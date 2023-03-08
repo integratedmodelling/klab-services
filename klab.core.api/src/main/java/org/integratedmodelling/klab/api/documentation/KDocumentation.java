@@ -4,9 +4,9 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
-import org.integratedmodelling.klab.api.lang.KContextualizable;
-import org.integratedmodelling.klab.api.services.runtime.KActuator;
-import org.integratedmodelling.klab.api.services.runtime.KReport;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Report;
 
 /**
  * A documentation object corresponds to one tag in the \@documented k.IM annotation, associated to
@@ -51,16 +51,16 @@ public interface KDocumentation {
      */
     enum Trigger {
 
-        INITIALIZATION("Initialization", KContextualizable.Trigger.STATE_INITIALIZATION), DEFINITION("Definition",
-                KContextualizable.Trigger.DEFINITION), INSTANTIATION("Instantiation", KContextualizable.Trigger.INSTANTIATION), TRANSITION(
+        INITIALIZATION("Initialization", Contextualizable.Trigger.STATE_INITIALIZATION), DEFINITION("Definition",
+                Contextualizable.Trigger.DEFINITION), INSTANTIATION("Instantiation", Contextualizable.Trigger.INSTANTIATION), TRANSITION(
                         "Transition",
-                        KContextualizable.Trigger.TRANSITION), TERMINATION("Termination", KContextualizable.Trigger.TERMINATION), INTERACTIVE(
+                        Contextualizable.Trigger.TRANSITION), TERMINATION("Termination", Contextualizable.Trigger.TERMINATION), INTERACTIVE(
                                 "Interactive", null), DOCUMENTATION("Documentation", null);
 
         String key;
-        KContextualizable.Trigger trigger;
+        Contextualizable.Trigger trigger;
 
-        Trigger(String key, KContextualizable.Trigger trigger) {
+        Trigger(String key, Contextualizable.Trigger trigger) {
             this.key = key;
             this.trigger = trigger;
         }
@@ -116,14 +116,14 @@ public interface KDocumentation {
          * @param scope
          * @return
          */
-        void compile(KReport.Section section, KContextScope scope, Map<String, Object> templateVariables);
+        void compile(Report.Section section, KContextScope scope, Map<String, Object> templateVariables);
 
         /**
          * Return the section type that this applies to.
          * 
          * @return
          */
-        KReport.Section.Type getSectionType();
+        Report.Section.Type getSectionType();
 
         /**
          * Return the documentation this is part of. Needed for caching and handling of multiple
@@ -160,7 +160,7 @@ public interface KDocumentation {
      * @param template
      * @param trigger
      */
-    boolean instrumentReport(KReport report, Template template, Trigger trigger, KActuator actuator,
+    boolean instrumentReport(Report report, Template template, Trigger trigger, Actuator actuator,
             KContextScope scope);
 
     /**

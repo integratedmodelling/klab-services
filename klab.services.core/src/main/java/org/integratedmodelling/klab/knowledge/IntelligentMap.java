@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.utils.DebugFile;
 
 /**
@@ -46,12 +46,12 @@ import org.integratedmodelling.klab.utils.DebugFile;
  *
  * @param <T>
  */
-public class IntelligentMap<T> implements Map<KConcept, T> {
+public class IntelligentMap<T> implements Map<Concept, T> {
 
 	HashMap<String, T> data = new HashMap<>();
 	HashMap<String, T> cache = new HashMap<>();
 	HashMap<String, Set<String>> closure = new HashMap<>();
-	HashMap<KConcept, T> original = new HashMap<>();
+	HashMap<Concept, T> original = new HashMap<>();
 
 	private T defaultValue = null;
 
@@ -70,11 +70,11 @@ public class IntelligentMap<T> implements Map<KConcept, T> {
 
 	public T get(Object object) {
 
-		if (!(object instanceof KConcept)) {
+		if (!(object instanceof Concept)) {
 			return null;
 		}
 
-		KConcept concept = (KConcept) object;
+		Concept concept = (Concept) object;
 		String definition = concept.getUrn();
 
 		// cached
@@ -103,12 +103,12 @@ public class IntelligentMap<T> implements Map<KConcept, T> {
 
 	}
 	
-	public T getValue(KConcept key) {
+	public T getValue(Concept key) {
 	    return original.get(key);
 	}
 
 	@Override
-	public T put(KConcept concept, T data) {
+	public T put(Concept concept, T data) {
 
 		DebugFile.println("STORING " + concept + ": " + data);
 		
@@ -116,7 +116,7 @@ public class IntelligentMap<T> implements Map<KConcept, T> {
 		
 		if (!closure.containsKey(concept.getUrn())) {
 			Set<String> clss = new HashSet<>();
-			for (KConcept c : concept.closure()) {
+			for (Concept c : concept.closure()) {
 				clss.add(c.getUrn());
 			}
 			this.closure.put(concept.getUrn(), clss);
@@ -143,7 +143,7 @@ public class IntelligentMap<T> implements Map<KConcept, T> {
 	}
 
 	@Override
-	public Set<Map.Entry<KConcept, T>> entrySet() {
+	public Set<Map.Entry<Concept, T>> entrySet() {
 		return original.entrySet();
 	}
 
@@ -153,21 +153,21 @@ public class IntelligentMap<T> implements Map<KConcept, T> {
 	}
 
 	@Override
-	public Set<KConcept> keySet() {
+	public Set<Concept> keySet() {
 		return original.keySet();
 	}
 
 	@Override
-	public void putAll(Map<? extends KConcept, ? extends T> m) {
-		for (KConcept c : m.keySet()) {
+	public void putAll(Map<? extends Concept, ? extends T> m) {
+		for (Concept c : m.keySet()) {
 			put(c, m.get(c));
 		}
 	}
 
 	@Override
 	public T remove(Object key) {
-		if (key instanceof KConcept) {
-			data.remove(((KConcept) key).getUrn());
+		if (key instanceof Concept) {
+			data.remove(((Concept) key).getUrn());
 		}
 		return original.remove(key);
 	}

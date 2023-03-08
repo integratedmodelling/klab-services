@@ -25,9 +25,9 @@ package org.integratedmodelling.klab.api.geometry.impl;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.integratedmodelling.klab.api.collections.impl.Triple;
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.geometry.KGeometry.Dimension;
+import org.integratedmodelling.klab.api.collections.impl.TripleImpl;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 
 public class MultidimensionalCursor {
 
@@ -130,7 +130,7 @@ public class MultidimensionalCursor {
         storageOrderType = order;
     }
 
-    public MultidimensionalCursor(KGeometry geometry) {
+    public MultidimensionalCursor(Geometry geometry) {
         multiplicity = 0;
         dimensions = 0;
         storageOrderType = StorageOrdering.ROW_FIRST;
@@ -143,7 +143,7 @@ public class MultidimensionalCursor {
         initializeStrides();
     }
     
-    public MultidimensionalCursor(KGeometry geometry, long[] lockedDimensions) {
+    public MultidimensionalCursor(Geometry geometry, long[] lockedDimensions) {
         multiplicity = 0;
         dimensions = 0;
         storageOrderType = StorageOrdering.ROW_FIRST;
@@ -251,7 +251,7 @@ public class MultidimensionalCursor {
      * @param intes
      * @return the offsets
      */
-    public Triple<Long, Long, Long> getStridedOffsets(int dimension, long[] intes) {
+    public TripleImpl<Long, Long, Long> getStridedOffsets(int dimension, long[] intes) {
 
         intes[dimension] = 0;
         long ofs = getElementOffset(intes);
@@ -259,7 +259,7 @@ public class MultidimensionalCursor {
         long stp = getElementOffset(intes) - ofs;
         intes[dimension] = extents.get(dimension);
         long end = getElementOffset(intes);
-        return new Triple<>(ofs, end, stp);
+        return new TripleImpl<>(ofs, end, stp);
     }
     
     public MultidimensionalCursor(long... extents) {

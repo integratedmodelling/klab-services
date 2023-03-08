@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.tests.services.resources;
 
-import org.integratedmodelling.klab.api.lang.kim.KKimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KKimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
 import org.integratedmodelling.klab.utils.Utils;
 import org.junit.jupiter.api.AfterAll;
@@ -39,7 +39,7 @@ class ResourceIngestion {
     void parseObservables() {
 
         for (String observable : testObservables) {
-            KKimObservable obs = service.resolveObservable(observable);
+            KimObservable obs = service.resolveObservable(observable);
             System.out.println(obs);
             assert(obs != null);
         }
@@ -49,10 +49,10 @@ class ResourceIngestion {
     void serializeAndDeserializeObservables() {
 
         for (String observable : testObservables) {
-            KKimObservable obs = service.resolveObservable(observable);
+            KimObservable obs = service.resolveObservable(observable);
             String serialized = Utils.Json.asString(obs);
-            KKimStatement kimObject = Utils.Json.parseObject(serialized, KKimStatement.class);
-            assert (kimObject instanceof KKimObservable);
+            KimStatement kimObject = Utils.Json.parseObject(serialized, KimStatement.class);
+            assert (kimObject instanceof KimObservable);
         }
     }
 

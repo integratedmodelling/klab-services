@@ -3,7 +3,7 @@
  */
 package org.integratedmodelling.klab.api.exceptions;
 
-import org.integratedmodelling.klab.api.knowledge.KArtifact;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
  * The KlabResourceAccessException
@@ -50,7 +50,7 @@ public class KResourceAccessException extends KException {
 	 * @param message
 	 * @param scope
 	 */
-	public KResourceAccessException(String message, KArtifact scope) {
+	public KResourceAccessException(String message, Artifact scope) {
 		super(message, scope);
 	}
 
@@ -58,7 +58,7 @@ public class KResourceAccessException extends KException {
 	 * @param message
 	 * @param scope
 	 */
-	public KResourceAccessException(Throwable message, KArtifact scope) {
+	public KResourceAccessException(Throwable message, Artifact scope) {
 		super(message, scope);
 	}
 

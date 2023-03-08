@@ -2,8 +2,8 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
 import java.util.Collection;
 
-import org.integratedmodelling.klab.api.knowledge.KAuthority;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.knowledge.Authority;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 
 /**
  * Enumerated extent, which details a coverage over a conceptual space, either the semantic closure
@@ -18,18 +18,18 @@ public interface KEnumeratedExtent extends KExtent {
      * 
      * @return
      */
-    KAuthority getAuthority();
+    Authority getAuthority();
 
     /**
      * 
      * @return
      */
-    KConcept getBaseIdentity();
+    Concept getBaseIdentity();
 
     /**
      * Return all the concepts that make up the extent of this domain.
      * 
      * @return
      */
-    Collection<KConcept> getExtension();
+    Collection<Concept> getExtension();
 }

@@ -8,10 +8,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.services.KReasoner;
-import org.integratedmodelling.klab.api.services.runtime.KChannel;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.utils.Utils;
@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.utils.Utils;
 public class CoreOntology /* extends AbstractWorkspace */ {
 
     private boolean synced = false;
-    private Map<SemanticType, KConcept> worldviewCoreConcepts = Collections.synchronizedMap(new HashMap<>());
+    private Map<SemanticType, Concept> worldviewCoreConcepts = Collections.synchronizedMap(new HashMap<>());
     private File root;
     private static Map<SemanticType, String> coreConceptIds = Collections.synchronizedMap(new HashMap<>());
 
@@ -340,7 +340,7 @@ public class CoreOntology /* extends AbstractWorkspace */ {
         this.root = directory;
     }
 
-    public void registerCoreConcept(String coreConcept, KConcept worldviewPeer) {
+    public void registerCoreConcept(String coreConcept, Concept worldviewPeer) {
         /*
          * TODO must handle the specialized concepts so that they inherit from the redefined ones,
          * too. E.g. when the AGENT handler is received, it should create and install all the agent
@@ -354,7 +354,7 @@ public class CoreOntology /* extends AbstractWorkspace */ {
     // }
 
     // @Override
-    public /* IKimLoader */ void load(KChannel monitor) {
+    public /* IKimLoader */ void load(Channel monitor) {
         // IKimLoader ret = null;
         if (!synced) {
             synced = true;
@@ -371,7 +371,7 @@ public class CoreOntology /* extends AbstractWorkspace */ {
          * DO NOT REMOVE this test. Removing it will cause seemingly completely unrelated bugs that
          * will take a very long time to figure out.
          */
-        KConcept dummy = OWL.INSTANCE.getConcept(NS.OBSERVATION);
+        Concept dummy = OWL.INSTANCE.getConcept(NS.OBSERVATION);
         if (dummy == null) {
             throw new KIOException("core knowledge: can't find known concepts, ontologies are probably corrupted");
         }
@@ -381,7 +381,7 @@ public class CoreOntology /* extends AbstractWorkspace */ {
         // return ret;
     }
 
-    public KConcept getCoreType(Set<SemanticType> type) {
+    public Concept getCoreType(Set<SemanticType> type) {
 
         if (type.contains(SemanticType.NOTHING)) {
             return OWL.INSTANCE.getNothing();
@@ -391,7 +391,7 @@ public class CoreOntology /* extends AbstractWorkspace */ {
         if (coreType == null) {
             return null;
         }
-        KConcept ret = worldviewCoreConcepts.get(coreType);
+        Concept ret = worldviewCoreConcepts.get(coreType);
         if (ret == null) {
             String id = coreConceptIds.get(coreType);
             if (id != null) {
@@ -515,15 +515,15 @@ public class CoreOntology /* extends AbstractWorkspace */ {
         return ret;
     }
 
-    public String importOntology(String url, String prefix, KChannel monitor) {
+    public String importOntology(String url, String prefix, Channel monitor) {
         return OWL.INSTANCE.importExternal(url, prefix, monitor);
     }
 
-    public void setAsCoreType(KConcept concept) {
+    public void setAsCoreType(Concept concept) {
         worldviewCoreConcepts.put(getRepresentativeCoreSemanticType(concept.getType()), concept);
     }
 
-    public KConcept alignCoreInheritance(KConcept concept) {
+    public Concept alignCoreInheritance(Concept concept) {
         // if (concept.is(IKimConcept.Type.RELATIONSHIP)) {
         // // parent of core relationship depends on functional/structural nature
         // if (concept.is(IKimConcept.Type.FUNCTIONAL) ||

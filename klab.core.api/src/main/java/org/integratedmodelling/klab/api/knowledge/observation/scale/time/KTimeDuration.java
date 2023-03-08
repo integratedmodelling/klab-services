@@ -15,7 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
-import org.integratedmodelling.klab.api.collections.KPair;
+import org.integratedmodelling.klab.api.collections.Pair;
 
 /**
  * The Interface ITimeDuration.
@@ -102,7 +102,7 @@ public interface KTimeDuration extends Comparable<KTimeDuration> {
 	 *
 	 * @return localization
 	 */
-	KPair<KTimeInstant, KTimeInstant> localize();
+	Pair<KTimeInstant, KTimeInstant> localize();
 
 	/**
 	 * True for a no-duration duration.

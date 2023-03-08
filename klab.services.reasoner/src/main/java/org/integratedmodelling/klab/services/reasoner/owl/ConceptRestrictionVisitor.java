@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
@@ -34,7 +34,7 @@ public class ConceptRestrictionVisitor
         return this.restriction;
     }
 
-    public ConceptRestrictionVisitor(KConcept concept, KConcept filler) {
+    public ConceptRestrictionVisitor(Concept concept, Concept filler) {
         this.onts = OWL.INSTANCE.manager.getOntologies();
         this.filler = OWL.INSTANCE.getOWLClass(filler);
         OWL.INSTANCE.getOWLClass(concept).accept(this);

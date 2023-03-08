@@ -18,7 +18,7 @@ package org.integratedmodelling.klab.api.exceptions;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.integratedmodelling.klab.api.knowledge.KArtifact;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
  * The Class KlabException.
@@ -29,7 +29,7 @@ import org.integratedmodelling.klab.api.knowledge.KArtifact;
 public class KException extends RuntimeException {
 
     private static final long serialVersionUID = 5999457326224959271L;
-    private KArtifact scope;
+    private Artifact scope;
 
     /**
      * Instantiates a new klab exception.
@@ -74,7 +74,7 @@ public class KException extends RuntimeException {
      * @param arg0 the arg 0
      * @param scope the scope
      */
-    public KException(String arg0, KArtifact scope) {
+    public KException(String arg0, Artifact scope) {
         super(arg0);
         this.scope = scope;
     }
@@ -85,7 +85,7 @@ public class KException extends RuntimeException {
      * @param arg0 the arg 0
      * @param scope the scope
      */
-    public KException(Throwable arg0, KArtifact scope) {
+    public KException(Throwable arg0, Artifact scope) {
         super(arg0);
         this.scope = scope;
     }
@@ -106,7 +106,7 @@ public class KException extends RuntimeException {
      *
      * @return the scope
      */
-    public KArtifact getScope() {
+    public Artifact getScope() {
         return scope;
     }
 

@@ -15,7 +15,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.KUnit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
-import org.integratedmodelling.klab.api.geometry.KGeometry.Dimension;
+import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.KExtent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.KTopologicallyComparable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;

@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scope;
 
-import org.integratedmodelling.klab.api.geometry.KGeometry;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 
 public interface KSessionScope extends KScope {
 
@@ -15,7 +15,7 @@ public interface KSessionScope extends KScope {
      * 
      * @return
      */
-    KGeometry getGeometry();
+    Geometry getGeometry();
 
     /**
      * A session may represent a raw session, a script or an application. In each case a name is

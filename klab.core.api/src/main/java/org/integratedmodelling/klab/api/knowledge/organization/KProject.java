@@ -7,8 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
-import org.integratedmodelling.klab.api.lang.kactors.KKActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KKimNamespace;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 
 public interface KProject extends Serializable {
 
@@ -43,7 +43,7 @@ public interface KProject extends Serializable {
      * @param id
      * @return
      */
-    KKimNamespace getNamespace(String id);
+    KimNamespace getNamespace(String id);
 
     /**
      * 
@@ -61,14 +61,14 @@ public interface KProject extends Serializable {
      * 
      * @return
      */
-    List<KKimNamespace> getNamespaces();
+    List<KimNamespace> getNamespaces();
 
     /**
      * All the legitimate behaviors (in the source files)
      * 
      * @return
      */
-    List<KKActorsBehavior> getBehaviors();
+    List<KActorsBehavior> getBehaviors();
 
     /**
      * All the behaviors in the apps directory (which may also contain k.IM scripts). Includes apps
@@ -76,14 +76,14 @@ public interface KProject extends Serializable {
      * 
      * @return
      */
-    List<KKActorsBehavior> getApps();
+    List<KActorsBehavior> getApps();
 
     /**
      * All the behaviors in the tests directory (which may also contain k.IM scripts).
      * 
      * @return
      */
-    List<KKActorsBehavior> getTests();
+    List<KActorsBehavior> getTests();
 
     /**
      * 

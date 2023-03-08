@@ -18,13 +18,13 @@ import org.eclipse.jgit.lib.Repository;
 import org.integratedmodelling.kim.api.IKimAnnotation;
 import org.integratedmodelling.kim.api.IKimStatement;
 import org.integratedmodelling.kim.api.IParameters;
-import org.integratedmodelling.klab.api.collections.Annotation;
-import org.integratedmodelling.klab.api.collections.Metadata;
-import org.integratedmodelling.klab.api.data.KMetadata;
+import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
-import org.integratedmodelling.klab.api.lang.KAnnotation;
-import org.integratedmodelling.klab.api.lang.kim.impl.KimStatement;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimStatementImpl;
 import org.integratedmodelling.klab.data.encoding.JacksonConfiguration;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
@@ -146,7 +146,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return value == null ? "unknown" : value.toString();
         }
 
-        public static void copyStatementData(IKimStatement source, KimStatement destination) {
+        public static void copyStatementData(IKimStatement source, KimStatementImpl destination) {
 
             destination.setUri(source.getURI());
             destination.setLocationDescriptor(source.getLocationDescriptor());
@@ -159,10 +159,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             destination.setNamespace(source.getNamespace());
 
             for (IKimAnnotation annotation : source.getAnnotations()) {
-                KAnnotation newAnnotation = makeAnnotation(annotation);
+                Annotation newAnnotation = makeAnnotation(annotation);
                 if ("deprecated".equals(newAnnotation.getName())) {
                     destination.setDeprecated(true);
-                    destination.setDeprecation(newAnnotation.get(KAnnotation.VALUE_PARAMETER_KEY, String.class));
+                    destination.setDeprecation(newAnnotation.get(Annotation.VALUE_PARAMETER_KEY, String.class));
                 } else if ("documented".equals(newAnnotation.getName())) {
                     destination.setDocumentationMetadata(newAnnotation);
                 }
@@ -170,15 +170,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
         }
 
-        public static KAnnotation makeAnnotation(IKimAnnotation annotation) {
-            Annotation ret = new Annotation();
+        public static Annotation makeAnnotation(IKimAnnotation annotation) {
+            AnnotationImpl ret = new AnnotationImpl();
             ret.setName(annotation.getName());
             ret.putAll(annotation.getParameters());
             return ret;
         }
 
-        public static KMetadata makeMetadata(IParameters<String> metadata) {
-            Metadata ret = new Metadata();
+        public static Metadata makeMetadata(IParameters<String> metadata) {
+            MetadataImpl ret = new MetadataImpl();
             ret.putAll(metadata);
             return ret;
         }

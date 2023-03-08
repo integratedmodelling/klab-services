@@ -2,11 +2,11 @@ package org.integratedmodelling.klab.api.knowledge.observation.scope;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.collections.KParameters;
-import org.integratedmodelling.klab.api.identities.KUserIdentity;
-import org.integratedmodelling.klab.api.services.runtime.KChannel;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 
-public interface KScope extends KChannel, Serializable {
+public interface KScope extends Channel, Serializable {
 
     enum Type {
         USER, // root-level scope
@@ -50,14 +50,14 @@ public interface KScope extends KChannel, Serializable {
      * 
      * @return
      */
-    KUserIdentity getUser();
+    UserIdentity getUser();
 
     /**
      * Each scope can carry arbitrary data linked to it.
      * 
      * @return
      */
-    KParameters<String> getData();
+    Parameters<String> getData();
 
     /**
      * Start a raw session with a given identifier and return the scope that controls it.

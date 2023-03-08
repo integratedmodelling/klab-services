@@ -21,10 +21,10 @@
  *******************************************************************************/
 package org.integratedmodelling.klab.api.data.mediation;
 
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.geometry.KLocator;
-import org.integratedmodelling.klab.api.knowledge.KObservable;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KScale;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
  * Describes any object that can mediate a value to another. In k.LAB mediations are allowed to
@@ -40,7 +40,7 @@ public interface KValueMediator {
      * 
      * @param other
      * @throws KIllegalStateException if this mediator was produced through
-     *         {@link #contextualize(KObservable, KScale)}.
+     *         {@link #contextualize(Observable, Scale)}.
      * @return true if other is compatible
      */
     boolean isCompatible(KValueMediator other);
@@ -52,7 +52,7 @@ public interface KValueMediator {
      * @param scale
      * @return the converted number
      * @throws KIllegalStateException if this mediator was produced through
-     *         {@link #contextualize(KObservable, KScale)}.
+     *         {@link #contextualize(Observable, Scale)}.
      */
     Number convert(Number d, KValueMediator scale);
 
@@ -61,7 +61,7 @@ public interface KValueMediator {
      * currency) into what we represent, using the scale portion over which the observation of the
      * value is made to account for any different distribution through the context.
      * <p>
-     * The resulting mediator will only accept the {@link #convert(Number, KLocator)} call and throw
+     * The resulting mediator will only accept the {@link #convert(Number, Locator)} call and throw
      * an exception in any other situation. If the observable passed has no mediator, the conversion
      * will be standard and non-contextual (using a simple conversion factor for speed). Otherwise,
      * the fastest set of transformations will be encoded in the returned mediator.
@@ -92,23 +92,23 @@ public interface KValueMediator {
      * @param scale
      * @return a contextualized mediator specialized for the conversion to this unit in this scale.
      */
-    KValueMediator contextualize(KObservable observable, KGeometry scale);
+    KValueMediator contextualize(Observable observable, Geometry scale);
 
     /**
      * Convert a quantity to the unit we represent from the one in the observable that was passed to
-     * the {@link #contextualize(KObservable, KScale)} call that originated this one.
+     * the {@link #contextualize(Observable, Scale)} call that originated this one.
      * 
      * @param value
      * @param locator
      * @throws KIllegalStateException if this is called on a mediator that was not produced
-     *         through {@link #contextualize(KObservable, KScale)}.
+     *         through {@link #contextualize(Observable, Scale)}.
      * @return
      */
-    Number convert(Number value, KLocator locator);
+    Number convert(Number value, Locator locator);
 
     /**
      * If true, this mediator is meant to be used across scales using
-     * {@link #convert(Number, KLocator)}, otherwise it's a pure non-contextual mediator.
+     * {@link #convert(Number, Locator)}, otherwise it's a pure non-contextual mediator.
      * 
      * @return
      */

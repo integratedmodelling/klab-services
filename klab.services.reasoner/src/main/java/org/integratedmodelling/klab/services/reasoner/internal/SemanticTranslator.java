@@ -13,18 +13,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
-import org.integratedmodelling.klab.api.knowledge.KObservable;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.observation.KObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
-import org.integratedmodelling.klab.api.lang.kim.KKimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KKimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KKimConceptStatement.ApplicableConcept;
-import org.integratedmodelling.klab.api.lang.kim.KKimConceptStatement.ParentConcept;
-import org.integratedmodelling.klab.api.lang.kim.KKimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KKimScope;
-import org.integratedmodelling.klab.api.services.runtime.KChannel;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimScope;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
@@ -37,7 +37,7 @@ import org.springframework.stereotype.Service;
 public class SemanticTranslator {
 
     private Map<String, String> coreConceptPeers = new HashMap<>();
-    Map<KConcept, Emergence> emergent = new HashMap<>();
+    Map<Concept, Emergence> emergent = new HashMap<>();
     IntelligentMap<Set<Emergence>> emergence = new IntelligentMap<>();
 
     
@@ -59,14 +59,14 @@ public class SemanticTranslator {
      */
     public class Emergence {
 
-        public Set<KConcept> triggerObservables = new LinkedHashSet<>();
-        public KConcept emergentObservable;
+        public Set<Concept> triggerObservables = new LinkedHashSet<>();
+        public Concept emergentObservable;
         public String namespaceId;
 
-        public Set<KObservation> matches(KConcept relationship, KContextScope scope) {
+        public Set<Observation> matches(Concept relationship, KContextScope scope) {
 
-            for (KConcept trigger : triggerObservables) {
-                Set<KObservation> ret = new HashSet<>();
+            for (Concept trigger : triggerObservables) {
+                Set<Observation> ret = new HashSet<>();
                 checkScope(trigger, scope.getCatalog(), relationship, ret);
                 if (!ret.isEmpty()) {
                     return ret;
@@ -107,22 +107,22 @@ public class SemanticTranslator {
         /*
          * current observable must be one of the triggers, any others need to be in scope
          */
-        private void checkScope(KConcept trigger, Map<KObservable, KObservation> map, KConcept relationship,
-                Set<KObservation> obs) {
+        private void checkScope(Concept trigger, Map<Observable, Observation> map, Concept relationship,
+                Set<Observation> obs) {
             if (trigger.is(SemanticType.UNION)) {
-                for (KConcept trig : trigger.operands()) {
+                for (Concept trig : trigger.operands()) {
                     checkScope(trig, map, relationship, obs);
                 }
             } else if (trigger.is(SemanticType.INTERSECTION)) {
-                for (KConcept trig : trigger.operands()) {
-                    Set<KObservation> oobs = new HashSet<>();
+                for (Concept trig : trigger.operands()) {
+                    Set<Observation> oobs = new HashSet<>();
                     checkScope(trig, map, relationship, oobs);
                     if (oobs.isEmpty()) {
                         obs = oobs;
                     }
                 }
             } else {
-                KObservation a = map.get(trigger);
+                Observation a = map.get(trigger);
                 if (a != null) {
                     obs.add(a);
                 }
@@ -130,22 +130,22 @@ public class SemanticTranslator {
         }
     }
 
-    public KConcept defineConcept(KKimConcept parsed) {
+    public Concept defineConcept(KimConcept parsed) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public KObservable defineObservable(KKimObservable parsed) {
+    public Observable defineObservable(KimObservable parsed) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public KConcept defineConcept(KKimConceptStatement statement) {
+    public Concept defineConcept(KimConceptStatement statement) {
         // TODO
         return null;
     }
 
-    public KConcept build(KKimConceptStatement concept, Ontology ontology, KKimConceptStatement kimObject, KChannel monitor) {
+    public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject, Channel monitor) {
 
         if (concept.isMacro()) {
             return null;
@@ -158,7 +158,7 @@ public class SemanticTranslator {
                 /*
                  * can only have 'is' X or 'equals' X
                  */
-                KConcept parent = null;
+                Concept parent = null;
                 if (concept.getUpperConceptDefined() != null) {
                     parent = OWL.INSTANCE.getConcept(concept.getUpperConceptDefined());
                     if (parent == null) {
@@ -168,7 +168,7 @@ public class SemanticTranslator {
                     }
                 } else {
 
-                    List<KConcept> concepts = new ArrayList<>();
+                    List<Concept> concepts = new ArrayList<>();
                     int i = 0;
                     for (ParentConcept p : concept.getParents()) {
 
@@ -176,8 +176,8 @@ public class SemanticTranslator {
                             monitor.error("concepts defining aliases with 'equals' cannot have more than one parent", p);
                         }
 
-                        for (KKimConcept pdecl : p.getConcepts()) {
-                            KConcept declared = declare(pdecl, ontology, monitor);
+                        for (KimConcept pdecl : p.getConcepts()) {
+                            Concept declared = declare(pdecl, ontology, monitor);
                             if (declared == null) {
                                 monitor.error("parent declaration " + pdecl + " does not identify known concepts", pdecl);
                                 return null;
@@ -199,10 +199,10 @@ public class SemanticTranslator {
                 return null;
             }
 
-            KConcept ret = buildInternal(concept, ontology, kimObject, monitor);
-            KConcept upperConceptDefined = null;
+            Concept ret = buildInternal(concept, ontology, kimObject, monitor);
+            Concept upperConceptDefined = null;
             if (concept.getParents().isEmpty()) {
-                KConcept parent = null;
+                Concept parent = null;
                 if (concept.getUpperConceptDefined() != null) {
                     upperConceptDefined = parent = OWL.INSTANCE.getConcept(concept.getUpperConceptDefined());
                     if (parent == null) {
@@ -241,10 +241,10 @@ public class SemanticTranslator {
         return null;
     }
 
-    private KConcept buildInternal(final KKimConceptStatement concept, Ontology ontology, KKimConceptStatement kimObject,
-            final KChannel monitor) {
+    private Concept buildInternal(final KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject,
+            final Channel monitor) {
 
-        KConcept main = null;
+        Concept main = null;
         String mainId = concept.getName();
 
         ontology.add(Axiom.ClassAssertion(mainId,
@@ -270,9 +270,9 @@ public class SemanticTranslator {
 
         for (ParentConcept parent : concept.getParents()) {
 
-            List<KConcept> concepts = new ArrayList<>();
-            for (KKimConcept pdecl : parent.getConcepts()) {
-                KConcept declared = declare(pdecl, ontology, monitor);
+            List<Concept> concepts = new ArrayList<>();
+            for (KimConcept pdecl : parent.getConcepts()) {
+                Concept declared = declare(pdecl, ontology, monitor);
                 if (declared == null) {
                     monitor.error("parent declaration " + pdecl + " does not identify known concepts", pdecl);
                     return null;
@@ -283,7 +283,7 @@ public class SemanticTranslator {
             if (concepts.size() == 1) {
                 ontology.add(Axiom.SubClass(concepts.get(0).getUrn(), mainId));
             } else {
-                KConcept expr = null;
+                Concept expr = null;
                 switch(parent.getConnector()) {
                 case INTERSECTION:
                     expr = OWL.INSTANCE.getIntersection(concepts, ontology, concepts.get(0).getType());
@@ -307,11 +307,11 @@ public class SemanticTranslator {
             ontology.define();
         }
 
-        for (KKimScope child : concept.getChildren()) {
-            if (child instanceof KKimConceptStatement) {
+        for (KimScope child : concept.getChildren()) {
+            if (child instanceof KimConceptStatement) {
                 try {
 //                    KimConceptStatement chobj = kimObject == null ? null : new KimConceptStatement((IKimConceptStatement) child);
-                    KConcept childConcept = buildInternal((KKimConceptStatement) child, ontology, concept,
+                    Concept childConcept = buildInternal((KimConceptStatement) child, ontology, concept,
                             /*
                              * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
                              * monitor).contextualize(child) :
@@ -325,8 +325,8 @@ public class SemanticTranslator {
             }
         }
 
-        for (KKimConcept inherited : concept.getTraitsInherited()) {
-            KConcept trait = declare(inherited, ontology, monitor);
+        for (KimConcept inherited : concept.getTraitsInherited()) {
+            Concept trait = declare(inherited, ontology, monitor);
             if (trait == null) {
                 monitor.error("inherited " + inherited.getName() + " does not identify known concepts", inherited);
                 return null;
@@ -339,8 +339,8 @@ public class SemanticTranslator {
         }
 
         // TODO all the rest: creates, ....
-        for (KKimConcept affected : concept.getQualitiesAffected()) {
-            KConcept quality = declare(affected, ontology, monitor);
+        for (KimConcept affected : concept.getQualitiesAffected()) {
+            Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
                 monitor.error("affected " + affected.getName() + " does not identify known concepts", affected);
                 return null;
@@ -348,8 +348,8 @@ public class SemanticTranslator {
             OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality, ontology);
         }
 
-        for (KKimConcept required : concept.getRequiredIdentities()) {
-            KConcept quality = declare(required, ontology, monitor);
+        for (KimConcept required : concept.getRequiredIdentities()) {
+            Concept quality = declare(required, ontology, monitor);
             if (quality == null) {
                 monitor.error("required " + required.getName() + " does not identify known concepts", required);
                 return null;
@@ -357,8 +357,8 @@ public class SemanticTranslator {
             OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality, ontology);
         }
 
-        for (KKimConcept affected : concept.getObservablesCreated()) {
-            KConcept quality = declare(affected, ontology, monitor);
+        for (KimConcept affected : concept.getObservablesCreated()) {
+            Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
                 monitor.error("created " + affected.getName() + " does not identify known concepts", affected);
                 return null;
@@ -377,8 +377,8 @@ public class SemanticTranslator {
         }
 
         if (!concept.getEmergenceTriggers().isEmpty()) {
-            List<KConcept> triggers = new ArrayList<>();
-            for (KKimConcept trigger : concept.getEmergenceTriggers()) {
+            List<Concept> triggers = new ArrayList<>();
+            for (KimConcept trigger : concept.getEmergenceTriggers()) {
                 triggers.add(declare(trigger, ontology, monitor));
             }
             registerEmergent(main, triggers);
@@ -394,7 +394,7 @@ public class SemanticTranslator {
     /*
      * Register the triggers and each triggering concept in the emergence map.
      */
-    public boolean registerEmergent(KConcept configuration, Collection<KConcept> triggers) {
+    public boolean registerEmergent(Concept configuration, Collection<Concept> triggers) {
 
         if (!configuration.isAbstract()) {
 
@@ -412,8 +412,8 @@ public class SemanticTranslator {
             descriptor.namespaceId = configuration.getNamespace();
             this.emergent.put(configuration, descriptor);
 
-            for (KConcept trigger : triggers) {
-                for (KConcept tr : OWL.INSTANCE.flattenOperands(trigger)) {
+            for (Concept trigger : triggers) {
+                for (Concept tr : OWL.INSTANCE.flattenOperands(trigger)) {
                     Set<Emergence> es = emergence.get(tr);
                     if (es == null) {
                         es = new HashSet<>();
@@ -429,7 +429,7 @@ public class SemanticTranslator {
         return false;
     }
 
-    private void createProperties(KConcept ret, Ontology ns) {
+    private void createProperties(Concept ret, Ontology ns) {
 
         String pName = null;
         String pProp = null;
@@ -454,12 +454,12 @@ public class SemanticTranslator {
         }
     }
 
-    private KConcept declare(KKimConcept affected, Ontology ontology, KChannel monitor) {
+    private Concept declare(KimConcept affected, Ontology ontology, Channel monitor) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public static String getCleanId(KConcept main) {
+    public static String getCleanId(Concept main) {
         String id = main.getMetadata().get(IMetadata.DC_LABEL, String.class);
         if (id == null) {
             id = main.getName();

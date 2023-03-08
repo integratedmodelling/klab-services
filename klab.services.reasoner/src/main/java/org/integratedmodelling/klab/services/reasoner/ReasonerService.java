@@ -5,18 +5,23 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import org.integratedmodelling.klab.api.collections.impl.Pair;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
-import org.integratedmodelling.klab.api.knowledge.KObservable;
-import org.integratedmodelling.klab.api.knowledge.KSemantics;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.observation.KObservation;
-import org.integratedmodelling.klab.api.lang.kim.KKimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KKimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KKimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KKimScope;
-import org.integratedmodelling.klab.api.services.KReasoner;
-import org.integratedmodelling.klab.api.services.KResources;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimScope;
+import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resources;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
@@ -30,36 +35,40 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 @Service
-public class ReasonerService implements KReasoner, KReasoner.Admin {
+public class ReasonerService implements Reasoner, Reasoner.Admin {
 
-    private KResources resourceService;
-    private SemanticTranslator semanticTranslator;
-    private ReasonerConfiguration configuration;
-    
+    private static final long serialVersionUID = 380622027752591182L;
+
+    private String url;
+
+    transient private Resources resourceService;
+    transient private SemanticTranslator semanticTranslator;
+    transient private ReasonerConfiguration configuration;
+
     /**
      * Caches for concepts and observables, linked to the URI in the corresponding
-     * {@link KKimScope}.
+     * {@link KimScope}.
      */
-    LoadingCache<String, KConcept> concepts = CacheBuilder.newBuilder()
-//            .expireAfterAccess(10, TimeUnit.MINUTES)
-            .build(new CacheLoader<String, KConcept>(){
-                public KConcept load(String key) {
-                    KKimConcept parsed = resourceService.resolveConcept(key);
+    LoadingCache<String, Concept> concepts = CacheBuilder.newBuilder()
+            // .expireAfterAccess(10, TimeUnit.MINUTES)
+            .build(new CacheLoader<String, Concept>(){
+                public Concept load(String key) {
+                    KimConcept parsed = resourceService.resolveConcept(key);
                     return semanticTranslator.defineConcept(parsed);
                 }
             });
 
-    LoadingCache<String, KObservable> observables = CacheBuilder.newBuilder()
-//            .expireAfterAccess(10, TimeUnit.MINUTES)
-            .build(new CacheLoader<String, KObservable>(){
-                public KObservable load(String key) { // no checked exception
-                    KKimObservable parsed = resourceService.resolveObservable(key);
+    LoadingCache<String, Observable> observables = CacheBuilder.newBuilder()
+            // .expireAfterAccess(10, TimeUnit.MINUTES)
+            .build(new CacheLoader<String, Observable>(){
+                public Observable load(String key) { // no checked exception
+                    KimObservable parsed = resourceService.resolveObservable(key);
                     return semanticTranslator.defineObservable(parsed);
                 }
             });
 
     @Autowired
-    public ReasonerService(KResources resourceService, SemanticTranslator semanticTranslator) {
+    public ReasonerService(Resources resourceService, SemanticTranslator semanticTranslator) {
         this.resourceService = resourceService;
         Services.INSTANCE.setReasoner(this);
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
@@ -72,14 +81,14 @@ public class ReasonerService implements KReasoner, KReasoner.Admin {
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         Utils.YAML.save(this.configuration, config);
     }
-    
+
     @Override
-    public KConcept addConcept(KKimConceptStatement statement) {
+    public Concept defineConcept(KimConceptStatement statement) {
         return null;
     }
 
     @Override
-    public KConcept resolveConcept(String definition) {
+    public Concept resolveConcept(String definition) {
         try {
             return concepts.get(definition);
         } catch (ExecutionException e) {
@@ -88,7 +97,7 @@ public class ReasonerService implements KReasoner, KReasoner.Admin {
     }
 
     @Override
-    public KObservable resolveObservable(String definition) {
+    public Observable resolveObservable(String definition) {
         try {
             return observables.get(definition);
         } catch (ExecutionException e) {
@@ -96,228 +105,228 @@ public class ReasonerService implements KReasoner, KReasoner.Admin {
         }
     }
 
-    private KObservable errorObservable(String definition) {
+    private Observable errorObservable(String definition) {
         // TODO Auto-generated method stub
         return null;
     }
 
-    private KConcept errorConcept(String definition) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Collection<KConcept> operands(KSemantics target) {
+    private Concept errorConcept(String definition) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> children(KSemantics target) {
+    public Collection<Concept> operands(Semantics target) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> parents(KSemantics target) {
+    public Collection<Concept> children(Semantics target) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> allChildren(KSemantics target) {
+    public Collection<Concept> parents(Semantics target) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> allParents(KSemantics target) {
+    public Collection<Concept> allChildren(Semantics target) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> closure(KSemantics target) {
+    public Collection<Concept> allParents(Semantics target) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public int semanticDistance(KSemantics target) {
+    public Collection<Concept> closure(Semantics target) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int semanticDistance(Semantics target) {
         // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
-    public int semanticDistance(KSemantics target, KSemantics context) {
+    public int semanticDistance(Semantics target, Semantics context) {
         // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
-    public KConcept coreObservable(KConcept first) {
+    public Concept coreObservable(Concept first) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Pair<KConcept, List<SemanticType>> splitOperators(KConcept concept) {
+    public Pair<Concept, List<SemanticType>> splitOperators(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> traits(KConcept concept) {
+    public Collection<Concept> traits(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public int assertedDistance(KConcept kConcept, KConcept t) {
+    public int assertedDistance(Concept kConcept, Concept t) {
         // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
-    public boolean hasTrait(KConcept concept, KConcept t) {
+    public boolean hasTrait(Concept concept, Concept t) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Collection<KConcept> roles(KConcept concept) {
+    public Collection<Concept> roles(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean hasRole(KConcept concept, KConcept t) {
+    public boolean hasRole(Concept concept, Concept t) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public KConcept directContext(KConcept concept) {
+    public Concept directContext(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept context(KConcept concept) {
+    public Concept context(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directInherent(KConcept concept) {
+    public Concept directInherent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept inherent(KConcept concept) {
+    public Concept inherent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directGoal(KConcept concept) {
+    public Concept directGoal(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept goal(KConcept concept) {
+    public Concept goal(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directCooccurrent(KConcept concept) {
+    public Concept directCooccurrent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directCausant(KConcept concept) {
+    public Concept directCausant(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directCaused(KConcept concept) {
+    public Concept directCaused(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directAdjacent(KConcept concept) {
+    public Concept directAdjacent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directCompresent(KConcept concept) {
+    public Concept directCompresent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept directRelativeTo(KConcept concept) {
+    public Concept directRelativeTo(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept cooccurrent(KConcept concept) {
+    public Concept cooccurrent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept causant(KConcept concept) {
+    public Concept causant(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept caused(KConcept concept) {
+    public Concept caused(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept adjacent(KConcept concept) {
+    public Concept adjacent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept compresent(KConcept concept) {
+    public Concept compresent(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept relativeTo(KConcept concept) {
+    public Concept relativeTo(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Object displayLabel(KSemantics concept) {
+    public Object displayLabel(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Object codeName(KSemantics concept) {
+    public Object codeName(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String style(KConcept concept) {
+    public String style(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -329,99 +338,132 @@ public class ReasonerService implements KReasoner, KReasoner.Admin {
     }
 
     @Override
-    public Collection<KConcept> identities(KConcept concept) {
+    public Collection<Concept> identities(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> attributes(KConcept concept) {
+    public Collection<Concept> attributes(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> realms(KConcept concept) {
+    public Collection<Concept> realms(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept baseParentTrait(KConcept trait) {
+    public Concept baseParentTrait(Concept trait) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean hasParentTrait(KConcept type, KConcept trait) {
+    public boolean hasParentTrait(Concept type, Concept trait) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Collection<KConcept> directTraits(KConcept concept) {
+    public Collection<Concept> directTraits(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept negated(KConcept concept) {
+    public Concept negated(Concept concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Class<? extends KObservation> observationClass(KObservable observable) {
+    public Class<? extends Observation> observationClass(Observable observable) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public SemanticType observableType(KObservable observable, boolean acceptTraits) {
+    public SemanticType observableType(Observable observable, boolean acceptTraits) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept relationshipSource(KConcept relationship) {
+    public Concept relationshipSource(Concept relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> relationshipSources(KConcept relationship) {
+    public Collection<Concept> relationshipSources(Concept relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KConcept relationshipTarget(KConcept relationship) {
+    public Concept relationshipTarget(Concept relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> relationshipTargets(KConcept relationship) {
+    public Collection<Concept> relationshipTargets(Concept relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean satisfiable(KConcept ret) {
+    public boolean satisfiable(Concept ret) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Collection<KConcept> applicableObservables(KConcept main) {
+    public Collection<Concept> applicableObservables(Concept main) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<KConcept> directRoles(KConcept concept) {
+    public Collection<Concept> directRoles(Concept concept) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean loadKnowledge(ResourceSet resources) {
+
+        boolean ret = true;
+        for (Resource namespace : resources.getNamespaces()) {
+            Resources service = resources.getServices().get(namespace.getServiceId());
+            KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(),
+                    /* TODO scope of owning user - should come from authentication service */ null);
+            if (!parsed.isErrors()) {
+                for (KimStatement statement : parsed.getStatements()) {
+                    if (statement instanceof KimConceptStatement) {
+                        defineConcept((KimConceptStatement)statement);
+                    } else if (statement instanceof KimSymbolDefinition) {
+                        // TODO RDF but only with supporting semantic info
+                    }
+                }
+            } else {
+                ret = false;
+                break;
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public String getUrl() {
+        return this.url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
 }

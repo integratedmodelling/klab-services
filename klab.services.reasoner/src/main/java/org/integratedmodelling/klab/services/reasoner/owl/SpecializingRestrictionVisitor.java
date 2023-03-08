@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLObjectAllValuesFrom;
@@ -31,12 +31,12 @@ public class SpecializingRestrictionVisitor
     private Set<OWLOntology>     onts;
     private Set<OWLClass>        processedClasses   = new HashSet<>();
     private Property            property;
-    private Collection<KConcept> result             = null;
-    private KConcept             concept;
+    private Collection<Concept> result             = null;
+    private Concept             concept;
     private boolean              useSuperproperties = false;
     private OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression> restriction;
 
-    public Collection<KConcept> getResult() {
+    public Collection<Concept> getResult() {
         return result == null ? new HashSet<>() : result;
     }
 
@@ -44,7 +44,7 @@ public class SpecializingRestrictionVisitor
         return this.restriction;
     }
     
-    public SpecializingRestrictionVisitor(KConcept concept, Property property,
+    public SpecializingRestrictionVisitor(Concept concept, Property property,
             boolean useSuperProperties) {
         this.onts = OWL.INSTANCE.manager.getOntologies();
         this.property = property;
@@ -97,7 +97,7 @@ public class SpecializingRestrictionVisitor
     /*
      * return whether the restriction was used.
      */
-    private boolean addNew(Collection<KConcept> collection) {
+    private boolean addNew(Collection<Concept> collection) {
         
         if (result == null) {
             result = collection;
@@ -107,11 +107,11 @@ public class SpecializingRestrictionVisitor
         /*
          * only add those that are not already present in a more specialized class.
          */
-        Set<KConcept> keep = new HashSet<>();
-        Set<KConcept> remove = new HashSet<>();
-        for (KConcept toadd : collection) {
+        Set<Concept> keep = new HashSet<>();
+        Set<Concept> remove = new HashSet<>();
+        for (Concept toadd : collection) {
             boolean ok = true;
-            for (KConcept c : result) {
+            for (Concept c : result) {
                 if (!c.equals(toadd) && c.is(toadd)) {
                     ok = false;
                     break;

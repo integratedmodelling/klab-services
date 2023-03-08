@@ -6,8 +6,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.geometry.KGeometry.Dimension;
-import org.integratedmodelling.klab.api.geometry.impl.Geometry.DimensionImpl;
+import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl.DimensionImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KSpace;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTimeInstant;
@@ -46,46 +46,46 @@ public class GeometryBuilder {
         }
 
         public TimeBuilder covering(KTimeInstant start, KTimeInstant end) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_COVERAGE_START, start.getMilliseconds());
-            time.getParameters().put(Geometry.PARAMETER_TIME_COVERAGE_END, end.getMilliseconds());
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_COVERAGE_START, start.getMilliseconds());
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_COVERAGE_END, end.getMilliseconds());
             return this;
         }
 
         public TimeBuilder covering(long startMs, long endMs) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_COVERAGE_START, startMs);
-            time.getParameters().put(Geometry.PARAMETER_TIME_COVERAGE_END, endMs);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_COVERAGE_START, startMs);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_COVERAGE_END, endMs);
             return this;
         }
 
         public TimeBuilder start(KTimeInstant start) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_START, start.getMilliseconds());
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_START, start.getMilliseconds());
             return this;
         }
 
         public TimeBuilder start(long startMs) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_START, startMs);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_START, startMs);
             return this;
         }
 
         public TimeBuilder end(KTimeInstant start) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_END, start.getMilliseconds());
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_END, start.getMilliseconds());
             return this;
         }
 
         public TimeBuilder end(long endMs) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_END, endMs);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_END, endMs);
             return this;
         }
 
         public TimeBuilder resolution(KTime.Resolution resolution) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_SCOPE, resolution.getMultiplier());
-            time.getParameters().put(Geometry.PARAMETER_TIME_SCOPE_UNIT, resolution.getType().name().toLowerCase());
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE, resolution.getMultiplier());
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE_UNIT, resolution.getType().name().toLowerCase());
             return this;
         }
 
         public TimeBuilder resolution(KTime.Resolution.Type resolution, double multiplier) {
-            time.getParameters().put(Geometry.PARAMETER_TIME_SCOPE, multiplier);
-            time.getParameters().put(Geometry.PARAMETER_TIME_SCOPE_UNIT, resolution.name().toLowerCase());
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE, multiplier);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE_UNIT, resolution.name().toLowerCase());
             return this;
         }
 
@@ -140,22 +140,22 @@ public class GeometryBuilder {
          * Bounding box as a double[]{minX, maxX, minY, maxY}; lat/lon use lon as x axis
          */
         public SpaceBuilder boundingBox(double x1, double x2, double y1, double y2) {
-            space.getParameters().put(Geometry.PARAMETER_SPACE_BOUNDINGBOX, new double[]{x1, x2, y1, y2});
+            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX, new double[]{x1, x2, y1, y2});
             return this;
         }
 
         public SpaceBuilder shape(String wktb) {
-            space.getParameters().put(Geometry.PARAMETER_SPACE_SHAPE, Geometry.encodeForSerialization(wktb));
+            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_SHAPE, GeometryImpl.encodeForSerialization(wktb));
             return this;
         }
 
         public SpaceBuilder urn(String urn) {
-            space.getParameters().put(Geometry.PARAMETER_SPACE_RESOURCE_URN, Geometry.encodeForSerialization(urn));
+            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_RESOURCE_URN, GeometryImpl.encodeForSerialization(urn));
             return this;
         }
 
         public SpaceBuilder resolution(String gridResolution) {
-            space.getParameters().put(Geometry.PARAMETER_SPACE_GRIDRESOLUTION, gridResolution);
+            space.getParameters().put(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION, gridResolution);
             return this;
         }
 
@@ -258,9 +258,9 @@ public class GeometryBuilder {
         return new TimeBuilder();
     }
 
-    public Geometry build() {
+    public GeometryImpl build() {
 
-        Geometry ret = new Geometry();
+        GeometryImpl ret = new GeometryImpl();
 
         if (space != null) {
             ret.addDimension(space);
@@ -274,8 +274,8 @@ public class GeometryBuilder {
     }
 
     public static void main(String[] args) {
-        System.out.println(Geometry.builder().space().generic().build());
-        System.out.println(Geometry.builder().space().size(200, 339).build());
+        System.out.println(GeometryImpl.builder().space().generic().build());
+        System.out.println(GeometryImpl.builder().space().size(200, 339).build());
     }
 
 }

@@ -13,7 +13,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
-import org.integratedmodelling.klab.api.geometry.KGeometry.Dimension;
+import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 
 /**
  * All extent dimensions understood in this implementation, for both space and time. Used to

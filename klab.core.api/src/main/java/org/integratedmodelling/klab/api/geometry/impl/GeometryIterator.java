@@ -2,8 +2,8 @@ package org.integratedmodelling.klab.api.geometry.impl;
 
 import java.util.Iterator;
 
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.geometry.KLocator;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.Locator;
 
 /**
  * Simplest iterator for a geometry, producing {@link Offset} objects.
@@ -11,20 +11,20 @@ import org.integratedmodelling.klab.api.geometry.KLocator;
  * @author ferdinando.villa
  *
  */
-public class GeometryIterator implements Iterator<KLocator> {
+public class GeometryIterator implements Iterator<Locator> {
 
 	MultidimensionalCursor cursor;
-	KGeometry geometry;
+	Geometry geometry;
 	long[] locked;
 	long offset = 0;
 
-	public GeometryIterator(KGeometry geometry, Offset offset) {
+	public GeometryIterator(Geometry geometry, Offset offset) {
 		this.locked = offset.pos;
 		this.cursor = new MultidimensionalCursor(geometry, locked);
 		this.geometry = geometry;
 	}
 
-	public GeometryIterator(Geometry geometry) {
+	public GeometryIterator(GeometryImpl geometry) {
 		this.geometry = geometry;
 		this.cursor = new MultidimensionalCursor(geometry);
 	}
@@ -35,7 +35,7 @@ public class GeometryIterator implements Iterator<KLocator> {
 	}
 
 	@Override
-	public KLocator next() {
+	public Locator next() {
 		long[] pos = cursor.getElementIndexes(offset++);
 		boolean scalar = true;
 		if (locked != null) {

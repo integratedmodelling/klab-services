@@ -13,9 +13,9 @@
  */
 package org.integratedmodelling.klab.api.data.mediation.classification;
 
-import org.integratedmodelling.klab.api.data.KMetadata;
-import org.integratedmodelling.klab.api.knowledge.KArtifact;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime.Resolution;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
 
@@ -95,7 +95,7 @@ public interface KClassifier {
 	 * 
 	 * @return
 	 */
-	KArtifact.Type getType();
+	Artifact.Type getType();
 
 	/**
 	 * True if this classifies a concept
@@ -116,7 +116,7 @@ public interface KClassifier {
 	 * 
 	 * @return
 	 */
-	KConcept getConcept();
+	Concept getConcept();
 
 	/**
 	 * This should not return null. Metadata aren't associated to classifiers
@@ -125,7 +125,7 @@ public interface KClassifier {
 	 * 
 	 * @return
 	 */
-	KMetadata getMetadata();
+	Metadata getMetadata();
 
 	/**
 	 * If isConcept(), return the way the concept is resolved. If Resolution.Only

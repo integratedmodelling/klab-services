@@ -3,14 +3,13 @@ package org.integratedmodelling.klab.services.scope;
 import java.util.function.Consumer;
 
 import org.integratedmodelling.kactors.api.IKActorsBehavior.Ref;
-import org.integratedmodelling.klab.api.collections.KParameters;
-import org.integratedmodelling.klab.api.collections.impl.Parameters;
-import org.integratedmodelling.klab.api.identities.KIdentity;
-import org.integratedmodelling.klab.api.identities.KUserIdentity;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KSessionScope;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KSessionScope.Status;
-import org.integratedmodelling.klab.api.services.runtime.KMessage;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
@@ -20,11 +19,11 @@ public class Scope implements KScope {
 
     private static final long serialVersionUID = 605310381727313326L;
 
-    private KParameters<String> data = Parameters.create();
-    private KUserIdentity user;
+    private Parameters<String> data = Parameters.create();
+    private UserIdentity user;
     private Ref agent;
 
-    public Scope(KUserIdentity user) {
+    public Scope(UserIdentity user) {
         this.user = user;
         ((EngineService)Services.INSTANCE.getEngine()).registerScope(this);
     }
@@ -64,12 +63,12 @@ public class Scope implements KScope {
     }
 
     @Override
-    public KUserIdentity getUser() {
+    public UserIdentity getUser() {
         return this.user;
     }
 
     @Override
-    public KParameters<String> getData() {
+    public Parameters<String> getData() {
         return this.data;
     }
 
@@ -140,12 +139,12 @@ public class Scope implements KScope {
     }
 
     @Override
-    public KIdentity getIdentity() {
+    public Identity getIdentity() {
         return getUser();
     }
 
     @Override
-    public void post(Consumer<KMessage> handler, Object... message) {
+    public void post(Consumer<Message> handler, Object... message) {
         // TODO Auto-generated method stub
         
     }

@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.actors;
 
-import org.integratedmodelling.klab.api.lang.kactors.KKActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
@@ -26,7 +26,7 @@ public class UserAgent extends KAgent {
     }
 
     private void createApplication(ReActorContext rctx, CreateApplication message) {
-        KKActorsBehavior behavior = Services.INSTANCE.getResources().resolveBehavior(message.getApplicationId(),
+        KActorsBehavior behavior = Services.INSTANCE.getResources().resolveBehavior(message.getApplicationId(),
                 message.getScope());
         if (behavior == null) {
             message.getScope().error("cannot find behavior " + message.getApplicationId());

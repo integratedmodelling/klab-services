@@ -15,31 +15,32 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
-import org.integratedmodelling.klab.api.collections.impl.Pair;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.KUnit;
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.geometry.KGeometry.Dimension;
-import org.integratedmodelling.klab.api.geometry.KLocator;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
+import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
  * A {@code IExtent} is a semantically aware {@link Dimension geometry
  * dimension} that represents an observation of the topology it describes.
  * {@code IExtent}s make up the dimensions of the semantically aware
- * {@link org.integratedmodelling.klab.api.data.KGeometry} represented by
- * {@link org.integratedmodelling.klab.api.KScale.scale.IScale}.
+ * {@link org.integratedmodelling.klab.api.data.Geometry} represented by
+ * {@link org.integratedmodelling.klab.api.Scale.scale.IScale}.
  *
  * In a {@code IExtent}, the {{@link #size()} will never return
  * {IGeometry#UNDEFINED} and the shape returned by {{@link #shape()} will never
  * contain undefined values.
  *
- * {@code IExtent}s can be used as {@link KLocator locators} to address the
+ * {@code IExtent}s can be used as {@link Locator locators} to address the
  * value space of observations.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KExtent extends KLocator, KTopology<KExtent>, KGeometry.Dimension {
+public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension {
 
 	/**
 	 * Merge in another extent from the overall context, producing an extent that is
@@ -131,7 +132,7 @@ public interface KExtent extends KLocator, KTopology<KExtent>, KGeometry.Dimensi
 	 * 
 	 * @return
 	 */
-	Pair<Double, KUnit> getStandardizedDimension(KLocator locator);
+	Pair<Double, KUnit> getStandardizedDimension(Locator locator);
 
 	/**
 	 * If this extent specifies a larger portion of the topology than the modeled

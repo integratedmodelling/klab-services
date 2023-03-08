@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.geometry.KGeometry.Dimension;
-import org.integratedmodelling.klab.api.geometry.KLocator;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KScale;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
+import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KSpace;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
 
@@ -34,7 +34,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
  * @author Ferd
  *
  */
-public class Offset implements KLocator {
+public class Offset implements Locator {
 
     /**
      * Position as offsets with the dimensionality of the target. If a scale, one linear offset per
@@ -68,7 +68,7 @@ public class Offset implements KLocator {
     /**
      * The located geometry, possibly a IScale, never null.
      */
-    private KGeometry geometry = null;
+    private Geometry geometry = null;
 
     private MultidimensionalCursor cursor;
 
@@ -80,7 +80,7 @@ public class Offset implements KLocator {
      * 
      * @param geometry
      */
-    public Offset(KGeometry geometry) {
+    public Offset(Geometry geometry) {
         this.geometry = geometry;
         this.pos = new long[geometry.getDimensions().size()];
         int i = 0;
@@ -92,7 +92,7 @@ public class Offset implements KLocator {
         this.scalar = geometry.size() == 1;
     }
 
-    public Offset(KGeometry geometry, long[] pos, double coverage) {
+    public Offset(Geometry geometry, long[] pos, double coverage) {
         this(geometry, pos);
         this.coverage = coverage;
     }
@@ -104,11 +104,11 @@ public class Offset implements KLocator {
         return this.cursor;
     }
 
-    public long computeOffset(long[] pos, KGeometry geometry) {
+    public long computeOffset(long[] pos, Geometry geometry) {
         return getCursor().getElementOffset(pos);
     }
 
-    public long[] computeOffsets(long pos, KGeometry geometry) {
+    public long[] computeOffsets(long pos, Geometry geometry) {
         return getCursor().getElementIndexes(pos);
     }
 
@@ -118,7 +118,7 @@ public class Offset implements KLocator {
      * 
      * @param geometry
      */
-    public Offset(KGeometry geometry, long[] pos) {
+    public Offset(Geometry geometry, long[] pos) {
 
         this.geometry = geometry;
         if (pos.length == 1 && geometry.getDimensions().size() > 1) {
@@ -155,7 +155,7 @@ public class Offset implements KLocator {
      * @param geometry
      * @return
      */
-    public static Offset create(String spec, KGeometry geometry) {
+    public static Offset create(String spec, Geometry geometry) {
         Offset ret = new Offset();
         int at = spec.indexOf('@');
         if (at > 0) {
@@ -175,7 +175,7 @@ public class Offset implements KLocator {
         return ret;
     }
 
-    private static long[] read(String spec, KGeometry geometry) {
+    private static long[] read(String spec, Geometry geometry) {
 
         long[] sret = new long[geometry.getDimensions().size()];
         StringTokenizer tokenizer = new StringTokenizer(spec, "(,)*\u221E", true);
@@ -228,7 +228,7 @@ public class Offset implements KLocator {
         Offset ret = new Offset();
         int at = spec.indexOf('@');
         if (at > 0) {
-            ret.geometry = Geometry.create(spec.substring(0, at));
+            ret.geometry = GeometryImpl.create(spec.substring(0, at));
             ret.pos = read(spec.substring(at + 1), ret.geometry);
             ret.linear = ret.computeOffset(ret.pos, ret.geometry);
         } else {
@@ -239,21 +239,21 @@ public class Offset implements KLocator {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends KLocator> T as(Class<T> cls) {
+    public <T extends Locator> T as(Class<T> cls) {
         if (Offset.class.isAssignableFrom(cls)) {
             return (T) this;
-        } else if (KGeometry.class.isAssignableFrom(cls)) {
+        } else if (Geometry.class.isAssignableFrom(cls)) {
             return (T) geometry;
-        } else if (geometry instanceof KScale) {
-            if (KScale.class.isAssignableFrom(cls)) {
+        } else if (geometry instanceof Scale) {
+            if (Scale.class.isAssignableFrom(cls)) {
                 return (T) geometry;
             } else if (KSpace.class.isAssignableFrom(cls)) {
-                if (((KScale) geometry).getSpace() != null) {
-                    return (T) ((KScale) geometry).getSpace();
+                if (((Scale) geometry).getSpace() != null) {
+                    return (T) ((Scale) geometry).getSpace();
                 }
             } else if (KTime.class.isAssignableFrom(cls)) {
-                if (((KScale) geometry).getTime() != null) {
-                    return (T) ((KScale) geometry).getTime();
+                if (((Scale) geometry).getTime() != null) {
+                    return (T) ((Scale) geometry).getTime();
                 }
             }
         }
@@ -261,11 +261,11 @@ public class Offset implements KLocator {
     }
 
     @Override
-    public KGeometry geometry() {
+    public Geometry geometry() {
         return geometry;
     }
 
-    public void setGeometry(KGeometry geometry) {
+    public void setGeometry(Geometry geometry) {
         this.geometry = geometry;
     }
 
@@ -275,7 +275,7 @@ public class Offset implements KLocator {
             if (!oofs.isEmpty()) {
                 oofs += ",";
             }
-            oofs += (pos[i] == Geometry.INFINITE_SIZE ? "\u221E" : ("" + pos[i]));
+            oofs += (pos[i] == GeometryImpl.INFINITE_SIZE ? "\u221E" : ("" + pos[i]));
         }
         return oofs + " in " + geometry;
     }
@@ -338,7 +338,7 @@ public class Offset implements KLocator {
     }
 
     @Override
-    public Iterator<KLocator> iterator() {
+    public Iterator<Locator> iterator() {
         return new GeometryIterator(geometry, this);
     }
 
@@ -365,7 +365,7 @@ public class Offset implements KLocator {
         pos[spaceDimension] = offset;
     }
 
-    public KLocator at(long... offsets) {
+    public Locator at(long... offsets) {
         for (int i = 0; i < offsets.length; i++) {
             this.pos[i] = offsets[i];
         }
@@ -382,7 +382,7 @@ public class Offset implements KLocator {
      * @param geometry
      * @return
      */
-    public Offset reduceTo(KGeometry geometry) {
+    public Offset reduceTo(Geometry geometry) {
         Offset ret = new Offset();
         ret.geometry = geometry;
         List<Long> positions = new ArrayList<>();

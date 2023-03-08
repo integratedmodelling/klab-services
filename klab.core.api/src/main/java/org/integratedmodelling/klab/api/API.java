@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api;
 
-import org.integratedmodelling.klab.api.knowledge.KConcept;
-import org.integratedmodelling.klab.api.knowledge.KObservable;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 
 public interface API {
     /**
@@ -25,14 +25,14 @@ public interface API {
          * 
          * @protocol GET
          * @service 
-         * @produces {@link KConcept}
+         * @produces {@link Concept}
          */
         public static String RESOLVE_CONCEPT = REASONER_BASE + "/resolve/concept/{definition}";
 
         /**
          * 
          * @protocol GET
-         * @produces {@link KObservable}
+         * @produces {@link Observable}
          */
         public static String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable/{definition}";
 

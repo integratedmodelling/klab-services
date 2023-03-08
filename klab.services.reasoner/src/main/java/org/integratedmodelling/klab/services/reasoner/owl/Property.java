@@ -31,7 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataPropertyExpression;
 import org.semanticweb.owlapi.model.OWLDataRange;
@@ -130,8 +130,8 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Collection<KConcept> getRange() {
-        Set<KConcept> ret = new HashSet<>();
+    public Collection<Concept> getRange() {
+        Set<Concept> ret = new HashSet<>();
         synchronized (_owl) {
             if (_owl.isOWLDataProperty()) {
 
@@ -139,7 +139,7 @@ public class Property /* extends Knowledge implements IProperty */ {
 
                     if (c.isDatatype()) {
                         OWLDatatype type = c.asOWLDatatype();
-                        KConcept tltype = OWL.INSTANCE.getDatatypeMapping(type.getIRI().toString());
+                        Concept tltype = OWL.INSTANCE.getDatatypeMapping(type.getIRI().toString());
                         if (tltype != null) {
                             ret.add(tltype);
                         }
@@ -157,9 +157,9 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Collection<KConcept> getPropertyDomain() {
+    public Collection<Concept> getPropertyDomain() {
 
-        Set<KConcept> ret = new HashSet<>();
+        Set<Concept> ret = new HashSet<>();
         synchronized (this._owl) {
             if (_owl.isOWLDataProperty()) {
                 for (OWLClassExpression c : _owl.asOWLDataProperty().getDomains(

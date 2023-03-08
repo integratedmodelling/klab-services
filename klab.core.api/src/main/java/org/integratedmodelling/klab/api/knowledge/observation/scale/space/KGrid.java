@@ -28,7 +28,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
 import java.util.Collection;
 
-import org.integratedmodelling.klab.api.geometry.KGeometry;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KGrid.Cell;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
@@ -189,7 +189,7 @@ public interface KGrid extends Iterable<Cell> {
 		/**
 		 * Get the geometry this grid is part of.
 		 */
-		KGeometry getGeometry();
+		Geometry getGeometry();
 
 	}
 

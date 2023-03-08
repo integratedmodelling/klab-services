@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.scope;
 
-import org.integratedmodelling.klab.api.geometry.KGeometry;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KSessionScope;
 
@@ -20,7 +20,7 @@ public class SessionScope extends Scope implements KSessionScope {
     }
 
     @Override
-    public KGeometry getGeometry() {
+    public Geometry getGeometry() {
         // TODO Auto-generated method stub
         return null;
     }

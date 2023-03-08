@@ -23,8 +23,8 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 
 import java.util.HashMap;
 
-import org.integratedmodelling.klab.api.collections.Metadata;
-import org.integratedmodelling.klab.api.data.KMetadata;
+import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.owlapi.model.IRI;
@@ -42,7 +42,7 @@ import org.semanticweb.owlapi.vocab.OWLRDFVocabulary;
  * 
  * @author Ferd
  */
-public class OWLMetadata extends Metadata implements KMetadata {
+public class OWLMetadata extends MetadataImpl implements Metadata {
 
     private static final long serialVersionUID = -2172262717519576273L;
     

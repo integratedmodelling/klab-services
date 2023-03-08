@@ -18,13 +18,14 @@ package org.integratedmodelling.klab.logging;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
-import org.integratedmodelling.klab.api.collections.impl.Pair;
-import org.integratedmodelling.klab.api.identities.KIdentity;
-import org.integratedmodelling.klab.api.services.runtime.KMessage;
-import org.integratedmodelling.klab.api.services.runtime.KMessage.MessageClass;
-import org.integratedmodelling.klab.api.services.runtime.KMessageBus;
-import org.integratedmodelling.klab.api.services.runtime.KNotification;
-import org.integratedmodelling.klab.api.services.runtime.impl.Message;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Message.MessageClass;
+import org.integratedmodelling.klab.api.services.runtime.MessageBus;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.slf4j.Logger;
@@ -41,8 +42,8 @@ public enum Logging  {
 	INSTANCE;
 
 	private Logger logger;
-	private KMessageBus messageBus;
-	private KIdentity rootIdentity;
+	private MessageBus messageBus;
+	private Identity rootIdentity;
 
 	Consumer<String> infoWriter = (message) -> System.out.println("INFO: " + message);
 	Consumer<String> warningWriter = (message) -> System.err.println("WARN: " + message);
@@ -61,10 +62,10 @@ public enum Logging  {
 
 	public void info(Object... o) {
 
-		Pair<String, KNotification.Type> payload = Utils.Notifications.getMessage(o);
+		Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
 		if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.INFO.intValue()) {
-			messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, KMessage.Type.Info,
+			messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.Type.Info,
 					payload.getFirst(), payload.getSecond()));
 		}
 
@@ -81,11 +82,11 @@ public enum Logging  {
 
 	public void warn(Object... o) {
 
-		Pair<String, KNotification.Type> payload = Utils.Notifications.getMessage(o);
+		Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
 		if (messageBus != null
 				&& Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.WARNING.intValue()) {
-			messageBus.post(Message.create(rootIdentity.getId(), KMessage.MessageClass.Notification, KMessage.Type.Warning,
+			messageBus.post(Message.create(rootIdentity.getId(), Message.MessageClass.Notification, Message.Type.Warning,
 					payload.getFirst(), payload.getSecond()));
 		}
 
@@ -101,10 +102,10 @@ public enum Logging  {
 
 	public void error(Object... o) {
 
-        Pair<String, KNotification.Type> payload = Utils.Notifications.getMessage(o);
+        Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
 		if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
-			messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, KMessage.Type.Error,
+			messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.Type.Error,
 					payload.getFirst(), payload.getSecond()));
 		}
 
@@ -120,10 +121,10 @@ public enum Logging  {
 
 	public void debug(Object... o) {
 
-        Pair<String, KNotification.Type> payload = Utils.Notifications.getMessage(o);
+        Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
 		if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.FINE.intValue()) {
-			messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, KMessage.Type.Debug,
+			messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.Type.Debug,
 					payload.getFirst(), payload.getSecond()));
 		}
 
@@ -137,11 +138,11 @@ public enum Logging  {
 		}
 	}
 
-	public void setMessageBus(KMessageBus mbus) {
+	public void setMessageBus(MessageBus mbus) {
 		this.messageBus = mbus;
 	}
 
-	public void setRootIdentity(KIdentity identity) {
+	public void setRootIdentity(Identity identity) {
 		this.rootIdentity = identity;
 	}
 

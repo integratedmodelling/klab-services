@@ -36,9 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.lang.kim.KKimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
@@ -77,12 +77,12 @@ public class Ontology /* implements IOntology */ {
 
     String id;
     private Set<String> imported = new HashSet<>();
-    private Map<String, KConcept> delegates = new HashMap<>();
+    private Map<String, Concept> delegates = new HashMap<>();
     OWLOntology ontology;
     private String prefix;
-    private Map<String, KConcept> conceptIDs = new HashMap<>();
+    private Map<String, Concept> conceptIDs = new HashMap<>();
     Map<String, Individual> individuals = new LinkedHashMap<>();
-    private Map<KConcept, OWLClass> owlClasses = new HashMap<>();
+    private Map<Concept, OWLClass> owlClasses = new HashMap<>();
     /*
      * all properties
      */
@@ -160,15 +160,15 @@ public class Ontology /* implements IOntology */ {
         // }
     }
 
-    public void addDelegateConcept(String id, String namespace, KConcept concept) {
+    public void addDelegateConcept(String id, String namespace, Concept concept) {
         this.delegates.put(id, concept);
         OWL.INSTANCE.getOntology(concept.getNamespace()).define(Collections
                 .singleton(Axiom.AnnotationAssertion(concept.getName(), NS.LOCAL_ALIAS_PROPERTY, namespace + ":" + id)));
     }
     
-    public Collection<KConcept> getConcepts() {
+    public Collection<Concept> getConcepts() {
 
-        ArrayList<KConcept> ret = new ArrayList<>(conceptIDs.values());
+        ArrayList<Concept> ret = new ArrayList<>(conceptIDs.values());
         // for (String s : this.conceptIDs) {
         // ret.add(getConcept(s));
         // }
@@ -192,8 +192,8 @@ public class Ontology /* implements IOntology */ {
     }
 
     // @Override
-    public KConcept getConcept(String ID) {
-        KConcept ret = this.conceptIDs.get(ID);
+    public Concept getConcept(String ID) {
+        Concept ret = this.conceptIDs.get(ID);
         if (ret != null) {
             return ret;
         }
@@ -235,7 +235,7 @@ public class Ontology /* implements IOntology */ {
                 String iri = o.getOntologyID().getOntologyIRI().toString();
                 if (iri.startsWith(myns) && !o.equals(this.ontology)) {
                     String fr = o.getOntologyID().getOntologyIRI().getFragment();
-                    KKimNamespace other = OWL.INSTANCE.getNamespace(fr);
+                    KimNamespace other = OWL.INSTANCE.getNamespace(fr);
                     if (other != null) {
                         if (!fr.endsWith(".owl")) {
                             fr += ".owl";
@@ -277,7 +277,7 @@ public class Ontology /* implements IOntology */ {
      */
     public Collection<Ontology> getDelegateOntologies() {
         Set<Ontology> ret = new HashSet<>();
-        for (KConcept c : delegates.values()) {
+        for (Concept c : delegates.values()) {
             ret.add(OWL.INSTANCE.getOntology(c.getNamespace()));
         }
         return ret;
@@ -642,7 +642,7 @@ public class Ontology /* implements IOntology */ {
 
         if (c.contains(":")) {
 
-            KConcept cc = OWL.INSTANCE.getConcept(c);
+            Concept cc = OWL.INSTANCE.getConcept(c);
             if (cc == null) {
                 errors.add("concept " + cc + " not found");
                 return null;
@@ -664,7 +664,7 @@ public class Ontology /* implements IOntology */ {
 
         } else {
 
-            KConcept cc = conceptIDs.get(c);
+            Concept cc = conceptIDs.get(c);
 
             if (cc != null) {
                 ret = owlClasses.get(cc);
@@ -809,9 +809,9 @@ public class Ontology /* implements IOntology */ {
         return this.resourceUrl;
     }
 
-    public KConcept createConcept(String newName, Set<SemanticType> type) {
+    public Concept createConcept(String newName, Set<SemanticType> type) {
 
-        KConcept ret = getConcept(newName);
+        Concept ret = getConcept(newName);
         if (ret == null) {
             ArrayList<IAxiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(newName, type));

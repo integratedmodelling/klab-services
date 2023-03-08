@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.actors;
 
-import org.integratedmodelling.klab.api.lang.kactors.KKActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.messages.reactors.ReActorStop;
@@ -12,7 +12,7 @@ public class SessionAgent extends KAgent {
         super(name);
     }
 
-    public SessionAgent(KKActorsBehavior application) {
+    public SessionAgent(KActorsBehavior application) {
         super(application.getName());
         // TODO create VM (must be quick)
     }

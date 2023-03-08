@@ -6,31 +6,30 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.auth.IRuntimeIdentity;
-import org.integratedmodelling.klab.api.collections.impl.Pair;
-import org.integratedmodelling.klab.api.identities.KIdentity;
-import org.integratedmodelling.klab.api.services.runtime.KChannel;
-import org.integratedmodelling.klab.api.services.runtime.KMessage;
-import org.integratedmodelling.klab.api.services.runtime.KMessageBus;
-import org.integratedmodelling.klab.api.services.runtime.KNotification;
-import org.integratedmodelling.klab.api.services.runtime.KNotification.Type;
-import org.integratedmodelling.klab.api.services.runtime.impl.Message;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessageBus;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.Notification.Type;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.utils.Utils;
 
-public class Monitor implements KChannel {
+public class Monitor implements Channel {
 
     private int errorCount = 0;
     private AtomicBoolean isInterrupted = new AtomicBoolean(false);
     private int waitTime;
-    private KIdentity identity;
+    private Identity identity;
     
-    transient KMessageBus messageBus;
+    transient MessageBus messageBus;
 
-    public Monitor(KIdentity identity) {
+    public Monitor(Identity identity) {
         this.identity = identity;
     }
 
-    public Monitor(KIdentity identity, KMessageBus messageBus) {
+    public Monitor(Identity identity, MessageBus messageBus) {
         this.identity = identity;
         this.messageBus = messageBus;
     }
@@ -51,7 +50,7 @@ public class Monitor implements KChannel {
         if (infoWriter != null) {
             infoWriter.accept(message.getFirst());
         }
-        send(new Notification(message, Level.INFO));
+        send(new NotificationImpl(message, Level.INFO));
     }
 
     @Override
@@ -61,7 +60,7 @@ public class Monitor implements KChannel {
         if (warningWriter != null) {
             warningWriter.accept(message.getFirst());
         }
-        send(new Notification(message, Level.WARNING));
+        send(new NotificationImpl(message, Level.WARNING));
     }
 
     @Override
@@ -71,7 +70,7 @@ public class Monitor implements KChannel {
         if (errorWriter != null) {
             errorWriter.accept(message.getFirst());
         }
-        send(new Notification(message, Level.SEVERE));
+        send(new NotificationImpl(message, Level.SEVERE));
         errorCount++;
     }
 
@@ -82,20 +81,20 @@ public class Monitor implements KChannel {
         if (debugWriter != null) {
             debugWriter.accept(message.getFirst());
         }
-        send(new Notification(message, Level.FINE));
+        send(new NotificationImpl(message, Level.FINE));
     }
 
     @Override
     public void send(Object... o) {
 
-        KMessage message = null;
+        Message message = null;
 
         if (o != null && o.length > 0) {
             if (messageBus != null) {
-                if (o.length == 1 && o[0] instanceof KMessage) {
-                    messageBus.post(message = (KMessage) o[0]);
-                } else if (o.length == 1 && o[0] instanceof KNotification) {
-                    messageBus.post(message = Message.create((KNotification) o[0], this.identity.getId()));
+                if (o.length == 1 && o[0] instanceof Message) {
+                    messageBus.post(message = (Message) o[0]);
+                } else if (o.length == 1 && o[0] instanceof Notification) {
+                    messageBus.post(message = Message.create((Notification) o[0], this.identity.getId()));
                 } else {
                     messageBus.post(message = Message.create(this.identity.getId(), o));
                 }
@@ -104,13 +103,13 @@ public class Monitor implements KChannel {
     }
 
 //    @Override
-    public Future<KMessage> ask(Object... o) {
+    public Future<Message> ask(Object... o) {
         if (o != null && o.length > 0) {
             if (messageBus != null) {
-                if (o.length == 1 && o[0] instanceof KMessage) {
-                    return messageBus.ask((KMessage) o[0]);
-                } else if (o.length == 1 && o[0] instanceof KNotification) {
-                    return messageBus.ask(Message.create((KNotification) o[0], this.identity.getId()));
+                if (o.length == 1 && o[0] instanceof Message) {
+                    return messageBus.ask((Message) o[0]);
+                } else if (o.length == 1 && o[0] instanceof Notification) {
+                    return messageBus.ask(Message.create((Notification) o[0], this.identity.getId()));
                 } else {
                     return messageBus.ask(Message.create(this.identity.getId(), o));
                 }
@@ -120,13 +119,13 @@ public class Monitor implements KChannel {
     }
 
     @Override
-    public void post(Consumer<KMessage> handler, Object... o) {
+    public void post(Consumer<Message> handler, Object... o) {
         if (o != null && o.length > 0) {
             if (messageBus != null) {
-                if (o.length == 1 && o[0] instanceof KMessage) {
-                    messageBus.post((KMessage) o[0], handler);
-                } else if (o.length == 1 && o[0] instanceof KNotification) {
-                    messageBus.post(Message.create((KNotification) o[0], this.identity.getId()), handler);
+                if (o.length == 1 && o[0] instanceof Message) {
+                    messageBus.post((Message) o[0], handler);
+                } else if (o.length == 1 && o[0] instanceof Notification) {
+                    messageBus.post(Message.create((Notification) o[0], this.identity.getId()), handler);
                 } else {
                     messageBus.post(Message.create(this.identity.getId(), o), handler);
                 }
@@ -135,7 +134,7 @@ public class Monitor implements KChannel {
     }
 
     @Override
-    public KIdentity getIdentity() {
+    public Identity getIdentity() {
         return identity;
     }
 
@@ -144,7 +143,7 @@ public class Monitor implements KChannel {
         return errorCount > 0;
     }
 
-    public Monitor get(KIdentity identity) {
+    public Monitor get(Identity identity) {
         Monitor ret = new Monitor(identity);
         return ret;
     }

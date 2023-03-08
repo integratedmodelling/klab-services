@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.Collection;
 
-import org.integratedmodelling.klab.api.lang.kim.KKimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 
 public interface KWorkspace extends Serializable {
     
@@ -36,5 +36,5 @@ public interface KWorkspace extends Serializable {
      * @param id
      * @return the namespace or null
      */
-    KKimNamespace findNamespace(String id);
+    KimNamespace findNamespace(String id);
 }

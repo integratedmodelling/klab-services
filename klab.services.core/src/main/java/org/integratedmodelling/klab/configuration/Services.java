@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.configuration;
 
-import org.integratedmodelling.klab.api.services.KEngine;
-import org.integratedmodelling.klab.api.services.KReasoner;
-import org.integratedmodelling.klab.api.services.KResolver;
-import org.integratedmodelling.klab.api.services.KResources;
-import org.integratedmodelling.klab.api.services.KRuntime;
+import org.integratedmodelling.klab.api.services.Engine;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.Resources;
+import org.integratedmodelling.klab.api.services.Runtime;
 
 /**
  * Makes the k.LAB services available globally through self-notification on injection. Each service
@@ -18,39 +18,39 @@ public enum Services {
 
     INSTANCE;
 
-    private KReasoner reasoner;
-    private KResources resources;
-    private KEngine engine;
-    private KResolver resolver;
-    private KRuntime runtime;
-    public KReasoner getReasoner() {
+    private Reasoner reasoner;
+    private Resources resources;
+    private Engine engine;
+    private Resolver resolver;
+    private Runtime runtime;
+    public Reasoner getReasoner() {
         return reasoner;
     }
-    public void setReasoner(KReasoner reasoner) {
+    public void setReasoner(Reasoner reasoner) {
         this.reasoner = reasoner;
     }
-    public KResources getResources() {
+    public Resources getResources() {
         return resources;
     }
-    public void setResources(KResources resources) {
+    public void setResources(Resources resources) {
         this.resources = resources;
     }
-    public KEngine getEngine() {
+    public Engine getEngine() {
         return engine;
     }
-    public void setEngine(KEngine engine) {
+    public void setEngine(Engine engine) {
         this.engine = engine;
     }
-    public KResolver getResolver() {
+    public Resolver getResolver() {
         return resolver;
     }
-    public void setResolver(KResolver resolver) {
+    public void setResolver(Resolver resolver) {
         this.resolver = resolver;
     }
-    public KRuntime getRuntime() {
+    public Runtime getRuntime() {
         return runtime;
     }
-    public void setRuntime(KRuntime runtime) {
+    public void setRuntime(Runtime runtime) {
         this.runtime = runtime;
     }
 

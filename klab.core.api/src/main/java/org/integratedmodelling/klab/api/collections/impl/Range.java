@@ -5,9 +5,9 @@ import java.util.Date;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.geometry.KLocator;
-import org.integratedmodelling.klab.api.knowledge.KObservable;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTimeInstant;
 
 public class Range implements KValueMediator, Serializable {
@@ -601,7 +601,7 @@ public class Range implements KValueMediator, Serializable {
 	 *         percentage of original error (amount of cell covered in the original
 	 *         range).
 	 */
-	public Pair<Range, Pair<Double, Double>> snap(Range original, long nCells) {
+	public PairImpl<Range, PairImpl<Double, Double>> snap(Range original, long nCells) {
 
 		if (!this.overlaps(original)) {
 			return null;
@@ -618,10 +618,10 @@ public class Range implements KValueMediator, Serializable {
 		double rightCells = (long) Math.floor(rightGap / cellWidth);
 		double rightError = rightGap - (rightCells * cellWidth);
 
-		return new Pair<>(
+		return new PairImpl<>(
 				create(this.getLowerBound() + (leftGap > 0 ? (leftCells * cellWidth) : 0),
 						this.getUpperBound() - (rightGap > 0 ? (rightCells * cellWidth) : 0)),
-				new Pair<>(leftError, rightError));
+				new PairImpl<>(leftError, rightError));
 	}
 
 	public boolean isWithin(double n) {
@@ -633,7 +633,7 @@ public class Range implements KValueMediator, Serializable {
 	public static void main(String[] args) {
 
 		Range cock = create(-10, 0);
-		Pair<Range, Pair<Double, Double>> snapped = cock.snap(create(-8.7, -3.9), 10);
+		PairImpl<Range, PairImpl<Double, Double>> snapped = cock.snap(create(-8.7, -3.9), 10);
 
 		System.out.println("FIXED RANGE: " + snapped.getFirst());
 		System.out.println("ERRORS: " + snapped.getSecond());
@@ -692,7 +692,7 @@ public class Range implements KValueMediator, Serializable {
 	}
 
 	@Override
-	public KValueMediator contextualize(KObservable observable, KGeometry scale) {
+	public KValueMediator contextualize(Observable observable, Geometry scale) {
 		return this;
 	}
 
@@ -704,7 +704,7 @@ public class Range implements KValueMediator, Serializable {
 	}
 
     @Override
-    public Number convert(Number value, KLocator locator) {
+    public Number convert(Number value, Locator locator) {
         // TODO Auto-generated method stub
         return null;
     }

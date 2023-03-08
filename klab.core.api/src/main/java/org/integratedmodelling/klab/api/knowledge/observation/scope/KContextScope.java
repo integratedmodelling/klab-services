@@ -4,16 +4,16 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.identities.KIdentity;
-import org.integratedmodelling.klab.api.knowledge.KObservable;
-import org.integratedmodelling.klab.api.knowledge.observation.KDirectObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.KObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.KRelationship;
-import org.integratedmodelling.klab.api.knowledge.observation.KState;
-import org.integratedmodelling.klab.api.provenance.KProvenance;
-import org.integratedmodelling.klab.api.services.runtime.KDataflow;
-import org.integratedmodelling.klab.api.services.runtime.KReport;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
+import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Report;
 
 /**
  * The scope for a context and any observations made within it.
@@ -29,7 +29,7 @@ public interface KContextScope extends KSessionScope {
      * 
      * @return
      */
-    KIdentity getObserver();
+    Identity getObserver();
 
     /**
      * Return a child scope with the passed observer instead of ours.
@@ -37,15 +37,15 @@ public interface KContextScope extends KSessionScope {
      * @param scenarios
      * @return
      */
-    KContextScope withObserver(KIdentity observer);
+    KContextScope withObserver(Identity observer);
 
     /**
      * The context observation for this scope. When an observation scope is created, this is null
-     * and must be set using {@link #within(KDirectObservation)} on the parent scope.
+     * and must be set using {@link #within(DirectObservation)} on the parent scope.
      * 
      * @return
      */
-    KDirectObservation getContextObservation();
+    DirectObservation getContextObservation();
 
     /**
      * Return a scope focused on a specific root observation as the context for its
@@ -54,7 +54,7 @@ public interface KContextScope extends KSessionScope {
      * @param observation
      * @return a new scope focused on the passed observation.
      */
-    KContextScope within(KDirectObservation observation);
+    KContextScope within(DirectObservation observation);
 
     /**
      * Return a new observation scope that sets the passed scenarios for any future observation.
@@ -66,7 +66,7 @@ public interface KContextScope extends KSessionScope {
 
     /**
      * Make an observation. Must be called on a context scope, possibly focused on a given root
-     * observation using {@link #within(KDirectObservation)}. If no root observation is present in
+     * observation using {@link #within(DirectObservation)}. If no root observation is present in
      * the scope, the arguments must fully specify a subject, either through an
      * {@link IAcknowledgement} or a subject observable + a scale. If the parent session was focused
      * on a scale, this is available through {@link #getGeometry()} and the context can decide to
@@ -81,11 +81,11 @@ public interface KContextScope extends KSessionScope {
      * If the observation is at root level, or connecting two root-level subject through a
      * relationship, the overall geometry of the context will be automatically adjusted.
      * 
-     * @param observables either a {@link KObservable} (with a {@link KGeometry} if root subject) or
+     * @param observables either a {@link Observable} (with a {@link Geometry} if root subject) or
      *        a {@link IAcknowledgement} for a pre-specified root subject.
      * @return a future for the observation being contextualized.
      */
-    Future<KObservation> observe(Object... observables);
+    Future<Observation> observe(Object... observables);
 
     /**
      * <p>
@@ -94,7 +94,7 @@ public interface KContextScope extends KSessionScope {
      *
      * @return the provenance graph. Null in an empty context.
      */
-    KProvenance getProvenance();
+    Provenance getProvenance();
 
     /**
      * There is one report per root context. Actuators will add sections to it as models are
@@ -103,7 +103,7 @@ public interface KContextScope extends KSessionScope {
      * 
      * @return
      */
-    KReport getReport();
+    Report getReport();
 
     /**
      * During a contextualization there normally is a dataflow being run. This will only be null
@@ -112,7 +112,7 @@ public interface KContextScope extends KSessionScope {
      * 
      * @return
      */
-    KDataflow<?> getDataflow();
+    Dataflow<?> getDataflow();
 
     /**
      * Return the parent observation of the passed observation. The runtime context maintains the
@@ -121,43 +121,43 @@ public interface KContextScope extends KSessionScope {
      * @param observation
      * @return the parent, or null if root subject
      */
-    KDirectObservation getParentOf(KObservation observation);
+    DirectObservation getParentOf(Observation observation);
 
     /**
      * Return all children of the passed observation, using the logical structure (i.e. skipping
      * observation groups). The runtime context maintains the structure graph.
      * 
-     * @param observation an observation. {@link KState States} have no children but no error should
+     * @param observation an observation. {@link State States} have no children but no error should
      *        be raised.
      * @return the parent, or an empty collection if no children
      */
-    Collection<KObservation> getChildrenOf(KObservation observation);
+    Collection<Observation> getChildrenOf(Observation observation);
 
     /**
      * Inspect the network graph of the current context, returning all relationships that have the
      * passed subject as target.
      *
      * @param observation a
-     *        {@link org.integratedmodelling.klab.api.KDirectObservation.IDirectObservation} object.
+     *        {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation} object.
      * @return a {@link java.util.Collection} object.
      */
-    Collection<KRelationship> getOutgoingRelationships(KDirectObservation observation);
+    Collection<Relationship> getOutgoingRelationships(DirectObservation observation);
 
     /**
      * Inspect the network graph of the current context, returning all relationships that have the
      * passed subject as target.
      *
      * @param observation a
-     *        {@link org.integratedmodelling.klab.api.KDirectObservation.IDirectObservation} object.
+     *        {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation} object.
      * @return a {@link java.util.Collection} object.
      */
-    Collection<KRelationship> getIncomingRelationships(KDirectObservation observation);
+    Collection<Relationship> getIncomingRelationships(DirectObservation observation);
 
     /**
      * Return the currently known observations as a map indexed by observable.
      * 
      * @return
      */
-    Map<KObservable, KObservation> getCatalog();
+    Map<Observable, Observation> getCatalog();
 
 }

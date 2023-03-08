@@ -4,19 +4,18 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.collections.Annotation;
-import org.integratedmodelling.klab.api.collections.KLiteral;
-import org.integratedmodelling.klab.api.collections.KParameters;
-import org.integratedmodelling.klab.api.collections.Metadata;
-import org.integratedmodelling.klab.api.collections.impl.Literal;
-import org.integratedmodelling.klab.api.collections.impl.Parameters;
+import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
+import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
 import org.integratedmodelling.klab.api.collections.impl.Range;
-import org.integratedmodelling.klab.api.data.KMetadata;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.lang.KAnnotation;
-import org.integratedmodelling.klab.api.lang.kim.KKimStatement;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.logging.Logging;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -48,7 +47,7 @@ public class JacksonConfiguration {
 
         @Override
         public boolean useForType(JavaType t) {
-            if (KKimStatement.class.isAssignableFrom(t.getRawClass()) || KGeometry.class.isAssignableFrom(t.getRawClass())) {
+            if (KimStatement.class.isAssignableFrom(t.getRawClass()) || Geometry.class.isAssignableFrom(t.getRawClass())) {
                 return true;
             }
 
@@ -56,11 +55,11 @@ public class JacksonConfiguration {
         }
     }
 
-    static class LiteralDeserializer extends JsonDeserializer<KLiteral> {
+    static class LiteralDeserializer extends JsonDeserializer<Literal> {
 
         @Override
-        public KLiteral deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-            Literal ret = new Literal();
+        public Literal deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            LiteralImpl ret = new LiteralImpl();
             JsonNode node = p.getCodec().readTree(p);
             ret.setValueType(p.getCodec().treeToValue(node.get("valueType"), ValueType.class));
             switch(ret.getValueType()) {
@@ -142,10 +141,10 @@ public class JacksonConfiguration {
     }
 
     @SuppressWarnings("rawtypes")
-    static class ParameterSerializer<T extends KParameters> extends JsonSerializer<T> {
+    static class ParameterSerializer<T extends Parameters> extends JsonSerializer<T> {
 
         @Override
-        public void serialize(KParameters value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        public void serialize(Parameters value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
             gen.writeObjectField("@type", getTypeName(value));
             for (Object key : value.keySet()) {
@@ -154,17 +153,17 @@ public class JacksonConfiguration {
             gen.writeEndObject();
         }
 
-        private String getTypeName(KParameters<?> value) {
-            if (value instanceof KMetadata) {
+        private String getTypeName(Parameters<?> value) {
+            if (value instanceof Metadata) {
                 return "KMetadata";
-            } else if (value instanceof KAnnotation) {
+            } else if (value instanceof Annotation) {
                 return "KAnnotation";
             }
             return "KParameters";
         }
     }
 
-    static class ParameterDeserializer<T extends KParameters<?>> extends JsonDeserializer<T> {
+    static class ParameterDeserializer<T extends Parameters<?>> extends JsonDeserializer<T> {
 
         @SuppressWarnings("unchecked")
         @Override
@@ -174,20 +173,20 @@ public class JacksonConfiguration {
         }
 
         @SuppressWarnings("unchecked")
-        private KParameters<?> readParameters(JsonNode node, JsonParser p, String type) {
+        private Parameters<?> readParameters(JsonNode node, JsonParser p, String type) {
 
             try {
-                KParameters<?> ret = null;
+                Parameters<?> ret = null;
 
                 switch(type) {
                 case "KParameters":
-                    ret = (KParameters<?>) Parameters.create();
+                    ret = (Parameters<?>) Parameters.create();
                     break;
                 case "KAnnotation":
-                    ret = new Annotation();
+                    ret = new AnnotationImpl();
                     break;
                 case "KMetadata":
-                    ret = new Metadata();
+                    ret = new MetadataImpl();
                     break;
                 }
                 Iterator<String> fields = node.fieldNames();
@@ -219,13 +218,13 @@ public class JacksonConfiguration {
     @SuppressWarnings({"unchecked"})
     public static void configureObjectMapperForKlabTypes(ObjectMapper mapper) {
         @SuppressWarnings("rawtypes")
-        SimpleModule module = new SimpleModule().addSerializer(KAnnotation.class, new ParameterSerializer())
-                .addSerializer(KMetadata.class, new ParameterSerializer())
-                .addSerializer(KParameters.class, new ParameterSerializer())
-                .addDeserializer(KMetadata.class, new ParameterDeserializer())
-                .addDeserializer(KAnnotation.class, new ParameterDeserializer())
-                .addDeserializer(KParameters.class, new ParameterDeserializer())
-                .addDeserializer(KLiteral.class, new LiteralDeserializer());
+        SimpleModule module = new SimpleModule().addSerializer(Annotation.class, new ParameterSerializer())
+                .addSerializer(Metadata.class, new ParameterSerializer())
+                .addSerializer(Parameters.class, new ParameterSerializer())
+                .addDeserializer(Metadata.class, new ParameterDeserializer())
+                .addDeserializer(Annotation.class, new ParameterDeserializer())
+                .addDeserializer(Parameters.class, new ParameterDeserializer())
+                .addDeserializer(Literal.class, new LiteralDeserializer());
         mapper.registerModule(module);
         mapper.registerModule(new ParameterNamesModule());
 

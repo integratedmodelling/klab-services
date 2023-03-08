@@ -2,10 +2,10 @@ package org.integratedmodelling.klab.api.data.mediation.classification;
 
 import java.util.List;
 
-import org.integratedmodelling.klab.api.collections.KParameters;
-import org.integratedmodelling.klab.api.geometry.KLocator;
-import org.integratedmodelling.klab.api.knowledge.KArtifact;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
 
 /**
@@ -30,7 +30,7 @@ public interface KLookupTable extends KDataKey {
 
 		String getId();
 
-		KConcept getConcept();
+		Concept getConcept();
 	}
 
 //	/**
@@ -61,7 +61,7 @@ public interface KLookupTable extends KDataKey {
 	 * @param locator to capture states when the parameter is a state
 	 * @return the first matching object from the result column, or null
 	 */
-	Object lookup(KParameters<String> parameters, KContextScope context, KLocator locator);
+	Object lookup(Parameters<String> parameters, KContextScope context, Locator locator);
 
 	/**
 	 * The artifact type for the results in the lookup column, which must be
@@ -69,7 +69,7 @@ public interface KLookupTable extends KDataKey {
 	 * 
 	 * @return
 	 */
-	KArtifact.Type getResultType();
+	Artifact.Type getResultType();
 
 	/**
 	 * Column providing the results.

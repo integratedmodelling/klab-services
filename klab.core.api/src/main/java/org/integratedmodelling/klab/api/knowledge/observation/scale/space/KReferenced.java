@@ -15,7 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import org.integratedmodelling.klab.api.data.KMetadata;
+import org.integratedmodelling.klab.api.data.Metadata;
 
 /**
  * Anything that has coordinates is referenced. We also expose metadata so that
@@ -41,5 +41,5 @@ public abstract interface KReferenced {
 	 * 
 	 * @return
 	 */
-	KMetadata getMetadata();
+	Metadata getMetadata();
 }

@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
 import java.util.Collection;
 
-import org.integratedmodelling.klab.api.collections.impl.Pair;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 
 /**
  * A {@code IScaleMediator} assists the mediation of a value from an extent to
@@ -52,6 +52,6 @@ public interface KScaleMediator {
 	 * @param originalOffset
 	 * @return the mediation strategy.
 	 */
-	Collection<Pair<Long, Double>> map(long originalOffset);
+	Collection<PairImpl<Long, Double>> map(long originalOffset);
 
 }

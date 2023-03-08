@@ -36,15 +36,16 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.integratedmodelling.klab.api.collections.impl.Pair;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.KArtifact;
-import org.integratedmodelling.klab.api.knowledge.KArtifact.Type;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
-import org.integratedmodelling.klab.api.knowledge.observation.KObservation;
-import org.integratedmodelling.klab.api.lang.kim.KKimScope;
-import org.integratedmodelling.klab.api.services.runtime.KNotification;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.kim.KimScope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class Utils {
 
@@ -213,28 +214,28 @@ public class Utils {
          * @param objects the objects
          * @return the message
          */
-        public static Pair<String, KNotification.Type> getMessage(Object... objects) {
+        public static Pair<String, Notification.Type> getMessage(Object... objects) {
 
             StringBuffer ret = new StringBuffer(256);
-            KNotification.Type ntype = null;
+            Notification.Type ntype = null;
 
             for (Object o : objects) {
                 if (o instanceof String) {
                     ret.append((ret.length() == 0 ? "" : " ") + o);
                 } else if (o instanceof Throwable) {
                     ret.append((ret.length() == 0 ? "" : " ") + ((Throwable) o).getLocalizedMessage());
-                } else if (o instanceof KKimScope) {
-                    ret.insert(0, ((KKimScope) o).getLocationDescriptor() + ": ");
-                } else if (o instanceof KNotification.Type) {
-                    ntype = (KNotification.Type) o;
-                } else if (o instanceof KNotification) {
-                    ntype = ((KNotification) o).getType();
-                    ret.append(((KNotification) o).getMessage());
+                } else if (o instanceof KimScope) {
+                    ret.insert(0, ((KimScope) o).getLocationDescriptor() + ": ");
+                } else if (o instanceof Notification.Type) {
+                    ntype = (Notification.Type) o;
+                } else if (o instanceof Notification) {
+                    ntype = ((Notification) o).getType();
+                    ret.append(((Notification) o).getMessage());
                 }
                 // TODO continue
             }
 
-            return new Pair<>(ret.toString(), ntype);
+            return new PairImpl<>(ret.toString(), ntype);
         }
     }
 
@@ -836,7 +837,7 @@ public class Utils {
          */
         public static Pair<Double, String> separateUnit(Object o) {
             if (o == null || o.toString().trim().isEmpty()) {
-                return new Pair<>(Double.NaN, "");
+                return new PairImpl<>(Double.NaN, "");
             }
             String s = o.toString().trim();
             String num = "";
@@ -849,7 +850,7 @@ public class Utils {
                 }
             }
 
-            return new Pair<>(num.isEmpty() ? Double.NaN : Double.parseDouble(num), uni);
+            return new PairImpl<>(num.isEmpty() ? Double.NaN : Double.parseDouble(num), uni);
         }
 
         /**
@@ -2247,7 +2248,7 @@ public class Utils {
             }
 
             if (type == Type.CONCEPT) {
-                if (value instanceof KConcept) {
+                if (value instanceof Concept) {
                     return value;
                 } else {
                     // value =
@@ -2499,8 +2500,8 @@ public class Utils {
             if (value instanceof Boolean) {
                 return Boolean.class;
             }
-            if (value instanceof KConcept) {
-                return KConcept.class;
+            if (value instanceof Concept) {
+                return Concept.class;
             }
             return String.class;
         }
@@ -2534,11 +2535,11 @@ public class Utils {
             return value;
         }
 
-        public static boolean validateAs(Object pod, KArtifact.Type type) {
+        public static boolean validateAs(Object pod, Artifact.Type type) {
             if (pod == null) {
                 return false;
             }
-            KArtifact.Type tp = getArtifactType(pod.getClass());
+            Artifact.Type tp = getArtifactType(pod.getClass());
             if (type == tp) {
                 return true;
             }
@@ -2695,7 +2696,7 @@ public class Utils {
                 if (cls.equals(Boolean.class)) {
                     return (T) Boolean.valueOf((String) ret);
                 }
-                if (cls.equals(KConcept.class)) {
+                if (cls.equals(Concept.class)) {
                     // IConceptService service =
                     // Services.INSTANCE.getService(IConceptService.class);
                     // if (service != null) {
@@ -2806,13 +2807,13 @@ public class Utils {
                 ret = Type.NUMBER;
             } else if (Boolean.class.isAssignableFrom(cls)) {
                 ret = Type.BOOLEAN;
-            } else if (KConcept.class.isAssignableFrom(cls)) {
+            } else if (Concept.class.isAssignableFrom(cls)) {
                 ret = Type.CONCEPT;
             }
             return ret;
         }
 
-        public static Class<?> getClassForType(KArtifact.Type type) {
+        public static Class<?> getClassForType(Artifact.Type type) {
             switch(type) {
             case BOOLEAN:
                 return Boolean.class;
@@ -2821,7 +2822,7 @@ public class Utils {
             case TEXT:
                 return String.class;
             case CONCEPT:
-                return KConcept.class;
+                return Concept.class;
             default:
                 break;
             }
@@ -3262,21 +3263,21 @@ public class Utils {
          * @param artifacts
          * @return
          */
-        public static Collection<KArtifact> joinArtifacts(Collection<KArtifact> artifacts) {
-            List<KArtifact> ret = new ArrayList<>();
-            for (KArtifact artifact : artifacts) {
-                for (KArtifact a : artifact) {
+        public static Collection<Artifact> joinArtifacts(Collection<Artifact> artifacts) {
+            List<Artifact> ret = new ArrayList<>();
+            for (Artifact artifact : artifacts) {
+                for (Artifact a : artifact) {
                     ret.add(a);
                 }
             }
             return ret;
         }
 
-        public static Collection<KObservation> joinObservations(Collection<KObservation> artifacts) {
-            List<KObservation> ret = new ArrayList<>();
-            for (KObservation artifact : artifacts) {
-                for (KArtifact a : artifact) {
-                    ret.add((KObservation) a);
+        public static Collection<Observation> joinObservations(Collection<Observation> artifacts) {
+            List<Observation> ret = new ArrayList<>();
+            for (Observation artifact : artifacts) {
+                for (Artifact a : artifact) {
+                    ret.add((Observation) a);
                 }
             }
             return ret;

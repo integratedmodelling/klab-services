@@ -20,6 +20,42 @@ public class ResourcesConfiguration implements Serializable {
 
     private static final long serialVersionUID = 8407649258899502009L;
 
+    public static class ResourceConfiguration implements Serializable {
+
+        private static final long serialVersionUID = -8966889570222340019L;
+
+        private ResourcePrivileges privileges;
+        private String doi;
+        private int revisionTier;
+        private String localPath;
+        
+        public ResourcePrivileges getPrivileges() {
+            return privileges;
+        }
+        public void setPrivileges(ResourcePrivileges privileges) {
+            this.privileges = privileges;
+        }
+        public String getDoi() {
+            return doi;
+        }
+        public void setDoi(String doi) {
+            this.doi = doi;
+        }
+        public int getRevisionTier() {
+            return revisionTier;
+        }
+        public void setRevisionTier(int revisionTier) {
+            this.revisionTier = revisionTier;
+        }
+        public String getLocalPath() {
+            return localPath;
+        }
+        public void setLocalPath(String localPath) {
+            this.localPath = localPath;
+        }
+
+    }
+
     public static class ProjectConfiguration implements Serializable {
 
         private static final long serialVersionUID = -8989429880321748157L;
@@ -118,9 +154,15 @@ public class ResourcesConfiguration implements Serializable {
     private Map<String, Set<String>> workspaces = new LinkedHashMap<>();
 
     /**
-     * Each project managed by this
+     * Each project managed by this service
      */
     private Map<String, ProjectConfiguration> projectConfiguration = new HashMap<>();
+
+    /**
+     * Same for individually managed resources (those local to projects are managed in the project
+     * config itself)
+     */
+    private Map<String, ResourceConfiguration> resourceConfiguration = new HashMap<>();
 
     public String getServicePath() {
         return servicePath;

@@ -6,13 +6,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.collections.KParameters;
-import org.integratedmodelling.klab.api.identities.KEngineIdentity;
-import org.integratedmodelling.klab.api.identities.KIdentity;
-import org.integratedmodelling.klab.api.identities.KUserIdentity;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.identities.EngineIdentity;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
-import org.integratedmodelling.klab.api.services.KEngine;
-import org.integratedmodelling.klab.api.services.runtime.KChannel;
+import org.integratedmodelling.klab.api.services.Engine;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.runtime.Monitor;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
@@ -31,12 +31,14 @@ import io.reacted.core.reactorsystem.ReActorSystem;
  *
  */
 @Service
-public class EngineService implements KEngine, KEngineIdentity {
+public class EngineService implements Engine, EngineIdentity {
 
-    private Map<String, Scope> userScopes = Collections.synchronizedMap(new HashMap<>());
-    private Monitor monitor = new Monitor(this);
-    private String name = "modular-klab-engine";
-    private ReActorSystem actorSystem;
+    private static final long serialVersionUID = -5132403746054203201L;
+    private String name = "modular-klab-engine"; // TODO read from configuration
+
+    transient private Map<String, Scope> userScopes = Collections.synchronizedMap(new HashMap<>());
+    transient private Monitor monitor = new Monitor(this);
+    transient private ReActorSystem actorSystem;
 
     public void boot() {
 
@@ -50,15 +52,10 @@ public class EngineService implements KEngine, KEngineIdentity {
         this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
                 .initReActorSystem();
 
-        // this.reasonerService = createReasonerService();
-        // this.resourceService = createResourceService();
-        // this.resolverService = createResolverService();
-        // this.runtimeService = createRuntimeService();
-
     }
 
     @Override
-    public KScope login(KUserIdentity user) {
+    public KScope login(UserIdentity user) {
 
         Scope ret = userScopes.get(user.getUsername());
         if (ret == null) {
@@ -84,80 +81,10 @@ public class EngineService implements KEngine, KEngineIdentity {
         ret.boot();
         return ret;
     }
-
-    //
-    // @Override
-    // public Date getBootTime() {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-    //
-    // @Override
-    // public Collection<String> getUrls() {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-    //
-    // @Override
-    // public boolean isOnline() {
-    // // TODO Auto-generated method stub
-    // return false;
-    // }
-
+    
     public ReActorSystem getActors() {
         return this.actorSystem;
     }
-
-    // @Override
-    // public IClient getClient() {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-    //
-    // @Override
-    // public boolean stop() {
-    // // TODO Auto-generated method stub
-    // return false;
-    // }
-    //
-    // @Override
-    // public IMonitor getMonitor() {
-    // return monitor;
-    // }
-    //
-    // @Override
-    // public IParameters<String> getState() {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-    //
-    // @Override
-    // public Type getIdentityType() {
-    // return Type.ENGINE;
-    // }
-    //
-    // @Override
-    // public String getId() {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-    //
-    // @Override
-    // public IIdentity getParentIdentity() {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
-    //
-    // @Override
-    // public boolean is(Type type) {
-    // return getIdentityType() == type;
-    // }
-    //
-    // @Override
-    // public <T extends IIdentity> T getParentIdentity(Class<T> type) {
-    // // TODO Auto-generated method stub
-    // return null;
-    // }
 
     public Object getSystemRef() {
         // TODO Auto-generated method stub
@@ -194,12 +121,12 @@ public class EngineService implements KEngine, KEngineIdentity {
     }
 
     @Override
-    public KChannel getMonitor() {
+    public Channel getMonitor() {
         return monitor;
     }
 
     @Override
-    public KParameters<String> getState() {
+    public Parameters<String> getState() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -217,7 +144,7 @@ public class EngineService implements KEngine, KEngineIdentity {
     }
 
     @Override
-    public KIdentity getParentIdentity() {
+    public Identity getParentIdentity() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -229,7 +156,19 @@ public class EngineService implements KEngine, KEngineIdentity {
     }
 
     @Override
-    public <T extends KIdentity> T getParentIdentity(Class<T> type) {
+    public <T extends Identity> T getParentIdentity(Class<T> type) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Capabilities capabilities() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

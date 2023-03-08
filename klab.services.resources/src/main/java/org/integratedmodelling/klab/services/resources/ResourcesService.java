@@ -19,19 +19,19 @@ import org.integratedmodelling.kim.model.Kim;
 import org.integratedmodelling.kim.model.KimLoader;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.data.KKlabData;
-import org.integratedmodelling.klab.api.knowledge.KResource;
+import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
 import org.integratedmodelling.klab.api.knowledge.organization.KProject;
 import org.integratedmodelling.klab.api.knowledge.organization.KWorkspace;
-import org.integratedmodelling.klab.api.lang.kactors.KKActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kdl.KKdlDataflow;
-import org.integratedmodelling.klab.api.lang.kim.KKimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KKimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KKimObservable;
-import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespace;
-import org.integratedmodelling.klab.api.services.KResources;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
+import org.integratedmodelling.klab.api.services.Resources;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
@@ -49,28 +49,33 @@ import org.springframework.stereotype.Service;
 import com.google.inject.Injector;
 
 @Service
-public class ResourcesService implements KResources, KResources.Admin {
+public class ResourcesService implements Resources, Resources.Admin {
+
+    private static final long serialVersionUID = 6589150530995037678L;
 
     private static boolean languagesInitialized;
-    private KimLoader kimLoader;
-    private ResourcesConfiguration configuration = new ResourcesConfiguration();
 
-    Map<String, KProject> localProjects = Collections.synchronizedMap(new HashMap<>());
-    Map<String, KWorkspace> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
-    Map<String, KKimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
-    Map<String, KKActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
+    private String url;
+    
+    transient private KimLoader kimLoader;
+    transient private ResourcesConfiguration configuration = new ResourcesConfiguration();
+
+    transient Map<String, KProject> localProjects = Collections.synchronizedMap(new HashMap<>());
+    transient Map<String, KWorkspace> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
+    transient Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
+    transient Map<String, KActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
 
     /*
      * Dirty namespaces are kept in order of dependency and reloaded sequentially.
      */
-    Set<String> dirtyNamespaces = Collections.synchronizedSet(new LinkedHashSet<>());
-    Set<String> dirtyProjects = Collections.synchronizedSet(new LinkedHashSet<>());
-    Set<String> dirtyWorkspaces = Collections.synchronizedSet(new LinkedHashSet<>());
+    transient Set<String> dirtyNamespaces = Collections.synchronizedSet(new LinkedHashSet<>());
+    transient Set<String> dirtyProjects = Collections.synchronizedSet(new LinkedHashSet<>());
+    transient Set<String> dirtyWorkspaces = Collections.synchronizedSet(new LinkedHashSet<>());
 
     /**
      * Always load projects and namespaces sequentially.
      */
-    ExecutorService projectLoader = Executors.newSingleThreadExecutor();
+    transient ExecutorService projectLoader = Executors.newSingleThreadExecutor();
 
     /**
      * Default interval to check for changes in Git (15 minutes in milliseconds)
@@ -145,7 +150,7 @@ public class ResourcesService implements KResources, KResources.Admin {
     private void loadNamespaces(List<NamespaceDescriptor> namespaces) {
         for (NamespaceDescriptor ns : namespaces) {
             projectLoader.execute(() -> {
-                KimNamespace namespace = KimAdapter.adaptKimNamespace(ns);
+                KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
                 this.localNamespaces.put(namespace.getName(), namespace);
             });
         }
@@ -153,7 +158,7 @@ public class ResourcesService implements KResources, KResources.Admin {
     }
 
     @Override
-    public KProject resolveNamespace(String urn, KScope scope) {
+    public KimNamespace resolveNamespace(String urn, KScope scope) {
 
         /*
          * must be a known project, either here or on a federated service.
@@ -163,42 +168,42 @@ public class ResourcesService implements KResources, KResources.Admin {
     }
 
     @Override
-    public KKActorsBehavior resolveBehavior(String urn, KScope scope) {
+    public KActorsBehavior resolveBehavior(String urn, KScope scope) {
 
         return null;
     }
 
     @Override
-    public KResource resolveResource(String urn, KScope scope) {
+    public Resource resolveResource(String urn, KScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KResource contextualizeResource(KResource originalResource, KContextScope scope) {
+    public Resource contextualizeResource(Resource originalResource, KContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KKlabData contextualize(KResource contextualizedResource, KScope scope) {
+    public KlabData contextualize(Resource contextualizedResource, KScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KKdlDataflow resolveDataflow(String urn, KScope scope) {
+    public KdlDataflow resolveDataflow(String urn, KScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<KKimNamespace> dependents(String namespaceId) {
+    public List<KimNamespace> dependents(String namespaceId) {
         return null;
     }
 
     @Override
-    public List<KKimNamespace> precursors(String namespaceId) {
+    public List<KimNamespace> precursors(String namespaceId) {
         return null;
     }
 
@@ -268,7 +273,7 @@ public class ResourcesService implements KResources, KResources.Admin {
     @Override
     public void removeProjectFromLocalWorkspace(String workspaceName, String projectName) {
         // TODO Auto-generated method stub
-//        ProjectConfiguration configuration = 
+        // ProjectConfiguration configuration =
     }
 
     @Override
@@ -302,19 +307,19 @@ public class ResourcesService implements KResources, KResources.Admin {
     }
 
     @Override
-    public Capabilities getCapabilities() {
+    public Capabilities capabilities() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KKimObservable resolveObservable(String definition) {
+    public KimObservable resolveObservable(String definition) {
         IKimObservable parsed = Kim.INSTANCE.declare(definition);
         return parsed == null ? null : KimAdapter.adaptKimObservable(parsed);
     }
 
     @Override
-    public KKimConcept resolveConcept(String definition) {
+    public KimConcept resolveConcept(String definition) {
         IKimObservable parsed = Kim.INSTANCE.declare(definition);
         if (parsed == null) {
             return null;
@@ -324,19 +329,19 @@ public class ResourcesService implements KResources, KResources.Admin {
     }
 
     @Override
-    public ResourceSet getWorldview() {
+    public ResourceSet requestWorldview() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ResourceSet getProject(String projectName, KScope scope) {
+    public ResourceSet requestProject(String projectName, KScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ResourceSet getModel(String modelName, KScope scope) {
+    public ResourceSet requestModel(String modelName, KScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -354,7 +359,7 @@ public class ResourcesService implements KResources, KResources.Admin {
     }
 
     @Override
-    public String addResourceToLocalWorkspace(KResource resource) {
+    public String addResourceToLocalWorkspace(Resource resource) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -362,6 +367,7 @@ public class ResourcesService implements KResources, KResources.Admin {
     @Override
     public String addResourceToLocalWorkspace(File resourcePath) {
         // TODO Auto-generated method stub
+//        Concept
         return null;
     }
 
@@ -375,5 +381,14 @@ public class ResourcesService implements KResources, KResources.Admin {
     public boolean unpublishResource(String resourceUrn) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public String getUrl() {
+        return this.url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

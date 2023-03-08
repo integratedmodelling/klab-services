@@ -15,9 +15,10 @@ package org.integratedmodelling.klab.api.data.mediation;
 
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.collections.impl.Pair;
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.knowledge.KObservable;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistribution;
 
@@ -27,7 +28,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistri
  * <p>
  * Much more complex than (not-really-)standard JRS-375 units due to the need of scale awareness and
  * semantic-driven value aggregation and propagation. When a quality is extensive (i.e.,
- * {@link IObservableService#isExtensive(KObservable)} returns true), its value can be translated to
+ * {@link IObservableService#isExtensive(Observable)} returns true), its value can be translated to
  * units that are incompatible because they either add or remove one or more contextual dimensions
  * (space and/or time). Also, the unit may already contain an implicit contextualization and be
  * valid for the semantics of the observable once the contextualization is factored in: for example,
@@ -94,7 +95,7 @@ public interface KUnit extends KValueMediator {
     Pair<KUnit, KUnit> splitExtent(ExtentDimension dimension);
 
     @Override
-    KUnit contextualize(KObservable observable, KGeometry scale);
+    KUnit contextualize(Observable observable, Geometry scale);
 
     /**
      * True if unitless.

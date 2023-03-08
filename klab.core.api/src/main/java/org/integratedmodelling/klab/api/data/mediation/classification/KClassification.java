@@ -15,8 +15,9 @@
  */
 package org.integratedmodelling.klab.api.data.mediation.classification;
 
-import org.integratedmodelling.klab.api.collections.impl.Pair;
-import org.integratedmodelling.klab.api.knowledge.KConcept;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
 
 /**
@@ -25,16 +26,16 @@ import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScop
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KClassification extends KDataKey, Iterable<Pair<KConcept, KClassifier>> {
+public interface KClassification extends KDataKey, Iterable<Pair<Concept, KClassifier>> {
 
 	/**
 	 * Return the main concept that subsumes all those expressed by the classifiers.
 	 * In some situations this may be null. In normal situations this will be an
 	 * abstract concept and subsume all others.
 	 *
-	 * @return a {@link org.integratedmodelling.klab.api.knowledge.KConcept} object.
+	 * @return a {@link org.integratedmodelling.klab.api.knowledge.Concept} object.
 	 */
-	KConcept getConcept();
+	Concept getConcept();
 
 	/**
 	 * True if this has been declared and validated as a discretization. Subsumes
@@ -60,9 +61,9 @@ public interface KClassification extends KDataKey, Iterable<Pair<KConcept, KClas
 	 *            a {@link java.lang.Object} object.
 	 * @param scope
 	 *            context of computation
-	 * @return a {@link org.integratedmodelling.klab.api.knowledge.KConcept} object.
+	 * @return a {@link org.integratedmodelling.klab.api.knowledge.Concept} object.
 	 */
-	KConcept classify(Object object, KContextScope scope);
+	Concept classify(Object object, KContextScope scope);
 
 	/**
 	 * Get the undiscretized value for the passed concept. If the concept is not in
@@ -72,7 +73,7 @@ public interface KClassification extends KDataKey, Iterable<Pair<KConcept, KClas
 	 *            the object
 	 * @return the double
 	 */
-	double undiscretize(KConcept object);
+	double undiscretize(Concept object);
 
 	/**
 	 * Return a sensible numeric value for the passed concept. NaN should be
@@ -86,7 +87,7 @@ public interface KClassification extends KDataKey, Iterable<Pair<KConcept, KClas
 	 * @return the number we can use to encode the concept, which must be one of the
 	 *         getConcepts()
 	 */
-	double getNumericValue(KConcept o);
+	double getNumericValue(Concept o);
 
 	/**
 	 * Classify to the numeric ranking of the concept instead of the concept.

@@ -2,16 +2,13 @@ package org.integratedmodelling.klab.test.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.integratedmodelling.klab.api.collections.Annotation;
-import org.integratedmodelling.klab.api.collections.KLiteral;
-import org.integratedmodelling.klab.api.collections.KParameters;
-import org.integratedmodelling.klab.api.collections.Metadata;
-import org.integratedmodelling.klab.api.collections.impl.Literal;
-import org.integratedmodelling.klab.api.collections.impl.Parameters;
-import org.integratedmodelling.klab.api.data.KMetadata;
-import org.integratedmodelling.klab.api.geometry.KGeometry;
-import org.integratedmodelling.klab.api.geometry.impl.Geometry;
-import org.integratedmodelling.klab.api.lang.KAnnotation;
+import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.utils.Utils;
 import org.junit.jupiter.api.Test;
 
@@ -21,58 +18,58 @@ class SerializationTests {
 
     @Test
     void parameters() {
-        KParameters<Object> object = Parameters.create("one", 1, "oneString", "one", "params", Parameters.create("one", 1));
+        Parameters<Object> object = Parameters.create("one", 1, "oneString", "one", "params", Parameters.create("one", 1));
         String serialized = Utils.Json.asString(object);
-        KParameters<?> deserialized = Utils.Json.parseObject(serialized, KParameters.class);
+        Parameters<?> deserialized = Utils.Json.parseObject(serialized, Parameters.class);
         System.out.println(serialized);
         System.out.println(deserialized.getClass());
         System.out.println(deserialized.get("params").getClass());
-        assert (deserialized instanceof KParameters);
-        assert (deserialized.get("params") instanceof KParameters);
+        assert (deserialized instanceof Parameters);
+        assert (deserialized.get("params") instanceof Parameters);
     }
 
     @Test
     void metadata() {
-        KMetadata object = Metadata.create("one", 1, "oneString", "one", "params", Metadata.create("one", 1));
+        Metadata object = Metadata.create("one", 1, "oneString", "one", "params", Metadata.create("one", 1));
         String serialized = Utils.Json.asString(object);
-        KMetadata deserialized = Utils.Json.parseObject(serialized, KMetadata.class);
+        Metadata deserialized = Utils.Json.parseObject(serialized, Metadata.class);
         System.out.println(serialized);
         System.out.println(deserialized.getClass());
         System.out.println(deserialized.get("params").getClass());
-        assert (deserialized instanceof KMetadata);
-        assert (deserialized.get("params") instanceof KMetadata);
+        assert (deserialized instanceof Metadata);
+        assert (deserialized.get("params") instanceof Metadata);
     }
 
     @Test
     void annotation() {
-        KAnnotation object = Annotation.create("belaCagada", "one", 1, "oneString", "one", "params",
+        Annotation object = Annotation.create("belaCagada", "one", 1, "oneString", "one", "params",
                 Annotation.create("cazzarola", "one", 1));
         String serialized = Utils.Json.asString(object);
-        KAnnotation deserialized = Utils.Json.parseObject(serialized, KAnnotation.class);
+        Annotation deserialized = Utils.Json.parseObject(serialized, Annotation.class);
         System.out.println(serialized);
         System.out.println(deserialized.getClass());
         System.out.println(deserialized.get("params").getClass());
-        assert (deserialized instanceof KAnnotation);
-        assert (deserialized.get("params") instanceof KAnnotation);
+        assert (deserialized instanceof Annotation);
+        assert (deserialized.get("params") instanceof Annotation);
     }
 
     @Test
     void geometry() {
-        KGeometry geometry = Geometry.create(centralColombia);
+        Geometry geometry = GeometryImpl.create(centralColombia);
         String serialized = Utils.Json.asString(geometry);
-        KGeometry deserialized = Utils.Json.parseObject(serialized, KGeometry.class);
+        Geometry deserialized = Utils.Json.parseObject(serialized, Geometry.class);
         System.out.println(serialized);
-        assert (deserialized instanceof KGeometry);
+        assert (deserialized instanceof Geometry);
         String before = geometry.encode();
         String after = deserialized.encode();
         assertEquals(before, after);
     }
 
     private Object serializeAndDeserializeLiteral(Object o) {
-        Literal literal = Literal.of(o);
+        LiteralImpl literal = LiteralImpl.of(o);
         String serialized = Utils.Json.asString(literal);
         System.out.println(serialized);
-        return Utils.Json.parseObject(serialized, KLiteral.class).get(Object.class);
+        return Utils.Json.parseObject(serialized, Literal.class).get(Object.class);
     }
 
     @Test
