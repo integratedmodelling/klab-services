@@ -26,7 +26,6 @@ import org.integratedmodelling.klab.utils.MiscUtilities;
 import org.integratedmodelling.klab.utils.NameGenerator;
 import org.integratedmodelling.klab.utils.OS;
 
-// TODO: Auto-generated Javadoc
 /**
  * TODO use a declarative approach for all properties, so that there is one place for all default
  * settings and it's possible to override any of them through global JVM settings.

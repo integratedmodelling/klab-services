@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.authentication;
+package org.integratedmodelling.klab.api.authentication;
 
 import java.util.Collection;
 import java.util.HashSet;

@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.klab.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 
 /**
  * The resource service configuration is a POJO serialized from/to the resources.yaml file in the

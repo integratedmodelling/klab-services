@@ -3,8 +3,9 @@ package org.integratedmodelling.tests.services.reasoner;
 import org.integratedmodelling.klab.api.knowledge.KConcept;
 import org.integratedmodelling.klab.api.knowledge.KObservable;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
+import org.integratedmodelling.klab.services.reasoner.internal.SemanticTranslator;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class ConceptIngestion {
@@ -20,12 +21,11 @@ class ConceptIngestion {
             "geography:Elevation in m optional", "any geography:Elevation in m", "geography:Elevation in m > 100",
             "geography:Elevation in m by landcover:LandCoverType"};
 
-    private ResourcesService resourceService = new ResourcesService();
-    private ReasonerService reasonerService;
+    private static ReasonerService reasonerService;
 
-    @Before
-    public void prepare() {
-        this.reasonerService = new ReasonerService(resourceService, null);
+    @BeforeAll
+    public static void prepare() {
+        reasonerService = new ReasonerService(new ResourcesService(), new SemanticTranslator());
     }
 
     @Test

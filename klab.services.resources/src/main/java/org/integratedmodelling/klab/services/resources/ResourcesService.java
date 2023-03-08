@@ -18,6 +18,7 @@ import org.integratedmodelling.kim.api.IKimObservable;
 import org.integratedmodelling.kim.model.Kim;
 import org.integratedmodelling.kim.model.KimLoader;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KKlabData;
 import org.integratedmodelling.klab.api.knowledge.KResource;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
@@ -31,6 +32,7 @@ import org.integratedmodelling.klab.api.lang.kim.KKimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KKimObservable;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespace;
 import org.integratedmodelling.klab.api.services.KResources;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.logging.Logging;
@@ -151,7 +153,7 @@ public class ResourcesService implements KResources, KResources.Admin {
     }
 
     @Override
-    public KProject resolveProject(String urn, KScope scope) {
+    public KProject resolveNamespace(String urn, KScope scope) {
 
         /*
          * must be a known project, either here or on a federated service.
@@ -319,5 +321,59 @@ public class ResourcesService implements KResources, KResources.Admin {
         }
         return KimAdapter.adaptKimObservable(parsed).getMain();
 
+    }
+
+    @Override
+    public ResourceSet getWorldview() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ResourceSet getProject(String projectName, KScope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ResourceSet getModel(String modelName, KScope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean unpublishProject(String projectUrl) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public String addResourceToLocalWorkspace(KResource resource) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String addResourceToLocalWorkspace(File resourcePath) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean unpublishResource(String resourceUrn) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

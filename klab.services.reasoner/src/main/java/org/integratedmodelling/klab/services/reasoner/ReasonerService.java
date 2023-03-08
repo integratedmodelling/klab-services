@@ -1,9 +1,9 @@
 package org.integratedmodelling.klab.services.reasoner;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import org.integratedmodelling.klab.api.collections.impl.Pair;
 import org.integratedmodelling.klab.api.knowledge.KConcept;
@@ -17,8 +17,11 @@ import org.integratedmodelling.klab.api.lang.kim.KKimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KKimScope;
 import org.integratedmodelling.klab.api.services.KReasoner;
 import org.integratedmodelling.klab.api.services.KResources;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticTranslator;
+import org.integratedmodelling.klab.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +34,8 @@ public class ReasonerService implements KReasoner, KReasoner.Admin {
 
     private KResources resourceService;
     private SemanticTranslator semanticTranslator;
-
+    private ReasonerConfiguration configuration;
+    
     /**
      * Caches for concepts and observables, linked to the URI in the corresponding
      * {@link KKimScope}.
@@ -58,8 +62,17 @@ public class ReasonerService implements KReasoner, KReasoner.Admin {
     public ReasonerService(KResources resourceService, SemanticTranslator semanticTranslator) {
         this.resourceService = resourceService;
         Services.INSTANCE.setReasoner(this);
+        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
+        if (config.exists()) {
+            configuration = Utils.YAML.load(config, ReasonerConfiguration.class);
+        }
     }
 
+    private void saveConfiguration() {
+        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
+        Utils.YAML.save(this.configuration, config);
+    }
+    
     @Override
     public KConcept addConcept(KKimConceptStatement statement) {
         return null;

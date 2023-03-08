@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.io.File;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KKlabData;
 import org.integratedmodelling.klab.api.knowledge.KResource;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
@@ -13,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kdl.KKdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KKimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KKimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KKimObservable;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
 public interface KResources {
 
@@ -32,13 +35,19 @@ public interface KResources {
 
     Capabilities getCapabilities();
 
+    ResourceSet getWorldview();
+
+    ResourceSet getProject(String projectName, KScope scope);
+
+    ResourceSet getModel(String modelName, KScope scope);
+
     /**
      * 
      * @param urn
      * @param scope
      * @return
      */
-    KProject resolveProject(String urn, KScope scope);
+    KProject resolveNamespace(String urn, KScope scope);
 
     /**
      * 
@@ -112,9 +121,6 @@ public interface KResources {
      * @return
      */
     List<KKimNamespace> precursors(String namespaceId);
-    
-    
-    
 
     /**
      * Admin interface to submit/remove projects and configure the service.
@@ -135,6 +141,60 @@ public interface KResources {
          *         wasn't overwritten)
          */
         boolean addProjectToLocalWorkspace(String workspaceName, String projectUrl, boolean overwriteIfExisting);
+
+        /**
+         * Publish a project with the passed privileges. The project must has been added before this
+         * is called. If the project is already published, update the permissions.
+         * 
+         * @param projectUrl
+         * @param permissions
+         * @return
+         */
+        boolean publishProject(String projectUrl, ResourcePrivileges permissions);
+
+        /**
+         * Unpublish a previously published project.
+         * 
+         * @param projectUrl
+         * @return
+         */
+        boolean unpublishProject(String projectUrl);
+
+        /**
+         * Add a resource fully specified by a resource object to those managed by this service.
+         * Resource is invisible from the outside until published. The resource adapter must be
+         * available to the service.
+         * 
+         * @param resource
+         * @return the resource URN, potentially modified w.r.t. the one in the request.
+         */
+        String addResourceToLocalWorkspace(KResource resource);
+
+        /**
+         * Add a resource with file content to those managed by this service. Resource is invisible
+         * from the outside until published. The resource adapter must be available to the service.
+         * 
+         * @param resourcePath the directory or zip file that contains the resource files. A
+         *        resource.json file must be present, along with anything else required by the
+         *        adapter.
+         * @return the resource URN, potentially modified w.r.t. the one in the request.
+         */
+        String addResourceToLocalWorkspace(File resourcePath);
+
+        /**
+         * 
+         * @param resource
+         * @param permissions
+         * @return
+         */
+        boolean publishResource(String resourceUrn, ResourcePrivileges permissions);
+
+        /**
+         * 
+         * @param resourceUrn
+         * @return
+         */
+        boolean unpublishResource(String resourceUrn);
 
         /**
          * 
