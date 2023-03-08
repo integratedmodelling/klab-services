@@ -2,17 +2,17 @@ package org.integratedmodelling.klab.services.actors.messages.user;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 
 public class CreateApplication implements Serializable {
 
     private String applicationId;
-    private KScope scope;
+    private Scope scope;
 
     public CreateApplication() {
     }
 
-    public CreateApplication(KScope scope, String sessionId) {
+    public CreateApplication(Scope scope, String sessionId) {
         this.scope = scope;
         this.applicationId = sessionId;
     }
@@ -27,11 +27,11 @@ public class CreateApplication implements Serializable {
         this.applicationId = applicationId;
     }
 
-    public KScope getScope() {
+    public Scope getScope() {
         return scope;
     }
 
-    public void setScope(KScope scope) {
+    public void setScope(Scope scope) {
         this.scope = scope;
     }
 

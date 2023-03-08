@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 
 /**
  * A lookup table matches a table to a lookup strategy expressed as a set of
@@ -61,7 +61,7 @@ public interface KLookupTable extends KDataKey {
 	 * @param locator to capture states when the parameter is a state
 	 * @return the first matching object from the result column, or null
 	 */
-	Object lookup(Parameters<String> parameters, KContextScope context, Locator locator);
+	Object lookup(Parameters<String> parameters, ContextScope context, Locator locator);
 
 	/**
 	 * The artifact type for the results in the lookup column, which must be

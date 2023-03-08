@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.documentation;
 import java.util.Collection;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Report;
@@ -116,7 +116,7 @@ public interface KDocumentation {
          * @param scope
          * @return
          */
-        void compile(Report.Section section, KContextScope scope, Map<String, Object> templateVariables);
+        void compile(Report.Section section, ContextScope scope, Map<String, Object> templateVariables);
 
         /**
          * Return the section type that this applies to.
@@ -161,7 +161,7 @@ public interface KDocumentation {
      * @param trigger
      */
     boolean instrumentReport(Report report, Template template, Trigger trigger, Actuator actuator,
-            KContextScope scope);
+            ContextScope scope);
 
     /**
      * Get all templates corresponding to the passed action type, if any.

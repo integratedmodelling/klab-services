@@ -7,8 +7,8 @@ import java.util.List;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.organization.KWorkspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
@@ -51,7 +51,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    ResourceSet requestProject(String projectName, KScope scope);
+    ResourceSet requestProject(String projectName, Scope scope);
 
     /**
      * Request the namespaces containing a given model along with anything else required to run it
@@ -62,7 +62,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    ResourceSet requestModel(String modelName, KScope scope);
+    ResourceSet requestModel(String modelName, Scope scope);
 
     /**
      * Return the parsed contents of a namespace. This only be called after a request that returned
@@ -72,7 +72,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    KimNamespace resolveNamespace(String urn, KScope scope);
+    KimNamespace resolveNamespace(String urn, Scope scope);
 
     /**
      * Return the parsed contents of a behavior. This only be called after a request that returned
@@ -82,7 +82,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    KActorsBehavior resolveBehavior(String urn, KScope scope);
+    KActorsBehavior resolveBehavior(String urn, Scope scope);
 
     /**
      * Return the parsed contents of a resource.
@@ -91,7 +91,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    Resource resolveResource(String urn, KScope scope);
+    Resource resolveResource(String urn, Scope scope);
 
     /**
      * 
@@ -113,7 +113,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    Resource contextualizeResource(Resource originalResource, KContextScope scope);
+    Resource contextualizeResource(Resource originalResource, ContextScope scope);
 
     /**
      * 
@@ -121,7 +121,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    KlabData contextualize(Resource contextualizedResource, KScope scope);
+    KlabData contextualize(Resource contextualizedResource, Scope scope);
 
     /**
      * 
@@ -129,7 +129,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    KdlDataflow resolveDataflow(String urn, KScope scope);
+    KdlDataflow resolveDataflow(String urn, Scope scope);
 
     /**
      * Return all the namespaces that depend on the passed namespace.

@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import java.io.Serializable;
 
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -37,7 +37,7 @@ public interface Resolver extends KlabService {
      * @param scope
      * @return the dataflow that will create the observation in a runtime.
      */
-    Dataflow<?> resolve(Object observable, KScope scope);
+    Dataflow<?> resolve(Object observable, Scope scope);
 
     interface Admin {
 

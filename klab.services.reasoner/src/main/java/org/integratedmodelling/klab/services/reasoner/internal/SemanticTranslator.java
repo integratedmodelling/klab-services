@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
@@ -63,7 +63,7 @@ public class SemanticTranslator {
         public Concept emergentObservable;
         public String namespaceId;
 
-        public Set<Observation> matches(Concept relationship, KContextScope scope) {
+        public Set<Observation> matches(Concept relationship, ContextScope scope) {
 
             for (Concept trigger : triggerObservables) {
                 Set<Observation> ret = new HashSet<>();

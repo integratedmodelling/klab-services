@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scope;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 
-public interface KSessionScope extends KScope {
+public interface SessionScope extends Scope {
 
     public enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, /* this only sent by UIs for now */ INTERRUPTED, EMPTY
@@ -10,7 +10,7 @@ public interface KSessionScope extends KScope {
 
     /**
      * Never null. The session scope's geometry is the "focal" geometry of the user (where/when the
-     * user agent is looking); the geometry in each {@link KContextScope} is the actual view
+     * user agent is looking); the geometry in each {@link ContextScope} is the actual view
      * during observation.
      * 
      * @return
@@ -31,7 +31,7 @@ public interface KSessionScope extends KScope {
      * 
      * @return
      */
-    KContextScope createContext(String id);
+    ContextScope createContext(String id);
 
     /**
      * Return the status of the session scope at the time of the call.

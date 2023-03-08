@@ -2,20 +2,20 @@ package org.integratedmodelling.klab.services.scope;
 
 import java.util.function.Consumer;
 
-import org.integratedmodelling.kactors.api.IKActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KSessionScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KSessionScope.Status;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.SessionScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.SessionScope.Status;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 import org.integratedmodelling.klab.services.engine.EngineService;
 
-public class Scope implements KScope {
+public class EngineScopeImpl implements Scope {
 
     private static final long serialVersionUID = 605310381727313326L;
 
@@ -23,19 +23,19 @@ public class Scope implements KScope {
     private UserIdentity user;
     private Ref agent;
 
-    public Scope(UserIdentity user) {
+    public EngineScopeImpl(UserIdentity user) {
         this.user = user;
         ((EngineService)Services.INSTANCE.getEngine()).registerScope(this);
     }
 
-    protected Scope(Scope parent) {
+    protected EngineScopeImpl(EngineScopeImpl parent) {
         this.user = parent.user;
     }
     
     @Override
-    public KSessionScope runSession(String sessionName) {
+    public SessionScope runSession(String sessionName) {
 
-        final SessionScope ret = new SessionScope(this);
+        final EngineSessionScopeImpl ret = new EngineSessionScopeImpl(this);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateSession(this, sessionName), Ref.class);
         if (!sessionAgent.isEmpty()) {
@@ -48,9 +48,9 @@ public class Scope implements KScope {
     }
 
     @Override
-    public KSessionScope runApplication(String behaviorName) {
+    public SessionScope runApplication(String behaviorName) {
 
-        final SessionScope ret = new SessionScope(this);
+        final EngineSessionScopeImpl ret = new EngineSessionScopeImpl(this);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateApplication(this, behaviorName), Ref.class);
         if (!sessionAgent.isEmpty()) {

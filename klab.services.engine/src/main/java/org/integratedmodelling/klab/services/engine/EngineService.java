@@ -10,14 +10,14 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.EngineIdentity;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.services.Engine;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.runtime.Monitor;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
-import org.integratedmodelling.klab.services.scope.Scope;
+import org.integratedmodelling.klab.services.scope.EngineScopeImpl;
 import org.springframework.stereotype.Service;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
@@ -36,7 +36,7 @@ public class EngineService implements Engine, EngineIdentity {
     private static final long serialVersionUID = -5132403746054203201L;
     private String name = "modular-klab-engine"; // TODO read from configuration
 
-    transient private Map<String, Scope> userScopes = Collections.synchronizedMap(new HashMap<>());
+    transient private Map<String, EngineScopeImpl> userScopes = Collections.synchronizedMap(new HashMap<>());
     transient private Monitor monitor = new Monitor(this);
     transient private ReActorSystem actorSystem;
 
@@ -55,12 +55,12 @@ public class EngineService implements Engine, EngineIdentity {
     }
 
     @Override
-    public KScope login(UserIdentity user) {
+    public Scope login(UserIdentity user) {
 
-        Scope ret = userScopes.get(user.getUsername());
+        EngineScopeImpl ret = userScopes.get(user.getUsername());
         if (ret == null) {
-            ret = new Scope(user);
-            final Scope scope = ret;
+            ret = new EngineScopeImpl(user);
+            final EngineScopeImpl scope = ret;
             String agentName = user.getUsername();
             actorSystem.spawn(new UserAgent(agentName)).ifSuccess((t) -> scope.setAgent(KAgentRef.get(t))).orElseSneakyThrow();
             userScopes.put(user.getUsername(), ret);
@@ -68,7 +68,7 @@ public class EngineService implements Engine, EngineIdentity {
         return ret;
     }
 
-    public void registerScope(Scope scope) {
+    public void registerScope(EngineScopeImpl scope) {
         userScopes.put(scope.getUser().getUsername(), scope);
     }
 

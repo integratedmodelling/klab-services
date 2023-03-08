@@ -2,19 +2,19 @@ package org.integratedmodelling.klab.services.actors.messages.user;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 
 public class CreateSession implements Serializable {
 
     private static final long serialVersionUID = -4721979530562111456L;
 
     private String sessionId;
-    private KScope scope;
+    private Scope scope;
 
     public CreateSession() {
     }
     
-    public CreateSession(KScope scope, String sessionId) {
+    public CreateSession(Scope scope, String sessionId) {
         this.setScope(scope);
         this.sessionId = sessionId;
     }
@@ -27,11 +27,11 @@ public class CreateSession implements Serializable {
         this.sessionId = sessionId;
     }
 
-    public KScope getScope() {
+    public Scope getScope() {
         return scope;
     }
 
-    public void setScope(KScope scope) {
+    public void setScope(Scope scope) {
         this.scope = scope;
     }
 

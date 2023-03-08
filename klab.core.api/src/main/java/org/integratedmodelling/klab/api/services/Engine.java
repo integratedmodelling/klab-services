@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import java.io.Serializable;
 
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 
 public interface Engine extends KlabService {
 
@@ -47,5 +47,5 @@ public interface Engine extends KlabService {
      * @param user
      * @return
      */
-    KScope login(UserIdentity user);
+    Scope login(UserIdentity user);
 }

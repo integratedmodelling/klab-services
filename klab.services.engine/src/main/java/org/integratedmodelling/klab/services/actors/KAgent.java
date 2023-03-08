@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.integratedmodelling.kactors.api.IKActorsBehavior.Ref;
-import org.integratedmodelling.klab.api.actors.IBehavior;
-import org.integratedmodelling.klab.api.engine.IScope;
+import org.integratedmodelling.klab.api.knowledge.Behavior;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 
 import io.reacted.core.config.reactors.ReActorConfig;
@@ -157,7 +157,7 @@ public class KAgent implements ReActor {
                 .reAct(RunBehavior.class, this::runBehavior);
     }
 
-    protected void run(IBehavior behavior, IScope scope) {
+    protected void run(Behavior behavior, Scope scope) {
 //        if (vm != null) {
 //            // ? ehm
 //        }

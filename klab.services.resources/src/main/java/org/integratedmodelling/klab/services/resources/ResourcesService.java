@@ -21,8 +21,8 @@ import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.organization.KProject;
 import org.integratedmodelling.klab.api.knowledge.organization.KWorkspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -158,7 +158,7 @@ public class ResourcesService implements Resources, Resources.Admin {
     }
 
     @Override
-    public KimNamespace resolveNamespace(String urn, KScope scope) {
+    public KimNamespace resolveNamespace(String urn, Scope scope) {
 
         /*
          * must be a known project, either here or on a federated service.
@@ -168,31 +168,31 @@ public class ResourcesService implements Resources, Resources.Admin {
     }
 
     @Override
-    public KActorsBehavior resolveBehavior(String urn, KScope scope) {
+    public KActorsBehavior resolveBehavior(String urn, Scope scope) {
 
         return null;
     }
 
     @Override
-    public Resource resolveResource(String urn, KScope scope) {
+    public Resource resolveResource(String urn, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Resource contextualizeResource(Resource originalResource, KContextScope scope) {
+    public Resource contextualizeResource(Resource originalResource, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KlabData contextualize(Resource contextualizedResource, KScope scope) {
+    public KlabData contextualize(Resource contextualizedResource, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public KdlDataflow resolveDataflow(String urn, KScope scope) {
+    public KdlDataflow resolveDataflow(String urn, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -335,13 +335,13 @@ public class ResourcesService implements Resources, Resources.Admin {
     }
 
     @Override
-    public ResourceSet requestProject(String projectName, KScope scope) {
+    public ResourceSet requestProject(String projectName, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ResourceSet requestModel(String modelName, KScope scope) {
+    public ResourceSet requestModel(String modelName, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }

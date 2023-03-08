@@ -13,7 +13,7 @@
  */
 package org.integratedmodelling.klab.api.identities;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 
 /**
  * The Interface ITaskIdentity.
@@ -32,5 +32,5 @@ public interface TaskIdentity extends RuntimeIdentity {
      * 
      * @return
      */
-    KContextScope getScope();
+    ContextScope getScope();
 }

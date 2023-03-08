@@ -13,29 +13,29 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
-public class ContextScope extends SessionScope implements KContextScope {
+public class EngineContextScopeImpl extends EngineSessionScopeImpl implements ContextScope {
 
     private static final long serialVersionUID = -3241953358893122142L;
 
     Identity observer;
     DirectObservation context;
     Set<String> scenarios;
-    ContextScope parent;
+    EngineContextScopeImpl parent;
     Geometry geometry;
     String token;
     Map<Observable, Observation> catalog = new HashMap<>();
 
-    ContextScope(SessionScope parent) {
+    EngineContextScopeImpl(EngineSessionScopeImpl parent) {
         super(parent);
         this.observer = parent.getUser();
     }
 
-    private ContextScope(ContextScope parent) {
+    private EngineContextScopeImpl(EngineContextScopeImpl parent) {
         super(parent);
         this.parent = parent;
         this.observer = parent.observer;
@@ -58,8 +58,8 @@ public class ContextScope extends SessionScope implements KContextScope {
     }
 
     @Override
-    public ContextScope withScenarios(String... scenarios) {
-        ContextScope ret = new ContextScope(this);
+    public EngineContextScopeImpl withScenarios(String... scenarios) {
+        EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
         if (scenarios == null) {
             ret.scenarios = null;
         }
@@ -71,15 +71,15 @@ public class ContextScope extends SessionScope implements KContextScope {
     }
 
     @Override
-    public ContextScope withObserver(Identity observer) {
-        ContextScope ret = new ContextScope(this);
+    public EngineContextScopeImpl withObserver(Identity observer) {
+        EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
         ret.observer = observer;
         return ret;
     }
 
     @Override
-    public ContextScope within(DirectObservation context) {
-        ContextScope ret = new ContextScope(this);
+    public EngineContextScopeImpl within(DirectObservation context) {
+        EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
         ret.context = context;
         return ret;
     }

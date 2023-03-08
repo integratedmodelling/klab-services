@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -69,7 +69,7 @@ public interface KlabData {
 		 *                                  recognized by the context associated with
 		 *                                  this builder.
 		 */
-		Builder startState(String name, String unit, KContextScope scope);
+		Builder startState(String name, String unit, ContextScope scope);
 
 		/**
 		 * Add a value to the state being defined by this builder. The state is added in

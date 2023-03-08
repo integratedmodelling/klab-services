@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
-public interface KScope extends Channel, Serializable {
+public interface Scope extends Channel, Serializable {
 
     enum Type {
         USER, // root-level scope
@@ -16,34 +16,6 @@ public interface KScope extends Channel, Serializable {
         SESSION, // raw session for direct use within Java code
         CONTEXT // context, on which observe() can be called
     }
-
-//    /**
-//     * Return the reasoner service assigned to this scope.
-//     * 
-//     * @return
-//     */
-//    Reasoner getReasoner();
-//
-//    /**
-//     * Return the resolver service assigned to this scope.
-//     * 
-//     * @return
-//     */
-//    Resolver getResolver();
-//
-//    /**
-//     * Return the runtime service assigned to this scope.
-//     * 
-//     * @return
-//     */
-//    Runtime getRuntime();
-//
-//    /**
-//     * Return the resources service assigned to this scope.
-//     * 
-//     * @return
-//     */
-//    Resources getResources();
 
     /**
      * The scope is created for an authenticated user by the engine.
@@ -65,7 +37,7 @@ public interface KScope extends Channel, Serializable {
      * @param sessionName
      * @return
      */
-    KSessionScope runSession(String sessionName);
+    SessionScope runSession(String sessionName);
 
     /**
      * Run an application or script and return the scope that controls it.
@@ -73,6 +45,6 @@ public interface KScope extends Channel, Serializable {
      * @param behavior
      * @return
      */
-    KSessionScope runApplication(String behaviorName);
+    SessionScope runApplication(String behaviorName);
 
 }

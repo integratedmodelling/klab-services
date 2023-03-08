@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.services.scope;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KSessionScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.SessionScope;
 
-public class SessionScope extends Scope implements KSessionScope {
+public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionScope {
 
     private static final long serialVersionUID = -5840277560139759406L;
 
@@ -15,7 +15,7 @@ public class SessionScope extends Scope implements KSessionScope {
         this.name = name;
     }
 
-    SessionScope(Scope parent) {
+    EngineSessionScopeImpl(EngineScopeImpl parent) {
         super(parent);
     }
 
@@ -26,9 +26,9 @@ public class SessionScope extends Scope implements KSessionScope {
     }
 
     @Override
-    public KContextScope createContext(String id) {
+    public ContextScope createContext(String id) {
 
-        final ContextScope ret = new ContextScope(this);
+        final EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
         ret.setName(id);
         ret.setStatus(Status.WAITING);
 

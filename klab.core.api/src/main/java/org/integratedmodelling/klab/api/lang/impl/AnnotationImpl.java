@@ -19,12 +19,6 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.lang.Annotation;
 
-/**
- * The Class Metadata.
- *
- * @author ferdinando.villa
- * @version $Id: $Id
- */
 public class AnnotationImpl extends ParametersImpl<String> implements Annotation {
 
     private static final long serialVersionUID = -8898359231943508540L;

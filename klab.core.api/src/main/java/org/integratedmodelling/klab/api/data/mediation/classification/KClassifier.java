@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime.Resolution;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 
 /**
  * The Interface IClassifier.
@@ -34,7 +34,7 @@ public interface KClassifier {
 	 * @param scope the context
 	 * @return True if passed object matches the conditions of the classifier
 	 */
-	boolean classify(Object o, KContextScope scope);
+	boolean classify(Object o, ContextScope scope);
 
 	/**
 	 * True if this classifier matches everything.
@@ -88,7 +88,7 @@ public interface KClassifier {
 	 * 
 	 * @return the value this classifier resolves to.
 	 */
-	Object asValue(KContextScope scope);
+	Object asValue(ContextScope scope);
 
 	/**
 	 * Return the type of the classifier when used as a value.

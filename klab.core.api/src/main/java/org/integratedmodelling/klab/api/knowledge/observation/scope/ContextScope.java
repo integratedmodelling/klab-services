@@ -21,7 +21,7 @@ import org.integratedmodelling.klab.api.services.runtime.Report;
  * @author Ferd
  *
  */
-public interface KContextScope extends KSessionScope {
+public interface ContextScope extends SessionScope {
 
     /**
      * Return the observer for this context. The original observation scope has the session user as
@@ -37,7 +37,7 @@ public interface KContextScope extends KSessionScope {
      * @param scenarios
      * @return
      */
-    KContextScope withObserver(Identity observer);
+    ContextScope withObserver(Identity observer);
 
     /**
      * The context observation for this scope. When an observation scope is created, this is null
@@ -54,7 +54,7 @@ public interface KContextScope extends KSessionScope {
      * @param observation
      * @return a new scope focused on the passed observation.
      */
-    KContextScope within(DirectObservation observation);
+    ContextScope within(DirectObservation observation);
 
     /**
      * Return a new observation scope that sets the passed scenarios for any future observation.
@@ -62,7 +62,7 @@ public interface KContextScope extends KSessionScope {
      * @param scenarios
      * @return
      */
-    KContextScope withScenarios(String... scenarios);
+    ContextScope withScenarios(String... scenarios);
 
     /**
      * Make an observation. Must be called on a context scope, possibly focused on a given root

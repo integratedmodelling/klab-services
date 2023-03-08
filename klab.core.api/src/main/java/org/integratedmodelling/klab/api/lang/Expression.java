@@ -18,7 +18,7 @@ import java.util.Collection;
 
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.KContextScope;
+import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**
@@ -181,7 +181,7 @@ public interface Expression extends Serializable {
          * 
          * @return
          */
-        KContextScope getRuntimeScope();
+        ContextScope getRuntimeScope();
 
         /**
          * If true, we have requested the expression to be evaluated in a scalar fashion no matter
@@ -205,6 +205,6 @@ public interface Expression extends Serializable {
      * @return the result of evaluating the expression
      * @throws org.integratedmodelling.klab.KException.KlabException TODO
      */
-    Object eval(KContextScope scope, Object... additionalParameters);
+    Object eval(ContextScope scope, Object... additionalParameters);
 
 }

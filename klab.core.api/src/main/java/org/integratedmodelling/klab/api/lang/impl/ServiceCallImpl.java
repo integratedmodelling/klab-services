@@ -8,7 +8,6 @@ import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.mediation.KCurrency;
@@ -34,52 +33,12 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     protected ParametersImpl<String> parameters = new ParametersImpl<>();
     protected Set<String> interactiveParameterIds = new HashSet<>();
 
-
-
-//    public KimServiceCall(Function statement, IKimStatement parent) {
-//        super(statement, parent);
-//        if (statement != null) {
-//            // if we don't check, the call causes a stack overflow in functions that are argument of
-//            // a 'covering' clause in a namespace definition.
-//            KimNamespace namespace = parent instanceof KimNamespace
-//                    ? (KimNamespace) parent
-//                    : Kim.INSTANCE.getNamespace(statement);
-//            this.name = statement.getName();
-//            if (statement.getParameters() != null) {
-//                if (statement.getParameters().getSingleValue() != null
-//                        && statement.getParameters().getSingleValue().size() > 0) {
-//                    List<Object> objects = new ArrayList<>();
-//                    for (Value value : statement.getParameters().getSingleValue()) {
-//                        objects.add(Kim.INSTANCE.parseValue(value, namespace));
-//                    }
-//                    this.parameters.put(DEFAULT_PARAMETER_NAME,
-//                            objects.size() == 1 ? objects.get(0) : objects);
-//                } else if (statement.getParameters().getPairs() != null) {
-//                    for (KeyValuePair kv : statement.getParameters().getPairs()) {
-//                        this.parameters.put(kv.getName(), Kim.INSTANCE.parseValue(kv.getValue(), namespace));
-//                        if (kv.isInteractive()) {
-//                            this.interactiveParameterIds.add(kv.getName());
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-
     public List<Notification> validateUsage(Set<Artifact.Type> expectedType) {
         return null;// Kim.INSTANCE.validateFunctionCall(this, expectedType);
     }
 
-//    public KimServiceCall(EObject statement, String name, Map<String, Object> parameters,
-//            IKimStatement parent) {
-//        super(statement, parent);
-//        this.name = name;
-//        this.parameters.putAll(parameters);
-//    }
-
     @SuppressWarnings("unchecked")
     public ServiceCallImpl(String name, Object[] parameters) {
-//        super((EObject) null, null);
         this.name = name;
         if (parameters != null && parameters.length == 1 && parameters[0] instanceof Parameters) {
             this.parameters.putAll((Parameters<String>) (parameters[0]));
@@ -93,7 +52,6 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     }
 
     public ServiceCallImpl(String name, Map<String, Object> parameters) {
-//        super((EObject) null, null);
         this.name = name;
         this.parameters.putAll(parameters);
     }
