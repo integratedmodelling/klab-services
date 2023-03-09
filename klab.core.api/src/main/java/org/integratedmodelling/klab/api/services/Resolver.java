@@ -10,13 +10,17 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public interface Resolver extends KlabService {
 
+    default String getServiceName() {
+        return "klab.resolver.service";
+    }
+    
     /**
      * All services publish capabilities and have a call to obtain them.
      * 
      * @author Ferd
      *
      */
-    interface Capabilities extends Serializable {
+    interface Capabilities extends ServiceCapabilities {
 
     }
 

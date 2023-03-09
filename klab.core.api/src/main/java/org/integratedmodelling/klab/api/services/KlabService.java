@@ -14,6 +14,33 @@ import java.io.Serializable;
  */
 public interface KlabService extends Serializable {
 
+    /**
+     * At the very minimum, each service advertises its type and local name.
+     * 
+     * @author Ferd
+     *
+     */
+    interface ServiceCapabilities extends Serializable {
+
+        String getLocalName();
+
+        String getServiceName();
+    }
+
+    ServiceCapabilities getCapabilities();
+
     String getUrl();
+
+    /**
+     * Local name should be unique among services even of the same type. It should reflect the local
+     * node and always appear in REST calls as the requesting entity, so that federated calls coming
+     * from the same service in a ping-pong chain of calls can be filtered out and avoid infinite
+     * call chains.
+     * 
+     * @return
+     */
+    String getLocalName();
+
+    String getServiceName();
 
 }

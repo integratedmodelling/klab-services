@@ -31,7 +31,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
-import org.integratedmodelling.klab.api.services.Resources;
+import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
@@ -49,13 +49,14 @@ import org.springframework.stereotype.Service;
 import com.google.inject.Injector;
 
 @Service
-public class ResourcesService implements Resources, Resources.Admin {
+public class ResourcesService implements ResourceProvider, ResourceProvider.Admin {
 
     private static final long serialVersionUID = 6589150530995037678L;
 
     private static boolean languagesInitialized;
 
     private String url;
+    private String localName;
     
     transient private KimLoader kimLoader;
     transient private ResourcesConfiguration configuration = new ResourcesConfiguration();
@@ -307,7 +308,7 @@ public class ResourcesService implements Resources, Resources.Admin {
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities getCapabilities() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -329,19 +330,19 @@ public class ResourcesService implements Resources, Resources.Admin {
     }
 
     @Override
-    public ResourceSet requestWorldview() {
+    public ResourceSet worldview(Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ResourceSet requestProject(String projectName, Scope scope) {
+    public ResourceSet project(String projectName, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ResourceSet requestModel(String modelName, Scope scope) {
+    public ResourceSet model(String modelName, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -390,5 +391,28 @@ public class ResourcesService implements Resources, Resources.Admin {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    @Override
+    public String getLocalName() {
+        return localName;
+    }
+
+    public void setLocalName(String localName) {
+        this.localName = localName;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public ResourcesService exclusive(Scope scope) {
+        // TODO Auto-generated method stub
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public ResourcesService dedicated(Scope scope) {
+        // TODO Auto-generated method stub
+        return this;
     }
 }

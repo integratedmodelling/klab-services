@@ -16,6 +16,10 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
 public interface Reasoner extends KlabService {
 
+    default String getServiceName() {
+        return "klab.reasoner.service";
+    }
+    
     /**
      * All services publish capabilities and have a call to obtain them. Capabilities may depend on
      * authentication but the endpoint should be publicly available as well.
@@ -23,7 +27,7 @@ public interface Reasoner extends KlabService {
      * @author Ferd
      *
      */
-    interface Capabilities extends Serializable {
+    interface Capabilities extends ServiceCapabilities {
 
         /**
          * If true, the service is local or dedicated to the service that uses it.

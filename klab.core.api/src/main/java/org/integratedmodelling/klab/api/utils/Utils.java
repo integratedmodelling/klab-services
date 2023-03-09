@@ -37,7 +37,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -45,9 +44,66 @@ import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
+import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class Utils {
+
+    /**
+     * Utilities to create, manipulate and merge resource sets
+     * 
+     * @author Ferd
+     *
+     */
+    public static class Resources {
+
+        /**
+         * Create a resource set describing the passed resources and automatically adding the passed
+         * service.
+         * 
+         * @param service
+         * @param resources pass the actual resources to build their descriptor.
+         * @return
+         */
+        public static ResourceSet create(ResourceProvider service, Object... resources) {
+            ResourceSet ret = new ResourceSet();
+            ret.getServices().put(service.getLocalName(), service);
+            if (resources != null) {
+                for (Object resource : resources) {
+
+                }
+            }
+            return ret;
+        }
+
+        /**
+         * Merge two or more resource sets into a new one. If the same resources are available keep
+         * the one with the most recent version. Behaves well with no arguments or just one.
+         * 
+         * @param resourceSets
+         * @return
+         */
+        public static ResourceSet merge(ResourceSet... resourceSets) {
+
+            ResourceSet ret = null;
+
+            if (resourceSets == null) {
+                ret = new ResourceSet();
+                ret.setEmpty(true);
+            } else if (resourceSets.length == 1) {
+                ret = resourceSets[0];
+            } else {
+                ret = new ResourceSet();
+                for (ResourceSet set : resourceSets) {
+
+                }
+            }
+
+            return ret;
+        }
+
+    }
 
     /**
      * Utility to reduce the ugliness of casting generic collections in Java. If you have say a
@@ -235,7 +291,7 @@ public class Utils {
                 // TODO continue
             }
 
-            return new PairImpl<>(ret.toString(), ntype);
+            return Pair.of(ret.toString(), ntype);
         }
     }
 
@@ -836,9 +892,11 @@ public class Utils {
          * @return the pair
          */
         public static Pair<Double, String> separateUnit(Object o) {
+
             if (o == null || o.toString().trim().isEmpty()) {
-                return new PairImpl<>(Double.NaN, "");
+                return Pair.of(Double.NaN, "");
             }
+
             String s = o.toString().trim();
             String num = "";
             String uni = "";
@@ -850,7 +908,7 @@ public class Utils {
                 }
             }
 
-            return new PairImpl<>(num.isEmpty() ? Double.NaN : Double.parseDouble(num), uni);
+            return Pair.of(num.isEmpty() ? Double.NaN : Double.parseDouble(num), uni);
         }
 
         /**
@@ -1866,15 +1924,15 @@ public class Utils {
 
             for (int i = 0; i < nspc.length(); i++) {
                 char c = nspc.charAt(i);
-                if ((flags | NONLETTERS) != 0) {
+                if ((flags & NONLETTERS) != 0) {
                     if ((c < 'A' || c > 'z') && !(c == '.' || c == '_'))
                         return true;
                 }
-                if ((flags | UPPERCASE) != 0) {
+                if ((flags & UPPERCASE) != 0) {
                     if (c >= 'A' && c <= 'Z')
                         return true;
                 }
-                if ((flags | WHITESPACE) != 0) {
+                if ((flags & WHITESPACE) != 0) {
                     if (Character.isWhitespace(c))
                         return true;
                 }

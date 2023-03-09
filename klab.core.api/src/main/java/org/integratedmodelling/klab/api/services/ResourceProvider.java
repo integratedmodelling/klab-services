@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
-public interface Resources extends KlabService {
+public interface ResourceProvider extends KlabFederatedService {
 
     /**
      * All services publish capabilities and have a call to obtain them.
@@ -25,24 +25,29 @@ public interface Resources extends KlabService {
      * @author Ferd
      *
      */
-    interface Capabilities extends Serializable {
+    interface Capabilities extends FederatedServiceCapabilities {
 
         boolean isWorldviewProvider();
 
         String getAdoptedWorldview();
 
     }
+    
+    default String getServiceName() {
+        return "klab.resources.service";
+    }
 
-    Capabilities capabilities();
+    Capabilities getCapabilities();
 
     /**
      * Get the managed worldview. Assumes that the capabilities have been consulted and have
      * suggested that this is a sensible request.
      * 
+     * @param scope
      * @return an entire worldview managed by this service, or an empty resource set if not
      *         available.
      */
-    ResourceSet requestWorldview();
+    ResourceSet worldview(Scope scope);
 
     /**
      * Request all the contents of a given project.
@@ -51,7 +56,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    ResourceSet requestProject(String projectName, Scope scope);
+    ResourceSet project(String projectName, Scope scope);
 
     /**
      * Request the namespaces containing a given model along with anything else required to run it
@@ -62,7 +67,7 @@ public interface Resources extends KlabService {
      * @param scope
      * @return
      */
-    ResourceSet requestModel(String modelName, Scope scope);
+    ResourceSet model(String modelName, Scope scope);
 
     /**
      * Return the parsed contents of a namespace. This only be called after a request that returned

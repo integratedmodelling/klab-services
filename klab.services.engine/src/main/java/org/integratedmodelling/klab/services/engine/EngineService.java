@@ -12,6 +12,9 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.services.Engine;
+import org.integratedmodelling.klab.api.services.KlabFederatedService;
+import org.integratedmodelling.klab.api.services.KlabFederatedService.FederatedServiceCapabilities;
+import org.integratedmodelling.klab.api.services.Runtime.Capabilities;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.runtime.Monitor;
@@ -40,6 +43,12 @@ public class EngineService implements Engine, EngineIdentity {
     transient private Monitor monitor = new Monitor(this);
     transient private ReActorSystem actorSystem;
 
+    
+    interface Capabilities extends FederatedServiceCapabilities {
+        
+    }
+    
+    
     public void boot() {
 
         Services.INSTANCE.setEngine(this);
@@ -162,15 +171,40 @@ public class EngineService implements Engine, EngineIdentity {
     }
 
     @Override
-    public Capabilities capabilities() {
+    public String getUrl() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String getUrl() {
+    public String getLocalName() {
         // TODO Auto-generated method stub
         return null;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public FederatedServiceCapabilities getCapabilities() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public EngineService exclusive(Scope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public EngineService dedicated(Scope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 
 }

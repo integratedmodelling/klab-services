@@ -38,7 +38,7 @@ public enum BinarySemanticOperator {
      */
     FOLLOWS("follows");
     
-    String declaration;
+    final String declaration;
     
     BinarySemanticOperator(String code) {
         this.declaration = code;

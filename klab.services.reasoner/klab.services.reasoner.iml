@@ -19,13 +19,11 @@
     <orderEntry type="module" module-name="klab.services.resources" scope="TEST" />
     <orderEntry type="module" module-name="klab.services.authentication" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="Maven: org.integratedmodelling:org.integratedmodelling.kim:0.11.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.eclipse.xtext:org.eclipse.xtext.xbase:2.25.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.eclipse.xtext:org.eclipse.xtext.common.types:2.25.0" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm-commons:9.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm:9.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm-tree:9.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm-analysis:9.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: io.github.classgraph:classgraph:4.8.35" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.eclipse.xtext:org.eclipse.xtext.xbase:2.27.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.eclipse.xtext:org.eclipse.xtext.common.types:2.27.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.ow2.asm:asm:9.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: io.github.classgraph:classgraph:4.8.138" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.osgi:osgi.annotation:8.0.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.integratedmodelling:org.integratedmodelling.kactors:0.11.0-SNAPSHOT" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.integratedmodelling:org.integratedmodelling.kdl:0.11.0-SNAPSHOT" level="project" />
     <orderEntry type="module" module-name="klab.core.api" />

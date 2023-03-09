@@ -6,9 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.services.Resources;
+import org.integratedmodelling.klab.api.services.ResourceProvider;
 
 /**
  * The output of any resources GET endpoint that provides models, projects, worldview, behaviors or
@@ -16,8 +15,10 @@ import org.integratedmodelling.klab.api.services.Resources;
  * versions; the order of each array is the load dependency order.
  * <p>
  * Each resource lists a URN, a version and the service that provides it. The serializable service
- * object would normally be just a client with a URL and access methods but in local configurations
- * it may be the operational service object.
+ * object would normally be just a client with a URL and access methods; for local resources it can
+ * be the operational service object which may provide a URL or not, but should always provide it if
+ * the request comes from a remote client. All resource sets must contain at least the service that
+ * produced it.
  * <p>
  * A method isEmpty() is provided to streamline usage and possibly differentiate from a resource set
  * that contains no resources but actually represents as a non-empty result.
@@ -63,7 +64,7 @@ public class ResourceSet implements Serializable {
 
     }
 
-    private Map<String, Resources> services = new HashMap<>();
+    private Map<String, ResourceProvider> services = new HashMap<>();
     private List<Resource> namespaces = new ArrayList<>();
     private List<Resource> behaviors = new ArrayList<>();
     private List<Resource> resources = new ArrayList<>();
@@ -93,10 +94,10 @@ public class ResourceSet implements Serializable {
     public void setEmpty(boolean empty) {
         this.empty = empty;
     }
-    public Map<String, Resources> getServices() {
+    public Map<String, ResourceProvider> getServices() {
         return services;
     }
-    public void setServices(Map<String, Resources> services) {
+    public void setServices(Map<String, ResourceProvider> services) {
         this.services = services;
     }
 

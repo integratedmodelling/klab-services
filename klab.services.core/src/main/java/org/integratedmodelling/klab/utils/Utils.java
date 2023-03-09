@@ -195,7 +195,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Load an object from an input stream.
          * 
-         * @param is the input stream
+         * @param url the input stream
          * @param cls the class
          * @return the object
          * @throws KlabIOException
@@ -366,7 +366,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Load an object from an input stream.
          * 
-         * @param is the input stream
+         * @param url the input stream
          * @param cls the class
          * @return the object
          * @throws KlabIOException

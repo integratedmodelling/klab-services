@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resources;
+import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -41,7 +41,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     private String url;
 
-    transient private Resources resourceService;
+    transient private ResourceProvider resourceService;
     transient private SemanticTranslator semanticTranslator;
     transient private ReasonerConfiguration configuration;
 
@@ -67,8 +67,10 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                 }
             });
 
+    private String localName;
+
     @Autowired
-    public ReasonerService(Resources resourceService, SemanticTranslator semanticTranslator) {
+    public ReasonerService(ResourceProvider resourceService, SemanticTranslator semanticTranslator) {
         this.resourceService = resourceService;
         Services.INSTANCE.setReasoner(this);
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
@@ -438,7 +440,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         boolean ret = true;
         for (Resource namespace : resources.getNamespaces()) {
-            Resources service = resources.getServices().get(namespace.getServiceId());
+            ResourceProvider service = resources.getServices().get(namespace.getServiceId());
             KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(),
                     /* TODO scope of owning user - should come from authentication service */ null);
             if (!parsed.isErrors()) {
@@ -464,6 +466,15 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    @Override
+    public String getLocalName() {
+        return localName;
+    }
+
+    public void setLocalName(String localName) {
+        this.localName = localName;
     }
 
 }
