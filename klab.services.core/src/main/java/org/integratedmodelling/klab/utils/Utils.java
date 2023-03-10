@@ -115,7 +115,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     if (path == null) {
                         throw new KlabIOException("internal: cannot establish path for resource " + resource);
                     }
-                    String fileName = MiscUtilities.getFileName(path);
+                    String fileName = Files.getFileName(path);
                     File dest = new File(destinationDirectory + File.separator + fileName);
                     InputStream is = resource.getInputStream();
                     FileUtils.copyInputStreamToFile(is, dest);
@@ -526,7 +526,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          */
         public static String clone(String gitUrl, File directory, boolean removeIfExisting) throws KlabException {
 
-            String dirname = MiscUtilities.getURLBaseName(gitUrl);
+            String dirname = URLs.getURLBaseName(gitUrl);
 
             File pdir = new File(directory + File.separator + dirname);
             if (pdir.exists()) {
@@ -609,7 +609,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          */
         public static String requireUpdatedRepository(String gitUrl, File gitDirectory) throws KlabException {
 
-            String repositoryName = MiscUtilities.getURLBaseName(gitUrl);
+            String repositoryName = URLs.getURLBaseName(gitUrl);
 
             File repoDir = new File(gitDirectory + File.separator + repositoryName);
             File gitDir = new File(repoDir + File.separator + ".git");

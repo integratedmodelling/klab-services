@@ -41,30 +41,30 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistri
  * process model may produce extensive rainfall in both space and time (e.g. in m^2, applied to each
  * timestep and area subdivision) and area/time intensive snow (e.g. in mm/day) at the same time.
  * <p>
- * The unit API enables contextual conversion by using a specialized {@link KUnit} implementation.
+ * The unit API enables contextual conversion by using a specialized {@link Unit} implementation.
  * When the context is factored in, the scale of computation for the unit is incorporated in the
  * declared unit by obtaining a contextualized unit from
  * 
  * @author Ferd
  * @version $Id: $Id
  */
-public interface KUnit extends KValueMediator {
+public interface Unit extends KValueMediator {
 
     /**
      * Return a new unit multiplied by the passed one.
      *
-     * @param unit a {@link org.integratedmodelling.klab.api.data.mediation.KUnit} object.
+     * @param unit a {@link org.integratedmodelling.klab.api.data.mediation.Unit} object.
      * @return a new product unit
      */
-    KUnit multiply(KUnit unit);
+    Unit multiply(Unit unit);
 
     /**
      * Return a new unit divided by the passed one.
      *
-     * @param unit a {@link org.integratedmodelling.klab.api.data.mediation.KUnit} object.
+     * @param unit a {@link org.integratedmodelling.klab.api.data.mediation.Unit} object.
      * @return a new unit
      */
-    KUnit divide(KUnit unit);
+    Unit divide(Unit unit);
 
     /**
      * Return a new unit scaled according to the passed double.
@@ -72,7 +72,7 @@ public interface KUnit extends KValueMediator {
      * @param scale a double.
      * @return a new unit
      */
-    KUnit scale(double scale);
+    Unit scale(double scale);
 
     /**
      * Return the set of aggregated dimensions in case this one results from re-contextualizing a
@@ -92,10 +92,10 @@ public interface KUnit extends KValueMediator {
      * @param dimension
      * @return
      */
-    Pair<KUnit, KUnit> splitExtent(ExtentDimension dimension);
+    Pair<Unit, Unit> splitExtent(ExtentDimension dimension);
 
     @Override
-    KUnit contextualize(Observable observable, Geometry scale);
+    Unit contextualize(Observable observable, Geometry scale);
 
     /**
      * True if unitless.

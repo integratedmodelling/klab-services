@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.integratedmodelling.contrib.jgrapht.alg.util.Pair;
 import org.integratedmodelling.kim.api.IContextualizable;
 import org.integratedmodelling.kim.api.IKimAcknowledgement;
 import org.integratedmodelling.kim.api.IKimClassification;
@@ -36,8 +37,8 @@ import org.integratedmodelling.klab.api.errormanagement.ICompileNotification;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -75,12 +76,19 @@ public class KimAdapter {
         KimNamespaceImpl ret = new KimNamespaceImpl();
         Utils.Kim.copyStatementData(original, ret);
 
-        ret.setName(original.getName());
+        ret.setUrn(original.getName());
         for (ICompileNotification notification : ns.getIssues()) {
             // TODO
         }
 
         ret.setMetadata(Utils.Kim.makeMetadata(ns.getNamespace().getMetadata()));
+        ret.setProjectName(ns.getProjectName());
+        for (String imported : ns.getNamespace().getImportedNamespaceIds(false)) {
+            /*
+             * TODO add symbols. This is done in an awkward way in the original namespace.
+             */
+            ret.getImports().put(imported, new ArrayList<>());
+        }
 
         switch(ns.getNamespace().getScope()) {
         case NAMESPACE:

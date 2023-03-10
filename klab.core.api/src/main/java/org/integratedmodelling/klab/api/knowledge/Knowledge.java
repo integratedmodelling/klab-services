@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import java.io.Serializable;
-
 /**
  * All knowledge in k.LAB has a URN and is serializable. Methods in derived classes only use the
  * <code>getXxxx</code> naming pattern for serializable fields, to ensure easy serialization to JSON
@@ -11,14 +9,7 @@ import java.io.Serializable;
  * @author ferd
  *
  */
-public interface Knowledge extends Serializable {
+public interface Knowledge extends KlabAsset {
 
-    /**
-     * Anything that represents knowledge must return a stable, unique identifier that can be
-     * resolved back to the original or to an identical object. Only {@link Resource} must use
-     * proper URN syntax; for other types of knowledge may use expressions or paths.
-     * 
-     * @return the unique identifier that specifies this.
-     */
-    public String getUrn();
+
 }

@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,11 @@ import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -63,16 +68,31 @@ public class Utils {
          * service.
          * 
          * @param service
-         * @param resources pass the actual resources to build their descriptor.
+         * @param resources pass the actual resources to build their descriptor. Not passing
+         *        anything will result in an empty resource set. If an empty array is passed the
+         *        resource set will not contain resources, but the {@link ResourceSet#isEmpty()}
+         *        method will return false.
          * @return
          */
-        public static ResourceSet create(ResourceProvider service, Object... resources) {
+        public static ResourceSet create(ResourceProvider service, KlabAsset... resources) {
             ResourceSet ret = new ResourceSet();
             ret.getServices().put(service.getLocalName(), service);
             if (resources != null) {
-                for (Object resource : resources) {
-
+                for (KlabAsset resource : resources) {
+                    ResourceSet.Resource descriptor = new ResourceSet.Resource();
+                    descriptor.setResourceUrn(resource.getUrn());
+                    descriptor.setServiceId(service.getLocalName());
+                    descriptor.setResourceVersion(resource.getVersion());
+                    if (resource instanceof KimNamespace) {
+                        ret.getNamespaces().add(descriptor);
+                    } else if (resource instanceof KActorsBehavior) {
+                        ret.getBehaviors().add(descriptor);
+                    } else if (resource instanceof Resource) {
+                        ret.getResources().add(descriptor);
+                    }
                 }
+            } else {
+                ret.setEmpty(true);
             }
             return ret;
         }
@@ -94,13 +114,50 @@ public class Utils {
             } else if (resourceSets.length == 1) {
                 ret = resourceSets[0];
             } else {
+
                 ret = new ResourceSet();
+                
+                Map<String, ResourceSet.Resource> rsns = new LinkedHashMap<>();
+                Map<String, ResourceSet.Resource> rsbh = new LinkedHashMap<>();
+                Map<String, ResourceSet.Resource> rsrs = new LinkedHashMap<>();
+
                 for (ResourceSet set : resourceSets) {
 
+                   ret.getServices().putAll(set.getServices());
+                    
+                    if (set.isEmpty()) {
+                        return set;
+                    }
+
+                    collectNewerOrAbsent(set.getNamespaces(), rsns);
+                    collectNewerOrAbsent(set.getBehaviors(), rsbh);
+                    collectNewerOrAbsent(set.getResources(), rsrs);
                 }
+
+                ret.getNamespaces().addAll(rsns.values());
+                ret.getBehaviors().addAll(rsbh.values());
+                ret.getResources().addAll(rsrs.values());
             }
 
             return ret;
+        }
+
+        private static Map<String, ResourceSet.Resource> collectNewerOrAbsent(List<ResourceSet.Resource> resources,
+                Map<String, ResourceSet.Resource> destination) {
+            for (ResourceSet.Resource r : resources) {
+                boolean swap = !destination.containsKey(r.getResourceUrn());
+                if (!swap) {
+                    ResourceSet.Resource or = destination.get(r.getResourceUrn());
+                    swap = (or.getResourceVersion() == null && r.getResourceVersion() != null);
+                    if (!swap && or.getResourceVersion() != null && r.getResourceVersion() != null) {
+                        swap = r.getResourceVersion().greater(or.getResourceVersion());
+                    }
+                }
+                if (swap) {
+                    destination.put(r.getResourceUrn(), r);
+                }
+            }
+            return destination;
         }
 
     }

@@ -13,7 +13,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
-import org.integratedmodelling.klab.api.data.mediation.KUnit;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.KExtent;
@@ -376,7 +376,7 @@ public interface KTime extends KExtent {
      * @param temporalUnit
      * @return
      */
-    double getLength(KUnit temporalUnit);
+    double getLength(Unit temporalUnit);
 
     /**
      * If this extent is a subdivision of a distributed extent, return the next in line after it, or

@@ -1,15 +1,16 @@
 package org.integratedmodelling.klab.knowledge;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.configuration.Services;
 
-public class ConceptImpl implements Serializable, Concept {
+public class ConceptImpl implements Concept {
 
     private static final long serialVersionUID = -6871573029225503370L;
     
@@ -33,14 +34,12 @@ public class ConceptImpl implements Serializable, Concept {
 
     @Override
     public boolean is(Semantics other) {
-        // TODO Auto-generated method stub
-        return false;
+        return Services.INSTANCE.getReasoner().subsumes(this, other);
     }
 
     @Override
     public boolean is(SemanticType type) {
-        // TODO Auto-generated method stub
-        return false;
+        return this.type.contains(type);
     }
 
     @Override
@@ -81,44 +80,37 @@ public class ConceptImpl implements Serializable, Concept {
 
     @Override
     public Collection<Concept> operands() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().operands(this);
     }
 
     @Override
     public Collection<Concept> children() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().children(this);
     }
 
     @Override
     public Collection<Concept> parents() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().parents(this);
     }
 
     @Override
     public Collection<Concept> allChildren() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().allChildren(this);
     }
 
     @Override
     public Collection<Concept> allParents() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().allParents(this);
     }
 
     @Override
     public Collection<Concept> closure() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().closure(this);
     }
 
     @Override
     public Semantics domain() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().domain(this);
     }
 
     @Override
@@ -144,6 +136,12 @@ public class ConceptImpl implements Serializable, Concept {
     @Override
     public String getReferenceName() {
         return referenceName;
+    }
+
+    @Override
+    public Version getVersion() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

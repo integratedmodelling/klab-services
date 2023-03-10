@@ -17,7 +17,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
 import java.util.Collection;
 
-import org.integratedmodelling.klab.api.data.mediation.KUnit;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
 
 /**
  * Opaque, minimal interface for a 2D geometry pertaining to a physical
@@ -45,11 +45,11 @@ public interface KShape extends KReferenced, KSpace {
 	/**
 	 * Return a suitable measure of area. Unit must be areal.
 	 *
-	 * @param unit a {@link org.integratedmodelling.klab.api.data.mediation.KUnit}
+	 * @param unit a {@link org.integratedmodelling.klab.api.data.mediation.Unit}
 	 *             object.
 	 * @return area in passed unit
 	 */
-	double getArea(KUnit unit);
+	double getArea(Unit unit);
 
 	/**
 	 * Shapes may be empty or inconsistent.

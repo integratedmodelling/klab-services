@@ -1,14 +1,16 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.Collection;
+import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Literal;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.Range;
-import org.integratedmodelling.klab.api.data.mediation.KCurrency;
-import org.integratedmodelling.klab.api.data.mediation.KUnit;
+import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
@@ -214,9 +216,9 @@ public interface Observable extends Semantics {
 
         Builder withoutAny(Concept... concepts);
 
-        Builder withUnit(KUnit unit);
+        Builder withUnit(Unit unit);
 
-        Builder withCurrency(KCurrency currency);
+        Builder withCurrency(Currency currency);
 
         /**
          * Value operators are added in the order they are received.
@@ -433,11 +435,11 @@ public interface Observable extends Semantics {
 
     Concept getSemantics();
 
-    KUnit getUnit();
+    Unit getUnit();
 
-    KUnit getCurrency();
+    Currency getCurrency();
 
-    Collection<PairImpl<ValueOperator, Object>> getValueOperators();
+    Collection<Pair<ValueOperator, Object>> getValueOperators();
 
     Collection<Annotation> getAnnotations();
 
@@ -483,4 +485,192 @@ public interface Observable extends Semantics {
      * @return
      */
     Literal getValue();
+    
+
+    /**
+     * The context type, direct or indirect, and revised according to the stated inherency (will be
+     * reverted to null if the indirect context is X and the concept is <this> of X). The revision
+     * only applies to observables and does not affect the underlying semantics.
+     * 
+     * @return the context type
+     */
+    Concept context();
+
+    /**
+     * The inherent type, direct or indirect.
+     * 
+     * @return the inherent type
+     */
+    Concept inherent();
+
+    /**
+     * An occurrent observable may be temporally inherent to an event, i.e. it will happen during
+     * each instance of it. Specified by 'during each' in observable syntax.
+     * 
+     * @return
+     */
+    Concept temporalInherent();
+
+
+    /**
+     * If a default value was defined for a quality observable, it is returned here. It will be
+     * applied according to the stated resolution exceptions and the optional status.
+     * 
+     * @return
+     */
+    Literal getDefaultValue();
+
+    /**
+     * Resolution exceptions linked to the use of a stated default value.
+     * 
+     * @return
+     */
+    Collection<ResolutionException> getResolutionExceptions();
+
+    /**
+     * A generic observable expects to be resolved extensively - i.e., all the subtypes, leaving the
+     * base type last if the subtypes don't provide full coverage. This subsumes the abstract nature
+     * of the observable concept, but may also be true in dependency observables, which may
+     * explicitly ask to be generic even if not abstract ('any' modifier), or result from an
+     * abstract clause (e.g. 'during <abstract event type>').
+     *
+     * @return true if generic
+     */
+    boolean isGeneric();
+
+    /**
+     * True if the observable was declared optional. This can only happen in model dependencies and
+     * for the observables of acknowledged subjects.
+     *
+     * @return optional status
+     */
+    boolean isOptional();
+
+    /**
+     * If this observable is the subjective point of view of a subject, return that subject. A null
+     * return value implies the observer is the owner of the session, i.e. what we can most
+     * legitimately call the "objective" observer for the observable.
+     * 
+     * @return
+     */
+    DirectObservation getObserver();
+
+
+    /**
+     * String definition of this observable, re-parseable into a compatible one. The definition is
+     * normalized, with sorted components and parenthesized as necessary, to guarantee an
+     * unambiguous result and the equality of observable definitions with identical semantics. Only
+     * the part that affects semantics is part of the definition: name, units or currencies are not
+     * included. Use {@link #getDeclaration()} if those are desired.
+     * 
+     * @return
+     */
+    String getDefinition();
+
+    /**
+     * The declaration is the same string returned by {@link #getDefinition()}, but including all
+     * clauses that do not directly affect semantics. If a name was stated in the original
+     * declaration, the 'named' clause is added to the definition. The same applies to units or
+     * currencies. Apart from that, the definition remains normalized so it may differ from an
+     * original, user-supplied string.
+     * 
+     * @return
+     */
+    String getDeclaration();
+
+    /**
+     * Abstract status of an observable may be more involved than just the abstract status of the
+     * main type, although in most cases that will be the result.
+     * 
+     * @return
+     */
+    boolean isAbstract();
+
+    /**
+     * Globalized observables have "all" prepended and are used in classifiers and other situations
+     * (but never in models) to indicate that all levels of the subsumed asserted hierarchy should
+     * be considered, including abstract ones.
+     * 
+     * @return
+     */
+    boolean isGlobal();
+
+    /**
+     * If a resolution was specified, return it. If not, return null - the default resolution will
+     * depend on the context of use, and will be ignored in most models.
+     * 
+     * @return
+     */
+    Resolution getResolution();
+
+    /**
+     * Return any role picked up during resolution for this observable. This happens when the
+     * observable has been resolved from a generic dependency on the role, which may have been
+     * defined by the session or implied during the resolution of an upstream process or direct
+     * observable.
+     * <p>
+     * The roles returned here are not part of the observable's semantics and only apply to it in
+     * the specific resolution and contextualization scope.
+     * 
+     * @return
+     */
+    Collection<Concept> getContextualRoles();
+
+    /**
+     * Complements the equivalent {@link IConcept#resolves(IConcept, IConcept)} with a check on
+     * value operators and other possible differences.
+     * 
+     * @param other
+     * @param context
+     * @return
+     */
+    boolean resolves(Observable other, Concept context);
+
+    /**
+     * Return any abstract identity or role that are set in this observable, and will need to be
+     * resolved to concrete ones before the observable can be resolved. This will return an empty
+     * set if the observable is generic, as that is handled differently.
+     * <p>
+     * For now abstract roles are always returned, and abstract identities are returned only if they
+     * are required by the observable ('requires identity ....'). This prevents unwanted resolutions
+     * of abstract predicates that may be used as tags only: the "need" for identification must be
+     * explicitly stated.
+     * 
+     * @return
+     */
+    Collection<Concept> getAbstractPredicates();
+
+    /**
+     * If the observable results from resolving another with abstract predicates, return the mapping
+     * of abstract -> concrete made by the resolver. This enables reconstructing the original
+     * abstract observable by replacing the concept after translating it
+     * ({@link IConceptService#replaceComponent(IConcept, Map)}) using the reverse mapping of the
+     * result.
+     * 
+     * @return
+     */
+    Map<Concept, Concept> getResolvedPredicates();
+
+    /**
+     * If true, the observable is for a dereifying observation, which just merges the results of
+     * observations of inherent sub-contexts (e.g. runoff of watershed, within region). Actuators
+     * for those observations aren't scheduled and may be treated differently.
+     * 
+     * @return true if dereified
+     */
+    boolean isDereified();
+
+    /**
+     * If true, this observable is explicitly declaring a context that is a subclass of the
+     * "natural" context of the primary observable. For example, "X within RiverBasin" when the
+     * natural context (declared for X) is "Region". This is used to speed search for alternative
+     * explanations that require distributing calculations across different objects, only done if
+     * the natural observation is not possible. These should only be used as the observables of
+     * models, with full knowledge of the drawbacks (i.e., X must be observable in the context and
+     * the observation within X must fully cover the observation in the natural context) and the
+     * flag won't be set if the same specification is given in a semantic declaration.
+     * 
+     * @return
+     */
+    boolean isSpecialized();
 }

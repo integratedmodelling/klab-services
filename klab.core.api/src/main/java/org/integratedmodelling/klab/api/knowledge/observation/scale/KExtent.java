@@ -17,7 +17,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.data.mediation.KUnit;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -124,7 +124,7 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 * @param unit
 	 * @return
 	 */
-	double getDimensionSize(KUnit unit);
+	double getDimensionSize(Unit unit);
 
 	/**
 	 * Return the standardized (SI) dimension of the extent at the passed locator
@@ -132,7 +132,7 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 * 
 	 * @return
 	 */
-	Pair<Double, KUnit> getStandardizedDimension(Locator locator);
+	Pair<Double, Unit> getStandardizedDimension(Locator locator);
 
 	/**
 	 * If this extent specifies a larger portion of the topology than the modeled

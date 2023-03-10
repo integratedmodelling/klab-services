@@ -10,8 +10,8 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.collections.impl.Range;
-import org.integratedmodelling.klab.api.data.mediation.KCurrency;
-import org.integratedmodelling.klab.api.data.mediation.KUnit;
+import org.integratedmodelling.klab.api.data.mediation.Currency;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.classification.KClassification;
 import org.integratedmodelling.klab.api.data.mediation.classification.KClassifier;
 import org.integratedmodelling.klab.api.data.mediation.classification.KLookupTable;
@@ -126,7 +126,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
             return ((ServiceCallImpl) val).getSourceCode();
         } else if (val instanceof Contextualizable) {
             return ((Contextualizable) val).getSourceCode();
-        } else if (val instanceof KUnit || val instanceof KCurrency) {
+        } else if (val instanceof Unit || val instanceof Currency) {
             return "\"" + val + "\"";
         }
         return val.toString();

@@ -1,15 +1,13 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -19,7 +17,7 @@ public interface Reasoner extends KlabService {
     default String getServiceName() {
         return "klab.reasoner.service";
     }
-    
+
     /**
      * All services publish capabilities and have a call to obtain them. Capabilities may depend on
      * authentication but the endpoint should be publicly available as well.
@@ -65,6 +63,8 @@ public interface Reasoner extends KlabService {
      * @return
      */
     Observable resolveObservable(String definition);
+
+    boolean subsumes(Semantics conceptImpl, Semantics other);
 
     Collection<Concept> operands(Semantics target);
 
@@ -127,12 +127,6 @@ public interface Reasoner extends KlabService {
     Concept compresent(Concept concept);
 
     Concept relativeTo(Concept concept);
-
-    Object displayLabel(Semantics concept);
-
-    Object codeName(Semantics concept);
-
-    String style(Concept concept);
 
     /**
      * Return all traits, i.e. identities, attributes and realms.
@@ -210,6 +204,12 @@ public interface Reasoner extends KlabService {
      */
     Collection<Concept> directRoles(Concept concept);
 
+    Object displayLabel(Semantics concept);
+
+    Object codeName(Semantics concept);
+
+    String style(Concept concept);
+
     /**
      * Return the Java class of the observation type corresponding to the passed observable.
      *
@@ -221,12 +221,9 @@ public interface Reasoner extends KlabService {
     /**
      * Return the base enum type (quality, subject....) for the passed observable.
      *
-     * @param observable a {@link org.integratedmodelling.klab.api.knowledge.IObservable} object.
+     * @param observable
      * @param acceptTraits if true, will return a trait type (which can be the observable of a class
      *        model although it's not an observable per se).
-     * @throws java.lang.IllegalArgumentException
-     * 
-     *         if not an observable
      * @return the enum type
      */
     SemanticType observableType(Observable observable, boolean acceptTraits);
@@ -238,7 +235,7 @@ public interface Reasoner extends KlabService {
      * @param relationship a relationship concept
      * @return the source. May be null in abstract relationships.
      */
-    Concept relationshipSource(Concept relationship);
+    Concept relationshipSource(Semantics relationship);
 
     /**
      * Return all the asserted sources of the relationship.
@@ -246,7 +243,7 @@ public interface Reasoner extends KlabService {
      * @param relationship a relationship concept
      * @return the sources. May be empty in abstract relationships.
      */
-    Collection<Concept> relationshipSources(Concept relationship);
+    Collection<Concept> relationshipSources(Semantics relationship);
 
     /**
      * Return the asserted target of the relationship, assuming it is unique. If it is not unique,
@@ -255,7 +252,7 @@ public interface Reasoner extends KlabService {
      * @param relationship a relationship concept
      * @return the target. May be null in abstract relationships.
      */
-    Concept relationshipTarget(Concept relationship);
+    Concept relationshipTarget(Semantics relationship);
 
     /**
      * Return all the asserted targets of the relationship.
@@ -263,7 +260,7 @@ public interface Reasoner extends KlabService {
      * @param relationship a relationship concept
      * @return the targets. May be empty in abstract relationships.
      */
-    Collection<Concept> relationshipTargets(Concept relationship);
+    Collection<Concept> relationshipTargets(Semantics relationship);
 
     /**
      * Return the concept this has been asserted to be the negation of, or null.
@@ -278,7 +275,14 @@ public interface Reasoner extends KlabService {
      * @param ret
      * @return
      */
-    boolean satisfiable(Concept ret);
+    boolean satisfiable(Semantics ret);
+
+    /**
+     * 
+     * @param conceptImpl
+     * @return
+     */
+    Semantics domain(Semantics conceptImpl);
 
     /**
      * Get all the restricted target of the "applies to" specification for this concept.

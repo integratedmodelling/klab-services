@@ -1,17 +1,23 @@
 package org.integratedmodelling.klab.services.resources;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.xtext.testing.IInjectorProvider;
+import org.integratedmodelling.contrib.jgrapht.Graph;
+import org.integratedmodelling.contrib.jgrapht.graph.DefaultDirectedGraph;
+import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
+import org.integratedmodelling.contrib.jgrapht.traverse.TopologicalOrderIterator;
 import org.integratedmodelling.kactors.model.KActors;
 import org.integratedmodelling.kdl.model.Kdl;
 import org.integratedmodelling.kim.api.IKimObservable;
@@ -20,6 +26,7 @@ import org.integratedmodelling.kim.model.KimLoader;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
@@ -57,7 +64,9 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
     private String url;
     private String localName;
-    
+    private boolean exclusive;
+    private boolean dedicated;
+
     transient private KimLoader kimLoader;
     transient private ResourcesConfiguration configuration = new ResourcesConfiguration();
 
@@ -84,6 +93,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
     private long DEFAULT_GIT_SYNC_INTERVAL = 15l * 60l * 60l * 1000l;
 
     public ResourcesService() {
+        this.localName = "klab.services.resources." + UUID.randomUUID();
         Services.INSTANCE.setResources(this);
         initializeLanguageServices();
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
@@ -91,6 +101,25 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
             configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
         }
         loadWorkspaces();
+    }
+
+    /**
+     * A singleton in nature, this is only to fork the same service in a different exclusive or
+     * dedicated mode.
+     * 
+     * @param self
+     */
+    public ResourcesService(ResourcesService self) {
+        this.localName = self.localName;
+        this.url = self.url;
+        this.configuration = self.configuration;
+        this.localNamespaces = self.localNamespaces;
+        this.localWorkspaces = self.localWorkspaces;
+        this.projectLoader = self.projectLoader;
+        this.kimLoader = self.kimLoader;
+        this.dirtyNamespaces = self.dirtyNamespaces;
+        this.dirtyProjects = self.dirtyProjects;
+        this.dirtyWorkspaces = self.dirtyWorkspaces;
     }
 
     private void saveConfiguration() {
@@ -152,7 +181,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
         for (NamespaceDescriptor ns : namespaces) {
             projectLoader.execute(() -> {
                 KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
-                this.localNamespaces.put(namespace.getName(), namespace);
+                this.localNamespaces.put(namespace.getUrn(), namespace);
             });
         }
 
@@ -331,14 +360,76 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
     @Override
     public ResourceSet worldview(Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+
+        ResourceSet ret = new ResourceSet();
+
+        /*
+         * find all the worldview projects
+         */
+        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
+            ProjectConfiguration project = this.configuration.getProjectConfiguration().get(projectName);
+            if (project.isWorldview()) {
+                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
+            }
+        }
+
+        return sort(ret, scope);
+    }
+
+    private ResourceSet sort(ResourceSet ret, Scope scope) {
+
+        Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+
+        for (ResourceSet.Resource ns : ret.getNamespaces()) {
+
+            // TODO use a recursive function to capture n-th level deps that aren't resolved
+            // directly, although this doesn't apply if we have the whole workspace
+
+            graph.addVertex(ns.getResourceUrn());
+            KimNamespace namespace = resolveNamespace(ns.getResourceUrn(), scope);
+            if (namespace == null) {
+                ret.setEmpty(true);
+                return ret;
+            }
+            for (String imp : namespace.getImports().keySet()) {
+                KimNamespace imported = resolveNamespace(ns.getResourceUrn(), scope);
+                if (imported == null) {
+                    ret.setEmpty(true);
+                    return ret;
+                }
+                graph.addVertex(imported.getUrn());
+                graph.addEdge(imported.getUrn(), namespace.getUrn());
+            }
+        }
+
+        TopologicalOrderIterator<String, DefaultEdge> order = new TopologicalOrderIterator<>(graph);
+
+        return ret;
+    }
+
+    /**
+     * Collect all known project data, fulfilling any missing external dependencies but not sorting
+     * the results by dependency as this could be one step in a multiple-project setup. If external
+     * dependencies are needed and unsatisfied, return an empty resourceset.
+     * 
+     * @param projectName
+     * @param scope
+     * @return
+     */
+    private ResourceSet collectProject(String projectName, Scope scope) {
+        List<KimNamespace> namespaces = new ArrayList<>();
+        for (String namespace : this.localNamespaces.keySet()) {
+            KimNamespace ns = this.localNamespaces.get(namespace);
+            if (projectName.equals(ns.getProjectName())) {
+                namespaces.add(ns);
+            }
+        }
+        return Utils.Resources.create(this, namespaces.toArray(new KlabAsset[namespaces.size()]));
     }
 
     @Override
     public ResourceSet project(String projectName, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        return sort(collectProject(projectName, scope), scope);
     }
 
     @Override
@@ -368,7 +459,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
     @Override
     public String addResourceToLocalWorkspace(File resourcePath) {
         // TODO Auto-generated method stub
-//        Concept
+        // Concept
         return null;
     }
 
@@ -405,14 +496,18 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
     @SuppressWarnings("unchecked")
     @Override
     public ResourcesService exclusive(Scope scope) {
-        // TODO Auto-generated method stub
-        return this;
+        ResourcesService ret = new ResourcesService(this);
+        // TODO check scope for permissions
+        ret.exclusive = true;
+        return ret;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public ResourcesService dedicated(Scope scope) {
-        // TODO Auto-generated method stub
-        return this;
+        ResourcesService ret = new ResourcesService(this);
+        // TODO check scope for permissions
+        ret.dedicated = true;
+        return ret;
     }
 }

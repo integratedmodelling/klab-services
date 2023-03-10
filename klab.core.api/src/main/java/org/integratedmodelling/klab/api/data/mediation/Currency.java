@@ -21,7 +21,7 @@ package org.integratedmodelling.klab.api.data.mediation;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KCurrency extends KValueMediator {
+public interface Currency extends KValueMediator {
     
     /**
      * <p>isMonetary.</p>
@@ -36,6 +36,6 @@ public interface KCurrency extends KValueMediator {
      * 
      * @return
      */
-    KUnit getUnit();
+    Unit getUnit();
 
 }

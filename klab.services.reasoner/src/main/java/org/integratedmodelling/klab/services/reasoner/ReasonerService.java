@@ -394,31 +394,31 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Concept relationshipSource(Concept relationship) {
+    public Concept relationshipSource(Semantics relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<Concept> relationshipSources(Concept relationship) {
+    public Collection<Concept> relationshipSources(Semantics relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept relationshipTarget(Concept relationship) {
+    public Concept relationshipTarget(Semantics relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<Concept> relationshipTargets(Concept relationship) {
+    public Collection<Concept> relationshipTargets(Semantics relationship) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean satisfiable(Concept ret) {
+    public boolean satisfiable(Semantics ret) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -475,6 +475,18 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     public void setLocalName(String localName) {
         this.localName = localName;
+    }
+
+    @Override
+    public boolean subsumes(Semantics conceptImpl, Semantics other) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public Semantics domain(Semantics conceptImpl) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

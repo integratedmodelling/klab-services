@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -24,7 +25,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
 
     private static final long serialVersionUID = 6198296119075476515L;
-    private String name;
+    private String urn;
     private Set<String> disjointNamespaces = new HashSet<>();
     private long timestamp;
     private List<PairImpl<String, String>> owlImports = new ArrayList<>();
@@ -40,10 +41,11 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
     private List<KimStatement> statements = new ArrayList<>();
     private Map<String, List<String>> imports = new HashMap<>();
     private String projectName;
+    private Version version;
 
     @Override
-    public String getName() {
-        return this.name;
+    public String getUrn() {
+        return this.urn;
     }
 
     @Override
@@ -116,8 +118,8 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
         return this.imports;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUrn(String name) {
+        this.urn = name;
     }
 
     public void setDisjointNamespaces(Set<String> disjointNamespaces) {
@@ -183,6 +185,15 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    @Override
+    public Version getVersion() {
+        return this.version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
     }
 
 }

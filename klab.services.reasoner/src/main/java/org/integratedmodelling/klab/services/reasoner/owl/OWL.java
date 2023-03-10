@@ -182,12 +182,12 @@ public enum OWL {
         boolean transitive = true;
         KimNamespace ns = getNamespace(namespace);
         for (String s : graph) {
-            if (!s.equals(ns.getName()) && !ns.getImports().containsKey(s)) {
+            if (!s.equals(ns.getUrn()) && !ns.getImports().containsKey(s)) {
                 transitive = false;
                 break;
             }
         }
-        return (Ontology) (transitive && ns != null ? getOntology(ns.getName()) : fallback);
+        return (Ontology) (transitive && ns != null ? getOntology(ns.getUrn()) : fallback);
     }
 
     public Ontology requireOntology(String id, String prefix) {

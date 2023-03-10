@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
 /**
@@ -13,7 +14,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
  * @author ferdinando.villa
  *
  */
-public interface KimNamespace extends KimStatement {
+public interface KimNamespace extends KimStatement, KlabAsset {
 
     /**
      * Roles a namespace can play within a project. Not fully integrated at the moment, although the
@@ -25,15 +26,6 @@ public interface KimNamespace extends KimStatement {
     public enum Role {
         KNOWLEDGE, SCRIPT, TESTCASE, CALIBRATION, SCENARIO
     }
-
-    /**
-     * The namespace ID: either the stated name (when the namespace is a regular one) or an id
-     * composed of the adopted worldview and the unique resource path for the namespace when this
-     * represents a script, test, calibration or sidecar file.
-     * 
-     * @return the name. Never null.
-     */
-    String getName();
 
     /**
      * Return all the namespaces that this should not be mixed with during resolution or scenario

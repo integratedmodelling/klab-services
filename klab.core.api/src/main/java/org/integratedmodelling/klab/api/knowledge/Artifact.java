@@ -20,12 +20,14 @@ import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.DataArtifact.ValuePresentation;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Process;
 import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 
 /**
@@ -50,26 +52,6 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
  * @version $Id: $Id
  */
 public interface Artifact extends Provenance.Node, Iterable<Artifact> {
-
-    enum ValuePresentation {
-
-        /**
-         * Artifact value is a single value of the specified type.
-         */
-        VALUE,
-
-        /**
-         * Artifact value is presented as a discrete, empirical probability distribution assigning
-         * different probabilities to each value, with probabilities summing up to 1.
-         */
-        PROBABILITY_DISTRIBUTION,
-
-        /**
-         * Artifact value is presented as a table, i.e. a multi-entry map with a value column and
-         * one or more keys to be matched outside the context.
-         */
-        TABLE
-    }
 
     /**
      * Type contextualized by the actor. Mimics IKdlActuator.Type for now, should be integrated with
@@ -391,14 +373,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      */
     Type getType();
 
-    /**
-     * Get the form that the value will present itself in this artifact. This should be VALUE for
-     * all artifacts that aren't qualities, and may be a distribution or a table for numeric and
-     * categorical artifacts.
-     * 
-     * @return the value presentation
-     */
-    ValuePresentation getValuePresentation();
 
     /**
      * Call when the artifact can be disposed of. This should schedule the removal of any storage
