@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -48,6 +49,7 @@ public interface Reasoner extends KlabService {
      * 
      * @return
      */
+    @Override
     Capabilities getCapabilities();
 
     /**
@@ -300,7 +302,7 @@ public interface Reasoner extends KlabService {
          * @param resources
          * @return
          */
-        boolean loadKnowledge(ResourceSet resources);
+        boolean loadKnowledge(ResourceSet resources, Scope scope);
 
         /**
          * The "port" to ingest a wordview, available only to admins. Also makes it possible for the
@@ -311,7 +313,7 @@ public interface Reasoner extends KlabService {
          * @param statement
          * @return
          */
-        Concept defineConcept(KimConceptStatement statement);
+        Concept defineConcept(KimConceptStatement statement, Scope scope);
 
     }
 

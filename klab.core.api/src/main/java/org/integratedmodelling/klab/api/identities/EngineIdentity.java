@@ -21,7 +21,7 @@ package org.integratedmodelling.klab.api.identities;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface EngineIdentity extends ServerIdentity {
+public interface EngineIdentity extends ServiceIdentity {
 
     /** Constant <code>type</code> */
     Type type = Type.ENGINE;

@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Behavior;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 

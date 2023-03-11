@@ -1,9 +1,9 @@
 package org.integratedmodelling.klab.api.services;
 
+import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 
-public interface Engine extends KlabFederatedService {
+public interface Engine extends KlabService {
 
     default String getServiceName() {
         return "klab.engine.service";
@@ -17,5 +17,5 @@ public interface Engine extends KlabFederatedService {
      * @param user
      * @return
      */
-    Scope login(UserIdentity user);
+    UserScope login(UserIdentity user);
 }

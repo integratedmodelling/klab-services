@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.knowledge.observation.scope;
+package org.integratedmodelling.klab.api.authentication.scope;
 
 import java.util.Collection;
 import java.util.Map;

@@ -5,10 +5,10 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.organization.KWorkspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
-public interface ResourceProvider extends KlabFederatedService {
+public interface ResourceProvider extends KlabService {
 
     /**
      * All services publish capabilities and have a call to obtain them.
@@ -25,7 +25,7 @@ public interface ResourceProvider extends KlabFederatedService {
      * @author Ferd
      *
      */
-    interface Capabilities extends FederatedServiceCapabilities {
+    interface Capabilities extends ServiceCapabilities {
 
         boolean isWorldviewProvider();
 

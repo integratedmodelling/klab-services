@@ -17,12 +17,12 @@ package org.integratedmodelling.klab.api.data;
 
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**

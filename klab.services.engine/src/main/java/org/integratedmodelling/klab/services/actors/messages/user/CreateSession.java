@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.actors.messages.user;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 
 public class CreateSession implements Serializable {
 

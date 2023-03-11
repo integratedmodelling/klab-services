@@ -13,11 +13,11 @@
  */
 package org.integratedmodelling.klab.api.data.mediation.classification;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime.Resolution;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 
 /**
  * The Interface IClassifier.

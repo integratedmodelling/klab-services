@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -18,6 +20,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -26,6 +29,7 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticTranslator;
+import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,14 +44,18 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     private static final long serialVersionUID = 380622027752591182L;
 
     private String url;
+    private String localName;
 
     transient private ResourceProvider resourceService;
+    transient private Authentication authenticationService;
     transient private SemanticTranslator semanticTranslator;
     transient private ReasonerConfiguration configuration;
+    transient private ServiceScope scope;
+
+    // transient private
 
     /**
-     * Caches for concepts and observables, linked to the URI in the corresponding
-     * {@link KimScope}.
+     * Caches for concepts and observables, linked to the URI in the corresponding {@link KimScope}.
      */
     LoadingCache<String, Concept> concepts = CacheBuilder.newBuilder()
             // .expireAfterAccess(10, TimeUnit.MINUTES)
@@ -67,11 +75,18 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                 }
             });
 
-    private String localName;
-
     @Autowired
-    public ReasonerService(ResourceProvider resourceService, SemanticTranslator semanticTranslator) {
+    public ReasonerService(Authentication authenticationService, ResourceProvider resourceService,
+            SemanticTranslator semanticTranslator) {
+
+        this.authenticationService = authenticationService;
+        this.scope = authenticationService.authenticateService(this);
+
+        OWL.INSTANCE.initialize(this.scope);
+
         this.resourceService = resourceService;
+        this.semanticTranslator = semanticTranslator;
+
         Services.INSTANCE.setReasoner(this);
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         if (config.exists()) {
@@ -85,8 +100,8 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Concept defineConcept(KimConceptStatement statement) {
-        return null;
+    public Concept defineConcept(KimConceptStatement statement, Scope scope) {
+        return semanticTranslator.defineConcept(statement, scope);
     }
 
     @Override
@@ -436,7 +451,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public boolean loadKnowledge(ResourceSet resources) {
+    public boolean loadKnowledge(ResourceSet resources, Scope scope) {
 
         boolean ret = true;
         for (Resource namespace : resources.getNamespaces()) {
@@ -446,7 +461,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             if (!parsed.isErrors()) {
                 for (KimStatement statement : parsed.getStatements()) {
                     if (statement instanceof KimConceptStatement) {
-                        defineConcept((KimConceptStatement)statement);
+                        defineConcept((KimConceptStatement) statement, scope);
                     } else if (statement instanceof KimSymbolDefinition) {
                         // TODO RDF but only with supporting semantic info
                     }

@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.klab.Configuration;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -42,8 +43,8 @@ import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -83,6 +84,7 @@ public enum OWL {
 
     INSTANCE;
 
+    public static final String DEFAULT_ONTOLOGY_PREFIX = "http://integratedmodelling.org/ks";
     public static final String INTERNAL_ONTOLOGY_PREFIX = "http://integratedmodelling.org/ks/internal";
 
     private final HashMap<String, KimNamespace> namespaces = new HashMap<>();
@@ -92,7 +94,10 @@ public enum OWL {
     HashMap<String, String> c2ont = new HashMap<>();
     HashMap<String, OWLClass> systemConcepts = new HashMap<>();
     HashMap<String, ConceptImpl> xsdMappings = new HashMap<>();
-
+    HashMap<Long, OWLClass> owlClasses = new HashMap<>();
+    
+    AtomicLong classId = new AtomicLong(1l);
+    
     static EnumSet<SemanticType> emptyType = EnumSet.noneOf(SemanticType.class);
 
     Ontology nonSemanticConcepts;
@@ -101,7 +106,7 @@ public enum OWL {
      * package-visible, never null.
      */
     OWLOntologyManager manager = null;
-    private File loadPath;
+//    private File loadPath;
 
     Concept thing;
     Concept nothing;
@@ -121,12 +126,17 @@ public enum OWL {
     OWLClass getOWLClass(Concept c) {
         return null;
     }
-    
-    Concept makeConcept(OWLClass owlClass, String id, Collection<SemanticType> type) {
-        // new Concept(c, this.id, OWL.emptyType)
-        return null;
+
+    Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
+        ConceptImpl ret = new ConceptImpl();
+        ret.setId(classId.getAndIncrement());
+        ret.setNamespace(ontologyName);
+        ret.setUrn(ontologyName + ":" + id);
+        owlClasses.put(ret.getId(), owlClass);
+        ret.getType().addAll(type);
+        return ret;
     }
-    
+
     /**
      * Given a collection of namespace-specified knowledge and/or collections thereof, return the
      * ontology of a namespace that sits on top of all others in the asserted dependency chain and
@@ -188,6 +198,10 @@ public enum OWL {
             }
         }
         return (Ontology) (transitive && ns != null ? getOntology(ns.getUrn()) : fallback);
+    }
+
+    public Ontology requireOntology(String id) {
+        return requireOntology(id, DEFAULT_ONTOLOGY_PREFIX);
     }
 
     public Ontology requireOntology(String id, String prefix) {
@@ -326,14 +340,49 @@ public enum OWL {
      * 
      * @throws KlabException
      */
-    public void initialize(File loadPath, Channel monitor) {
+    public void initialize(Channel monitor) {
+        
         manager = OWLManager.createOWLOntologyManager();
-        this.loadPath = loadPath;
-        initialize(monitor);
+//        this.loadPath = loadPath;
         coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"));
-        coreOntology.load(monitor);
+//        coreOntology.load(monitor);
+        load(coreOntology.getRoot());
+        
+        /*
+         * FIXME manual mapping until I understand what's going on with BFO, whose concepts have a
+         * IRI that does not contain the namespace.
+         */
+        iri2ns.put("http://purl.obolibrary.org/obo", "bfo");
+
+        /*
+         * TODO insert basic datatypes as well
+         */
+        this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
+        this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
+
+//        if (this.loadPath == null) {
+//            throw new KIOException("owl resources cannot be found: knowledge load directory does not exist");
+//        }
+
+//        load();
+
+        /*
+         * all namespaces so far are internal, and just these.
+         */
+        for (KimNamespace ns : this.namespaces.values()) {
+            // ((Namespace) ns).setInternal(true);
+            // ((Ontology) (ns.getOntology())).setInternal(true);
+        }
+
+        // createReasoner(monitor);
+
+        /*
+         * create an independent ontology for the non-semantic types we encounter.
+         */
+        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
+
     }
-    
+
     public CoreOntology getCoreOntology() {
         return this.coreOntology;
     }
@@ -353,41 +402,9 @@ public enum OWL {
     // }
     // }
 
-    private void initialize(Channel monitor) {
-
-        /*
-         * FIXME manual mapping until I understand what's going on with BFO, whose concepts have a
-         * IRI that does not contain the namespace.
-         */
-        iri2ns.put("http://purl.obolibrary.org/obo", "bfo");
-
-        /*
-         * TODO insert basic datatypes as well
-         */
-        this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
-        this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
-
-        if (this.loadPath == null) {
-            throw new KIOException("owl resources cannot be found: knowledge load directory does not exist");
-        }
-
-        load(this.loadPath);
-
-        /*
-         * all namespaces so far are internal, and just these.
-         */
-        for (KimNamespace ns : this.namespaces.values()) {
-            // ((Namespace) ns).setInternal(true);
-            // ((Ontology) (ns.getOntology())).setInternal(true);
-        }
-
-        // createReasoner(monitor);
-
-        /*
-         * create an independent ontology for the non-semantic types we encounter.
-         */
-        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
-    }
+//    private void initialize(Channel monitor) {
+//
+//    }
 
     String importOntology(OWLOntology ontology, String resource, String namespace, boolean imported, Channel monitor) {
 
@@ -437,7 +454,7 @@ public enum OWL {
                 if (o == null) {
                     OWLClass systemConcept = this.systemConcepts.get(st);
                     if (systemConcept != null) {
-                        result = makeConcept(systemConcept, st.getNamespace(), emptyType);
+                        result = makeConcept(systemConcept, st.getName(), st.getNamespace(), emptyType);
                     }
                 } else {
                     result = o.getConcept(st.getName());
@@ -475,23 +492,23 @@ public enum OWL {
         return result;
     }
 
-//    public KConcept getLeastGeneralCommonConcept(Collection<KConcept> cc) {
-//        KConcept ret = null;
-//        KConcept tmpConcept;
-//
-//        for (KConcept concept : cc) {
-//            if (ret == null) {
-//                ret = concept;
-//            } else {
-//                tmpConcept = ((Concept) ret).getLeastGeneralCommonConcept(concept);
-//                if (tmpConcept != null) {
-//                    ret = tmpConcept;
-//                }
-//            }
-//        }
-//
-//        return ret;
-//    }
+    // public KConcept getLeastGeneralCommonConcept(Collection<KConcept> cc) {
+    // KConcept ret = null;
+    // KConcept tmpConcept;
+    //
+    // for (KConcept concept : cc) {
+    // if (ret == null) {
+    // ret = concept;
+    // } else {
+    // tmpConcept = ((Concept) ret).getLeastGeneralCommonConcept(concept);
+    // if (tmpConcept != null) {
+    // ret = tmpConcept;
+    // }
+    // }
+    // }
+    //
+    // return ret;
+    // }
 
     /**
      * Return the ontology for the given namespace ID (short name).
@@ -505,7 +522,7 @@ public enum OWL {
 
     public Concept getRootConcept() {
         if (this.thing == null) {
-            this.thing = makeConcept(manager.getOWLDataFactory().getOWLThing(), "owl", emptyType);
+            this.thing = makeConcept(manager.getOWLDataFactory().getOWLThing(), "Thing", "owl", emptyType);
         }
         return this.thing;
     }
@@ -625,7 +642,7 @@ public enum OWL {
                 /*
                  * everything else is probably an error
                  */
-                throw new KIOException("reading " + f + ": " + e.getMessage());
+                monitor.error(new KIOException("reading " + f + ": " + e.getMessage()));
             }
 
             Ontology o = ontologies.get(pth);
@@ -754,7 +771,7 @@ public enum OWL {
 
     public Concept getNothing() {
         if (this.nothing == null) {
-            this.nothing = makeConcept(manager.getOWLDataFactory().getOWLNothing(), "owl", EnumSet.of(SemanticType.NOTHING));
+            this.nothing = makeConcept(manager.getOWLDataFactory().getOWLNothing(), "Nothing", "owl", EnumSet.of(SemanticType.NOTHING));
         }
         return this.nothing;
     }
@@ -961,8 +978,8 @@ public enum OWL {
                 Collections.singleton(Axiom.AtMostNValuesFrom(target.toString(), property.toString(), filler.toString(), max)));
     }
 
-    public void restrictExactly(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
-            int howmany, Ontology ontology) {
+    public void restrictExactly(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers, int howmany,
+            Ontology ontology) {
 
         if (fillers.size() == 1) {
             restrictExactly(target, property, fillers.iterator().next(), howmany, ontology);
@@ -1193,13 +1210,12 @@ public enum OWL {
         }
     }
 
-
     public void restrict(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers, Ontology ontology)
             throws KlabValidationException {
 
         /*
-         * divide up in bins according to base trait; take property from annotation;
-         * restrict each group.
+         * divide up in bins according to base trait; take property from annotation; restrict each
+         * group.
          */
         Map<Concept, List<Concept>> pairs = new HashMap<>();
         for (Concept t : fillers) {
@@ -1245,18 +1261,16 @@ public enum OWL {
         restrictSome(relationship, hasTarget, LogicalConnector.UNION, Collections.singleton(target), ontology);
     }
 
-    
     /**
-     * Analyze an observable concept and return the main observable with all the
-     * original identities and realms but no attributes; separately, return the list
-     * of the attributes that were removed.
+     * Analyze an observable concept and return the main observable with all the original identities
+     * and realms but no attributes; separately, return the list of the attributes that were
+     * removed.
      * 
      * @param observable
      * @return attribute profile
      * @throws KlabValidationException
      */
-    public Pair<Concept, Collection<Concept>> separateAttributes(Concept observable)
-            throws KlabValidationException {
+    public Pair<Concept, Collection<Concept>> separateAttributes(Concept observable) throws KlabValidationException {
 
         Concept obs = Services.INSTANCE.getReasoner().coreObservable(observable);
         ArrayList<Concept> tret = new ArrayList<>();
@@ -1287,7 +1301,7 @@ public enum OWL {
             property = getProperty(CoreOntology.NS.HAS_ATTRIBUTE_PROPERTY);
         }
         if (property != null) {
-            restrict(main, property, LogicalConnector.UNION, Collections.singleton(trait), (Ontology)ontology);
+            restrict(main, property, LogicalConnector.UNION, Collections.singleton(trait), (Ontology) ontology);
         }
     }
 
@@ -1311,11 +1325,10 @@ public enum OWL {
             aontology.add(Axiom.ClassAssertion(conceptId, newType));
             aontology.add(Axiom.SubClass(parent.toString(), conceptId));
             aontology.add(Axiom.AnnotationAssertion(conceptId, CoreOntology.NS.BASE_DECLARATION, "true"));
-            aontology.add(Axiom.AnnotationAssertion(conceptId, CoreOntology.NS.REFERENCE_NAME_PROPERTY, "not_" + attribute.getReferenceName()));
-            aontology.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", "Not"
-                    + SemanticTranslator.getCleanId(attribute)));
-            aontology.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not  "
-                    + attribute.getUrn()));
+            aontology.add(Axiom.AnnotationAssertion(conceptId, CoreOntology.NS.REFERENCE_NAME_PROPERTY,
+                    "not_" + attribute.getReferenceName()));
+            aontology.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", "Not" + SemanticTranslator.getCleanId(attribute)));
+            aontology.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not  " + attribute.getUrn()));
 
             if (prop != null) {
                 aontology.add(Axiom.AnnotationAssertion(conceptId, NS.TRAIT_RESTRICTING_PROPERTY, prop));
@@ -1325,14 +1338,14 @@ public enum OWL {
 
             ret = aontology.getConcept(conceptId);
 
-            OWL.INSTANCE.restrictSome(ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology)ontology);
+            OWL.INSTANCE.restrictSome(ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology) ontology);
         }
 
         return ret;
     }
     /**
-     * Return all atomic components of a concept, recursing any logical combination
-     * irrespective of the operator.
+     * Return all atomic components of a concept, recursing any logical combination irrespective of
+     * the operator.
      * 
      * @param trigger
      * @return
@@ -1352,7 +1365,7 @@ public enum OWL {
             ret.add(trigger);
         }
     }
-    
+
     public static String getCleanId(Concept main) {
         String id = main.getMetadata().get(Metadata.DC_LABEL, String.class);
         if (id == null) {
@@ -1360,5 +1373,5 @@ public enum OWL {
         }
         return id;
     }
-    
+
 }

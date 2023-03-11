@@ -131,7 +131,7 @@ public class Ontology /* implements IOntology */ {
 
         for (OWLClass c : this.ontology.getClassesInSignature(false)) {
             if (c.getIRI().toString().contains(this.prefix) && !this.conceptIDs.containsKey(c.getIRI().getFragment())) {
-                this.conceptIDs.put(c.getIRI().getFragment(), OWL.INSTANCE.makeConcept(c, this.id, OWL.emptyType));
+                this.conceptIDs.put(c.getIRI().getFragment(), OWL.INSTANCE.makeConcept(c, this.id, this.getName(), OWL.emptyType));
             }
         }
         for (OWLProperty<?, ?> p : this.ontology.getDataPropertiesInSignature(false)) {
@@ -324,7 +324,7 @@ public class Ontology /* implements IOntology */ {
 
                     OWLClass newcl = factory.getOWLClass(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
                     this.ontology.getOWLOntologyManager().addAxiom(this.ontology, factory.getOWLDeclarationAxiom(newcl));
-                    this.conceptIDs.put(axiom.getArgument(0).toString(), OWL.INSTANCE.makeConcept(newcl, id, ((Axiom) axiom).conceptType));
+                    this.conceptIDs.put(axiom.getArgument(0).toString(), OWL.INSTANCE.makeConcept(newcl, id, getName(), ((Axiom) axiom).conceptType));
 
                 } else if (axiom.is(IAxiom.SUBCLASS_OF)) {
 
@@ -672,7 +672,7 @@ public class Ontology /* implements IOntology */ {
 
                 ret = this.ontology.getOWLOntologyManager().getOWLDataFactory().getOWLClass(IRI.create(this.prefix + "#" + c));
 
-                this.conceptIDs.put(c, OWL.INSTANCE.makeConcept(ret, c, OWL.emptyType));
+                this.conceptIDs.put(c, OWL.INSTANCE.makeConcept(ret, c, getName(), OWL.emptyType));
             }
         }
 

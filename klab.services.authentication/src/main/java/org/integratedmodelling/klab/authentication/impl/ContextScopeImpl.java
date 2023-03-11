@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.scope;
+package org.integratedmodelling.klab.authentication.impl;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,24 +18,24 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
-public class EngineContextScopeImpl extends EngineSessionScopeImpl implements ContextScope {
+public class ContextScopeImpl extends SessionScopeImpl implements ContextScope {
 
     private static final long serialVersionUID = -3241953358893122142L;
 
     Identity observer;
     DirectObservation context;
     Set<String> scenarios;
-    EngineContextScopeImpl parent;
+    ContextScopeImpl parent;
     Geometry geometry;
     String token;
     Map<Observable, Observation> catalog = new HashMap<>();
 
-    EngineContextScopeImpl(EngineSessionScopeImpl parent) {
+    ContextScopeImpl(SessionScopeImpl parent) {
         super(parent);
         this.observer = parent.getUser();
     }
 
-    private EngineContextScopeImpl(EngineContextScopeImpl parent) {
+    private ContextScopeImpl(ContextScopeImpl parent) {
         super(parent);
         this.parent = parent;
         this.observer = parent.observer;
@@ -58,8 +58,8 @@ public class EngineContextScopeImpl extends EngineSessionScopeImpl implements Co
     }
 
     @Override
-    public EngineContextScopeImpl withScenarios(String... scenarios) {
-        EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
+    public ContextScopeImpl withScenarios(String... scenarios) {
+        ContextScopeImpl ret = new ContextScopeImpl(this);
         if (scenarios == null) {
             ret.scenarios = null;
         }
@@ -71,15 +71,15 @@ public class EngineContextScopeImpl extends EngineSessionScopeImpl implements Co
     }
 
     @Override
-    public EngineContextScopeImpl withObserver(Identity observer) {
-        EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
+    public ContextScopeImpl withObserver(Identity observer) {
+        ContextScopeImpl ret = new ContextScopeImpl(this);
         ret.observer = observer;
         return ret;
     }
 
     @Override
-    public EngineContextScopeImpl within(DirectObservation context) {
-        EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
+    public ContextScopeImpl within(DirectObservation context) {
+        ContextScopeImpl ret = new ContextScopeImpl(this);
         ret.context = context;
         return ret;
     }

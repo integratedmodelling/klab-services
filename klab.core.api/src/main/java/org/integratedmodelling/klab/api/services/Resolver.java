@@ -2,8 +2,8 @@ package org.integratedmodelling.klab.api.services;
 
 import java.io.Serializable;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;

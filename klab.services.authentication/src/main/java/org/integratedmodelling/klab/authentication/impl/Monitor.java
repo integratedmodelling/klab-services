@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime;
+package org.integratedmodelling.klab.authentication.impl;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,8 +13,9 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessageBus;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Type;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.logging.Logging;
-import org.integratedmodelling.klab.utils.Utils;
 
 public class Monitor implements Channel {
 
@@ -25,6 +26,8 @@ public class Monitor implements Channel {
     
     transient MessageBus messageBus;
 
+    protected Monitor() {}
+    
     public Monitor(Identity identity) {
         this.identity = identity;
     }
@@ -193,4 +196,38 @@ public class Monitor implements Channel {
     public int getWaitTime() {
         return this.waitTime;
     }
+
+    public int getErrorCount() {
+        return errorCount;
+    }
+
+    public void setErrorCount(int errorCount) {
+        this.errorCount = errorCount;
+    }
+
+    public AtomicBoolean getIsInterrupted() {
+        return isInterrupted;
+    }
+
+    public void setIsInterrupted(AtomicBoolean isInterrupted) {
+        this.isInterrupted = isInterrupted;
+    }
+
+    public MessageBus getMessageBus() {
+        return messageBus;
+    }
+
+    public void setMessageBus(MessageBus messageBus) {
+        this.messageBus = messageBus;
+    }
+
+    public void setWaitTime(int waitTime) {
+        this.waitTime = waitTime;
+    }
+
+    public void setIdentity(Identity identity) {
+        this.identity = identity;
+    }
+    
+    
 }

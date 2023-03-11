@@ -2,11 +2,11 @@ package org.integratedmodelling.klab.api.data.mediation.classification;
 
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 
 /**
  * A lookup table matches a table to a lookup strategy expressed as a set of

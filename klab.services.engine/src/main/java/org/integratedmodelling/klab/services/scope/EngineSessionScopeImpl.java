@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.services.scope;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.SessionScope;
 
 public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionScope {
 

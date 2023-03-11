@@ -16,9 +16,9 @@ package org.integratedmodelling.klab.api.lang;
 import java.io.Serializable;
 import java.util.Collection;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**

@@ -85,6 +85,11 @@ public abstract interface Identity {
         NODE,
 
         /**
+         * k.LAB service. May supersede the node.
+         */
+        SERVICE,
+
+        /**
          * Identified by a user token authenticated by a server.
          */
         IM_USER,

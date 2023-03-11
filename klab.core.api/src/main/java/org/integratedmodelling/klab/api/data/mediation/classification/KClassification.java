@@ -15,10 +15,10 @@
  */
 package org.integratedmodelling.klab.api.data.mediation.classification;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 
 /**
  * The Interface IClassification.

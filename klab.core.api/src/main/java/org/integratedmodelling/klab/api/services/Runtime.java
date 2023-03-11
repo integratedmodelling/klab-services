@@ -1,8 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.io.Serializable;
-
-public interface Runtime extends KlabFederatedService {
+public interface Runtime extends KlabService {
 	
     default String getServiceName() {
         return "klab.runtime.service";
@@ -14,7 +12,7 @@ public interface Runtime extends KlabFederatedService {
 	 * @author Ferd
 	 *
 	 */
-	interface Capabilities extends FederatedServiceCapabilities {
+	interface Capabilities extends ServiceCapabilities {
 	    
 	}
 

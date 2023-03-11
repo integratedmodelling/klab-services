@@ -1,7 +1,13 @@
-package org.integratedmodelling.klab.api.knowledge.observation.scope;
+package org.integratedmodelling.klab.api.authentication.scope;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 
+/**
+ * Session scopes are stateful.
+ * 
+ * @author ferd
+ *
+ */
 public interface SessionScope extends Scope {
 
     public enum Status {
@@ -10,8 +16,8 @@ public interface SessionScope extends Scope {
 
     /**
      * Never null. The session scope's geometry is the "focal" geometry of the user (where/when the
-     * user agent is looking); the geometry in each {@link ContextScope} is the actual view
-     * during observation.
+     * user agent is looking); the geometry in each {@link ContextScope} is the actual view during
+     * observation. If there is no current focus the result is the empty geometry.
      * 
      * @return
      */

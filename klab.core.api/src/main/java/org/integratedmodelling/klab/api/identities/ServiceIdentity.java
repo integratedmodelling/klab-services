@@ -24,7 +24,7 @@ import java.util.Date;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public abstract interface ServerIdentity extends RuntimeIdentity {
+public abstract interface ServiceIdentity extends RuntimeIdentity {
 
 	/**
 	 * <p>
@@ -59,10 +59,4 @@ public abstract interface ServerIdentity extends RuntimeIdentity {
      */
     boolean isOnline();
 
-//    /**
-//     * Return a primed client with the URLs and the token already set.
-//     * 
-//     * @return
-//     */
-//	IClient getClient();
 }

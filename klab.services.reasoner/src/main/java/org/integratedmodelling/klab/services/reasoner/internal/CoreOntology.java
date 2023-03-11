@@ -338,6 +338,11 @@ public class CoreOntology /* extends AbstractWorkspace */ {
 
     public CoreOntology(File directory) {
         this.root = directory;
+        Utils.Classpath.extractKnowledgeFromClasspath(this.root);
+    }
+
+    public File getRoot() {
+        return this.root;
     }
 
     public void registerCoreConcept(String coreConcept, Concept worldviewPeer) {
@@ -354,32 +359,26 @@ public class CoreOntology /* extends AbstractWorkspace */ {
     // }
 
     // @Override
-    public /* IKimLoader */ void load(Channel monitor) {
-        // IKimLoader ret = null;
-        if (!synced) {
-            synced = true;
-            Utils.Classpath.extractKnowledgeFromClasspath(this.root);
-        }
-        OWL.INSTANCE.initialize(this.root, monitor);
-
-        /**
-         * This test is unlikely to fail, but its purpose is primarily to preload the core ontology
-         * catalogues, so that the k.IM validator will not cause delays when checking core concepts,
-         * which makes the validator stop silently (by horrendous XText design) and ignore
-         * everything beyond the first delay.
-         * 
-         * DO NOT REMOVE this test. Removing it will cause seemingly completely unrelated bugs that
-         * will take a very long time to figure out.
-         */
-        Concept dummy = OWL.INSTANCE.getConcept(NS.OBSERVATION);
-        if (dummy == null) {
-            throw new KIOException("core knowledge: can't find known concepts, ontologies are probably corrupted");
-        }
-
-        Logging.INSTANCE.info(OWL.INSTANCE.getOntologies(true).size() + " ontologies read from classpath");
-
-        // return ret;
-    }
+//    public /* IKimLoader */ void load(Channel monitor) {
+//
+//        /**
+//         * This test is unlikely to fail, but its purpose is primarily to preload the core ontology
+//         * catalogues, so that the k.IM validator will not cause delays when checking core concepts,
+//         * which makes the validator stop silently (by horrendous XText design) and ignore
+//         * everything beyond the first delay.
+//         * 
+//         * DO NOT REMOVE this test. Removing it will cause seemingly completely unrelated bugs that
+//         * will take a very long time to figure out.
+//         */
+//        Concept dummy = OWL.INSTANCE.getConcept(NS.OBSERVATION);
+//        if (dummy == null) {
+//            throw new KIOException("core knowledge: can't find known concepts, ontologies are probably corrupted");
+//        }
+//
+//        Logging.INSTANCE.info(OWL.INSTANCE.getOntologies(true).size() + " ontologies read from classpath");
+//
+//        // return ret;
+//    }
 
     public Concept getCoreType(Set<SemanticType> type) {
 
@@ -541,58 +540,58 @@ public class CoreOntology /* extends AbstractWorkspace */ {
         return concept;
     }
 
-//    /**
-//     * Return the spatial nature, if any, of the passed concept, which should be a countable, or
-//     * null.
-//     * 
-//     * @param concept
-//     * @return
-//     */
-//    public ExtentDimension getSpatialNature(KConcept concept) {
-//        for (KConcept identity : reasoner.identities(concept)) {
-//            if (identity.is(OWL.INSTANCE.getConcept(NS.SPATIAL_IDENTITY))) {
-//                if (identity.is(OWL.INSTANCE.getConcept(NS.AREAL_IDENTITY))) {
-//                    return ExtentDimension.AREAL;
-//                } else if (identity.is(OWL.INSTANCE.getConcept(NS.PUNTAL_IDENTITY))) {
-//                    return ExtentDimension.PUNTAL;
-//                }
-//                if (identity.is(OWL.INSTANCE.getConcept(NS.LINEAL_IDENTITY))) {
-//                    return ExtentDimension.LINEAL;
-//                }
-//                if (identity.is(OWL.INSTANCE.getConcept(NS.VOLUMETRIC_IDENTITY))) {
-//                    return ExtentDimension.VOLUMETRIC;
-//                }
-//            }
-//        }
-//        return null;
-//    }
+    // /**
+    // * Return the spatial nature, if any, of the passed concept, which should be a countable, or
+    // * null.
+    // *
+    // * @param concept
+    // * @return
+    // */
+    // public ExtentDimension getSpatialNature(KConcept concept) {
+    // for (KConcept identity : reasoner.identities(concept)) {
+    // if (identity.is(OWL.INSTANCE.getConcept(NS.SPATIAL_IDENTITY))) {
+    // if (identity.is(OWL.INSTANCE.getConcept(NS.AREAL_IDENTITY))) {
+    // return ExtentDimension.AREAL;
+    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.PUNTAL_IDENTITY))) {
+    // return ExtentDimension.PUNTAL;
+    // }
+    // if (identity.is(OWL.INSTANCE.getConcept(NS.LINEAL_IDENTITY))) {
+    // return ExtentDimension.LINEAL;
+    // }
+    // if (identity.is(OWL.INSTANCE.getConcept(NS.VOLUMETRIC_IDENTITY))) {
+    // return ExtentDimension.VOLUMETRIC;
+    // }
+    // }
+    // }
+    // return null;
+    // }
 
-//    /**
-//     * Return the temporal resolution implied in the passed concept, which should be an event, or
-//     * null.
-//     * 
-//     * TODO add the multiplier from (TBI) data properties associated with the identity.
-//     * 
-//     * @param concept
-//     * @return
-//     */
-//    public KTime.Resolution getTemporalNature(KConcept concept) {
-//        for (KConcept identity : reasoner.identities(concept)) {
-//            if (identity.is(OWL.INSTANCE.getConcept(NS.TEMPORAL_IDENTITY))) {
-//                if (identity.is(OWL.INSTANCE.getConcept(NS.YEARLY_IDENTITY))) {
-//                    return Time.resolution(1, KTime.Resolution.Type.YEAR);
-//                } else if (identity.is(OWL.INSTANCE.getConcept(NS.HOURLY_IDENTITY))) {
-//                    return Time.resolution(1, KTime.Resolution.Type.HOUR);
-//                } else if (identity.is(OWL.INSTANCE.getConcept(NS.WEEKLY_IDENTITY))) {
-//                    return Time.resolution(1, KTime.Resolution.Type.WEEK);
-//                } else if (identity.is(OWL.INSTANCE.getConcept(NS.MONTHLY_IDENTITY))) {
-//                    return Time.resolution(1, KTime.Resolution.Type.MONTH);
-//                } else if (identity.is(OWL.INSTANCE.getConcept(NS.DAILY_IDENTITY))) {
-//                    return Time.resolution(1, KTime.Resolution.Type.DAY);
-//                }
-//            }
-//        }
-//        return null;
-//    }
+    // /**
+    // * Return the temporal resolution implied in the passed concept, which should be an event, or
+    // * null.
+    // *
+    // * TODO add the multiplier from (TBI) data properties associated with the identity.
+    // *
+    // * @param concept
+    // * @return
+    // */
+    // public KTime.Resolution getTemporalNature(KConcept concept) {
+    // for (KConcept identity : reasoner.identities(concept)) {
+    // if (identity.is(OWL.INSTANCE.getConcept(NS.TEMPORAL_IDENTITY))) {
+    // if (identity.is(OWL.INSTANCE.getConcept(NS.YEARLY_IDENTITY))) {
+    // return Time.resolution(1, KTime.Resolution.Type.YEAR);
+    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.HOURLY_IDENTITY))) {
+    // return Time.resolution(1, KTime.Resolution.Type.HOUR);
+    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.WEEKLY_IDENTITY))) {
+    // return Time.resolution(1, KTime.Resolution.Type.WEEK);
+    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.MONTHLY_IDENTITY))) {
+    // return Time.resolution(1, KTime.Resolution.Type.MONTH);
+    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.DAILY_IDENTITY))) {
+    // return Time.resolution(1, KTime.Resolution.Type.DAY);
+    // }
+    // }
+    // }
+    // return null;
+    // }
 
 }

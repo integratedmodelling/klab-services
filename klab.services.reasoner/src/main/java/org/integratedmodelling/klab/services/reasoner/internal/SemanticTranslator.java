@@ -12,12 +12,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
@@ -40,7 +40,6 @@ public class SemanticTranslator {
     Map<Concept, Emergence> emergent = new HashMap<>();
     IntelligentMap<Set<Emergence>> emergence = new IntelligentMap<>();
 
-    
     /*
      * Record correspondence of core concept peers to worldview concepts. Called by KimValidator for
      * later use at namespace construction.
@@ -48,7 +47,7 @@ public class SemanticTranslator {
     public void setWorldviewPeer(String coreConcept, String worldviewConcept) {
         coreConceptPeers.put(worldviewConcept, coreConcept);
     }
-    
+
     /**
      * An emergence is the appearance of an observation triggered by another, under the assumptions
      * stated in the worldview. It applies to processes and relationships and its emergent
@@ -107,8 +106,7 @@ public class SemanticTranslator {
         /*
          * current observable must be one of the triggers, any others need to be in scope
          */
-        private void checkScope(Concept trigger, Map<Observable, Observation> map, Concept relationship,
-                Set<Observation> obs) {
+        private void checkScope(Concept trigger, Map<Observable, Observation> map, Concept relationship, Set<Observation> obs) {
             if (trigger.is(SemanticType.UNION)) {
                 for (Concept trig : trigger.operands()) {
                     checkScope(trig, map, relationship, obs);
@@ -140,9 +138,8 @@ public class SemanticTranslator {
         return null;
     }
 
-    public Concept defineConcept(KimConceptStatement statement) {
-        // TODO
-        return null;
+    public Concept defineConcept(KimConceptStatement statement, Channel monitor) {
+        return build(statement, OWL.INSTANCE.requireOntology(statement.getNamespace(), null), null, monitor);
     }
 
     public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject, Channel monitor) {
@@ -310,7 +307,8 @@ public class SemanticTranslator {
         for (KimScope child : concept.getChildren()) {
             if (child instanceof KimConceptStatement) {
                 try {
-//                    KimConceptStatement chobj = kimObject == null ? null : new KimConceptStatement((IKimConceptStatement) child);
+                    // KimConceptStatement chobj = kimObject == null ? null : new
+                    // KimConceptStatement((IKimConceptStatement) child);
                     Concept childConcept = buildInternal((KimConceptStatement) child, ontology, concept,
                             /*
                              * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
@@ -318,7 +316,7 @@ public class SemanticTranslator {
                              */ monitor);
                     ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
                     ontology.define();
-//                    kimObject.getChildren().add(chobj);
+                    // kimObject.getChildren().add(chobj);
                 } catch (Throwable e) {
                     monitor.error(e, child);
                 }
@@ -384,9 +382,9 @@ public class SemanticTranslator {
             registerEmergent(main, triggers);
         }
 
-//        if (kimObject != null) {
-//            kimObject.set(main);
-//        }
+        // if (kimObject != null) {
+        // kimObject.set(main);
+        // }
 
         return main;
     }
@@ -398,13 +396,13 @@ public class SemanticTranslator {
 
         if (!configuration.isAbstract()) {
 
-//          DebugFile.println("CHECK for storage of " + configuration + " based on " + triggers);
-            
+            // DebugFile.println("CHECK for storage of " + configuration + " based on " + triggers);
+
             if (this.emergent.containsKey(configuration)) {
                 return true;
             }
 
-//          DebugFile.println("   STORED " + configuration);
+            // DebugFile.println(" STORED " + configuration);
 
             Emergence descriptor = new Emergence();
             descriptor.emergentObservable = configuration;

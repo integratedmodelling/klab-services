@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.knowledge;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -17,7 +18,7 @@ public class ConceptImpl implements Concept {
     private long id;
     private String urn;
     private Metadata metadata;
-    private Set<SemanticType> type;
+    private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private String namespace;
     private String name;
     private String referenceName;

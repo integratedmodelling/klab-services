@@ -25,11 +25,12 @@ import org.integratedmodelling.kim.model.Kim;
 import org.integratedmodelling.kim.model.KimLoader;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.ContextScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.organization.KProject;
 import org.integratedmodelling.klab.api.knowledge.organization.KWorkspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -38,6 +39,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
+import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -51,6 +53,7 @@ import org.integratedmodelling.klab.services.resources.lang.KimAdapter;
 import org.integratedmodelling.klab.services.resources.lang.KimInjectorProvider;
 import org.integratedmodelling.klab.utils.Utils;
 import org.integratedmodelling.klab.utils.Utils.Git;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.google.inject.Injector;
@@ -64,11 +67,11 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
     private String url;
     private String localName;
-    private boolean exclusive;
-    private boolean dedicated;
 
     transient private KimLoader kimLoader;
     transient private ResourcesConfiguration configuration = new ResourcesConfiguration();
+    transient private Authentication authenticationService;
+    transient private ServiceScope scope;
 
     transient Map<String, KProject> localProjects = Collections.synchronizedMap(new HashMap<>());
     transient Map<String, KWorkspace> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
@@ -101,6 +104,13 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
             configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
         }
         loadWorkspaces();
+    }
+
+    @Autowired
+    public ResourcesService(Authentication authenticationService) {
+        this();
+        this.authenticationService = authenticationService;
+        this.scope = authenticationService.authenticateService(this);
     }
 
     /**
@@ -190,11 +200,32 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
     @Override
     public KimNamespace resolveNamespace(String urn, Scope scope) {
 
-        /*
-         * must be a known project, either here or on a federated service.
-         */
+        KimNamespace ret = localNamespaces.get(urn);
+        if (ret != null) {
+            /*
+             * check permissions; if not allowed, log and set ret = null
+             */
+            ProjectConfiguration pconf = this.configuration.getProjectConfiguration().get(ret.getProjectName());
+            if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
+                // scope.info("");
+                ret = null;
+            }
 
-        return null;
+        } else if (!this.scope.isExclusive()) {
+
+            for (ResourceProvider service : Services.INSTANCE.getFederatedResources()) {
+                KimNamespace candidate = service.resolveNamespace(urn, scope);
+                if (candidate != null) {
+                    // FIXME this causes more traffic than we should cause - maybe limit full scan
+                    // to option
+                    if (ret == null || (ret != null && candidate.getVersion().greater(ret.getVersion()))) {
+                        ret = candidate;
+                    }
+                }
+            }
+        }
+
+        return ret;
     }
 
     @Override
@@ -392,17 +423,26 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
                 return ret;
             }
             for (String imp : namespace.getImports().keySet()) {
-                KimNamespace imported = resolveNamespace(ns.getResourceUrn(), scope);
+                KimNamespace imported = resolveNamespace(imp, scope);
                 if (imported == null) {
                     ret.setEmpty(true);
                     return ret;
                 }
                 graph.addVertex(imported.getUrn());
+                if (imported.getUrn().equals(namespace.getUrn())) {
+                    System.out.println("DIO ZAPPA");
+                }
                 graph.addEdge(imported.getUrn(), namespace.getUrn());
             }
         }
 
         TopologicalOrderIterator<String, DefaultEdge> order = new TopologicalOrderIterator<>(graph);
+        Map<String, ResourceSet.Resource> toSort = new HashMap<>();
+        ret.getNamespaces().forEach((ns) -> toSort.put(ns.getResourceUrn(), ns));
+        ret.getNamespaces().clear();
+        while(order.hasNext()) {
+            ret.getNamespaces().add(toSort.get(order.next()));
+        }
 
         return ret;
     }
@@ -493,21 +533,4 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
         this.localName = localName;
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public ResourcesService exclusive(Scope scope) {
-        ResourcesService ret = new ResourcesService(this);
-        // TODO check scope for permissions
-        ret.exclusive = true;
-        return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public ResourcesService dedicated(Scope scope) {
-        ResourcesService ret = new ResourcesService(this);
-        // TODO check scope for permissions
-        ret.dedicated = true;
-        return ret;
-    }
 }

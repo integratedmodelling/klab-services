@@ -2,12 +2,12 @@ package org.integratedmodelling.klab.services.scope;
 
 import java.util.function.Consumer;
 
+import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
+import org.integratedmodelling.klab.api.authentication.scope.SessionScope.Status;
+import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.SessionScope;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.SessionScope.Status;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Services;
@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.services.actors.messages.user.CreateApplicat
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 import org.integratedmodelling.klab.services.engine.EngineService;
 
-public class EngineScopeImpl implements Scope {
+public class EngineScopeImpl implements UserScope {
 
     private static final long serialVersionUID = 605310381727313326L;
 

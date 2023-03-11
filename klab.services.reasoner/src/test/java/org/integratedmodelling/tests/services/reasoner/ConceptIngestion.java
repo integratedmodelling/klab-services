@@ -1,8 +1,9 @@
 package org.integratedmodelling.tests.services.reasoner;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.scope.Scope;
+import org.integratedmodelling.klab.authentication.AuthenticationService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.internal.SemanticTranslator;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
@@ -24,11 +25,14 @@ class ConceptIngestion {
 
     private static ResourcesService resourcesService;
     private static ReasonerService reasonerService;
-    private Scope scope = null;
+    private static Scope scope = null;
 
     @BeforeAll
     public static void prepare() {
-        reasonerService = new ReasonerService(resourcesService = new ResourcesService(), new SemanticTranslator());
+        AuthenticationService authenticationService = new AuthenticationService();
+        scope = authenticationService.getAnonymousScope();
+        reasonerService = new ReasonerService(authenticationService,
+                resourcesService = new ResourcesService(authenticationService), new SemanticTranslator());
     }
 
     @Test
@@ -49,7 +53,7 @@ class ConceptIngestion {
 
     @Test
     void worldview() {
-        reasonerService.loadKnowledge(resourcesService.worldview(scope));
+        reasonerService.loadKnowledge(resourcesService.worldview(scope), scope);
     }
-    
+
 }

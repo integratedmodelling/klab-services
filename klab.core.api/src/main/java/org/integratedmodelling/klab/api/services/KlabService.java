@@ -8,6 +8,9 @@ import java.io.Serializable;
  * serialized form to ResourceSet and other responses, so they should abide to Java bean conventions
  * and only use set/get methods to expose fields that are themselves serializable. All service
  * methods should NOT use getXxx/setXxx syntax.
+ * <p>
+ * The API of a service is designed in a way that the serialized version of a full service can
+ * deserialize directly to a service client that communicates with it.
  * 
  * @author Ferd
  *
@@ -41,6 +44,12 @@ public interface KlabService extends Serializable {
      */
     String getLocalName();
 
+    /**
+     * The identifier of the service type in the k.LAB ecosystem. This is the same for all services
+     * of the same type and the derived interfaces provide a default implementation.
+     * 
+     * @return
+     */
     String getServiceName();
 
 }
