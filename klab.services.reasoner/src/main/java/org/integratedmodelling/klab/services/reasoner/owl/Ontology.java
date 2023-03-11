@@ -311,6 +311,7 @@ public class Ontology /* implements IOntology */ {
 	Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
 		ConceptImpl ret = new ConceptImpl();
 		ret.setId(OWL.INSTANCE.registerOwlClass(owlClass));
+		ret.setName(id);
 		ret.setNamespace(ontologyName);
 		ret.setUrn(ontologyName + ":" + id);
 		ret.getType().addAll(type);
@@ -340,7 +341,7 @@ public class Ontology /* implements IOntology */ {
 					this.ontology.getOWLOntologyManager().addAxiom(this.ontology,
 							factory.getOWLDeclarationAxiom(newcl));
 					this.conceptIDs.put(axiom.getArgument(0).toString(),
-							makeConcept(newcl, id, getName(), ((Axiom) axiom).conceptType));
+							makeConcept(newcl, axiom.getArgument(0).toString(), id, ((Axiom) axiom).conceptType));
 
 				} else if (axiom.is(IAxiom.SUBCLASS_OF)) {
 

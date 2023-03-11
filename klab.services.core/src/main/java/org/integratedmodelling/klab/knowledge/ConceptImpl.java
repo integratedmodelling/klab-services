@@ -79,7 +79,15 @@ public class ConceptImpl implements Concept {
         return false;
     }
 
-    @Override
+    public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setReferenceName(String referenceName) {
+		this.referenceName = referenceName;
+	}
+
+	@Override
     public Collection<Concept> operands() {
         return Services.INSTANCE.getReasoner().operands(this);
     }
