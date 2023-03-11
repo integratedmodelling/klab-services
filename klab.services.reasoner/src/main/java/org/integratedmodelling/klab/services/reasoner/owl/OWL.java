@@ -123,18 +123,8 @@ public enum OWL {
         return namespace.replaceAll("\\.", "_") + "__" + CamelCase.toLowerCase(name, '_');
     }
 
-    OWLClass getOWLClass(Concept c) {
-        return null;
-    }
-
-    Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
-        ConceptImpl ret = new ConceptImpl();
-        ret.setId(classId.getAndIncrement());
-        ret.setNamespace(ontologyName);
-        ret.setUrn(ontologyName + ":" + id);
-        owlClasses.put(ret.getId(), owlClass);
-        ret.getType().addAll(type);
-        return ret;
+    long getOWLClassId() {
+        return classId.getAndIncrement();
     }
 
     /**
@@ -454,7 +444,7 @@ public enum OWL {
                 if (o == null) {
                     OWLClass systemConcept = this.systemConcepts.get(st);
                     if (systemConcept != null) {
-                        result = makeConcept(systemConcept, st.getName(), st.getNamespace(), emptyType);
+                        result = o.makeConcept(systemConcept, st.getName(), st.getNamespace(), emptyType);
                     }
                 } else {
                     result = o.getConcept(st.getName());

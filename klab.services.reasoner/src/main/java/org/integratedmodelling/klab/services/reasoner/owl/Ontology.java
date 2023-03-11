@@ -40,6 +40,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.HermiT.model.Individual;
@@ -303,6 +304,17 @@ public class Ontology /* implements IOntology */ {
         return ret;
     }
 
+
+    Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
+        ConceptImpl ret = new ConceptImpl();
+        ret.setId(OWL.INSTANCE.getOWLClassId());
+        ret.setNamespace(ontologyName);
+        ret.setUrn(ontologyName + ":" + id);
+        owlClasses.put(ret.getId(), owlClass);
+        ret.getType().addAll(type);
+        return ret;
+    }
+    
     public Collection<String> define(Collection<IAxiom> axioms) {
 
         ArrayList<String> errors = new ArrayList<>();
@@ -324,7 +336,7 @@ public class Ontology /* implements IOntology */ {
 
                     OWLClass newcl = factory.getOWLClass(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
                     this.ontology.getOWLOntologyManager().addAxiom(this.ontology, factory.getOWLDeclarationAxiom(newcl));
-                    this.conceptIDs.put(axiom.getArgument(0).toString(), OWL.INSTANCE.makeConcept(newcl, id, getName(), ((Axiom) axiom).conceptType));
+                    this.conceptIDs.put(axiom.getArgument(0).toString(), makeConcept(newcl, id, getName(), ((Axiom) axiom).conceptType));
 
                 } else if (axiom.is(IAxiom.SUBCLASS_OF)) {
 
