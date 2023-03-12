@@ -7,29 +7,35 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IConcept;
+import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.utils.CamelCase;
+import org.integratedmodelling.klab.utils.Utils;
+import org.springframework.util.StringUtils;
 
 public class ConceptImpl implements Concept {
 
     private static final long serialVersionUID = -6871573029225503370L;
-    
+
     private long id;
     private String urn;
-    private Metadata metadata;
+    private Metadata metadata = Metadata.create();
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private String namespace;
     private String name;
     private String referenceName;
-    
+    private boolean isAbstract;
+
     @Override
     public String getUrn() {
         return urn;
     }
 
     @Override
-    public Collection<SemanticType> getType() {
+    public Set<SemanticType> getType() {
         return type;
     }
 
@@ -68,6 +74,10 @@ public class ConceptImpl implements Concept {
         this.type = type;
     }
 
+    public void setAbstract(boolean isAbstract) {
+        this.isAbstract = isAbstract;
+    }
+
     @Override
     public Semantics semantics() {
         return this;
@@ -75,19 +85,18 @@ public class ConceptImpl implements Concept {
 
     @Override
     public boolean isAbstract() {
-        // TODO Auto-generated method stub
-        return false;
+        return isAbstract;
     }
 
     public void setName(String name) {
-		this.name = name;
-	}
+        this.name = name;
+    }
 
-	public void setReferenceName(String referenceName) {
-		this.referenceName = referenceName;
-	}
+    public void setReferenceName(String referenceName) {
+        this.referenceName = referenceName;
+    }
 
-	@Override
+    @Override
     public Collection<Concept> operands() {
         return Services.INSTANCE.getReasoner().operands(this);
     }
@@ -151,6 +160,38 @@ public class ConceptImpl implements Concept {
     public Version getVersion() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public String codeName() {
+        return Utils.CamelCase.toLowerCase(displayName(), '_');
+    }
+    
+    @Override
+    public String displayName() {
+
+        // String ret = getMetadata().get(IMetadata.DISPLAY_LABEL_PROPERTY, String.class);
+        //
+        // if (ret == null) {
+        String ret = getMetadata().get(IMetadata.DC_LABEL, String.class);
+        // }
+        if (ret == null) {
+            ret = getName();
+        }
+        if (ret.startsWith("i")) {
+            ret = ret.substring(1);
+        }
+
+        return ret;
+    }
+
+    @Override
+    public String displayLabel() {
+        String ret = displayName();
+        if (!ret.contains(" ")) {
+            ret = StringUtils.capitalize(CamelCase.toLowerCase(ret, ' '));
+        }
+        return ret;
     }
 
 }

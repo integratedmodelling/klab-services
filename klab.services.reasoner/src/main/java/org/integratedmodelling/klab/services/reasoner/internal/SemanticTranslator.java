@@ -12,9 +12,17 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.codehaus.groovy.transform.trait.Traits;
+import org.integratedmodelling.kim.api.IKimConcept;
+import org.integratedmodelling.kim.api.IKimConcept.Expression;
+import org.integratedmodelling.kim.api.IKimConcept.ObservableRole;
+import org.integratedmodelling.kim.api.IKimConcept.Type;
+import org.integratedmodelling.klab.Concepts;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
+import org.integratedmodelling.klab.api.knowledge.IObservable.Builder;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -27,6 +35,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
+import org.integratedmodelling.klab.owl.ObservableBuilder;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
@@ -452,9 +461,172 @@ public class SemanticTranslator {
         }
     }
 
-    private Concept declare(KimConcept affected, Ontology ontology, Channel monitor) {
-        // TODO Auto-generated method stub
-        return null;
+    private Concept declare(KimConcept concept, Ontology ontology, Channel monitor) {
+        return declareInternal(concept, ontology, monitor);
+    }
+
+    private synchronized @Nullable Concept declareInternal(KimConcept concept, Ontology ontology,
+            Channel monitor) {
+
+        Concept main = null;
+
+        if (concept.getObservable() != null) {
+            main = declareInternal(concept.getObservable(), ontology, monitor);
+        } else if (concept.getName() != null) {
+            main = OWL.INSTANCE.getConcept(concept.getName());
+        }
+
+        if (main == null) {
+            return null;
+        }
+
+        Builder builder = new ObservableBuilder(main, ontology, monitor).withDeclaration(concept, monitor);
+
+        if (concept.getDistributedInherent() != null) {
+            builder.withDistributedInherency(true);
+        }
+
+        /*
+         * transformations first
+         */
+
+        if (concept.getInherent() != null) {
+            IConcept c = declareInternal(concept.getInherent(), ontology, monitor);
+            if (c != null) {
+                builder.of(c);
+            }
+        }
+        if (concept.getContext() != null) {
+            IConcept c = declareInternal(concept.getContext(), ontology, monitor);
+            if (c != null) {
+                if (ObservableRole.CONTEXT.equals(concept.getDistributedInherent())) {
+                    builder.of(c);
+                } else {
+                    builder.within(c);
+                }
+            }
+        }
+        if (concept.getCompresent() != null) {
+            IConcept c = declareInternal(concept.getCompresent(), ontology, monitor);
+            if (c != null) {
+                builder.with(c);
+            }
+        }
+        if (concept.getCausant() != null) {
+            IConcept c = declareInternal(concept.getCausant(), ontology, monitor);
+            if (c != null) {
+                builder.from(c);
+            }
+        }
+        if (concept.getCaused() != null) {
+            IConcept c = declareInternal(concept.getCaused(), ontology, monitor);
+            if (c != null) {
+                builder.to(c);
+            }
+        }
+        if (concept.getMotivation() != null) {
+            IConcept c = declareInternal(concept.getMotivation(), ontology, monitor);
+            if (c != null) {
+                if (ObservableRole.GOAL.equals(concept.getDistributedInherent())) {
+                    builder.of(c);
+                } else {
+                    builder.withGoal(c);
+                }
+            }
+        }
+        if (concept.getCooccurrent() != null) {
+            IConcept c = declareInternal(concept.getCooccurrent(), ontology, monitor);
+            if (c != null) {
+                builder.withCooccurrent(c);
+            }
+        }
+        if (concept.getAdjacent() != null) {
+            IConcept c = declareInternal(concept.getAdjacent(), ontology, monitor);
+            if (c != null) {
+                builder.withAdjacent(c);
+            }
+        }
+        if (concept.getRelationshipSource() != null) {
+            IConcept source = declareInternal(concept.getRelationshipSource(), ontology, monitor);
+            IConcept target = declareInternal(concept.getRelationshipTarget(), ontology, monitor);
+            if (source != null && target != null) {
+                builder.linking(source, target);
+            }
+
+        }
+
+        for (IKimConcept c : concept.getTraits()) {
+            IConcept trait = declareInternal(c, ontology, monitor);
+            if (trait != null) {
+                builder.withTrait(trait);
+            }
+        }
+
+        for (IKimConcept c : concept.getRoles()) {
+            IConcept role = declareInternal(c, ontology, monitor);
+            if (role != null) {
+                builder.withRole(role);
+            }
+        }
+
+        if (concept.getSemanticModifier() != null) {
+            IConcept other = null;
+            if (concept.getComparisonConcept() != null) {
+                other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
+            }
+            try {
+                builder.as(concept.getSemanticModifier(),
+                        other == null ? (IConcept[]) null : new IConcept[]{other});
+            } catch (KlabValidationException e) {
+                monitor.error(e, concept);
+            }
+        }
+
+        Concept ret = null;
+        try {
+
+            ret = (Concept) builder.buildConcept();
+
+            /*
+             * handle unions and intersections
+             */
+            if (concept.getOperands().size() > 0) {
+                List<IConcept> concepts = new ArrayList<>();
+                concepts.add(ret);
+                for (IKimConcept op : concept.getOperands()) {
+                    concepts.add(declareInternal(op, ontology, monitor));
+                }
+                ret = concept.getExpressionType() == Expression.INTERSECTION
+                        ? OWL.INSTANCE.getIntersection(concepts, ontology,
+                                concept.getOperands().get(0).getType())
+                        : OWL.INSTANCE.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
+            }
+
+            // set the k.IM definition in the concept.This must only happen if the
+            // concept wasn't there - within build() and repeat if mods are made
+            if (builder.axiomsAdded()) {
+
+                ret.getOntology().define(Collections.singletonList(
+                        Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY,
+                                concept.getDefinition())));
+
+                // consistency check
+                if (!Reasoner.INSTANCE.isSatisfiable(ret)) {
+                    ((Concept) ret).getTypeSet().add(Type.NOTHING);
+                    monitor.error("the definition of this concept has logical errors and is inconsistent",
+                            concept);
+                }
+            }
+
+        } catch (Throwable e) {
+            monitor.error(e, concept);
+        }
+
+        if (concept.isNegated()) {
+            ret = (Concept) Traits.INSTANCE.makeNegation(ret, ontology);
+        }
+
+        return ret;
     }
 
     public static String getCleanId(Concept main) {

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.Collection;
+import java.util.Set;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 
@@ -10,7 +11,7 @@ public interface Concept extends Semantics {
      * 
      * @return
      */
-    Collection<SemanticType> getType();
+    Set<SemanticType> getType();
 
     /**
      * 

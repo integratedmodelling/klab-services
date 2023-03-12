@@ -81,4 +81,27 @@ public interface Semantics extends Knowledge {
      */
     boolean isAbstract();
 
+    /**
+     * Semantic assets may be referenced in code using identifiers. Return an appropriate identifier
+     * for this concept compatible with the k.LAB language family.
+     * 
+     * @return
+     */
+    String codeName();
+
+    /**
+     * Return a single name usable for human consumption.
+     * 
+     * @return
+     */
+    String displayName();
+
+    /**
+     * Return a short label that may contain spaces and may have been assigned by the user. If none
+     * exists return {@link #displayName()}.
+     * 
+     * @return
+     */
+    String displayLabel();
+
 }

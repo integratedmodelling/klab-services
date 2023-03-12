@@ -10,7 +10,9 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
 public interface Reasoner extends KlabService {
@@ -65,6 +67,20 @@ public interface Reasoner extends KlabService {
      * @return
      */
     Observable resolveObservable(String definition);
+    
+    /**
+     * 
+     * @param conceptDeclaration
+     * @return
+     */
+    Concept declareConcept(KimConcept conceptDeclaration);
+
+    /**
+     * 
+     * @param conceptDeclaration
+     * @return
+     */
+    Observable declareObservable(KimObservable observableDeclaration);
 
     boolean subsumes(Semantics conceptImpl, Semantics other);
 
@@ -84,51 +100,51 @@ public interface Reasoner extends KlabService {
 
     int semanticDistance(Semantics target, Semantics context);
 
-    Concept coreObservable(Concept first);
+    Concept coreObservable(Semantics first);
 
-    Pair<Concept, List<SemanticType>> splitOperators(Concept concept);
+    Pair<Concept, List<SemanticType>> splitOperators(Semantics concept);
 
-    int assertedDistance(Concept kConcept, Concept t);
+    int assertedDistance(Semantics from, Semantics to);
 
-    Collection<Concept> roles(Concept concept);
+    Collection<Concept> roles(Semantics concept);
 
-    boolean hasRole(Concept concept, Concept t);
+    boolean hasRole(Semantics concept, Concept t);
 
-    Concept directContext(Concept concept);
+    Concept directContext(Semantics concept);
 
-    Concept context(Concept concept);
+    Concept context(Semantics concept);
 
-    Concept directInherent(Concept concept);
+    Concept directInherent(Semantics concept);
 
-    Concept inherent(Concept concept);
+    Concept inherent(Semantics concept);
 
-    Concept directGoal(Concept concept);
+    Concept directGoal(Semantics concept);
 
-    Concept goal(Concept concept);
+    Concept goal(Semantics concept);
 
-    Concept directCooccurrent(Concept concept);
+    Concept directCooccurrent(Semantics concept);
 
-    Concept directCausant(Concept concept);
+    Concept directCausant(Semantics concept);
 
-    Concept directCaused(Concept concept);
+    Concept directCaused(Semantics concept);
 
-    Concept directAdjacent(Concept concept);
+    Concept directAdjacent(Semantics concept);
 
-    Concept directCompresent(Concept concept);
+    Concept directCompresent(Semantics concept);
 
-    Concept directRelativeTo(Concept concept);
+    Concept directRelativeTo(Semantics concept);
 
-    Concept cooccurrent(Concept concept);
+    Concept cooccurrent(Semantics concept);
 
-    Concept causant(Concept concept);
+    Concept causant(Semantics concept);
 
-    Concept caused(Concept concept);
+    Concept caused(Semantics concept);
 
-    Concept adjacent(Concept concept);
+    Concept adjacent(Semantics concept);
 
-    Concept compresent(Concept concept);
+    Concept compresent(Semantics concept);
 
-    Concept relativeTo(Concept concept);
+    Concept relativeTo(Semantics concept);
 
     /**
      * Return all traits, i.e. identities, attributes and realms.
@@ -136,7 +152,7 @@ public interface Reasoner extends KlabService {
      * @param concept
      * @return
      */
-    Collection<Concept> traits(Concept concept);
+    Collection<Concept> traits(Semantics concept);
 
     /**
      * Return all identities.
@@ -144,7 +160,7 @@ public interface Reasoner extends KlabService {
      * @param concept
      * @return identities
      */
-    Collection<Concept> identities(Concept concept);
+    Collection<Concept> identities(Semantics concept);
 
     /**
      * Return all attributes
@@ -152,7 +168,7 @@ public interface Reasoner extends KlabService {
      * @param concept
      * @return attributes
      */
-    Collection<Concept> attributes(Concept concept);
+    Collection<Concept> attributes(Semantics concept);
 
     /**
      * Return all realms.
@@ -160,7 +176,7 @@ public interface Reasoner extends KlabService {
      * @param concept
      * @return realms
      */
-    Collection<Concept> realms(Concept concept);
+    Collection<Concept> realms(Semantics concept);
 
     /**
      * <p>
@@ -170,8 +186,13 @@ public interface Reasoner extends KlabService {
      * @param trait
      * @return
      */
-    Concept baseParentTrait(Concept trait);
+    Concept baseParentTrait(Semantics trait);
 
+    Concept baseObservable(Semantics observable);
+    
+    Concept rawObservable(Semantics observable);
+    
+    
     /**
      * Check if concept k carries the passed trait. Uses is() on all explicitly expressed traits.
      *
@@ -179,14 +200,30 @@ public interface Reasoner extends KlabService {
      * @param trait
      * @return a boolean.
      */
-    boolean hasTrait(Concept type, Concept trait);
+    boolean hasTrait(Semantics type, Concept trait);
 
     /**
      * Check if concept k carries a trait T so that the passed trait is-a T.
      *
      * @return a boolean.
      */
-    boolean hasParentTrait(Concept type, Concept trait);
+    boolean hasParentTrait(Semantics type, Concept trait);
+
+    /**
+     * Check if concept k carries a role T so that the passed role is-a T.
+     *
+     * @return a boolean.
+     */
+    boolean hasParentRole(Semantics o1, Concept t);
+    
+    /**
+     * Like {@link #traits(Concept)} but only returns the traits directly attributed to this
+     * concept.
+     * 
+     * @param concept
+     * @return
+     */
+    Collection<Concept> directTraits(Semantics concept);
 
     /**
      * Like {@link #traits(Concept)} but only returns the traits directly attributed to this
@@ -195,20 +232,9 @@ public interface Reasoner extends KlabService {
      * @param concept
      * @return
      */
-    Collection<Concept> directTraits(Concept concept);
-
-    /**
-     * Like {@link #traits(Concept)} but only returns the traits directly attributed to this
-     * concept.
-     * 
-     * @param concept
-     * @return
-     */
-    Collection<Concept> directRoles(Concept concept);
+    Collection<Concept> directRoles(Semantics concept);
 
     Object displayLabel(Semantics concept);
-
-    Object codeName(Semantics concept);
 
     String style(Concept concept);
 
@@ -294,6 +320,44 @@ public interface Reasoner extends KlabService {
      */
     Collection<Concept> applicableObservables(Concept main);
 
+    /**
+     * 
+     * @param concept
+     * @param other
+     * @return
+     */
+    boolean compatible(Semantics concept, Semantics other);
+    
+
+    /**
+     * Check for compatibility of context1 and context2 as the context for an observation of focus
+     * (i.e., focus can be observed by an observation process that happens in context1). Works like
+     * isCompatible, but if context1 is an occurrent, it will let through situations where it
+     * affects focus in whatever context it is, or where the its own context is the same as
+     * context2, thereby there is a common context to refer to.
+     * 
+     * @param focus the focal observable whose context we are checking
+     * @param context1 the specific context of the observation (model) that will observe focus
+     * @param context2 the mandated context of focus
+     * 
+     * @return true if focus can be observed by an observation process that happens in context1.
+     */
+    boolean contextuallyCompatible(Semantics focus, Semantics context1, Semantics context2);
+
+    /**
+     * 
+     * @param concept
+     * @return
+     */
+    boolean occurrent(Semantics concept);
+
+    /**
+     * 
+     * @param concept
+     * @param affecting
+     * @return
+     */
+    boolean affectedBy(Semantics concept, Semantics affecting);
     interface Admin {
 
         /**
@@ -316,5 +380,8 @@ public interface Reasoner extends KlabService {
         Concept defineConcept(KimConceptStatement statement, Scope scope);
 
     }
+
+
+
 
 }

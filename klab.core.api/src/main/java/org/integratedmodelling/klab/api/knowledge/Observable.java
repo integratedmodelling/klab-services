@@ -432,6 +432,8 @@ public interface Observable extends Semantics {
         Builder withUrl(String uri);
 
     }
+    
+    Builder builder();
 
     Concept getSemantics();
 
@@ -554,29 +556,6 @@ public interface Observable extends Semantics {
      * @return
      */
     DirectObservation getObserver();
-
-
-    /**
-     * String definition of this observable, re-parseable into a compatible one. The definition is
-     * normalized, with sorted components and parenthesized as necessary, to guarantee an
-     * unambiguous result and the equality of observable definitions with identical semantics. Only
-     * the part that affects semantics is part of the definition: name, units or currencies are not
-     * included. Use {@link #getDeclaration()} if those are desired.
-     * 
-     * @return
-     */
-    String getDefinition();
-
-    /**
-     * The declaration is the same string returned by {@link #getDefinition()}, but including all
-     * clauses that do not directly affect semantics. If a name was stated in the original
-     * declaration, the 'named' clause is added to the definition. The same applies to units or
-     * currencies. Apart from that, the definition remains normalized so it may differ from an
-     * original, user-supplied string.
-     * 
-     * @return
-     */
-    String getDeclaration();
 
     /**
      * Abstract status of an observable may be more involved than just the abstract status of the

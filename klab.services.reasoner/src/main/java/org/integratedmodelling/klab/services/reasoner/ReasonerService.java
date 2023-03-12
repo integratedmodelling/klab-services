@@ -5,10 +5,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import org.integratedmodelling.kim.api.IKimConcept.Type;
+import org.integratedmodelling.klab.Roles;
+import org.integratedmodelling.klab.Traits;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -43,6 +47,47 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     private static final long serialVersionUID = 380622027752591182L;
 
+
+    /**
+     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * 
+     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, different realms will not
+     * determine incompatibility.
+     */
+    static public final int ACCEPT_REALM_DIFFERENCES = 0x01;
+
+    /**
+     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * 
+     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, only types that have the exact
+     * same core type will be accepted.
+     */
+    static public final int REQUIRE_SAME_CORE_TYPE = 0x02;
+
+    /**
+     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * 
+     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, types with roles that are more
+     * general of the roles in the first concept will be accepted.
+     */
+    static public final int USE_ROLE_PARENT_CLOSURE = 0x04;
+
+    /**
+     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * 
+     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, types with traits that are more
+     * general of the traits in the first concept will be accepted.
+     */
+    static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
+
+    /**
+     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * 
+     * If passed to {@link #isCompatible(IConcept, IConcept, int)} causes acceptance of subjective
+     * traits for observables.
+     */
+    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
+    
     private String url;
     private String localName;
 
@@ -502,6 +547,145 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     public Semantics domain(Semantics conceptImpl) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public Concept declareConcept(KimConcept conceptDeclaration) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Observable declareObservable(KimObservable observableDeclaration) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    
+
+    @Override
+    public boolean compatible(Semantics o1, Semantics o2) {
+        return compatible(o1, o2, 0);
+    }
+
+//    @Override
+    public boolean compatible(Semantics o1, Semantics o2, int flags) {
+
+        if (o1 == o2 || o1.equals(o2)) {
+            return true;
+        }
+
+        boolean mustBeSameCoreType = (flags & REQUIRE_SAME_CORE_TYPE) != 0;
+        boolean useRoleParentClosure = (flags & USE_ROLE_PARENT_CLOSURE) != 0;
+        // boolean acceptRealmDifferences = (flags & ACCEPT_REALM_DIFFERENCES) != 0;
+
+        // TODO unsupported
+        boolean useTraitParentClosure = (flags & USE_TRAIT_PARENT_CLOSURE) != 0;
+
+        if ((!o1.is(Type.OBSERVABLE) || !o2.is(Type.OBSERVABLE)) && !(o1.is(Type.CONFIGURATION) && o2.is(Type.CONFIGURATION))) {
+            return false;
+        }
+
+        Concept core1 = coreObservable(o1);
+        Concept core2 = coreObservable(o2);
+
+        if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : core1.is(core2))) {
+            return false;
+        }
+
+        Concept cc1 = context(o1);
+        Concept cc2 = context(o2);
+
+        // candidate may have no context; if both have them, they must be compatible
+        if (cc1 == null && cc2 != null) {
+            return false;
+        }
+        if (cc1 != null && cc2 != null) {
+            if (!compatible(cc1, cc2, ACCEPT_REALM_DIFFERENCES)) {
+                return false;
+            }
+        }
+
+        Concept ic1 = inherent(o1);
+        Concept ic2 = inherent(o2);
+
+        // same with inherency
+        if (ic1 == null && ic2 != null) {
+            return false;
+        }
+        if (ic1 != null && ic2 != null) {
+            if (!compatible(ic1, ic2)) {
+                return false;
+            }
+        }
+
+        for (Concept t : traits(o2)) {
+            boolean ok = hasTrait(o1, t);
+            if (!ok && useTraitParentClosure) {
+                ok = hasParentTrait(o1, t);
+            }
+            if (!ok) {
+                return false;
+            }
+        }
+
+        for (Concept t : roles(o2)) {
+            boolean ok = hasRole(o1, t);
+            if (!ok && useRoleParentClosure) {
+                ok = hasParentRole(o1, t);
+            }
+            if (!ok) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
+    @Override
+    public boolean hasParentRole(Semantics o1, Concept t) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /**
+     * Check for compatibility of context1 and context2 as the context for an observation of focus
+     * (i.e., focus can be observed by an observation process that happens in context1). Works like
+     * isCompatible, but if context1 is an occurrent, it will let through situations where it
+     * affects focus in whatever context it is, or where the its own context is the same as
+     * context2, thereby there is a common context to refer to.
+     * 
+     * @param focus the focal observable whose context we are checking
+     * @param context1 the specific context of the observation (model) that will observe focus
+     * @param context2 the mandated context of focus
+     * 
+     * @return true if focus can be observed by an observation process that happens in context1.
+     */
+    @Override
+    public boolean contextuallyCompatible(Semantics focus, Semantics context1, Semantics context2) {
+        boolean ret = compatible(context1, context2, 0);
+        if (!ret && occurrent(context1)) {
+            ret = affectedBy(focus, context1);
+            Concept itsContext = context(context1);
+            if (!ret) {
+                if (itsContext != null) {
+                    ret = compatible(itsContext, context2);
+                }
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public boolean occurrent(Semantics context1) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean affectedBy(Semantics focus, Semantics context1) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }

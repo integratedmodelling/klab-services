@@ -42,6 +42,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
+import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.HermiT.model.Individual;
 import org.semanticweb.owlapi.io.OWLXMLOntologyFormat;
@@ -135,7 +136,7 @@ public class Ontology /* implements IOntology */ {
 
 		for (OWLClass c : this.ontology.getClassesInSignature(false)) {
 			if (c.getIRI().toString().contains(this.prefix) && !this.conceptIDs.containsKey(c.getIRI().getFragment())) {
-				this.conceptIDs.put(c.getIRI().getFragment(), makeConcept(c, this.id, this.getName(), OWL.emptyType));
+				this.conceptIDs.put(c.getIRI().getFragment(), makeConcept(c, c.getIRI().getFragment(), this.getName(), OWL.emptyType));
 			}
 		}
 		for (OWLProperty<?, ?> p : this.ontology.getDataPropertiesInSignature(false)) {
@@ -362,7 +363,7 @@ public class Ontology /* implements IOntology */ {
 					this.propertyIDs.add(axiom.getArgument(0).toString());
 					this.apropertyIDs.add(axiom.getArgument(0).toString());
 					OWLMetadata._metadataVocabulary.put(p.getIRI().toString(), getName() + ":" + axiom.getArgument(0));
-
+					
 				} else if (axiom.is(IAxiom.DATA_PROPERTY_ASSERTION)) {
 
 					OWLDataProperty p = factory
@@ -627,6 +628,7 @@ public class Ontology /* implements IOntology */ {
 							OWLAnnotation annotation = factory.getOWLAnnotation(property, literal);
 							OWL.INSTANCE.manager.addAxiom(this.ontology,
 									factory.getOWLAnnotationAssertionAxiom(target.getIRI(), annotation));
+			                 addMetadata(axiom.getArgument(0).toString(), property.toString(), value);
 						}
 					}
 
@@ -647,7 +649,19 @@ public class Ontology /* implements IOntology */ {
 		return errors;
 	}
 
-	/* must exist, can be property or class */
+	private void addMetadata(String conceptId, String property, Object literal) {
+	    ConceptImpl concept = (ConceptImpl)this.conceptIDs.get(conceptId);
+	    concept.getMetadata().put(property, literal);
+	    if (CoreOntology.NS.IS_ABSTRACT.equals(property)) {
+	        concept.setAbstract(Boolean.parseBoolean(literal.toString()));
+	    } else if (CoreOntology.NS.CONCEPT_DEFINITION_PROPERTY.equals(property)) {
+            concept.setUrn(literal.toString());
+	    } else if (CoreOntology.NS.REFERENCE_NAME_PROPERTY.equals(property)) {
+            concept.setReferenceName(literal.toString());
+        }
+    }
+
+    /* must exist, can be property or class */
 	private OWLEntity findKnowledge(String string, ArrayList<String> errors) {
 
 		if (this.conceptIDs.containsKey(string)) {
