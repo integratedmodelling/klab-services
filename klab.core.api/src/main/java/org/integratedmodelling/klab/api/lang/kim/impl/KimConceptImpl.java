@@ -53,6 +53,40 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private String codeName;
     private KimConcept temporalInherent;
 
+    public KimConceptImpl() {}
+    
+    private KimConceptImpl(KimConceptImpl other) {
+        this.semanticRole = other.semanticRole;                                   
+        this.traitObservable = other.traitObservable;                                     
+        this.name = other.name;                                                 
+        this.type = EnumSet.copyOf(other.type); 
+        this.observable = other.observable;                                       
+        this.context = other.context;                                          
+        this.inherent = other.inherent;                                         
+        this.motivation = other.motivation;                                       
+        this.causant = other.causant;                                          
+        this.caused = other.caused;                                           
+        this.compresent = other.compresent;                                       
+        this.comparisonConcept = other.comparisonConcept;                                
+        this.authorityTerm = other.authority;                                        
+        this.authority = other.authority;                                            
+        this.semanticModifier = other.semanticModifier;                      
+        this.relationshipSource = other.relationshipSource;                               
+        this.relationshipTarget = other.relationshipTarget;                               
+        this.traits.addAll(other.traits);                 
+        this.roles.addAll(other.roles);                  
+        this.template = other.template;                                            
+        this.negated = other.negated;                                             
+        this.definition = other.definition;                                           
+        this.operands.addAll(other.operands);               
+        this.expressionType = other.expressionType;                                    
+        this.fundamentalType = other.fundamentalType;                                
+        this.cooccurrent = other.cooccurrent;                                      
+        this.adjacent = other.adjacent;                                         
+        this.codeName = other.codeName;                                             
+        this.temporalInherent = other.temporalInherent;                                 
+    }
+    
     @Override
     public String getName() {
         return this.name;
@@ -323,4 +357,135 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     public String toString() {
         return this.definition;
     }
+    
+    /*
+     * modification methods
+     */
+    
+    public KimConcept removeOperator() {
+        KimConceptImpl ret = new KimConceptImpl(this);
+        if (this.semanticModifier != null) {
+            ret.semanticModifier = null;
+            ret.comparisonConcept = null;
+            ret.type = this.argumentType;
+        }
+        return ret;
+    }
+
+    public KimConcept removeComponents(SemanticRole... roles) {
+
+        KimConceptImpl ret = new KimConceptImpl(this);
+
+        for (SemanticRole role : roles) {
+
+            switch(role) {
+            case ADJACENT:
+                ret.adjacent = null;
+                break;
+            case CAUSANT:
+                ret.causant = null;
+                break;
+            case CAUSED:
+                ret.caused = null;
+                break;
+            case COMPRESENT:
+                ret.compresent = null;
+                break;
+            case CONTEXT:
+                ret.context = null;
+                break;
+            case COOCCURRENT:
+                ret.cooccurrent = null;
+                break;
+            case GOAL:
+                ret.motivation = null;
+                break;
+            case INHERENT:
+                ret.inherent = null;
+                break;
+            case ROLE:
+                ret.roles.clear();
+                break;
+            case TRAIT:
+                ret.traits.clear();
+                break;
+            case TEMPORAL_INHERENT:
+                ret.temporalInherent = null;
+                break;
+            case UNARY_OPERATOR:
+                ((KimConceptImpl)ret.observable).semanticModifier = null;
+                break;
+            default:
+                break;
+            }
+        }
+        
+        // RECOMPUTE DEFINITION
+        
+        return ret;
+    }
+
+    public KimConcept removeComponents(List<String> declarations, List<SemanticRole> roles) {
+
+        KimConceptImpl ret = new KimConceptImpl(this);
+
+        for (int i = 0; i < declarations.size(); i++) {
+
+            String declaration = declarations.get(i);
+            SemanticRole role = roles.get(i);
+
+            switch(role) {
+            case ADJACENT:
+                ret.adjacent = null;
+                break;
+            case CAUSANT:
+                ret.causant = null;
+                break;
+            case CAUSED:
+                ret.caused = null;
+                break;
+            case COMPRESENT:
+                ret.compresent = null;
+                break;
+            case CONTEXT:
+                ret.context = null;
+                break;
+            case COOCCURRENT:
+                ret.cooccurrent = null;
+                break;
+            case GOAL:
+                ret.motivation = null;
+                break;
+            case INHERENT:
+                ret.inherent = null;
+                break;
+            case TEMPORAL_INHERENT:
+                ret.temporalInherent = null;
+                break;
+            case ROLE:
+                ret.roles = copyWithout(ret.roles, declaration);
+                break;
+            case TRAIT:
+                ret.traits = copyWithout(ret.traits, declaration);
+                break;
+            default:
+                break;
+            }
+        }
+
+        // RECOMPUTE DEFINITION, CODENAME AND...?
+
+        return ret;
+    }
+
+    private static List<KimConcept> copyWithout(List<KimConcept> concepts, String declaration) {
+        List<KimConcept> ret = new ArrayList<>();
+        for (KimConcept c : concepts) {
+            if (!c.toString().equals(declaration)) {
+                ret.add(c);
+            }
+        }
+        return ret;
+    }
+    
 }

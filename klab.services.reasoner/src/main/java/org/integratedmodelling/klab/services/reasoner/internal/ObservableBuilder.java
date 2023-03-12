@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IKnowledge;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -153,7 +154,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.mustContextualize = observable.mustContextualizeAtResolution();
         this.temporalInherent = observable.temporalInherent();
         this.annotations.addAll(observable.getAnnotations());
-        this.incarnatedAbstractObservable = observable.incarnatedAbstractObservable;
+        this.incarnatedAbstractObservable = observable.getIncarnatedAbstractObservable();
         this.deferredTarget = observable.getDeferredTarget();
         this.defaultValue = observable.getDefaultValue();
         this.resolutionExceptions.addAll(observable.getResolutionExceptions());
@@ -344,13 +345,13 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (!declarationIsComplete) {
-            this.declaration.setObservationType(type);
+            this.declaration.setSemanticModifier(type);
         }
 
         if (participants != null && participants.length > 0) {
             this.comparison = participants[0];
             if (!declarationIsComplete) {
-                this.declaration.setOtherConcept(getDeclaration(participants[0]));
+                this.declaration.setComparisonConcept(getDeclaration(participants[0]));
             }
             if (participants.length > 1) {
                 throw new KlabValidationException("cannot handle more than one participant concept in semantic operator");
@@ -471,7 +472,7 @@ public class ObservableBuilder implements Observable.Builder {
             }
         }
 
-        KimConceptImpl newDeclaration = this.declaration.removeComponents(roles);
+        KimConceptImpl newDeclaration = (KimConceptImpl) this.declaration.removeComponents(roles);
         ObservableBuilder ret = new ObservableBuilder(Services.INSTANCE.getReasoner().declareConcept(newDeclaration), monitor);
 
         /*
@@ -511,13 +512,13 @@ public class ObservableBuilder implements Observable.Builder {
         ObservableBuilder ret = new ObservableBuilder(this);
         List<SemanticRole> removedRoles = new ArrayList<>();
         for (Concept concept : concepts) {
-            Pair<Collection<Concept>, Collection<Concept>> tdelta = Concepts.INSTANCE.copyWithout(ret.traits, concept);
+            Pair<Collection<Concept>, Collection<Concept>> tdelta = copyWithout(ret.traits, concept);
             ret.traits = new ArrayList<>(tdelta.getFirst());
             ret.removed.addAll(tdelta.getSecond());
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.TRAIT);
             }
-            Pair<Collection<Concept>, Collection<Concept>> rdelta = Concepts.INSTANCE.copyWithout(ret.roles, concept);
+            Pair<Collection<Concept>, Collection<Concept>> rdelta = copyWithout(ret.roles, concept);
             ret.roles = new ArrayList<>(rdelta.getFirst());
             ret.removed.addAll(rdelta.getSecond());
             for (int i = 0; i < rdelta.getSecond().size(); i++) {
@@ -574,7 +575,7 @@ public class ObservableBuilder implements Observable.Builder {
             for (Concept r : ret.removed) {
                 declarations.add(r.getUrn());
             }
-            ret.declaration = ret.declaration.removeComponents(declarations, removedRoles);
+            ret.declaration = (KimConceptImpl) ret.declaration.removeComponents(declarations, removedRoles);
         }
 
         ret.checkTrivial();
@@ -588,13 +589,13 @@ public class ObservableBuilder implements Observable.Builder {
         ObservableBuilder ret = new ObservableBuilder(this);
         List<SemanticRole> removedRoles = new ArrayList<>();
         for (SemanticType concept : concepts) {
-            Pair<Collection<Concept>, Collection<Concept>> tdelta = Concepts.INSTANCE.copyWithoutAny(ret.traits, concept);
+            Pair<Collection<Concept>, Collection<Concept>> tdelta = copyWithoutAny(ret.traits, concept);
             ret.traits = new ArrayList<>(tdelta.getFirst());
             ret.removed.addAll(tdelta.getSecond());
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.TRAIT);
             }
-            Pair<Collection<Concept>, Collection<Concept>> rdelta = Concepts.INSTANCE.copyWithoutAny(ret.roles, concept);
+            Pair<Collection<Concept>, Collection<Concept>> rdelta = copyWithoutAny(ret.roles, concept);
             ret.roles = new ArrayList<>(rdelta.getFirst());
             ret.removed.addAll(rdelta.getSecond());
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
@@ -651,7 +652,7 @@ public class ObservableBuilder implements Observable.Builder {
             for (Concept r : ret.removed) {
                 declarations.add(r.getUrn());
             }
-            ret.declaration = ret.declaration.removeComponents(declarations, removedRoles);
+            ret.declaration = (KimConceptImpl) ret.declaration.removeComponents(declarations, removedRoles);
         }
 
         ret.checkTrivial();
@@ -666,13 +667,13 @@ public class ObservableBuilder implements Observable.Builder {
         ObservableBuilder ret = new ObservableBuilder(this);
         List<SemanticRole> removedRoles = new ArrayList<>();
         for (Concept concept : concepts) {
-            Pair<Collection<Concept>, Collection<Concept>> tdelta = Concepts.INSTANCE.copyWithoutAny(ret.traits, concept);
+            Pair<Collection<Concept>, Collection<Concept>> tdelta = copyWithoutAny(ret.traits, concept);
             ret.traits = new ArrayList<>(tdelta.getFirst());
             ret.removed.addAll(tdelta.getSecond());
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.TRAIT);
             }
-            Pair<Collection<Concept>, Collection<Concept>> rdelta = Concepts.INSTANCE.copyWithoutAny(ret.roles, concept);
+            Pair<Collection<Concept>, Collection<Concept>> rdelta = copyWithoutAny(ret.roles, concept);
             ret.roles = new ArrayList<>(rdelta.getFirst());
             ret.removed.addAll(rdelta.getSecond());
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
@@ -729,7 +730,7 @@ public class ObservableBuilder implements Observable.Builder {
             for (Concept r : ret.removed) {
                 declarations.add(r.getUrn());
             }
-            ret.declaration = ret.declaration.removeComponents(declarations, removedRoles);
+            ret.declaration = (KimConceptImpl) ret.declaration.removeComponents(declarations, removedRoles);
         }
 
         ret.checkTrivial();
@@ -1559,4 +1560,69 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
+
+
+    /**
+     * Utility to filter a concept list
+     * 
+     * @param concepts
+     * @param concept
+     * @return collection without the concepts and the concepts removed
+     */
+    public Pair<Collection<Concept>, Collection<Concept>> copyWithout(Collection<Concept> concepts,
+            Concept concept) {
+        Set<Concept> ret = new HashSet<>();
+        Set<Concept> rem = new HashSet<>();
+        for (Concept c : concepts) {
+            if (!c.equals(concept)) {
+                ret.add(c);
+            } else {
+                rem.add(c);
+            }
+        }
+        return Pair.of(ret, rem);
+    }
+
+    /**
+     * Utility to filter a concept list
+     * 
+     * @param concepts
+     * @param concept
+     * @return
+     */
+    public Pair<Collection<Concept>, Collection<Concept>> copyWithoutAny(Collection<Concept> concepts,
+            Concept concept) {
+        Set<Concept> ret = new HashSet<>();
+        Set<Concept> rem = new HashSet<>();
+        for (Concept c : concepts) {
+            if (!c.is(concept)) {
+                ret.add(c);
+            } else {
+                rem.add(c);
+            }
+        }
+        return Pair.of(ret, rem);
+    }
+
+    /**
+     * Utility to filter a concept list
+     * 
+     * @param concepts
+     * @param concept
+     * @return
+     */
+    public Pair<Collection<Concept>, Collection<Concept>> copyWithoutAny(Collection<Concept> concepts,
+            SemanticType concept) {
+        Set<Concept> ret = new HashSet<>();
+        Set<Concept> rem = new HashSet<>();
+        for (Concept c : concepts) {
+            if (!c.is(concept)) {
+                ret.add(c);
+            } else {
+                rem.add(c);
+            }
+        }
+        return Pair.of(ret, rem);
+    }
+    
 }

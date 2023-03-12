@@ -13,8 +13,6 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -30,7 +28,7 @@ public class ObservableImpl implements Observable {
 
     private static final long serialVersionUID = 6188649888474774359L;
 
-    private ConceptImpl semantics;
+    private Concept semantics;
     private Version version;
     private DirectObservation observer;
     private Activity.Description descriptionType;
@@ -40,6 +38,7 @@ public class ObservableImpl implements Observable {
     private Unit unit;
     private Currency currency;
     private Range range;
+    private String url;
 
     private boolean specialized;
 
@@ -76,6 +75,14 @@ public class ObservableImpl implements Observable {
     private String name;
 
     private String namespace;
+    
+    private boolean mustContextualizeAtResolution;
+    private Concept targetPredicate;
+    private boolean distributedInherency;
+    private Concept temporalInherent;
+    private String dereifiedAttribute;
+    private Observable incarnatedAbstractObservable;
+    private Observable deferredTarget;
     
     @Override
     public String getUrn() {
@@ -423,6 +430,82 @@ public class ObservableImpl implements Observable {
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    @Override
+    public boolean isMustContextualizeAtResolution() {
+        return mustContextualizeAtResolution;
+    }
+
+    public void setMustContextualizeAtResolution(boolean mustContextualizeAtResolution) {
+        this.mustContextualizeAtResolution = mustContextualizeAtResolution;
+    }
+
+    @Override
+    public Concept getTargetPredicate() {
+        return targetPredicate;
+    }
+
+    public void setTargetPredicate(Concept targetPredicate) {
+        this.targetPredicate = targetPredicate;
+    }
+
+    @Override
+    public boolean isDistributedInherency() {
+        return distributedInherency;
+    }
+
+    public void setDistributedInherency(boolean distributedInherency) {
+        this.distributedInherency = distributedInherency;
+    }
+
+    @Override
+    public Concept getTemporalInherent() {
+        return temporalInherent;
+    }
+
+    public void setTemporalInherent(Concept temporalInherent) {
+        this.temporalInherent = temporalInherent;
+    }
+
+    @Override
+    public String getDereifiedAttribute() {
+        return dereifiedAttribute;
+    }
+
+    public void setDereifiedAttribute(String dereifiedAttribute) {
+        this.dereifiedAttribute = dereifiedAttribute;
+    }
+
+    @Override
+    public Observable getIncarnatedAbstractObservable() {
+        return incarnatedAbstractObservable;
+    }
+
+    public void setIncarnatedAbstractObservable(Observable incarnatedAbstractObservable) {
+        this.incarnatedAbstractObservable = incarnatedAbstractObservable;
+    }
+
+    @Override
+    public Observable getDeferredTarget() {
+        return deferredTarget;
+    }
+
+    public void setDeferredTarget(Observable deferredTarget) {
+        this.deferredTarget = deferredTarget;
+    }
+
+    public void setSemantics(Concept semantics) {
+        this.semantics = semantics;
+    }
+
+    @Override
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
 }

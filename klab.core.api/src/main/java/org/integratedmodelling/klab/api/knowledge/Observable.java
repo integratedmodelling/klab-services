@@ -652,4 +652,21 @@ public interface Observable extends Semantics {
      * @return
      */
     boolean isSpecialized();
+
+    Observable getDeferredTarget();
+
+    Observable getIncarnatedAbstractObservable();
+
+    boolean isMustContextualizeAtResolution();
+
+    String getUrl();
+
+    String getDereifiedAttribute();
+
+    Concept getTemporalInherent();
+
+    boolean isDistributedInherency();
+
+    Concept getTargetPredicate();
+
 }

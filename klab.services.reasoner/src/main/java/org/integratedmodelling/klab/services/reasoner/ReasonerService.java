@@ -226,163 +226,157 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Concept coreObservable(Concept first) {
+    public Concept coreObservable(Semantics first) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Pair<Concept, List<SemanticType>> splitOperators(Concept concept) {
+    public Pair<Concept, List<SemanticType>> splitOperators(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<Concept> traits(Concept concept) {
+    public Collection<Concept> traits(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public int assertedDistance(Concept kConcept, Concept t) {
+    public int assertedDistance(Semantics kConcept, Semantics t) {
         // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
-    public boolean hasTrait(Concept concept, Concept t) {
+    public boolean hasTrait(Semantics concept, Concept t) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Collection<Concept> roles(Concept concept) {
+    public Collection<Concept> roles(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean hasRole(Concept concept, Concept t) {
+    public boolean hasRole(Semantics concept, Concept t) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Concept directContext(Concept concept) {
+    public Concept directContext(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept context(Concept concept) {
+    public Concept context(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directInherent(Concept concept) {
+    public Concept directInherent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept inherent(Concept concept) {
+    public Concept inherent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directGoal(Concept concept) {
+    public Concept directGoal(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept goal(Concept concept) {
+    public Concept goal(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directCooccurrent(Concept concept) {
+    public Concept directCooccurrent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directCausant(Concept concept) {
+    public Concept directCausant(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directCaused(Concept concept) {
+    public Concept directCaused(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directAdjacent(Concept concept) {
+    public Concept directAdjacent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directCompresent(Concept concept) {
+    public Concept directCompresent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept directRelativeTo(Concept concept) {
+    public Concept directRelativeTo(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept cooccurrent(Concept concept) {
+    public Concept cooccurrent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept causant(Concept concept) {
+    public Concept causant(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept caused(Concept concept) {
+    public Concept caused(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept adjacent(Concept concept) {
+    public Concept adjacent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept compresent(Concept concept) {
+    public Concept compresent(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept relativeTo(Concept concept) {
+    public Concept relativeTo(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Object displayLabel(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Object codeName(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -400,37 +394,37 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Collection<Concept> identities(Concept concept) {
+    public Collection<Concept> identities(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<Concept> attributes(Concept concept) {
+    public Collection<Concept> attributes(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<Concept> realms(Concept concept) {
+    public Collection<Concept> realms(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Concept baseParentTrait(Concept trait) {
+    public Concept baseParentTrait(Semantics trait) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean hasParentTrait(Concept type, Concept trait) {
+    public boolean hasParentTrait(Semantics type, Concept trait) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Collection<Concept> directTraits(Concept concept) {
+    public Collection<Concept> directTraits(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -490,7 +484,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Collection<Concept> directRoles(Concept concept) {
+    public Collection<Concept> directRoles(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -582,7 +576,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         // TODO unsupported
         boolean useTraitParentClosure = (flags & USE_TRAIT_PARENT_CLOSURE) != 0;
 
-        if ((!o1.is(Type.OBSERVABLE) || !o2.is(Type.OBSERVABLE)) && !(o1.is(Type.CONFIGURATION) && o2.is(Type.CONFIGURATION))) {
+        if ((!o1.is(SemanticType.OBSERVABLE) || !o2.is(SemanticType.OBSERVABLE)) && !(o1.is(SemanticType.CONFIGURATION) && o2.is(SemanticType.CONFIGURATION))) {
             return false;
         }
 
@@ -648,19 +642,6 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         return false;
     }
 
-    /**
-     * Check for compatibility of context1 and context2 as the context for an observation of focus
-     * (i.e., focus can be observed by an observation process that happens in context1). Works like
-     * isCompatible, but if context1 is an occurrent, it will let through situations where it
-     * affects focus in whatever context it is, or where the its own context is the same as
-     * context2, thereby there is a common context to refer to.
-     * 
-     * @param focus the focal observable whose context we are checking
-     * @param context1 the specific context of the observation (model) that will observe focus
-     * @param context2 the mandated context of focus
-     * 
-     * @return true if focus can be observed by an observation process that happens in context1.
-     */
     @Override
     public boolean contextuallyCompatible(Semantics focus, Semantics context1, Semantics context2) {
         boolean ret = compatible(context1, context2, 0);
@@ -686,6 +667,18 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     public boolean affectedBy(Semantics focus, Semantics context1) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public Concept baseObservable(Semantics observable) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Concept rawObservable(Semantics observable) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }
