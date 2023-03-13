@@ -194,4 +194,9 @@ public class ConceptImpl implements Concept {
         return ret;
     }
 
+    @Override
+    public Concept asConcept() {
+        return this;
+    }
+
 }

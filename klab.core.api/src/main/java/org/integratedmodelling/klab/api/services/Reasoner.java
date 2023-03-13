@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -67,7 +68,7 @@ public interface Reasoner extends KlabService {
      * @return
      */
     Observable resolveObservable(String definition);
-    
+
     /**
      * 
      * @param conceptDeclaration
@@ -88,7 +89,29 @@ public interface Reasoner extends KlabService {
 
     Collection<Concept> children(Semantics target);
 
+    /**
+     * 
+     * @param target
+     * @return
+     */
     Collection<Concept> parents(Semantics target);
+
+    /**
+     * Get a builder specified on the passed observable.
+     * 
+     * @param observableImpl
+     * @return
+     */
+    Builder observableBuilder(Observable observableImpl);
+
+    /**
+     * For fluency. Returns a single parent for a concept known to be part of a straight hierarchy.
+     * If the concept has multiple parents, an exception is thrown.
+     * 
+     * @param c
+     * @return
+     */
+    Concept parent(Semantics c);
 
     Collection<Concept> allChildren(Semantics target);
 
@@ -189,10 +212,9 @@ public interface Reasoner extends KlabService {
     Concept baseParentTrait(Semantics trait);
 
     Concept baseObservable(Semantics observable);
-    
+
     Concept rawObservable(Semantics observable);
-    
-    
+
     /**
      * Check if concept k carries the passed trait. Uses is() on all explicitly expressed traits.
      *
@@ -215,7 +237,7 @@ public interface Reasoner extends KlabService {
      * @return a boolean.
      */
     boolean hasParentRole(Semantics o1, Concept t);
-    
+
     /**
      * Like {@link #traits(Concept)} but only returns the traits directly attributed to this
      * concept.
@@ -321,13 +343,22 @@ public interface Reasoner extends KlabService {
     Collection<Concept> applicableObservables(Concept main);
 
     /**
+     * Return the type described by a quality that results from applying a unary operator to it. For
+     * example <code>magnitude of earth:AtmosphericTemperature</code> describes
+     * AtmosphericTemperature.
+     * 
+     * @param concept
+     * @return
+     */
+    Concept describedType(Semantics concept);
+
+    /**
      * 
      * @param concept
      * @param other
      * @return
      */
     boolean compatible(Semantics concept, Semantics other);
-    
 
     /**
      * Check for compatibility of context1 and context2 as the context for an observation of focus
@@ -380,8 +411,5 @@ public interface Reasoner extends KlabService {
         Concept defineConcept(KimConceptStatement statement, Scope scope);
 
     }
-
-
-
 
 }

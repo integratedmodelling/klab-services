@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.authentication.AuthenticationService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
-import org.integratedmodelling.klab.services.reasoner.internal.SemanticTranslator;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,7 +31,7 @@ class ConceptIngestion {
         AuthenticationService authenticationService = new AuthenticationService();
         scope = authenticationService.getAnonymousScope();
         reasonerService = new ReasonerService(authenticationService,
-                resourcesService = new ResourcesService(authenticationService), new SemanticTranslator());
+                resourcesService = new ResourcesService(authenticationService));
     }
 
     @Test

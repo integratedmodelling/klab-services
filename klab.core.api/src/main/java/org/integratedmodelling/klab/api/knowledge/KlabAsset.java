@@ -2,10 +2,11 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import java.io.Serializable;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 
 /**
- * All k.LAB assets have a URN and a version.
+ * All k.LAB assets have a URN, a version, and metadata.
  * 
  * @author Ferd
  *
@@ -27,5 +28,12 @@ public interface KlabAsset extends Serializable {
      * @return
      */
     Version getVersion();
+    
+    /**
+     * Never null, possibly empty.
+     * 
+     * @return
+     */
+    Metadata getMetadata();
     
 }

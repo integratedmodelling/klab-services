@@ -46,14 +46,12 @@ import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IKnowledge;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Model;
+import org.integratedmodelling.klab.api.knowledge.ISemantic;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
@@ -66,14 +64,22 @@ import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
-import org.integratedmodelling.klab.services.reasoner.internal.SemanticTranslator;
 import org.integratedmodelling.klab.utils.Pair;
+import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLDataProperty;
+import org.semanticweb.owlapi.model.OWLDataPropertyExpression;
+import org.semanticweb.owlapi.model.OWLLiteral;
+import org.semanticweb.owlapi.model.OWLNamedIndividual;
+import org.semanticweb.owlapi.model.OWLNaryBooleanClassExpression;
 import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
+import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyAlreadyExistsException;
@@ -81,8 +87,22 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLProperty;
 import org.semanticweb.owlapi.model.OWLQuantifiedRestriction;
+import org.semanticweb.owlapi.reasoner.AxiomNotInProfileException;
+import org.semanticweb.owlapi.reasoner.ClassExpressionNotInProfileException;
+import org.semanticweb.owlapi.reasoner.FreshEntitiesException;
+import org.semanticweb.owlapi.reasoner.InconsistentOntologyException;
+import org.semanticweb.owlapi.reasoner.InferenceType;
+import org.semanticweb.owlapi.reasoner.Node;
+import org.semanticweb.owlapi.reasoner.NodeSet;
+import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.reasoner.ReasonerInterruptedException;
+import org.semanticweb.owlapi.reasoner.TimeOutException;
+import org.semanticweb.owlapi.reasoner.UnsupportedEntailmentTypeException;
 import org.semanticweb.owlapi.util.AutoIRIMapper;
+import org.semanticweb.owlapi.util.Version;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
 
 /**
@@ -102,8 +122,16 @@ public enum OWL {
     private HashMap<String, String> iri2ns = new HashMap<>();
     private HashMap<String, OWLClass> systemConcepts = new HashMap<>();
     private HashMap<String, ConceptImpl> xsdMappings = new HashMap<>();
-    private HashMap<Long, OWLClass> owlClasses = new HashMap<>();
+    private BiMap<Long, OWLClass> owlClasses = HashBiMap.create();
+    private BiMap<Long, ConceptImpl> conceptsById = HashBiMap.create();
     private AtomicLong classId = new AtomicLong(1l);
+
+    private boolean reasonerActive;
+    private boolean reasonerSynchronizing = false;
+    private Ontology mergedReasonerOntology;
+    private OWLReasoner reasoner;
+
+    private static String INTERNAL_REASONER_ONTOLOGY_ID = "k";
 
     static EnumSet<SemanticType> emptyType = EnumSet.noneOf(SemanticType.class);
 
@@ -218,52 +246,54 @@ public enum OWL {
         return ret;
     }
 
-    /**
-     * Get the KConcept corresponding to the OWL class passed. Throws an unchecked exception if not
-     * found.
-     * 
-     * @param owl
-     * @param complainIfNotFound
-     * @return the concept for the class
-     */
-    public Concept getConceptFor(OWLClass owl, boolean complainIfNotFound) {
-        Concept ret = null;
-        String sch = owl.getIRI().getNamespace();
-        if (sch.endsWith("#")) {
-            sch = sch.substring(0, sch.length() - 1);
-        }
-        if (sch.endsWith("/")) {
-            sch = sch.substring(0, sch.length() - 1);
-        }
-        Ontology ontology = getOntology(iri2ns.get(sch));
-        if (ontology != null) {
-            ret = ontology.getConcept(owl.getIRI().getFragment());
-        }
-
-        if (ret == null && complainIfNotFound) {
-            throw new KInternalErrorException("internal: OWL entity " + owl + " not corresponding to a known ontology");
-        }
-
-        return ret;
-    }
-
-    public Concept getConceptFor(IRI iri) {
-        Concept ret = null;
-        String sch = iri.getNamespace();
-        if (sch.endsWith("#")) {
-            sch = sch.substring(0, sch.length() - 1);
-        }
-        Ontology ontology = getOntology(iri2ns.get(sch));
-        if (ontology != null) {
-            ret = ontology.getConcept(iri.getFragment());
-        }
-
-        if (ret == null) {
-            throw new KInternalErrorException("internal: OWL IRI " + iri + " not corresponding to a known ontology");
-        }
-
-        return ret;
-    }
+    // /**
+    // * Get the Concept corresponding to the OWL class passed. Throws an unchecked exception if not
+    // * found.
+    // *
+    // * @param owl
+    // * @param complainIfNotFound
+    // * @return the concept for the class
+    // */
+    // public Concept getConceptFor(OWLClass owl, boolean complainIfNotFound) {
+    // Concept ret = null;
+    // String sch = owl.getIRI().getNamespace();
+    // if (sch.endsWith("#")) {
+    // sch = sch.substring(0, sch.length() - 1);
+    // }
+    // if (sch.endsWith("/")) {
+    // sch = sch.substring(0, sch.length() - 1);
+    // }
+    // Ontology ontology = getOntology(iri2ns.get(sch));
+    // if (ontology != null) {
+    // ret = ontology.getConcept(owl.getIRI().getFragment());
+    // }
+    //
+    // if (ret == null && complainIfNotFound) {
+    // throw new KInternalErrorException("internal: OWL entity " + owl + " does not correspond to a
+    // known ontology");
+    // }
+    //
+    // return ret;
+    // }
+    //
+    // public Concept getConceptFor(IRI iri) {
+    // Concept ret = null;
+    // String sch = iri.getNamespace();
+    // if (sch.endsWith("#")) {
+    // sch = sch.substring(0, sch.length() - 1);
+    // }
+    // Ontology ontology = getOntology(iri2ns.get(sch));
+    // if (ontology != null) {
+    // ret = ontology.getConcept(iri.getFragment());
+    // }
+    //
+    // if (ret == null) {
+    // throw new KInternalErrorException("internal: OWL IRI " + iri + " does not correspond to a
+    // known ontology");
+    // }
+    //
+    // return ret;
+    // }
 
     /**
      * Get the IProperty corresponding to the OWL class passed. Throws an unchecked exception if not
@@ -294,38 +324,39 @@ public enum OWL {
         return ret;
     }
 
-    public Property getPropertyFor(IRI iri) {
-        Property ret = null;
-        String sch = iri.getNamespace();
-        if (sch.endsWith("#")) {
-            sch = sch.substring(0, sch.length() - 1);
-        }
-        Ontology ontology = getOntology(iri2ns.get(sch));
-        if (ontology != null) {
-            ret = ontology.getProperty(iri.getFragment());
-        }
+    // public Property getPropertyFor(IRI iri) {
+    // Property ret = null;
+    // String sch = iri.getNamespace();
+    // if (sch.endsWith("#")) {
+    // sch = sch.substring(0, sch.length() - 1);
+    // }
+    // Ontology ontology = getOntology(iri2ns.get(sch));
+    // if (ontology != null) {
+    // ret = ontology.getProperty(iri.getFragment());
+    // }
+    //
+    // if (ret == null) {
+    // throw new KInternalErrorException("internal: OWL IRI " + iri + " not corresponding to a known
+    // ontology");
+    // }
+    //
+    // return ret;
+    // }
 
-        if (ret == null) {
-            throw new KInternalErrorException("internal: OWL IRI " + iri + " not corresponding to a known ontology");
-        }
-
-        return ret;
-    }
-
-    public static String getFileName(String s) {
-
-        String ret = s;
-
-        int sl = ret.lastIndexOf(File.separator);
-        if (sl < 0) {
-            sl = ret.lastIndexOf('/');
-        }
-        if (sl > 0) {
-            ret = ret.substring(sl + 1);
-        }
-
-        return ret;
-    }
+    // public static String getFileName(String s) {
+    //
+    // String ret = s;
+    //
+    // int sl = ret.lastIndexOf(File.separator);
+    // if (sl < 0) {
+    // sl = ret.lastIndexOf('/');
+    // }
+    // if (sl > 0) {
+    // ret = ret.substring(sl + 1);
+    // }
+    //
+    // return ret;
+    // }
 
     /**
      * Create a manager and load every OWL file under the load path.
@@ -362,45 +393,40 @@ public enum OWL {
 
         // load();
 
+        this.mergedReasonerOntology = (Ontology) requireOntology(INTERNAL_REASONER_ONTOLOGY_ID, OWL.INTERNAL_ONTOLOGY_PREFIX);
+        this.mergedReasonerOntology.setInternal(true);
+
         /*
          * all namespaces so far are internal, and just these.
          */
         for (KimNamespace ns : this.namespaces.values()) {
             // ((Namespace) ns).setInternal(true);
-            // ((Ontology) (ns.getOntology())).setInternal(true);
+            getOntology(ns.getNamespace()).setInternal(true);
         }
 
-        // createReasoner(monitor);
+        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
 
         /*
          * create an independent ontology for the non-semantic types we encounter.
          */
-        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
+        // if (Namespaces.INSTANCE.getNamespace(ONTOLOGY_ID) == null) {
+        // Namespaces.INSTANCE.registerNamespace(new Namespace(ONTOLOGY_ID, null, overall),
+        // monitor);
+        // }
+        if (Configuration.INSTANCE.useReasoner()) {
+            this.reasoner = new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
+            reasonerActive = true;
+        }
+
+        for (KimNamespace ns : this.namespaces.values()) {
+            registerWithReasoner(getOntology(ns.getNamespace()));
+        }
 
     }
 
     public CoreOntology getCoreOntology() {
         return this.coreOntology;
     }
-
-    // public void createReasoner(IMonitor monitor) {
-    //
-    // /*
-    // * Create the reasoner.
-    // */
-    // Reasoner.INSTANCE.setReasoner(new KlabReasoner(this, monitor));
-    //
-    // /*
-    // * all namespaces so far are internal, and just these.
-    // */
-    // for (INamespace ns : this.namespaces.values()) {
-    // Reasoner.INSTANCE.addOntology((Ontology) ns.getOntology());
-    // }
-    // }
-
-    // private void initialize(Channel monitor) {
-    //
-    // }
 
     String importOntology(OWLOntology ontology, String resource, String namespace, boolean imported, Channel monitor) {
 
@@ -523,8 +549,13 @@ public enum OWL {
             ((ConceptImpl) this.thing).setId(registerOwlClass(manager.getOWLDataFactory().getOWLThing()));
             ((ConceptImpl) this.thing).setUrn("owl:Thing");
             ((ConceptImpl) this.thing).setNamespace("owl");
+            registerConcept((ConceptImpl) this.thing);
         }
         return this.thing;
+    }
+
+    public void registerConcept(ConceptImpl thing) {
+        this.conceptsById.put(thing.getId(), thing);
     }
 
     public String getConceptSpace(IRI iri) {
@@ -1046,6 +1077,10 @@ public enum OWL {
 
     public Concept getExistingOrCreate(OWLClass owl) {
 
+        if (owlClasses.containsValue(owl)) {
+            return conceptsById.get(owlClasses.inverse().get(owl));
+        }
+
         String conceptId = owl.getIRI().getFragment();
         String namespace = getConceptSpace(owl.getIRI());
 
@@ -1334,7 +1369,7 @@ public enum OWL {
             aontology.add(Axiom.AnnotationAssertion(conceptId, CoreOntology.NS.BASE_DECLARATION, "true"));
             aontology.add(Axiom.AnnotationAssertion(conceptId, CoreOntology.NS.REFERENCE_NAME_PROPERTY,
                     "not_" + attribute.getReferenceName()));
-            aontology.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", "Not" + SemanticTranslator.getCleanId(attribute)));
+            aontology.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", "Not" + getCleanId(attribute)));
             aontology.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not  " + attribute.getUrn()));
 
             if (prop != null) {
@@ -2224,81 +2259,434 @@ public enum OWL {
 
     }
 
-//    
-//   
-//    
-//    /**
-//     * Given a collection of namespace-specified knowledge and/or collections
-//     * thereof, return the ontology of a namespace that sits on top of all others in
-//     * the asserted dependency chain and imports all concepts. If that is not
-//     * possible, return the "fallback" ontology which must already import all the
-//     * concepts (typically the one where the targets are used in a declaration). 
-//     * Used to establish where to put derived concepts and restrictions so as to 
-//     * avoid circular dependencies in the underlying OWL model while minimizing
-//     * redundant concepts.
-//     * 
-//     * @param targets
-//     * @return
-//     */
-//    public Ontology getTargetOntology(Ontology fallback, Object... targets) {
-//
-//        Set<String> graph = new HashSet<>();
-//        if (targets != null) {
-//            for (Object o : targets) {
-//                if (o instanceof KlabAsset || o instanceof KimStatement) {
-//                    String nsid = getNamespace(o);
-//                    if (Services.INSTANCE.getResources().resolveNamespace(nsid, scope) != null) {
-//                        graph.add(nsid);
-//                    }
-//                } else if (o instanceof Iterable) {
-//                    for (Object u : (Iterable<?>) o) {
-//                        if (u instanceof IKnowledge) {
-//                            String nsid = getNamespace(o);
-//                            if (Services.INSTANCE.getResources().resolveNamespace(nsid, scope) != null) {
-//                                graph.add(nsid);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//
-//        String namespace = null;
-//        Set<String> os = new HashSet<>(graph);
-//        for (String a : graph) {
-//            if (namespace == null) {
-//                namespace = a;
-//            }
-//            for (String b : os) {
-//                KimNamespace ns = Services.INSTANCE.getResources().resolveNamespace(b, scope);
-//                if (!b.equals(a) && ns.getImports().containsKey(a)) {
-//                    namespace = b;
-//                }
-//            }
-//        }
-//
-//        /*
-//         * candidate namespace must already import all the others. If not, choose the
-//         * fallback ontology which must be guaranteed to contain all the imports already.
-//         */
-//        boolean transitive = true;
-//        KimNamespace ns = Services.INSTANCE.getResources().resolveNamespace(namespace, scope);
-//        for (String s : graph) {
-//            if (!s.equals(ns.getUrn()) && !ns.getImports().containsKey(s)) {
-//                transitive = false;
-//                break;
-//            }
-//        }
-//        return (Ontology) (transitive && ns != null ? getOntology(ns.getNamespace()) : fallback);
-//    }
-//
-//    String getNamespace(Object o) {
-//        if (o instanceof KimStatement) {
-//            return ((KimStatement)o).getNamespace();
-//        } else if (o instanceof Model) {
-//            return ((Model)o).getNamespace();
-//        }
-//        // FIXME throw some shit
-//        return null;
-//    }
+    Concept getConceptFor(OWLClass cls) {
+        Long id = owlClasses.inverse().get(cls);
+        return conceptsById.get(id);
+    }
+
+    synchronized void registerWithReasoner(Ontology o) {
+        if (mergedReasonerOntology != null) {
+            mergedReasonerOntology.addImport(o);
+            if (reasoner != null && reasonerSynchronizing) {
+                reasoner.flush();
+            }
+        }
+    }
+
+    public void flushReasoner() {
+        if (reasoner != null && !reasonerSynchronizing) {
+            reasoner.flush();
+        }
+    }
+
+    public boolean isOn() {
+        return reasonerActive;
+    }
+
+    public Ontology getOntology() {
+        return mergedReasonerOntology;
+    }
+
+    /**
+     * {@link IKnowledge#is(ISemantic)} will only check for direct subsumption. This one defaults to
+     * that when the reasoner is not active.
+     * 
+     * Annotation properties only use asserted methods.
+     * 
+     * TODO handle exceptions and/or default to is() when the ontology is inconsistent and we're not
+     * running in strict mode.
+     * 
+     * @param c1
+     * @param c2
+     * @return true
+     */
+    public boolean is(Semantics c1, Semantics c2) {
+
+        if (c1 instanceof Concept && c2 instanceof Concept) {
+
+            if (reasoner == null) {
+                return c1.is(c2);
+            }
+            return getSubClasses(OWL.INSTANCE.getOWLClass(c2.asConcept()), false)
+                    .containsEntity(OWL.INSTANCE.getOWLClass(c1.asConcept()));
+
+        } else if (c1 instanceof Property && c2 instanceof Property) {
+
+            if (reasoner == null || (((Property) c1).isAnnotation() && ((Property) c2).isAnnotation())) {
+                return ((Property) c1).is(c2);
+            }
+
+            if (((Property) c1).isObjectProperty() && ((Property) c2).isObjectProperty()) {
+                return getSubObjectProperties(((Property) c2).getOWLEntity().asOWLObjectProperty(), false)
+                        .containsEntity(((Property) c1).getOWLEntity().asOWLObjectProperty());
+            } else if (((Property) c1).isLiteralProperty() && ((Property) c2).isLiteralProperty()) {
+                return getSubDataProperties(((Property) c2).getOWLEntity().asOWLDataProperty(), false)
+                        .containsEntity(((Property) c1).getOWLEntity().asOWLDataProperty());
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Return if concept is consistent. If reasoner is off, assume true.
+     * 
+     * @param c
+     * @return true if concept is consistent.
+     */
+    public boolean isSatisfiable(Semantics c) {
+        return reasoner == null ? true : isSatisfiable(OWL.INSTANCE.getOWLClass(c.asConcept()));
+    }
+
+    /**
+     * Synonym of getAllParents(), in Concept; defaults to asserted parents if reasoner is off. Will
+     * not return owl:Thing (which should never appear anyway) or owl:Nothing, even if the concept
+     * is inconsistent.
+     * 
+     * @param main
+     * @return the parent closure of the concept
+     */
+    public Set<Concept> getParentClosure(Concept main) {
+        Set<Concept> ret = new HashSet<>();
+        if (reasoner != null) {
+            for (OWLClass cls : getSuperClasses(OWL.INSTANCE.getOWLClass(main.asConcept()), false).getFlattened()) {
+                if (cls.isBottomEntity() || cls.isTopEntity()) {
+                    continue;
+                }
+                Concept cc = OWL.INSTANCE.getConceptFor(cls);
+                if (cc != null) {
+                    ret.add(cc);
+                }
+            }
+        } else {
+            ret.addAll(Services.INSTANCE.getReasoner().allParents(main));
+        }
+        return ret;
+
+    }
+
+    /**
+     * Synonym of getSubclasses, in Concepts; defaults to asserted children if reasoner is off. Will
+     * not return owl:Thing (which should never appear anyway) or owl:Nothing, which is a child of
+     * everything.
+     * 
+     * @param main
+     * @return the semantic closure of the concept
+     */
+    public Collection<Concept> getSemanticClosure(Concept main) {
+        if (reasoner != null) {
+            Set<Concept> ret = new HashSet<>();
+            for (OWLClass cls : getSubClasses(OWL.INSTANCE.getOWLClass(main.asConcept()), false).getFlattened()) {
+                if (cls.isBottomEntity() || cls.isTopEntity()) {
+                    continue;
+                }
+                Concept cc = OWL.INSTANCE.getConceptFor(cls);
+                if (cc != null) {
+                    ret.add(cc);
+                }
+            }
+            return ret;
+        }
+        return Services.INSTANCE.getReasoner().closure(main);
+    }
+
+    /*
+     * Delegate methods. TODO align with k.LAB API instead of OWLAPI.
+     */
+
+    public void flush() {
+        if (reasoner != null) {
+            reasoner.flush();
+        }
+    }
+
+    public NodeSet<OWLClass> getDataPropertyDomains(OWLDataProperty arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getDataPropertyDomains(arg0, arg1);
+    }
+
+    public Set<OWLLiteral> getDataPropertyValues(OWLNamedIndividual arg0, OWLDataProperty arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getDataPropertyValues(arg0, arg1);
+    }
+
+    public NodeSet<OWLNamedIndividual> getDifferentIndividuals(OWLNamedIndividual arg0)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getDifferentIndividuals(arg0);
+    }
+
+    public NodeSet<OWLClass> getDisjointClasses(OWLClassExpression arg0)
+            throws ReasonerInterruptedException, TimeOutException, FreshEntitiesException, InconsistentOntologyException {
+        return reasoner.getDisjointClasses(arg0);
+    }
+
+    public NodeSet<OWLDataProperty> getDisjointDataProperties(OWLDataPropertyExpression arg0)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getDisjointDataProperties(arg0);
+    }
+
+    public NodeSet<OWLObjectPropertyExpression> getDisjointObjectProperties(OWLObjectPropertyExpression arg0)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getDisjointObjectProperties(arg0);
+    }
+
+    public Node<OWLClass> getEquivalentClasses(OWLClassExpression arg0) throws InconsistentOntologyException,
+            ClassExpressionNotInProfileException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getEquivalentClasses(arg0);
+    }
+
+    public Node<OWLDataProperty> getEquivalentDataProperties(OWLDataProperty arg0)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getEquivalentDataProperties(arg0);
+    }
+
+    public Node<OWLObjectPropertyExpression> getEquivalentObjectProperties(OWLObjectPropertyExpression arg0)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getEquivalentObjectProperties(arg0);
+    }
+
+    public NodeSet<OWLNamedIndividual> getInstances(OWLClassExpression arg0, boolean arg1) throws InconsistentOntologyException,
+            ClassExpressionNotInProfileException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getInstances(arg0, arg1);
+    }
+
+    public Node<OWLObjectPropertyExpression> getInverseObjectProperties(OWLObjectPropertyExpression arg0)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getInverseObjectProperties(arg0);
+    }
+
+    public NodeSet<OWLClass> getObjectPropertyDomains(OWLObjectPropertyExpression arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getObjectPropertyDomains(arg0, arg1);
+    }
+
+    public NodeSet<OWLClass> getObjectPropertyRanges(OWLObjectPropertyExpression arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getObjectPropertyRanges(arg0, arg1);
+    }
+
+    public NodeSet<OWLNamedIndividual> getObjectPropertyValues(OWLNamedIndividual arg0, OWLObjectPropertyExpression arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getObjectPropertyValues(arg0, arg1);
+    }
+
+    public String getReasonerName() {
+        return reasoner.getReasonerName();
+    }
+
+    public Version getReasonerVersion() {
+        return reasoner.getReasonerVersion();
+    }
+
+    public Node<OWLNamedIndividual> getSameIndividuals(OWLNamedIndividual arg0)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getSameIndividuals(arg0);
+    }
+
+    public NodeSet<OWLClass> getSubClasses(OWLClassExpression arg0, boolean arg1) throws ReasonerInterruptedException,
+            TimeOutException, FreshEntitiesException, InconsistentOntologyException, ClassExpressionNotInProfileException {
+        return reasoner.getSubClasses(arg0, arg1);
+    }
+
+    public NodeSet<OWLDataProperty> getSubDataProperties(OWLDataProperty arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getSubDataProperties(arg0, arg1);
+    }
+
+    public NodeSet<OWLObjectPropertyExpression> getSubObjectProperties(OWLObjectPropertyExpression arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getSubObjectProperties(arg0, arg1);
+    }
+
+    public NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1) throws InconsistentOntologyException,
+            ClassExpressionNotInProfileException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getSuperClasses(arg0, arg1);
+    }
+
+    public NodeSet<OWLDataProperty> getSuperDataProperties(OWLDataProperty arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getSuperDataProperties(arg0, arg1);
+    }
+
+    public NodeSet<OWLObjectPropertyExpression> getSuperObjectProperties(OWLObjectPropertyExpression arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getSuperObjectProperties(arg0, arg1);
+    }
+
+    public long getTimeOut() {
+        return reasoner.getTimeOut();
+    }
+
+    public NodeSet<OWLClass> getTypes(OWLNamedIndividual arg0, boolean arg1)
+            throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException, TimeOutException {
+        return reasoner.getTypes(arg0, arg1);
+    }
+
+    public Node<OWLClass> getUnsatisfiableClasses()
+            throws ReasonerInterruptedException, TimeOutException, InconsistentOntologyException {
+        return reasoner.getUnsatisfiableClasses();
+    }
+
+    public void interrupt() {
+        reasoner.interrupt();
+    }
+
+    public boolean isConsistent() throws ReasonerInterruptedException, TimeOutException {
+        return reasoner.isConsistent();
+    }
+
+    public boolean isEntailed(OWLAxiom arg0) throws ReasonerInterruptedException, UnsupportedEntailmentTypeException,
+            TimeOutException, AxiomNotInProfileException, FreshEntitiesException, InconsistentOntologyException {
+        return reasoner.isEntailed(arg0);
+    }
+
+    public boolean isEntailed(Set<? extends OWLAxiom> arg0)
+            throws ReasonerInterruptedException, UnsupportedEntailmentTypeException, TimeOutException, AxiomNotInProfileException,
+            FreshEntitiesException, InconsistentOntologyException {
+        return reasoner.isEntailed(arg0);
+    }
+
+    public boolean isEntailmentCheckingSupported(AxiomType<?> arg0) {
+        return reasoner.isEntailmentCheckingSupported(arg0);
+    }
+
+    public boolean isPrecomputed(InferenceType arg0) {
+        return reasoner.isPrecomputed(arg0);
+    }
+
+    public boolean isSatisfiable(OWLClassExpression arg0) throws ReasonerInterruptedException, TimeOutException,
+            ClassExpressionNotInProfileException, FreshEntitiesException, InconsistentOntologyException {
+        return reasoner.isSatisfiable(arg0);
+    }
+
+    public void registerWithReasoner(KimNamespace parsed) {
+        Ontology ontology = getOntology(parsed.getNamespace());
+        if (ontology != null) {
+            registerWithReasoner(ontology);
+        }
+    }
+
+    public Collection<Concept> getParents(Concept concept) {
+        Set<Concept> concepts = new HashSet<>();
+        OWLClass owl = getOWLClass(concept);
+        synchronized (owl) {
+            Set<OWLClassExpression> set = owl.getSuperClasses(manager.getOntologies());
+            for (OWLClassExpression s : set) {
+                if (!s.equals(owl) && !(s.isAnonymous() || s.asOWLClass().isBuiltIn()))
+                    concepts.add(getExistingOrCreate(s.asOWLClass()));
+            }
+        }
+        return concepts;
+    }
+
+    public Collection<Concept> getChildren(Concept concept) {
+        Set<Concept> concepts = new HashSet<>();
+        OWLClass owl = getOWLClass(concept);
+        synchronized (owl) {
+            Set<OWLClassExpression> set = owl.getSubClasses(manager.getOntologies());
+            for (OWLClassExpression s : set) {
+                if (!(s.isAnonymous() || s.isOWLNothing() || s.isOWLThing()))
+                    concepts.add(getExistingOrCreate(s.asOWLClass()));
+            }
+            if (set.isEmpty() && owl.isOWLThing()) {
+                for (Ontology onto : ontologies.values()) {
+                    concepts.addAll(onto.getConcepts());
+                }
+            }
+        }
+        return concepts;
+    }
+    //
+    //
+    //
+    // /**
+    // * Given a collection of namespace-specified knowledge and/or collections
+    // * thereof, return the ontology of a namespace that sits on top of all others in
+    // * the asserted dependency chain and imports all concepts. If that is not
+    // * possible, return the "fallback" ontology which must already import all the
+    // * concepts (typically the one where the targets are used in a declaration).
+    // * Used to establish where to put derived concepts and restrictions so as to
+    // * avoid circular dependencies in the underlying OWL model while minimizing
+    // * redundant concepts.
+    // *
+    // * @param targets
+    // * @return
+    // */
+    // public Ontology getTargetOntology(Ontology fallback, Object... targets) {
+    //
+    // Set<String> graph = new HashSet<>();
+    // if (targets != null) {
+    // for (Object o : targets) {
+    // if (o instanceof KlabAsset || o instanceof KimStatement) {
+    // String nsid = getNamespace(o);
+    // if (Services.INSTANCE.getResources().resolveNamespace(nsid, scope) != null) {
+    // graph.add(nsid);
+    // }
+    // } else if (o instanceof Iterable) {
+    // for (Object u : (Iterable<?>) o) {
+    // if (u instanceof IKnowledge) {
+    // String nsid = getNamespace(o);
+    // if (Services.INSTANCE.getResources().resolveNamespace(nsid, scope) != null) {
+    // graph.add(nsid);
+    // }
+    // }
+    // }
+    // }
+    // }
+    // }
+    //
+    // String namespace = null;
+    // Set<String> os = new HashSet<>(graph);
+    // for (String a : graph) {
+    // if (namespace == null) {
+    // namespace = a;
+    // }
+    // for (String b : os) {
+    // KimNamespace ns = Services.INSTANCE.getResources().resolveNamespace(b, scope);
+    // if (!b.equals(a) && ns.getImports().containsKey(a)) {
+    // namespace = b;
+    // }
+    // }
+    // }
+    //
+    // /*
+    // * candidate namespace must already import all the others. If not, choose the
+    // * fallback ontology which must be guaranteed to contain all the imports already.
+    // */
+    // boolean transitive = true;
+    // KimNamespace ns = Services.INSTANCE.getResources().resolveNamespace(namespace, scope);
+    // for (String s : graph) {
+    // if (!s.equals(ns.getUrn()) && !ns.getImports().containsKey(s)) {
+    // transitive = false;
+    // break;
+    // }
+    // }
+    // return (Ontology) (transitive && ns != null ? getOntology(ns.getNamespace()) : fallback);
+    // }
+    //
+    // String getNamespace(Object o) {
+    // if (o instanceof KimStatement) {
+    // return ((KimStatement)o).getNamespace();
+    // } else if (o instanceof Model) {
+    // return ((Model)o).getNamespace();
+    // }
+    // // FIXME throw some shit
+    // return null;
+    // }
+
+    public Set<Concept> getOperands(Concept asConcept) {
+        Set<Concept> ret = new HashSet<>();
+        OWLClass _owl = getOWLClass(asConcept);
+        Set<OWLClassExpression> set = _owl.getSuperClasses(manager.getOntologies());
+        for (OWLClassExpression s : set) {
+            if (s instanceof OWLNaryBooleanClassExpression) {
+                for (OWLClassExpression cls : ((OWLNaryBooleanClassExpression) s).getOperandsAsList()) {
+                    if (cls instanceof OWLClass) {
+                        ret.add(getExistingOrCreate(cls.asOWLClass()));
+                    }
+                }
+            }
+        }
+        return ret;
+    }
 }

@@ -316,6 +316,7 @@ public class Ontology /* implements IOntology */ {
 		ret.setNamespace(ontologyName);
 		ret.setUrn(ontologyName + ":" + id);
 		ret.getType().addAll(type);
+		OWL.INSTANCE.registerConcept(ret);
 		return ret;
 	}
 

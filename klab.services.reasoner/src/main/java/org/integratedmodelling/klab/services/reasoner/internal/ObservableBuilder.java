@@ -111,6 +111,10 @@ public class ObservableBuilder implements Observable.Builder {
         return new ObservableBuilder(concept, monitor);
     }
 
+    public static ObservableBuilder getBuilder(Observable observable, Channel monitor) {
+        return new ObservableBuilder(observable, monitor);
+    }
+
     public ObservableBuilder(Concept main, Ontology ontology, Channel monitor) {
         this.main = main;
         this.ontology = ontology;
@@ -1556,8 +1560,6 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-
-
     /**
      * Utility to filter a concept list
      * 
@@ -1565,8 +1567,7 @@ public class ObservableBuilder implements Observable.Builder {
      * @param concept
      * @return collection without the concepts and the concepts removed
      */
-    public Pair<Collection<Concept>, Collection<Concept>> copyWithout(Collection<Concept> concepts,
-            Concept concept) {
+    public Pair<Collection<Concept>, Collection<Concept>> copyWithout(Collection<Concept> concepts, Concept concept) {
         Set<Concept> ret = new HashSet<>();
         Set<Concept> rem = new HashSet<>();
         for (Concept c : concepts) {
@@ -1586,8 +1587,7 @@ public class ObservableBuilder implements Observable.Builder {
      * @param concept
      * @return
      */
-    public Pair<Collection<Concept>, Collection<Concept>> copyWithoutAny(Collection<Concept> concepts,
-            Concept concept) {
+    public Pair<Collection<Concept>, Collection<Concept>> copyWithoutAny(Collection<Concept> concepts, Concept concept) {
         Set<Concept> ret = new HashSet<>();
         Set<Concept> rem = new HashSet<>();
         for (Concept c : concepts) {
@@ -1607,8 +1607,7 @@ public class ObservableBuilder implements Observable.Builder {
      * @param concept
      * @return
      */
-    public Pair<Collection<Concept>, Collection<Concept>> copyWithoutAny(Collection<Concept> concepts,
-            SemanticType concept) {
+    public Pair<Collection<Concept>, Collection<Concept>> copyWithoutAny(Collection<Concept> concepts, SemanticType concept) {
         Set<Concept> ret = new HashSet<>();
         Set<Concept> rem = new HashSet<>();
         for (Concept c : concepts) {
@@ -1620,5 +1619,5 @@ public class ObservableBuilder implements Observable.Builder {
         }
         return Pair.of(ret, rem);
     }
-    
+
 }

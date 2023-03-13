@@ -34,6 +34,14 @@ public interface KlabService extends Serializable {
 
     ServiceCapabilities getCapabilities();
 
+    /**
+     * Get the URL to this service. If this is null, the service cannot be used except through
+     * direct injection. If it's a local URL, it can only be used locally. All these properties will
+     * be reflected in the service scope. Otherwise, this could be a full-fledged service or a
+     * client for one, and will speak the service API.
+     * 
+     * @return
+     */
     String getUrl();
 
     /**
@@ -55,8 +63,8 @@ public interface KlabService extends Serializable {
     String getServiceName();
 
     /**
-     * Each service has a root scope that is used to report issues, talk to clients and derive child
-     * scopes for users and when appropriate, sessions and contexts.
+     * Each service operates under a root scope that is used to report issues, talk to clients and
+     * derive child scopes for users and when appropriate, sessions and contexts.
      * 
      * @return
      */

@@ -6,9 +6,9 @@ import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
-import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -39,7 +39,7 @@ public interface Observable extends Semantics {
     }
 
     /**
-     * Conditions stated in the observable that control the use of the default value. Only
+     * Conditions stated in the observable that trigger the use of the default value. Only
      * meaningful if a default value is given.
      * 
      * @author Ferd
@@ -54,8 +54,8 @@ public interface Observable extends Semantics {
      * incarnate all the possible features for an observable. The builder is smart and fast when
      * concepts that already exist due to previous declarations are requested.
      * <p>
-     * NOTE: the builder's method <em>all</em> return the same builder, not a child builder. This
-     * means that, for example, of(concept).withTrait(trait) will apply the trait to the
+     * NOTE: the builder's method <em>all</em> should return the same builder, not a child builder.
+     * This means that, for example, of(concept).withTrait(trait) will apply the trait to the
      * <em>main</em> concept, not the inherent one. In most programmatical applications, this is the
      * desired behavior for fluent observable specification and modification. We provide an
      * ObservableComposer which acts as a stateful builder and implements the alternative behavior
@@ -206,18 +206,51 @@ public interface Observable extends Semantics {
          */
         Builder withDeclaration(KimConcept declaration, Channel monitor);
 
+        /**
+         * 
+         * @param cooccurrent
+         * @return
+         */
         Builder withCooccurrent(Concept cooccurrent);
 
+        /**
+         * 
+         */
         Builder withAdjacent(Concept adjacent);
 
+        /**
+         * 
+         * @param concepts
+         * @return
+         */
         Builder withoutAny(Collection<Concept> concepts);
 
+        /**
+         * 
+         * @param type
+         * @return
+         */
         Builder withoutAny(SemanticType... type);
 
+        /**
+         * 
+         * @param concepts
+         * @return
+         */
         Builder withoutAny(Concept... concepts);
 
+        /**
+         * 
+         * @param unit
+         * @return
+         */
         Builder withUnit(Unit unit);
 
+        /**
+         * 
+         * @param currency
+         * @return
+         */
         Builder withCurrency(Currency currency);
 
         /**
@@ -237,6 +270,12 @@ public interface Observable extends Semantics {
          */
         Collection<Concept> getRemoved();
 
+        /**
+         * 
+         * @param source
+         * @param target
+         * @return
+         */
         Builder linking(Concept source, Concept target);
 
         /**
@@ -432,19 +471,49 @@ public interface Observable extends Semantics {
         Builder withUrl(String uri);
 
     }
-    
+
+    /**
+     * Return a builder to operate on this observable. This may not be possible if a semantic
+     * service capable of reasoning is not connected.
+     * 
+     * @return
+     */
     Builder builder();
 
+    /**
+     * 
+     * @return
+     */
     Concept getSemantics();
 
+    /**
+     * 
+     * @return
+     */
     Unit getUnit();
 
+    /**
+     * 
+     * @return
+     */
     Currency getCurrency();
 
+    /**
+     * 
+     * @return
+     */
     Collection<Pair<ValueOperator, Object>> getValueOperators();
 
+    /**
+     * 
+     * @return
+     */
     Collection<Annotation> getAnnotations();
 
+    /**
+     * 
+     * @return
+     */
     Collection<Concept> abstractPredicates();
 
     /**
@@ -487,7 +556,6 @@ public interface Observable extends Semantics {
      * @return
      */
     Literal getValue();
-    
 
     /**
      * The context type, direct or indirect, and revised according to the stated inherency (will be
@@ -512,7 +580,6 @@ public interface Observable extends Semantics {
      * @return
      */
     Concept temporalInherent();
-
 
     /**
      * If a default value was defined for a quality observable, it is returned here. It will be
@@ -653,20 +720,52 @@ public interface Observable extends Semantics {
      */
     boolean isSpecialized();
 
+    /**
+     * 
+     * @return
+     */
     Observable getDeferredTarget();
 
+    /**
+     * 
+     * @return
+     */
     Observable getIncarnatedAbstractObservable();
 
+    /**
+     * 
+     * @return
+     */
     boolean isMustContextualizeAtResolution();
 
+    /**
+     * 
+     * @return
+     */
     String getUrl();
 
+    /**
+     * 
+     * @return
+     */
     String getDereifiedAttribute();
 
+    /**
+     * 
+     * @return
+     */
     Concept getTemporalInherent();
 
+    /**
+     * 
+     * @return
+     */
     boolean isDistributedInherency();
 
+    /**
+     * 
+     * @return
+     */
     Concept getTargetPredicate();
 
 }

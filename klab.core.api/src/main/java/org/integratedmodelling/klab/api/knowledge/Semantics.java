@@ -103,5 +103,12 @@ public interface Semantics extends Knowledge {
      * @return
      */
     String displayLabel();
+    
+    /**
+     * Anything semantic can be seen as a concept.
+     * 
+     * @return
+     */
+    Concept asConcept();
 
 }

@@ -31,7 +31,7 @@ import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 
 
 /**
-  * Stupid generic pair class.
+  * Stupid generic triple class.
  * @param <T1> 
  * @param <T2> 
  * @param <T3> 

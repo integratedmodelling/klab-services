@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.provenance.Activity.Description;
+import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.util.StringUtils;
 
@@ -64,6 +66,7 @@ public class ObservableImpl implements Observable {
     private String dereifiedAttribute;
     private Observable incarnatedAbstractObservable;
     private Observable deferredTarget;
+    private Metadata metadata = Metadata.create();
 
     @Override
     public String getUrn() {
@@ -337,8 +340,7 @@ public class ObservableImpl implements Observable {
 
     @Override
     public Builder builder() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().observableBuilder(this);
     }
 
     public void setSpecialized(boolean specialized) {
@@ -505,8 +507,22 @@ public class ObservableImpl implements Observable {
         }
         ret.artifactType = Artifact.Type.forSemantics(concept.getType());
         ret.descriptionType = Description.forSemantics(concept.getType(), false);
-        
+
         return ret;
+    }
+
+    @Override
+    public Concept asConcept() {
+        return semantics;
+    }
+
+    @Override
+    public Metadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
     }
 
 }
