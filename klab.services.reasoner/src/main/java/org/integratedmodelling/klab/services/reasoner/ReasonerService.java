@@ -15,10 +15,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.integratedmodelling.kim.api.IKimConcept;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
@@ -28,6 +28,8 @@ import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
@@ -45,8 +47,8 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
-import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
+import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
@@ -477,25 +479,26 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public boolean hasTrait(Semantics concept, Concept trait) {
-
         for (Concept c : traits(concept)) {
             if (subsumes(c, trait)) {
                 return true;
             }
         }
-
         return false;
     }
 
     @Override
     public Collection<Concept> roles(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return OWL.INSTANCE.getRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_ROLE_PROPERTY));
     }
 
     @Override
-    public boolean hasRole(Semantics concept, Concept t) {
-        // TODO Auto-generated method stub
+    public boolean hasRole(Semantics concept, Concept role) {
+        for (Concept c : roles(concept)) {
+            if (subsumes(c, role)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -608,7 +611,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Object displayLabel(Semantics concept) {
+    public String displayLabel(Semantics concept) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -666,9 +669,9 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public boolean hasParentTrait(Semantics type, Concept trait) {
+    public boolean hasDirectTrait(Semantics type, Concept trait) {
 
-        for (Concept c : traits(type)) {
+        for (Concept c : directTraits(type)) {
             if (trait.is(c)) {
                 return true;
             }
@@ -694,13 +697,13 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Class<? extends Observation> observationClass(Observable observable) {
+    public Class<? extends Observation> observationClass(Semantics observable) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public SemanticType observableType(Observable observable, boolean acceptTraits) {
+    public SemanticType observableType(Semantics observable, boolean acceptTraits) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -796,14 +799,23 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     @Override
     public boolean subsumes(Semantics concept, Semantics other) {
 
-        /*
-         * TODO first use "isn't" based on the enum types to quickly cut out those that don't match.
-         * Also works with concepts in different ontologies that have the same definition.
-         */
-
         if (concept == other || concept.equals(other)) {
             return true;
         }
+
+        /*
+         * first use "isn't" based on the enum types to quickly cut out those that don't match. Also
+         * works with concepts in different ontologies that have the same definition.
+         */
+        if (Sets.intersection(concept.asConcept().getType(), other.asConcept().getType()).size() < concept.asConcept().getType()
+                .size()) {
+            return false;
+        }
+
+        /*
+         * TODO this would be a good point to insert caching logics. It should also go in all remote
+         * clients.
+         */
 
         /*
          * Speed up checking for logical expressions without forcing the reasoner to compute complex
@@ -850,8 +862,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Observable declareObservable(KimObservable observableDeclaration) {
-        // TODO Auto-generated method stub
-        return null;
+        return declare(observableDeclaration, OWL.INSTANCE.getOntology(observableDeclaration.getMain().getNamespace()), scope);
     }
 
     @Override
@@ -914,7 +925,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         for (Concept t : traits(o2)) {
             boolean ok = hasTrait(o1, t);
             if (!ok && useTraitParentClosure) {
-                ok = hasParentTrait(o1, t);
+                ok = hasDirectTrait(o1, t);
             }
             if (!ok) {
                 return false;
@@ -1482,6 +1493,93 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         }
 
         return ret;
+    }
+
+    public Observable declare(KimObservable concept, Ontology declarationOntology, Channel monitor) {
+
+        if (concept.getNonSemanticType() != null) {
+            Concept nsmain = OWL.INSTANCE.getNonsemanticPeer(concept.getModelReference(), concept.getNonSemanticType());
+            ObservableImpl observable = new ObservableImpl(nsmain);
+            observable.setModelReference(concept.getModelReference());
+            observable.setName(concept.getFormalName());
+            observable.setStatedName(concept.getFormalName());
+            observable.setReferenceName(concept.getFormalName());
+            return observable;
+        }
+
+        Concept main = declareInternal(concept.getMain(), declarationOntology, monitor);
+        if (main == null) {
+            return null;
+        }
+
+        Concept observable = main;
+
+        Observable.Builder builder = new ObservableBuilder(observable, monitor);
+
+        // ret.setUrl(concept.getURI());
+        // builder.withUrl(concept.getURI());
+
+        boolean unitsSet = false;
+
+        if (concept.getUnit() != null) {
+            unitsSet = true;
+            builder = builder.withUnit(concept.getUnit());
+        }
+
+        if (concept.getCurrency() != null) {
+            unitsSet = true;
+            builder = builder.withCurrency(concept.getCurrency());
+        }
+
+        if (concept.getValue() != null) {
+            Object value = concept.getValue();
+            if (value instanceof KimConcept) {
+                value = declareConcept((KimConcept) value);
+            }
+            builder = builder.withInlineValue(value);
+        }
+
+        if (concept.getDefaultValue() != null) {
+            Object value = concept.getValue();
+            if (value instanceof KimConcept) {
+                value = declareConcept((KimConcept) value);
+            }
+            builder = builder.withDefaultValue(value);
+        }
+
+        for (Observable.ResolutionException exc : concept.getResolutionExceptions()) {
+            builder = builder.withResolutionException(exc);
+        }
+
+        if (concept.getRange() != null) {
+            builder = builder.withRange(concept.getRange());
+            // ret.setRange(concept.getRange());
+        }
+
+        builder = builder.optional(concept.isOptional()).generic(concept.isGeneric()).global(concept.isGlobal())
+                .named(concept.getFormalName());
+
+        if (concept.isExclusive()) {
+            builder = builder.withResolution(Observable.Resolution.Only);
+        } else if (concept.isGlobal()) {
+            builder = builder.withResolution(Observable.Resolution.All);
+        } else if (concept.isGeneric()) {
+            builder = builder.withResolution(Observable.Resolution.Any);
+        }
+
+        for (Pair<ValueOperator, Literal> operator : concept.getValueOperators()) {
+            builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());
+        }
+
+        if (Units.INSTANCE.needsUnits(ret) && !unitsSet) {
+            builder = builder.fluidUnits(true);
+        }
+
+        for (Annotation annotation : concept.getAnnotations()) {
+            builder = builder.withAnnotation(new Annotation(annotation));
+        }
+
+        return (Observable) builder.buildObservable();
     }
 
 }

@@ -229,7 +229,7 @@ public interface Reasoner extends KlabService {
      *
      * @return a boolean.
      */
-    boolean hasParentTrait(Semantics type, Concept trait);
+    boolean hasDirectTrait(Semantics type, Concept trait);
 
     /**
      * Check if concept k carries a role T so that the passed role is-a T.
@@ -256,17 +256,27 @@ public interface Reasoner extends KlabService {
      */
     Collection<Concept> directRoles(Semantics concept);
 
-    Object displayLabel(Semantics concept);
+    /**
+     * 
+     * @param concept
+     * @return
+     */
+    String displayLabel(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     String style(Concept concept);
 
     /**
      * Return the Java class of the observation type corresponding to the passed observable.
      *
-     * @param observable a {@link org.integratedmodelling.klab.api.knowledge.IObservable} object.
-     * @return a {@link java.lang.Class} object.
+     * @param observable
+     * @return 
      */
-    Class<? extends Observation> observationClass(Observable observable);
+    Class<? extends Observation> observationClass(Semantics observable);
 
     /**
      * Return the base enum type (quality, subject....) for the passed observable.
@@ -276,7 +286,7 @@ public interface Reasoner extends KlabService {
      *        model although it's not an observable per se).
      * @return the enum type
      */
-    SemanticType observableType(Observable observable, boolean acceptTraits);
+    SemanticType observableType(Semantics observable, boolean acceptTraits);
 
     /**
      * Return the asserted source of the relationship, assuming it is unique. If it is not unique,

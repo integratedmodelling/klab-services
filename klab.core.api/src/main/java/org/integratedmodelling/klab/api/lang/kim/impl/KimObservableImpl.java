@@ -9,6 +9,8 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Observable.ResolutionException;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -23,7 +25,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     private String formalName;
     private Literal value;
     private Literal defaultValue;
-    private List<ResolutionException> resolutionExceptions = new ArrayList<>();
+    private List<Observable.ResolutionException> resolutionExceptions = new ArrayList<>();
     private List<Pair<ValueOperator, Literal>> valueOperators = new ArrayList<>();
     private String attributeIdentifier;
     private boolean optional;

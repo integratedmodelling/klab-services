@@ -8,24 +8,11 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 
 public interface KimObservable extends KimStatement, Knowledge {
 
-    /**
-     * Conditions stated in the observable that control the use of the default value. Only
-     * meaningful if a default value is given.
-     * 
-     * @author Ferd
-     *
-     */
-    enum ResolutionException {
-        Missing,
-        Nodata,
-        Error
-    }
-
-    
     /**
      * @return the main concept
      */
@@ -72,7 +59,7 @@ public interface KimObservable extends KimStatement, Knowledge {
      * 
      * @return
      */
-    Collection<ResolutionException> getResolutionExceptions();
+    Collection<Observable.ResolutionException> getResolutionExceptions();
 
     /**
      * Value operators with their operands.
