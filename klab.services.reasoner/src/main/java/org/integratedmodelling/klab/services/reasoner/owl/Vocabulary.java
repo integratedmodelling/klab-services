@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 
 import org.integratedmodelling.klab.api.utils.Utils;
 
-public interface Vocabulary {
+public class Vocabulary {
 
     /** The dc name. */
     public final static String DC_NAME = "dc:name";

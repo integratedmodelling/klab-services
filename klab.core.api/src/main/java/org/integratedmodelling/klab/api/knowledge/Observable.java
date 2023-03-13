@@ -436,15 +436,7 @@ public interface Observable extends Semantics {
          * @return
          */
         Builder withResolution(Resolution only);
-
-        /**
-         * Give or remove the fluid units trait
-         * 
-         * @param b
-         * @return
-         */
-        Builder fluidUnits(boolean b);
-
+        
         /**
          * Add an annotation to the result observable.
          * 
@@ -767,5 +759,12 @@ public interface Observable extends Semantics {
      * @return
      */
     Concept getTargetPredicate();
+
+    /**
+     * A model URN if the observable is restricted to using a specified model to be resolved.
+     * 
+     * @return
+     */
+    String getModelReference();
 
 }

@@ -66,6 +66,7 @@ public class ObservableImpl implements Observable {
     private String dereifiedAttribute;
     private Observable incarnatedAbstractObservable;
     private Observable deferredTarget;
+    private String modelReference;
     private Metadata metadata = Metadata.create();
 
     @Override
@@ -523,6 +524,15 @@ public class ObservableImpl implements Observable {
 
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
+    }
+
+    @Override
+    public String getModelReference() {
+        return modelReference;
+    }
+
+    public void setModelReference(String modelReference) {
+        this.modelReference = modelReference;
     }
 
 }

@@ -363,7 +363,7 @@ public class Ontology /* implements IOntology */ {
 					// factory.getOWLDeclarationAxiom(p));
 					this.propertyIDs.add(axiom.getArgument(0).toString());
 					this.apropertyIDs.add(axiom.getArgument(0).toString());
-					OWLMetadata._metadataVocabulary.put(p.getIRI().toString(), getName() + ":" + axiom.getArgument(0));
+					OWLMetadata.metadataVocabulary.put(p.getIRI().toString(), getName() + ":" + axiom.getArgument(0));
 					
 				} else if (axiom.is(IAxiom.DATA_PROPERTY_ASSERTION)) {
 
@@ -629,7 +629,7 @@ public class Ontology /* implements IOntology */ {
 							OWLAnnotation annotation = factory.getOWLAnnotation(property, literal);
 							OWL.INSTANCE.manager.addAxiom(this.ontology,
 									factory.getOWLAnnotationAssertionAxiom(target.getIRI(), annotation));
-			                 addMetadata(axiom.getArgument(0).toString(), property.toString(), value);
+			                 addMetadata(axiom.getArgument(0).toString(), property.getIRI().toString(), value);
 						}
 					}
 
@@ -652,6 +652,7 @@ public class Ontology /* implements IOntology */ {
 
 	private void addMetadata(String conceptId, String property, Object literal) {
 	    ConceptImpl concept = (ConceptImpl)this.conceptIDs.get(conceptId);
+	    property = OWLMetadata.translate(property);
 	    concept.getMetadata().put(property, literal);
 	    if (CoreOntology.NS.IS_ABSTRACT.equals(property)) {
 	        concept.setAbstract(Boolean.parseBoolean(literal.toString()));

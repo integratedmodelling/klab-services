@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.integratedmodelling.contrib.jgrapht.alg.util.Pair;
 import org.integratedmodelling.kim.api.IContextualizable;
 import org.integratedmodelling.kim.api.IKimAcknowledgement;
 import org.integratedmodelling.kim.api.IKimClassification;
@@ -39,6 +38,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.IObservable;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -55,7 +55,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable.ResolutionException;
 import org.integratedmodelling.klab.api.lang.kim.KimRestriction;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement.Scope;
 import org.integratedmodelling.klab.api.lang.kim.impl.KimAcknowledgementImpl;
@@ -178,7 +177,7 @@ public class KimAdapter {
                 : new Range(parsed.getRange().getLowerBound(), parsed.getRange().getUpperBound(),
                         parsed.getRange().isLeftBounded(), parsed.getRange().isRightBounded()));
         ret.getResolutionExceptions().addAll(parsed.getResolutionExceptions().stream()
-                .map((t) -> ResolutionException.valueOf(t.name())).collect(Collectors.toSet()));
+                .map((t) -> Observable.ResolutionException.valueOf(t.name())).collect(Collectors.toSet()));
         ret.setUnit(parsed.getUnit());
         for (org.integratedmodelling.klab.utils.Pair<org.integratedmodelling.kim.api.ValueOperator, Object> vop : parsed
                 .getValueOperators()) {

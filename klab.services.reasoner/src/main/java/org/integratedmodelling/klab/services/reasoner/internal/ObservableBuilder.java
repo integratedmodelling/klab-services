@@ -87,7 +87,7 @@ public class ObservableBuilder implements Observable.Builder {
     Range range;
     boolean generic;
     Observable.Resolution resolution;
-    boolean fluidUnits;
+//    boolean fluidUnits;
     private Literal defaultValue = null;
     private Set<Observable.ResolutionException> resolutionExceptions = EnumSet.noneOf(Observable.ResolutionException.class);
 
@@ -1523,12 +1523,12 @@ public class ObservableBuilder implements Observable.Builder {
         this.resolution = resolution;
         return this;
     }
-
-    @Override
-    public Observable.Builder fluidUnits(boolean b) {
-        this.fluidUnits = b;
-        return this;
-    }
+//
+//    @Override
+//    public Observable.Builder fluidUnits(boolean b) {
+//        this.fluidUnits = b;
+//        return this;
+//    }
 
     @Override
     public Observable.Builder withAnnotation(Annotation annotation) {

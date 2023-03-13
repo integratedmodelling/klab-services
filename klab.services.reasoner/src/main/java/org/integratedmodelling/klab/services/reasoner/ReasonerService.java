@@ -30,6 +30,7 @@ import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
@@ -448,7 +449,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             } else {
                 cret = ccret;
             }
-            type = Sets.intersection(cret.getType(), IKimConcept.OPERATOR_TYPES);
+            type = Sets.intersection(cret.getType(), SemanticType.OPERATOR_TYPES);
         }
 
         return Pair.of(cret, types);
@@ -1209,11 +1210,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                 monitor.error("inherited " + inherited.getName() + " does not identify known concepts", inherited);
                 return null;
             }
-            try {
-                OWL.INSTANCE.addTrait(main, trait, ontology);
-            } catch (KlabValidationException e) {
-                monitor.error(e, inherited);
-            }
+            OWL.INSTANCE.addTrait(main, trait, ontology);
         }
 
         // TODO all the rest: creates, ....
@@ -1444,11 +1441,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             if (concept.getComparisonConcept() != null) {
                 other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
             }
-            try {
-                builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null : new Concept[]{other});
-            } catch (KlabValidationException e) {
-                monitor.error(e, concept);
-            }
+            builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null : new Concept[]{other});
         }
 
         Concept ret = null;
@@ -1499,7 +1492,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         if (concept.getNonSemanticType() != null) {
             Concept nsmain = OWL.INSTANCE.getNonsemanticPeer(concept.getModelReference(), concept.getNonSemanticType());
-            ObservableImpl observable = new ObservableImpl(nsmain);
+            ObservableImpl observable = ObservableImpl.promote(nsmain);
             observable.setModelReference(concept.getModelReference());
             observable.setName(concept.getFormalName());
             observable.setStatedName(concept.getFormalName());
@@ -1571,12 +1564,8 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());
         }
 
-        if (Units.INSTANCE.needsUnits(ret) && !unitsSet) {
-            builder = builder.fluidUnits(true);
-        }
-
         for (Annotation annotation : concept.getAnnotations()) {
-            builder = builder.withAnnotation(new Annotation(annotation));
+            builder = builder.withAnnotation(new AnnotationImpl(annotation));
         }
 
         return (Observable) builder.buildObservable();

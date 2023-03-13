@@ -43,7 +43,6 @@ public class AnnotationImpl extends ParametersImpl<String> implements Annotation
     public AnnotationImpl(Map<String, Object> data) {
         super(data);
     }
-
     /**
      * Instantiates a new metadata.
      */
