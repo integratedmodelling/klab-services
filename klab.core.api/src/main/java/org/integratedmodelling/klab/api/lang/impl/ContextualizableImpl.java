@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -39,7 +39,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private Parameters<String> parameters;
     private Collection<String> interactiveParameters;
     private Contextualizable condition;
-    private Pair<KValueMediator, KValueMediator> conversion;
+    private Pair<ValueMediator, ValueMediator> conversion;
     private boolean negated;
     private boolean mediation;
     private Geometry geometry;
@@ -133,7 +133,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     }
 
     @Override
-    public Pair<KValueMediator, KValueMediator> getConversion() {
+    public Pair<ValueMediator, ValueMediator> getConversion() {
         return this.conversion;
     }
 
@@ -235,7 +235,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         this.condition = condition;
     }
 
-    public void setConversion(Pair<KValueMediator, KValueMediator> conversion) {
+    public void setConversion(Pair<ValueMediator, ValueMediator> conversion) {
         this.conversion = conversion;
     }
 

@@ -21,7 +21,7 @@ package org.integratedmodelling.klab.api.data.mediation;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KNumericRange extends KValueMediator {
+public interface NumericRange extends ValueMediator {
     
     /**
      * Any unbounded boundary will be the corresponding Double.(NEGATIVE_)INFINITE.

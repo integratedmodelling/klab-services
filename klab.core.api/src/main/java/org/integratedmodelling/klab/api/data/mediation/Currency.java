@@ -15,13 +15,15 @@
  */
 package org.integratedmodelling.klab.api.data.mediation;
 
+import org.integratedmodelling.klab.api.data.mediation.impl.CurrencyImpl;
+
 /**
  * The Interface ICurrency.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Currency extends KValueMediator {
+public interface Currency extends ValueMediator {
     
     /**
      * <p>isMonetary.</p>
@@ -38,4 +40,8 @@ public interface Currency extends KValueMediator {
      */
     Unit getUnit();
 
+    static Currency create(String currencyDefinition) {
+        return new CurrencyImpl(currencyDefinition);
+    }
+    
 }

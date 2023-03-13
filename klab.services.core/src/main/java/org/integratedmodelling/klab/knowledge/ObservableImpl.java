@@ -5,11 +5,11 @@ import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
-import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -39,43 +39,24 @@ public class ObservableImpl implements Observable {
     private Currency currency;
     private Range range;
     private String url;
-
     private boolean specialized;
-
     private boolean dereified;
-
     private Map<Concept, Concept> resolvedPredicates;
-
     private Collection<Concept> abstractPredicates;
-
     private Collection<Concept> contextualRoles;
-
     private Resolution resolution;
-
     private boolean global;
-
     private boolean optional;
-
     private boolean generic;
-
     private Collection<ResolutionException> resolutionExceptions;
-
     private Literal defaultValue;
-
     private Literal value;
-
     private String statedName;
-
     private Collection<Annotation> annotations;
-
     private Collection<Pair<ValueOperator, Object>> valueOperators;
-
     private String referenceName;
-
     private String name;
-
     private String namespace;
-    
     private boolean mustContextualizeAtResolution;
     private Concept targetPredicate;
     private boolean distributedInherency;
@@ -83,7 +64,7 @@ public class ObservableImpl implements Observable {
     private String dereifiedAttribute;
     private Observable incarnatedAbstractObservable;
     private Observable deferredTarget;
-    
+
     @Override
     public String getUrn() {
         return urn;
@@ -186,7 +167,7 @@ public class ObservableImpl implements Observable {
     }
 
     @Override
-    public KValueMediator mediator() {
+    public ValueMediator mediator() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -319,7 +300,7 @@ public class ObservableImpl implements Observable {
     public void setCurrency(Currency currency) {
         this.currency = currency;
     }
-    
+
     @Override
     public String displayName() {
 
@@ -506,6 +487,26 @@ public class ObservableImpl implements Observable {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public static ObservableImpl promote(Concept concept) {
+
+        ObservableImpl ret = new ObservableImpl();
+
+        ret.semantics = concept;
+        ret.urn = concept.getUrn();
+        ret.isAbstract = concept.isAbstract();
+        // ret.generic = concept.is(SemanticType.ROLE);
+        ret.referenceName = concept.getReferenceName();
+        ret.name = concept.codeName();
+        if (ret.referenceName == null) {
+            // only happens with non-standard observables from system ontologies
+            ret.referenceName = concept.getNamespace() + "_" + concept.getName();
+        }
+        ret.artifactType = Artifact.Type.forSemantics(concept.getType());
+        ret.descriptionType = Description.forSemantics(concept.getType(), false);
+        
+        return ret;
     }
 
 }

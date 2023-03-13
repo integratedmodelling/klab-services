@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.integratedmodelling.kim.api.IKimConcept.Type;
-import org.integratedmodelling.klab.Roles;
-import org.integratedmodelling.klab.Traits;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -679,6 +677,11 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     public Concept rawObservable(Semantics observable) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public ServiceScope scope() {
+        return this.scope;
     }
 
 }

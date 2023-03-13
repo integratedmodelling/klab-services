@@ -8,16 +8,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.integratedmodelling.kim.api.IKimConcept;
-import org.integratedmodelling.kim.api.IKimObservable;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IKnowledge;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -151,7 +148,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.goal = Services.INSTANCE.getReasoner().directGoal(observable.getSemantics());
         this.compresent = Services.INSTANCE.getReasoner().directCompresent(observable.getSemantics());
         this.declaration = getDeclaration(observable.getSemantics());
-        this.mustContextualize = observable.mustContextualizeAtResolution();
+        this.mustContextualize = observable.isMustContextualizeAtResolution();
         this.temporalInherent = observable.temporalInherent();
         this.annotations.addAll(observable.getAnnotations());
         this.incarnatedAbstractObservable = observable.getIncarnatedAbstractObservable();
@@ -435,7 +432,7 @@ public class ObservableBuilder implements Observable.Builder {
      */
     private Observable.Builder getArgumentBuilder() {
         ObservableBuilder ret = new ObservableBuilder(this);
-        ret.declaration = declaration.removeOperator();
+        ret.declaration = (KimConceptImpl) declaration.removeOperator();
         ret.type = ret.declaration.getType();
         return ret;
     }
@@ -1281,7 +1278,7 @@ public class ObservableBuilder implements Observable.Builder {
             return null;
         }
 
-        ObservableImpl ret = Observable.promote(obs);
+        ObservableImpl ret = ObservableImpl.promote(obs);
 
         if (currency != null) {
             ret.setCurrency(currency);
@@ -1392,8 +1389,7 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (this.inlineValue != null) {
-            /* TODO CHECK */
-            ret.setValue(this.inlineValue);
+            ret.setValue(Literal.of(this.inlineValue));
         }
 
         if (this.range != null) {
@@ -1408,17 +1404,17 @@ public class ObservableBuilder implements Observable.Builder {
         if (o == null) {
             return "empty";
         } else if (o instanceof IKnowledge) {
-            return reference ? ((Concept) o).getReferenceName() : ((Concept) o).getCodeName();
+            return reference ? ((Concept) o).getReferenceName() : ((Concept) o).codeName();
         } else if (o instanceof Integer || o instanceof Long) {
             return ("i" + o).replaceAll("-", "_");
         } else if (o instanceof KimConcept) {
             return reference
-                    ? Concepts.INSTANCE.declare((IKimConcept) o).getReferenceName()
-                    : Concepts.INSTANCE.getCodeName(Concepts.INSTANCE.declare((IKimConcept) o));
+                    ? Services.INSTANCE.getReasoner().declareConcept((KimConcept) o).getReferenceName()
+                    : Services.INSTANCE.getReasoner().declareConcept((KimConcept) o).getName();
         } else if (o instanceof KimObservable) {
             return reference
-                    ? Observables.INSTANCE.declare((IKimObservable) o, Klab.INSTANCE.getRootMonitor()).getReferenceName()
-                    : Observables.INSTANCE.declare((IKimObservable) o, Klab.INSTANCE.getRootMonitor()).getName();
+                    ? Services.INSTANCE.getReasoner().declareObservable((KimObservable) o).getReferenceName()
+                    : Services.INSTANCE.getReasoner().declareObservable((KimObservable) o).getName();
         }
         return ("h" + o.hashCode()).replaceAll("-", "_");
     }

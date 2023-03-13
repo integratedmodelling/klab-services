@@ -15,7 +15,7 @@ package org.integratedmodelling.klab.api.knowledge.observation;
 
 import java.util.Iterator;
 
-import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.DataArtifact;
@@ -65,7 +65,7 @@ public interface State extends Observation, DataArtifact {
      * @return a mediated state, or this.
      * @throws IllegalArgumentException if the mediator does not apply to the state.
      */
-    State in(KValueMediator mediator);
+    State in(ValueMediator mediator);
 
     @Override
     State at(Locator locator);

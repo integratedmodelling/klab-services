@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim.impl;
 
 import java.util.ArrayList;
 
-import org.integratedmodelling.klab.api.collections.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.kim.KimClassifier;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;

@@ -6,11 +6,12 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.Range;
+import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
 public class KimObservableImpl extends KimStatementImpl implements KimObservable {
 
@@ -28,11 +29,12 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     private boolean optional;
     private String modelReference;
     private Type nonSemanticType;
-    private String definition;
     private String codeName;
     private boolean generic;
     private boolean global;
     private boolean exclusive;
+    private String urn;
+    private Version version;
 
     @Override
     public KimConcept getMain() {
@@ -97,11 +99,6 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     @Override
     public Type getNonSemanticType() {
         return this.nonSemanticType;
-    }
-
-    @Override
-    public String getDefinition() {
-        return this.definition;
     }
 
     @Override
@@ -176,10 +173,6 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
         this.nonSemanticType = nonSemanticType;
     }
 
-    public void setDefinition(String definition) {
-        this.definition = definition;
-    }
-
     public void setCodeName(String codeName) {
         this.codeName = codeName;
     }
@@ -198,8 +191,23 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 
     @Override
     public String toString() {
-        return this.definition;
+        return this.urn;
     }
 
-    
+    public String getUrn() {
+        return urn;
+    }
+
+    public void setUrn(String urn) {
+        this.urn = urn;
+    }
+
+    public Version getVersion() {
+        return version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
+
 }

@@ -5,9 +5,9 @@ import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
-import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -479,7 +479,7 @@ public interface Observable extends Semantics {
      * 
      * @return
      */
-    KValueMediator mediator();
+    ValueMediator mediator();
 
     /**
      * Not null if the (quality) observable has been given a pre-observed value.

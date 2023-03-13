@@ -533,4 +533,9 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
         this.localName = localName;
     }
 
+    @Override
+    public ServiceScope scope() {
+        return this.scope;
+    }
+
 }

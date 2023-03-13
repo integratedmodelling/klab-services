@@ -5,11 +5,12 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 
-public interface KimObservable extends KimStatement {
+public interface KimObservable extends KimStatement, Knowledge {
 
     /**
      * Conditions stated in the observable that control the use of the default value. Only
@@ -114,13 +115,6 @@ public interface KimObservable extends KimStatement {
      * @return
      */
     Artifact.Type getNonSemanticType();
-
-    /**
-     * The canonical definition
-     * 
-     * @return
-     */
-    String getDefinition();
 
     /**
      * Return a descriptive name for this concept suitable for use as the name of a k.IM object. If

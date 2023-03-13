@@ -603,7 +603,7 @@ public class SemanticTranslator {
 
                 OWL.INSTANCE.getOntology(ret.getNamespace()).define(Collections.singletonList(
                         Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY,
-                                concept.getDefinition())));
+                                concept.getUrn())));
 
                 // consistency check
                 if (!Services.INSTANCE.getReasoner().satisfiable(ret)) {

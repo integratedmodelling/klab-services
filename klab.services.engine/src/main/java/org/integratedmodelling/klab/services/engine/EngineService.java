@@ -112,4 +112,9 @@ public class EngineService implements Engine {
         return null;
     }
 
+    @Override
+    public ServiceScope scope() {
+        return this.scope;
+    }
+
 }

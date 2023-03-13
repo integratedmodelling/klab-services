@@ -1,16 +1,18 @@
-package org.integratedmodelling.klab.api.collections.impl;
+package org.integratedmodelling.klab.api.data.mediation.impl;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
+import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
+import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTimeInstant;
 
-public class Range implements KValueMediator, Serializable {
+public class Range implements NumericRange {
 
     private static final long serialVersionUID = 874216692405815586L;
 
@@ -339,12 +341,12 @@ public class Range implements KValueMediator, Serializable {
 	}
 
 	@Override
-	public boolean isCompatible(KValueMediator other) {
+	public boolean isCompatible(ValueMediator other) {
 		return other instanceof Range && isBounded() && ((Range) other).isBounded();
 	}
 
 	@Override
-	public Number convert(Number d, KValueMediator other) {
+	public Number convert(Number d, ValueMediator other) {
 
 		if (!isBounded()) {
 			throw new IllegalArgumentException(
@@ -692,7 +694,7 @@ public class Range implements KValueMediator, Serializable {
 	}
 
 	@Override
-	public KValueMediator contextualize(Observable observable, Geometry scale) {
+	public ValueMediator contextualize(Observable observable, Geometry scale) {
 		return this;
 	}
 
@@ -711,6 +713,12 @@ public class Range implements KValueMediator, Serializable {
 
     @Override
     public boolean isContextual() {
+        return false;
+    }
+
+    @Override
+    public boolean isInteger() {
+        // TODO Auto-generated method stub
         return false;
     }
 

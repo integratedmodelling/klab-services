@@ -29,10 +29,10 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
-import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.IGeometry;
 import org.integratedmodelling.klab.api.data.IResource;
-import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.errormanagement.ICompileNotification;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -163,7 +163,7 @@ public class KimAdapter {
         ret.setCodeName(parsed.getCodeName());
         ret.setCurrency(parsed.getCurrency());
         ret.setDefaultValue(parsed.getDefaultValue() == null ? null : LiteralImpl.of(adapt(parsed.getDefaultValue())));
-        ret.setDefinition(parsed.getDefinition());
+        ret.setUrn(parsed.getDefinition());
         ret.setExclusive(parsed.isExclusive());
         ret.setFormalName(parsed.getFormalName());
         ret.setGeneric(parsed.isGeneric());
@@ -186,7 +186,7 @@ public class KimAdapter {
                     LiteralImpl.of(adapt(vop.getSecond()))));
         }
 
-        ret.setUri(ret.getDefinition());
+        ret.setUri(ret.getUri());
 
         return ret;
     }
@@ -215,7 +215,7 @@ public class KimAdapter {
         ret.setAuthority(original.getAuthority());
         ret.setAuthorityTerm(original.getAuthorityTerm());
         ret.setCodeName(original.getCodeName());
-        ret.setDefinition(original.getDefinition());
+        ret.setUrn(original.getDefinition());
         ret.setName(original.getName());
         ret.setNegated(original.isNegated());
         ret.setSemanticModifier(original.getSemanticModifier() == null
@@ -251,7 +251,7 @@ public class KimAdapter {
                 original.getRelationshipTarget() == null ? null : adaptKimConcept(original.getRelationshipTarget()));
         ret.setTemporalInherent(original.getTemporalInherent() == null ? null : adaptKimConcept(original.getTemporalInherent()));
 
-        ret.setUri(ret.getDefinition());
+        ret.setUri(ret.getUri());
 
         return ret;
     }
@@ -314,7 +314,7 @@ public class KimAdapter {
                 contextualizable.getCondition() == null ? null : adaptContextualization(contextualizable.getCondition()));
         ret.setConversion(contextualizable.getConversion() == null
                 ? null
-                : new PairImpl<KValueMediator, KValueMediator>(adaptMediator(contextualizable.getConversion().getFirst()),
+                : new PairImpl<ValueMediator, ValueMediator>(adaptMediator(contextualizable.getConversion().getFirst()),
                         adaptMediator(contextualizable.getConversion().getSecond())));
         ret.setEmpty(contextualizable.isEmpty());
         ret.setExpression(contextualizable.getExpression() == null ? null : adaptKimExpression(contextualizable.getExpression()));
@@ -343,7 +343,7 @@ public class KimAdapter {
         return ret;
     }
 
-    private static KValueMediator adaptMediator(IValueMediator first) {
+    private static ValueMediator adaptMediator(IValueMediator first) {
         // TODO Auto-generated method stub
         return null;
     }

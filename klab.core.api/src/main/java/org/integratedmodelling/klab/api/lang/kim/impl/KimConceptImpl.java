@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
@@ -44,7 +45,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private List<KimConcept> roles = new ArrayList<>();
     private boolean template;
     private boolean negated;
-    private String definition;
+    private String urn;
     private List<KimConcept> operands = new ArrayList<>();
     private Expression expressionType;
     private SemanticType fundamentalType;
@@ -52,8 +53,29 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private KimConcept adjacent;
     private String codeName;
     private KimConcept temporalInherent;
+    private SemanticRole distributedInherent;
+    private Version version;
+
+    @Override
+    public SemanticRole getDistributedInherent() {
+        return distributedInherent;
+    }
+
+    public void setDistributedInherent(SemanticRole distributedInherent) {
+        this.distributedInherent = distributedInherent;
+    }
+
+    public Set<SemanticType> getArgumentType() {
+        return argumentType;
+    }
+
+    public void setArgumentType(Set<SemanticType> argumentType) {
+        this.argumentType = argumentType;
+    }
 
     public KimConceptImpl() {}
+
+    transient private Set<SemanticType> argumentType = EnumSet.noneOf(SemanticType.class);
     
     private KimConceptImpl(KimConceptImpl other) {
         this.semanticRole = other.semanticRole;                                   
@@ -77,14 +99,16 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.roles.addAll(other.roles);                  
         this.template = other.template;                                            
         this.negated = other.negated;                                             
-        this.definition = other.definition;                                           
+        this.urn = other.urn;                                           
         this.operands.addAll(other.operands);               
         this.expressionType = other.expressionType;                                    
         this.fundamentalType = other.fundamentalType;                                
         this.cooccurrent = other.cooccurrent;                                      
         this.adjacent = other.adjacent;                                         
         this.codeName = other.codeName;                                             
-        this.temporalInherent = other.temporalInherent;                                 
+        this.temporalInherent = other.temporalInherent;            
+        this.distributedInherent = other.distributedInherent;
+        this.argumentType = EnumSet.copyOf(other.argumentType);
     }
     
     @Override
@@ -183,8 +207,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     }
 
     @Override
-    public String getDefinition() {
-        return this.definition;
+    public String getUrn() {
+        return this.urn;
     }
 
     @Override
@@ -321,8 +345,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.negated = negated;
     }
 
-    public void setDefinition(String definition) {
-        this.definition = definition;
+    public void setUrn(String urn) {
+        this.urn = urn;;
     }
 
     public void setOperands(List<KimConcept> operands) {
@@ -355,7 +379,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     @Override
     public String toString() {
-        return this.definition;
+        return this.urn;
     }
     
     /*
@@ -368,6 +392,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             ret.semanticModifier = null;
             ret.comparisonConcept = null;
             ret.type = this.argumentType;
+            ret.urn = computeUrn();
         }
         return ret;
     }
@@ -420,7 +445,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             }
         }
         
-        // RECOMPUTE DEFINITION
+        this.urn = computeUrn();
         
         return ret;
     }
@@ -473,7 +498,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             }
         }
 
-        // RECOMPUTE DEFINITION, CODENAME AND...?
+        this.urn = computeUrn();
 
         return ret;
     }
@@ -488,4 +513,175 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         return ret;
     }
     
+    
+
+    /**
+     * Create a text declaration that can be parsed back into a concept.
+     */
+    public String computeUrn() {
+
+        String ret = "";
+        boolean complex = false;
+
+        if (semanticModifier != null) {
+            ret += (ret.isEmpty() ? "" : " ") + semanticModifier.declaration[0];
+            complex = true;
+        }
+
+        if (negated) {
+            ret += (ret.isEmpty() ? "" : " ") + "not";
+            complex = true;
+        }
+
+        String concepts = "";
+        boolean ccomplex = false;
+
+        for (KimConcept trait : traits) {
+            concepts += (concepts.isEmpty() ? "" : " ") + parenthesize(trait.getUrn());
+            ccomplex = true;
+        }
+
+        for (KimConcept role : roles) {
+            concepts += (concepts.isEmpty() ? "" : " ") + parenthesize(role.getUrn());
+            ccomplex = true;
+        }
+
+//        for (KimConcept conc : unclassified) {
+//            concepts += (concepts.isEmpty() ? "" : " ") + conc;
+//            ccomplex = true;
+//        }
+
+        concepts += (concepts.isEmpty() ? "" : " ") + (name == null ? observable.toString() : name);
+
+        ret += (ret.isEmpty() ? "" : " ") + (ccomplex ? "(" : "") + concepts + (ccomplex ? ")" : "");
+
+        if (comparisonConcept != null) {
+            ret += " " + semanticModifier.declaration[1] + " " + comparisonConcept.getUrn();
+            complex = true;
+        }
+
+        if (authority != null) {
+            ret += " identified as " + stringify(authorityTerm) + " by " + authority;
+            complex = true;
+        }
+
+        if (inherent != null) {
+            ret += " of " + (distributedInherent == null ? "" : "each ") + inherent;
+            complex = true;
+        }
+
+        if (context != null) {
+            ret += " within " + context;
+            complex = true;
+        }
+
+        if (causant != null) {
+            ret += " caused by " + causant;
+            complex = true;
+        }
+
+        if (caused != null) {
+            ret += " causing " + caused;
+            complex = true;
+        }
+
+        if (compresent != null) {
+            ret += " with " + compresent;
+            complex = true;
+        }
+
+        if (cooccurrent != null) {
+            ret += " during " + cooccurrent;
+            complex = true;
+        }
+
+        if (temporalInherent != null) {
+            ret += " during each " + temporalInherent;
+            complex = true;
+        }
+
+        if (adjacent != null) {
+            ret += " adjacent to " + adjacent;
+            complex = true;
+        }
+
+        if (motivation != null) {
+            ret += " for " + motivation;
+            complex = true;
+        }
+
+        if (relationshipSource != null) {
+            ret += " linking " + relationshipSource;
+            if (relationshipTarget != null) {
+                ret += " to " + relationshipSource;
+            }
+            complex = true;
+        }
+
+        for (KimConcept operand : operands) {
+            ret += " " + (expressionType == Expression.INTERSECTION ? "and" : "or") + " " + operand;
+            complex = true;
+        }
+
+        return (ccomplex || complex) ? parenthesize(ret) : ret;
+    }
+
+    /**
+     * Add parentheses around a declaration unless it is already enclosed in parentheses.
+     * 
+     * @param ret
+     * @return
+     */
+    private static String parenthesize(String ret) {
+        int firstOpening = -1;
+        int lastClosing = -1;
+        int level = 0;
+        for (int i = 0; i < ret.length(); i++) {
+            if (ret.charAt(i) == '(') {
+                if (level == 0) {
+                    firstOpening = i;
+                }
+                level++;
+            } else if (ret.charAt(i) == ')') {
+                level--;
+                if (level == 0) {
+                    lastClosing = i;
+                }
+            }
+        }
+
+        boolean enclosed = firstOpening == 0 && lastClosing == ret.length() - 1;
+
+        return enclosed ? ret : ("(" + ret + ")");
+    }
+
+    private String stringify(String term) {
+
+        if (term.startsWith("\"")) {
+            return term;
+        }
+
+        boolean ws = false;
+
+        // stringify anything that's not a lowercase ID
+        for (int i = 0; i < term.length(); i++) {
+            if (Character.isWhitespace(term.charAt(i))
+                    || !(Character.isLetter(term.charAt(i)) || Character.isDigit(term.charAt(i)) || term.charAt(i) == '_')) {
+                ws = true;
+                break;
+            }
+        }
+
+        // TODO should escape any internal double quotes, unlikely
+        return ws ? ("\"" + term + "\"") : term;
+    }
+
+    @Override
+    public Version getVersion() {
+        return this.version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
 }

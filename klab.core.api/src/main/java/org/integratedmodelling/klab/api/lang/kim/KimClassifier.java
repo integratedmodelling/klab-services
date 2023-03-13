@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 import java.util.List;
 
-import org.integratedmodelling.klab.api.collections.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**

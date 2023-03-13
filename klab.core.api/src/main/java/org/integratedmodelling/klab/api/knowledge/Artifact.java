@@ -16,8 +16,8 @@ package org.integratedmodelling.klab.api.knowledge;
 import java.util.Collection;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.DataArtifact.ValuePresentation;
@@ -33,8 +33,8 @@ import org.integratedmodelling.klab.api.provenance.Provenance;
 /**
  * An Artifact can be any of the first-class products of a k.LAB task: a non-semantic
  * {@link DataArtifact} or {@link ObjectArtifact}, an observed (semantic) {@link Observation} (as
- * produced by most activities in k.LAB) or a {@link KimModelStatement k.IM model description} when the
- * model has been produced by an observation activity, such as a learning model.
+ * produced by most activities in k.LAB) or a {@link KimModelStatement k.IM model description} when
+ * the model has been produced by an observation activity, such as a learning model.
  * <p>
  * By implementing {@link java.lang.Iterable}, we also allow Artifacts to represent groups of
  * artifacts (e.g. all the {@link Subject subjects} instantiated by resolving a subject
@@ -205,6 +205,29 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
             return this == EVENT || this == PROCESS;
         }
 
+        public static Type forSemantics(Collection<SemanticType> type) {
+
+            if (type.contains(SemanticType.CLASS)) {
+                return Type.CONCEPT;
+            } else if (type.contains(SemanticType.PRESENCE)) {
+                return Type.BOOLEAN;
+            } else if (type.contains(SemanticType.QUALITY)) { // don't reorder these!
+                return Type.NUMBER;
+            } else if (type.contains(SemanticType.EVENT)) {
+                return Type.EVENT;
+            } else if (type.contains(SemanticType.COUNTABLE)) {
+                return Type.OBJECT;
+            } else if (type.contains(SemanticType.CONFIGURATION)) {
+                return Type.OBJECT;
+            } else if (type.contains(SemanticType.PROCESS)) {
+                return Type.PROCESS;
+            } else if (type.contains(SemanticType.TRAIT) || type.contains(SemanticType.ROLE)) {
+                // FIXME seems odd and contradicting the comment below
+                return Type.VALUE;
+            }
+            // trait and role observers specify filters, which produce void.
+            return Type.VOID;
+        }
     }
 
     /**
@@ -324,8 +347,8 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * provenance chain.
      *
      * @param role
-     * @param roleContext a {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation}
-     *        object.
+     * @param roleContext a
+     *        {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation} object.
      * @return a {@link org.integratedmodelling.klab.api.provenance.Artifact} object.
      */
     Artifact trace(Concept role, DirectObservation roleContext);
@@ -343,8 +366,8 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * chain.
      *
      * @param role
-     * @param roleContext a {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation}
-     *        object.
+     * @param roleContext a
+     *        {@link org.integratedmodelling.klab.api.DirectObservation.IDirectObservation} object.
      * @return a {@link java.util.Collection} object.
      */
     Collection<Artifact> collect(Concept role, DirectObservation roleContext);
@@ -372,7 +395,6 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * @return the type
      */
     Type getType();
-
 
     /**
      * Call when the artifact can be disposed of. This should schedule the removal of any storage

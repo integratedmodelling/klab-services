@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.data.encoding;
 
 import java.io.IOException;
+import java.util.Currency;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -10,9 +11,11 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
-import org.integratedmodelling.klab.api.collections.impl.Range;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -50,7 +53,9 @@ public class JacksonConfiguration {
 		@Override
 		public boolean useForType(JavaType t) {
 			if (KimStatement.class.isAssignableFrom(t.getRawClass()) || Geometry.class.isAssignableFrom(t.getRawClass())
-					|| Pair.class.isAssignableFrom(t.getRawClass()) || Triple.class.isAssignableFrom(t.getRawClass())) {
+					|| Pair.class.isAssignableFrom(t.getRawClass()) || Triple.class.isAssignableFrom(t.getRawClass())
+					|| Unit.class.isAssignableFrom(t.getRawClass()) || Currency.class.isAssignableFrom(t.getRawClass())
+					|| NumericRange.class.isAssignableFrom(t.getRawClass())) {
 				return true;
 			}
 

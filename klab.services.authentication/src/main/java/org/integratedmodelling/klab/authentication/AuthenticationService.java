@@ -58,4 +58,10 @@ public class AuthenticationService implements Authentication {
         return new LocalServiceScope(service);
     }
 
+    @Override
+    public ServiceScope scope() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

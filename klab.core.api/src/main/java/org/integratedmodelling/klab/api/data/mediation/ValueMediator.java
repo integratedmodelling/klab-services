@@ -21,6 +21,9 @@
  *******************************************************************************/
 package org.integratedmodelling.klab.api.data.mediation;
 
+import java.io.Serializable;
+
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -33,7 +36,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  * @author Ferd
  *
  */
-public interface KValueMediator {
+public interface ValueMediator extends Serializable {
 
     /**
      * true if this can be converted into other. Do not throw exceptions.
@@ -43,7 +46,7 @@ public interface KValueMediator {
      *         {@link #contextualize(Observable, Scale)}.
      * @return true if other is compatible
      */
-    boolean isCompatible(KValueMediator other);
+    boolean isCompatible(ValueMediator other);
 
     /**
      * Convert from the passed mediator to the one this represents.
@@ -54,7 +57,7 @@ public interface KValueMediator {
      * @throws KIllegalStateException if this mediator was produced through
      *         {@link #contextualize(Observable, Scale)}.
      */
-    Number convert(Number d, KValueMediator scale);
+    Number convert(Number d, ValueMediator scale);
 
     /**
      * Obtain a mediator that will convert quantities from the mediator of the observable (unit or
@@ -92,7 +95,7 @@ public interface KValueMediator {
      * @param scale
      * @return a contextualized mediator specialized for the conversion to this unit in this scale.
      */
-    KValueMediator contextualize(Observable observable, Geometry scale);
+    ValueMediator contextualize(Observable observable, Geometry scale);
 
     /**
      * Convert a quantity to the unit we represent from the one in the observable that was passed to

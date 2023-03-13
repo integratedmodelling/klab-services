@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.data.mediation.KValueMediator;
+import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -428,7 +428,7 @@ public interface Contextualizable extends KimStatement {
      *
      * @return a tuple containing the original and target value semantics.
      */
-	Pair<KValueMediator, KValueMediator> getConversion();
+	Pair<ValueMediator, ValueMediator> getConversion();
 //
 //	/**
 //	 * Add the resolution mode from the originating model to disambiguate resources

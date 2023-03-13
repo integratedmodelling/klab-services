@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.api.services;
 
 import java.io.Serializable;
 
+import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
  * should provide both forms. The latter ones must publish a URL. In all cases they are added in
@@ -51,5 +53,13 @@ public interface KlabService extends Serializable {
      * @return
      */
     String getServiceName();
+
+    /**
+     * Each service has a root scope that is used to report issues, talk to clients and derive child
+     * scopes for users and when appropriate, sessions and contexts.
+     * 
+     * @return
+     */
+    ServiceScope scope();
 
 }

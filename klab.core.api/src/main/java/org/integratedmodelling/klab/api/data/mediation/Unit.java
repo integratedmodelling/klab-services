@@ -16,7 +16,7 @@ package org.integratedmodelling.klab.api.data.mediation;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
@@ -48,7 +48,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistri
  * @author Ferd
  * @version $Id: $Id
  */
-public interface Unit extends KValueMediator {
+public interface Unit extends ValueMediator {
 
     /**
      * Return a new unit multiplied by the passed one.
@@ -103,5 +103,9 @@ public interface Unit extends KValueMediator {
      * @return
      */
     boolean isUnitless();
+
+    static Unit create(String unitStatement) {
+        return new UnitImpl(unitStatement);
+    }
 
 }
