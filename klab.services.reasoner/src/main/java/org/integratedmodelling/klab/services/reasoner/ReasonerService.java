@@ -408,15 +408,293 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public int semanticDistance(Semantics target) {
+    public int semanticDistance(Semantics target, Semantics other) {
         // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
-    public int semanticDistance(Semantics target, Semantics context) {
+    public int semanticDistance(Semantics target, Semantics other, Semantics context) {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    /**
+     * The workhorse of semantic distance computation can also consider any predicates that were
+     * abstract in the lineage of the passed concept (i.e. the concept is the result of a query with
+     * the abstract predicates, which has been contextualized to incarnate them into the passed
+     * correspondence with concrete counterparts). In that case, and only in that case, the distance
+     * between a concrete candidate and one that contains its predicates in the abstract form can be
+     * positive, i.e. a concept with abstract predicates can resolve one with concrete subclasses as
+     * long as the lineage contains its resolution.
+     * 
+     * @param to
+     * @param context
+     * @param compareInherency
+     * @param resolvedAbstractPredicates
+     * @return
+     */
+    public int semanticDistance(Concept from, Concept to, Concept context, boolean compareInherency,
+            Map<Concept, Concept> resolvedAbstractPredicates) {
+
+        int distance = 0;
+
+        // String resolving = this.getDefinition();
+        // String resolved = concept.getDefinition();
+        // System.out.println("Does " + resolving + " resolve " + resolved + "?");
+
+        int mainDistance = coreDistance(from, to, context, compareInherency, resolvedAbstractPredicates);
+        distance += mainDistance * 50;
+        if (distance < 0) {
+            return distance;
+        }
+
+        // should have all the same traits - additional traits are allowed only
+        // in contextual types
+        Set<Concept> acceptedTraits = new HashSet<>();
+        for (Concept t : traits(from)) {
+            if (t.isAbstract() && resolvedAbstractPredicates != null && resolvedAbstractPredicates.containsKey(t)) {
+                distance += assertedDistance(resolvedAbstractPredicates.get(t), t);
+                acceptedTraits.add(resolvedAbstractPredicates.get(t));
+            } else {
+                boolean ok = hasTrait(to, t);
+                if (!ok) {
+                    return -50;
+                }
+            }
+        }
+
+        for (Concept t : traits(to)) {
+            if (!acceptedTraits.contains(t) && !hasTrait(from, t)) {
+                return -50;
+            }
+        }
+
+        // same with roles.
+        Set<Concept> acceptedRoles = new HashSet<>();
+        for (Concept t : roles(from)) {
+            if (t.isAbstract() && resolvedAbstractPredicates != null && resolvedAbstractPredicates.containsKey(t)) {
+                distance += assertedDistance(resolvedAbstractPredicates.get(t), t);
+                acceptedRoles.add(resolvedAbstractPredicates.get(t));
+            } else {
+                boolean ok = hasRole(to, t);
+                if (!ok) {
+                    return -50;
+                }
+            }
+        }
+
+        for (Concept t : roles(to)) {
+            if (!acceptedRoles.contains(t) && !hasRole(from, t)) {
+                return -50;
+            }
+        }
+
+        if (context == null) {
+            context = context(to);
+        }
+
+        int component;
+
+        if (compareInherency) {
+
+            component = distance(context(from), context, true);
+
+            if (component < 0) {
+                double d = ((double) component / 10.0);
+                return -1 * (int) (d > 10 ? d : 10);
+            }
+            distance += component;
+
+            /*
+             * any EXPLICIT inherency must be the same in both.
+             */
+            Concept ourExplicitInherent = directInherent(from);
+            Concept itsExplicitInherent = directInherent(to);
+
+            if (ourExplicitInherent != null || itsExplicitInherent != null) {
+                if (ourExplicitInherent != null && itsExplicitInherent != null) {
+                    component = distance(ourExplicitInherent, itsExplicitInherent, true);
+
+                    if (component < 0) {
+                        double d = ((double) component / 10.0);
+                        return -1 * (int) (d > 10 ? d : 10);
+                    }
+                    distance += component;
+                } else {
+                    return -50;
+                }
+            }
+
+            /*
+             * inherency must be same (theirs is ours) unless our inherent type is abstract
+             */
+            Concept ourInherent = inherent(from);
+            Concept itsInherent = inherent(to);
+
+            if (ourInherent != null || itsInherent != null) {
+
+                if (ourInherent != null && ourInherent.isAbstract()) {
+                    component = distance(ourInherent, itsInherent, false);
+                } else if (ourInherent == null && itsInherent != null && context != null) {
+                    /*
+                     * Situations like: does XXX resolve YYY of ZZZ when ZZZ is the context.
+                     */
+                    component = distance(context, itsInherent, false);
+                } else {
+                    component = distance(itsInherent, ourInherent, false);
+                }
+
+                if (component < 0) {
+                    double d = ((double) component / 10.0);
+                    return -1 * (int) (d > 10 ? d : 10);
+                }
+                distance += component;
+            }
+
+        }
+
+        component = distance(goal(from), goal(to), false);
+        if (component < 0) {
+            double d = ((double) component / 10.0);
+            return -1 * (int) (d > 10 ? d : 10);
+        }
+        distance += component;
+
+        component = distance(cooccurrent(from), cooccurrent(to), false);
+        if (component < 0) {
+            double d = ((double) component / 10.0);
+            return -1 * (int) (d > 10 ? d : 10);
+        }
+        distance += component;
+
+        component = distance(causant(from), causant(to), false);
+        if (component < 0) {
+            double d = ((double) component / 10.0);
+            return -1 * (int) (d > 10 ? d : 10);
+        }
+        distance += component;
+
+        component = distance(caused(from), caused(to), false);
+        if (component < 0) {
+            double d = ((double) component / 10.0);
+            return -1 * (int) (d > 10 ? d : 10);
+        }
+        distance += component;
+
+        component = distance(adjacent(from), adjacent(to), false);
+        if (component < 0) {
+            double d = ((double) component / 10.0);
+            return -1 * (int) (d > 10 ? d : 10);
+        }
+        distance += component;
+
+        component = distance(compresent(from), compresent(to), false);
+        if (component < 0) {
+            double d = ((double) component / 10.0);
+            return -1 * (int) (d > 10 ? d : 10);
+        }
+        distance += component;
+
+        component = distance(relativeTo(from), relativeTo(to), false);
+        if (component < 0) {
+            double d = ((double) component / 10.0);
+            return -1 * (int) (d > 10 ? d : 10);
+        }
+        distance += component;
+
+        return distance;
+    }
+
+    /**
+     * Get the distance between the core described observables after factoring out all operators and
+     * ensuring they are the same. If not the same, the concepts are incompatible and the distance
+     * is negative.
+     * 
+     * @param to
+     * @return
+     */
+    public int coreDistance(Concept from, Concept to, Concept context, boolean compareInherency,
+            Map<Concept, Concept> resolvedAbstractPredicates) {
+
+        if (this == to || this.equals(to)) {
+            return 0;
+        }
+
+        Pair<Concept, List<SemanticType>> c1ops = splitOperators(from);
+        Pair<Concept, List<SemanticType>> c2ops = splitOperators(to);
+
+        if (!c1ops.getSecond().equals(c2ops.getSecond())) {
+            return -50;
+        }
+
+        if (!c1ops.getSecond().isEmpty()) {
+            /*
+             * if operators were extracted, the distance must take into account traits and the like
+             * for the concepts they describe, so call the main method again, which will call this
+             * and perform the core check below.
+             */
+            return semanticDistance(c1ops.getFirst(), c2ops.getFirst(), context, compareInherency, resolvedAbstractPredicates);
+        }
+
+        Concept core1 = coreObservable(c1ops.getFirst());
+        Concept core2 = coreObservable(c2ops.getFirst());
+
+        /*
+         * FIXME this must check: have operator ? (operator == operator && coreObs == coreObs) :
+         * coreObs == coreObs;
+         */
+
+        if (core1 == null || core2 == null) {
+            return -100;
+        }
+
+        if (!from.is(SemanticType.PREDICATE) && !core1.equals(core2)) {
+            /*
+             * in order to resolve an observation, the core observables must be equal; subsumption
+             * is not OK (lidar elevation does not resolve elevation as it creates different
+             * observations; same for different observation techniques - easy strategy to annotate
+             * techs that make measurements incompatible = use a subclass instead of a related
+             * trait).
+             * 
+             * Predicates are unique in being able to resolve a more specific predicate.
+             */
+            return -50;
+        }
+
+        /**
+         * Previously returning the distance, which does not work unless the core observables are
+         * the same (differentiated by predicates only) - which for example makes identities under
+         * 'type of' be compatible no matter the identity.
+         */
+        return core1.equals(core2) ? assertedDistance(from, to) : (assertedDistance(from, to) == 0 ? 0 : -1);
+    }
+
+    private int distance(Concept from, Concept to, boolean acceptAbsent) {
+
+        int ret = 0;
+        if (from == null && to != null) {
+            ret = acceptAbsent ? 50 : -50;
+        } else if (from != null && to == null) {
+            ret = -50;
+        } else if (from != null && to != null) {
+            ret = to.is(from) ? assertedDistance(to, from) : -100;
+            if (ret >= 0) {
+                for (Concept t : traits(from)) {
+                    boolean ok = hasTrait(to, t);
+                    if (!ok) {
+                        return -50;
+                    }
+                }
+                for (Concept t : traits(to)) {
+                    if (!hasTrait(from, t)) {
+                        ret += 10;
+                    }
+                }
+            }
+        }
+
+        return ret > 100 ? 100 : ret;
     }
 
     @Override
@@ -469,13 +747,32 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         ret.addAll(OWL.INSTANCE.getRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_IDENTITY_PROPERTY)));
         ret.addAll(OWL.INSTANCE.getRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_ATTRIBUTE_PROPERTY)));
         return ret;
-
     }
 
     @Override
-    public int assertedDistance(Semantics kConcept, Semantics t) {
-        // TODO Auto-generated method stub
-        return 0;
+    public int assertedDistance(Semantics from, Semantics to) {
+
+        if (from == to || from.equals(to)) {
+            return 0;
+        }
+        int ret = 1;
+        while(true) {
+            Collection<Concept> parents = parents(from);
+            if (parents.isEmpty()) {
+                break;
+            }
+            if (parents.contains(to)) {
+                return ret;
+            }
+            for (Concept parent : parents) {
+                int d = assertedDistance(from, parent);
+                if (d >= 0) {
+                    return ret + d;
+                }
+            }
+            ret++;
+        }
+        return -1;
     }
 
     @Override
@@ -582,8 +879,9 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Concept directRelativeTo(Semantics concept) {
-        // TODO
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.IS_COMPARED_TO_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
@@ -623,8 +921,9 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Concept relativeTo(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.IS_COMPARED_TO_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
@@ -1140,7 +1439,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         Concept main = null;
         String mainId = concept.getName();
-        
+
         ontology.add(Axiom.ClassAssertion(mainId,
                 concept.getType().stream().map((c) -> SemanticType.valueOf(c.name())).collect(Collectors.toSet())));
 
@@ -1511,13 +1810,13 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         }
 
         /**
-         * TODO/CHECK
-         * Save the declaration, including the source code which could have a different order
+         * TODO/CHECK Save the declaration, including the source code which could have a different
+         * order
          */
         if (ret != null) {
             concepts.put(ret.getUrn(), ret);
         }
-        
+
         return ret;
     }
 

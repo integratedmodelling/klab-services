@@ -27,7 +27,9 @@ import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.util.StringUtils;
 
-public class ObservableImpl implements Observable {
+import groovy.lang.GroovyObjectSupport;
+
+public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
     private static final long serialVersionUID = 6188649888474774359L;
 

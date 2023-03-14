@@ -8,7 +8,6 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -17,7 +16,9 @@ import org.integratedmodelling.klab.utils.CamelCase;
 import org.integratedmodelling.klab.utils.Utils;
 import org.springframework.util.StringUtils;
 
-public class ConceptImpl implements Concept {
+import groovy.lang.GroovyObjectSupport;
+
+public class ConceptImpl extends GroovyObjectSupport implements Concept {
 
     private static final long serialVersionUID = -6871573029225503370L;
 

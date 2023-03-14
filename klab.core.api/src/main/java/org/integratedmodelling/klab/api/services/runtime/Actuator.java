@@ -15,6 +15,7 @@ package org.integratedmodelling.klab.api.services.runtime;
 
 import java.util.List;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -182,5 +183,14 @@ public interface Actuator extends Plan {
      * @return the merged coverage of all models in or below this actuator.
      */
     Coverage getCoverage();
+
+    /**
+     * Each actuator can bring with itself arbitrary data that can be referenced by ID in the
+     * computations downstream. This includes tables such as classifications and lookup tables
+     * defined in models and needed for computation.
+     * 
+     * @return
+     */
+    Parameters<String> getData();
 
 }

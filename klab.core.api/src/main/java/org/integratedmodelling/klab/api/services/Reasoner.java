@@ -83,13 +83,34 @@ public interface Reasoner extends KlabService {
      */
     Observable declareObservable(KimObservable observableDeclaration);
 
+    /**
+     * Basic operation for subsumption between concepts.
+     * 
+     * @param conceptImpl
+     * @param other
+     * @return
+     */
     boolean subsumes(Semantics conceptImpl, Semantics other);
 
+    /**
+     * If the target is a union or intersection, return the operands. Otherwise return a singleton
+     * with the target itself in it.
+     * 
+     * @param target
+     * @return
+     */
     Collection<Concept> operands(Semantics target);
 
+    /**
+     * The direct asserted children of the target.
+     * 
+     * @param target
+     * @return
+     */
     Collection<Concept> children(Semantics target);
 
     /**
+     * The direct asserted parents of the target.
      * 
      * @param target
      * @return
@@ -97,7 +118,8 @@ public interface Reasoner extends KlabService {
     Collection<Concept> parents(Semantics target);
 
     /**
-     * Get a builder specified on the passed observable.
+     * Get a builder specified on the passed observable, used to obtain a modified observable.
+     * 
      * 
      * @param observableImpl
      * @return
@@ -114,14 +136,20 @@ public interface Reasoner extends KlabService {
     Concept parent(Semantics c);
 
     /**
-     * Return the set of all children of the target, using only the asserted hierarchy. For the
-     * inferred version use {@link #closure(Semantics)}.
+     * Return the set of all children of the target, direct or indirect, using only the asserted
+     * hierarchy. For the inferred version use {@link #closure(Semantics)}.
      * 
      * @param target
      * @return
      */
     Collection<Concept> allChildren(Semantics target);
 
+    /**
+     * Return all the asserted parents of the target, direct or indirect.
+     * 
+     * @param target
+     * @return
+     */
     Collection<Concept> allParents(Semantics target);
 
     /**
@@ -133,54 +161,190 @@ public interface Reasoner extends KlabService {
      */
     Collection<Concept> closure(Semantics target);
 
-    int semanticDistance(Semantics target);
+    /**
+     * 
+     * @param target
+     * @return
+     */
+    int semanticDistance(Semantics target, Semantics other);
 
-    int semanticDistance(Semantics target, Semantics context);
+    /**
+     * Contextual version of {@link #semanticDistance(Semantics, Semantics)}.
+     * 
+     * @param target
+     * @param other
+     * @param context
+     * @return
+     */
+    int semanticDistance(Semantics target, Semantics other, Semantics context);
 
+    /**
+     * The core observable represented by the target, from the root namespace of the worldview.
+     * 
+     * @param first
+     * @return
+     */
     Concept coreObservable(Semantics first);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Pair<Concept, List<SemanticType>> splitOperators(Semantics concept);
 
+    /**
+     * The number of hops in the asserted hierarchy to reach the second concept starting at from. If
+     * there is no path, return -1.
+     * 
+     * @param from
+     * @param to
+     * @return
+     */
     int assertedDistance(Semantics from, Semantics to);
 
+    /**
+     * All roles adopted by the target, directly or indirectly.
+     * 
+     * @param concept
+     * @return
+     */
     Collection<Concept> roles(Semantics concept);
 
-    boolean hasRole(Semantics concept, Concept t);
+    /**
+     * 
+     * @param concept
+     * @param t
+     * @return
+     */
+    boolean hasRole(Semantics concept, Concept role);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directContext(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept context(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directInherent(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept inherent(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directGoal(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept goal(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directCooccurrent(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directCausant(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directCaused(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directAdjacent(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directCompresent(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept directRelativeTo(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept cooccurrent(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept causant(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept caused(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept adjacent(Semantics concept);
 
+    /**
+     * 
+     * @param concept
+     * @return
+     */
     Concept compresent(Semantics concept);
 
+    /**
+     * The "comparison" concept when the passed semantics has been modified by a unary operator that
+     * implies comparison, such as ratio, proportion or pairwise value.
+     * 
+     * @param concept
+     * @return
+     */
     Concept relativeTo(Semantics concept);
 
     /**
@@ -225,8 +389,20 @@ public interface Reasoner extends KlabService {
      */
     Concept baseParentTrait(Semantics trait);
 
+    /**
+     * The base observable is the one that was specified in k.IM as the root of the hierarchy where
+     * the observable was specified. Can be the concept itself.
+     * 
+     * @param observable
+     * @return
+     */
     Concept baseObservable(Semantics observable);
 
+    /**
+     * 
+     * @param observable
+     * @return
+     */
     Concept rawObservable(Semantics observable);
 
     /**
@@ -337,7 +513,9 @@ public interface Reasoner extends KlabService {
     Collection<Concept> relationshipTargets(Semantics relationship);
 
     /**
-     * Return the concept this has been asserted to be the negation of, or null.
+     * If the passed concept is not negated, return its negation. Otherwise return the concept this
+     * has been asserted to be the negation of. If the concept is not a deniable attribute, throw an
+     * exception.
      * 
      * @param concept
      * @return
@@ -345,6 +523,9 @@ public interface Reasoner extends KlabService {
     Concept negated(Concept concept);
 
     /**
+     * Use the DL reasoner to check if the passed concept is semantically consistent. As all
+     * concepts are automatically checked at the time of definition, the fast way to check for
+     * consistency is {@link Concept#is(SemanticType.NOTHING)}.
      * 
      * @param ret
      * @return
@@ -352,6 +533,8 @@ public interface Reasoner extends KlabService {
     boolean satisfiable(Semantics ret);
 
     /**
+     * The knowledge domain this concept is part of, defined through the worldview. Should never be
+     * null, although currently it may be.
      * 
      * @param conceptImpl
      * @return
@@ -413,10 +596,13 @@ public interface Reasoner extends KlabService {
      * @return
      */
     boolean affectedBy(Semantics concept, Semantics affecting);
+
     interface Admin {
 
         /**
-         * Load all usable knowledge from the namespaces included in the passed resource set.
+         * Load all usable knowledge from the namespaces included in the passed resource set. This
+         * will read all concept definitions and semantic individual definitions in the namespaces,
+         * ignoring everything else.
          * 
          * @param resources
          * @return
@@ -424,10 +610,11 @@ public interface Reasoner extends KlabService {
         boolean loadKnowledge(ResourceSet resources, Scope scope);
 
         /**
-         * The "port" to ingest a wordview, available only to admins. Also makes it possible for the
-         * resolver to declare local concepts as long as it owns the semantic service. Definition
-         * must be made only in terms of known concepts (no forward declaration is allowed), so
-         * order of ingestion is critical.
+         * The "port" to ingest an individual concept definition, called by
+         * {@link #loadKnowledge(ResourceSet, Scope)}. Provided separately to make it possible for
+         * a resolver service to declare individual local concepts, as long as it owns the semantic
+         * service. Definition must be made only in terms of known concepts (no forward declaration
+         * is allowed), so order of ingestion is critical.
          * 
          * @param statement
          * @return
