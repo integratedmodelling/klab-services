@@ -15,7 +15,6 @@
  */
 package org.integratedmodelling.klab.services.reasoner.api;
 
-// TODO: Auto-generated Javadoc
 /**
  * Used to programmatically create knowledge when it's more convenient to accumulate
  * axioms than it is to explicity create and restrict concepts and properties. Axioms must
