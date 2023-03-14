@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.knowledge;
 
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -198,5 +199,29 @@ public class ConceptImpl implements Concept {
     public Concept asConcept() {
         return this;
     }
+    
+    @Override
+    public String toString() {
+        return this.urn;
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(urn);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ConceptImpl other = (ConceptImpl) obj;
+        return Objects.equals(urn, other.urn);
+    }
+
+    
+    
 }

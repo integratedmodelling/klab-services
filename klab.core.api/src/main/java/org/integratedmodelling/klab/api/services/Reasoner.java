@@ -113,10 +113,24 @@ public interface Reasoner extends KlabService {
      */
     Concept parent(Semantics c);
 
+    /**
+     * Return the set of all children of the target, using only the asserted hierarchy. For the
+     * inferred version use {@link #closure(Semantics)}.
+     * 
+     * @param target
+     * @return
+     */
     Collection<Concept> allChildren(Semantics target);
 
     Collection<Concept> allParents(Semantics target);
 
+    /**
+     * The closure is the inferred version of {@link #allChildren(Semantics)}, which only uses the
+     * asserted hierarchy.
+     * 
+     * @param target
+     * @return
+     */
     Collection<Concept> closure(Semantics target);
 
     int semanticDistance(Semantics target);
@@ -274,7 +288,7 @@ public interface Reasoner extends KlabService {
      * Return the Java class of the observation type corresponding to the passed observable.
      *
      * @param observable
-     * @return 
+     * @return
      */
     Class<? extends Observation> observationClass(Semantics observable);
 

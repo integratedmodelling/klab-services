@@ -177,4 +177,12 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
 //        this.kimStatementClass = kimStatementClass;
 //    }
 
+    @Override
+    public String toString() {
+        if (getSourceCode() != null) {
+            return getSourceCode();
+        }
+        return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
+    }
+    
 }

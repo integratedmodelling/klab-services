@@ -49,10 +49,10 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
     public static HashMap<String, String> metadataVocabulary = new HashMap<>();
 
     static {
-        metadataVocabulary.put(OWLRDFVocabulary.RDFS_LABEL.getIRI().toString(), Vocabulary.DC_LABEL);
-        metadataVocabulary.put(OWLRDFVocabulary.RDFS_COMMENT.getIRI().toString(), Vocabulary.DC_COMMENT);
-        metadataVocabulary.put("http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl#label", Vocabulary.DC_LABEL);
-        metadataVocabulary.put("http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl#comment", Vocabulary.DC_COMMENT);
+        metadataVocabulary.put(OWLRDFVocabulary.RDFS_LABEL.getIRI().toString(), Vocabulary.RDFS_LABEL);
+        metadataVocabulary.put(OWLRDFVocabulary.RDFS_COMMENT.getIRI().toString(), Vocabulary.RDFS_COMMENT);
+        metadataVocabulary.put("http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl#label", Vocabulary.RDFS_LABEL);
+        metadataVocabulary.put("http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl#comment", Vocabulary.RDFS_COMMENT);
         metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#baseDeclaration", CoreOntology.NS.BASE_DECLARATION);
         metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#isAbstract", NS.IS_ABSTRACT);
         metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#unit", NS.SI_UNIT_PROPERTY);

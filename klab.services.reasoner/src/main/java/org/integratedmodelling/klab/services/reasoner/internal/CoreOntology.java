@@ -7,12 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.utils.Utils;
 
@@ -22,11 +19,10 @@ import org.integratedmodelling.klab.utils.Utils;
  * @author ferdinando.villa
  *
  */
-public class CoreOntology /* extends AbstractWorkspace */ {
+public class CoreOntology {
 
-    private boolean synced = false;
-    private Map<SemanticType, Concept> worldviewCoreConcepts = Collections.synchronizedMap(new HashMap<>());
     private File root;
+    private Map<SemanticType, Concept> worldviewCoreConcepts = Collections.synchronizedMap(new HashMap<>());
     private static Map<SemanticType, String> coreConceptIds = Collections.synchronizedMap(new HashMap<>());
 
     public static final String CORE_ONTOLOGY_NAME = "odo-im";
@@ -359,26 +355,28 @@ public class CoreOntology /* extends AbstractWorkspace */ {
     // }
 
     // @Override
-//    public /* IKimLoader */ void load(Channel monitor) {
-//
-//        /**
-//         * This test is unlikely to fail, but its purpose is primarily to preload the core ontology
-//         * catalogues, so that the k.IM validator will not cause delays when checking core concepts,
-//         * which makes the validator stop silently (by horrendous XText design) and ignore
-//         * everything beyond the first delay.
-//         * 
-//         * DO NOT REMOVE this test. Removing it will cause seemingly completely unrelated bugs that
-//         * will take a very long time to figure out.
-//         */
-//        Concept dummy = OWL.INSTANCE.getConcept(NS.OBSERVATION);
-//        if (dummy == null) {
-//            throw new KIOException("core knowledge: can't find known concepts, ontologies are probably corrupted");
-//        }
-//
-//        Logging.INSTANCE.info(OWL.INSTANCE.getOntologies(true).size() + " ontologies read from classpath");
-//
-//        // return ret;
-//    }
+    // public /* IKimLoader */ void load(Channel monitor) {
+    //
+    // /**
+    // * This test is unlikely to fail, but its purpose is primarily to preload the core ontology
+    // * catalogues, so that the k.IM validator will not cause delays when checking core concepts,
+    // * which makes the validator stop silently (by horrendous XText design) and ignore
+    // * everything beyond the first delay.
+    // *
+    // * DO NOT REMOVE this test. Removing it will cause seemingly completely unrelated bugs that
+    // * will take a very long time to figure out.
+    // */
+    // Concept dummy = OWL.INSTANCE.getConcept(NS.OBSERVATION);
+    // if (dummy == null) {
+    // throw new KIOException("core knowledge: can't find known concepts, ontologies are probably
+    // corrupted");
+    // }
+    //
+    // Logging.INSTANCE.info(OWL.INSTANCE.getOntologies(true).size() + " ontologies read from
+    // classpath");
+    //
+    // // return ret;
+    // }
 
     public Concept getCoreType(Set<SemanticType> type) {
 

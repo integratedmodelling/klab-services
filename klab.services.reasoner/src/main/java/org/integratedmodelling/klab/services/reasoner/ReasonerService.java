@@ -57,6 +57,7 @@ import org.integratedmodelling.klab.services.reasoner.internal.ObservableBuilder
 import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
+import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
 import org.integratedmodelling.klab.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -403,8 +404,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Collection<Concept> closure(Semantics target) {
-        // TODO Auto-generated method stub
-        return null;
+        return OWL.INSTANCE.getSemanticClosure(target.asConcept());
     }
 
     @Override
@@ -505,104 +505,120 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Concept directContext(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_CONTEXT_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept context(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_CONTEXT_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directInherent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.IS_INHERENT_TO_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept inherent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.IS_INHERENT_TO_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directGoal(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_PURPOSE_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept goal(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_PURPOSE_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directCooccurrent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.OCCURS_DURING_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directCausant(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_CAUSANT_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directCaused(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_CAUSED_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directAdjacent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.IS_ADJACENT_TO_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directCompresent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_COMPRESENT_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept directRelativeTo(Semantics concept) {
-        // TODO Auto-generated method stub
+        // TODO
         return null;
     }
 
     @Override
     public Concept cooccurrent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.OCCURS_DURING_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept causant(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_CAUSANT_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept caused(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_CAUSED_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept adjacent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.IS_ADJACENT_TO_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
     public Concept compresent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> cls = OWL.INSTANCE.getRestrictedClasses(concept.asConcept(),
+                OWL.INSTANCE.getProperty(NS.HAS_COMPRESENT_PROPERTY));
+        return cls.isEmpty() ? null : cls.iterator().next();
     }
 
     @Override
@@ -1124,7 +1140,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         Concept main = null;
         String mainId = concept.getName();
-
+        
         ontology.add(Axiom.ClassAssertion(mainId,
                 concept.getType().stream().map((c) -> SemanticType.valueOf(c.name())).collect(Collectors.toSet())));
 
@@ -1135,6 +1151,10 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         // and the reference name
         ontology.add(Axiom.AnnotationAssertion(mainId, NS.REFERENCE_NAME_PROPERTY,
                 OWL.getCleanFullId(ontology.getName(), concept.getName())));
+
+        if (concept.getDocstring() != null) {
+            ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT, concept.getDocstring()));
+        }
 
         /*
          * basic attributes subjective deniable internal uni/bidirectional (relationship)
@@ -1335,6 +1355,11 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     private Concept declareInternal(KimConcept concept, Ontology ontology, Channel monitor) {
 
+        Concept existing = concepts.getIfPresent(concept.getUrn());
+        if (existing != null) {
+            return existing;
+        }
+
         Concept main = null;
 
         if (concept.getObservable() != null) {
@@ -1485,6 +1510,14 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             ret = Services.INSTANCE.getReasoner().negated(ret);
         }
 
+        /**
+         * TODO/CHECK
+         * Save the declaration, including the source code which could have a different order
+         */
+        if (ret != null) {
+            concepts.put(ret.getUrn(), ret);
+        }
+        
         return ret;
     }
 

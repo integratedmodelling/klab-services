@@ -8,10 +8,10 @@ public class Vocabulary {
     public final static String DC_NAME = "dc:name";
 
     /** The dc label. */
-    public final static String DC_LABEL = "dc:label";
+    public final static String RDFS_LABEL = "rdfs:label";
 
     /** The dc comment. */
-    public final static String DC_COMMENT = "dc:comment";
+    public final static String RDFS_COMMENT = "rdfs:comment";
 
     /** The dc definition. */
     public final static String DC_DEFINITION = "dc:definition";

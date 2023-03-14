@@ -58,7 +58,6 @@ import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
-import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
@@ -1223,7 +1222,7 @@ public enum OWL {
         Concept ret = nonSemanticConcepts.getConcept(conceptId);
         if (ret != null) {
             if (!ret.is(qualityType)) {
-                throw new KlabInternalErrorException(
+                throw new KInternalErrorException(
                         "non-semantic peer concept for " + name + " was declared previously with a different type");
             }
             return ret;
@@ -1253,7 +1252,7 @@ public enum OWL {
     }
 
     public void restrict(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers, Ontology ontology)
-            throws KlabValidationException {
+            throws KValidationException {
 
         /*
          * divide up in bins according to base trait; take property from annotation; restrict each
@@ -1262,7 +1261,9 @@ public enum OWL {
         Map<Concept, List<Concept>> pairs = new HashMap<>();
         for (Concept t : fillers) {
             Concept base = Services.INSTANCE.getReasoner().baseParentTrait(t);
-            if (!pairs.containsKey(base)) {
+            if (base == null) {
+
+            } else if (!pairs.containsKey(base)) {
                 pairs.put(base, new ArrayList<>());
             }
             pairs.get(base).add(t);
@@ -1278,7 +1279,7 @@ public enum OWL {
                      */
                     prop = CoreOntology.NS.HAS_SUBJECTIVE_TRAIT_PROPERTY;
                 } else {
-                    throw new KlabValidationException("cannot find property to restrict for trait " + base);
+                    throw new KValidationException("cannot find a property to restrict for trait " + base);
                 }
             }
             OWL.INSTANCE.restrictSome(target, getProperty(prop), how, pairs.get(base), (Ontology) ontology);
@@ -1312,7 +1313,7 @@ public enum OWL {
      * @return attribute profile
      * @throws KlabValidationException
      */
-    public Pair<Concept, Collection<Concept>> separateAttributes(Concept observable) throws KlabValidationException {
+    public Pair<Concept, Collection<Concept>> separateAttributes(Concept observable) {
 
         Concept obs = Services.INSTANCE.getReasoner().coreObservable(observable);
         ArrayList<Concept> tret = new ArrayList<>();
@@ -1326,9 +1327,9 @@ public enum OWL {
             }
         }
 
-        Concept root = null; // Observables.declareObservable((IConcept) (obs == null ? observable
-        // : obs), keep, Observables.getContextType(observable), Observables
-        // .getInherentType(observable));
+        Concept root = obs; 
+//            Services.INSTANCE.getReasoner().declareObservable((obs == null ? observable : obs), keep,
+//            Services.INSTANCE.getReasoner().context(observable), Services.INSTANCE.getReasoner().inherent(observable));
 
         return new Pair<>(root, tret);
     }
@@ -2387,7 +2388,7 @@ public enum OWL {
             }
             return ret;
         }
-        return Services.INSTANCE.getReasoner().closure(main);
+        return Services.INSTANCE.getReasoner().allChildren(main);
     }
 
     /*

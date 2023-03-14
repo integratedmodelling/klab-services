@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.knowledge;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -535,4 +536,23 @@ public class ObservableImpl implements Observable {
         this.modelReference = modelReference;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(descriptionType, urn);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ObservableImpl other = (ObservableImpl) obj;
+        return descriptionType == other.descriptionType && Objects.equals(urn, other.urn);
+    }
+
+    
+    
 }
