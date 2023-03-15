@@ -17,17 +17,24 @@ import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.logging.Logging;
 
+/**
+ * Generic monitor class with logging. Use to derive any scope, linking the needed message bus.
+ * 
+ * @author Ferd
+ *
+ */
 public class Monitor implements Channel {
 
     private int errorCount = 0;
     private AtomicBoolean isInterrupted = new AtomicBoolean(false);
     private int waitTime;
     private Identity identity;
-    
+
     transient MessageBus messageBus;
 
-    protected Monitor() {}
-    
+    protected Monitor() {
+    }
+
     public Monitor(Identity identity) {
         this.identity = identity;
     }
@@ -70,6 +77,9 @@ public class Monitor implements Channel {
     public void error(Object... o) {
         Pair<String, Type> message = Utils.Notifications.getMessage(o);
         Consumer<String> errorWriter = Logging.INSTANCE.getErrorWriter();
+        if (message.getFirst().contains("classExpression cannot")) {
+            System.out.println("TURBOMINCHIA");
+        }
         if (errorWriter != null) {
             errorWriter.accept(message.getFirst());
         }
@@ -105,7 +115,7 @@ public class Monitor implements Channel {
         }
     }
 
-//    @Override
+    // @Override
     public Future<Message> ask(Object... o) {
         if (o != null && o.length > 0) {
             if (messageBus != null) {
@@ -228,6 +238,5 @@ public class Monitor implements Channel {
     public void setIdentity(Identity identity) {
         this.identity = identity;
     }
-    
-    
+
 }

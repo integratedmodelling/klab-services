@@ -36,9 +36,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import org.integratedmodelling.klab.Configuration;
-import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
@@ -46,24 +46,30 @@ import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IKnowledge;
+import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.ISemantic;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.services.Authority;
+import org.integratedmodelling.klab.api.services.Authority.Identity;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
+import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.utils.Pair;
+import org.integratedmodelling.klab.utils.Path;
 import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.AxiomType;
@@ -99,6 +105,7 @@ import org.semanticweb.owlapi.reasoner.TimeOutException;
 import org.semanticweb.owlapi.reasoner.UnsupportedEntailmentTypeException;
 import org.semanticweb.owlapi.util.AutoIRIMapper;
 import org.semanticweb.owlapi.util.Version;
+import org.springframework.util.StringUtils;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -141,7 +148,6 @@ public enum OWL {
     Concept nothing;
 
     private CoreOntology coreOntology;
-    private ServiceScope scope;
 
     /**
      * Source of truth for identifier-friendly reference names
@@ -245,55 +251,6 @@ public enum OWL {
         return ret;
     }
 
-    // /**
-    // * Get the Concept corresponding to the OWL class passed. Throws an unchecked exception if not
-    // * found.
-    // *
-    // * @param owl
-    // * @param complainIfNotFound
-    // * @return the concept for the class
-    // */
-    // public Concept getConceptFor(OWLClass owl, boolean complainIfNotFound) {
-    // Concept ret = null;
-    // String sch = owl.getIRI().getNamespace();
-    // if (sch.endsWith("#")) {
-    // sch = sch.substring(0, sch.length() - 1);
-    // }
-    // if (sch.endsWith("/")) {
-    // sch = sch.substring(0, sch.length() - 1);
-    // }
-    // Ontology ontology = getOntology(iri2ns.get(sch));
-    // if (ontology != null) {
-    // ret = ontology.getConcept(owl.getIRI().getFragment());
-    // }
-    //
-    // if (ret == null && complainIfNotFound) {
-    // throw new KInternalErrorException("internal: OWL entity " + owl + " does not correspond to a
-    // known ontology");
-    // }
-    //
-    // return ret;
-    // }
-    //
-    // public Concept getConceptFor(IRI iri) {
-    // Concept ret = null;
-    // String sch = iri.getNamespace();
-    // if (sch.endsWith("#")) {
-    // sch = sch.substring(0, sch.length() - 1);
-    // }
-    // Ontology ontology = getOntology(iri2ns.get(sch));
-    // if (ontology != null) {
-    // ret = ontology.getConcept(iri.getFragment());
-    // }
-    //
-    // if (ret == null) {
-    // throw new KInternalErrorException("internal: OWL IRI " + iri + " does not correspond to a
-    // known ontology");
-    // }
-    //
-    // return ret;
-    // }
-
     /**
      * Get the IProperty corresponding to the OWL class passed. Throws an unchecked exception if not
      * found.
@@ -322,40 +279,6 @@ public enum OWL {
 
         return ret;
     }
-
-    // public Property getPropertyFor(IRI iri) {
-    // Property ret = null;
-    // String sch = iri.getNamespace();
-    // if (sch.endsWith("#")) {
-    // sch = sch.substring(0, sch.length() - 1);
-    // }
-    // Ontology ontology = getOntology(iri2ns.get(sch));
-    // if (ontology != null) {
-    // ret = ontology.getProperty(iri.getFragment());
-    // }
-    //
-    // if (ret == null) {
-    // throw new KInternalErrorException("internal: OWL IRI " + iri + " not corresponding to a known
-    // ontology");
-    // }
-    //
-    // return ret;
-    // }
-
-    // public static String getFileName(String s) {
-    //
-    // String ret = s;
-    //
-    // int sl = ret.lastIndexOf(File.separator);
-    // if (sl < 0) {
-    // sl = ret.lastIndexOf('/');
-    // }
-    // if (sl > 0) {
-    // ret = ret.substring(sl + 1);
-    // }
-    //
-    // return ret;
-    // }
 
     /**
      * Create a manager and load every OWL file under the load path.
@@ -456,27 +379,28 @@ public enum OWL {
     public Concept getConcept(String concept) {
 
         Concept result = null;
-
+        
         if (QualifiedName.validate(concept)) {
 
             QualifiedName st = new QualifiedName(concept);
 
             if (Character.isUpperCase(st.getNamespace().charAt(0))) {
 
-                /*
-                 * FIXME authority concept
-                 */
-                // result = Concepts.INSTANCE
-                // .getAuthorityConcept(Authorities.INSTANCE.getIdentity(st.getNamespace(),
-                // removeTicks(st.getName())));
-
+                Authority authority = Services.INSTANCE.getAuthorities().get(st.getNamespace());
+                if (authority != null) {
+                    Identity identity = authority.resolveIdentity(removeTicks(st.getName()));
+                    if (identity != null) {
+                        result = getAuthorityConcept(identity);
+                    }
+                }
+                
             } else {
 
                 Ontology o = ontologies.get(st.getNamespace());
                 if (o == null) {
-                    OWLClass systemConcept = this.systemConcepts.get(st);
+                    OWLClass systemConcept = this.systemConcepts.get(st.toString());
                     if (systemConcept != null) {
-                        result = o.makeConcept(systemConcept, st.getName(), st.getNamespace(), emptyType);
+                        result = makeConcept(systemConcept, st.getName(), st.getNamespace(), emptyType);
                     }
                 } else {
                     result = o.getConcept(st.getName());
@@ -485,6 +409,17 @@ public enum OWL {
         }
 
         return result;
+    }
+
+    Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
+        ConceptImpl ret = new ConceptImpl();
+        ret.setId(registerOwlClass(owlClass));
+        ret.setName(id);
+        ret.setNamespace(ontologyName);
+        ret.setUrn(ontologyName + ":" + id);
+        ret.getType().addAll(type);
+        registerConcept(ret);
+        return ret;
     }
 
     private String removeTicks(String id) {
@@ -553,8 +488,8 @@ public enum OWL {
         return this.thing;
     }
 
-    public void registerConcept(ConceptImpl thing) {
-        this.conceptsById.put(thing.getId(), thing);
+    public void registerConcept(ConceptImpl concept) {
+        this.conceptsById.put(concept.getId(), concept);
     }
 
     public String getConceptSpace(IRI iri) {
@@ -640,10 +575,8 @@ public enum OWL {
             }
         } else if (Utils.Files.getFileExtension(f.toString()).equals("owl")) {
 
-            InputStream input;
-
-            try {
-                input = new FileInputStream(f);
+            try (InputStream input = new FileInputStream(f)) {
+                
                 OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
                 input.close();
                 Ontology ont = new Ontology(ontology, pth);
@@ -687,6 +620,82 @@ public enum OWL {
                 // this.namespaces.put(pth, ns);
             }
         }
+    }
+
+    public Concept getAuthorityConcept(Authority.Identity identity) {
+
+        if (identity == null) {
+            return null;
+        }
+
+        for (Notification notification : identity.getNotifications()) {
+            if (Level.SEVERE.getName().equals(notification.getLevel())) {
+                return null;
+            }
+        }
+
+        String oid = "auth_" + Path.getFirst(identity.getAuthorityName(), ".").toLowerCase();
+        boolean isNew = OWL.INSTANCE.getOntology(oid) == null;
+        Ontology ontology = OWL.INSTANCE.requireOntology(oid, OWL.INTERNAL_ONTOLOGY_PREFIX);
+
+        if (isNew) {
+            ontology.setInternal(true);
+            registerWithReasoner(ontology);
+            // authorityOntologyIds.add(oid);
+        }
+
+        Concept ret = ontology.getConcept(identity.getConceptName());
+        if (ret == null) {
+
+            List<IAxiom> axioms = new ArrayList<>();
+            Set<SemanticType> type = UnarySemanticOperator.getType("identity", null);
+            type.add(SemanticType.AUTHORITY_IDENTITY);
+
+            // lookup parent if any; otherwise ensure we have a suitable parent
+            String baseIdentity = identity.getBaseIdentity();
+            if (baseIdentity == null) {
+                baseIdentity = StringUtils.capitalize(oid.toLowerCase()) + "Identity";
+            } else {
+                // TODO recursively resolve the base identity
+                throw new KlabUnimplementedException("explicit base identities for authority concepts are still unimplemented");
+            }
+
+            String pName = "is" + baseIdentity;
+            Concept base = ontology.getConcept(baseIdentity);
+            if (base == null) {
+                axioms.add(Axiom.ClassAssertion(baseIdentity, type));
+                // TODO check - there should be a base identity per leaf vocabulary
+                axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.BASE_DECLARATION, "true"));
+                axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.AUTHORITY_ID_PROPERTY, identity.getAuthorityName()));
+                axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.REFERENCE_NAME_PROPERTY,
+                        "auth_" + identity.getAuthorityName().toLowerCase() + "_" + baseIdentity.toLowerCase()));
+                axioms.add(Axiom.ObjectPropertyAssertion(pName));
+                axioms.add(Axiom.ObjectPropertyRange(pName, baseIdentity));
+                axioms.add(Axiom.SubObjectProperty(NS.HAS_IDENTITY_PROPERTY, pName));
+                axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.TRAIT_RESTRICTING_PROPERTY, oid + ":" + pName));
+            }
+
+            // if we created the parent, add the restricting property and prepare to
+            // give it to the new identity
+
+            axioms.add(Axiom.ClassAssertion(identity.getConceptName(), type));
+            axioms.add(Axiom.SubClass(baseIdentity, identity.getConceptName()));
+            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.REFERENCE_NAME_PROPERTY,
+                    "auth_" + identity.getAuthorityName().toLowerCase() + "_" + identity.getConceptName().toLowerCase()));
+            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), IMetadata.DC_LABEL, identity.getLabel()));
+            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.DISPLAY_LABEL_PROPERTY, identity.getLabel()));
+            axioms.add(
+                    Axiom.AnnotationAssertion(identity.getConceptName(), NS.AUTHORITY_ID_PROPERTY, identity.getAuthorityName()));
+            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), IMetadata.DC_COMMENT, identity.getDescription()));
+            axioms.add(
+                    Axiom.AnnotationAssertion(identity.getConceptName(), NS.CONCEPT_DEFINITION_PROPERTY, identity.getLocator()));
+
+            ontology.define(axioms);
+
+            ret = ontology.getConcept(identity.getConceptName());
+        }
+
+        return ret;
     }
 
     public Ontology refreshOntology(URL url, String id) {
@@ -896,7 +905,8 @@ public enum OWL {
 
     public void restrictSome(Concept target, Property property, Concept filler, Ontology ontology) {
         getTargetOntology(ontology, target, property, filler)
-                .define(Collections.singleton(Axiom.SomeValuesFrom(target.toString(), property.toString(), filler.toString())));
+                .define(Collections.singleton(Axiom.SomeValuesFrom(target.getNamespace() + ":" + target.getName(),
+                        property.toString(), filler.getNamespace() + ":" + filler.getName())));
     }
 
     public void restrictAll(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
@@ -951,7 +961,8 @@ public enum OWL {
 
     public void restrictAll(Concept target, Property property, Concept filler, Ontology ontology) {
         getTargetOntology(ontology, target, property, filler)
-                .define(Collections.singleton(Axiom.AllValuesFrom(target.toString(), property.toString(), filler.toString())));
+                .define(Collections.singleton(Axiom.AllValuesFrom(target.getNamespace() + ":" + target.getName(),
+                        property.toString(), filler.getNamespace() + ":" + filler.getName())));
     }
 
     public void restrictAtLeast(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers, int min,
@@ -980,8 +991,9 @@ public enum OWL {
     }
 
     public void restrictAtLeast(Concept target, Property property, Concept filler, int min, Ontology ontology) {
-        getTargetOntology(ontology, target, property, filler).define(
-                Collections.singleton(Axiom.AtLeastNValuesFrom(target.toString(), property.toString(), filler.toString(), min)));
+        getTargetOntology(ontology, target, property, filler)
+                .define(Collections.singleton(Axiom.AtLeastNValuesFrom(target.getNamespace() + ":" + target.getName(),
+                        property.toString(), filler.getNamespace() + ":" + filler.getName(), min)));
     }
 
     public void restrictAtMost(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers, int max,
@@ -1009,8 +1021,9 @@ public enum OWL {
     }
 
     public void restrictAtMost(Concept target, Property property, Concept filler, int max, Ontology ontology) {
-        getTargetOntology(ontology, target, property, filler).define(
-                Collections.singleton(Axiom.AtMostNValuesFrom(target.toString(), property.toString(), filler.toString(), max)));
+        getTargetOntology(ontology, target, property, filler)
+                .define(Collections.singleton(Axiom.AtMostNValuesFrom(target.getNamespace() + ":" + target.getName(),
+                        property.toString(), filler.getNamespace() + ":" + filler.getName(), max)));
     }
 
     public void restrictExactly(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers, int howmany,
@@ -1038,8 +1051,9 @@ public enum OWL {
     }
 
     public void restrictExactly(Concept target, Property property, Concept filler, int howMany, Ontology ontology) {
-        getTargetOntology(ontology, target, property, filler).define(Collections
-                .singleton(Axiom.ExactlyNValuesFrom(target.toString(), property.toString(), filler.toString(), howMany)));
+        getTargetOntology(ontology, target, property, filler)
+                .define(Collections.singleton(Axiom.ExactlyNValuesFrom(target.getNamespace() + ":" + target.getName(),
+                        property.toString(), filler.getNamespace() + ":" + filler.getName(), howMany)));
     }
 
     /**
@@ -1262,7 +1276,8 @@ public enum OWL {
         for (Concept t : fillers) {
             Concept base = Services.INSTANCE.getReasoner().baseParentTrait(t);
             if (base == null) {
-
+                System.err.println("HOSTIA no  base trait for " + t);
+                continue;
             } else if (!pairs.containsKey(base)) {
                 pairs.put(base, new ArrayList<>());
             }
@@ -1327,9 +1342,10 @@ public enum OWL {
             }
         }
 
-        Concept root = obs; 
-//            Services.INSTANCE.getReasoner().declareObservable((obs == null ? observable : obs), keep,
-//            Services.INSTANCE.getReasoner().context(observable), Services.INSTANCE.getReasoner().inherent(observable));
+        Concept root = obs;
+        // Services.INSTANCE.getReasoner().declareObservable((obs == null ? observable : obs), keep,
+        // Services.INSTANCE.getReasoner().context(observable),
+        // Services.INSTANCE.getReasoner().inherent(observable));
 
         return new Pair<>(root, tret);
     }

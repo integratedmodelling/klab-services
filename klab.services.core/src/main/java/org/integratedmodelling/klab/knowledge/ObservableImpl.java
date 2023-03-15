@@ -9,9 +9,9 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -42,7 +42,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private String urn;
     private Unit unit;
     private Currency currency;
-    private Range range;
+    private NumericRange range;
     private String url;
     private boolean specialized;
     private boolean dereified;
@@ -84,8 +84,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
     @Override
     public Semantics domain() {
-        // TODO Auto-generated method stub
-        return null;
+        return semantics == null ? null : semantics.domain();
     }
 
     @Override
@@ -175,8 +174,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
     @Override
     public ValueMediator mediator() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.unit == null ? (this.range == null ? this.currency : this.range) : this.unit;
     }
 
     @Override
@@ -268,11 +266,11 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         return specialized;
     }
 
-    public Range getRange() {
+    public NumericRange getRange() {
         return range;
     }
 
-    public void setRange(Range range) {
+    public void setRange(NumericRange range) {
         this.range = range;
     }
 
@@ -555,6 +553,4 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         return descriptionType == other.descriptionType && Objects.equals(urn, other.urn);
     }
 
-    
-    
 }

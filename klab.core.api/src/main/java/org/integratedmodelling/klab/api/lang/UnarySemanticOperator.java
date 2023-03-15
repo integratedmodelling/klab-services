@@ -138,7 +138,7 @@ public enum UnarySemanticOperator {
         return null;
     }
 
-    public Set<SemanticType> getType(String string, Collection<SemanticType> original) {
+    public static Set<SemanticType> getType(String string, Collection<SemanticType> original) {
 
         if (string == null) {
             return EnumSet.noneOf(SemanticType.class);
@@ -290,8 +290,7 @@ public enum UnarySemanticOperator {
             return EnumSet.of(SemanticType.CONFIGURATION);
         case "extent":
             return EnumSet.of(SemanticType.EXTENT);
-        case "observability":
-            return EnumSet.of(SemanticType.OBSERVABILITY, SemanticType.DENIABLE, SemanticType.TRAIT, SemanticType.PREDICATE);
+      
         }
 
         throw new UnsupportedOperationException("internal error: type " + string + " not handled");

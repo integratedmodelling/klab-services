@@ -1,8 +1,12 @@
 package org.integratedmodelling.klab.configuration;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Engine;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -10,9 +14,10 @@ import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.Runtime;
 
 /**
- * Makes the k.LAB services available globally through self-notification on injection. Each service
- * implementation is required to manually register itself. Needed by small objects such as concepts
- * and observables, unless we want to implement them all as non-static embedded classes.
+ * Makes the k.LAB services available globally through service discovery, self-notification or
+ * injection. In testing and local configurations, service implementations must explicitly register
+ * themselves. Needed by small objects such as concepts and observables, unless we want to implement
+ * them all as non-static embedded classes.
  * <p>
  * This also gives access to any <em>additional</em> federated resource managers and runtimes that
  * were discovered, through the {@link #getFederatedResources()} and
@@ -21,6 +26,9 @@ import org.integratedmodelling.klab.api.services.Runtime;
  * perform atomic operations. For now we assume that the reasoner and the resolver are singletons
  * within an engine, as they maintain semantic assets and reactive observations that remain
  * available throughout a session.
+ * <p>
+ * Authorities are also potentially independent and redundant services, and they are discovered and
+ * made available through this class.
  * 
  * @author Ferd
  *
@@ -35,12 +43,35 @@ public enum Services {
     private Resolver resolver;
     private Runtime runtime;
 
+    private Map<String, Authority> authorities = new HashMap<>();
     private List<Reasoner> federatedRuntimes = new ArrayList<>();
     private List<ResourceProvider> federatedResources = new ArrayList<>();
 
     public Reasoner getReasoner() {
         return reasoner;
     }
+
+    /**
+     * Return the resource providers available to the passed scope, best matches first (also
+     * considering social features).
+     * 
+     * @param scope
+     * @return
+     */
+    public List<ResourceProvider> resourceProviders(Scope scope) {
+        return null;
+    }
+
+    /**
+     * Return the runtimes available to the passed scope.
+     * 
+     * @param scope
+     * @return
+     */
+    public List<Runtime> runtimes(Scope scope) {
+        return null;
+    }
+
     public void setReasoner(Reasoner reasoner) {
         this.reasoner = reasoner;
     }
@@ -79,6 +110,12 @@ public enum Services {
     }
     public void setFederatedResources(List<ResourceProvider> federatedResources) {
         this.federatedResources = federatedResources;
+    }
+    public Map<String, Authority> getAuthorities() {
+        return authorities;
+    }
+    public void setAuthorities(Map<String, Authority> authorities) {
+        this.authorities = authorities;
     }
 
 }

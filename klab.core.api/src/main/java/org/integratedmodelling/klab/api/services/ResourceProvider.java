@@ -32,7 +32,7 @@ public interface ResourceProvider extends KlabService {
         String getAdoptedWorldview();
 
     }
-    
+
     default String getServiceName() {
         return "klab.resources.service";
     }
@@ -43,7 +43,8 @@ public interface ResourceProvider extends KlabService {
      * Get the managed worldview. Assumes that the capabilities have been consulted and have
      * suggested that this is a sensible request.
      * 
-     * @param scope
+     * @param scope could be null (defaulting to the service scope) for the entire worldview, but a
+     *        user scope should include the optional parts due to the user's group selection.
      * @return an entire worldview managed by this service, or an empty resource set if not
      *         available.
      */
@@ -80,8 +81,8 @@ public interface ResourceProvider extends KlabService {
     KimNamespace resolveNamespace(String urn, Scope scope);
 
     /**
-     * Return the parsed contents of a behavior. This only be called after a request that returned
-     * a ResourceSet to ensure correct dependency handling.
+     * Return the parsed contents of a behavior. This only be called after a request that returned a
+     * ResourceSet to ensure correct dependency handling.
      * 
      * @param urn
      * @param scope

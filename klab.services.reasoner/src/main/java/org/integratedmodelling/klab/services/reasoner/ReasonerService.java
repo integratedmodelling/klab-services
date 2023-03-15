@@ -48,6 +48,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
@@ -233,6 +234,8 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     @Autowired
     public ReasonerService(Authentication authenticationService, ResourceProvider resourceService) {
 
+        Services.INSTANCE.setReasoner(this);
+
         this.authenticationService = authenticationService;
         this.scope = authenticationService.authenticateService(this);
 
@@ -240,7 +243,6 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         this.resourceService = resourceService;
 
-        Services.INSTANCE.setReasoner(this);
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         if (config.exists()) {
             configuration = Utils.YAML.load(config, ReasonerConfiguration.class);
@@ -1050,8 +1052,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public boolean satisfiable(Semantics ret) {
-        // TODO Auto-generated method stub
-        return false;
+        return OWL.INSTANCE.isSatisfiable(ret);
     }
 
     @Override
@@ -1072,9 +1073,8 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         boolean ret = true;
         for (Resource namespace : resources.getNamespaces()) {
             ResourceProvider service = resources.getServices().get(namespace.getServiceId());
-            KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(),
-                    /* TODO scope of owning user - should come from authentication service */ null);
-            if (!parsed.isErrors()) {
+            KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(), scope);
+            if (parsed != null && !parsed.isErrors()) {
                 for (KimStatement statement : parsed.getStatements()) {
                     if (statement instanceof KimConceptStatement) {
                         defineConcept((KimConceptStatement) statement, scope);
@@ -1393,29 +1393,31 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             }
 
             Concept ret = buildInternal(concept, ontology, kimObject, monitor);
-            Concept upperConceptDefined = null;
-            if (concept.getParents().isEmpty()) {
-                Concept parent = null;
-                if (concept.getUpperConceptDefined() != null) {
-                    upperConceptDefined = parent = OWL.INSTANCE.getConcept(concept.getUpperConceptDefined());
-                    if (parent == null) {
-                        monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
-                    }
-                } else {
-                    parent = OWL.INSTANCE.getCoreOntology().getCoreType(concept.getType());
-                    if (coreConceptPeers.containsKey(ret.toString())) {
-                        // ensure that any non-trivial core inheritance is dealt with appropriately
-                        parent = OWL.INSTANCE.getCoreOntology().alignCoreInheritance(ret);
-                    }
-                }
-
-                if (parent != null) {
-                    ontology.add(Axiom.SubClass(parent.getUrn(), ret.getName()));
-                }
-            }
 
             if (ret != null) {
-                ontology.add(Axiom.AnnotationAssertion(ret.getName(), NS.BASE_DECLARATION, "true"));
+
+                Concept upperConceptDefined = null;
+                if (concept.getParents().isEmpty()) {
+                    Concept parent = null;
+                    if (concept.getUpperConceptDefined() != null) {
+                        upperConceptDefined = parent = OWL.INSTANCE.getConcept(concept.getUpperConceptDefined());
+                        if (parent == null) {
+                            monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
+                        }
+                    } else {
+                        parent = OWL.INSTANCE.getCoreOntology().getCoreType(concept.getType());
+                        if (coreConceptPeers.containsKey(ret.toString())) {
+                            // ensure that any non-trivial core inheritance is dealt with
+                            // appropriately
+                            parent = OWL.INSTANCE.getCoreOntology().alignCoreInheritance(ret);
+                        }
+                    }
+
+                    if (parent != null) {
+                        ontology.add(Axiom.SubClass(parent.getUrn(), ret.getName()));
+                    }
+                }
+
                 createProperties(ret, ontology);
                 ontology.define();
 
@@ -1453,6 +1455,10 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         if (concept.getDocstring() != null) {
             ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT, concept.getDocstring()));
+        }
+
+        if (kimObject == null) {
+            ontology.add(Axiom.AnnotationAssertion(mainId, NS.BASE_DECLARATION, "true"));
         }
 
         /*
@@ -1514,8 +1520,10 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                              * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
                              * monitor).contextualize(child) :
                              */ monitor);
-                    ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
-                    ontology.define();
+                    if (childConcept != null) {
+                        ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
+                        ontology.define();
+                    }
                     // kimObject.getChildren().add(chobj);
                 } catch (Throwable e) {
                     monitor.error(e, child);
@@ -1527,9 +1535,10 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             Concept trait = declare(inherited, ontology, monitor);
             if (trait == null) {
                 monitor.error("inherited " + inherited.getName() + " does not identify known concepts", inherited);
-                return null;
+                // return null;
+            } else {
+                OWL.INSTANCE.addTrait(main, trait, ontology);
             }
-            OWL.INSTANCE.addTrait(main, trait, ontology);
         }
 
         // TODO all the rest: creates, ....
@@ -1537,27 +1546,27 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
                 monitor.error("affected " + affected.getName() + " does not identify known concepts", affected);
-                return null;
+            } else {
+                OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality, ontology);
             }
-            OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality, ontology);
         }
 
         for (KimConcept required : concept.getRequiredIdentities()) {
             Concept quality = declare(required, ontology, monitor);
             if (quality == null) {
                 monitor.error("required " + required.getName() + " does not identify known concepts", required);
-                return null;
+            } else {
+                OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality, ontology);
             }
-            OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality, ontology);
         }
 
         for (KimConcept affected : concept.getObservablesCreated()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
                 monitor.error("created " + affected.getName() + " does not identify known concepts", affected);
-                return null;
+            } else {
+                OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(NS.CREATES_PROPERTY), quality, ontology);
             }
-            OWL.INSTANCE.restrictSome(main, OWL.INSTANCE.getProperty(NS.CREATES_PROPERTY), quality, ontology);
         }
 
         for (ApplicableConcept link : concept.getSubjectsLinked()) {
@@ -1799,6 +1808,11 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                     ret.getType().add(SemanticType.NOTHING);
                     monitor.error("the definition of this concept has logical errors and is inconsistent", concept);
                 }
+
+                /**
+                 * Now that the URN is set, put away the description
+                 */
+                registerConcept(ret);
             }
 
         } catch (Throwable e) {
@@ -1878,7 +1892,6 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         if (concept.getRange() != null) {
             builder = builder.withRange(concept.getRange());
-            // ret.setRange(concept.getRange());
         }
 
         builder = builder.optional(concept.isOptional()).generic(concept.isGeneric()).global(concept.isGlobal())
@@ -1901,6 +1914,10 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         }
 
         return (Observable) builder.buildObservable();
+    }
+
+    public void registerConcept(Concept thing) {
+        this.concepts.put(thing.getUrn(), thing);
     }
 
 }

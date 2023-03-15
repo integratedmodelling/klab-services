@@ -53,6 +53,8 @@ class ConceptIngestion {
     @Test
     void worldview() {
         reasonerService.loadKnowledge(resourcesService.worldview(scope), scope);
+//        File output = Configuration.INSTANCE.getExportFile("im.owl");
+//        OWL.INSTANCE.getOntology("im").write(output, false);
     }
 
 }

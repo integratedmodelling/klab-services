@@ -11,8 +11,8 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IKnowledge;
@@ -84,7 +84,7 @@ public class ObservableBuilder implements Observable.Builder {
     String unitStatement;
     String currencyStatement;
     Object inlineValue;
-    Range range;
+    NumericRange range;
     boolean generic;
     Observable.Resolution resolution;
 //    boolean fluidUnits;
@@ -1140,7 +1140,7 @@ public class ObservableBuilder implements Observable.Builder {
          */
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CORE_OBSERVABLE_PROPERTY, main.toString()));
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, rId));
-        axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, declaration.getUri()));
+        axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, declaration.getUrn()));
 
         if (type.contains(SemanticType.ABSTRACT)) {
             axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_ABSTRACT, "true"));
@@ -1507,7 +1507,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     @Override
-    public Observable.Builder withRange(Range range) {
+    public Observable.Builder withRange(NumericRange range) {
         this.range = range;
         return this;
     }
