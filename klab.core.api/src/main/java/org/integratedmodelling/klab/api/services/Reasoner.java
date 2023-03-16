@@ -590,6 +590,15 @@ public interface Reasoner extends KlabService {
     boolean occurrent(Semantics concept);
 
     /**
+     * Return the most specific ancestor that the concepts in the passed collection have in common,
+     * or null if none.
+     * 
+     * @param cc
+     * @return
+     */
+    Concept leastGeneralCommon(Collection<Concept> cc);
+
+    /**
      * 
      * @param concept
      * @param affecting
@@ -597,6 +606,44 @@ public interface Reasoner extends KlabService {
      */
     boolean affectedBy(Semantics concept, Semantics affecting);
 
+    /**
+     * All the roles played by the passed observable within the passed context.
+     * 
+     * @param observable
+     * @param context
+     * @return
+     */
+    Collection<Concept> rolesFor(Concept observable, Concept context);
+
+    /**
+     * Return the specific role that is baseRole and is implied by the context observable, either
+     * directly or through its implication closure.
+     * 
+     * @param baseRole
+     * @param contextObservable
+     * @return
+     */
+    public Concept impliedRole(Concept baseRole, Concept contextObservable);
+
+    /**
+     * Get all other roles implied by this one. These must be concrete when the role is used in the
+     * main observable for a model, which must produce or use them. Optionally include the source
+     * and destination endpoints for all roles that apply to a relationship.
+     * 
+     * @param role
+     * @param includeRelationshipEndpoints if true, roles that apply to relationships will add the
+     *        specialized source and destination types.
+     * @return
+     */
+    public Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints);
+
+    /**
+     * Administration of a semantic server includes loading specific knowledge and defining the
+     * configuration.
+     * 
+     * @author Ferd
+     *
+     */
     interface Admin {
 
         /**
@@ -611,8 +658,8 @@ public interface Reasoner extends KlabService {
 
         /**
          * The "port" to ingest an individual concept definition, called by
-         * {@link #loadKnowledge(ResourceSet, Scope)}. Provided separately to make it possible for
-         * a resolver service to declare individual local concepts, as long as it owns the semantic
+         * {@link #loadKnowledge(ResourceSet, Scope)}. Provided separately to make it possible for a
+         * resolver service to declare individual local concepts, as long as it owns the semantic
          * service. Definition must be made only in terms of known concepts (no forward declaration
          * is allowed), so order of ingestion is critical.
          * 

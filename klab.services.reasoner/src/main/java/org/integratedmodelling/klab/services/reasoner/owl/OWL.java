@@ -45,6 +45,7 @@ import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IKnowledge;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.ISemantic;
@@ -379,7 +380,7 @@ public enum OWL {
     public Concept getConcept(String concept) {
 
         Concept result = null;
-        
+
         if (QualifiedName.validate(concept)) {
 
             QualifiedName st = new QualifiedName(concept);
@@ -393,7 +394,7 @@ public enum OWL {
                         result = getAuthorityConcept(identity);
                     }
                 }
-                
+
             } else {
 
                 Ontology o = ontologies.get(st.getNamespace());
@@ -576,7 +577,7 @@ public enum OWL {
         } else if (Utils.Files.getFileExtension(f.toString()).equals("owl")) {
 
             try (InputStream input = new FileInputStream(f)) {
-                
+
                 OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
                 input.close();
                 Ontology ont = new Ontology(ontology, pth);
@@ -2613,6 +2614,28 @@ public enum OWL {
         }
         return concepts;
     }
+    
+    public Concept getLeastGeneralCommonConcept(Concept reference, Concept otherConcept) {
+        Concept ret = null;
+        if (otherConcept == null) {
+            ret = reference;
+        }
+        if (reference.is(otherConcept)) {
+            ret = otherConcept;
+        } else if (otherConcept.is(reference)) {
+            ret = reference;
+        } else {
+            for (Concept pp : getParents(reference)) {
+                Concept c1 = getLeastGeneralCommonConcept(pp, otherConcept);
+                if (c1 != null) {
+                    ret = c1;
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+
     //
     //
     //

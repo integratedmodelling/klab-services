@@ -9,12 +9,19 @@
 	<name>k.LAB reasoner service</name>
 	<dependencies>
 
+
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
 			<artifactId>klab.services.resources</artifactId>
 			<version>${klab.version}</version>
 			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jgrapht</groupId>
+			<artifactId>jgrapht-core </artifactId>
+			<version>1.1.0</version>
 		</dependency>
 
 		<!-- OWL and DL reasoning -->
