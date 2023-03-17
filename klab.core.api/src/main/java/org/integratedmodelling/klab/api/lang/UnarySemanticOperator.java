@@ -85,6 +85,51 @@ public enum UnarySemanticOperator {
         }
         return ret;
     }
+    
+    public Set<SemanticType> getApplicableType(Set<SemanticType> original) {
+
+        switch (this) {
+        case COUNT:
+            return getType("count", original);
+        case DISTANCE:
+            return getType("distance", original);
+        case MAGNITUDE:
+            return getType("magnitude", original);
+        case LEVEL:
+            return getType("level", original);
+        case CHANGE:
+            return getType("change", original);
+        case MONETARY_VALUE:
+            return getType("money", original);
+        case OCCURRENCE:
+            return getType("occurrence", original);
+        case PERCENTAGE:
+            return getType("percentage", original);
+        case PRESENCE:
+            return getType("presence", original);
+        case PROBABILITY:
+            return getType("probability", original);
+        case PROPORTION:
+            return getType("proportion", original);
+        case RATIO:
+            return getType("ratio", original);
+        case TYPE:
+            return getType("class", original);
+        case UNCERTAINTY:
+            return getType("uncertainty", original);
+        case VALUE:
+            return getType("value", original);
+        case RATE:
+            return getType("rate", original);
+        case CHANGED:
+            return getType("changed", original);
+        case NOT:
+        default:
+            break;
+        }
+
+        return null;
+    }
 
     /**
      * Return the semantic typeset of a concept after applying the operator we represent.

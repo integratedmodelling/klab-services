@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import java.io.Serializable;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -128,7 +128,7 @@ public interface Authority extends Serializable {
          * each. If the authority also admits use without subauthorities, the first element should
          * contain an empty string for the authority ID.
          */
-        List<PairImpl<String, String>> getSubAuthorities();
+        List<Pair<String, String>> getSubAuthorities();
 
         /**
          * Return the media type names for any documentation that this authority is capable of
@@ -179,6 +179,16 @@ public interface Authority extends Serializable {
      * @return
      */
     Codelist getCodelist();
+
+    /**
+     * If the authority has lower-level subcatalogs, return the singleton that will handle the
+     * catalog below us. Asking for a path that's not declared in the capabilities is an internal
+     * error and should never happen. The subauthority must be completely initialized and get stored
+     * for any successive request.
+     * 
+     * @return
+     */
+    Authority subAuthority(String catalog);
 
     // /**
     // * Write the documentation for the passed identity in the passed media type,

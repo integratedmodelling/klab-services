@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.reasoner.indexing;
+package org.integratedmodelling.klab.indexing;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,17 +7,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.integratedmodelling.kim.api.BinarySemanticOperator;
-import org.integratedmodelling.kim.api.IKimConcept.ObservableRole;
-import org.integratedmodelling.kim.api.SemanticModifier;
-import org.integratedmodelling.kim.api.UnarySemanticOperator;
-import org.integratedmodelling.kim.api.ValueOperator;
-import org.integratedmodelling.klab.api.data.mediation.IUnit;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
+import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.configuration.Services;
 
 /**
  * Defines the acceptable semantic tokens in any given state of the specification of a semantic
@@ -151,14 +149,14 @@ public class SemanticScope {
                 if (concept.is(SemanticType.MONETARY_VALUE)) {
                     ret.lexicalRealm.add(SemanticRole.CURRENCY);
                 } else if (concept.is(SemanticType.EXTENSIVE_PROPERTY) || concept.is(SemanticType.INTENSIVE_PROPERTY)) {
-                    Unit baseUnit = Units.INSTANCE.getDefaultUnitFor(concept);
+                    Unit baseUnit = Services.INSTANCE.getUnitService().getDefaultUnitFor(concept);
                     if (baseUnit != null) {
                         ret.lexicalRealm.add(SemanticRole.UNIT);
                         ret.logicalRealm.add(Constraint.compatibleUnit(baseUnit));
                     }
                 } else if (concept.is(SemanticType.NUMEROSITY)) {
                     ret.lexicalRealm.add(SemanticRole.UNIT);
-                    ret.logicalRealm.add(Constraint.compatibleUnit(Units.INSTANCE.getUnit("1")));
+                    ret.logicalRealm.add(Constraint.compatibleUnit(Services.INSTANCE.getUnitService().getUnit("1")));
                 }
             }
             
@@ -173,7 +171,7 @@ public class SemanticScope {
 
     private static Collection<SemanticRole> compatibleModifiers(Concept concept) {
         List<SemanticRole> ret = new ArrayList<>();
-        for (SemanticModifier modifier : SemanticModifier.values()) {
+        for (SemanticLexicalElement modifier : SemanticLexicalElement.values()) {
             if (modifier.role != null) {
                 for (SemanticType type : modifier.applicable) {
                     if (concept.is(type)) {
@@ -210,6 +208,7 @@ public class SemanticScope {
     }
 
     public static SemanticScope scope(BinarySemanticOperator op, SemanticExpression context) {
+        
         SemanticScope ret = new SemanticScope();
 
         switch(op) {
@@ -271,7 +270,7 @@ public class SemanticScope {
         return ret;
     }
 
-    public static SemanticScope scope(SemanticModifier role, SemanticExpression context) {
+    public static SemanticScope scope(SemanticLexicalElement role, SemanticExpression context) {
 
         SemanticScope ret = new SemanticScope();
         // always possible to scope for a complex observable
@@ -290,8 +289,6 @@ public class SemanticScope {
         ret.lexicalRealm.add(SemanticRole.GROUP_OPEN);
 
         switch(role) {
-        case ASSESSMENT:
-            break;
         case CHANGE:
             ret.logicalRealm.add(Constraint.of(SemanticType.QUALITY));
             break;
@@ -315,9 +312,6 @@ public class SemanticScope {
             break;
         case NOT:
             ret.logicalRealm.add(Constraint.of(SemanticType.DENIABLE));
-            break;
-        case OBSERVABILITY:
-            ret.logicalRealm.add(Constraint.of(SemanticType.OBSERVABLE));
             break;
         case OCCURRENCE:
             ret.logicalRealm.add(Constraint.of(SemanticType.COUNTABLE));
@@ -368,46 +362,46 @@ public class SemanticScope {
 
         boolean ret = false;
 
-        if (token instanceof IConcept) {
+        if (token instanceof Concept) {
 
             for (Constraint c : this.logicalRealm) {
-                if (c.matches((IConcept) token)) {
+                if (c.matches((Concept) token)) {
                     ret = true;
                 }
             }
 
         } else if (token instanceof ValueOperator) {
-            ret = this.lexicalRealm.contains(ObservableRole.VALUE_OPERATOR)
-                    && !context.collect(ObservableRole.VALUE_OPERATOR).contains(token);
-        } else if (token instanceof SemanticModifier) {
-            ret = this.lexicalRealm.contains(((SemanticModifier)token).role)
-                    && !context.collect(ObservableRole.SEMANTIC_MODIFIER).contains(token);
+            ret = this.lexicalRealm.contains(SemanticRole.VALUE_OPERATOR)
+                    && !context.collect(SemanticRole.VALUE_OPERATOR).contains(token);
+        } else if (token instanceof SemanticLexicalElement) {
+            ret = this.lexicalRealm.contains(((SemanticLexicalElement)token).role)
+                    && !context.collect(SemanticRole.SEMANTIC_MODIFIER).contains(token);
         } else if (token instanceof UnarySemanticOperator) {
-            ret = this.lexicalRealm.contains(ObservableRole.UNARY_OPERATOR)
-                    && context.collect(ObservableRole.UNARY_OPERATOR).isEmpty();
+            ret = this.lexicalRealm.contains(SemanticRole.UNARY_OPERATOR)
+                    && context.collect(SemanticRole.UNARY_OPERATOR).isEmpty();
         } else if (token instanceof BinarySemanticOperator) {
-            ret = this.lexicalRealm.contains(ObservableRole.BINARY_OPERATOR);
+            ret = this.lexicalRealm.contains(SemanticRole.BINARY_OPERATOR);
         } else if (token instanceof String) {
             switch((String) token) {
             case "(":
-                ret = this.lexicalRealm.contains(ObservableRole.GROUP_OPEN);
+                ret = this.lexicalRealm.contains(SemanticRole.GROUP_OPEN);
                 break;
             case ")":
                 ret = context.getCurrent().getGroupParent() != null;
                 break;
             case "in":
-                Set<Object> obs = context.collect(ObservableRole.OBSERVABLE);
+                Set<Object> obs = context.collect(SemanticRole.OBSERVABLE);
                 if (!obs.isEmpty()) {
                     if (((Concept) obs.iterator().next()).is(SemanticType.MONETARY_VALUE)) {
-                        ret = this.lexicalRealm.contains(ObservableRole.CURRENCY)
-                                && context.collect(ObservableRole.CURRENCY).isEmpty();
+                        ret = this.lexicalRealm.contains(SemanticRole.CURRENCY)
+                                && context.collect(SemanticRole.CURRENCY).isEmpty();
                     } else {
-                        ret = this.lexicalRealm.contains(ObservableRole.UNIT) && context.collect(ObservableRole.UNIT).isEmpty();
+                        ret = this.lexicalRealm.contains(SemanticRole.UNIT) && context.collect(SemanticRole.UNIT).isEmpty();
                     }
                 }
                 break;
             case "per":
-                ret = this.lexicalRealm.contains(ObservableRole.DISTRIBUTED_UNIT);
+                ret = this.lexicalRealm.contains(SemanticRole.DISTRIBUTED_UNIT);
                 break;
             default:
 
@@ -415,15 +409,15 @@ public class SemanticScope {
                  * TODO must be under unit, currency or operator value; validate as required based
                  * on context
                  */
-                if (context.getCurrent().isAs(ObservableRole.UNIT)) {
+                if (context.getCurrent().isAs(SemanticRole.UNIT)) {
                     // validate against property (not numerosity). TODO may want a constraint for
                     // base unit
-                } else if (context.getCurrent().isAs(ObservableRole.CURRENCY)) {
+                } else if (context.getCurrent().isAs(SemanticRole.CURRENCY)) {
                     // validate against monetary value
-                } else if (context.getCurrent().isAs(ObservableRole.DISTRIBUTED_UNIT)) {
+                } else if (context.getCurrent().isAs(SemanticRole.DISTRIBUTED_UNIT)) {
                     // validate against numerosity, must be unitless. TODO may want a constraint for
                     // base unit
-                } else if (context.getCurrent().isAs(ObservableRole.INLINE_VALUE)) {
+                } else if (context.getCurrent().isAs(SemanticRole.INLINE_VALUE)) {
                     // validate against operator and observable. TODO may want a type constraint
                 }
                 break;

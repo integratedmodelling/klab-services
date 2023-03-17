@@ -1998,6 +1998,49 @@ public class Utils {
         }
 
         /**
+         * True if string o contains any of the characters in string string
+         * 
+         * @param o
+         * @param string
+         * @return
+         */
+        public static boolean containsAny(String o, String string) {
+            for (int i = 0; i < string.length(); i++) {
+                if (o.indexOf(string.charAt(i)) >= 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        public static boolean containsAny(String o, char[] string) {
+            for (int i = 0; i < string.length; i++) {
+                if (o.indexOf(string[i]) >= 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static boolean containsUppercase(String string) {
+            for (int i = 0; i < string.length(); i++) {
+                if (Character.isUpperCase(string.charAt(i))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static boolean containsLowercase(String string) {
+            for (int i = 0; i < string.length(); i++) {
+                if (Character.isLowerCase(string.charAt(i))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        /**
          * Replace whitespace.
          *
          * @param text the text

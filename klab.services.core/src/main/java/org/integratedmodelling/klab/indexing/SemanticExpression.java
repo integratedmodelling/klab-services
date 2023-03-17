@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.reasoner.indexing;
+package org.integratedmodelling.klab.indexing;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,24 +11,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import org.integratedmodelling.kim.api.BinarySemanticOperator;
-import org.integratedmodelling.kim.api.IKimConcept.ObservableRole;
-import org.integratedmodelling.kim.api.IKimConcept.Type;
-import org.integratedmodelling.kim.api.SemanticModifier;
-import org.integratedmodelling.kim.api.UnarySemanticOperator;
-import org.integratedmodelling.kim.api.ValueOperator;
-import org.integratedmodelling.klab.api.data.mediation.ICurrency;
-import org.integratedmodelling.klab.api.data.mediation.IUnit;
+import org.integratedmodelling.klab.api.data.mediation.Currency;
+import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.SemanticRole;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
+import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.configuration.Services;
-import org.integratedmodelling.klab.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.indexing.SemanticScope.Constraint;
 import org.integratedmodelling.klab.rest.StyledKimToken;
-import org.integratedmodelling.klab.services.reasoner.indexing.SemanticScope.Constraint;
 import org.integratedmodelling.klab.utils.Utils;
-import org.integratedmodelling.klab.utils.Utils.Kim;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
@@ -42,9 +39,9 @@ public class SemanticExpression {
 
     public class SemanticToken {
 
-        public IConcept concept;
-        public IUnit unit;
-        public ICurrency currency;
+        public Concept concept;
+        public Unit unit;
+        public Currency currency;
         public Object value;
         public Stack<SemanticToken> previous = new Stack<>();
         private SemanticScope scope;
@@ -91,7 +88,7 @@ public class SemanticExpression {
 
         public SemanticToken getGroupParent() {
             for (SemanticLink link : graph.incomingEdgesOf(this)) {
-                if (link.observableRole == ObservableRole.GROUP_OPEN) {
+                if (link.observableRole == SemanticRole.GROUP_OPEN) {
                     return graph.getEdgeSource(link);
                 }
             }
@@ -111,9 +108,9 @@ public class SemanticExpression {
          * @param role
          * @return
          */
-        public boolean isAs(ObservableRole role) {
+        public boolean isAs(SemanticRole role) {
             for (SemanticLink link : graph.incomingEdgesOf(this)) {
-                if (link.is(ObservableRole.GROUP_OPEN) && role != ObservableRole.GROUP_OPEN) {
+                if (link.is(SemanticRole.GROUP_OPEN) && role != SemanticRole.GROUP_OPEN) {
                     if (graph.getEdgeSource(link).isAs(role)) {
                         return true;
                     } else if (link.is(role)) {
@@ -152,14 +149,14 @@ public class SemanticExpression {
 
     public class SemanticLink {
 
-        public ObservableRole observableRole;
+        public org.integratedmodelling.klab.api.knowledge.SemanticRole observableRole;
         public ValueOperator valueOperator;
         public UnarySemanticOperator unarySemanticOperator;
         public BinarySemanticOperator binarySemanticOperator;
-        public SemanticModifier semanticModifier;
+        public SemanticLexicalElement semanticModifier;
         public String syntacticElement;
 
-        public boolean is(ObservableRole role) {
+        public boolean is(SemanticRole role) {
             return role.equals(this.observableRole);
         }
 
@@ -269,17 +266,17 @@ public class SemanticExpression {
         SemanticToken added = new SemanticToken(this.current);
         SemanticLink link = new SemanticLink();
 
-        if (token instanceof IConcept) {
+        if (token instanceof Concept) {
 
             // TODO set concept and redefine constraints
-            if (((IConcept) token).is(Type.OBSERVABLE)) {
-                link.observableRole = ObservableRole.OBSERVABLE;
-            } else if (((IConcept) token).is(Type.ROLE)) {
-                link.observableRole = ObservableRole.ROLE;
-            } else if (((IConcept) token).is(Type.PREDICATE)) {
-                link.observableRole = ObservableRole.TRAIT;
+            if (((Concept) token).is(SemanticType.OBSERVABLE)) {
+                link.observableRole = SemanticRole.OBSERVABLE;
+            } else if (((Concept) token).is(SemanticType.ROLE)) {
+                link.observableRole = SemanticRole.ROLE;
+            } else if (((Concept) token).is(SemanticType.PREDICATE)) {
+                link.observableRole = SemanticRole.TRAIT;
             }
-            added.concept = (IConcept) token;
+            added.concept = (Concept) token;
             added.scope = SemanticScope.scope(added.concept, this);
 
         } else if (token instanceof ValueOperator) {
@@ -297,32 +294,32 @@ public class SemanticExpression {
             link.binarySemanticOperator = (BinarySemanticOperator) token;
             added.scope = SemanticScope.scope((BinarySemanticOperator) token, this);
 
-        } else if (token instanceof SemanticModifier) {
+        } else if (token instanceof SemanticLexicalElement) {
 
-            link.semanticModifier = (SemanticModifier) token;
-            added.scope = SemanticScope.scope((SemanticModifier) token, this);
+            link.semanticModifier = (SemanticLexicalElement) token;
+            added.scope = SemanticScope.scope((SemanticLexicalElement) token, this);
 
-        } else if (token instanceof IUnit) {
+        } else if (token instanceof Unit) {
 
             // This case is for API use, won't be called from the session builder as units arrive as
             // strings
             link.syntacticElement = "in";
-            added.unit = (IUnit) token;
+            added.unit = (Unit) token;
             // TODO validate unit
 
-        } else if (token instanceof ICurrency) {
+        } else if (token instanceof Currency) {
 
             // This case is for API use, won't be called from the session builder as units arrive as
             // strings
             link.syntacticElement = "in";
-            added.currency = (ICurrency) token;
+            added.currency = (Currency) token;
             // TODO validate currency
 
         } else if (token instanceof String) {
 
             if ("(".equals(token)) {
             
-                link.observableRole = ObservableRole.GROUP_OPEN;
+                link.observableRole = SemanticRole.GROUP_OPEN;
                 added.scope = new SemanticScope();
 
                 /*
@@ -331,12 +328,12 @@ public class SemanticExpression {
                  */
 
                 added.scope.lexicalRealm.addAll(current.scope.getAdmittedLexicalInput());
-                added.scope.lexicalRealm.remove(ObservableRole.GROUP_OPEN);
-                added.scope.lexicalRealm.add(ObservableRole.GROUP_CLOSE);
+                added.scope.lexicalRealm.remove(SemanticRole.GROUP_OPEN);
+                added.scope.lexicalRealm.add(SemanticRole.GROUP_CLOSE);
                 added.scope.logicalRealm.addAll(current.scope.getAdmittedLogicalInput());
                 // open groups are always for observables, which are specified in the original
                 // scope, so add predicates
-                added.scope.logicalRealm.add(Constraint.of(Type.PREDICATE));
+                added.scope.logicalRealm.add(Constraint.of(SemanticType.PREDICATE));
 
             } else if (")".equals(token)) {
 
@@ -361,7 +358,7 @@ public class SemanticExpression {
             }
 
         } else {
-            throw new KlabIllegalStateException("internal: semantic token was accepted but is not handled: " + token);
+            throw new KIllegalStateException("internal: semantic token was accepted but is not handled: " + token);
         }
 
         graph.addVertex(added);
@@ -383,8 +380,8 @@ public class SemanticExpression {
      * 
      * @return
      */
-    public Set<ObservableRole> getRoles() {
-        Set<ObservableRole> ret = EnumSet.noneOf(ObservableRole.class);
+    public Set<SemanticRole> getRoles() {
+        Set<SemanticRole> ret = EnumSet.noneOf(SemanticRole.class);
         // TODO
         return ret;
     }
@@ -395,10 +392,10 @@ public class SemanticExpression {
      * 
      * @return
      */
-    public Set<Object> collect(ObservableRole role) {
+    public Set<Object> collect(SemanticRole role) {
         Set<Object> ret = new HashSet<>();
         SemanticToken start = getCurrentLexicalContext();
-
+        // TODO
         return ret;
     }
 
@@ -408,8 +405,8 @@ public class SemanticExpression {
      * 
      * @return
      */
-    public Set<IConcept> getBaseTraits() {
-        Set<IConcept> ret = new HashSet<>();
+    public Set<Concept> getBaseTraits() {
+        Set<Concept> ret = new HashSet<>();
         return ret;
     }
 
@@ -462,11 +459,11 @@ public class SemanticExpression {
         List<SemanticLink> observables = new ArrayList<>();
 
         for (SemanticLink link : graph.outgoingEdgesOf(token)) {
-            if (link.observableRole == ObservableRole.TRAIT) {
+            if (link.observableRole == SemanticRole.TRAIT) {
                 traits.add(link);
-            } else if (link.observableRole == ObservableRole.ROLE) {
+            } else if (link.observableRole == SemanticRole.ROLE) {
                 roles.add(link);
-            } else if (link.observableRole == ObservableRole.OBSERVABLE) {
+            } else if (link.observableRole == SemanticRole.OBSERVABLE) {
                 observables.add(link);
             }
         }
@@ -518,7 +515,7 @@ public class SemanticExpression {
                     tokens.add(StyledKimToken.unknown());
                 }
 
-            } else if (link.observableRole == ObservableRole.GROUP_OPEN) {
+            } else if (link.observableRole == SemanticRole.GROUP_OPEN) {
                 tokens.add(StyledKimToken.create("("));
                 if (collectStyledCode(graph.getEdgeTarget(link), tokens) == 0) {
                     tokens.add(StyledKimToken.unknown());
@@ -531,13 +528,13 @@ public class SemanticExpression {
     }
 
     public Collection<String> getErrors() {
-        return this.error == null ? Collections.EMPTY_LIST : Collections.singleton(this.error);
+        return this.error == null ? Collections.emptyList() : Collections.singleton(this.error);
     }
 
-    public Type getObservableType() {
-        IConcept concept = buildConcept();
+    public SemanticType getObservableType() {
+        Concept concept = buildConcept();
         if (concept != null) {
-            return Kim.INSTANCE.getFundamentalType(((Concept) concept).getTypeSet());
+            return  SemanticType.fundamentalType(concept.getType());
         }
         return null;
     }
@@ -548,7 +545,7 @@ public class SemanticExpression {
      * @return
      */
     public <T> T getData(String key, Class<T> cls) {
-        return Utils.asType(data.get(key), cls);
+        return Utils.Data.asType(data.get(key), cls);
     }
 
     public void setData(String key, Object value) {
@@ -566,7 +563,7 @@ public class SemanticExpression {
     private String dump(SemanticToken token, int level) {
 
         String ret = "";
-        String spacer = StringUtil.spaces(level);
+        String spacer = Utils.Strings.spaces(level);
         ret += spacer + token + "\n";
         for (SemanticLink link : graph.outgoingEdgesOf(token)) {
             ret += spacer + "  \u2192 " + link + ":\n";
@@ -580,11 +577,11 @@ public class SemanticExpression {
         return dump(head, 0);
     }
 
-    public IObservable buildObservable() {
+    public Observable buildObservable() {
         return head.buildObservable();
     }
 
-    public IConcept buildConcept() {
+    public Concept buildConcept() {
         return head.buildConcept();
     }
 

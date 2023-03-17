@@ -7,11 +7,13 @@ import java.util.Map;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
+import org.integratedmodelling.klab.api.services.CurrencyService;
 import org.integratedmodelling.klab.api.services.Engine;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.Runtime;
+import org.integratedmodelling.klab.api.services.UnitService;
 
 /**
  * Makes the k.LAB services available globally through service discovery, self-notification or
@@ -42,6 +44,8 @@ public enum Services {
     private Engine engine;
     private Resolver resolver;
     private Runtime runtime;
+    private UnitService unitService;
+    private CurrencyService currencyService;
 
     private Map<String, Authority> authorities = new HashMap<>();
     private List<Reasoner> federatedRuntimes = new ArrayList<>();
@@ -116,6 +120,22 @@ public enum Services {
     }
     public void setAuthorities(Map<String, Authority> authorities) {
         this.authorities = authorities;
+    }
+
+    public UnitService getUnitService() {
+        return unitService;
+    }
+
+    public void setUnitService(UnitService unitService) {
+        this.unitService = unitService;
+    }
+
+    public CurrencyService getCurrencyService() {
+        return currencyService;
+    }
+
+    public void setCurrencyService(CurrencyService currencyService) {
+        this.currencyService = currencyService;
     }
 
 }
