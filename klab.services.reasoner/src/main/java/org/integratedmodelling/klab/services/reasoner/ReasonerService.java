@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -19,11 +20,12 @@ import java.util.stream.Collectors;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
-import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
+import org.integratedmodelling.klab.api.knowledge.IMetadata;
+import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
@@ -42,10 +44,8 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
-import org.integratedmodelling.klab.api.monitoring.IMessage;
+import org.integratedmodelling.klab.api.provenance.IArtifact;
 import org.integratedmodelling.klab.api.services.Authentication;
-import org.integratedmodelling.klab.api.services.IIndexingService.Context;
-import org.integratedmodelling.klab.api.services.IIndexingService.Match;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -58,12 +58,6 @@ import org.integratedmodelling.klab.indexing.SearchMatch;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
-import org.integratedmodelling.klab.monitoring.Message;
-import org.integratedmodelling.klab.rest.ObservableReference;
-import org.integratedmodelling.klab.rest.QueryStatusResponse;
-import org.integratedmodelling.klab.rest.SearchRequest;
-import org.integratedmodelling.klab.rest.SearchRequest.Mode;
-import org.integratedmodelling.klab.rest.SearchResponse;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
@@ -72,11 +66,11 @@ import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
-import org.integratedmodelling.klab.utils.NameGenerator;
+import org.integratedmodelling.klab.utils.CamelCase;
 import org.integratedmodelling.klab.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.expression.spel.ast.Indexer;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -164,6 +158,8 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                     return declareObservable(parsed);
                 }
             });
+
+    private Capabilities capabilities = new ReasonerCapabilities();
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
     public boolean derived(Semantics c) {
@@ -949,10 +945,54 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public String displayLabel(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        String ret = displayName(concept);
+        if (!ret.contains(" ")) {
+            ret = StringUtils.capitalize(CamelCase.toLowerCase(ret, ' '));
+        }
+        return ret;
     }
 
+    @Override
+    public String displayName(Semantics semantics) {
+        return semantics instanceof Observable
+                ? observableDisplayName((Observable) semantics)
+                : conceptDisplayName(semantics.asConcept());
+    }
+
+    private String conceptDisplayName(Concept t) {
+
+        String ret = t.getMetadata().get(NS.DISPLAY_LABEL_PROPERTY, String.class);
+
+        if (ret == null) {
+            ret = t.getMetadata().get(IMetadata.DC_LABEL, String.class);
+        }
+        if (ret == null) {
+            ret = t.getName();
+        }
+        if (ret.startsWith("i")) {
+            ret = ret.substring(1);
+        }
+        return ret;
+    }
+
+    private String observableDisplayName(Observable o) {
+
+        String ret = conceptDisplayName(o.asConcept());
+
+        for (Pair<ValueOperator, Object> operator : o.getValueOperators()) {
+
+            ret += StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_'));
+
+            if (operator.getSecond() instanceof Concept) {
+                ret += conceptDisplayName((Concept) operator.getSecond());
+            } else if (operator.getSecond() instanceof IObservable) {
+                ret += observableDisplayName((Observable) operator.getSecond());
+            } else {
+                ret += "_" + operator.getSecond().toString().replace(' ', '_');
+            }
+        }
+        return ret;
+    }
     @Override
     public String style(Concept concept) {
         // TODO Auto-generated method stub
@@ -961,8 +1001,11 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Capabilities getCapabilities() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.capabilities ;
+    }
+
+    public void setCapabilities(Capabilities capabilities) {
+        this.capabilities = capabilities;
     }
 
     @Override
@@ -1034,39 +1077,46 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Class<? extends Observation> observationClass(Semantics observable) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public SemanticType observableType(Semantics observable, boolean acceptTraits) {
-        // TODO Auto-generated method stub
-        return null;
+        if (observable instanceof Observable && ((Observable) observable).getArtifactType().equals(IArtifact.Type.VOID)) {
+            return SemanticType.NOTHING;
+        }
+        Set<SemanticType> type = EnumSet.copyOf(observable.asConcept().getType());
+        type.retainAll(SemanticType.BASE_MODELABLE_TYPES);
+        if (type.size() != 1) {
+            throw new IllegalArgumentException("trying to extract the observable type from non-observable " + observable);
+        }
+        return type.iterator().next();
     }
 
     @Override
     public Concept relationshipSource(Semantics relationship) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> ret = relationshipSources(relationship);
+        return ret.size() == 0 ? null : ret.iterator().next();
     }
 
     @Override
     public Collection<Concept> relationshipSources(Semantics relationship) {
-        // TODO Auto-generated method stub
-        return null;
+        return Utils.Collections.join(
+                OWL.INSTANCE.getDirectRestrictedClasses(relationship.asConcept(),
+                        OWL.INSTANCE.getProperty(NS.IMPLIES_SOURCE_PROPERTY)),
+                OWL.INSTANCE.getRestrictedClasses(relationship.asConcept(),
+                        OWL.INSTANCE.getProperty(NS.IMPLIES_SOURCE_PROPERTY)));
     }
 
     @Override
     public Concept relationshipTarget(Semantics relationship) {
-        // TODO Auto-generated method stub
-        return null;
+        Collection<Concept> ret = relationshipTargets(relationship);
+        return ret.size() == 0 ? null : ret.iterator().next();
     }
 
     @Override
     public Collection<Concept> relationshipTargets(Semantics relationship) {
-        // TODO Auto-generated method stub
-        return null;
+        return Utils.Collections.join(
+                OWL.INSTANCE.getDirectRestrictedClasses(relationship.asConcept(),
+                        OWL.INSTANCE.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)),
+                OWL.INSTANCE.getRestrictedClasses(relationship.asConcept(),
+                        OWL.INSTANCE.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)));
     }
 
     @Override
@@ -1082,8 +1132,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Collection<Concept> directRoles(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_ROLE_PROPERTY));
     }
 
     @Override
@@ -1308,8 +1357,69 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public boolean affectedBy(Semantics focus, Semantics context1) {
-        // TODO Auto-generated method stub
+    public Collection<Concept> affectedOrCreated(Semantics semantics) {
+        Set<Concept> ret = new HashSet<>();
+        for (Concept c : OWL.INSTANCE.getRestrictedClasses(semantics.asConcept(),
+                OWL.INSTANCE.getProperty(NS.AFFECTS_PROPERTY))) {
+            if (!OWL.INSTANCE.getOntology(c.getNamespace()).isInternal()) {
+                ret.add(c);
+            }
+        }
+        for (Concept c : OWL.INSTANCE.getRestrictedClasses(semantics.asConcept(),
+                OWL.INSTANCE.getProperty(NS.CREATES_PROPERTY))) {
+            if (!OWL.INSTANCE.getOntology(c.getNamespace()).isInternal()) {
+                ret.add(c);
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public Collection<Concept> affected(Semantics semantics) {
+        Set<Concept> ret = new HashSet<>();
+        for (Concept c : OWL.INSTANCE.getRestrictedClasses(semantics.asConcept(),
+                OWL.INSTANCE.getProperty(NS.AFFECTS_PROPERTY))) {
+            if (!OWL.INSTANCE.getOntology(c.getNamespace()).isInternal()) {
+                ret.add(c);
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public Collection<Concept> created(Semantics semantics) {
+        Set<Concept> ret = new HashSet<>();
+        for (Concept c : OWL.INSTANCE.getRestrictedClasses(semantics.asConcept(),
+                OWL.INSTANCE.getProperty(NS.CREATES_PROPERTY))) {
+            if (!OWL.INSTANCE.getOntology(c.getNamespace()).isInternal()) {
+                ret.add(c);
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public boolean affectedBy(Semantics affected, Semantics affecting) {
+        Concept described = describedType(affected);
+        for (Concept c : affected(affecting)) {
+            if (affected.is(c) || (described != null && described.is(c))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean createdBy(Semantics affected, Semantics affecting) {
+        Concept described = describedType(affected);
+        if (described != null && described.is(affecting)) {
+            return true;
+        }
+        for (Concept c : created(affecting)) {
+            if (affected.is(c) || (described != null && described.is(c))) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -1325,14 +1435,18 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Concept parent(Semantics c) {
-
-        return null;
+        Collection<Concept> parents =  OWL.INSTANCE.getParents(c.asConcept());
+        return parents.isEmpty() ? null : parents.iterator().next();
     }
 
     @Override
     public Concept rawObservable(Semantics observable) {
-        // TODO Auto-generated method stub
-        return null;
+        String def = observable.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
+        Concept ret = observable.asConcept();
+        if (def != null) {
+            ret = resolveConcept(def);
+        }
+        return ret;
     }
 
     @Override
@@ -2021,185 +2135,196 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
      */
     private Map<String, SemanticExpression> semanticExpressions = new HashMap<>();
 
-//    /**
-//     * The next-generation semantic search using ObservableComposer
-//     * 
-//     * @param request
-//     * @param message
-//     */
-//    private void semanticSearch(SearchRequest request, UserScope scope, Message message) {
-//
-//        if (request.isCancelSearch()) {
-//            semanticExpressions.remove(request.getContextId());
-//            searchContexts.remove(request.getContextId());
-//        } else {
-//            /*
-//             * spawn search thread, which will respond when done.
-//             */
-//            new Thread(){
-//
-//                @Override
-//                public void run() {
-//
-//                    SearchResponse response = setupResponse(request);
-//
-//                    switch(request.getSearchMode()) {
-//                    case FREETEXT:
-//                        searchFreetext(request, response);
-//                        break;
-//                    case UNDO:
-//
-//                        // client may be stupid, as mine is
-//                        if (request.getContextId() != null && semanticExpressions.containsKey(request.getContextId())) {
-//
-//                            SemanticExpression expression = semanticExpressions.get(request.getContextId());
-//                            boolean ok = true;
-//                            if (!semanticExpressions.get(request.getContextId()).undo()) {
-//                                semanticExpressions.remove(request.getContextId());
-//                                searchContexts.remove(request.getContextId());
-//                                ok = false;
-//                            }
-//
-//                            QueryStatusResponse qr = new QueryStatusResponse();
-//                            qr.setContextId(ok ? request.getContextId() : null);
-//                            if (ok) {
-//                                qr.getErrors().addAll(expression.getErrors());
-//                                qr.getCode().addAll(expression.getStyledCode());
-//                                qr.setCurrentType(expression.getObservableType());
-//                            }
-//                            scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
-//                        }
-//                        break;
-//
-//                    case OPEN_SCOPE:
-//
-//                        semanticExpressions.get(response.getContextId()).accept("(");
-//                        QueryStatusResponse qr = new QueryStatusResponse();
-//                        qr.setContextId(request.getContextId());
-//                        qr.getErrors().addAll(semanticExpressions.get(response.getContextId()).getErrors());
-//                        qr.getCode().addAll(semanticExpressions.get(response.getContextId()).getStyledCode());
-//                        qr.setCurrentType(semanticExpressions.get(response.getContextId()).getObservableType());
-//                        scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
-//                        break;
-//
-//                    case CLOSE_SCOPE:
-//
-//                        semanticExpressions.get(response.getContextId()).accept(")");
-//                        qr = new QueryStatusResponse();
-//                        qr.setContextId(request.getContextId());
-//                        qr.getErrors().addAll(semanticExpressions.get(response.getContextId()).getErrors());
-//                        qr.getCode().addAll(semanticExpressions.get(response.getContextId()).getStyledCode());
-//                        qr.setCurrentType(semanticExpressions.get(response.getContextId()).getObservableType());
-//                        scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
-//                        break;
-//
-//                    case SEMANTIC:
-//
-//                        if (request.isDefaultResults()) {
-//                            setDefaultSearchResults(response.getContextId(), request, response);
-//                        } else {
-//                            SemanticExpression expression = semanticExpressions.get(response.getContextId());
-//                            if (expression == null) {
-//                                expression = SemanticExpression.create();
-//                                semanticExpressions.put(response.getContextId(), expression);
-//                            }
-//                            runSemanticSearch(expression, request, response);
-//                        }
-//
-//                        break;
-//                    }
-//
-//                    response.setElapsedTimeMs(System.currentTimeMillis() - response.getElapsedTimeMs());
-//                    scope.send(Message.create(scope.getIdentity().getId(), IMessage.MessageClass.Query, IMessage.Type.QueryResult,
-//                            response.signalEndTime()).inResponseTo(message));
-//                }
-//            }.run();
-//        }
-//
-//    }
-//
-//    protected SearchResponse setupResponse(SearchRequest request) {
-//
-//        final String contextId = request.getContextId() == null ? NameGenerator.shortUUID() : request.getContextId();
-//
-//        if ((request.getSearchMode() == Mode.FREETEXT || request.isDefaultResults())) {
-//            if ((request.getContextId() == null)
-//                    || searchContexts.get(contextId) == null && searchContexts.get(contextId).getFirst() == null) {
-//                searchContexts.put(contextId, new Pair<>(
-//                        Indexing.INSTANCE.createContext(request.getMatchTypes(), request.getSemanticTypes()), new ArrayList<>()));
-//            }
-//        }
-//
-//        SearchResponse response = new SearchResponse();
-//        response.setContextId(contextId);
-//        response.setRequestId(request.getRequestId());
-//
-//        return response;
-//    }
-//
-//    /**
-//     * TODO move into semantics package
-//     * 
-//     * @param expression
-//     * @param request
-//     * @param response
-//     */
-//    protected void runSemanticSearch(SemanticExpression expression, SearchRequest request, SearchResponse response) {
-//
-//        for (Match match : Indexer.INSTANCE.query(request.getQueryString(), expression.getCurrent().getScope(),
-//                request.getMaxResults())) {
-//            response.getMatches().add(((SearchMatch) match).getReference());
-//        }
-//
-//        // save the matches in the expression so that we recognize a choice
-//        expression.setData("matches", response);
-//    }
-//
-//    /**
-//     * TODO move into authentication package or semantics
-//     * 
-//     * @param response
-//     */
-//    protected void setDefaultSearchResults(String contextId, SearchRequest request, SearchResponse response) {
-//        /*
-//         * These come from the user's groups. They should eventually be linked to session history
-//         * and preferences.
-//         */
-//        List<Match> matches = new ArrayList<>();
-//        int i = 0;
-//        for (ObservableReference observable : Authentication.INSTANCE.getDefaultObservables(Session.this)) {
-//            SearchMatch match = new SearchMatch(observable.getObservable(), observable.getLabel(), observable.getDescription(),
-//                    observable.getSemantics(), observable.getState(), observable.getExtendedDescription());
-//            match.setIndex(i++);
-//            response.getMatches().add(match);
-//            matches.add(new SearchMatch(match));
-//        }
-//        searchContexts.put(contextId, new Pair<Context, List<Match>>(
-//                Indexing.INSTANCE.createContext(request.getMatchTypes(), request.getSemanticTypes()), matches));
-//    }
-//
-//    /**
-//     * TODO move into semantic package or concepts
-//     * 
-//     * @param request
-//     * @param response
-//     */
-//    protected void searchFreetext(SearchRequest request, SearchResponse response) {
-//        // TODO also lookup local matches and spawn search for remote ones to answer
-//        // afterwards.
-//        List<Match> matches = new ArrayList<>();
-//        // int i = 0;
-//        // for (Location location : Geocoder.INSTANCE.lookup(request.getQueryString())) {
-//        // if ("relation".equals(location.getOsm_type())) {
-//        //
-//        // SearchMatch match = new SearchMatch(location.getURN(), location.getName(),
-//        // location.getDescription(),
-//        // IKimConcept.Type.SUBJECT);
-//        // match.setIndex(i++);
-//        // response.getMatches().add(match);
-//        // matches.add(new org.integratedmodelling.klab.engine.indexing.SearchMatch(match));
-//        // }
-//        // }
-//    }
+    // /**
+    // * The next-generation semantic search using ObservableComposer
+    // *
+    // * @param request
+    // * @param message
+    // */
+    // private void semanticSearch(SearchRequest request, UserScope scope, Message message) {
+    //
+    // if (request.isCancelSearch()) {
+    // semanticExpressions.remove(request.getContextId());
+    // searchContexts.remove(request.getContextId());
+    // } else {
+    // /*
+    // * spawn search thread, which will respond when done.
+    // */
+    // new Thread(){
+    //
+    // @Override
+    // public void run() {
+    //
+    // SearchResponse response = setupResponse(request);
+    //
+    // switch(request.getSearchMode()) {
+    // case FREETEXT:
+    // searchFreetext(request, response);
+    // break;
+    // case UNDO:
+    //
+    // // client may be stupid, as mine is
+    // if (request.getContextId() != null &&
+    // semanticExpressions.containsKey(request.getContextId())) {
+    //
+    // SemanticExpression expression = semanticExpressions.get(request.getContextId());
+    // boolean ok = true;
+    // if (!semanticExpressions.get(request.getContextId()).undo()) {
+    // semanticExpressions.remove(request.getContextId());
+    // searchContexts.remove(request.getContextId());
+    // ok = false;
+    // }
+    //
+    // QueryStatusResponse qr = new QueryStatusResponse();
+    // qr.setContextId(ok ? request.getContextId() : null);
+    // if (ok) {
+    // qr.getErrors().addAll(expression.getErrors());
+    // qr.getCode().addAll(expression.getStyledCode());
+    // qr.setCurrentType(expression.getObservableType());
+    // }
+    // scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
+    // }
+    // break;
+    //
+    // case OPEN_SCOPE:
+    //
+    // semanticExpressions.get(response.getContextId()).accept("(");
+    // QueryStatusResponse qr = new QueryStatusResponse();
+    // qr.setContextId(request.getContextId());
+    // qr.getErrors().addAll(semanticExpressions.get(response.getContextId()).getErrors());
+    // qr.getCode().addAll(semanticExpressions.get(response.getContextId()).getStyledCode());
+    // qr.setCurrentType(semanticExpressions.get(response.getContextId()).getObservableType());
+    // scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
+    // break;
+    //
+    // case CLOSE_SCOPE:
+    //
+    // semanticExpressions.get(response.getContextId()).accept(")");
+    // qr = new QueryStatusResponse();
+    // qr.setContextId(request.getContextId());
+    // qr.getErrors().addAll(semanticExpressions.get(response.getContextId()).getErrors());
+    // qr.getCode().addAll(semanticExpressions.get(response.getContextId()).getStyledCode());
+    // qr.setCurrentType(semanticExpressions.get(response.getContextId()).getObservableType());
+    // scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
+    // break;
+    //
+    // case SEMANTIC:
+    //
+    // if (request.isDefaultResults()) {
+    // setDefaultSearchResults(response.getContextId(), request, response);
+    // } else {
+    // SemanticExpression expression = semanticExpressions.get(response.getContextId());
+    // if (expression == null) {
+    // expression = SemanticExpression.create();
+    // semanticExpressions.put(response.getContextId(), expression);
+    // }
+    // runSemanticSearch(expression, request, response);
+    // }
+    //
+    // break;
+    // }
+    //
+    // response.setElapsedTimeMs(System.currentTimeMillis() - response.getElapsedTimeMs());
+    // scope.send(Message.create(scope.getIdentity().getId(), IMessage.MessageClass.Query,
+    // IMessage.Type.QueryResult,
+    // response.signalEndTime()).inResponseTo(message));
+    // }
+    // }.run();
+    // }
+    //
+    // }
+    //
+    // protected SearchResponse setupResponse(SearchRequest request) {
+    //
+    // final String contextId = request.getContextId() == null ? NameGenerator.shortUUID() :
+    // request.getContextId();
+    //
+    // if ((request.getSearchMode() == Mode.FREETEXT || request.isDefaultResults())) {
+    // if ((request.getContextId() == null)
+    // || searchContexts.get(contextId) == null && searchContexts.get(contextId).getFirst() == null)
+    // {
+    // searchContexts.put(contextId, new Pair<>(
+    // Indexing.INSTANCE.createContext(request.getMatchTypes(), request.getSemanticTypes()), new
+    // ArrayList<>()));
+    // }
+    // }
+    //
+    // SearchResponse response = new SearchResponse();
+    // response.setContextId(contextId);
+    // response.setRequestId(request.getRequestId());
+    //
+    // return response;
+    // }
+    //
+    // /**
+    // * TODO move into semantics package
+    // *
+    // * @param expression
+    // * @param request
+    // * @param response
+    // */
+    // protected void runSemanticSearch(SemanticExpression expression, SearchRequest request,
+    // SearchResponse response) {
+    //
+    // for (Match match : Indexer.INSTANCE.query(request.getQueryString(),
+    // expression.getCurrent().getScope(),
+    // request.getMaxResults())) {
+    // response.getMatches().add(((SearchMatch) match).getReference());
+    // }
+    //
+    // // save the matches in the expression so that we recognize a choice
+    // expression.setData("matches", response);
+    // }
+    //
+    // /**
+    // * TODO move into authentication package or semantics
+    // *
+    // * @param response
+    // */
+    // protected void setDefaultSearchResults(String contextId, SearchRequest request,
+    // SearchResponse response) {
+    // /*
+    // * These come from the user's groups. They should eventually be linked to session history
+    // * and preferences.
+    // */
+    // List<Match> matches = new ArrayList<>();
+    // int i = 0;
+    // for (ObservableReference observable :
+    // Authentication.INSTANCE.getDefaultObservables(Session.this)) {
+    // SearchMatch match = new SearchMatch(observable.getObservable(), observable.getLabel(),
+    // observable.getDescription(),
+    // observable.getSemantics(), observable.getState(), observable.getExtendedDescription());
+    // match.setIndex(i++);
+    // response.getMatches().add(match);
+    // matches.add(new SearchMatch(match));
+    // }
+    // searchContexts.put(contextId, new Pair<Context, List<Match>>(
+    // Indexing.INSTANCE.createContext(request.getMatchTypes(), request.getSemanticTypes()),
+    // matches));
+    // }
+    //
+    // /**
+    // * TODO move into semantic package or concepts
+    // *
+    // * @param request
+    // * @param response
+    // */
+    // protected void searchFreetext(SearchRequest request, SearchResponse response) {
+    // // TODO also lookup local matches and spawn search for remote ones to answer
+    // // afterwards.
+    // List<Match> matches = new ArrayList<>();
+    // // int i = 0;
+    // // for (Location location : Geocoder.INSTANCE.lookup(request.getQueryString())) {
+    // // if ("relation".equals(location.getOsm_type())) {
+    // //
+    // // SearchMatch match = new SearchMatch(location.getURN(), location.getName(),
+    // // location.getDescription(),
+    // // IKimConcept.Type.SUBJECT);
+    // // match.setIndex(i++);
+    // // response.getMatches().add(match);
+    // // matches.add(new org.integratedmodelling.klab.engine.indexing.SearchMatch(match));
+    // // }
+    // // }
+    // }
 
 }

@@ -135,8 +135,7 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
 
     @Override
     public Concept parent() {
-        // TODO Auto-generated method stub
-        return null;
+        return Services.INSTANCE.getReasoner().parent(this);
     }
 
     @Override

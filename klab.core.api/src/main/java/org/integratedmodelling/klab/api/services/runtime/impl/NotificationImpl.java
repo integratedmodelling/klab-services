@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
 import java.io.Serializable;
-import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
@@ -58,8 +57,8 @@ public class NotificationImpl implements Notification, Serializable {
         this.message = message;
     }
 
-    public String getLevel() {
-        return level.getName();
+    public Level getLevel() {
+        return level;
     }
 
     public void setLevel(Level level) {

@@ -627,10 +627,18 @@ public class Ontology /* implements IOntology */ {
         if (CoreOntology.NS.IS_ABSTRACT.equals(property)) {
             concept.setAbstract(Boolean.parseBoolean(literal.toString()));
         } else if (CoreOntology.NS.CONCEPT_DEFINITION_PROPERTY.equals(property)) {
-            concept.setUrn(literal.toString());
+            concept.setUrn(removeOuterParentheses(literal.toString()));
         } else if (CoreOntology.NS.REFERENCE_NAME_PROPERTY.equals(property)) {
             concept.setReferenceName(literal.toString());
         }
+    }
+
+    private String removeOuterParentheses(String string) {
+        string = string.trim();
+        if (string.startsWith("(") && string.endsWith(")")) {
+            string = string.substring(1, string.length() - 1);
+        }
+        return string;
     }
 
     /* must exist, can be property or class */

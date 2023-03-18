@@ -1366,9 +1366,9 @@ public enum OWL {
 
     public Concept makeNegation(Concept attribute, Ontology ontology) {
 
-        Concept negation = Services.INSTANCE.getReasoner().negated(attribute);
-        if (negation != null) {
-            return negation;
+        String orig = attribute.getMetadata().get(NS.IS_NEGATION_OF, String.class);
+        if (orig != null) {
+            return getConcept(orig);
         }
 
         Ontology aontology = getOntology(attribute.getNamespace());
@@ -1449,6 +1449,11 @@ public enum OWL {
      */
     public Concept makeChange(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.CHANGE)) {
+            return concept;
+        }
+
+        
         String cName = getCleanId(concept) + "Change";
 
         if (!concept.is(SemanticType.QUALITY)) {
@@ -1512,6 +1517,10 @@ public enum OWL {
      */
     public Concept makeRate(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.RATE)) {
+            return concept;
+        }
+
         String cName = getCleanId(concept) + "ChangeRate";
 
         if (!concept.is(SemanticType.QUALITY)) {
@@ -1573,6 +1582,10 @@ public enum OWL {
      * @return the transformed concept
      */
     public Concept makeChanged(Concept concept, boolean addDefinition) {
+
+        if (concept.is(SemanticType.CHANGED)) {
+            return concept;
+        }
 
         String cName = "Changed" + getCleanId(concept);
 
@@ -1638,6 +1651,10 @@ public enum OWL {
      */
     public Concept makeCount(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.NUMEROSITY)) {
+            return concept;
+        }
+        
         /*
          * first, ensure we're counting countable things.
          */
@@ -1696,6 +1713,10 @@ public enum OWL {
      */
     public Concept makeDistance(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.DISTANCE)) {
+            return concept;
+        }
+        
         if (!concept.is(SemanticType.COUNTABLE)) {
             throw new KValidationException("cannot compute the distance to a non-countable observable");
         }
@@ -1746,6 +1767,10 @@ public enum OWL {
      */
     public Concept makePresence(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.PRESENCE)) {
+            return concept;
+        }
+        
         if (concept.is(SemanticType.QUALITY) || concept.is(SemanticType.CONFIGURATION) || concept.is(SemanticType.TRAIT)
                 || concept.is(SemanticType.ROLE)) {
             throw new KValidationException("presence can be observed only for subjects, events, processes and relationships");
@@ -1797,6 +1822,10 @@ public enum OWL {
      * @return the transformed concept
      */
     public Concept makeOccurrence(Concept concept, boolean addDefinition) {
+
+        if (concept.is(SemanticType.OCCURRENCE)) {
+            return concept;
+        }
 
         if (!concept.is(SemanticType.DIRECT_OBSERVABLE)) {
             throw new KValidationException(
@@ -1850,6 +1879,11 @@ public enum OWL {
      */
     public Concept makeMagnitude(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.MAGNITUDE)) {
+            return concept;
+        }
+
+        
         if (Sets.intersection(concept.getType(), SemanticType.CONTINUOUS_QUALITY_TYPES).size() == 0) {
             throw new KValidationException("magnitudes can only be observed only for quantifiable qualities");
         }
@@ -1900,6 +1934,10 @@ public enum OWL {
      * @return the transformed concept
      */
     public Concept makeLevel(Concept concept, boolean addDefinition) {
+
+        if (concept.is(SemanticType.ORDERING)) {
+            return concept;
+        }
 
         if (Sets.intersection(concept.getType(), SemanticType.CONTINUOUS_QUALITY_TYPES).size() == 0) {
             throw new KValidationException("magnitudes can only be observed only for quantifiable qualities");
@@ -1952,6 +1990,11 @@ public enum OWL {
      */
     public Concept makeProbability(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.PROBABILITY)) {
+            return concept;
+        }
+
+        
         if (!concept.is(SemanticType.EVENT)) {
             throw new KValidationException("probabilities can only be observed only for events");
         }
@@ -2003,6 +2046,10 @@ public enum OWL {
      */
     public Concept makeUncertainty(Concept concept, boolean addDefinition) {
 
+        if (concept.is(SemanticType.UNCERTAINTY)) {
+            return concept;
+        }
+
         String cName = "UncertaintyOf" + getCleanId(concept);
         String definition = UnarySemanticOperator.UNCERTAINTY.declaration[0] + " " + concept.getUrn();
         Ontology ontology = getOntology(concept.getNamespace());
@@ -2038,6 +2085,10 @@ public enum OWL {
     }
 
     public Concept makeProportion(Concept concept, Concept comparison, boolean addDefinition, boolean isPercentage) {
+
+        if (concept.is(SemanticType.PROPORTION) || concept.is(SemanticType.PERCENTAGE)) {
+            return concept;
+        }
 
         if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.TRAIT))
                 && (comparison != null && !comparison.is(SemanticType.QUALITY))) {
@@ -2101,6 +2152,10 @@ public enum OWL {
     }
 
     public Concept makeRatio(Concept concept, Concept comparison, boolean addDefinition) {
+
+        if (concept.is(SemanticType.RATIO)) {
+            return concept;
+        }
 
         /*
          * accept only two qualities of the same physical nature (TODO)
@@ -2168,6 +2223,11 @@ public enum OWL {
 
     public Concept makeValue(Concept concept, Concept comparison, boolean addDefinition, boolean monetary) {
 
+        if (concept.is(SemanticType.VALUE) || concept.is(SemanticType.MONETARY_VALUE)) {
+            return concept;
+        }
+
+        
         String cName = (monetary ? "MonetaryValueOf" : "ValueOf") + getCleanId(concept)
                 + (comparison == null ? "" : ("Vs" + getCleanId(comparison)));
 
@@ -2232,6 +2292,11 @@ public enum OWL {
      * @return
      */
     public Concept makeType(Concept classified, boolean addDefinition) {
+
+        
+        if (classified.is(SemanticType.CLASS)) {
+            return classified;
+        }
 
         String traitID = getCleanId(classified) + "Type";
         String definition = UnarySemanticOperator.TYPE.declaration[0] + " " + classified.getUrn();

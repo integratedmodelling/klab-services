@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
+
 public interface Notification {
 
 	/**
@@ -16,6 +18,10 @@ public interface Notification {
 	public enum Mode {
 		Silent, Normal, Verbose
 	}
+	
+	public enum Level {
+	    Debug, Info, Warning, Error, SystemError
+	}
 
 	/**
 	 * The notifying identity
@@ -30,7 +36,7 @@ public interface Notification {
 	 * 
 	 * @return
 	 */
-	String getLevel();
+	Level getLevel();
 
 	/**
 	 * System time of notification
@@ -42,4 +48,8 @@ public interface Notification {
 	String getMessage();
 
 	Type getType();
+	
+	public static Notification of(String message, Level level) {
+	    return new NotificationImpl(message, level);
+	}
 }

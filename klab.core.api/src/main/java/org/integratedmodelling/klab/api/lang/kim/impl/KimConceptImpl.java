@@ -392,7 +392,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             ret.semanticModifier = null;
             ret.comparisonConcept = null;
             ret.type = this.argumentType;
-            ret.urn = computeUrn();
+            ret.urn = ret.computeUrn();
         }
         return ret;
     }
@@ -618,12 +618,14 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             complex = true;
         }
 
+        boolean expression = false;
         for (KimConcept operand : operands) {
             ret += " " + (expressionType == Expression.INTERSECTION ? "and" : "or") + " " + operand;
             complex = true;
+            expression = true;
         }
 
-        return (ccomplex || complex) ? parenthesize(ret) : ret;
+        return (expression /* ccomplex || complex */) ? parenthesize(ret) : ret;
     }
 
     /**

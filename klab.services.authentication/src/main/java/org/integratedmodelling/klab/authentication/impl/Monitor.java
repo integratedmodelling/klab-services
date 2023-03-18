@@ -3,8 +3,6 @@ package org.integratedmodelling.klab.authentication.impl;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-
 import org.integratedmodelling.klab.api.auth.IRuntimeIdentity;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -60,7 +58,7 @@ public class Monitor implements Channel {
         if (infoWriter != null) {
             infoWriter.accept(message.getFirst());
         }
-        send(new NotificationImpl(message, Level.INFO));
+        send(new NotificationImpl(message, Notification.Level.Info));
     }
 
     @Override
@@ -70,20 +68,17 @@ public class Monitor implements Channel {
         if (warningWriter != null) {
             warningWriter.accept(message.getFirst());
         }
-        send(new NotificationImpl(message, Level.WARNING));
+        send(new NotificationImpl(message, Notification.Level.Warning));
     }
 
     @Override
     public void error(Object... o) {
         Pair<String, Type> message = Utils.Notifications.getMessage(o);
         Consumer<String> errorWriter = Logging.INSTANCE.getErrorWriter();
-        if (message.getFirst().contains("classExpression cannot")) {
-            System.out.println("TURBOMINCHIA");
-        }
         if (errorWriter != null) {
             errorWriter.accept(message.getFirst());
         }
-        send(new NotificationImpl(message, Level.SEVERE));
+        send(new NotificationImpl(message, Notification.Level.Error));
         errorCount++;
     }
 
@@ -94,7 +89,7 @@ public class Monitor implements Channel {
         if (debugWriter != null) {
             debugWriter.accept(message.getFirst());
         }
-        send(new NotificationImpl(message, Level.FINE));
+        send(new NotificationImpl(message, Notification.Level.Debug));
     }
 
     @Override

@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -30,21 +29,6 @@ public interface Reasoner extends KlabService {
      *
      */
     interface Capabilities extends ServiceCapabilities {
-
-        /**
-         * If true, the service is local or dedicated to the service that uses it.
-         * 
-         * @return
-         */
-        boolean isExclusive();
-
-        /**
-         * If true, the user asking for capabilities can use the admin functions. If isExclusive()
-         * returns false, using admin functions can be dangerous.
-         * 
-         * @return
-         */
-        boolean canWrite();
 
     }
 
@@ -391,7 +375,8 @@ public interface Reasoner extends KlabService {
 
     /**
      * The base observable is the one that was specified in k.IM as the root of the hierarchy where
-     * the observable was specified. Can be the concept itself.
+     * the observable was specified, without any traits, modifiers or roles. Can be the concept
+     * itself.
      * 
      * @param observable
      * @return
@@ -399,6 +384,8 @@ public interface Reasoner extends KlabService {
     Concept baseObservable(Semantics observable);
 
     /**
+     * Remove any attribute or explicit restriction and return the raw observable, without digging
+     * down to the core definition.
      * 
      * @param observable
      * @return
@@ -448,6 +435,13 @@ public interface Reasoner extends KlabService {
 
     /**
      * 
+     * @param semantics
+     * @return
+     */
+    String displayName(Semantics semantics);
+
+    /**
+     * 
      * @param concept
      * @return
      */
@@ -459,14 +453,6 @@ public interface Reasoner extends KlabService {
      * @return
      */
     String style(Concept concept);
-
-    /**
-     * Return the Java class of the observation type corresponding to the passed observable.
-     *
-     * @param observable
-     * @return
-     */
-    Class<? extends Observation> observationClass(Semantics observable);
 
     /**
      * Return the base enum type (quality, subject....) for the passed observable.
@@ -599,13 +585,48 @@ public interface Reasoner extends KlabService {
     Concept leastGeneralCommon(Collection<Concept> cc);
 
     /**
+     * True if affecting affects affected. Uses inference when checking. Also true if the concept is
+     * a quality describing anything that is affected.
      * 
      * @param concept
      * @param affecting
      * @return
      */
-    boolean affectedBy(Semantics concept, Semantics affecting);
+    boolean affectedBy(Semantics affected, Semantics affecting);
 
+    /**
+     * True if affecting creates affected. Uses inference when checking. Also true if the concept is
+     * a quality describing anything that is created or the affecting type itself (this last
+     * condition only holds for created, as the affecting type, an occurrent, must occur for its
+     * derived quality to exist).
+     * 
+     * @param affected
+     * @param affecting
+     * @return true if created.
+     */
+    boolean createdBy(Semantics affected, Semantics affecting);
+
+    /**
+     * 
+     * @param semantics
+     * @return
+     */
+    Collection<Concept> affectedOrCreated(Semantics semantics);
+
+    /**
+     * 
+     * @param semantics
+     * @return
+     */
+    Collection<Concept> affected(Semantics semantics);
+
+    /**
+     * 
+     * @param semantics
+     * @return
+     */
+    Collection<Concept> created(Semantics semantics);
+    
     /**
      * All the roles played by the passed observable within the passed context.
      * 
@@ -669,5 +690,6 @@ public interface Reasoner extends KlabService {
         Concept defineConcept(KimConceptStatement statement, Scope scope);
 
     }
+
 
 }

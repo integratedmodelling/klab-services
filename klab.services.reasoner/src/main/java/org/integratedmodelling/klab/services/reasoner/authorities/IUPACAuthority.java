@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Codelist;
 import org.integratedmodelling.klab.api.services.resources.impl.AuthorityIdentity;
 import org.integratedmodelling.klab.api.services.resources.impl.AuthorityReference;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.logging.Logging;
@@ -80,7 +81,7 @@ public class IUPACAuthority implements Authority {
             standardKey = getIdentity(identityId);
             if (standardKey == null) {
                 ret.getNotifications().add(
-                         new NotificationImpl("Identity " + identityId + " is unknown to authority " + ID, Level.SEVERE));
+                         Notification.of("Identity " + identityId + " is unknown to authority " + ID, Notification.Level.Error));
             }
         }
         String officialName = null;
@@ -89,12 +90,12 @@ public class IUPACAuthority implements Authority {
             officialName = getIUPACName(identityId);
             if (officialName == null) {
                 ret.getNotifications()
-                        .add(new NotificationImpl("Identity " + identityId + " has no common name in " + ID, Level.INFO));
+                        .add(Notification.of("Identity " + identityId + " has no common name in " + ID, Notification.Level.Info));
                 officialName = standardName;
             }
             if (standardName == null) {
                 ret.getNotifications().add(
-                        new NotificationImpl("Identity " + identityId + " has has no official IUPAC name", Level.SEVERE));
+                        Notification.of("Identity " + identityId + " has has no official IUPAC name", Notification.Level.Error));
             }
         }
 

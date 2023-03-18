@@ -339,7 +339,7 @@ public class ObservableBuilder implements Observable.Builder {
 
     @Override
     public Observable.Builder as(UnarySemanticOperator type, Concept... participants) throws KlabValidationException {
-
+        
         Concept argument = null;
         if (resolveMain()) {
             argument = getArgumentBuilder().buildConcept();
@@ -437,7 +437,7 @@ public class ObservableBuilder implements Observable.Builder {
     private Observable.Builder getArgumentBuilder() {
         ObservableBuilder ret = new ObservableBuilder(this);
         ret.declaration = (KimConceptImpl) declaration.removeOperator();
-        ret.type = ret.declaration.getType();
+        ret.type = declaration.getType();
         return ret;
     }
 
