@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 
 /**
  * Just a holder for axiom information. Because axioms are basically just syntax, we provide an implementation
@@ -40,8 +39,178 @@ import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
  * @author Ferd
  * 
  */
-public class Axiom implements IAxiom {
+public class Axiom /* implements IAxiom */ implements Iterable<Object> {
 
+    /*
+     * class axioms
+     */
+    public static final String EQUIVALENT_CLASSES                 = "EquivalentClasses";
+    
+    /** The Constant SUBCLASS_OF. */
+    public static final String SUBCLASS_OF                        = "SubClassOf";
+    
+    /** The Constant DISJOINT_CLASSES. */
+    public static final String DISJOINT_CLASSES                   = "DisjointClasses";
+    
+    /** The Constant DISJOINT_UNION. */
+    public static final String DISJOINT_UNION                     = "DisjointUnion";
+
+    /** The Constant CLASS_ASSERTION. */
+    /*
+     * individual axioms
+     */
+    public static final String CLASS_ASSERTION                    = "ClassAssertion";
+    
+    /** The Constant SAME_INDIVIDUAL. */
+    public static final String SAME_INDIVIDUAL                    = "SameIndividual";
+    
+    /** The Constant DIFFERENT_INDIVIDUALS. */
+    public static final String DIFFERENT_INDIVIDUALS              = "DifferentIndividuals";
+    
+    /** The Constant OBJECT_PROPERTY_ASSERTION. */
+    public static final String OBJECT_PROPERTY_ASSERTION          = "ObjectPropertyAssertion";
+    
+    /** The Constant NEGATIVE_OBJECT_PROPERTY_ASSERTION. */
+    public static final String NEGATIVE_OBJECT_PROPERTY_ASSERTION = "NegativeObjectPropertyAssertion";
+    
+    /** The Constant DATA_PROPERTY_ASSERTION. */
+    public static final String DATA_PROPERTY_ASSERTION            = "DataPropertyAssertion";
+    
+    /** The Constant NEGATIVE_DATA_PROPERTY_ASSERTION. */
+    public static final String NEGATIVE_DATA_PROPERTY_ASSERTION   = "NegativeDataPropertyAssertion";
+
+    /** The Constant EQUIVALENT_OBJECT_PROPERTIES. */
+    /*
+     * object property axioms
+     */
+    public static final String EQUIVALENT_OBJECT_PROPERTIES       = "EquivalentObjectProperties";
+    
+    /** The Constant SUB_OBJECT_PROPERTY. */
+    public static final String SUB_OBJECT_PROPERTY                = "SubObjectPropertyOf";
+    
+    /** The Constant INVERSE_OBJECT_PROPERTIES. */
+    public static final String INVERSE_OBJECT_PROPERTIES          = "InverseObjectProperties";
+    
+    /** The Constant FUNCTIONAL_OBJECT_PROPERTY. */
+    public static final String FUNCTIONAL_OBJECT_PROPERTY         = "FunctionalObjectProperty";
+    
+    /** The Constant INVERSE_FUNCTIONAL_OBJECT_PROPERTY. */
+    public static final String INVERSE_FUNCTIONAL_OBJECT_PROPERTY = "InverseFunctionalObjectProperty";
+    
+    /** The Constant SYMMETRIC_OBJECT_PROPERTY. */
+    public static final String SYMMETRIC_OBJECT_PROPERTY          = "SymmetricObjectProperty";
+    
+    /** The Constant ASYMMETRIC_OBJECT_PROPERTY. */
+    public static final String ASYMMETRIC_OBJECT_PROPERTY         = "AsymmetricObjectProperty";
+    
+    /** The Constant TRANSITIVE_OBJECT_PROPERTY. */
+    public static final String TRANSITIVE_OBJECT_PROPERTY         = "TransitiveObjectProperty";
+    
+    /** The Constant REFLEXIVE_OBJECT_PROPERTY. */
+    public static final String REFLEXIVE_OBJECT_PROPERTY          = "ReflexiveObjectProperty";
+    
+    /** The Constant IRREFLEXIVE_OBJECT_PROPERTY. */
+    public static final String IRREFLEXIVE_OBJECT_PROPERTY        = "IrrefexiveObjectProperty";
+    
+    /** The Constant OBJECT_PROPERTY_DOMAIN. */
+    public static final String OBJECT_PROPERTY_DOMAIN             = "ObjectPropertyDomain";
+    
+    /** The Constant OBJECT_PROPERTY_RANGE. */
+    public static final String OBJECT_PROPERTY_RANGE              = "ObjectPropertyRange";
+    
+    /** The Constant DISJOINT_OBJECT_PROPERTIES. */
+    public static final String DISJOINT_OBJECT_PROPERTIES         = "DisjointObjectProperties";
+    
+    /** The Constant SUB_PROPERTY_CHAIN_OF. */
+    public static final String SUB_PROPERTY_CHAIN_OF              = "SubPropertyChainOf";
+
+    /** The Constant EQUIVALENT_DATA_PROPERTIES. */
+    /*
+     * data property axioms
+     */
+    public static final String EQUIVALENT_DATA_PROPERTIES         = "EquivalentDataProperties";
+    
+    /** The Constant SUB_DATA_PROPERTY. */
+    public static final String SUB_DATA_PROPERTY                  = "SubDataPropertyOf";
+    
+    /** The Constant SUB_ANNOTATION_PROPERTY. */
+    public static final String SUB_ANNOTATION_PROPERTY            = "SubAnnotationPropertyOf";
+    
+    /** The Constant FUNCTIONAL_DATA_PROPERTY. */
+    public static final String FUNCTIONAL_DATA_PROPERTY           = "FunctionalDataProperty";
+    
+    /** The Constant DATA_PROPERTY_DOMAIN. */
+    public static final String DATA_PROPERTY_DOMAIN               = "DataPropertyDomain";
+    
+    /** The Constant DATA_PROPERTY_RANGE. */
+    public static final String DATA_PROPERTY_RANGE                = "DataPropertyRange";
+    
+    /** The Constant DISJOINT_DATA_PROPERTIES. */
+    public static final String DISJOINT_DATA_PROPERTIES           = "DisjointDataProperties";
+    
+    /** The Constant HAS_KEY. */
+    public static final String HAS_KEY                            = "HasKey";
+    
+    /** The Constant SWRL_RULE. */
+    public static final String SWRL_RULE                          = "Rule";
+
+    /** The Constant NO_VALUES_FROM_RESTRICTION. */
+    /*
+     * restriction "axioms". These are not atomic in DL and actually are more like
+     * ontology "actions", but we represent them as single axioms for ease of use - the
+     * ontology implementation is able to translate them into the non-atomic actual OWL
+     * axioms.
+     */
+    public static final String NO_VALUES_FROM_RESTRICTION         = "NoValuesFrom";
+    
+    /** The Constant ALL_VALUES_FROM_RESTRICTION. */
+    public static final String ALL_VALUES_FROM_RESTRICTION        = "AllValuesFrom";
+    
+    /** The Constant SOME_VALUES_FROM_RESTRICTION. */
+    public static final String SOME_VALUES_FROM_RESTRICTION       = "SomeValuesFrom";
+    
+    /** The Constant EXACTLY_N_VALUES_FROM_RESTRICTION. */
+    public static final String EXACTLY_N_VALUES_FROM_RESTRICTION  = "ExactlyNValuesFrom";
+    
+    /** The Constant AT_LEAST_N_VALUES_FROM_RESTRICTION. */
+    public static final String AT_LEAST_N_VALUES_FROM_RESTRICTION = "AtLeastNaluesFrom";
+    
+    /** The Constant AT_MOST_N_VALUES_FROM_RESTRICTION. */
+    public static final String AT_MOST_N_VALUES_FROM_RESTRICTION  = "AtMostNValuesFrom";
+    
+    /** The Constant HAS_VALUE_RESTRICTION. */
+    public static final String HAS_VALUE_RESTRICTION              = "HasValue";
+    
+    /** The Constant HAS_MAX_CARDINALITY_RESTRICTION. */
+    public static final String HAS_MAX_CARDINALITY_RESTRICTION    = "HasMaxCardinality";
+    
+    /** The Constant HAS_MIN_CARDINALITY_RESTRICTION. */
+    public static final String HAS_MIN_CARDINALITY_RESTRICTION    = "HasMinCardinality";
+    
+    /** The Constant HAS_EXACT_CARDINALITY_RESTRICTION. */
+    public static final String HAS_EXACT_CARDINALITY_RESTRICTION  = "HasExactCardinality";
+
+    /** The Constant ANNOTATION_ASSERTION. */
+    /*
+     * annotation property axioms
+     */
+    public static final String ANNOTATION_ASSERTION               = "AnnotationAssertion";
+    
+    /** The Constant SUB_ANNOTATION_PROPERTY_OF. */
+    public static final String SUB_ANNOTATION_PROPERTY_OF         = "SubAnnotationPropertyOf";
+    
+    /** The Constant ANNOTATION_PROPERTY_ASSERTION. */
+    public static final String ANNOTATION_PROPERTY_ASSERTION      = "AnnotationPropertyAssertion";
+    
+    /** The Constant ANNOTATION_PROPERTY_RANGE. */
+    public static final String ANNOTATION_PROPERTY_RANGE          = "AnnotationPropertyRangeOf";
+    
+    /** The Constant ANNOTATION_PROPERTY_DOMAIN. */
+    public static final String ANNOTATION_PROPERTY_DOMAIN         = "AnnotationPropertyDomain";
+    
+    /** The Constant DATATYPE_DEFINITION. */
+    public static final String DATATYPE_DEFINITION                = "DatatypeDefinition";
+    
     private String   _type;
     private Object[] _args;
     Set<SemanticType> conceptType;
@@ -55,101 +224,101 @@ public class Axiom implements IAxiom {
      * @param type 
      * @return class assertion
      */
-    static public IAxiom ClassAssertion(String conceptId, Set<SemanticType> type) {
+    static public Axiom ClassAssertion(String conceptId, Set<SemanticType> type) {
         Axiom ret = new Axiom(CLASS_ASSERTION, conceptId);
         ret.conceptType = type;
         return ret;
     }
 
-    static public IAxiom AnnotationAssertion(String targetConcept, String annotationProperty, Object value) {
+    static public Axiom AnnotationAssertion(String targetConcept, String annotationProperty, Object value) {
         return new Axiom(ANNOTATION_ASSERTION, targetConcept, annotationProperty, value);
     }
 
-    static public IAxiom SubClass(String parentClass, String subclass) {
+    static public Axiom SubClass(String parentClass, String subclass) {
         return new Axiom(SUBCLASS_OF, parentClass, subclass);
     }
 
-    static public IAxiom SubObjectProperty(String parentProperty, String subProperty) {
+    static public Axiom SubObjectProperty(String parentProperty, String subProperty) {
         return new Axiom(SUB_OBJECT_PROPERTY, parentProperty, subProperty);
     }
 
-    static public IAxiom SubAnnotationProperty(String parentProperty, String subProperty) {
+    static public Axiom SubAnnotationProperty(String parentProperty, String subProperty) {
         return new Axiom(SUB_ANNOTATION_PROPERTY, parentProperty, subProperty);
     }
     
-    static public IAxiom SubDataProperty(String parentProperty, String subProperty) {
+    static public Axiom SubDataProperty(String parentProperty, String subProperty) {
         return new Axiom(SUB_DATA_PROPERTY, parentProperty, subProperty);
     }
 
-    public static IAxiom ObjectPropertyAssertion(String string) {
+    public static Axiom ObjectPropertyAssertion(String string) {
         return new Axiom(OBJECT_PROPERTY_ASSERTION, string);
     }
 
-    public static IAxiom DataPropertyAssertion(String string) {
+    public static Axiom DataPropertyAssertion(String string) {
         return new Axiom(DATA_PROPERTY_ASSERTION, string);
     }
 
-    public static IAxiom ObjectPropertyRange(String property, String concept) {
+    public static Axiom ObjectPropertyRange(String property, String concept) {
         return new Axiom(OBJECT_PROPERTY_RANGE, property, concept);
     }
 
-    public static IAxiom DataPropertyRange(String property, String concept) {
+    public static Axiom DataPropertyRange(String property, String concept) {
         return new Axiom(DATA_PROPERTY_RANGE, property, concept);
     }
 
-    public static IAxiom ObjectPropertyDomain(String property, String concept) {
+    public static Axiom ObjectPropertyDomain(String property, String concept) {
         return new Axiom(OBJECT_PROPERTY_DOMAIN, property, concept);
     }
 
-    public static IAxiom DataPropertyDomain(String property, String concept) {
+    public static Axiom DataPropertyDomain(String property, String concept) {
         return new Axiom(DATA_PROPERTY_DOMAIN, property, concept);
     }
 
-    public static IAxiom FunctionalDataProperty(String id) {
+    public static Axiom FunctionalDataProperty(String id) {
         return new Axiom(FUNCTIONAL_DATA_PROPERTY, id);
     }
 
-    public static IAxiom FunctionalObjectProperty(String id) {
+    public static Axiom FunctionalObjectProperty(String id) {
         return new Axiom(FUNCTIONAL_OBJECT_PROPERTY, id);
     }
 
-    public static IAxiom AnnotationPropertyAssertion(String id) {
+    public static Axiom AnnotationPropertyAssertion(String id) {
         return new Axiom(ANNOTATION_PROPERTY_ASSERTION, id);
     }
 
-    public static IAxiom DisjointClasses(String[] concepts) {
+    public static Axiom DisjointClasses(String[] concepts) {
         return new Axiom(DISJOINT_CLASSES, (Object[]) concepts);
     }
 
-    public static IAxiom SomeValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller) {
+    public static Axiom SomeValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller) {
         return new Axiom(SOME_VALUES_FROM_RESTRICTION, restrictedConcept, restrictedProperty, restrictionFiller);
     }
 
-    public static IAxiom AllValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller) {
+    public static Axiom AllValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller) {
         return new Axiom(ALL_VALUES_FROM_RESTRICTION, restrictedConcept, restrictedProperty, restrictionFiller);
     }
 
-    public static IAxiom NoValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller) {
+    public static Axiom NoValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller) {
         return new Axiom(NO_VALUES_FROM_RESTRICTION, restrictedConcept, restrictedProperty, restrictionFiller);
     }
 
-    public static IAxiom AtLeastNValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller, int n) {
+    public static Axiom AtLeastNValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller, int n) {
         return new Axiom(AT_LEAST_N_VALUES_FROM_RESTRICTION, restrictedConcept, restrictedProperty, restrictionFiller, n);
     }
 
-    public static IAxiom AtMostNValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller, int n) {
+    public static Axiom AtMostNValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller, int n) {
         return new Axiom(AT_MOST_N_VALUES_FROM_RESTRICTION, restrictedConcept, restrictedProperty, restrictionFiller, n);
     }
 
-    public static IAxiom ExactlyNValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller, int n) {
+    public static Axiom ExactlyNValuesFrom(String restrictedConcept, String restrictedProperty, String restrictionFiller, int n) {
         return new Axiom(EXACTLY_N_VALUES_FROM_RESTRICTION, restrictedConcept, restrictedProperty, restrictionFiller, n);
     }
 
-    public static IAxiom HasValue(String concept, String dataProperty, Object value) {
+    public static Axiom HasValue(String concept, String dataProperty, Object value) {
         return new Axiom(HAS_VALUE_RESTRICTION, concept, dataProperty, value);
     }
 
-    public static IAxiom EquivalentClasses(String class1, String class2) {
+    public static Axiom EquivalentClasses(String class1, String class2) {
         return new Axiom(EQUIVALENT_CLASSES, class1, class2);
     }
 
@@ -180,12 +349,12 @@ public class Axiom implements IAxiom {
         return ret + ">";
     }
 
-    @Override
+//    @Override
     public boolean is(String classAssertion) {
         return _type.equals(classAssertion);
     }
 
-    @Override
+//    @Override
     public Object getArgument(int index) {
         return _args[index];
     }

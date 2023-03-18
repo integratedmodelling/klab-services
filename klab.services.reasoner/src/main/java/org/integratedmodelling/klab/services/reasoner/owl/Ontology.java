@@ -37,11 +37,11 @@ import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.IAxiom;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.knowledge.ConceptImpl;
-import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.HermiT.model.Individual;
@@ -102,7 +102,7 @@ public class Ontology /* implements IOntology */ {
     private boolean isInternal = false;
     private AtomicInteger idCounter = new AtomicInteger(0);
 
-    List<IAxiom> axiomCache = new ArrayList<>();
+    List<Axiom> axiomCache = new ArrayList<>();
 
     Ontology(OWLOntology ontology, String id) {
 
@@ -291,7 +291,7 @@ public class Ontology /* implements IOntology */ {
      * 
      * @param axiom
      */
-    public void add(IAxiom axiom) {
+    public void add(Axiom axiom) {
         this.axiomCache.add(axiom);
     }
 
@@ -306,7 +306,7 @@ public class Ontology /* implements IOntology */ {
         return ret;
     }
 
-    public Collection<String> define(Collection<IAxiom> axioms) {
+    public Collection<String> define(Collection<Axiom> axioms) {
 
         ArrayList<String> errors = new ArrayList<>();
 
@@ -317,7 +317,7 @@ public class Ontology /* implements IOntology */ {
          */
         OWLDataFactory factory = this.ontology.getOWLOntologyManager().getOWLDataFactory();
 
-        for (IAxiom axiom : axioms) {
+        for (Axiom axiom : axioms) {
 
             // System.out.println(" [" + id + "] => " + axiom);
 
@@ -839,7 +839,7 @@ public class Ontology /* implements IOntology */ {
 
         Concept ret = getConcept(newName);
         if (ret == null) {
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(newName, type));
             define(ax);
             ret = getConcept(newName);
@@ -852,7 +852,7 @@ public class Ontology /* implements IOntology */ {
 
         Property ret = getProperty(newName);
         if (ret == null) {
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(isData ? Axiom.DataPropertyAssertion(newName) : Axiom.ObjectPropertyAssertion(newName));
             define(ax);
             ret = getProperty(newName);

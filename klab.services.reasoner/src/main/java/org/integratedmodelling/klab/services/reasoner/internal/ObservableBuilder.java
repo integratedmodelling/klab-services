@@ -31,7 +31,6 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
-import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
@@ -1126,7 +1125,7 @@ public class ObservableBuilder implements Observable.Builder {
          */
         evaluateAbstractStatus();
 
-        List<IAxiom> axioms = new ArrayList<>();
+        List<Axiom> axioms = new ArrayList<>();
         axioms.add(Axiom.ClassAssertion(conceptId, type));
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY, cDs));
         axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cId));

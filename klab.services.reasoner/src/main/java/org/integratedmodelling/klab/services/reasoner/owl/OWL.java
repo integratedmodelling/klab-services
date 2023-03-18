@@ -65,7 +65,6 @@ import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.ConceptImpl;
-import org.integratedmodelling.klab.services.reasoner.api.IAxiom;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.utils.Pair;
@@ -647,7 +646,7 @@ public enum OWL {
         Concept ret = ontology.getConcept(identity.getConceptName());
         if (ret == null) {
 
-            List<IAxiom> axioms = new ArrayList<>();
+            List<Axiom> axioms = new ArrayList<>();
             Set<SemanticType> type = UnarySemanticOperator.getType("identity", null);
             type.add(SemanticType.AUTHORITY_IDENTITY);
 
@@ -1475,7 +1474,7 @@ public enum OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.CHANGE.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_CHANGE, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -1542,7 +1541,7 @@ public enum OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.RATE.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_CHANGE_RATE, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -1608,7 +1607,7 @@ public enum OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.CHANGED.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_EVENT, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -1680,7 +1679,7 @@ public enum OWL {
             conceptId = ontology.createIdForDefinition(definition);
 
             Set<SemanticType> newType = UnarySemanticOperator.COUNT.apply(concept.getType());
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_COUNT, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -1735,7 +1734,7 @@ public enum OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.DISTANCE.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_DISTANCE, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -1790,7 +1789,7 @@ public enum OWL {
             String reference = UnarySemanticOperator.PRESENCE.getReferenceName(concept.getReferenceName(), null);
 
             Set<SemanticType> newType = UnarySemanticOperator.PRESENCE.apply(concept.getType());
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_PRESENCE, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
@@ -1846,7 +1845,7 @@ public enum OWL {
             conceptId = ontology.createIdForDefinition(definition);
             Set<SemanticType> newType = UnarySemanticOperator.OCCURRENCE.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_OCCURRENCE, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -1903,7 +1902,7 @@ public enum OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.MAGNITUDE.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_MAGNITUDE, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -1958,7 +1957,7 @@ public enum OWL {
 
             String reference = UnarySemanticOperator.LEVEL.getReferenceName(concept.getReferenceName(), null);
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_LEVEL, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -2014,7 +2013,7 @@ public enum OWL {
 
             String reference = UnarySemanticOperator.PROBABILITY.getReferenceName(concept.getReferenceName(), null);
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_PROBABILITY, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -2064,7 +2063,7 @@ public enum OWL {
             conceptId = ontology.createIdForDefinition(definition);
             Set<SemanticType> newType = UnarySemanticOperator.UNCERTAINTY.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_UNCERTAINTY, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -2127,7 +2126,7 @@ public enum OWL {
                     ? UnarySemanticOperator.PERCENTAGE.apply(concept.getType())
                     : UnarySemanticOperator.PROPORTION.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_PROPORTION, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -2185,7 +2184,7 @@ public enum OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.RATIO.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(NS.CORE_RATIO, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -2258,7 +2257,7 @@ public enum OWL {
                     ? UnarySemanticOperator.MONETARY_VALUE.apply(concept.getType())
                     : UnarySemanticOperator.VALUE.apply(concept.getType());
 
-            ArrayList<IAxiom> ax = new ArrayList<>();
+            ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
             ax.add(Axiom.SubClass(monetary ? NS.CORE_MONETARY_VALUE : NS.CORE_VALUE, conceptId));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
@@ -2313,7 +2312,7 @@ public enum OWL {
 
             String reference = UnarySemanticOperator.TYPE.getReferenceName(classified.getReferenceName(), null);
 
-            List<IAxiom> axioms = new ArrayList<>();
+            List<Axiom> axioms = new ArrayList<>();
             axioms.add(Axiom.ClassAssertion(conceptId, newType));
             axioms.add(Axiom.SubClass(NS.CORE_TYPE, conceptId));
             axioms.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
