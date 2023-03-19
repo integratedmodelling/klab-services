@@ -14,7 +14,8 @@
 	<module>klab.core.api</module> 
 	<module>klab.services.resources</module>
 	<module>klab.services.authentication</module>
-	</modules>
+	<module>klab.services.reasoner.server</module>
+  </modules>
 	
 	<licenses>
 		<license>

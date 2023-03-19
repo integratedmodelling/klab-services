@@ -426,14 +426,12 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public int semanticDistance(Semantics target, Semantics other) {
-        // TODO Auto-generated method stub
-        return 0;
+        return semanticDistance(target.asConcept(), other.asConcept(), null, true, null);
     }
 
     @Override
     public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-        // TODO Auto-generated method stub
-        return 0;
+        return semanticDistance(target.asConcept(), other.asConcept(), context.asConcept(), true, null);
     }
 
     /**
