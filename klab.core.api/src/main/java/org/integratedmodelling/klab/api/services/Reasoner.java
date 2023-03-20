@@ -13,6 +13,8 @@ import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
 public interface Reasoner extends KlabService {
@@ -626,7 +628,7 @@ public interface Reasoner extends KlabService {
      * @return
      */
     Collection<Concept> created(Semantics semantics);
-    
+
     /**
      * All the roles played by the passed observable within the passed context.
      * 
@@ -644,7 +646,7 @@ public interface Reasoner extends KlabService {
      * @param contextObservable
      * @return
      */
-    public Concept impliedRole(Concept baseRole, Concept contextObservable);
+    Concept impliedRole(Concept baseRole, Concept contextObservable);
 
     /**
      * Get all other roles implied by this one. These must be concrete when the role is used in the
@@ -656,7 +658,17 @@ public interface Reasoner extends KlabService {
      *        specialized source and destination types.
      * @return
      */
-    public Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints);
+    Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints);
+
+    /**
+     * Entry point of the assisted semantic search behind interactive concept definition. If the
+     * request has a new searchId, start a new SemanticExpression and keep it until timeout or
+     * completion.
+     *
+     * @param request
+     * @param message
+     */
+    SemanticSearchResponse semanticSearch(SemanticSearchRequest request);
 
     /**
      * Administration of a semantic server includes loading specific knowledge and defining the
@@ -690,6 +702,5 @@ public interface Reasoner extends KlabService {
         Concept defineConcept(KimConceptStatement statement, Scope scope);
 
     }
-
 
 }

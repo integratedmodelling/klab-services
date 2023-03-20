@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.services.resources.impl;
+package org.integratedmodelling.klab.api.services.resources.objects;
 
 import java.util.ArrayList;
 import java.util.List;

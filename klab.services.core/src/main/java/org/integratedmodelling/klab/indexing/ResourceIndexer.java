@@ -25,15 +25,14 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
 import org.integratedmodelling.klab.Urn;
-import org.integratedmodelling.klab.api.data.IResource;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.logging.Logging;
 
-public enum ResourceIndexer {
-
-	INSTANCE;
+public class ResourceIndexer {
 
 	private Directory index;
 	private IndexWriter writer;
@@ -66,7 +65,7 @@ public enum ResourceIndexer {
 		}
 	}
 
-	public void index(IResource resource) {
+	public void index(Resource resource) {
 
 		try {
 
@@ -79,7 +78,7 @@ public enum ResourceIndexer {
 			document.add(new StringField("catalog", urn.getCatalog(), Store.YES));
 			document.add(new TextField("name", urn.getUrn(), Store.YES));
 			for (String key : resource.getMetadata().keySet()) {
-				if (IMetadata.DC_DESCRIPTION.equals(key)) {
+				if (Metadata.DC_DESCRIPTION.equals(key)) {
 					document.add(new TextField("description", resource.getMetadata().get(key).toString(), Store.YES));
 				} else {
 					document.add(new TextField(key, resource.getMetadata().get(key).toString(), Store.YES));
@@ -113,7 +112,7 @@ public enum ResourceIndexer {
 		return true;
 	}
 
-	public List<SearchMatch> query(String query) {
+	public List<SemanticMatch> query(String query) {
 		return query(query, MAX_RESULT_COUNT);
 	}
 
@@ -128,9 +127,9 @@ public enum ResourceIndexer {
 		}
 	}
 
-	public List<SearchMatch> query(String query, int maxResults) {
+	public List<SemanticMatch> query(String query, int maxResults) {
 
-		List<SearchMatch> ret = new ArrayList<>();
+		List<SemanticMatch> ret = new ArrayList<>();
 
 		Set<String> ids = new HashSet<>();
 
@@ -152,12 +151,12 @@ public enum ResourceIndexer {
 
 				if (!ids.contains(document.get("id"))) {
 
-					SearchMatch match = new SearchMatch();
+					SemanticMatch match = new SemanticMatch();
 					match.setId(document.get("id"));
 					match.setName(document.get("name"));
 					match.setDescription(document.get("description"));
 					match.setScore(hit.score);
-					match.setMatchType(SearchMatch.Type.RESOURCE);
+					match.setMatchType(SemanticMatch.Type.RESOURCE);
 
 					ret.add(match);
 					ids.add(document.get("id"));

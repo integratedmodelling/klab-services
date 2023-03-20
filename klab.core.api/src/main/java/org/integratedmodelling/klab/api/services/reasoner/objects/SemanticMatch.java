@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.indexing;
+package org.integratedmodelling.klab.api.services.reasoner.objects;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 
-public class SearchMatch /* implements IIndexingService.Match */ {
+public class SemanticMatch {
 
     public static enum TokenClass {
         TOKEN, TEXT, INTEGER, DOUBLE, BOOLEAN, UNIT, CURRENCY
@@ -24,10 +24,6 @@ public class SearchMatch /* implements IIndexingService.Match */ {
 
     public enum Type {
         CONCEPT,
-        @Deprecated // use UNARY_OPERATOR
-        PREFIX_OPERATOR,
-        @Deprecated // use SEMANTIC_MODIFIER
-        INFIX_OPERATOR,
         OBSERVATION,
         MODEL,
         /**
@@ -61,57 +57,40 @@ public class SearchMatch /* implements IIndexingService.Match */ {
     SemanticLexicalElement modifier = null;
 
     boolean isAbstract = false;
-
-//    public org.integratedmodelling.klab.rest.SearchMatch getReference() {
-//        org.integratedmodelling.klab.rest.SearchMatch ret = new org.integratedmodelling.klab.rest.SearchMatch();
-//        ret.setId(this.id);
-//        ret.setDescription(this.description);
-//        ret.getSemanticType().addAll(this.semantics);
-//        ret.setMatchType(this.matchType);
-//        return ret;
-//    }
     
-    public SearchMatch() {
+    public SemanticMatch() {
     }
 
-//    public SearchMatch(org.integratedmodelling.klab.rest.SearchMatch descriptor) {
-//        this.id = descriptor.getId();
-//        this.description = descriptor.getDescription();
-//        this.score = 1;
-//        this.semantics.addAll(descriptor.getSemanticType());
-//        this.matchType = descriptor.getMatchType();
-//    }
-
-    public SearchMatch(Type matchType, Set<SemanticType> conceptType) {
+    public SemanticMatch(Type matchType, Set<SemanticType> conceptType) {
         this.matchType = matchType;
         this.conceptType.addAll(conceptType);
     }
 
-    public SearchMatch(UnarySemanticOperator op) {
+    public SemanticMatch(UnarySemanticOperator op) {
         this.unaryOperator = op;
         this.matchType = Type.UNARY_OPERATOR;
         this.id = this.name = op.declaration[0];
     }
 
-    public SearchMatch(ValueOperator op) {
+    public SemanticMatch(ValueOperator op) {
         this.valueOperator = op;
         this.matchType = Type.VALUE_OPERATOR;
         this.id = this.name = op.declaration;
     }
 
-    public SearchMatch(BinarySemanticOperator op) {
+    public SemanticMatch(BinarySemanticOperator op) {
         this.binaryOperator = op;
         this.matchType = Type.BINARY_OPERATOR;
         this.id = this.name = op.name().toLowerCase();
     }
 
-    public SearchMatch(SemanticLexicalElement op) {
+    public SemanticMatch(SemanticLexicalElement op) {
         this.modifier = op;
         this.matchType = Type.MODIFIER;
         this.id = this.name = modifier.declaration[0];
     }
 
-    public SearchMatch(SemanticRole role) {
+    public SemanticMatch(SemanticRole role) {
     	switch(role) {
         case CURRENCY:
         case UNIT:

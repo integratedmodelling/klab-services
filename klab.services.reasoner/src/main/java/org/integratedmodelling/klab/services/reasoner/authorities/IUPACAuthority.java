@@ -12,8 +12,8 @@ import java.util.regex.Pattern;
 
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Codelist;
-import org.integratedmodelling.klab.api.services.resources.impl.AuthorityIdentity;
-import org.integratedmodelling.klab.api.services.resources.impl.AuthorityReference;
+import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity;
+import org.integratedmodelling.klab.api.services.resources.objects.AuthorityReference;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.configuration.Configuration;

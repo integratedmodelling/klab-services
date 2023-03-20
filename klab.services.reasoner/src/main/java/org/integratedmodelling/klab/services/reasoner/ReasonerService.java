@@ -14,12 +14,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -48,13 +50,16 @@ import org.integratedmodelling.klab.api.provenance.IArtifact;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SearchContext;
-import org.integratedmodelling.klab.indexing.SearchMatch;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
@@ -72,6 +77,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -135,7 +141,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     transient private IntelligentMap<Set<Emergence>> emergence = new IntelligentMap<>();
 
     // TODO this must be a cache with automatic expiration
-    transient private Map<String, Pair<SearchContext, List<SearchMatch>>> searchContexts = Collections
+    transient private Map<String, Pair<SearchContext, List<SemanticMatch>>> searchContexts = Collections
             .synchronizedMap(new HashMap<>());
 
     /**
@@ -159,6 +165,16 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                 }
             });
 
+    Indexer indexer;
+
+    /**
+     * Cache for ongoing requests expires in 10 minutes. TODO this may be less and become
+     * configurable.
+     */
+    private Cache<Integer, SemanticExpression> semanticExpressions = CacheBuilder.newBuilder()
+            .expireAfterAccess(10, TimeUnit.MINUTES).build();
+
+    
     private Capabilities capabilities = new ReasonerCapabilities();
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
@@ -247,13 +263,14 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Autowired
-    public ReasonerService(Authentication authenticationService, ResourceProvider resourceService) {
+    public ReasonerService(Authentication authenticationService, ResourceProvider resourceService, Indexer indexer) {
 
         Services.INSTANCE.setReasoner(this);
 
         this.authenticationService = authenticationService;
         this.scope = authenticationService.authenticateService(this);
-
+        this.indexer = indexer;
+        
         OWL.INSTANCE.initialize(this.scope);
 
         this.resourceService = resourceService;
@@ -2129,200 +2146,97 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     /**
-     * Move up and substitute searchContexts when done. FIXME this must be linked to the Scope.
+     * Entry point of a semantic search. If the request has a new searchId, start a new
+     * SemanticExpression and keep it until timeout or completion.
+     *
+     * @param request
+     * @param message
      */
-    private Map<String, SemanticExpression> semanticExpressions = new HashMap<>();
+    @Override
+    public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
 
-    // /**
-    // * The next-generation semantic search using ObservableComposer
-    // *
-    // * @param request
-    // * @param message
-    // */
-    // private void semanticSearch(SearchRequest request, UserScope scope, Message message) {
-    //
-    // if (request.isCancelSearch()) {
-    // semanticExpressions.remove(request.getContextId());
-    // searchContexts.remove(request.getContextId());
-    // } else {
-    // /*
-    // * spawn search thread, which will respond when done.
-    // */
-    // new Thread(){
-    //
-    // @Override
-    // public void run() {
-    //
-    // SearchResponse response = setupResponse(request);
-    //
-    // switch(request.getSearchMode()) {
-    // case FREETEXT:
-    // searchFreetext(request, response);
-    // break;
-    // case UNDO:
-    //
-    // // client may be stupid, as mine is
-    // if (request.getContextId() != null &&
-    // semanticExpressions.containsKey(request.getContextId())) {
-    //
-    // SemanticExpression expression = semanticExpressions.get(request.getContextId());
-    // boolean ok = true;
-    // if (!semanticExpressions.get(request.getContextId()).undo()) {
-    // semanticExpressions.remove(request.getContextId());
-    // searchContexts.remove(request.getContextId());
-    // ok = false;
-    // }
-    //
-    // QueryStatusResponse qr = new QueryStatusResponse();
-    // qr.setContextId(ok ? request.getContextId() : null);
-    // if (ok) {
-    // qr.getErrors().addAll(expression.getErrors());
-    // qr.getCode().addAll(expression.getStyledCode());
-    // qr.setCurrentType(expression.getObservableType());
-    // }
-    // scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
-    // }
-    // break;
-    //
-    // case OPEN_SCOPE:
-    //
-    // semanticExpressions.get(response.getContextId()).accept("(");
-    // QueryStatusResponse qr = new QueryStatusResponse();
-    // qr.setContextId(request.getContextId());
-    // qr.getErrors().addAll(semanticExpressions.get(response.getContextId()).getErrors());
-    // qr.getCode().addAll(semanticExpressions.get(response.getContextId()).getStyledCode());
-    // qr.setCurrentType(semanticExpressions.get(response.getContextId()).getObservableType());
-    // scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
-    // break;
-    //
-    // case CLOSE_SCOPE:
-    //
-    // semanticExpressions.get(response.getContextId()).accept(")");
-    // qr = new QueryStatusResponse();
-    // qr.setContextId(request.getContextId());
-    // qr.getErrors().addAll(semanticExpressions.get(response.getContextId()).getErrors());
-    // qr.getCode().addAll(semanticExpressions.get(response.getContextId()).getStyledCode());
-    // qr.setCurrentType(semanticExpressions.get(response.getContextId()).getObservableType());
-    // scope.send(IMessage.MessageClass.UserInterface, IMessage.Type.QueryStatus, qr);
-    // break;
-    //
-    // case SEMANTIC:
-    //
-    // if (request.isDefaultResults()) {
-    // setDefaultSearchResults(response.getContextId(), request, response);
-    // } else {
-    // SemanticExpression expression = semanticExpressions.get(response.getContextId());
-    // if (expression == null) {
-    // expression = SemanticExpression.create();
-    // semanticExpressions.put(response.getContextId(), expression);
-    // }
-    // runSemanticSearch(expression, request, response);
-    // }
-    //
-    // break;
-    // }
-    //
-    // response.setElapsedTimeMs(System.currentTimeMillis() - response.getElapsedTimeMs());
-    // scope.send(Message.create(scope.getIdentity().getId(), IMessage.MessageClass.Query,
-    // IMessage.Type.QueryResult,
-    // response.signalEndTime()).inResponseTo(message));
-    // }
-    // }.run();
-    // }
-    //
-    // }
-    //
-    // protected SearchResponse setupResponse(SearchRequest request) {
-    //
-    // final String contextId = request.getContextId() == null ? NameGenerator.shortUUID() :
-    // request.getContextId();
-    //
-    // if ((request.getSearchMode() == Mode.FREETEXT || request.isDefaultResults())) {
-    // if ((request.getContextId() == null)
-    // || searchContexts.get(contextId) == null && searchContexts.get(contextId).getFirst() == null)
-    // {
-    // searchContexts.put(contextId, new Pair<>(
-    // Indexing.INSTANCE.createContext(request.getMatchTypes(), request.getSemanticTypes()), new
-    // ArrayList<>()));
-    // }
-    // }
-    //
-    // SearchResponse response = new SearchResponse();
-    // response.setContextId(contextId);
-    // response.setRequestId(request.getRequestId());
-    //
-    // return response;
-    // }
-    //
-    // /**
-    // * TODO move into semantics package
-    // *
-    // * @param expression
-    // * @param request
-    // * @param response
-    // */
-    // protected void runSemanticSearch(SemanticExpression expression, SearchRequest request,
-    // SearchResponse response) {
-    //
-    // for (Match match : Indexer.INSTANCE.query(request.getQueryString(),
-    // expression.getCurrent().getScope(),
-    // request.getMaxResults())) {
-    // response.getMatches().add(((SearchMatch) match).getReference());
-    // }
-    //
-    // // save the matches in the expression so that we recognize a choice
-    // expression.setData("matches", response);
-    // }
-    //
-    // /**
-    // * TODO move into authentication package or semantics
-    // *
-    // * @param response
-    // */
-    // protected void setDefaultSearchResults(String contextId, SearchRequest request,
-    // SearchResponse response) {
-    // /*
-    // * These come from the user's groups. They should eventually be linked to session history
-    // * and preferences.
-    // */
-    // List<Match> matches = new ArrayList<>();
-    // int i = 0;
-    // for (ObservableReference observable :
-    // Authentication.INSTANCE.getDefaultObservables(Session.this)) {
-    // SearchMatch match = new SearchMatch(observable.getObservable(), observable.getLabel(),
-    // observable.getDescription(),
-    // observable.getSemantics(), observable.getState(), observable.getExtendedDescription());
-    // match.setIndex(i++);
-    // response.getMatches().add(match);
-    // matches.add(new SearchMatch(match));
-    // }
-    // searchContexts.put(contextId, new Pair<Context, List<Match>>(
-    // Indexing.INSTANCE.createContext(request.getMatchTypes(), request.getSemanticTypes()),
-    // matches));
-    // }
-    //
-    // /**
-    // * TODO move into semantic package or concepts
-    // *
-    // * @param request
-    // * @param response
-    // */
-    // protected void searchFreetext(SearchRequest request, SearchResponse response) {
-    // // TODO also lookup local matches and spawn search for remote ones to answer
-    // // afterwards.
-    // List<Match> matches = new ArrayList<>();
-    // // int i = 0;
-    // // for (Location location : Geocoder.INSTANCE.lookup(request.getQueryString())) {
-    // // if ("relation".equals(location.getOsm_type())) {
-    // //
-    // // SearchMatch match = new SearchMatch(location.getURN(), location.getName(),
-    // // location.getDescription(),
-    // // IKimConcept.Type.SUBJECT);
-    // // match.setIndex(i++);
-    // // response.getMatches().add(match);
-    // // matches.add(new org.integratedmodelling.klab.engine.indexing.SearchMatch(match));
-    // // }
-    // // }
-    // }
+        SemanticSearchResponse response = new SemanticSearchResponse(request.getSearchId(), request.getRequestId());
+
+        if (request.isCancelSearch()) {
+            semanticExpressions.invalidate(request.getSearchId());
+        } else {
+
+            switch(request.getSearchMode()) {
+            case UNDO:
+
+                // client may be stupid, as mine is
+                SemanticExpression expression = semanticExpressions.getIfPresent(request.getSearchId());
+                if (expression != null) {
+                    boolean ok = true;
+                    if (!expression.undo()) {
+                        semanticExpressions.invalidate(request.getSearchId());
+                        ok = false;
+                    }
+
+                    response.setSearchId(ok ? request.getSearchId() : null);
+                    if (ok) {
+                        response.getErrors().addAll(expression.getErrors());
+                        response.getCode().addAll(expression.getStyledCode());
+                        response.setCurrentType(expression.getObservableType());
+                    }
+                } else {
+                    response.getErrors().add("Timeout during search");
+                }
+                break;
+
+            case OPEN_SCOPE:
+
+                expression = semanticExpressions.getIfPresent(response.getSearchId());
+                if (expression != null) {
+                    expression.accept("(");
+                    response.setSearchId(request.getSearchId());
+                    response.getErrors().addAll(expression.getErrors());
+                    response.getCode().addAll(expression.getStyledCode());
+                    response.setCurrentType(expression.getObservableType());
+                } else {
+                    response.getErrors().add("Timeout during search");
+                }
+
+                break;
+
+            case CLOSE_SCOPE:
+
+                expression = semanticExpressions.getIfPresent(response.getSearchId());
+                if (expression != null) {
+                    expression.accept(")");
+                    response.getErrors().addAll(expression.getErrors());
+                    response.getCode().addAll(expression.getStyledCode());
+                    response.setCurrentType(expression.getObservableType());
+                } else {
+                    response.getErrors().add("Timeout during search");
+                }
+                break;
+
+            case TOKEN:
+
+                expression = semanticExpressions.getIfPresent(response.getSearchId());
+                if (expression == null) {
+                    expression = SemanticExpression.create();
+                    semanticExpressions.put(response.getSearchId(), expression);
+                } else {
+                    response.getErrors().add("Timeout during search");
+                }
+
+                for (SemanticMatch match : indexer.query(request.getQueryString(), expression.getCurrent().getScope(),
+                        request.getMaxResults())) {
+                    response.getMatches().add(match);
+                }
+
+                // save the matches in the expression so that we recognize a choice
+                expression.setData("matches", response);
+
+                break;
+            }
+        }
+
+        response.setElapsedTimeMs(System.currentTimeMillis() - response.getElapsedTimeMs());
+        return response;
+
+    }
 
 }

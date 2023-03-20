@@ -5,7 +5,9 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.authentication.AuthenticationService;
 import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
+import org.integratedmodelling.klab.services.reasoner.authorities.CaliperAuthority;
 import org.integratedmodelling.klab.services.reasoner.authorities.GBIFAuthority;
 import org.integratedmodelling.klab.services.reasoner.authorities.IUPACAuthority;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
@@ -27,6 +29,7 @@ class ConceptIngestion {
 
     private static ResourcesService resourcesService;
     private static ReasonerService reasonerService;
+    private static Indexer indexingService;
     private static Scope scope = null;
 
     @BeforeAll
@@ -34,9 +37,10 @@ class ConceptIngestion {
         AuthenticationService authenticationService = new AuthenticationService();
         scope = authenticationService.getAnonymousScope();
         reasonerService = new ReasonerService(authenticationService,
-                resourcesService = new ResourcesService(authenticationService));
-       Services.INSTANCE.registerAuthority(new GBIFAuthority());
-       Services.INSTANCE.registerAuthority(new IUPACAuthority());
+                resourcesService = new ResourcesService(authenticationService), indexingService = new Indexer());
+        Services.INSTANCE.registerAuthority(new GBIFAuthority());
+        Services.INSTANCE.registerAuthority(new IUPACAuthority());
+        Services.INSTANCE.registerAuthority(new CaliperAuthority());
     }
 
     @Test
@@ -58,8 +62,8 @@ class ConceptIngestion {
     @Test
     void worldview() {
         reasonerService.loadKnowledge(resourcesService.worldview(scope), scope);
-//        File output = Configuration.INSTANCE.getExportFile("im.owl");
-//        OWL.INSTANCE.getOntology("im").write(output, false);
+        // File output = Configuration.INSTANCE.getExportFile("im.owl");
+        // OWL.INSTANCE.getOntology("im").write(output, false);
     }
 
 }

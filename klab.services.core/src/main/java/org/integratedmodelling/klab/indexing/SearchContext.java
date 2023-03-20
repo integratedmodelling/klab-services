@@ -11,18 +11,16 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.Query;
-import org.integratedmodelling.kim.api.IKimConcept;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch.TokenClass;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Services;
-import org.integratedmodelling.klab.indexing.SearchMatch.TokenClass;
-import org.integratedmodelling.klab.utils.Utils.Kim;
 
 import com.google.common.collect.Sets;
 
@@ -31,7 +29,7 @@ import com.google.common.collect.Sets;
  * @author Ferd
  *
  */
-public class SearchContext /* implements IIndexingService.Context */ {
+public class SearchContext {
 
     /*
      * we send this one up the chain of accepted matches to collect the meaning so far.
@@ -57,13 +55,13 @@ public class SearchContext /* implements IIndexingService.Context */ {
             return semantics == null ? false : semantics.contains(type);
         }
 
-        void accept(SearchMatch match) {
+        void accept(SemanticMatch match) {
 
             if (match != null) {
-                switch(match.matchType) {
+                switch(match.getMatchType()) {
                 case CONCEPT:
                 case PRESET_OBSERVABLE:
-                    Concept concept = Services.INSTANCE.getReasoner().resolveObservable(match.id).getSemantics();
+                    Concept concept = Services.INSTANCE.getReasoner().resolveObservable(match.getId()).getSemantics();
                     if (concept != null) {
                         if (concept.is(SemanticType.OBSERVABLE)) {
                             this.observable = concept;
@@ -80,7 +78,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
                     this.boundary = true;
                     break;
                 case UNARY_OPERATOR:
-                    Set<SemanticType> type = match.unaryOperator.getApplicableType(null);
+                    Set<SemanticType> type = match.getUnaryOperator().getApplicableType(null);
                     // we don't have an observable
                     type.remove(SemanticType.OBSERVABLE);
                     if (type != null) {
@@ -135,13 +133,13 @@ public class SearchContext /* implements IIndexingService.Context */ {
     // these are in OR - anything matching any of these is acceptable. No
     // constraints means everything is acceptable.
     private List<Constraint> constraints = new ArrayList<>();
-    private Set<SearchMatch.Type> constrainttypes = EnumSet.noneOf(SearchMatch.Type.class);
+    private Set<SemanticMatch.Type> constrainttypes = EnumSet.noneOf(SemanticMatch.Type.class);
     // previous in list, containing the preceding meaning.
     private SearchContext previous = null;
     // non-null in children of previous context. Must have parent == null to be
     // complete.
     private SearchContext parent = null;
-    private SearchMatch acceptedMatch;
+    private SemanticMatch acceptedMatch;
     private TokenClass nextTokenType = TokenClass.TOKEN;
     private SearchContext childContext;
     private int parenthesisDepth;
@@ -166,19 +164,19 @@ public class SearchContext /* implements IIndexingService.Context */ {
         this.previous = parent;
     }
 
-    private SearchContext(SearchContext parent, SearchMatch match) {
+    private SearchContext(SearchContext parent, SemanticMatch match) {
         this.previous = parent;
         this.acceptedMatch = match;
     }
 
     static class Condition {
 
-        SearchMatch.Type type;
+        SemanticMatch.Type type;
         Set<SemanticType> semantics;
         Concept c1;
         Concept c2;
 
-        public Condition(SearchMatch.Type type) {
+        public Condition(SemanticMatch.Type type) {
             this.type = type;
         }
 
@@ -191,7 +189,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
             }
         }
 
-        boolean filter(SearchMatch document) {
+        boolean filter(SemanticMatch document) {
             // TODO
             return true;
         }
@@ -236,12 +234,12 @@ public class SearchContext /* implements IIndexingService.Context */ {
         int minMatches = 1;
 
         // the type selects some pre-defined matches
-        SearchMatch.Type type;
+        SemanticMatch.Type type;
 
         // only effective if filtering
         private boolean allowAbstract;
 
-        private Constraint(SearchMatch.Type type) {
+        private Constraint(SemanticMatch.Type type) {
             this.type = type;
         }
 
@@ -251,13 +249,13 @@ public class SearchContext /* implements IIndexingService.Context */ {
             ret += query ? " QUERY" : "";
             ret += matcher
                     ? " MATCH"
-                    : "" + (type == SearchMatch.Type.MODIFIER ? (modifiers == null ? "[ALL]" : modifiers.toString()) : "");
+                    : "" + (type == SemanticMatch.Type.MODIFIER ? (modifiers == null ? "[ALL]" : modifiers.toString()) : "");
             ret += semantics == null || semantics.isEmpty() ? "" : (" " + semantics);
             ret += " " + conditions;
             return ret;
         }
 
-        SearchMatch.Type getType() {
+        SemanticMatch.Type getType() {
             return type;
         }
 
@@ -306,28 +304,28 @@ public class SearchContext /* implements IIndexingService.Context */ {
          * @param queryTerm
          * @return
          */
-        List<SearchMatch> getMatches(String queryTerm) {
-            List<SearchMatch> ret = new ArrayList<>();
+        List<SemanticMatch> getMatches(String queryTerm) {
+            List<SemanticMatch> ret = new ArrayList<>();
             if (this.type != null) {
                 switch(this.type) {
                 case BINARY_OPERATOR:
                     for (BinarySemanticOperator op : BinarySemanticOperator.values()) {
                         if (op.name().toLowerCase().startsWith(queryTerm)) {
-                            ret.add(new SearchMatch(op));
+                            ret.add(new SemanticMatch(op));
                         }
                     }
                     break;
                 case MODIFIER:
                     for (SemanticLexicalElement op : (modifiers == null ? allModifiers : modifiers)) {
                         if (op.declaration[0].startsWith(queryTerm)) {
-                            ret.add(new SearchMatch(op));
+                            ret.add(new SemanticMatch(op));
                         }
                     }
                     break;
                 case UNARY_OPERATOR:
                     for (UnarySemanticOperator op : UnarySemanticOperator.values()) {
                         if (op.declaration[0].startsWith(queryTerm)) {
-                            ret.add(new SearchMatch(op));
+                            ret.add(new SemanticMatch(op));
                         }
                     }
                     break;
@@ -339,7 +337,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
             return ret;
         }
 
-        public boolean filter(SearchMatch match) {
+        public boolean filter(SemanticMatch match) {
 
             if (!allowAbstract && match.getSemantics() != null) {
                 if (match.getSemantics().contains(SemanticType.ABSTRACT)
@@ -382,7 +380,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
         }
 
         public static Constraint allObservables(boolean allowAbstract) {
-            Constraint ret = new Constraint(SearchMatch.Type.CONCEPT);
+            Constraint ret = new Constraint(SemanticMatch.Type.CONCEPT);
             ret.semantics = EnumSet.of(SemanticType.OBSERVABLE);
             ret.query = true;
             ret.filter = true;
@@ -391,7 +389,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
         }
 
         public static Constraint allTraits(boolean allowAbstract) {
-            Constraint ret = new Constraint(SearchMatch.Type.CONCEPT);
+            Constraint ret = new Constraint(SemanticMatch.Type.CONCEPT);
             ret.semantics = EnumSet.of(SemanticType.TRAIT);
             ret.query = true;
             ret.filter = true;
@@ -400,7 +398,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
         }
 
         public static Constraint otherTraits(Collection<Concept> traits) {
-            Constraint ret = new Constraint(SearchMatch.Type.CONCEPT);
+            Constraint ret = new Constraint(SemanticMatch.Type.CONCEPT);
             ret.semantics = EnumSet.of(SemanticType.TRAIT);
             ret.query = true;
             ret.filter = true;
@@ -422,7 +420,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
          * @return
          */
         public static Constraint with(Set<SemanticType> types) {
-            Constraint ret = new Constraint(SearchMatch.Type.CONCEPT);
+            Constraint ret = new Constraint(SemanticMatch.Type.CONCEPT);
             ret.semantics = types;
             ret.query = true;
             ret.filter = true;
@@ -456,7 +454,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
          * @return
          */
         public static Constraint with(Set<SemanticType> types, int matchCount) {
-            Constraint ret = new Constraint(SearchMatch.Type.CONCEPT);
+            Constraint ret = new Constraint(SemanticMatch.Type.CONCEPT);
             ret.semantics = types;
             ret.query = true;
             ret.filter = true;
@@ -465,7 +463,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
         }
 
         public static Constraint allPrefixOperators() {
-            Constraint ret = new Constraint(SearchMatch.Type.UNARY_OPERATOR);
+            Constraint ret = new Constraint(SemanticMatch.Type.UNARY_OPERATOR);
             ret.matcher = true;
             return ret;
         }
@@ -495,7 +493,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
          */
         public static Constraint modifiersFor(Set<SemanticType> semantics) {
 
-            Constraint ret = new Constraint(SearchMatch.Type.MODIFIER);
+            Constraint ret = new Constraint(SemanticMatch.Type.MODIFIER);
             ret.matcher = true;
             ret.modifiers = new HashSet<>();
             if (semantics.contains(SemanticType.QUALITY)) {
@@ -580,7 +578,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
 
     }
 
-    public SearchContext accept(SearchMatch match) {
+    public SearchContext accept(SemanticMatch match) {
 
         switch(nextTokenType) {
         case BOOLEAN:
@@ -606,7 +604,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
         constraints.add(constraint);
     }
 
-    private SearchContext acceptToken(SearchMatch match) {
+    private SearchContext acceptToken(SemanticMatch match) {
 
         /*
          * Accepts it
@@ -843,7 +841,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
     // return collectMeaning().semantics;
     // }
 
-    public boolean isAllowed(SearchMatch.Type type) {
+    public boolean isAllowed(SemanticMatch.Type type) {
         return constrainttypes.isEmpty() || constrainttypes.contains(type);
     }
 
@@ -869,7 +867,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
         return previous;
     }
 
-    public static SearchContext createNew(Set<SearchMatch.Type> matchTypes, Set<SemanticType> semanticTypes) {
+    public static SearchContext createNew(Set<SemanticMatch.Type> matchTypes, Set<SemanticType> semanticTypes) {
         SearchContext ret = new SearchContext();
         if (matchTypes.isEmpty() && semanticTypes.isEmpty()) {
             // first context can select operators, non-abstract traits or non-abstract
@@ -935,7 +933,7 @@ public class SearchContext /* implements IIndexingService.Context */ {
         return meaning;
     }
 
-    public SearchMatch getAcceptedMatch() {
+    public SemanticMatch getAcceptedMatch() {
         return acceptedMatch;
     }
 

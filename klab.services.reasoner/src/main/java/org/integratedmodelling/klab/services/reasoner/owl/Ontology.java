@@ -294,7 +294,7 @@ public class Ontology /* implements IOntology */ {
     public void add(Axiom axiom) {
         this.axiomCache.add(axiom);
     }
-
+    
     /**
      * Incorporate all the axioms introduced with {@link #add(IAxiom)}.
      * 

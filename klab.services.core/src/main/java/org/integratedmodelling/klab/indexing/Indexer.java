@@ -31,19 +31,10 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
-import org.integratedmodelling.kim.api.IKimAcknowledgement;
-import org.integratedmodelling.kim.api.IKimConcept;
-import org.integratedmodelling.kim.api.IKimConcept.ObservableRole;
-import org.integratedmodelling.kim.api.IKimConceptStatement;
-import org.integratedmodelling.kim.api.IKimModel;
-import org.integratedmodelling.kim.api.IKimNamespace;
-import org.integratedmodelling.kim.api.IKimScope;
-import org.integratedmodelling.kim.api.IKimStatement;
 import org.integratedmodelling.klab.Urn;
-import org.integratedmodelling.klab.api.data.IResource;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
@@ -55,18 +46,15 @@ import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
-import org.integratedmodelling.klab.indexing.SemanticScope.Constraint;
 import org.integratedmodelling.klab.logging.Logging;
-import org.integratedmodelling.klab.utils.NumberUtils;
 
-public enum Indexer {
-
-    INSTANCE;
+public class Indexer {
 
     private Directory index;
     private IndexWriter writer;
@@ -77,10 +65,10 @@ public enum Indexer {
 
     public static final int MAX_RESULT_COUNT = 9;
 
-    private Indexer() {
+    public Indexer() {
         try {
             this.index = new ByteBuffersDirectory(); // new
-                                             // MMapDirectory(Configuration.INSTANCE.getDataPath("index").toPath());
+            // MMapDirectory(Configuration.INSTANCE.getDataPath("index").toPath());
             this.analyzer = new StandardAnalyzer();
             IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
             this.writer = new IndexWriter(index, config);
@@ -100,7 +88,7 @@ public enum Indexer {
         }
     }
 
-    public void index(IResource resource) {
+    public void index(Resource resource) {
 
         try {
 
@@ -126,9 +114,9 @@ public enum Indexer {
         }
     }
 
-    public SearchMatch index(KimStatement object, String namespaceId) {
+    public SemanticMatch index(KimStatement object, String namespaceId) {
 
-        SearchMatch ret = null;
+        SemanticMatch ret = null;
         Set<SemanticType> semanticType = null;
 
         if (object.isErrors()) {
@@ -144,10 +132,10 @@ public enum Indexer {
              */
             if (!((KimConceptStatement) object).getType().contains(SemanticType.NOTHING)) {
 
-                ret = new SearchMatch(SearchMatch.Type.CONCEPT, ((KimConceptStatement) object).getType());
-                ret.setDescription(((IKimConceptStatement) object).getDocstring());
-                ret.setId(namespaceId + ":" + ((IKimConceptStatement) object).getName());
-                ret.setName(((IKimConceptStatement) object).getName());
+                ret = new SemanticMatch(SemanticMatch.Type.CONCEPT, ((KimConceptStatement) object).getType());
+                ret.setDescription(((KimConceptStatement) object).getDocstring());
+                ret.setId(namespaceId + ":" + ((KimConceptStatement) object).getName());
+                ret.setName(((KimConceptStatement) object).getName());
 
                 semanticType = (((KimConceptStatement) object).getType());
 
@@ -167,7 +155,8 @@ public enum Indexer {
 
         } else if (object instanceof KimModelStatement && ((KimModelStatement) object).isSemantic()) {
 
-            ret = new SearchMatch(SearchMatch.Type.MODEL, ((KimModelStatement) object).getObservables().get(0).getMain().getType());
+            ret = new SemanticMatch(SemanticMatch.Type.MODEL,
+                    ((KimModelStatement) object).getObservables().get(0).getMain().getType());
             ret.setDescription(((KimModelStatement) object).getDocstring());
             ret.setName(((KimModelStatement) object).getName());
             ret.setId(((KimModelStatement) object).getName());
@@ -175,7 +164,8 @@ public enum Indexer {
 
         } else if (object instanceof KimAcknowledgement) {
 
-            ret = new SearchMatch(SearchMatch.Type.OBSERVATION, ((KimAcknowledgement) object).getObservable().getMain().getType());
+            ret = new SemanticMatch(SemanticMatch.Type.OBSERVATION,
+                    ((KimAcknowledgement) object).getObservable().getMain().getType());
             ret.setDescription(((KimAcknowledgement) object).getDocstring());
             ret.setName(((KimAcknowledgement) object).getName());
             ret.setId(((KimAcknowledgement) object).getName());
@@ -197,11 +187,11 @@ public enum Indexer {
                 }
 
                 // index type and concepttype as ints
-                document.add(new IntPoint("ctype", SemanticType.fundamentalType(ret.conceptType).ordinal()));
+                document.add(new IntPoint("ctype", SemanticType.fundamentalType(ret.getConceptType()).ordinal()));
                 document.add(new IntPoint("mtype", ret.getMatchType().ordinal()));
                 document.add(new IntPoint("abstract", ret.isAbstract() ? 1 : 0));
                 // ..store them
-                document.add(new StoredField("vctype", SemanticType.fundamentalType(ret.conceptType).ordinal()));
+                document.add(new StoredField("vctype", SemanticType.fundamentalType(ret.getConceptType()).ordinal()));
                 document.add(new StoredField("vmtype", ret.getMatchType().ordinal()));
                 document.add(new StoredField("smtype", encodeType(semanticType)));
 
@@ -244,7 +234,7 @@ public enum Indexer {
                     writer.deleteDocuments(new TermQuery(new Term("namespace", namespace.getUrn())));
                     writer.commit();
                     for (KimScope statement : namespace.getChildren()) {
-                        if (statement instanceof IKimStatement) {
+                        if (statement instanceof KimStatement) {
                             index((KimStatement) statement, namespace.getUrn());
                         }
                     }
@@ -270,7 +260,7 @@ public enum Indexer {
         return true;
     }
 
-    public List<SearchMatch> query(String currentTerm, SearchContext searchContext) {
+    public List<SemanticMatch> query(String currentTerm, SearchContext searchContext) {
         return query(currentTerm, searchContext, MAX_RESULT_COUNT);
     }
 
@@ -290,17 +280,17 @@ public enum Indexer {
      * interested in. We will return matches in order of request, incrementally filtering any
      * duplicates.
      * <p>
-     * The arguments may be values of the {@link ObservableRole} enum (which specify operators,
-     * types or roles) or {@link IKimConcept.Type}s for concept categories, or collections thereof.
-     * The may also be filters for properties to apply to concepts.
+     * The arguments may be values of the {@link SemanticRole} enum (which specify operators, types
+     * or roles) or {@link SemanticType}s for concept categories, or collections thereof. The may
+     * also be filters for properties to apply to concepts.
      * 
      * @param term
      * @param where
      * @return
      */
-    public List<SearchMatch> query(String term, SemanticScope composer, int maxResults) {
+    public List<SemanticMatch> query(String term, SemanticScope composer, int maxResults) {
 
-        List<SearchMatch> ret = new ArrayList<>();
+        List<SemanticMatch> ret = new ArrayList<>();
 
         if (maxResults <= 0) {
             maxResults = MAX_RESULT_COUNT;
@@ -310,45 +300,45 @@ public enum Indexer {
             if (role.kimDeclaration.isEmpty() || role.kimDeclaration.startsWith(term)) {
                 switch(role) {
                 case ADJACENT:
-                    ret.add(new SearchMatch(SemanticLexicalElement.ADJACENT_TO));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.ADJACENT_TO));
                     break;
                 case CAUSANT:
-                    ret.add(new SearchMatch(SemanticLexicalElement.CAUSING));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.CAUSING));
                     break;
                 case CAUSED:
-                    ret.add(new SearchMatch(SemanticLexicalElement.CAUSED_BY));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.CAUSED_BY));
                     break;
                 case COMPRESENT:
-                    ret.add(new SearchMatch(SemanticLexicalElement.WITH));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.WITH));
                     break;
                 case CONTEXT:
-                    ret.add(new SearchMatch(SemanticLexicalElement.WITHIN));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.WITHIN));
                     break;
                 case COOCCURRENT:
-                    ret.add(new SearchMatch(SemanticLexicalElement.DURING));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.DURING));
                     break;
                 case INHERENT:
-                    ret.add(new SearchMatch(SemanticLexicalElement.OF));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.OF));
                     break;
                 case RELATIONSHIP_SOURCE:
-                    ret.add(new SearchMatch(SemanticLexicalElement.LINKING));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.LINKING));
                     break;
                 case RELATIONSHIP_TARGET:
-                    ret.add(new SearchMatch(SemanticLexicalElement.TO));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.TO));
                     break;
                 case GOAL:
-                    ret.add(new SearchMatch(SemanticLexicalElement.FOR));
+                    ret.add(new SemanticMatch(SemanticLexicalElement.FOR));
                     break;
                 case UNIT:
                 case CURRENCY:
                 case INLINE_VALUE:
                 case GROUP_OPEN:
                 case DISTRIBUTED_UNIT:
-                	SearchMatch match = new SearchMatch(role);
-                	// space match gets suggestions in these cases
-                	if (term.isEmpty() || match.getId().startsWith(term)) {
-                		ret.add(match);
-                	}
+                    SemanticMatch match = new SemanticMatch(role);
+                    // space match gets suggestions in these cases
+                    if (term.isEmpty() || match.getId().startsWith(term)) {
+                        ret.add(match);
+                    }
                     break;
                 case LOGICAL_OPERATOR:
                     break;
@@ -384,7 +374,7 @@ public enum Indexer {
 
                     Document document = searcher.doc(hit.doc);
                     Concept concept = Services.INSTANCE.getReasoner().resolveConcept(document.get("id"));
-                    SearchMatch.Type matchType = SearchMatch.Type.values()[Integer.parseInt(document.get("vmtype"))];
+                    SemanticMatch.Type matchType = SemanticMatch.Type.values()[Integer.parseInt(document.get("vmtype"))];
 
                     if (concept == null || ids.contains(document.get("id"))) {
                         continue;
@@ -394,7 +384,7 @@ public enum Indexer {
 
                         if (constraint.matches(concept)) {
 
-                            SearchMatch match = new SearchMatch();
+                            SemanticMatch match = new SemanticMatch();
                             match.setId(document.get("id"));
                             match.setName(document.get("name"));
                             match.setDescription(document.get("description"));
@@ -427,38 +417,38 @@ public enum Indexer {
         return ret;
     }
 
-    Collection<SearchMatch> matchObservableModifier(String term, ObservableRole role) {
-        List<SearchMatch> ret = new ArrayList<>();
+    Collection<SemanticMatch> matchObservableModifier(String term, SemanticRole role) {
+        List<SemanticMatch> ret = new ArrayList<>();
         return ret;
     }
 
-    Collection<SearchMatch> matchValueOperators(String term) {
-        List<SearchMatch> ret = new ArrayList<>();
+    Collection<SemanticMatch> matchValueOperators(String term) {
+        List<SemanticMatch> ret = new ArrayList<>();
         for (ValueOperator op : ValueOperator.values()) {
             if (op.name().toLowerCase().startsWith(term)) {
-                ret.add(new SearchMatch(op));
+                ret.add(new SemanticMatch(op));
             }
         }
         return ret;
     }
 
-    Collection<SearchMatch> matchUnaryOperators(String term) {
-        List<SearchMatch> ret = new ArrayList<>();
+    Collection<SemanticMatch> matchUnaryOperators(String term) {
+        List<SemanticMatch> ret = new ArrayList<>();
         for (UnarySemanticOperator op : UnarySemanticOperator.values()) {
             if (op.declaration[0].startsWith(term)) {
-                ret.add(new SearchMatch(op));
+                ret.add(new SemanticMatch(op));
             }
         }
         return ret;
     }
 
-    public List<SearchMatch> query(String currentTerm, SearchContext context, int maxResults) {
+    public List<SemanticMatch> query(String currentTerm, SearchContext context, int maxResults) {
 
-        List<SearchMatch> ret = new ArrayList<>();
+        List<SemanticMatch> ret = new ArrayList<>();
 
         for (SearchContext.Constraint constraint : context.getConstraints()) {
 
-            List<SearchMatch> cret = new ArrayList<>();
+            List<SemanticMatch> cret = new ArrayList<>();
 
             // FIXME this is to avoid duplications, which should not be necessary if this
             // whole thing
@@ -466,7 +456,7 @@ public enum Indexer {
             Set<String> ids = new HashSet<>();
 
             if (constraint.isMatcher()) {
-                for (SearchMatch match : constraint.getMatches(currentTerm)) {
+                for (SemanticMatch match : constraint.getMatches(currentTerm)) {
                     if (!ids.contains(match.getId())) {
                         cret.add(match);
                         ids.add(match.getId());
@@ -492,11 +482,11 @@ public enum Indexer {
 
                         Document document = searcher.doc(hit.doc);
 
-                        SearchMatch.Type matchType = SearchMatch.Type.values()[Integer.parseInt(document.get("vmtype"))];
+                        SemanticMatch.Type matchType = SemanticMatch.Type.values()[Integer.parseInt(document.get("vmtype"))];
 
                         if (constraint.getType() == matchType && !ids.contains(document.get("id"))) {
 
-                            SearchMatch match = new SearchMatch();
+                            SemanticMatch match = new SemanticMatch();
                             match.setId(document.get("id"));
                             match.setName(document.get("name"));
                             match.setDescription(document.get("description"));
@@ -527,8 +517,8 @@ public enum Indexer {
              * filter matches if the constraint requires it.
              */
             if (constraint.isFilter()) {
-                List<SearchMatch> fret = new ArrayList<>();
-                for (SearchMatch match : cret) {
+                List<SemanticMatch> fret = new ArrayList<>();
+                for (SemanticMatch match : cret) {
                     if (constraint.filter(match)) {
                         fret.add(match);
                     }
