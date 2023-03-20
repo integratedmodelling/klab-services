@@ -13,12 +13,6 @@ public class Vocabulary {
     /** The dc comment. */
     public final static String RDFS_COMMENT = "rdfs:comment";
 
-    /** The dc definition. */
-    public final static String DC_DEFINITION = "dc:definition";
-
-    /** The dc seealso. */
-    public final static String DC_SEEALSO = "dc:name";
-
     /**
      * DCMI point http://dublincore.org/documents/dcmi-point/ ISO 3166
      * http://www.din.de/gremien/nas/nabd/iso3166ma/codlstp1/index.html DCMI box

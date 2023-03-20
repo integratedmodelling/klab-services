@@ -227,6 +227,7 @@ public class JacksonConfiguration {
 
     @SuppressWarnings({"unchecked"})
     public static void configureObjectMapperForKlabTypes(ObjectMapper mapper) {
+        
         @SuppressWarnings("rawtypes")
         SimpleModule module = new SimpleModule().addSerializer(Annotation.class, new ParameterSerializer())
                 .addSerializer(Metadata.class, new ParameterSerializer())

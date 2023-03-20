@@ -17,6 +17,9 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
+/**
+ * The reasoner service collects all functionalities that use semantics in k.LAB.
+ */
 public interface Reasoner extends KlabService {
 
     default String getServiceName() {
@@ -64,7 +67,7 @@ public interface Reasoner extends KlabService {
 
     /**
      * 
-     * @param conceptDeclaration
+     * @param observableDeclaration
      * @return
      */
     Observable declareObservable(KimObservable observableDeclaration);
@@ -200,7 +203,7 @@ public interface Reasoner extends KlabService {
     /**
      * 
      * @param concept
-     * @param t
+     * @param role
      * @return
      */
     boolean hasRole(Semantics concept, Concept role);
@@ -418,7 +421,7 @@ public interface Reasoner extends KlabService {
     boolean hasParentRole(Semantics o1, Concept t);
 
     /**
-     * Like {@link #traits(Concept)} but only returns the traits directly attributed to this
+     * Like {@link #traits(Semantics)} but only returns the traits directly attributed to this
      * concept.
      * 
      * @param concept
@@ -427,7 +430,7 @@ public interface Reasoner extends KlabService {
     Collection<Concept> directTraits(Semantics concept);
 
     /**
-     * Like {@link #traits(Concept)} but only returns the traits directly attributed to this
+     * Like {@link #traits(Semantics)} but only returns the traits directly attributed to this
      * concept.
      * 
      * @param concept
@@ -513,7 +516,7 @@ public interface Reasoner extends KlabService {
     /**
      * Use the DL reasoner to check if the passed concept is semantically consistent. As all
      * concepts are automatically checked at the time of definition, the fast way to check for
-     * consistency is {@link Concept#is(SemanticType.NOTHING)}.
+     * consistency is {@link Concept#is(SemanticType)} using the value NOTHING.
      * 
      * @param ret
      * @return
@@ -532,7 +535,7 @@ public interface Reasoner extends KlabService {
     /**
      * Get all the restricted target of the "applies to" specification for this concept.
      *
-     * @param main a {@link org.integratedmodelling.klab.api.knowledge.IConcept} object.
+     * @param main a concept.
      * @return all applicable concepts or an empty collection
      */
     Collection<Concept> applicableObservables(Concept main);
@@ -590,7 +593,7 @@ public interface Reasoner extends KlabService {
      * True if affecting affects affected. Uses inference when checking. Also true if the concept is
      * a quality describing anything that is affected.
      * 
-     * @param concept
+     * @param affected
      * @param affecting
      * @return
      */
@@ -666,7 +669,6 @@ public interface Reasoner extends KlabService {
      * completion.
      *
      * @param request
-     * @param message
      */
     SemanticSearchResponse semanticSearch(SemanticSearchRequest request);
 

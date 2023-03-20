@@ -102,18 +102,18 @@ public class KimAdapter {
         }
 
         for (IKimScope statement : original.getChildren()) {
-            ret.getStatements().add(makeStatement(statement));
+            ret.getStatements().add(makeStatement(statement, ns.getNamespace().getName()));
         }
 
         return ret;
     }
 
-    public static KimStatementImpl makeStatement(IKimScope statement) {
+    public static KimStatementImpl makeStatement(IKimScope statement, String namespace) {
 
         KimStatementImpl ret = null;
         
         if (statement instanceof IKimConceptStatement) {
-            ret = adaptConceptStatement((IKimConceptStatement) statement);
+            ret = adaptConceptStatement((IKimConceptStatement) statement, namespace);
         } else if (statement instanceof IKimModel) {
             ret = adaptModelStatement((IKimModel) statement);
         } else if (statement instanceof IKimSymbolDefinition) {
@@ -124,7 +124,7 @@ public class KimAdapter {
         
         if (ret != null) {
             for (IKimScope child : statement.getChildren()) {
-                ret.getChildren().add(makeStatement(child));
+                ret.getChildren().add(makeStatement(child, namespace));
             }
             return ret;
         }
@@ -381,7 +381,7 @@ public class KimAdapter {
         return null;
     }
 
-    private static KimConceptStatementImpl adaptConceptStatement(IKimConceptStatement statement) {
+    private static KimConceptStatementImpl adaptConceptStatement(IKimConceptStatement statement, String namespace) {
 
         KimConceptStatementImpl ret = new KimConceptStatementImpl();
         Utils.Kim.copyStatementData(statement, ret);
@@ -393,6 +393,7 @@ public class KimAdapter {
         ret.setDocstring(statement.getDocstring());
         ret.setMacro(statement.isMacro());
         ret.setName(statement.getName());
+        ret.setNamespace(namespace);
         ret.getType().addAll(statement.getType().stream().map((t) -> SemanticType.valueOf(t.name())).collect(Collectors.toSet()));
         ret.setUpperConceptDefined(statement.getUpperConceptDefined());
 

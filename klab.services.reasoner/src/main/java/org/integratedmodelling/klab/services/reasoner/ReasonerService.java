@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner;
 
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,7 +22,6 @@ import java.util.stream.Collectors;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
-import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -59,7 +59,6 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.indexing.Indexer;
-import org.integratedmodelling.klab.indexing.SearchContext;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
@@ -86,6 +85,7 @@ import com.google.common.collect.Sets;
 @Service
 public class ReasonerService implements Reasoner, Reasoner.Admin {
 
+    @Serial
     private static final long serialVersionUID = 380622027752591182L;
 
     /**
@@ -140,10 +140,6 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     transient private Map<Concept, Emergence> emergent = new HashMap<>();
     transient private IntelligentMap<Set<Emergence>> emergence = new IntelligentMap<>();
 
-    // TODO this must be a cache with automatic expiration
-    transient private Map<String, Pair<SearchContext, List<SemanticMatch>>> searchContexts = Collections
-            .synchronizedMap(new HashMap<>());
-
     /**
      * Caches for concepts and observables, linked to the URI in the corresponding {@link KimScope}.
      */
@@ -168,13 +164,12 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     Indexer indexer;
 
     /**
-     * Cache for ongoing requests expires in 10 minutes. TODO this may be less and become
+     * Cache for ongoing requests expires in 10 minutes. CHECK this may be less and become
      * configurable.
      */
     private Cache<Integer, SemanticExpression> semanticExpressions = CacheBuilder.newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES).build();
 
-    
     private Capabilities capabilities = new ReasonerCapabilities();
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
@@ -270,7 +265,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         this.authenticationService = authenticationService;
         this.scope = authenticationService.authenticateService(this);
         this.indexer = indexer;
-        
+
         OWL.INSTANCE.initialize(this.scope);
 
         this.resourceService = resourceService;
@@ -1016,7 +1011,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Capabilities getCapabilities() {
-        return this.capabilities ;
+        return this.capabilities;
     }
 
     public void setCapabilities(Capabilities capabilities) {
@@ -1450,7 +1445,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Concept parent(Semantics c) {
-        Collection<Concept> parents =  OWL.INSTANCE.getParents(c.asConcept());
+        Collection<Concept> parents = OWL.INSTANCE.getParents(c.asConcept());
         return parents.isEmpty() ? null : parents.iterator().next();
     }
 
@@ -1618,6 +1613,8 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         ontology.define();
         main = ontology.getConcept(mainId);
+
+        indexer.index(concept);
 
         for (ParentConcept parent : concept.getParents()) {
 
@@ -2093,7 +2090,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             builder = builder.withDefaultValue(value);
         }
 
-        for (Observable.ResolutionException exc : concept.getResolutionExceptions()) {
+        for (var exc : concept.getResolutionExceptions()) {
             builder = builder.withResolutionException(exc);
         }
 
@@ -2112,11 +2109,11 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             builder = builder.withResolution(Observable.Resolution.Any);
         }
 
-        for (Pair<ValueOperator, Literal> operator : concept.getValueOperators()) {
+        for (var operator : concept.getValueOperators()) {
             builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());
         }
 
-        for (Annotation annotation : concept.getAnnotations()) {
+        for (var annotation : concept.getAnnotations()) {
             builder = builder.withAnnotation(new AnnotationImpl(annotation));
         }
 
@@ -2155,7 +2152,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     @Override
     public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
 
-        SemanticSearchResponse response = new SemanticSearchResponse(request.getSearchId(), request.getRequestId());
+        var response = new SemanticSearchResponse(request.getSearchId(), request.getRequestId());
 
         if (request.isCancelSearch()) {
             semanticExpressions.invalidate(request.getSearchId());
@@ -2165,7 +2162,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
             case UNDO:
 
                 // client may be stupid, as mine is
-                SemanticExpression expression = semanticExpressions.getIfPresent(request.getSearchId());
+                var expression = semanticExpressions.getIfPresent(request.getSearchId());
                 if (expression != null) {
                     boolean ok = true;
                     if (!expression.undo()) {
@@ -2222,7 +2219,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
                     response.getErrors().add("Timeout during search");
                 }
 
-                for (SemanticMatch match : indexer.query(request.getQueryString(), expression.getCurrent().getScope(),
+                for (var match : indexer.query(request.getQueryString(), expression.getCurrent().getScope(),
                         request.getMaxResults())) {
                     response.getMatches().add(match);
                 }

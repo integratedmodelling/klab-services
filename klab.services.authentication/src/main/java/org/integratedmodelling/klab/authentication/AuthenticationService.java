@@ -11,9 +11,12 @@ import org.integratedmodelling.klab.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.authentication.impl.UserScopeImpl;
 import org.springframework.stereotype.Service;
 
+import java.io.Serial;
+
 @Service
 public class AuthenticationService implements Authentication {
 
+    @Serial
     private static final long serialVersionUID = -7742687519379834555L;
 
     private String url;

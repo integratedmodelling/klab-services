@@ -35,11 +35,15 @@ public interface Metadata extends Parameters<String> {
     /** The dc name. */
     public final static String DC_NAME = "dc:name";
 
-    /** The dc label. */
-    public final static String DC_LABEL = "dc:label";
+    /**
+     * Use the RDFS namespace for labels and comments so that we can directly interact with OWL2.
+     */
+    public final static String DC_LABEL = "rdfs:label";
 
-    /** The dc comment. */
-    public final static String DC_COMMENT = "dc:comment";
+    /**
+     * Use the RDFS namespace for labels and comments so that we can directly interact with OWL2.
+     */
+    public final static String DC_COMMENT = "rdfs:comment";
 
     /** The dc definition. */
     public final static String DC_DEFINITION = "dc:definition";
@@ -268,7 +272,6 @@ public interface Metadata extends Parameters<String> {
     /** The Constant KLAB_OPACITY. */
     public static final String KLAB_OPACITY = "klab:opacity";
 
-
     @SuppressWarnings("unchecked")
     public static Metadata create(Object... o) {
         Map<String, Object> inp = new LinkedHashMap<String, Object>();
@@ -286,8 +289,7 @@ public interface Metadata extends Parameters<String> {
         }
         return new MetadataImpl(inp);
     }
-    
-    
+
     /**
      * Get a variable irrespective of case.
      * 

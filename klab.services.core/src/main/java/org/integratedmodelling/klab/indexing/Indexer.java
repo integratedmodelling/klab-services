@@ -114,7 +114,7 @@ public class Indexer {
         }
     }
 
-    public SemanticMatch index(KimStatement object, String namespaceId) {
+    public SemanticMatch index(KimStatement object) {
 
         SemanticMatch ret = null;
         Set<SemanticType> semanticType = null;
@@ -134,7 +134,7 @@ public class Indexer {
 
                 ret = new SemanticMatch(SemanticMatch.Type.CONCEPT, ((KimConceptStatement) object).getType());
                 ret.setDescription(((KimConceptStatement) object).getDocstring());
-                ret.setId(namespaceId + ":" + ((KimConceptStatement) object).getName());
+                ret.setId(object.getNamespace() + ":" + ((KimConceptStatement) object).getName());
                 ret.setName(((KimConceptStatement) object).getName());
 
                 semanticType = (((KimConceptStatement) object).getType());
@@ -144,13 +144,11 @@ public class Indexer {
                  * weight; a concept that 'is' something should index its parent's definition with
                  * lower weight
                  */
-                if (object instanceof KimStatement) {
-                    for (KimScope child : ((KimStatement) object).getChildren()) {
+                    for (KimScope child : object.getChildren()) {
                         if (child instanceof KimConceptStatement) {
-                            index((KimConceptStatement) child, namespaceId);
+                            index((KimConceptStatement) child);
                         }
                     }
-                }
             }
 
         } else if (object instanceof KimModelStatement && ((KimModelStatement) object).isSemantic()) {
@@ -179,7 +177,7 @@ public class Indexer {
                 Document document = new Document();
 
                 document.add(new StringField("id", ret.getId(), Store.YES));
-                document.add(new StringField("namespace", namespaceId, Store.YES));
+                document.add(new StringField("namespace", object.getNamespace(), Store.YES));
                 document.add(new TextField("name", ret.getName(), Store.YES));
                 document.add(new TextField("description", ret.getDescription(), Store.YES));
                 for (String key : ret.getIndexableFields().keySet()) {
@@ -235,7 +233,7 @@ public class Indexer {
                     writer.commit();
                     for (KimScope statement : namespace.getChildren()) {
                         if (statement instanceof KimStatement) {
-                            index((KimStatement) statement, namespace.getUrn());
+                            index((KimStatement) statement);
                         }
                     }
                     writer.commit();
@@ -285,7 +283,6 @@ public class Indexer {
      * also be filters for properties to apply to concepts.
      * 
      * @param term
-     * @param where
      * @return
      */
     public List<SemanticMatch> query(String term, SemanticScope composer, int maxResults) {

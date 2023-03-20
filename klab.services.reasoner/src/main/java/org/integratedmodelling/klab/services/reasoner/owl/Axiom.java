@@ -39,7 +39,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
  * @author Ferd
  * 
  */
-public class Axiom /* implements IAxiom */ implements Iterable<Object> {
+public class Axiom implements Iterable<Object> {
 
     /*
      * class axioms

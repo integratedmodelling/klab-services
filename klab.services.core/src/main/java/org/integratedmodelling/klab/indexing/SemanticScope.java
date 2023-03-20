@@ -290,7 +290,7 @@ public class SemanticScope {
 
         switch(role) {
         case CHANGE:
-            ret.logicalRealm.add(Constraint.of(SemanticType.QUALITY));
+            ret.logicalRealm.add(Constraint.of(SemanticType.PROCESS));
             break;
         case CHANGED:
             ret.logicalRealm.add(Constraint.of(SemanticType.QUALITY));
@@ -316,8 +316,10 @@ public class SemanticScope {
         case OCCURRENCE:
             ret.logicalRealm.add(Constraint.of(SemanticType.COUNTABLE));
             ret.logicalRealm.add(Constraint.of(SemanticType.QUALITY));
+            ret.logicalRealm.add(Constraint.of(SemanticType.PROCESS));
             break;
         case PERCENTAGE:
+        case PROPORTION:
             ret.logicalRealm.add(Constraint.of(SemanticType.QUALITY));
             break;
         case PRESENCE:
@@ -325,9 +327,6 @@ public class SemanticScope {
             break;
         case PROBABILITY:
             ret.logicalRealm.add(Constraint.of(SemanticType.EVENT));
-            break;
-        case PROPORTION:
-            ret.logicalRealm.add(Constraint.of(SemanticType.QUALITY));
             break;
         case RATE:
             ret.logicalRealm.add(Constraint.of(SemanticType.QUALITY));
@@ -360,7 +359,7 @@ public class SemanticScope {
      */
     public boolean isAdmitted(Object token, SemanticExpression context) {
 
-        boolean ret = false;
+            boolean ret = false;
 
         if (token instanceof Concept) {
 
