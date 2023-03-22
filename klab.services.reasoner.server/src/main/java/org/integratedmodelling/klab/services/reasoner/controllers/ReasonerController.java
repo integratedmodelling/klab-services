@@ -3,18 +3,18 @@ package org.integratedmodelling.klab.services.reasoner.controllers;
 import java.util.Collection;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Reasoner.Capabilities;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -27,16 +27,19 @@ public class ReasonerController {
      * GET /capabilities
      * @return
      */
+    @GetMapping(ServicesAPI.CAPABILITIES)
     public Capabilities getCapabilities() {
         return reasoner.getCapabilities();
     }
 
     /**
+     *
      * GET /resolve/concept
      * @param definition
      * @return
      */
-    public Concept resolveConcept(String definition) {
+    @GetMapping(ServicesAPI.REASONER.RESOLVE_CONCEPT)
+    public @ResponseBody Concept resolveConcept(@PathVariable String definition) {
         return reasoner.resolveConcept(definition);
     }
 
@@ -45,18 +48,11 @@ public class ReasonerController {
      * @param definition
      * @return
      */
-    public Observable resolveObservable(String definition) {
+    @GetMapping(ServicesAPI.REASONER.RESOLVE_OBSERVABLE)
+    public @ResponseBody Observable resolveObservable(@PathVariable String definition) {
         return reasoner.resolveObservable(definition);
     }
-
-//    public Concept declareConcept(KimConcept conceptDeclaration) {
-//        return reasoner.declareConcept(conceptDeclaration);
-//    }
-//
-//    public Observable declareObservable(KimObservable observableDeclaration) {
-//        return reasoner.declareObservable(observableDeclaration);
-//    }
-
+    
     /**
      * POST /subsumes
      * @param conceptImpl

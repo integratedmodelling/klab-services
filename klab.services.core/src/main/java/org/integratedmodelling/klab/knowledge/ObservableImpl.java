@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.knowledge;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -57,7 +58,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private Literal defaultValue;
     private Literal value;
     private String statedName;
-    private Collection<Annotation> annotations;
+    private Collection<Annotation> annotations = new ArrayList<>();
     private Collection<Pair<ValueOperator, Object>> valueOperators;
     private String referenceName;
     private String name;

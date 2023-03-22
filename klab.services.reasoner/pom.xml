@@ -9,7 +9,6 @@
 	<name>k.LAB reasoner service</name>
 	<dependencies>
 
-
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
@@ -17,7 +16,6 @@
 			<version>${klab.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 
 		<!-- OWL and DL reasoning -->
 		<dependency>

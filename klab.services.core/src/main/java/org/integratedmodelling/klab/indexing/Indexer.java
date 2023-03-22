@@ -53,7 +53,9 @@ import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.logging.Logging;
+import org.springframework.stereotype.Service;
 
+@Service
 public class Indexer {
 
     private Directory index;

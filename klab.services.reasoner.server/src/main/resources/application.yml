@@ -1,0 +1,10 @@
+server:
+    port: 8091
+    servlet:
+       contextPath: /reasoner
+security:
+   basic:
+      enabled: false
+management:
+   security:
+      enabled: false

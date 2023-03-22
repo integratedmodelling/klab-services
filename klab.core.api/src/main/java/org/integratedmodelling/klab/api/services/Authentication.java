@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 
 public interface Authentication extends KlabService {
 
@@ -39,4 +40,13 @@ public interface Authentication extends KlabService {
      * @return
      */
     ServiceScope authenticateService(KlabService service);
+
+    /**
+     * Authenticate a user of a given service and return the result of calling
+     * the user scope generator on the service scope.
+     *
+     * @param serviceScope
+     * @return
+     */
+    UserScope authenticateUser(ServiceScope serviceScope);
 }

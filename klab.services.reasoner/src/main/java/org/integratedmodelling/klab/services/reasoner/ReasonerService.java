@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
@@ -34,7 +33,6 @@ import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
@@ -48,9 +46,9 @@ import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.IArtifact;
 import org.integratedmodelling.klab.api.services.Authentication;
+import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
-import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -62,7 +60,9 @@ import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
+import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
+import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.ObservableBuilder;
@@ -274,6 +274,40 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         if (config.exists()) {
             configuration = Utils.YAML.load(config, ReasonerConfiguration.class);
         }
+
+        for (ProjectConfiguration authority : configuration.getAuthorities()) {
+            loadAuthority(authority);
+        }
+
+        Set<String> worldview = configuration.getWorldview().stream().map(ProjectConfiguration::getProject)
+                .collect(Collectors.toSet());
+
+        if (!worldview.isEmpty()) {
+            ResourceSet projectSet = this.resourceService.projects(worldview, scope);
+            boolean ok = loadKnowledge(projectSet, scope);
+            /*
+             * TODO log and report
+             */
+        }
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void loadAuthority(ProjectConfiguration authority) {
+        if (authority.getUrl().startsWith("classpath:")) {
+            try {
+                Logging.INSTANCE.info("loading authority " + authority.getProject() + " from local classpath");
+                Class<? extends Authority> cls = (Class<? extends Authority>) Class
+                        .forName(authority.getUrl().substring("classpath:".length()));
+                Services.INSTANCE.registerAuthority(cls.getDeclaredConstructor().newInstance());
+                Logging.INSTANCE.info("Authority " + authority.getProject() + " ready for "
+                        + (authority.isServe() ? "global" : "local") + " use");
+            } catch (Exception e) {
+                Logging.INSTANCE.error(e);
+            }
+        }
+        // TODO Auto-generated method stub
+
     }
 
     private void saveConfiguration() {
@@ -1251,12 +1285,13 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     @Override
     public Concept declareConcept(KimConcept conceptDeclaration) {
-        return declare(conceptDeclaration, OWL.INSTANCE.getOntology(conceptDeclaration.getNamespace()), scope);
+        return declare(conceptDeclaration, OWL.INSTANCE.requireOntology(conceptDeclaration.getNamespace()), scope);
     }
 
     @Override
     public Observable declareObservable(KimObservable observableDeclaration) {
-        return declare(observableDeclaration, OWL.INSTANCE.getOntology(observableDeclaration.getMain().getNamespace()), scope);
+        return declare(observableDeclaration, OWL.INSTANCE.requireOntology(observableDeclaration.getMain().getNamespace()),
+                scope);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.authentication.impl;
+package org.integratedmodelling.klab.services.authentication.impl;
 
 import java.util.Collection;
 import java.util.HashMap;

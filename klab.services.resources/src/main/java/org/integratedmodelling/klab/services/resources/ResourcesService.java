@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resources;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -390,7 +391,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
     }
 
     @Override
-    public ResourceSet worldview(Scope scope) {
+    public ResourceSet projects(Collection<String> projects, Scope scope) {
 
         ResourceSet ret = new ResourceSet();
 
@@ -399,7 +400,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
          */
         for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
             ProjectConfiguration project = this.configuration.getProjectConfiguration().get(projectName);
-            if (project.isWorldview()) {
+            if (projects.contains(projectName)) {
                 ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
             }
         }

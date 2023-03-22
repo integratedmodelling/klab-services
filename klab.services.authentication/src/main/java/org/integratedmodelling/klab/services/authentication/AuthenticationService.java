@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.authentication;
+package org.integratedmodelling.klab.services.authentication;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
@@ -6,9 +6,9 @@ import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.authentication.impl.AnonymousUser;
-import org.integratedmodelling.klab.authentication.impl.LocalServiceScope;
-import org.integratedmodelling.klab.authentication.impl.UserScopeImpl;
+import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+import org.integratedmodelling.klab.services.authentication.impl.UserScopeImpl;
 import org.springframework.stereotype.Service;
 
 import java.io.Serial;
@@ -59,6 +59,11 @@ public class AuthenticationService implements Authentication {
     public ServiceScope authenticateService(KlabService service) {
         // TODO
         return new LocalServiceScope(service);
+    }
+
+    @Override
+    public UserScope authenticateUser(ServiceScope serviceScope) {
+        return null;
     }
 
     @Override

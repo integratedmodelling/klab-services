@@ -1,11 +1,13 @@
 package org.integratedmodelling.tests.services.reasoner;
 
+import java.util.List;
+
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.authentication.AuthenticationService;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.indexing.Indexer;
+import org.integratedmodelling.klab.services.authentication.AuthenticationService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.authorities.CaliperAuthority;
 import org.integratedmodelling.klab.services.reasoner.authorities.GBIFAuthority;
@@ -61,7 +63,7 @@ class ConceptIngestion {
 
     @Test
     void worldview() {
-        reasonerService.loadKnowledge(resourcesService.worldview(scope), scope);
+        reasonerService.loadKnowledge(resourcesService.projects(List.of("im"), scope), scope);
         // File output = Configuration.INSTANCE.getExportFile("im.owl");
         // OWL.INSTANCE.getOntology("im").write(output, false);
     }

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.authentication.impl;
+package org.integratedmodelling.klab.services.authentication.impl;
 
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;

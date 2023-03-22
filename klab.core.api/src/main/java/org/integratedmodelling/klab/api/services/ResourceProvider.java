@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
 import java.io.File;
-import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -40,15 +40,15 @@ public interface ResourceProvider extends KlabService {
     Capabilities getCapabilities();
 
     /**
-     * Get the managed worldview. Assumes that the capabilities have been consulted and have
-     * suggested that this is a sensible request.
+     * Get the contents of a set of projects. Assumes that the capabilities have been consulted and
+     * have suggested that this is a sensible request.
      * 
      * @param scope could be null (defaulting to the service scope) for the entire worldview, but a
      *        user scope should include the optional parts due to the user's group selection.
      * @return an entire worldview managed by this service, or an empty resource set if not
      *         available.
      */
-    ResourceSet worldview(Scope scope);
+    ResourceSet projects(Collection<String> projects, Scope scope);
 
     /**
      * Request all the contents of a given project.
