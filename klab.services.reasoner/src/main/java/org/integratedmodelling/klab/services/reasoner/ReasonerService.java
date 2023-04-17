@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
@@ -44,7 +45,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
-import org.integratedmodelling.klab.api.provenance.IArtifact;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -1105,6 +1105,16 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
+    public boolean hasDirectRole(Semantics type, Concept trait) {
+        for (Concept c : directRoles(type)) {
+            if (trait.is(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public Collection<Concept> directTraits(Semantics concept) {
         Set<Concept> ret = new HashSet<>();
         ret.addAll(OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_REALM_PROPERTY)));
@@ -1116,13 +1126,28 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
+    public Collection<Concept> directAttributes(Semantics concept) {
+        return OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_ATTRIBUTE_PROPERTY));
+    }
+
+    @Override
+    public Collection<Concept> directIdentities(Semantics concept) {
+        return OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_IDENTITY_PROPERTY));
+    }
+
+    @Override
+    public Collection<Concept> directRealms(Semantics concept) {
+        return OWL.INSTANCE.getDirectRestrictedClasses(concept.asConcept(), OWL.INSTANCE.getProperty(NS.HAS_REALM_PROPERTY));
+    }
+
+    @Override
     public Concept negated(Concept concept) {
         return OWL.INSTANCE.makeNegation(concept.asConcept(), OWL.INSTANCE.getOntology(concept.getNamespace()));
     }
 
     @Override
     public SemanticType observableType(Semantics observable, boolean acceptTraits) {
-        if (observable instanceof Observable && ((Observable) observable).getArtifactType().equals(IArtifact.Type.VOID)) {
+        if (observable instanceof Observable && ((Observable) observable).getArtifactType().equals(Artifact.Type.VOID)) {
             return SemanticType.NOTHING;
         }
         Set<SemanticType> type = EnumSet.copyOf(observable.asConcept().getType());
@@ -2151,6 +2176,8 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         for (var annotation : concept.getAnnotations()) {
             builder = builder.withAnnotation(new AnnotationImpl(annotation));
         }
+
+        // CHECK: fluidUnits = needsUnits() && !unitsSet;
 
         return (Observable) builder.buildObservable();
     }

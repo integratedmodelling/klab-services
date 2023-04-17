@@ -32,7 +32,7 @@ public class SpecializingRestrictionVisitor
     private Set<OWLClass>        processedClasses   = new HashSet<>();
     private Property            property;
     private Collection<Concept> result             = null;
-    private Concept             concept;
+//    private Concept             concept;
     private boolean              useSuperproperties = false;
     private OWLQuantifiedRestriction<?, ?, ? extends OWLClassExpression> restriction;
 
@@ -48,9 +48,8 @@ public class SpecializingRestrictionVisitor
             boolean useSuperProperties) {
         this.onts = OWL.INSTANCE.manager.getOntologies();
         this.property = property;
-        this.concept = concept;
+//        this.concept = concept;
         this.useSuperproperties = useSuperProperties;
-        // call to getType() ensures we get an instance of Concept, which is not guaranteed for IObservable
         OWL.INSTANCE.getOWLClass(concept).accept(this);
     }
 

@@ -10,7 +10,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
 @SpringBootApplication
+@EnableSwagger2
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.reasoner", "org.integratedmodelling.klab.indexing",
         "org.integratedmodelling.klab.services.authentication", "org.integratedmodelling.klab.services.resources",
         "org.integratedmodelling.klab.services.reasoner.controllers"})

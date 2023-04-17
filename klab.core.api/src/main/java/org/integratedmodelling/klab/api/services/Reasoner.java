@@ -211,6 +211,14 @@ public interface Reasoner extends KlabService {
     /**
      * 
      * @param concept
+     * @param role
+     * @return
+     */
+    boolean hasDirectRole(Semantics concept, Concept role);
+
+    /**
+     * 
+     * @param concept
      * @return
      */
     Concept directContext(Semantics concept);
@@ -353,6 +361,22 @@ public interface Reasoner extends KlabService {
     Collection<Concept> identities(Semantics concept);
 
     /**
+     * Return all identities.
+     * 
+     * @param concept
+     * @return identities
+     */
+    Collection<Concept> directIdentities(Semantics concept);
+
+    /**
+     * Return all identities.
+     * 
+     * @param concept
+     * @return identities
+     */
+    Collection<Concept> directAttributes(Semantics concept);
+
+    /**
      * Return all attributes
      * 
      * @param concept
@@ -367,6 +391,14 @@ public interface Reasoner extends KlabService {
      * @return realms
      */
     Collection<Concept> realms(Semantics concept);
+
+    /**
+     * Return all identities.
+     * 
+     * @param concept
+     * @return identities
+     */
+    Collection<Concept> directRealms(Semantics concept);
 
     /**
      * <p>
