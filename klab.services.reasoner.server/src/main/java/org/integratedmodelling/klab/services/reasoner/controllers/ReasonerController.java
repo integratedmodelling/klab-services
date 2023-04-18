@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Reasoner.Capabilities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,23 +17,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.ApiOperation;
-
 @RestController
 public class ReasonerController {
 
     @Autowired
     private Reasoner reasoner;
-
-    /**
-     * GET /capabilities
-     * @return
-     */
-    @ApiOperation(value = "Obtain the reasoner service capabilities")
-    @GetMapping(ServicesAPI.CAPABILITIES)
-    public Capabilities getCapabilities() {
-        return reasoner.getCapabilities();
-    }
 
     /**
      *
