@@ -36,6 +36,7 @@ public interface ServicesAPI {
          */
         public static String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable/{definition}";
 
+        public static String SEMANTIC_SEARCH = REASONER_BASE + "/semantic-search";
         
         public static String HAS_TRAIT = REASONER_BASE + "/has-trait";
 

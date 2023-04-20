@@ -42,6 +42,6 @@ public interface KimBehavior extends KimStatement {
      * 
      * @return the extent functions
      */
-    Collection<ServiceCall> getExtentFunctions();
+    List<ServiceCall> getExtentFunctions();
     
 }

@@ -29,7 +29,8 @@ public class AssistController {
         return reasoner.getCapabilities();
     }
 
-    @PostMapping
+    @ApiOperation(value = "Perform guided semantic search, composing a valid logical expression incrementally")
+    @PostMapping(ServicesAPI.REASONER.SEMANTIC_SEARCH)
     SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
         return reasoner.semanticSearch(request);
     }

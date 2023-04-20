@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.lang.kim.impl;
 
+import java.io.Serial;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
  */
 public class KimBehaviorImpl extends KimStatementImpl implements KimBehavior {
 
+    @Serial
     private static final long serialVersionUID = 2701074196387350255L;
     private List<KimAction> actions = new ArrayList<>();
     private boolean empty;
@@ -39,7 +40,7 @@ public class KimBehaviorImpl extends KimStatementImpl implements KimBehavior {
     }
 
     @Override
-    public Collection<ServiceCall> getExtentFunctions() {
+    public List<ServiceCall> getExtentFunctions() {
         return this.extentFunctions;
     }
 

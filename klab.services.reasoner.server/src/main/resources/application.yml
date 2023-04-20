@@ -8,3 +8,9 @@ security:
 management:
    security:
       enabled: false
+application:
+   info:
+      title: "k.LAB Reasoner API"
+      description: "Porcaccio dio gesu"
+      contactName: "Integrated Modelling Partnership"
+      contactEmail: "info@integratedmodelling.org"
