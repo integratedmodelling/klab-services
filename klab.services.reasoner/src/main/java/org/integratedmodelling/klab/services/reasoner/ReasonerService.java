@@ -133,7 +133,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     transient private ResourceProvider resourceService;
     transient private Authentication authenticationService;
-    transient private ReasonerConfiguration configuration;
+    transient private ReasonerConfiguration configuration = new ReasonerConfiguration();
     transient private ServiceScope scope;
 
     transient private Map<String, String> coreConceptPeers = new HashMap<>();
