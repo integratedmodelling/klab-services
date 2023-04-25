@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
  * @author ferd
  *
  */
-public interface SessionScope extends Scope {
+public interface SessionScope extends UserScope {
 
     public enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, /* this only sent by UIs for now */ INTERRUPTED, EMPTY
