@@ -11,6 +11,15 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 
+/**
+ * An "engine" implementation for local testing which will connect to any local services it finds
+ * running, and create local embedded services for the others. Only needs to expose a local
+ * authentication service to retrieve a user scope for the anonymous user, then the service proxies
+ * are available from it.
+ * 
+ * @author Ferd
+ *
+ */
 public class TestEngine {
 
     static class TestAuthentication implements Authentication {
