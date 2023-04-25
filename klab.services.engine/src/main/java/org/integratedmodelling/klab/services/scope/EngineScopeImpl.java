@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
@@ -147,6 +148,12 @@ public class EngineScopeImpl implements UserScope {
     public void post(Consumer<Message> handler, Object... message) {
         // TODO Auto-generated method stub
         
+    }
+
+    @Override
+    public <T extends KlabService> T getService(Class<T> serviceClass) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 

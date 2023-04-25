@@ -350,22 +350,19 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
         return null;
     }
 
-    public void shutdown() {
-        // TODO Auto-generated method stub
-        try {
-            projectLoader.awaitTermination(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Logging.INSTANCE.error("Error during thread termination", e);
-        }
+    @Override
+    public boolean shutdown() {
+        return shutdown(30);
     }
 
-    public void shutdown(int secondsToWait) {
-        // TODO Auto-generated method stub
+    public boolean shutdown(int secondsToWait) {
         try {
             projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
+            return true;
         } catch (InterruptedException e) {
             Logging.INSTANCE.error("Error during thread termination", e);
         }
+        return false;
     }
 
     @Override

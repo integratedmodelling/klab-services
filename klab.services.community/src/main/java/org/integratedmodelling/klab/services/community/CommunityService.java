@@ -37,4 +37,10 @@ public class CommunityService implements Community {
         return null;
     }
 
+    @Override
+    public boolean shutdown() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

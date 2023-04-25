@@ -2298,4 +2298,10 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
     }
 
+    @Override
+    public boolean shutdown() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

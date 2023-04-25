@@ -70,4 +70,12 @@ public interface KlabService extends Serializable {
      */
     ServiceScope scope();
 
+    /**
+     * All services provide a shutdown call to clean up things upon normal termination. The service
+     * should not be expected to exist after this is called.
+     * 
+     * @return
+     */
+    boolean shutdown();
+
 }

@@ -16,6 +16,7 @@
 	<module>klab.services.authentication</module>
 	<module>klab.services.reasoner.server</module>
 	<module>klab.services.community</module>
+	<module>klab.services.reasoner.client</module>
   </modules>
 	
 	<licenses>

@@ -72,4 +72,10 @@ public class AuthenticationService implements Authentication {
         return null;
     }
 
+    @Override
+    public boolean shutdown() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }

@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
-public interface Runtime extends KlabService {
+public interface RuntimeService extends KlabService {
 	
     default String getServiceName() {
         return "klab.runtime.service";

@@ -26,7 +26,8 @@ public interface Authentication extends KlabService {
 
     /**
      * Get an anonymous user scope with no permissions for testing or for unknown users. In local
-     * configurations the anonymous scope may access any local resources.
+     * configurations the anonymous scope may access any local resources and the locally available
+     * worldview(s), if any exists.
      * 
      * @return
      */
@@ -42,8 +43,8 @@ public interface Authentication extends KlabService {
     ServiceScope authenticateService(KlabService service);
 
     /**
-     * Authenticate a user of a given service and return the result of calling
-     * the user scope generator on the service scope.
+     * Authenticate a user of a given service and return the result of calling the user scope
+     * generator on the service scope.
      *
      * @param serviceScope
      * @return

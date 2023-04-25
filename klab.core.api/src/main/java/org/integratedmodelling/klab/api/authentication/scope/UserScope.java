@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.authentication.scope;
 
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
  * User scopes restrict a service's permissions to those available to a specific user.
@@ -19,7 +19,8 @@ public interface UserScope extends Scope {
     UserIdentity getUser();
 
     /**
-     * Start a raw session with a given identifier and return the scope that controls it.
+     * Start a raw session with a given identifier and return the scope that controls it. This will
+     * locate and connect an available runtime among those that are visible to the user.
      * 
      * @param sessionName
      * @return
@@ -27,11 +28,21 @@ public interface UserScope extends Scope {
     SessionScope runSession(String sessionName);
 
     /**
-     * Run an application or script and return the scope that controls it.
+     * Run an application, test case or script and return the scope that controls it.
      * 
      * @param behavior
      * @return
      */
     SessionScope runApplication(String behaviorName);
+
+    /**
+     * Retrieve the service corresponding to the passed class. A service unavailable exception
+     * should be the response when services are unavailable.
+     * 
+     * @param <T>
+     * @param serviceClass
+     * @return
+     */
+    <T extends KlabService> T getService(Class<T> serviceClass);
 
 }

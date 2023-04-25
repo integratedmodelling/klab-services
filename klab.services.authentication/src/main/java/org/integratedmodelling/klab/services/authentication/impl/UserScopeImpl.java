@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 public class UserScopeImpl extends Monitor implements UserScope {
 
@@ -44,6 +45,12 @@ public class UserScopeImpl extends Monitor implements UserScope {
     @Override
     public Parameters<String> getData() {
         return this.data;
+    }
+
+    @Override
+    public <T extends KlabService> T getService(Class<T> serviceClass) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

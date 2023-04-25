@@ -13,7 +13,7 @@ import org.integratedmodelling.klab.api.services.Engine;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
-import org.integratedmodelling.klab.api.services.Runtime;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.UnitService;
 
 /**
@@ -44,7 +44,7 @@ public enum Services {
     private ResourceProvider resources;
     private Engine engine;
     private Resolver resolver;
-    private Runtime runtime;
+    private RuntimeService runtime;
     private UnitService unitService;
     private CurrencyService currencyService;
 
@@ -73,7 +73,7 @@ public enum Services {
      * @param scope
      * @return
      */
-    public List<Runtime> runtimes(Scope scope) {
+    public List<RuntimeService> runtimes(Scope scope) {
         return null;
     }
 
@@ -105,11 +105,11 @@ public enum Services {
         this.resolver = resolver;
     }
 
-    public Runtime getRuntime() {
+    public RuntimeService getRuntime() {
         return runtime;
     }
 
-    public void setRuntime(Runtime runtime) {
+    public void setRuntime(RuntimeService runtime) {
         this.runtime = runtime;
     }
 

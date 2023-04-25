@@ -117,4 +117,10 @@ public class EngineService implements Engine {
         return this.scope;
     }
 
+    @Override
+    public boolean shutdown() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }
