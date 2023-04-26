@@ -3,6 +3,11 @@ package org.integratedmodelling.klab.utils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.DatagramSocket;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -673,6 +678,88 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
 
     public static class Network {
+
+        /**
+         * Checks if is server alive.
+         *
+         * @param host the host
+         * @return a boolean.
+         */
+        static public boolean isAlive(String host) {
+
+            try {
+                if (InetAddress.getByName(host).isReachable(200)) {
+                    return true;
+                }
+            } catch (Exception e) {
+            }
+            return false;
+        }
+        
+        
+        /**
+         * Port available.
+         *
+         * @param port the port
+         * @return a boolean.
+         */
+        public static boolean portAvailable(int port) {
+
+            ServerSocket ss = null;
+            DatagramSocket ds = null;
+            try {
+                ss = new ServerSocket(port);
+                ss.setReuseAddress(true);
+                ds = new DatagramSocket(port);
+                ds.setReuseAddress(true);
+                return true;
+            } catch (Exception e) {
+                e.getMessage();
+            } finally {
+                if (ds != null) {
+                    ds.close();
+                }
+
+                if (ss != null) {
+                    try {
+                        ss.close();
+                    } catch (IOException e) {
+                        /* should not be thrown */
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /**
+         * Call with "-" as a parameter to get the typical MAC address string. Otherwise use another
+         * string to get a unique machine identifier that can be customized.
+         *
+         * @param sep the sep
+         * @return MAC address
+         */
+        public static String getMACAddress(String sep) {
+
+            InetAddress ip;
+            String ret = null;
+            try {
+
+                ip = InetAddress.getLocalHost();
+                NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+                byte[] mac = network.getHardwareAddress();
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < mac.length; i++) {
+                    sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? sep : ""));
+                }
+                ret = sb.toString();
+
+            } catch (Exception e) {
+                throw new KlabIOException(e);
+            }
+
+            return ret;
+        }
 
     }
 

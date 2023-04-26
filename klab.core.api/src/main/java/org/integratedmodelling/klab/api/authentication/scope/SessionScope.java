@@ -37,7 +37,7 @@ public interface SessionScope extends UserScope {
      * 
      * @return
      */
-    ContextScope createContext(String id);
+    ContextScope createContext(String urn);
 
     /**
      * Return the status of the session scope at the time of the call.

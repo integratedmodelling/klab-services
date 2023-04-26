@@ -23,11 +23,7 @@ import org.junit.jupiter.api.Test;
 public class ObservationTests {
 
     static EngineService engine;
-    static Authentication authentication = null; // TODO something like TestSetup.localSetup(); -
-                                                 // should find anything launched locally and
-                                                 // complete the
-                                                 // missing parts, returning an authentication
-                                                 // service that only honors anonymous logins
+    static Authentication authentication = TestEngine.setup();
 
     @BeforeClass
     public static void setUp() throws Exception {

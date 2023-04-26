@@ -19,11 +19,17 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 public class ReasonerClient implements Reasoner {
 
     private static final long serialVersionUID = -3969112162251127910L;
+    
+    String url;
+    
+    public ReasonerClient(String url) {
+        this.url = url;
+    }
 
     @Override
     public String getUrl() {
         // TODO Auto-generated method stub
-        return null;
+        return this.url;
     }
 
     @Override

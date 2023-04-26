@@ -10,6 +10,10 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
+import org.integratedmodelling.klab.services.reasoner.ReasonerService;
+import org.integratedmodelling.klab.services.resources.ResourcesService;
+import org.integratedmodelling.klab.utils.Utils;
 
 /**
  * An "engine" implementation for local testing which will connect to any local services it finds
@@ -34,6 +38,17 @@ public class TestEngine {
         TestAuthentication() {
             // TODO check for a locally running service for each category; if existing, create a
             // client, otherwise create an embedded service
+            if (Utils.Network.isAlive("http://127.0.0.1:8092/resources/actuator")) {
+                this.resources = null; // new ResourcesClient("http://127.0.0.1:8091/resources");
+            } else {
+                this.resources =  new ResourcesService(this);
+            }
+
+            if (Utils.Network.isAlive("http://127.0.0.1:8091/reasoner/actuator")) {
+                this.reasoner = new ReasonerClient("http://127.0.0.1:8091/reasoner");
+            } else {
+                this.reasoner = new ReasonerService(this, this.resources, null);
+            }
         }
 
         @Override
@@ -56,7 +71,9 @@ public class TestEngine {
 
         @Override
         public boolean shutdown() {
-            // TODO Auto-generated method stub
+            this.reasoner.shutdown();
+            this.resources.shutdown();
+            // TODO
             return false;
         }
 
