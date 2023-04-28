@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.catalina.Engine;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.CurrencyService;
-import org.integratedmodelling.klab.api.services.Engine;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
@@ -42,7 +42,6 @@ public enum Services {
 
     private Reasoner reasoner;
     private ResourceProvider resources;
-    private Engine engine;
     private Resolver resolver;
     private RuntimeService runtime;
     private UnitService unitService;
@@ -87,14 +86,6 @@ public enum Services {
 
     public void setResources(ResourceProvider resources) {
         this.resources = resources;
-    }
-
-    public Engine getEngine() {
-        return engine;
-    }
-
-    public void setEngine(Engine engine) {
-        this.engine = engine;
     }
 
     public Resolver getResolver() {

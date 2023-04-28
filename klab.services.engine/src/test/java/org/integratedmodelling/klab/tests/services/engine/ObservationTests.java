@@ -6,8 +6,8 @@ import org.integratedmodelling.klab.Logging;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
-import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.exceptions.KlabException;
+import org.integratedmodelling.klab.tests.services.engine.TestEngine.TestAuthentication;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.jupiter.api.Test;
@@ -21,12 +21,11 @@ import org.junit.jupiter.api.Test;
 public class ObservationTests {
 
 //    static EngineService engine;
-    static Authentication authentication = TestEngine.setup();
+    static TestAuthentication authentication = TestEngine.setup();
 
     @BeforeClass
     public static void setUp() throws Exception {
-//        engine = new EngineService(authentication);
-        // ensure errors cause exc
+        // ensure errors cause exception
         Logging.INSTANCE.setErrorWriter(new Consumer<String>(){
 
             @Override
@@ -38,9 +37,7 @@ public class ObservationTests {
 
     @AfterClass
     public static void tearDown() throws Exception {
-//        if (engine != null) {
-//            engine.shutdown();
-//        }
+        authentication.shutdown();
     }
 
     @Test

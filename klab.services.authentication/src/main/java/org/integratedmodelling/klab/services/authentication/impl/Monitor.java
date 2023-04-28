@@ -3,9 +3,11 @@ package org.integratedmodelling.klab.services.authentication.impl;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+
 import org.integratedmodelling.klab.api.auth.IRuntimeIdentity;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessageBus;
@@ -14,6 +16,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification.Type;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope.LocalService;
 
 /**
  * Generic monitor class with logging. Use to derive any scope, linking the needed message bus.
@@ -32,7 +35,7 @@ public class Monitor implements Channel {
 
     protected Monitor() {
     }
-
+    
     public Monitor(Identity identity) {
         this.identity = identity;
     }

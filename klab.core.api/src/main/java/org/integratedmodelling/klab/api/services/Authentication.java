@@ -6,22 +6,22 @@ import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 
-public interface Authentication extends KlabService {
-
-    default String getServiceName() {
-        return "klab.engine.authentication";
-    }
-
-    interface Capabilities extends ServiceCapabilities {
-    }
+/**
+ * Proxy to whatever authentication strategy is used in the system. Responsible for building the
+ * user and service scopes that drive the API usage of everything. Expected to receive valid users
+ * (or anonymous) authenticated with external logics.
+ * 
+ * @author Ferd
+ *
+ */
+public interface Authentication {
 
     /**
      * 
+     * @param permissions
+     * @param scope
      * @return
      */
-    @Override
-    Capabilities getCapabilities();
-
     boolean checkPermissions(ResourcePrivileges permissions, Scope scope);
 
     /**

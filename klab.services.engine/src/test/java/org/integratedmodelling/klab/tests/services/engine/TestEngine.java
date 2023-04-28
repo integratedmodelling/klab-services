@@ -1,5 +1,8 @@
 package org.integratedmodelling.klab.tests.services.engine;
 
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.services.Authentication;
@@ -8,7 +11,9 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.services.authentication.AuthenticationService;
+import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+import org.integratedmodelling.klab.services.engine.EngineService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.resolver.ResolverClient;
@@ -16,7 +21,6 @@ import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.integratedmodelling.klab.services.resources.ResourcesClient;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
-import org.integratedmodelling.klab.services.scope.EngineScopeImpl;
 import org.integratedmodelling.klab.utils.Utils;
 
 /**
@@ -30,14 +34,7 @@ import org.integratedmodelling.klab.utils.Utils;
  */
 public class TestEngine {
 
-    static class TestAuthentication extends AuthenticationService {
-
-        private static final long serialVersionUID = -8805140708277187846L;
-
-        Reasoner reasoner;
-        ResourceProvider resources;
-        RuntimeService runtime;
-        Resolver resolver;
+    static class TestAuthentication extends EngineService implements Authentication {
 
         TestAuthentication() {
             /*
@@ -45,54 +42,50 @@ public class TestEngine {
              * otherwise create an embedded service
              */
             if (Utils.Network.isAlive("http://127.0.0.1:" + ResourceProvider.DEFAULT_PORT + " /resources/actuator")) {
-                this.resources = new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources");
+                setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources"));
             } else {
-                this.resources = new ResourcesService(this);
+                setResources(new ResourcesService(this));
             }
 
             if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {
-                this.reasoner = new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner");
+                setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
             } else {
-                this.reasoner = new ReasonerService(this, this.resources, null);
+                setReasoner(new ReasonerService(this, getResources(), null));
             }
 
             if (Utils.Network.isAlive("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver/actuator")) {
-                this.resolver = new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver");
+                setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
             } else {
-                this.resolver = new ResolverService(this, this.resources);
+                setResolver(new ResolverService(this, getResources()));
             }
 
             if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
-                this.runtime = new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime");
+                setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime"));
             } else {
-                this.runtime = new org.integratedmodelling.klab.services.runtime.RuntimeService(this, this.resources,
-                        this.resolver);
+                setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this, getResources(), getResolver()));
             }
 
-        }
-
-        @Override
-        public boolean shutdown() {
-            this.reasoner.shutdown();
-            this.resources.shutdown();
-            this.reasoner.shutdown();
-            this.runtime.shutdown();
-            return true;
         }
 
         @Override
         public UserScope authorizeUser(UserIdentity user) {
-            return new EngineScopeImpl(user) {
+            return login(user);
+        }
 
-                private static final long serialVersionUID = -7075324015105362816L;
+        @Override
+        public boolean checkPermissions(ResourcePrivileges permissions, Scope scope) {
+            // everything is allowed
+            return true;
+        }
 
-                @Override
-                public <T extends KlabService> T getService(Class<T> serviceClass) {
-                    // TODO Auto-generated method stub
-                    return null;
-                }
-                
-            };
+        @Override
+        public UserScope getAnonymousScope() {
+            return login(new AnonymousUser());
+        }
+
+        @Override
+        public ServiceScope authorizeService(KlabService service) {
+            return new LocalServiceScope(service);
         }
 
     }
@@ -104,7 +97,7 @@ public class TestEngine {
      * 
      * @return
      */
-    public static Authentication setup() {
+    public static TestAuthentication setup() {
         return new TestAuthentication();
     }
 }

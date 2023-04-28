@@ -14,7 +14,6 @@
 package org.integratedmodelling.klab.api.identities;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.services.Engine;
 
 /**
  * {@code IIdentity} represents all identities known to the IM semantic web. Since 0.10.0 identities

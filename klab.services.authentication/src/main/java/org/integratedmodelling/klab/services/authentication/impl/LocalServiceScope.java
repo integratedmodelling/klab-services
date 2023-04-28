@@ -18,6 +18,12 @@ public class LocalServiceScope extends Monitor implements ServiceScope {
     class LocalService implements ServiceIdentity {
 
         Date boot = new Date();
+        KlabService service;
+        
+        public LocalService(KlabService service) {
+            this.service = service;
+        }
+        
         
         @Override
         public boolean stop() {
@@ -82,7 +88,7 @@ public class LocalServiceScope extends Monitor implements ServiceScope {
     }
     
     public LocalServiceScope(KlabService service) {
-        setIdentity(new LocalService());
+        setIdentity(new LocalService(service));
     }
 
     private static final long serialVersionUID = -2392904937443296107L;

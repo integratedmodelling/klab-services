@@ -21,22 +21,14 @@ public abstract class AuthenticationService implements Authentication {
 
     private String url;
     private String localName;
-    private ServiceScope scope;
 
     public AuthenticationService() {
-        this.scope = new LocalServiceScope(this);
     }
     
     @Override
     public boolean checkPermissions(ResourcePrivileges permissions, Scope scope) {
         // TODO
         return true;
-    }
-
-    @Override
-    public Capabilities getCapabilities() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     public String getUrl() {
@@ -67,16 +59,5 @@ public abstract class AuthenticationService implements Authentication {
 
     @Override
     public abstract UserScope authorizeUser(UserIdentity user);
-
-    @Override
-    public ServiceScope scope() {
-        return this.scope;
-    }
-
-    @Override
-    public boolean shutdown() {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
 }
