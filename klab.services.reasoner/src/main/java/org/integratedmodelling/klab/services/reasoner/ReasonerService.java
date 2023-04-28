@@ -263,7 +263,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         Services.INSTANCE.setReasoner(this);
 
         this.authenticationService = authenticationService;
-        this.scope = authenticationService.authenticateService(this);
+        this.scope = authenticationService.authorizeService(this);
         this.indexer = indexer;
 
         OWL.INSTANCE.initialize(this.scope);

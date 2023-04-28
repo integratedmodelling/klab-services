@@ -17,6 +17,16 @@
 	<module>klab.services.reasoner.server</module>
 	<module>klab.services.community</module>
 	<module>klab.services.reasoner.client</module>
+	<module>klab.services.resources.client</module>
+	<module>klab.services.resources.server</module>
+	<module>klab.services.resolver.client</module>
+	<module>klab.services.resolver.server</module>
+	<module>klab.services.runtime.client</module>
+	<module>klab.services.runtime.server</module>
+	<module>klab.services.community.client</module>
+	<module>klab.services.community.server</module>
+	<module>klab.services.runtime</module>
+	<module>klab.services.resolver</module>
   </modules>
 	
 	<licenses>

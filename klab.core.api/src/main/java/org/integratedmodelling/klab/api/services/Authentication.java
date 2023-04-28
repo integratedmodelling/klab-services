@@ -40,7 +40,7 @@ public interface Authentication extends KlabService {
      * @param service
      * @return
      */
-    ServiceScope authenticateService(KlabService service);
+    ServiceScope authorizeService(KlabService service);
 
     /**
      * Authenticate a user of a given service and return the result of calling the user scope
@@ -49,5 +49,5 @@ public interface Authentication extends KlabService {
      * @param serviceScope
      * @return
      */
-    UserScope authenticateUser(ServiceScope serviceScope);
+    UserScope authorizeUser(UserIdentity user);
 }

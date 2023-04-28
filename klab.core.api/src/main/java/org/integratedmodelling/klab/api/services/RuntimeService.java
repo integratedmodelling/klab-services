@@ -6,6 +6,8 @@ public interface RuntimeService extends KlabService {
         return "klab.runtime.service";
     }
     
+    public static final int DEFAULT_PORT = 8094;
+
 	/**
 	 * All services publish capabilities and have a call to obtain them.
 	 * 

@@ -4,12 +4,10 @@ import java.util.function.Consumer;
 
 import org.integratedmodelling.klab.Logging;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
-import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.exceptions.KlabException;
-import org.integratedmodelling.klab.services.engine.EngineService;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.jupiter.api.Test;
@@ -22,12 +20,12 @@ import org.junit.jupiter.api.Test;
  */
 public class ObservationTests {
 
-    static EngineService engine;
+//    static EngineService engine;
     static Authentication authentication = TestEngine.setup();
 
     @BeforeClass
     public static void setUp() throws Exception {
-        engine = new EngineService(authentication);
+//        engine = new EngineService(authentication);
         // ensure errors cause exc
         Logging.INSTANCE.setErrorWriter(new Consumer<String>(){
 
@@ -40,9 +38,9 @@ public class ObservationTests {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        if (engine != null) {
-            engine.shutdown();
-        }
+//        if (engine != null) {
+//            engine.shutdown();
+//        }
     }
 
     @Test

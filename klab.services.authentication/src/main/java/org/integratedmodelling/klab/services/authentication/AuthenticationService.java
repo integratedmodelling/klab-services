@@ -1,27 +1,32 @@
 package org.integratedmodelling.klab.services.authentication;
 
+import java.io.Serial;
+
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
-import org.integratedmodelling.klab.services.authentication.impl.UserScopeImpl;
 import org.springframework.stereotype.Service;
 
-import java.io.Serial;
-
 @Service
-public class AuthenticationService implements Authentication {
+public abstract class AuthenticationService implements Authentication {
 
     @Serial
     private static final long serialVersionUID = -7742687519379834555L;
 
     private String url;
     private String localName;
+    private ServiceScope scope;
 
+    public AuthenticationService() {
+        this.scope = new LocalServiceScope(this);
+    }
+    
     @Override
     public boolean checkPermissions(ResourcePrivileges permissions, Scope scope) {
         // TODO
@@ -52,24 +57,20 @@ public class AuthenticationService implements Authentication {
 
     @Override
     public UserScope getAnonymousScope() {
-        return new UserScopeImpl(new AnonymousUser());
+        return authorizeUser(new AnonymousUser());
     }
 
     @Override
-    public ServiceScope authenticateService(KlabService service) {
-        // TODO
+    public ServiceScope authorizeService(KlabService service) {
         return new LocalServiceScope(service);
     }
 
     @Override
-    public UserScope authenticateUser(ServiceScope serviceScope) {
-        return null;
-    }
+    public abstract UserScope authorizeUser(UserIdentity user);
 
     @Override
     public ServiceScope scope() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.scope;
     }
 
     @Override

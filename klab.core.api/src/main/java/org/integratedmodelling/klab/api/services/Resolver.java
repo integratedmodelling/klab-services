@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.io.Serializable;
-
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
@@ -13,6 +11,9 @@ public interface Resolver extends KlabService {
     default String getServiceName() {
         return "klab.resolver.service";
     }
+    
+    public static final int DEFAULT_PORT = 8093;
+
     
     /**
      * All services publish capabilities and have a call to obtain them.

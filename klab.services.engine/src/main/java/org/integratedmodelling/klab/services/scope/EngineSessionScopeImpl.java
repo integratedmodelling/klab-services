@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.scope;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionScope {
 
@@ -63,6 +64,12 @@ public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionSc
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    @Override
+    public <T extends KlabService> T getService(Class<T> serviceClass) {
+        // TODO
+        return parentScope.getService(serviceClass);
     }
 
 }

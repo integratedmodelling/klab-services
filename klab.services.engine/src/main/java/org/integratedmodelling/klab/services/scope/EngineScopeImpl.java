@@ -9,30 +9,35 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
-import org.integratedmodelling.klab.services.engine.EngineService;
 
-public class EngineScopeImpl implements UserScope {
+/**
+ * Implementations must fill in the getService() strategy.
+ * 
+ * @author Ferd
+ *
+ */
+public abstract class EngineScopeImpl implements UserScope {
 
     private static final long serialVersionUID = 605310381727313326L;
 
     private Parameters<String> data = Parameters.create();
     private UserIdentity user;
     private Ref agent;
+    protected EngineScopeImpl parentScope;
 
     public EngineScopeImpl(UserIdentity user) {
         this.user = user;
-        ((EngineService)Services.INSTANCE.getEngine()).registerScope(this);
+//        ((EngineService) Services.INSTANCE.getEngine()).registerScope(this);
     }
 
     protected EngineScopeImpl(EngineScopeImpl parent) {
         this.user = parent.user;
+        this.parentScope = parent;
     }
-    
+
     @Override
     public SessionScope runSession(String sessionName) {
 
@@ -147,14 +152,7 @@ public class EngineScopeImpl implements UserScope {
     @Override
     public void post(Consumer<Message> handler, Object... message) {
         // TODO Auto-generated method stub
-        
-    }
 
-    @Override
-    public <T extends KlabService> T getService(Class<T> serviceClass) {
-        // TODO Auto-generated method stub
-        return null;
     }
-
 
 }

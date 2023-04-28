@@ -3,6 +3,8 @@ package org.integratedmodelling.tests.services.reasoner;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.configuration.Services;
@@ -36,7 +38,17 @@ class ConceptIngestion {
 
     @BeforeAll
     public static void prepare() {
-        AuthenticationService authenticationService = new AuthenticationService();
+        AuthenticationService authenticationService = new AuthenticationService() {
+
+            private static final long serialVersionUID = 462849067429006803L;
+
+            @Override
+            public UserScope authorizeUser(UserIdentity user) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+            
+        };
         scope = authenticationService.getAnonymousScope();
         reasonerService = new ReasonerService(authenticationService,
                 resourcesService = new ResourcesService(authenticationService), indexingService = new Indexer());

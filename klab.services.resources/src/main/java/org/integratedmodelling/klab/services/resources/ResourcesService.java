@@ -111,7 +111,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
     public ResourcesService(Authentication authenticationService) {
         this();
         this.authenticationService = authenticationService;
-        this.scope = authenticationService.authenticateService(this);
+        this.scope = authenticationService.authorizeService(this);
     }
 
     /**

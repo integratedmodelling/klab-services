@@ -39,6 +39,12 @@
         </dependency>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.resources.client</artifactId>
+            <version>${klab.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.services.reasoner.client</artifactId>
             <version>${klab.version}</version>
             <scope>test</scope>
@@ -52,6 +58,30 @@
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.services.resources</artifactId>
+            <version>${klab.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.resolver</artifactId>
+            <version>${klab.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.resolver.client</artifactId>
+            <version>${klab.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.runtime</artifactId>
+            <version>${klab.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.runtime.client</artifactId>
             <version>${klab.version}</version>
             <scope>test</scope>
         </dependency>

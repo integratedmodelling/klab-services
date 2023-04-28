@@ -25,6 +25,8 @@ public interface Reasoner extends KlabService {
     default String getServiceName() {
         return "klab.reasoner.service";
     }
+    
+    public static final int DEFAULT_PORT = 8091;
 
     /**
      * All services publish capabilities and have a call to obtain them. Capabilities may depend on
