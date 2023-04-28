@@ -68,9 +68,15 @@ public interface ContextScope extends SessionScope {
      * Make an observation. Must be called on a context scope, possibly focused on a given root
      * observation using {@link #within(DirectObservation)}. If no root observation is present in
      * the scope, the arguments must fully specify a subject, either through an
-     * {@link IAcknowledgement} or a subject observable + a scale. If the parent session was focused
-     * on a scale, this is available through {@link #getGeometry()} and the context can decide to
-     * use it as a scale for the root subject.
+     * {@link IAcknowledgement} or a URN specifying a subject observable + a scale. If the parent
+     * session was focused on a scale, this is available through {@link #getGeometry()} and the
+     * context can decide to use it as a scale for the root subject.
+     * <p>
+     * Observables will be routinely specified through URNs, which will be validated as any
+     * observable object - concepts/observables, resource URNs, model/acknowledgement URNs, or full
+     * URLs specifying a context/observation in an externally hosted runtime to link to the current
+     * context. Passing descriptors for concepts, observables, acknowledgements or models should not
+     * cause errors.
      * <p>
      * In case the observable specifies a relationship, k.LAB will attempt to instantiate it,
      * observing its source/target endpoints as well, unless two subject observations are passed, in
@@ -81,8 +87,8 @@ public interface ContextScope extends SessionScope {
      * If the observation is at root level, or connecting two root-level subject through a
      * relationship, the overall geometry of the context will be automatically adjusted.
      * 
-     * @param observables either a {@link Observable} (with a {@link Geometry} if root subject) or
-     *        a {@link IAcknowledgement} for a pre-specified root subject.
+     * @param observables either a {@link Observable} (with a {@link Geometry} if root subject) or a
+     *        {@link IAcknowledgement} for a pre-specified root subject.
      * @return a future for the observation being contextualized.
      */
     Future<Observation> observe(Object... observables);

@@ -10,8 +10,7 @@ import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.tests.services.engine.TestEngine.TestAuthentication;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.jupiter.api.Test;
-
+import org.junit.Test;
 /**
  * Runners for all the k.IM test cases in /kim.
  * 
@@ -20,7 +19,7 @@ import org.junit.jupiter.api.Test;
  */
 public class ObservationTests {
 
-//    static EngineService engine;
+    // static EngineService engine;
     static TestAuthentication authentication = TestEngine.setup();
 
     @BeforeClass
