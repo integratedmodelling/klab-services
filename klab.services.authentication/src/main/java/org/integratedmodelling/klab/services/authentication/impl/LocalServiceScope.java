@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.identities.ServiceIdentity;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
-public class LocalServiceScope extends Monitor implements ServiceScope {
+public abstract class LocalServiceScope extends Monitor implements ServiceScope {
 
     KlabService service;
     

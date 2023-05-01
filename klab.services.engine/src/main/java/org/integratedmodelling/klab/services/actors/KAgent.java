@@ -170,7 +170,7 @@ public class KAgent implements ReActor {
      */
 
     private void runBehavior(ReActorContext rctx, RunBehavior behavior) {
-
+        System.out.println("ZIO PANTANO");
     }
 
     /**

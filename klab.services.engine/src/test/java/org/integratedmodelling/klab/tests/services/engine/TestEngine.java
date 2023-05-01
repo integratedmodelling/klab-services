@@ -85,7 +85,17 @@ public class TestEngine {
 
         @Override
         public ServiceScope authorizeService(KlabService service) {
-            return new LocalServiceScope(service);
+            return new LocalServiceScope(service) {
+
+                private static final long serialVersionUID = 5357455713111028422L;
+
+                @Override
+                public <T extends KlabService> T getService(Class<T> serviceClass) {
+                    // TODO Auto-generated method stub
+                    return null;
+                }
+                
+            };
         }
 
     }

@@ -3,13 +3,17 @@ package org.integratedmodelling.tests.services.reasoner;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.services.authentication.AuthenticationService;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.authorities.CaliperAuthority;
 import org.integratedmodelling.klab.services.reasoner.authorities.GBIFAuthority;
@@ -38,14 +42,25 @@ class ConceptIngestion {
 
     @BeforeAll
     public static void prepare() {
+        
         AuthenticationService authenticationService = new AuthenticationService() {
-
-            private static final long serialVersionUID = 462849067429006803L;
 
             @Override
             public UserScope authorizeUser(UserIdentity user) {
                 // TODO Auto-generated method stub
                 return null;
+            }
+
+            @Override
+            public ServiceScope authorizeService(KlabService service) {
+                // TODO Auto-generated method stub
+                return new LocalServiceScope(service) {
+                    
+                    @Override
+                    public <T extends KlabService> T getService(Class<T> serviceClass) {
+                        throw new KServiceAccessException(serviceClass);
+                    }
+                };
             }
             
         };

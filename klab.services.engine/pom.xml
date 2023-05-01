@@ -32,12 +32,6 @@
             <version>${klab.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.2.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.services.resources.client</artifactId>
             <version>${klab.version}</version>

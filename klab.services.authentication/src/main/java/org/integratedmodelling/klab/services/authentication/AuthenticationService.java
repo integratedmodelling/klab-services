@@ -53,11 +53,6 @@ public abstract class AuthenticationService implements Authentication {
     }
 
     @Override
-    public ServiceScope authorizeService(KlabService service) {
-        return new LocalServiceScope(service);
-    }
-
-    @Override
     public abstract UserScope authorizeUser(UserIdentity user);
 
 }
