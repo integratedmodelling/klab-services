@@ -32,8 +32,13 @@ public interface SessionScope extends UserScope {
     String getName();
 
     /**
-     * Create a context scope in this session. The scope is initially focused on the geometry that
-     * the session was focused on at the time of the call.
+     * Create a context scope in this session. The scope is empty, initially focused on the geometry
+     * that the session was focused on at the time of the call (also empty by default). Because of
+     * this, only direct observables may be observed in it initially.
+     * 
+     * @param urn the context URN, which will be the ID in its URL for external reference. Must be
+     *        unique within the session. Optionally this can be the http-based URL of a remote
+     *        context, which will create a "proxy" for the remote.
      * 
      * @return
      */

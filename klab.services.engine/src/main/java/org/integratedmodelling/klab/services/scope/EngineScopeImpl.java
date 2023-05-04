@@ -14,7 +14,9 @@ import org.integratedmodelling.klab.services.actors.messages.user.CreateApplicat
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 
 /**
- * Implementations must fill in the getService() strategy.
+ * Implementations must fill in the getService() strategy. This is a scope that contains an agent
+ * ref. Any communication with the agent will pass the scope, so if the agent is remote the scope
+ * must be serialized to something that maintains communication with the original one.
  * 
  * @author Ferd
  *
@@ -30,7 +32,7 @@ public abstract class EngineScopeImpl implements UserScope {
 
     public EngineScopeImpl(UserIdentity user) {
         this.user = user;
-//        ((EngineService) Services.INSTANCE.getEngine()).registerScope(this);
+        // ((EngineService) Services.INSTANCE.getEngine()).registerScope(this);
     }
 
     protected EngineScopeImpl(EngineScopeImpl parent) {
@@ -85,10 +87,6 @@ public abstract class EngineScopeImpl implements UserScope {
     public void setAgent(Ref agent) {
         this.agent = agent;
     }
-
-    // public void setToken(String token) {
-    // this.token = token;
-    // }
 
     @Override
     public void info(Object... info) {

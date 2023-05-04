@@ -76,7 +76,7 @@ public class ObservationTests {
          * different runtime, or switch services. If so, the service proxies in the scope will be
          * automatically switched.
          */
-        ContextScope context = sessionScope.createContext("cagada");
+        ContextScope context = sessionScope.createContext("test.context");
 
         System.out.println(sessionScope);
 

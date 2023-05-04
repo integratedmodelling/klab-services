@@ -3,7 +3,9 @@ package org.integratedmodelling.klab.services.scope;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
 public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionScope {
 
@@ -27,28 +29,18 @@ public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionSc
     }
 
     @Override
-    public ContextScope createContext(String id) {
+    public ContextScope createContext(String contextId) {
 
         final EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
-        ret.setName(id);
+        ret.setName(contextId);
         ret.setStatus(Status.WAITING);
-
-//        CompletionStage<SessionAgent.ContextCreated> sessionFuture = AskPattern.ask(getAgent(),
-//                replyTo -> new SessionAgent.CreateContext(id, ret, replyTo), Duration.ofSeconds(25),
-//                EngineService.INSTANCE.getActorSystem().scheduler());
-//
-//        sessionFuture.whenComplete((reply, failure) -> {
-//            if (reply instanceof SessionAgent.ContextCreated) {
-//                ret.setAgent(reply.contextAgent);
-//                ret.setToken(getToken() + "/" + id);
-//                ret.setStatus(Status.STARTED);
-//            } else {
-//                ret.setStatus(Status.ABORTED);
-//            }
-//        });
-//
-//        sessionFuture.toCompletableFuture().join();
-
+        Ref contextAgent = this.getAgent().ask(new CreateContext(ret, contextId, getGeometry()), Ref.class);
+        if (!contextAgent.isEmpty()) {
+            ret.setStatus(Status.STARTED);
+            ret.setAgent(contextAgent);
+        } else {
+            ret.setStatus(Status.ABORTED);
+        }
         return ret;
     }
 

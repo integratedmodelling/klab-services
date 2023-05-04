@@ -33,6 +33,9 @@ public class EngineContextScopeImpl extends EngineSessionScopeImpl implements Co
     EngineContextScopeImpl(EngineSessionScopeImpl parent) {
         super(parent);
         this.observer = parent.getUser();
+        /*
+         * TODO choose the services if this context or user requires specific ones
+         */
     }
 
     private EngineContextScopeImpl(EngineContextScopeImpl parent) {
