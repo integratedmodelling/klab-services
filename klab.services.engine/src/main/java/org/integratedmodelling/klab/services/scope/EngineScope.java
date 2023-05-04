@@ -21,21 +21,21 @@ import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
  * @author Ferd
  *
  */
-public abstract class EngineScopeImpl implements UserScope {
+public abstract class EngineScope implements UserScope {
 
     private static final long serialVersionUID = 605310381727313326L;
 
     private Parameters<String> data = Parameters.create();
     private UserIdentity user;
     private Ref agent;
-    protected EngineScopeImpl parentScope;
+    protected EngineScope parentScope;
 
-    public EngineScopeImpl(UserIdentity user) {
+    public EngineScope(UserIdentity user) {
         this.user = user;
         // ((EngineService) Services.INSTANCE.getEngine()).registerScope(this);
     }
 
-    protected EngineScopeImpl(EngineScopeImpl parent) {
+    protected EngineScope(EngineScope parent) {
         this.user = parent.user;
         this.parentScope = parent;
     }
@@ -43,7 +43,7 @@ public abstract class EngineScopeImpl implements UserScope {
     @Override
     public SessionScope runSession(String sessionName) {
 
-        final EngineSessionScopeImpl ret = new EngineSessionScopeImpl(this);
+        final EngineSessionScope ret = new EngineSessionScope(this);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateSession(this, sessionName), Ref.class);
         if (!sessionAgent.isEmpty()) {
@@ -58,7 +58,7 @@ public abstract class EngineScopeImpl implements UserScope {
     @Override
     public SessionScope runApplication(String behaviorName) {
 
-        final EngineSessionScopeImpl ret = new EngineSessionScopeImpl(this);
+        final EngineSessionScope ret = new EngineSessionScope(this);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateApplication(this, behaviorName), Ref.class);
         if (!sessionAgent.isEmpty()) {

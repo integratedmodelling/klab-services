@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
-public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionScope {
+public class EngineSessionScope extends EngineScope implements SessionScope {
 
     private static final long serialVersionUID = -5840277560139759406L;
 
@@ -18,7 +18,7 @@ public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionSc
         this.name = name;
     }
 
-    EngineSessionScopeImpl(EngineScopeImpl parent) {
+    EngineSessionScope(EngineScope parent) {
         super(parent);
     }
 
@@ -31,10 +31,10 @@ public class EngineSessionScopeImpl extends EngineScopeImpl implements SessionSc
     @Override
     public ContextScope createContext(String contextId) {
 
-        final EngineContextScopeImpl ret = new EngineContextScopeImpl(this);
+        final EngineContextScope ret = new EngineContextScope(this);
         ret.setName(contextId);
         ret.setStatus(Status.WAITING);
-        Ref contextAgent = this.getAgent().ask(new CreateContext(ret, contextId, getGeometry()), Ref.class);
+        Ref contextAgent = this.getAgent().ask(new CreateContext(ret, contextId), Ref.class);
         if (!contextAgent.isEmpty()) {
             ret.setStatus(Status.STARTED);
             ret.setAgent(contextAgent);

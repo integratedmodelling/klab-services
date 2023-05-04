@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.Logging;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.common.Geometry;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.tests.services.engine.TestEngine.TestAuthentication;
 import org.junit.AfterClass;
@@ -78,6 +79,8 @@ public class ObservationTests {
          */
         ContextScope context = sessionScope.createContext("test.context");
 
+        context.observe("earth:Region", Geometry.builder().build());
+        
         System.out.println(sessionScope);
 
         /*

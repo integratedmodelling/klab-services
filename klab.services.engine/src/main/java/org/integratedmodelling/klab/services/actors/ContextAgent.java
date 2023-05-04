@@ -2,27 +2,63 @@ package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.messages.reactors.ReActorStop;
+import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactorsystem.ReActorContext;
 
 public class ContextAgent extends KAgent {
 
-    Geometry originalGeometry;
-    Geometry currentGeometry;
-    ContextScope scope;
+    /**
+     * The geometry of focus when the context was created.
+     */
+    private final Geometry focalGeometry;
+    private final ContextScope scope;
+    private Geometry currentGeometry;
     
-    public ContextAgent(String name, Geometry geometry, ContextScope scope) {
+    public ContextAgent(String name, ContextScope scope) {
         super(name);
-        this.originalGeometry = geometry;
+        this.focalGeometry = scope.getGeometry();
+        this.scope = scope;
     }
 
-    public ContextAgent(KActorsBehavior application) {
-        super(application.getName());
+    protected ReActions.Builder setBehavior() {
+        return super.setBehavior().reAct(Observe.class, this::observe);
     }
 
+    
+    protected void observe(ReActorContext rctx, Observe message) {
+        
+        System.out.println("OBSERVE " + message);
+        
+        /*
+         * Establish URN type
+         */
+        
+        /*
+         * resolve URN through scope
+         */
+        
+        /*
+         * Build the dataflow in the scope
+         */
+        
+        /*
+         * Run the dataflow
+         */
+        
+        /*
+         * Adjust overall geometry and catalog
+         */
+        
+        /*
+         * Send the message response back with status and results
+         */
+    }
+    
+    
     @Override
     protected void initialize(ReActorContext rctx, ReActorInit message) {
         super.initialize(rctx, message);
@@ -46,4 +82,5 @@ public class ContextAgent extends KAgent {
         super.stop(rctx, message);
     }
 
+    
 }

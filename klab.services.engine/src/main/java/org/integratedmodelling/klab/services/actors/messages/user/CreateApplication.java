@@ -1,10 +1,9 @@
 package org.integratedmodelling.klab.services.actors.messages.user;
 
-import java.io.Serializable;
-
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.services.actors.messages.AgentMessage;
 
-public class CreateApplication implements Serializable {
+public class CreateApplication extends AgentMessage {
 
     private String applicationId;
     private Scope scope;

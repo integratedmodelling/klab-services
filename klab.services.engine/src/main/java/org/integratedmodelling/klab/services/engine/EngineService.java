@@ -13,7 +13,7 @@ import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
-import org.integratedmodelling.klab.services.scope.EngineScopeImpl;
+import org.integratedmodelling.klab.services.scope.EngineScope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +30,7 @@ import io.reacted.core.reactorsystem.ReActorSystem;
 @Service
 public class EngineService /* implements Engine */ {
 
-    private Map<String, EngineScopeImpl> userScopes = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
     private ReActorSystem actorSystem;
 
     private Reasoner reasoner;
@@ -55,9 +55,9 @@ public class EngineService /* implements Engine */ {
 
     public UserScope login(UserIdentity user) {
 
-        EngineScopeImpl ret = userScopes.get(user.getUsername());
+        EngineScope ret = userScopes.get(user.getUsername());
         if (ret == null) {
-            ret = new EngineScopeImpl(user){
+            ret = new EngineScope(user){
                 private static final long serialVersionUID = 2259089014852859140L;
 
                 @SuppressWarnings("unchecked")
@@ -76,7 +76,7 @@ public class EngineService /* implements Engine */ {
                 }
 
             };
-            final EngineScopeImpl scope = ret;
+            final EngineScope scope = ret;
             String agentName = user.getUsername();
             actorSystem.spawn(new UserAgent(agentName)).ifSuccess((t) -> scope.setAgent(KAgentRef.get(t))).orElseSneakyThrow();
             userScopes.put(user.getUsername(), ret);
@@ -84,7 +84,7 @@ public class EngineService /* implements Engine */ {
         return ret;
     }
 
-    public void registerScope(EngineScopeImpl scope) {
+    public void registerScope(EngineScope scope) {
         userScopes.put(scope.getUser().getUsername(), scope);
     }
 

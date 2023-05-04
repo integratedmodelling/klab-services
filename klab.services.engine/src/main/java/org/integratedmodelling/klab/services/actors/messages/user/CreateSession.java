@@ -1,10 +1,9 @@
 package org.integratedmodelling.klab.services.actors.messages.user;
 
-import java.io.Serializable;
-
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.services.actors.messages.AgentMessage;
 
-public class CreateSession implements Serializable {
+public class CreateSession extends AgentMessage {
 
     private static final long serialVersionUID = -4721979530562111456L;
 

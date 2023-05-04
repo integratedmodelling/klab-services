@@ -1,13 +1,12 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.messages.reactors.ReActorStop;
+import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactorsystem.ReActorContext;
-import io.reacted.core.reactorsystem.ReActorRef;
 
 public class SessionAgent extends KAgent {
 
@@ -20,6 +19,10 @@ public class SessionAgent extends KAgent {
         // TODO create VM (must be quick)
     }
 
+    protected ReActions.Builder setBehavior() {
+        return super.setBehavior().reAct(CreateContext.class, this::createContext);
+    }
+    
     @Override
     protected void initialize(ReActorContext rctx, ReActorInit message) {
         super.initialize(rctx, message);
@@ -40,7 +43,7 @@ public class SessionAgent extends KAgent {
 //            rctx.reply(ReActorRef.NO_REACTOR_REF);
 //        } else {
 //
-            rctx.spawnChild(new ContextAgent(message.getContextId(), message.getGeometry(), message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
+            rctx.spawnChild(new ContextAgent(message.getContextId(), message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
 //        }
     }
 }
