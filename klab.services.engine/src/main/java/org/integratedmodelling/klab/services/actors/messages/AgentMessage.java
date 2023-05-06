@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.actors.messages;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope.Status;
 
@@ -16,8 +17,10 @@ import org.integratedmodelling.klab.api.authentication.scope.SessionScope.Status
 public abstract class AgentMessage implements Serializable {
 
     private static final long serialVersionUID = 721530303478254820L;
+    private static AtomicLong nextId = new AtomicLong(0l);
 
     private Status status = Status.STARTED;
+    private long id = nextId.incrementAndGet();
 
     public Status getStatus() {
         return status;
@@ -26,5 +29,13 @@ public abstract class AgentMessage implements Serializable {
     public void setStatus(Status status) {
         this.status = status;
     }
+
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
     
 }
