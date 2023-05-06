@@ -1,5 +1,5 @@
-package org.integratedmodelling.klab.api.knowledge;
-
-public interface Behavior {
-
-}
+//package org.integratedmodelling.klab.api.knowledge;
+//
+//public interface Behavior {
+//
+//}

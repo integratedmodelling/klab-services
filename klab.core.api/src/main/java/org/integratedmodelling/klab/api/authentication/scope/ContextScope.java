@@ -39,22 +39,22 @@ public interface ContextScope extends SessionScope {
      */
     ContextScope withObserver(Identity observer);
 
-    /**
-     * The context observation for this scope. When an observation scope is created, this is null
-     * and must be set using {@link #within(DirectObservation)} on the parent scope.
-     * 
-     * @return
-     */
-    DirectObservation getContextObservation();
+    // /**
+    // * The context observation for this scope. When an observation scope is created, this is null
+    // * and must be set using {@link #within(DirectObservation)} on the parent scope.
+    // *
+    // * @return
+    // */
+    // DirectObservation getContextObservation();
 
-    /**
-     * Return a scope focused on a specific root observation as the context for its
-     * {@link #observe(Object...)} calls.
-     * 
-     * @param observation
-     * @return a new scope focused on the passed observation.
-     */
-    ContextScope within(DirectObservation observation);
+    // /**
+    // * Return a scope focused on a specific root observation as the context for its
+    // * {@link #observe(Object...)} calls.
+    // *
+    // * @param observation
+    // * @return a new scope focused on the passed observation.
+    // */
+    // ContextScope within(DirectObservation observation);
 
     /**
      * Return a new observation scope that sets the passed scenarios for any future observation.
@@ -98,14 +98,17 @@ public interface ContextScope extends SessionScope {
      * getProvenance.
      * </p>
      *
-     * @return the provenance graph. Null in an empty context.
+     * @return the provenance graph. Empty in an empty context, never null. Each observation in the
+     *         same context will report the same provenance graph for now (TODO may turn into
+     *         provenance as the "root" node or have a focus field).
      */
     Provenance getProvenance();
 
     /**
      * There is one report per root context. Actuators will add sections to it as models are
      * computed, based on the documentation templates associated with models and their parts. The
-     * report can be compiled and rendered at any time.
+     * report can be compiled and rendered at any time. Each observation in the same context will
+     * report the same report.
      * 
      * @return
      */
@@ -114,7 +117,7 @@ public interface ContextScope extends SessionScope {
     /**
      * During a contextualization there normally is a dataflow being run. This will only be null
      * only in special situations, e.g. when expressions are passed a convenience context in order
-     * to be evaluated outside of contextualization.
+     * to be evaluated outside of contextualization. Same notes as for provenance re: locality.
      * 
      * @return
      */

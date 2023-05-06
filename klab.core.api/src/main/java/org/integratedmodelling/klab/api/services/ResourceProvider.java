@@ -21,6 +21,7 @@ public interface ResourceProvider extends KlabService {
 
     public static final int DEFAULT_PORT = 8092;
     
+    
     /**
      * All services publish capabilities and have a call to obtain them.
      * 

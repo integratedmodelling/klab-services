@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 import io.reacted.core.messages.reactors.ReActorInit;
@@ -36,6 +37,18 @@ public class ContextAgent extends KAgent {
         /*
          * Establish URN type
          */
+        switch (Urn.classify(message.getUrn())) {
+        case KIM_OBJECT:
+            break;
+        case OBSERVABLE:
+            break;
+        case REMOTE_URL:
+            break;
+        case RESOURCE:
+            break;
+        case UNKNOWN:
+            break;
+        }
         
         /*
          * resolve URN through scope

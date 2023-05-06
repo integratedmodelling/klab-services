@@ -88,7 +88,7 @@ public interface KActorsBehavior extends KActorsCodeStatement {
      * @author Ferd
      *
      */
-    interface Ref extends Serializable {
+    public interface Ref extends Serializable {
 
         /**
          * Empty may mean that the response is null or that some agreed no-op value was set,

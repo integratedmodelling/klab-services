@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.scope;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,13 +11,16 @@ import java.util.concurrent.Future;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 public class EngineContextScope extends EngineSessionScope implements ContextScope {
 
@@ -43,11 +47,6 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
         this.parent = parent;
         this.observer = parent.observer;
         this.context = parent.context;
-    }
-
-    @Override
-    public DirectObservation getContextObservation() {
-        return this.context;
     }
 
     @Override
@@ -81,15 +80,25 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public EngineContextScope within(DirectObservation context) {
-        EngineContextScope ret = new EngineContextScope(this);
-        ret.context = context;
-        return ret;
-    }
-
-    @Override
     public Future<Observation> observe(Object... observables) {
-        // TODO Auto-generated method stub
+        
+        Observe message = new Observe();
+        
+        for (Object o : observables) {
+            if (o instanceof String || o instanceof Urn || o instanceof URL) {
+                message.setUrn(o.toString());
+            } else if (o instanceof Knowledge) {
+                message.setUrn(((Knowledge)o).getUrn());
+            } else if (o instanceof Geometry) {
+                message.setGeometry((Geometry)o);
+            }
+        }
+        
+        message.setScope(this);
+        
+        // TODO switch to a method that sets an ID in the message and sets up the future with the ID as a parameter
+        this.getAgent().tell(message);
+        
         return null;
     }
 

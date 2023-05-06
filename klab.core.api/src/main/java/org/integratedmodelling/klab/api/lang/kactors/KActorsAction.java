@@ -10,6 +10,10 @@ import java.util.List;
  */
 public interface KActorsAction extends KActorsCodeStatement {
 
+    /**
+     * 
+     * @return
+     */
 	String getName();
 
 	/**
