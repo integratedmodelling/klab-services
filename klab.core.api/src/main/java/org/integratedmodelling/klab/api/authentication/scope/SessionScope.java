@@ -10,10 +10,6 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
  */
 public interface SessionScope extends UserScope {
 
-    public enum Status {
-        WAITING, STARTED, CHANGED, FINISHED, ABORTED, /* this only sent by UIs for now */ INTERRUPTED, EMPTY
-    }
-
     /**
      * Never null. The session scope's geometry is the "focal" geometry of the user (where/when the
      * user agent is looking); the geometry in each {@link ContextScope} is the actual view during

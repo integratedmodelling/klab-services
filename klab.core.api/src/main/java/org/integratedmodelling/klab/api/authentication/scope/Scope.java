@@ -9,6 +9,10 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 public abstract interface Scope extends Channel, Serializable {
 
+    enum Status {
+        WAITING, STARTED, CHANGED, FINISHED, ABORTED, /* this only sent by UIs for now */ INTERRUPTED, EMPTY
+    }
+
     enum Type {
         SERVICE, // service-level scope
         USER, // root-level scope

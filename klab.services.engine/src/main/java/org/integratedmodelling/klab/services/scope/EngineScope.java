@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.services.scope;
 import java.util.function.Consumer;
 
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
-import org.integratedmodelling.klab.api.authentication.scope.SessionScope.Status;
+import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;

@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.actors.messages;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.authentication.scope.SessionScope.Status;
+import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 
 /**
  * Superclass for messages to/from actor. The general pattern is that whenever an action has
@@ -17,14 +17,14 @@ public abstract class AgentMessage implements Serializable {
 
     private static final long serialVersionUID = 721530303478254820L;
 
-    private Status status = Status.STARTED;
-
-    public Status getStatus() {
-        return status;
+    public AgentResponse response(Status status, Object... data) {
+        AgentResponse ret = new AgentResponse();
+        ret.setStatus(status);
+        if (data != null) {
+            for (int i = 0; i < data.length; i++) {
+                ret.getData().put(data[i].toString(), data[++i]);
+            }
+        }
+        return ret;
     }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-    
 }

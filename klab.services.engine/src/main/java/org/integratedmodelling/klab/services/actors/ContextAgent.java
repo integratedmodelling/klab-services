@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
@@ -32,7 +33,7 @@ public class ContextAgent extends KAgent {
     
     protected void observe(ReActorContext rctx, Observe message) {
         
-        System.out.println("OBSERVE " + message);
+        scope.send(message.response(Status.STARTED));
         
         /*
          * Establish URN type
@@ -69,6 +70,9 @@ public class ContextAgent extends KAgent {
         /*
          * Send the message response back with status and results
          */
+        
+        scope.send(message.response(Status.FINISHED));
+        
     }
     
     
