@@ -96,10 +96,10 @@ public class EngineService /* implements Engine */ {
         return this.actorSystem;
     }
 
-    public Object getSystemRef() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+//    public Object getSystemRef() {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
 
     public Reasoner getReasoner() {
         return reasoner;

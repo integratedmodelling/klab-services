@@ -3,7 +3,12 @@ package org.integratedmodelling.klab.services.actors;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.services.actors.messages.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 import io.reacted.core.messages.reactors.ReActorInit;
@@ -35,29 +40,38 @@ public class ContextAgent extends KAgent {
         
         scope.send(message.response(Status.STARTED));
         
+        Knowledge resolvable = null;
+        
         /*
-         * Establish URN type
+         * Establish URN type and resolve through the scope
          */
         switch (Urn.classify(message.getUrn())) {
         case KIM_OBJECT:
+//            scope.getService(ResourceProvider.class).
             break;
         case OBSERVABLE:
+            resolvable = message.getScope().getService(Reasoner.class).resolveObservable(message.getUrn());
             break;
         case REMOTE_URL:
             break;
         case RESOURCE:
+            resolvable = message.getScope().getService(ResourceProvider.class).resolveResource(message.getUrn(), scope);
             break;
         case UNKNOWN:
             break;
         }
         
-        /*
-         * resolve URN through scope
-         */
+        if (resolvable == null) {
+            scope.send(message.response(Status.ABORTED, AgentResponse.ERROR, "Cannot resolve URN " + message.getUrn()));
+        }
+        
+        Observation result = null;
+        
         
         /*
          * Build the dataflow in the scope
          */
+        
         
         /*
          * Run the dataflow
@@ -71,7 +85,7 @@ public class ContextAgent extends KAgent {
          * Send the message response back with status and results
          */
         
-        scope.send(message.response(Status.FINISHED));
+        scope.send(message.response(Status.FINISHED, AgentResponse.RESULT, result));
         
     }
     

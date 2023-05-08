@@ -8,7 +8,11 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 public class AgentResponse implements Serializable {
 
     private static final long serialVersionUID = 7014141315769313725L;
-
+    
+    // constants for often-used data FIXME/CHECK
+    public static final String RESULT = "result";
+    public static final String ERROR = "error";
+    
     private long id;
     private Parameters<String> data = Parameters.create();
     private Status status;

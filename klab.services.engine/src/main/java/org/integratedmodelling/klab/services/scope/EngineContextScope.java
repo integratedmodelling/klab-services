@@ -24,8 +24,6 @@ import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 public class EngineContextScope extends EngineSessionScope implements ContextScope {
 
-    private static final long serialVersionUID = -3241953358893122142L;
-
     Identity observer;
     DirectObservation context;
     Set<String> scenarios;
@@ -82,7 +80,9 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     @Override
     public Future<Observation> observe(Object... observables) {
         
-        Observe message = new Observe();
+        Observe message = registerMessage(Observe.class, (m, r) -> {
+            
+        });
         
         for (Object o : observables) {
             if (o instanceof String || o instanceof Urn || o instanceof URL) {
@@ -96,10 +96,10 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
         
         message.setScope(this);
         
-        // TODO switch to a method that sets an ID in the message and sets up the future with the ID as a parameter
         this.getAgent().tell(message);
         
-        return null;
+        // TODO return a completable future that watches the response
+        return responseFuture(message, Observation.class);
     }
 
     @Override

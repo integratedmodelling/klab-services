@@ -1,13 +1,11 @@
 package org.integratedmodelling.klab.api.authentication.scope;
 
-import java.io.Serializable;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
-public abstract interface Scope extends Channel, Serializable {
+public abstract interface Scope extends Channel {
 
     enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, /* this only sent by UIs for now */ INTERRUPTED, EMPTY
