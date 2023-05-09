@@ -7,7 +7,10 @@ import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.actors.messages.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
@@ -24,7 +27,7 @@ public class ContextAgent extends KAgent {
     private final Geometry focalGeometry;
     private final ContextScope scope;
     private Geometry currentGeometry;
-    
+
     public ContextAgent(String name, ContextScope scope) {
         super(name);
         this.focalGeometry = scope.getGeometry();
@@ -35,83 +38,95 @@ public class ContextAgent extends KAgent {
         return super.setBehavior().reAct(Observe.class, this::observe);
     }
 
-    
     protected void observe(ReActorContext rctx, Observe message) {
-        
-        scope.send(message.response(Status.STARTED));
-        
+
+        Status status = Status.EMPTY;
         Knowledge resolvable = null;
-        
-        /*
-         * Establish URN type and resolve through the scope
-         */
-        switch (Urn.classify(message.getUrn())) {
-        case KIM_OBJECT:
-//            scope.getService(ResourceProvider.class).
-            break;
-        case OBSERVABLE:
-            resolvable = message.getScope().getService(Reasoner.class).resolveObservable(message.getUrn());
-            break;
-        case REMOTE_URL:
-            break;
-        case RESOURCE:
-            resolvable = message.getScope().getService(ResourceProvider.class).resolveResource(message.getUrn(), scope);
-            break;
-        case UNKNOWN:
-            break;
-        }
-        
-        if (resolvable == null) {
-            scope.send(message.response(Status.ABORTED, AgentResponse.ERROR, "Cannot resolve URN " + message.getUrn()));
-        }
-        
         Observation result = null;
-        
-        
-        /*
-         * Build the dataflow in the scope
-         */
-        
-        
-        /*
-         * Run the dataflow
-         */
-        
-        /*
-         * Adjust overall geometry and catalog
-         */
-        
-        /*
-         * Send the message response back with status and results
-         */
-        
-        scope.send(message.response(Status.FINISHED, AgentResponse.RESULT, result));
-        
+
+        scope.send(message.response(Status.STARTED));
+
+        try {
+
+            /*
+             * Establish URN type and resolve through the scope
+             */
+            switch(Urn.classify(message.getUrn())) {
+            case KIM_OBJECT:
+                // scope.getService(ResourceProvider.class).
+                break;
+            case OBSERVABLE:
+                resolvable = scope.getService(Reasoner.class).resolveObservable(message.getUrn());
+                break;
+            case REMOTE_URL:
+                break;
+            case RESOURCE:
+                resolvable = scope.getService(ResourceProvider.class).resolveResource(message.getUrn(), message.getScope());
+                break;
+            case UNKNOWN:
+                break;
+            }
+
+            if (resolvable == null) {
+                scope.send(message.response(Status.ABORTED, AgentResponse.ERROR, "Cannot resolve URN " + message.getUrn()));
+            }
+
+            /*
+             * Build the dataflow in the scope
+             */
+            Dataflow<?> dataflow = scope.getService(Resolver.class).resolve(resolvable, message.getScope());
+
+
+            if (!dataflow.isEmpty()) {
+
+                /*
+                 * Run the dataflow
+                 */
+                result = scope.getService(RuntimeService.class).run(dataflow, message.getScope()).get();
+
+                /*
+                 * Adjust overall geometry and catalog
+                 */
+                if (!result.isEmpty()) {
+                    status = Status.FINISHED;
+                }
+            }
+
+            /*
+             * Send the message response back with status and results
+             */
+
+            
+        } catch (Throwable e) {
+            scope.error(e);
+            status = Status.ABORTED;
+        }
+
+        scope.send(message.response(status, AgentResponse.RESULT, result));
+
     }
-    
-    
+
     @Override
     protected void initialize(ReActorContext rctx, ReActorInit message) {
         super.initialize(rctx, message);
-        
+
         /*
-         * establish temporary storage 
+         * establish temporary storage
          */
     }
 
     @Override
     protected void stop(ReActorContext rctx, ReActorStop message) {
-        
+
         /*
          * save status if requested
          */
-        
+
         /*
          * deallocate any storage used
          */
-        
+
         super.stop(rctx, message);
     }
 
-    
 }

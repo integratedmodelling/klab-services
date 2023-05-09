@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.actors.messages.context;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.services.actors.messages.AgentMessage;
 
@@ -10,7 +10,7 @@ public class Observe extends AgentMessage {
 
     private String urn;
     private Geometry geometry;
-    private Scope scope;
+    private ContextScope scope;
     
     public String getUrn() {
         return urn;
@@ -24,10 +24,10 @@ public class Observe extends AgentMessage {
     public void setGeometry(Geometry geometry) {
         this.geometry = geometry;
     }
-    public Scope getScope() {
+    public ContextScope getScope() {
         return scope;
     }
-    public void setScope(Scope scope) {
+    public void setScope(ContextScope scope) {
         this.scope = scope;
     }
 

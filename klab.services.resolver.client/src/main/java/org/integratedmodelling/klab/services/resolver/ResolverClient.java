@@ -1,7 +1,8 @@
 package org.integratedmodelling.klab.services.resolver;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
@@ -44,7 +45,7 @@ public class ResolverClient implements Resolver {
     }
 
     @Override
-    public Dataflow<?> resolve(Object observable, Scope scope) {
+    public Dataflow<?> resolve(Knowledge resolvable, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }

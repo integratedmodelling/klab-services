@@ -13,6 +13,7 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -36,7 +37,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Actuator extends Plan {
+public interface Actuator extends Plan, Serializable {
 
     /**
      * All actuators have a name that corresponds 1-to-1 to the semantics it was created to resolve

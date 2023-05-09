@@ -1,7 +1,8 @@
 package org.integratedmodelling.klab.api.services;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -11,10 +12,9 @@ public interface Resolver extends KlabService {
     default String getServiceName() {
         return "klab.resolver.service";
     }
-    
+
     public static final int DEFAULT_PORT = 8093;
 
-    
     /**
      * All services publish capabilities and have a call to obtain them.
      * 
@@ -33,16 +33,17 @@ public interface Resolver extends KlabService {
     Capabilities getCapabilities();
 
     /**
-     * The main function of the resolver. Returns a dataflow that must be executed by a runtime
-     * service. Observable may be or resolve to any knowledge compatible with the observation scope.
-     * If the scope is a session scope, the observable must be an acknowledgement unless the scope
-     * has a set scale, in which case it can be a subject concept.
+     * The main function of the resolver is to resolve knowledge to a dataflow (in a context scope).
+     * Returns a dataflow that must be executed by a runtime service. Observable may be or resolve
+     * to any knowledge compatible with the observation scope. If the scope is a session scope, the
+     * observable must be an acknowledgement unless the scope has a set scale, in which case it can
+     * be a subject concept.
      * 
-     * @param observable
+     * @param resolvable
      * @param scope
      * @return the dataflow that will create the observation in a runtime.
      */
-    Dataflow<?> resolve(Object observable, Scope scope);
+    Dataflow<?> resolve(Knowledge resolvable, ContextScope scope);
 
     interface Admin {
 

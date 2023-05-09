@@ -1,9 +1,14 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.util.concurrent.Future;
+
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public class RuntimeService implements org.integratedmodelling.klab.api.services.RuntimeService {
 
@@ -39,6 +44,12 @@ public class RuntimeService implements org.integratedmodelling.klab.api.services
 
     @Override
     public Capabilities getCapabilities() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Future<Observation> run(Dataflow<?> dataflow, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }

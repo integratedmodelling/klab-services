@@ -9,4 +9,6 @@ package org.integratedmodelling.klab.api.services.resolver;
  */
 public interface Resolution {
 
+    
+    
 }
