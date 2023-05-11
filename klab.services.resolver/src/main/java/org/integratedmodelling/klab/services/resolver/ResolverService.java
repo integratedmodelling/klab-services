@@ -6,7 +6,9 @@ import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.services.resolver.resolution.ResolutionImpl;
 
 public class ResolverService implements Resolver {
 
@@ -48,7 +50,9 @@ public class ResolverService implements Resolver {
 
     @Override
     public Dataflow<?> resolve(Knowledge resolvable, ContextScope scope) {
-        // TODO Auto-generated method stub
+        Resolution resolution = new ResolutionImpl(resolvable, scope);
+//        if (resolvable instanceof Acknowledgement) {
+//        }
         return null;
     }
 

@@ -6,11 +6,14 @@ import java.util.List;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
@@ -128,6 +131,12 @@ public class ResourcesClient implements ResourceProvider {
 
     @Override
     public List<KimNamespace> precursors(String namespaceId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Pair<KimModelStatement, Double>> queryModels(Observable observable, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
