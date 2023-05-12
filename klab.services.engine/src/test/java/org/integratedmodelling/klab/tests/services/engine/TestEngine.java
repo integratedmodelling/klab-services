@@ -53,10 +53,11 @@ public class TestEngine {
                 setReasoner(new ReasonerService(this, getResources(), null));
             }
 
+            // FIXME mutual dependency between resolver and runtime guarantees screwup
             if (Utils.Network.isAlive("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver/actuator")) {
                 setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
             } else {
-                setResolver(new ResolverService(this, getResources()));
+                setResolver(new ResolverService(this, getResources(), getRuntime()));
             }
 
             if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
@@ -86,8 +87,6 @@ public class TestEngine {
         @Override
         public ServiceScope authorizeService(KlabService service) {
             return new LocalServiceScope(service) {
-
-                private static final long serialVersionUID = 5357455713111028422L;
 
                 @Override
                 public <T extends KlabService> T getService(Class<T> serviceClass) {

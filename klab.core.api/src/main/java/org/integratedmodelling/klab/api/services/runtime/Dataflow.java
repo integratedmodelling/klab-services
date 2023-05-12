@@ -13,9 +13,18 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
+import java.util.Collections;
+import java.util.List;
+
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 
 /**
  * Dataflows in k.LAB represent "raw" computations, which create, compute and link
@@ -116,5 +125,118 @@ public interface Dataflow<T extends Artifact> extends Actuator {
      * @return true if the dataflow is empty
      */
     boolean isEmpty();
+
+    static Dataflow<?> empty(Observable observable, Coverage coverage) {
+        return new Dataflow<Artifact>() {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public String getName() {
+                return "empty";
+            }
+
+            @Override
+            public String getAlias() {
+                return null;
+            }
+
+            @Override
+            public String getAlias(Observable observable) {
+                return null;
+            }
+
+            @Override
+            public Type getType() {
+                return Type.VOID;
+            }
+
+            @Override
+            public Observable getObservable() {
+                return observable;
+            }
+
+            @Override
+            public List<Actuator> getChildren() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public List<Actuator> getInputs() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public List<Actuator> getActuators() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public List<Dataflow<?>> getDataflows() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public List<Actuator> getOutputs() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public List<Contextualizable> getComputation() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public boolean isInput() {
+                return false;
+            }
+
+            @Override
+            public boolean isFilter() {
+                return false;
+            }
+
+            @Override
+            public boolean isComputed() {
+                return false;
+            }
+
+            @Override
+            public boolean isReference() {
+                return false;
+            }
+
+            @Override
+            public Coverage getCoverage() {
+                return coverage;
+            }
+
+            @Override
+            public Parameters<String> getData() {
+                return Parameters.create();
+            }
+
+            @Override
+            public String getId() {
+                return "empty";
+            }
+
+            @Override
+            public long getTimestamp() {
+                return 0;
+            }
+
+            @Override
+            public Provenance getProvenance() {
+                return Provenance.empty();
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return true;
+            }
+            
+        };
+    }
 
 }

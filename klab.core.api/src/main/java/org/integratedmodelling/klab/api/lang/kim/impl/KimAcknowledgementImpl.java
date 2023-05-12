@@ -2,10 +2,10 @@ package org.integratedmodelling.klab.api.lang.kim.impl;
 
 import java.util.List;
 
-import org.integratedmodelling.klab.api.lang.kim.KimAcknowledgement;
+import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
-public class KimAcknowledgementImpl extends KimActiveStatementImpl implements KimAcknowledgement {
+public class KimAcknowledgementImpl extends KimActiveStatementImpl implements KimInstance {
 
     private static final long serialVersionUID = -2269601151635547580L;
 

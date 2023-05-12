@@ -16,6 +16,7 @@
     package org.integratedmodelling.klab.api.provenance;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -150,5 +151,31 @@ public interface Provenance {
 	 * @return
 	 */
 	<T> Collection<T> collect(Class<? extends T> cls);
+
+    static Provenance empty() {
+        return new Provenance() {
+
+            @Override
+            public boolean isEmpty() {
+                return true;
+            }
+
+            @Override
+            public List<Activity> getPrimaryActions() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public Collection<Artifact> getArtifacts() {
+                return Collections.emptyList();
+            }
+
+            @Override
+            public <T> Collection<T> collect(Class<? extends T> cls) {
+                return Collections.emptyList();
+            }
+            
+        };
+    }
 
 }

@@ -8,12 +8,11 @@ import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
-public class ResolutionImpl implements Resolution {
+public class Resolution {
 
     /*
      * all the resolved nodes by observable
@@ -80,9 +79,17 @@ public class ResolutionImpl implements Resolution {
 
     }
 
-    public ResolutionImpl(Knowledge resolvable, ContextScope scope) {
+    public Resolution(Knowledge resolvable, ContextScope scope) {
         this.scope = scope;
         this.root = new Node(resolvable);
+    }
+
+    public Node root() {
+        return this.root;
+    }
+
+    public Coverage getCoverage() {
+        return coverage;
     }
 
 }

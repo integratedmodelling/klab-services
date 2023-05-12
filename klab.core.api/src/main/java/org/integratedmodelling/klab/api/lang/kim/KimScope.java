@@ -25,7 +25,7 @@ public interface KimScope extends Serializable {
 
 		void visitModel(KimModelStatement kimNamespace);
 
-		void visitObserver(KimAcknowledgement kimNamespace);
+		void visitObserver(KimInstance kimNamespace);
 
 		void visitConceptStatement(KimConceptStatement kimNamespace);
 
