@@ -34,7 +34,8 @@ import kong.unirest.Unirest;
  * @author Ferd
  *
  */
-//@Authority(id = IUPACAuthority.ID, description = IUPACAuthority.DESCRIPTION, version = Version.CURRENT)
+// @Authority(id = IUPACAuthority.ID, description = IUPACAuthority.DESCRIPTION, version =
+// Version.CURRENT)
 public class IUPACAuthority implements Authority {
 
     private static final long serialVersionUID = 6650535874804189123L;
@@ -81,7 +82,7 @@ public class IUPACAuthority implements Authority {
             standardKey = getIdentity(identityId);
             if (standardKey == null) {
                 ret.getNotifications().add(
-                         Notification.of("Identity " + identityId + " is unknown to authority " + ID, Notification.Level.Error));
+                        Notification.of("Identity " + identityId + " is unknown to authority " + ID, Notification.Level.Error));
             }
         }
         String officialName = null;
@@ -135,16 +136,16 @@ public class IUPACAuthority implements Authority {
         return matcher.matches();
     }
 
-//    @Override
-//    public void document(String identityId, String mediaType, OutputStream destination) {
-//        switch(mediaType) {
-//        case "text/plain":
-//            break;
-//        case "image/png":
-//            // https://cactus.nci.nih.gov/chemical/structure/aspirin/image
-//            break;
-//        }
-//    }
+    // @Override
+    // public void document(String identityId, String mediaType, OutputStream destination) {
+    // switch(mediaType) {
+    // case "text/plain":
+    // break;
+    // case "image/png":
+    // // https://cactus.nci.nih.gov/chemical/structure/aspirin/image
+    // break;
+    // }
+    // }
 
     @Override
     public List<Identity> search(String query, String catalog) {
@@ -245,7 +246,7 @@ public class IUPACAuthority implements Authority {
         }
     }
 
-//    @Override
+    // @Override
     public boolean setup(Map<String, String> options) {
         if ("true".equals(options.get("clearcache"))) {
             try {
@@ -257,16 +258,16 @@ public class IUPACAuthority implements Authority {
         }
         return true;
     }
-    
-	@Override
-	public String getName() {
-		return ID;
-	}
 
-	@Override
-	public Codelist getCodelist() {
-		return null;
-	}
+    @Override
+    public String getName() {
+        return ID;
+    }
+
+    @Override
+    public Codelist getCodelist() {
+        return null;
+    }
 
     @Override
     public Authority subAuthority(String catalog) {

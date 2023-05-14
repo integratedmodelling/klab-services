@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.Logging;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.common.Geometry;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.tests.services.engine.TestEngine.TestAuthentication;
@@ -68,6 +69,9 @@ public class ObservationTests {
          */
         SessionScope applicationScope = user.runApplication("aries.seea.en");
 
+        user.getService(Reasoner.class).resolveObservable("earth:Region");
+        
+        
         /*
          * Create an empty context within the session. Observations are made here, sequentially. As
          * new root observations are added, the context's geometry is automatically maintained. At

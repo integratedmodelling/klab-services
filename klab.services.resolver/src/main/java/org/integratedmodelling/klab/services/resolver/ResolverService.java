@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.knowledge.Instance;
@@ -31,7 +35,7 @@ public class ResolverService implements Resolver {
         this.serviceScope = authentication.authorizeService(this);
         this.resources = resources;
     }
-
+    
     @Override
     public String getUrl() {
         // TODO Auto-generated method stub
@@ -103,7 +107,17 @@ public class ResolverService implements Resolver {
 
     private void resolveObservable(Observable resolvable, Node root) {
         // TODO Auto-generated method stub
-
+        System.out.println("ZIO PONTE");
     }
 
+    private Collection<Observable> resolveAbstractPredicates(Observable observable, Node resolution) {
+     
+        Set<Observable> ret = new HashSet<>();
+                
+        // TODO!
+        ret.add(observable);
+        
+        return ret;
+    }
+    
 }

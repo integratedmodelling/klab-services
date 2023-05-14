@@ -81,7 +81,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     public Future<Observation> observe(Object... observables) {
         
         Observe message = registerMessage(Observe.class, (m, r) -> {
-            
+            // set scope according to result
         });
         
         for (Object o : observables) {

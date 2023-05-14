@@ -39,7 +39,11 @@ public class Resolution {
         private Map<Observable, Set<Node>> nodes = new HashMap<>();
 
         public Node(Knowledge resolvable) {
-            // TODO Auto-generated constructor stub
+            
+            /*
+             * if Instance: start with full coverage
+             */
+            
         }
 
         public Node getNode(Knowledge observable) {

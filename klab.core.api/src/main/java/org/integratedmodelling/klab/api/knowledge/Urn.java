@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.integratedmodelling.klab.api.data.Version;
 
@@ -23,6 +24,10 @@ public class Urn {
     final public static String VOID_URN_PREFIX = "urn:klab:void:";
     final public static String LOCAL_FILE_PREFIX = "file:";
 
+    final public static Pattern URN_RESOURCE_PATTERN = Pattern.compile("[A-z]+:[A-z]+:[A-z]+:[A-z]+(#.+)?");
+    final public static Pattern URN_KIM_OBJECT_PATTERN = Pattern.compile("[a-z]+(\\.[a-z]+)+");
+    final public static Pattern URN_CONCEPT_PATTERN = Pattern.compile("[a-z]+:[A-Z]+");
+    
 	private String urn;
 	private String fullUrn;
 	private String[] tokens;
@@ -199,9 +204,19 @@ public class Urn {
 	public Map<String, String> getParameters() {
 		return parameters;
 	}
-	
+		
 	public static Type classify(String urn) {
-	    // TODO
+	    
+	    if (urn.startsWith("http") && urn.contains("//:")) {
+	        return Type.REMOTE_URL;
+	    } else if (URN_RESOURCE_PATTERN.matcher(urn).find()) {
+	        return Type.RESOURCE;
+	    } else if (URN_KIM_OBJECT_PATTERN.matcher(urn).find()) {
+            return Type.KIM_OBJECT;
+        } else if (URN_CONCEPT_PATTERN.matcher(urn).find()) {
+            return Type.OBSERVABLE;
+        }
+	    
 	    return Type.UNKNOWN;
 	}
 

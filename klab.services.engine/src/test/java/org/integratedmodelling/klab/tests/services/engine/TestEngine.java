@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.engine.EngineService;
@@ -50,7 +51,7 @@ public class TestEngine {
             if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {
                 setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
             } else {
-                setReasoner(new ReasonerService(this, getResources(), null));
+                setReasoner(new ReasonerService(this, getResources(), new Indexer()));
             }
 
             // FIXME mutual dependency between resolver and runtime guarantees screwup
