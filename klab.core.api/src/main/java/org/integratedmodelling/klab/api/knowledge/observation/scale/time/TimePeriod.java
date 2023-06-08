@@ -26,7 +26,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
  * @author luke
  * @version $Id: $Id
  */
-public interface KTimePeriod extends KTime {
+public interface TimePeriod extends Time {
 
     /**
      * whether or not the time period contains the given instant, using exclusive-start,
@@ -35,7 +35,7 @@ public interface KTimePeriod extends KTime {
      * @param time the time
      * @return true if this contains time
      */
-    public boolean contains(KTimeInstant time);
+    public boolean contains(TimeInstant time);
 
     /**
      * whether or not the time period contains the given instant (ms since Jan 1, 1970), using
@@ -53,7 +53,7 @@ public interface KTimePeriod extends KTime {
      * @param instant the instant
      * @return true if this ends before instant
      */
-    public boolean endsBefore(KTimeInstant instant);
+    public boolean endsBefore(TimeInstant instant);
 
     /**
      * whether or not the time period ends before the start instant of the other period, using
@@ -62,7 +62,7 @@ public interface KTimePeriod extends KTime {
      * @param other the other
      * @return true if this ends before other
      */
-    public boolean endsBefore(KTime other);
+    public boolean endsBefore(Time other);
 
     /**
      * whether or not the two time periods overlap, using exclusive-start, inclusive-end semantics.
@@ -70,7 +70,7 @@ public interface KTimePeriod extends KTime {
      * @param other the other
      * @return true if this overlaps other
      */
-    public boolean overlaps(KTime other);
+    public boolean overlaps(Time other);
 
     /**
      * Return duration in milliseconds.

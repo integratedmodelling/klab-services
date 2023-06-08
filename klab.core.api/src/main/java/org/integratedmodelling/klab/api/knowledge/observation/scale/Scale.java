@@ -17,8 +17,8 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KSpace;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
@@ -27,21 +27,21 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Scale extends Locator, Geometry, KTopology<Scale> {
+public interface Scale extends Locator, Geometry, Topology<Scale> {
 
     /**
      * We deal with space and time in all natural systems, so we expose these to ease API use.
      *
      * @return the space, or null
      */
-    KSpace getSpace();
+    Space getSpace();
 
     /**
      * We deal with space and time in all natural systems, so we expose these to ease API use.
      *
      * @return the time, or null
      */
-    KTime getTime();
+    Time getTime();
 
     /**
      * True if we have time and the time topology determines more than a single state. It's also in
@@ -74,7 +74,7 @@ public interface Scale extends Locator, Geometry, KTopology<Scale> {
      *
      * @return the extents
      */
-    List<KExtent> getExtents();
+    List<Extent> getExtents();
 
     /**
      * Return true only if he scale has > 0 extents and any of them is empty, so that the coverage
@@ -125,7 +125,7 @@ public interface Scale extends Locator, Geometry, KTopology<Scale> {
      * Must not modify the original scales.
      */
     @Override
-    Scale merge(KTopologicallyComparable<?> other, LogicalConnector how, MergingOption... options);
+    Scale merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption... options);
 
     /**
      * Mimics {@link org.integratedmodelling.klab.api.data.Geometry.Dimension#shape()} passing the

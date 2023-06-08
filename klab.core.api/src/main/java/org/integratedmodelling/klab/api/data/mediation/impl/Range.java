@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTimeInstant;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 
 public class Range implements NumericRange {
 
@@ -423,8 +423,8 @@ public class Range implements NumericRange {
         if (!leftInfinite) {
             if (from instanceof Number) {
                 a = ((Number) from).doubleValue();
-            } else if (from instanceof KTimeInstant) {
-                a = ((KTimeInstant) from).getMilliseconds();
+            } else if (from instanceof TimeInstant) {
+                a = ((TimeInstant) from).getMilliseconds();
             } else if (from instanceof Date) {
                 a = ((Date) from).getTime();
             } else {
@@ -434,8 +434,8 @@ public class Range implements NumericRange {
         if (!rightInfinite) {
             if (to instanceof Number) {
                 b = ((Number) to).doubleValue();
-            } else if (to instanceof KTimeInstant) {
-                b = ((KTimeInstant) to).getMilliseconds();
+            } else if (to instanceof TimeInstant) {
+                b = ((TimeInstant) to).getMilliseconds();
             } else if (to instanceof Date) {
                 b = ((Date) to).getTime();
             } else {

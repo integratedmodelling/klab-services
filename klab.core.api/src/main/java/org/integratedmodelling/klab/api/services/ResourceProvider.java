@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.organization.KWorkspace;
+import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
@@ -265,7 +265,7 @@ public interface ResourceProvider extends KlabService {
          * 
          * @return
          */
-        List<KWorkspace> getWorkspaces();
+        List<Workspace> getWorkspaces();
 
     }
 

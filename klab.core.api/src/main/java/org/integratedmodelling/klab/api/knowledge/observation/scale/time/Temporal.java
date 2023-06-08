@@ -13,26 +13,24 @@
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned
  * in author tags. All rights reserved.
  */
-package org.integratedmodelling.klab.api.knowledge.observation.scale;
+package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
+
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Dimensional;
 
 /**
- * Adopted by dimensional extents, specifies the count of dimensions in each.
- *
- * FIXME this info now comes from the worldview, so it should be defined in a "soft" way.
+ * Tag interface that will assign temporal nature to a class, so that
+ * inferences can be made when checking units or other types of use.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public abstract interface KDimensional {
-
-	
-	
-	/**
+public interface Temporal extends Dimensional {
+    /**
      * <p>getDimensionCount.</p>
      *
      * @return a int.
      */
     static int getDimensionCount() {
-        return 0;
+        return 1;
     }
 }

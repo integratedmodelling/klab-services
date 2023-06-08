@@ -26,7 +26,7 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KShape extends KReferenced, KSpace {
+public interface Shape extends Referenced, Space {
 
 	/**
 	 * The Enum Type.
@@ -62,46 +62,46 @@ public interface KShape extends KReferenced, KSpace {
 	 * Return the shape transformed to the passed projection.
 	 *
 	 * @param projection a
-	 *                   {@link org.integratedmodelling.klab.api.KProjection.scale.space.IProjection}
+	 *                   {@link org.integratedmodelling.klab.api.Projection.scale.space.IProjection}
 	 *                   object.
 	 * @return the transformed shape
 	 * @throws org.integratedmodelling.klab.KValidationException.KlabValidationException
 	 */
-	KShape transform(KProjection projection);
+	Shape transform(Projection projection);
 
 	/**
 	 * The shape's bounding box
 	 *
 	 * @return the referenced envelope
 	 */
-	KEnvelope getEnvelope();
+	Envelope getEnvelope();
 
 	/**
 	 * Create a new shape by intersecting this with the passed other.
 	 *
 	 * @param other a
-	 *              {@link org.integratedmodelling.klab.api.KShape.scale.space.IShape}
+	 *              {@link org.integratedmodelling.klab.api.Shape.scale.space.IShape}
 	 *              object.
 	 * @return the intersection
 	 */
-	KShape intersection(KShape other);
+	Shape intersection(Shape other);
 
 	/**
 	 * Create a new shape by uniting this with the passed other.
 	 *
 	 * @param other a
-	 *              {@link org.integratedmodelling.klab.api.KShape.scale.space.IShape}
+	 *              {@link org.integratedmodelling.klab.api.Shape.scale.space.IShape}
 	 *              object.
 	 * @return the union
 	 */
-	KShape union(KShape other);
+	Shape union(Shape other);
 
 	/**
 	 * Get the boundary for a polygon, the shape itself for points and lines.
 	 * 
 	 * @return the boundary
 	 */
-	KShape getBoundingExtent();
+	Shape getBoundingExtent();
 
 	/**
 	 * Get the interior holes for a polygon, the empty collection for points and
@@ -109,7 +109,7 @@ public interface KShape extends KReferenced, KSpace {
 	 * 
 	 * @return the holes
 	 */
-	Collection<KShape> getHoles();
+	Collection<Shape> getHoles();
 
 	/**
 	 * Buffer by passed distance in native projection units.
@@ -117,7 +117,7 @@ public interface KShape extends KReferenced, KSpace {
 	 * @param bdistance
 	 * @return a new shape
 	 */
-	KShape buffer(double bdistance);
+	Shape buffer(double bdistance);
 
 	/**
 	 * Subtract the passed shape from this shape.
@@ -125,14 +125,14 @@ public interface KShape extends KReferenced, KSpace {
 	 * @param shape
 	 * @return
 	 */
-	KShape difference(KShape shape);
+	Shape difference(Shape shape);
 
 	/**
 	 * Get the centroid as a new IShape.
 	 * 
 	 * @return
 	 */
-	KShape getCentroid();
+	Shape getCentroid();
 
 	/**
 	 * Get the center x,y coordinates in projection units or in standardized units.

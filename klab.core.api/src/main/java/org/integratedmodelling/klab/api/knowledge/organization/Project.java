@@ -10,7 +10,7 @@ import java.util.Properties;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 
-public interface KProject extends Serializable {
+public interface Project extends Serializable {
 
     /**
      * 

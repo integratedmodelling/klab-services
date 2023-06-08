@@ -18,9 +18,9 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KSpace;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime.Resolution;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -160,9 +160,9 @@ public class GeometryImpl implements Geometry {
                         haveGeometry = true;
                         current.geometry = (Geometry) o;
                     } else if (o instanceof Class<?>) {
-                        if (KSpace.class.isAssignableFrom((Class<?>) o)) {
+                        if (Space.class.isAssignableFrom((Class<?>) o)) {
                             current.type = Dimension.Type.SPACE;
-                        } else if (KTime.class.isAssignableFrom((Class<?>) o)) {
+                        } else if (Time.class.isAssignableFrom((Class<?>) o)) {
                             current.type = Dimension.Type.TIME;
                         } else {
                             throw new KIllegalArgumentException("illegal locator definition: " + o);
@@ -1620,7 +1620,7 @@ public class GeometryImpl implements Geometry {
         if (time == null) {
             time = addLogicalTime(this);
         }
-        time.getParameters().put(PARAMETER_TIME_REPRESENTATION, KTime.Type.GRID);
+        time.getParameters().put(PARAMETER_TIME_REPRESENTATION, Time.Type.GRID);
         time.getParameters().put(PARAMETER_TIME_TRANSITIONS, List.of(transitionPoints));
         return this;
     }

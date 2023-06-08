@@ -29,7 +29,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 import java.util.Collection;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KGrid.Cell;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid.Cell;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
@@ -41,9 +41,9 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author Ferd
  *
  */
-public interface KGrid extends Iterable<Cell> {
+public interface Grid extends Iterable<Cell> {
 
-	public interface Cell extends KSpace {
+	public interface Cell extends Space {
 
 		/**
 		 * Cell to the North, or null.
@@ -184,7 +184,7 @@ public interface KGrid extends Iterable<Cell> {
 		/**
 		 * Return the grid as a shape.
 		 */
-		KShape getGridShape();
+		Shape getGridShape();
 
 		/**
 		 * Get the geometry this grid is part of.
@@ -388,6 +388,6 @@ public interface KGrid extends Iterable<Cell> {
 	 */
 	Cell getCell(long offset);
 
-	KProjection getProjection();
+	Projection getProjection();
 
 }

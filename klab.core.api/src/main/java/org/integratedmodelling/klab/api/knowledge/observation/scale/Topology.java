@@ -13,24 +13,24 @@
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned
  * in author tags. All rights reserved.
  */
-package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
+package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KDimensional;
-
+// TODO: Auto-generated Javadoc
 /**
- * Tag interface that will assign 2-d spatial nature to a class, so that
- * inferences can be made when checking units or other types of use.
+ * The Interface ITopology.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
+ * @param <T> the generic type
  */
-public interface KAreal extends KDimensional {
+public interface Topology<T> extends TopologicallyComparable<T> {
+
     /**
-     * <p>getDimensionCount.</p>
+     * Return the total number of distinct subdivisions in this topology. {@link #INFINITE} is
+     * an option when applicable.
      *
-     * @return a int.
+     * @return number of subdivisions
      */
-    static int getDimensionCount() {
-        return 2;
-    }
+    public long size();
+
 }

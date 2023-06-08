@@ -40,7 +40,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension {
+public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
 
 	/**
 	 * Merge in another extent from the overall context, producing an extent that is
@@ -70,7 +70,7 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 *               the same class, although usually implementing the same extent
 	 *               interface) from the prospective contextualization scale.
 	 */
-	KExtent mergeContext(KExtent extent);
+	Extent mergeContext(Extent extent);
 
 	/**
 	 * Locate the extent and return another with the original located extent and
@@ -81,7 +81,7 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 * @param locator
 	 * @return the extent, or null if location is impossible.
 	 */
-	KExtent at(Object... locators);
+	Extent at(Object... locators);
 
 	/**
 	 * Each extent must be able to return a worldview-dependent integer scale rank,
@@ -106,7 +106,7 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 *
 	 * @return a new extent with size() == 1.
 	 */
-	KExtent collapse();
+	Extent collapse();
 
 	/**
 	 * Return the simplest boundary that can be compared to another coming from an
@@ -116,7 +116,7 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 * 
 	 * @return the boundary.
 	 */
-	KExtent getBoundingExtent();
+	Extent getBoundingExtent();
 
 	/**
 	 * Return the dimensional coverage in the passed unit, which must be compatible.
@@ -155,11 +155,11 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 * @return the configured mediator or null
 	 * @throw {@link IllegalArgumentException} if called improperly
 	 */
-	public abstract KScaleMediator getMediator(KExtent extent);
+	public abstract ScaleMediator getMediator(Extent extent);
 
 	/** {@inheritDoc} */
 	@Override
-	KExtent merge(KTopologicallyComparable<?> other, LogicalConnector how, MergingOption...options);
+	Extent merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption...options);
 
 	/**
 	 * Return the n-th state of the ordered topology as a new extent with one state.
@@ -168,6 +168,6 @@ public interface KExtent extends Locator, KTopology<KExtent>, Geometry.Dimension
 	 * @return a new extent with getValueCount() == 1, or this if it is 1-sized and
 	 *         0 is passed.
 	 */
-	KExtent getExtent(long stateIndex);
+	Extent getExtent(long stateIndex);
 
 }

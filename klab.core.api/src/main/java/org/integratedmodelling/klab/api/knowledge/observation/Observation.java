@@ -20,7 +20,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KSpace;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 
 /**
  * The interface IObservation, which is the semantic equivalent of an IArtifact
@@ -128,7 +128,7 @@ public interface Observation extends Identity, Artifact {
 	 *
 	 * @return the observation of space
 	 */
-	KSpace getSpace();
+	Space getSpace();
 
 	/**
 	 * Return true if this observation has changes that happened after

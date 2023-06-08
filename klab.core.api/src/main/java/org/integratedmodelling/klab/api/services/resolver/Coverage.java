@@ -14,7 +14,7 @@
 package org.integratedmodelling.klab.api.services.resolver;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KTopologicallyComparable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * will modify the fraction of the original extents that is covered.
  * <p>
  * A {@code ICoverage} redefines the
- * {@link org.integratedmodelling.klab.api.Scale.scale.IScale#merge(KTopologicallyComparable, LogicalConnector)}
+ * {@link org.integratedmodelling.klab.api.Scale.scale.IScale#merge(TopologicallyComparable, LogicalConnector)}
  * method to only perform a union when the resulting coverage adds enough coverage. The
  * {@link #getGain()} can be called on the result to check if the merge produced any significant
  * increment or decrement in coverage.
@@ -59,7 +59,7 @@ public interface Coverage extends Scale {
     /**
      * {@inheritDoc}
      *
-     * Reimplements {@link Scale#merge(KTopologicallyComparable, LogicalConnector)} to return a
+     * Reimplements {@link Scale#merge(TopologicallyComparable, LogicalConnector)} to return a
      * coverage and implement {@code ICoverage}-specific behavior. Note that this breaks the
      * {@link Scale} contract by returning a coverage where the underlying scale is
      * <strong>unmodified</strong>, but only its coverage information has potentially changed.
@@ -72,10 +72,10 @@ public interface Coverage extends Scale {
      * Must not modify the original scales.
      */
     @Override
-    Coverage merge(KTopologicallyComparable<?> coverage, LogicalConnector how, MergingOption...options);
+    Coverage merge(TopologicallyComparable<?> coverage, LogicalConnector how, MergingOption...options);
 
     /**
-     * Like {@link #merge(KTopologicallyComparable, LogicalConnector)} but only merges extents,
+     * Like {@link #merge(TopologicallyComparable, LogicalConnector)} but only merges extents,
      * without building merged representations such as grids or other tessellations.
      * 
      * @param coverage

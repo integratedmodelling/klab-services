@@ -15,31 +15,22 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Dimensional;
 
 /**
- * Anything that has coordinates is referenced. We also expose metadata so that
- * additional info can be provided along with the referencing.
+ * Tag interface that will assign 2-d spatial nature to a class, so that
+ * inferences can be made when checking units or other types of use.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public abstract interface KReferenced {
-
-	/**
-	 * <p>
-	 * getProjection.
-	 * </p>
-	 *
-	 * @return a
-	 *         {@link org.integratedmodelling.klab.api.KProjection.scale.space.IProjection}
-	 *         object.
-	 */
-	KProjection getProjection();
-
-	/**
-	 * 
-	 * @return
-	 */
-	Metadata getMetadata();
+public interface Areal extends Dimensional {
+    /**
+     * <p>getDimensionCount.</p>
+     *
+     * @return a int.
+     */
+    static int getDimensionCount() {
+        return 2;
+    }
 }

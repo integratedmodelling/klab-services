@@ -15,22 +15,31 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KDimensional;
+import org.integratedmodelling.klab.api.data.Metadata;
 
 /**
- * Tag interface that will assign 1-d spatial nature to a class, so that
- * inferences can be made when checking units or other types of use.
+ * Anything that has coordinates is referenced. We also expose metadata so that
+ * additional info can be provided along with the referencing.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KLineal extends KDimensional {
-    /**
-     * <p>getDimensionCount.</p>
-     *
-     * @return a int.
-     */
-    static int getDimensionCount() {
-        return 1;
-    }
+public abstract interface Referenced {
+
+	/**
+	 * <p>
+	 * getProjection.
+	 * </p>
+	 *
+	 * @return a
+	 *         {@link org.integratedmodelling.klab.api.Projection.scale.space.IProjection}
+	 *         object.
+	 */
+	Projection getProjection();
+
+	/**
+	 * 
+	 * @return
+	 */
+	Metadata getMetadata();
 }

@@ -15,22 +15,24 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
-// TODO: Auto-generated Javadoc
 /**
- * The Interface ITopology.
+ * Adopted by dimensional extents, specifies the count of dimensions in each.
+ *
+ * FIXME this info now comes from the worldview, so it should be defined in a "soft" way.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
- * @param <T> the generic type
  */
-public interface KTopology<T> extends KTopologicallyComparable<T> {
+public abstract interface Dimensional {
 
-    /**
-     * Return the total number of distinct subdivisions in this topology. {@link #INFINITE} is
-     * an option when applicable.
+	
+	
+	/**
+     * <p>getDimensionCount.</p>
      *
-     * @return number of subdivisions
+     * @return a int.
      */
-    public long size();
-
+    static int getDimensionCount() {
+        return 0;
+    }
 }

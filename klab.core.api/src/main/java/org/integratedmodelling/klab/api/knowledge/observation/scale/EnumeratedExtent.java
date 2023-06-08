@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
  * @author Ferd
  *
  */
-public interface KEnumeratedExtent extends KExtent {
+public interface EnumeratedExtent extends Extent {
 
     /**
      * 

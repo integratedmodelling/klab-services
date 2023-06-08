@@ -8,9 +8,9 @@ import java.util.List;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl.DimensionImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KSpace;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTimeInstant;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 
 /**
  * Builder for geometries to ease defining time and space extents in forms that can be marshalled
@@ -45,7 +45,7 @@ public class GeometryBuilder {
             return this;
         }
 
-        public TimeBuilder covering(KTimeInstant start, KTimeInstant end) {
+        public TimeBuilder covering(TimeInstant start, TimeInstant end) {
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_COVERAGE_START, start.getMilliseconds());
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_COVERAGE_END, end.getMilliseconds());
             return this;
@@ -57,7 +57,7 @@ public class GeometryBuilder {
             return this;
         }
 
-        public TimeBuilder start(KTimeInstant start) {
+        public TimeBuilder start(TimeInstant start) {
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_START, start.getMilliseconds());
             return this;
         }
@@ -67,7 +67,7 @@ public class GeometryBuilder {
             return this;
         }
 
-        public TimeBuilder end(KTimeInstant start) {
+        public TimeBuilder end(TimeInstant start) {
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_END, start.getMilliseconds());
             return this;
         }
@@ -77,13 +77,13 @@ public class GeometryBuilder {
             return this;
         }
 
-        public TimeBuilder resolution(KTime.Resolution resolution) {
+        public TimeBuilder resolution(Time.Resolution resolution) {
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE, resolution.getMultiplier());
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE_UNIT, resolution.getType().name().toLowerCase());
             return this;
         }
 
-        public TimeBuilder resolution(KTime.Resolution.Type resolution, double multiplier) {
+        public TimeBuilder resolution(Time.Resolution.Type resolution, double multiplier) {
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE, multiplier);
             time.getParameters().put(GeometryImpl.PARAMETER_TIME_SCOPE_UNIT, resolution.name().toLowerCase());
             return this;
@@ -174,7 +174,7 @@ public class GeometryBuilder {
      * @return
      */
     public GeometryBuilder region(String urn) {
-        if (KSpace.isWKT(urn)) {
+        if (Space.isWKT(urn)) {
             return space().shape(urn).size(1).build();
         }
         return space().urn(urn).size(1).build();
@@ -201,7 +201,7 @@ public class GeometryBuilder {
      * @return
      */
     public GeometryBuilder grid(String urn, String resolution) {
-        if (KSpace.isWKT(urn)) {
+        if (Space.isWKT(urn)) {
             return space().regular().resolution(resolution).shape(urn).build();
         }
         return space().regular().resolution(resolution).urn(urn).build();
@@ -231,7 +231,7 @@ public class GeometryBuilder {
                 return time().start(startOfYear(years[0])).end(startOfYear(years[0] + 1)).size(1).build();
             } else if (years.length == 2) {
                 return time().start(startOfYear(years[0])).end(startOfYear(years[1])).size((long) (years[1] - years[0]))
-                        .resolution(KTime.Resolution.Type.YEAR, 1).build();
+                        .resolution(Time.Resolution.Type.YEAR, 1).build();
             }
             // TODO irregular coverage?
         }

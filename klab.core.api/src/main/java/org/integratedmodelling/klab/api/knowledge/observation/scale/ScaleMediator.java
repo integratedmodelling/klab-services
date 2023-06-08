@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.collections.impl.PairImpl;
  * @author ferdinando.villa
  *
  */
-public interface KScaleMediator {
+public interface ScaleMediator {
 
 	/**
 	 * A conformant mediator maps one offset to another, with no aggregation

@@ -15,8 +15,8 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KExtent;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KTopologicallyComparable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KSpace extends KExtent, KSpatial {
+public interface Space extends Extent, Spatial {
 
 	/** Constant <code>MIN_SCALE_RANK=0</code> */
 	int MIN_SCALE_RANK = 0;
@@ -33,14 +33,14 @@ public interface KSpace extends KExtent, KSpatial {
 	int MAX_SCALE_RANK = 21;
 
 	@Override
-	KSpace getExtent(long stateIndex);
+	Space getExtent(long stateIndex);
 	
 	/**
 	 * Get the envelope, providing boundaries.
 	 *
 	 * @return the referenced envelope
 	 */
-	KEnvelope getEnvelope();
+	Envelope getEnvelope();
 
 	/**
 	 * Projection. Just repeats same in envelope and shape. It's not legal to have
@@ -48,7 +48,7 @@ public interface KSpace extends KExtent, KSpatial {
 	 *
 	 * @return coordinate reference system
 	 */
-	KProjection getProjection();
+	Projection getProjection();
 
 	/**
 	 * Volume in standard SI units (square meters), NaN if < 3D.
@@ -106,25 +106,25 @@ public interface KSpace extends KExtent, KSpatial {
 	 * @param shape
 	 * @return the distance
 	 */
-	double getStandardizedDistance(KSpace extent);
+	double getStandardizedDistance(Space extent);
 
 	/**
 	 * Override the result for fluency
 	 */
 	@Override
-	KSpace getBoundingExtent();
+	Space getBoundingExtent();
 
 	/**
      * Override the result for fluency
      */
     @Override
-	KSpace mergeContext(KExtent extent);
+	Space mergeContext(Extent extent);
 
     /**
      * Override the result for fluency
      */
 	@Override
-	KSpace merge(KTopologicallyComparable<?> other, LogicalConnector how, MergingOption...options);
+	Space merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption...options);
 
 	/**
 	 * Quickly check if the passed string looks like a WKT string in the k.LAB

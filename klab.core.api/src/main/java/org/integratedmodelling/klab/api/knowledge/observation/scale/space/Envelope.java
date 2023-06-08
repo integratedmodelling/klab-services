@@ -21,7 +21,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KEnvelope extends KReferenced {
+public interface Envelope extends Referenced {
 
     /**
      * <p>getMinX.</p>
@@ -67,25 +67,25 @@ public interface KEnvelope extends KReferenced {
     /**
      * <p>asShape.</p>
      *
-     * @return a {@link org.integratedmodelling.klab.api.KShape.scale.space.IShape} object.
+     * @return a {@link org.integratedmodelling.klab.api.Shape.scale.space.IShape} object.
      */
-    KShape asShape();
+    Shape asShape();
     
     /**
      * <p>transform.</p>
      *
-     * @param projection a {@link org.integratedmodelling.klab.api.KProjection.scale.space.IProjection} object.
+     * @param projection a {@link org.integratedmodelling.klab.api.Projection.scale.space.IProjection} object.
      * @param b use lenient transformation if necessary (see JTS docs).
-     * @return a {@link org.integratedmodelling.klab.api.KEnvelope.scale.space.IEnvelope} object.
+     * @return a {@link org.integratedmodelling.klab.api.Envelope.scale.space.IEnvelope} object.
      */
-    KEnvelope transform(KProjection projection, boolean lenient);
+    Envelope transform(Projection projection, boolean lenient);
 
     /**
      * Return the envelope in a predictable, standard projection.
      * 
      * @return
      */
-    KEnvelope standard();
+    Envelope standard();
     
     /**
      * <p>getCenterCoordinates.</p>
@@ -151,7 +151,7 @@ public interface KEnvelope extends KReferenced {
      * @param other
      * @return
      */
-    boolean overlaps(KEnvelope other);
+    boolean overlaps(Envelope other);
     
     /**
      * Return a larger envelope containing the previous.
@@ -159,5 +159,5 @@ public interface KEnvelope extends KReferenced {
      * @param factor
      * @return
      */
-    KEnvelope grow(double factor);
+    Envelope grow(double factor);
 }

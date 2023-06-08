@@ -11,8 +11,8 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.KSpace;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 
 /**
  * The simplest locator, using only offsets and initializable through string specifications so that
@@ -247,11 +247,11 @@ public class Offset implements Locator {
         } else if (geometry instanceof Scale) {
             if (Scale.class.isAssignableFrom(cls)) {
                 return (T) geometry;
-            } else if (KSpace.class.isAssignableFrom(cls)) {
+            } else if (Space.class.isAssignableFrom(cls)) {
                 if (((Scale) geometry).getSpace() != null) {
                     return (T) ((Scale) geometry).getSpace();
                 }
-            } else if (KTime.class.isAssignableFrom(cls)) {
+            } else if (Time.class.isAssignableFrom(cls)) {
                 if (((Scale) geometry).getTime() != null) {
                     return (T) ((Scale) geometry).getTime();
                 }

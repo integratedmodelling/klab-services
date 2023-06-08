@@ -13,18 +13,18 @@
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned
  * in author tags. All rights reserved.
  */
-package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
+package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KDimensional;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Dimensional;
 
 /**
- * Tag interface that will assign temporal nature to a class, so that
+ * Tag interface that will assign 1-d spatial nature to a class, so that
  * inferences can be made when checking units or other types of use.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KTemporal extends KDimensional {
+public interface Lineal extends Dimensional {
     /**
      * <p>getDimensionCount.</p>
      *

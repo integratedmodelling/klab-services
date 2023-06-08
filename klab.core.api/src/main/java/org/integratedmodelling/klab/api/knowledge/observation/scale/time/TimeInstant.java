@@ -15,7 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime.Resolution;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 
 /**
  * The Interface ITimeInstant.
@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime.R
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KTimeInstant extends Comparable<KTimeInstant> {
+public interface TimeInstant extends Comparable<TimeInstant> {
 
 	/**
 	 * <p>
@@ -39,14 +39,14 @@ public interface KTimeInstant extends Comparable<KTimeInstant> {
 	 * @param end
 	 * @return
 	 */
-	boolean isAfter(KTimeInstant end);
+	boolean isAfter(TimeInstant end);
 
 	/**
 	 * 
 	 * @param start
 	 * @return
 	 */
-	boolean isBefore(KTimeInstant start);
+	boolean isBefore(TimeInstant start);
 
 	/**
 	 * Return a re-parseable Kim specification.
@@ -68,11 +68,11 @@ public interface KTimeInstant extends Comparable<KTimeInstant> {
 	 */
 	int getYear();
 
-	long getPeriods(KTimeInstant other, Resolution resolution);
+	long getPeriods(TimeInstant other, Resolution resolution);
 
-	KTimeInstant minus(int periods, Resolution resolution);
+	TimeInstant minus(int periods, Resolution resolution);
 
-	KTimeInstant plus(int periods, Resolution resolution);
+	TimeInstant plus(int periods, Resolution resolution);
 
 	/**
 	 * True if this time starts at a point correspondent with the beginning of the
@@ -99,7 +99,7 @@ public interface KTimeInstant extends Comparable<KTimeInstant> {
 	 * @param b
 	 * @return
 	 */
-	static KTimeInstant min(KTimeInstant a, KTimeInstant b) {
+	static TimeInstant min(TimeInstant a, TimeInstant b) {
 		if (a == null) {
 			return b;
 		}
@@ -116,7 +116,7 @@ public interface KTimeInstant extends Comparable<KTimeInstant> {
 	 * @param b
 	 * @return
 	 */
-	static KTimeInstant max(KTimeInstant a, KTimeInstant b) {
+	static TimeInstant max(TimeInstant a, TimeInstant b) {
 		if (a == null) {
 			return b;
 		}
@@ -132,13 +132,13 @@ public interface KTimeInstant extends Comparable<KTimeInstant> {
 	 * @param temporalAggregation
 	 * @return
 	 */
-	KTimeInstant beginOf(Resolution.Type temporalAggregation);
+	TimeInstant beginOf(Resolution.Type temporalAggregation);
 
 	/**
 	 * Adjust to beginning of next nearest period
 	 * @param temporalAggregation
 	 * @return
 	 */
-	KTimeInstant endOf(Resolution.Type temporalAggregation);
+	TimeInstant endOf(Resolution.Type temporalAggregation);
 
 }

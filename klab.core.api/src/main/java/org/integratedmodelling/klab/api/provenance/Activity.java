@@ -17,7 +17,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 
 /**
  * Activity (process). Primary processes produce artifacts. Secondary processes (after creation) may
@@ -148,7 +148,7 @@ public interface Activity extends Provenance.Node {
      * 
      * @return
      */
-    KTime getSchedulerTime();
+    Time getSchedulerTime();
 
     /**
      * If the action was caused by another action, return the action that caused it.

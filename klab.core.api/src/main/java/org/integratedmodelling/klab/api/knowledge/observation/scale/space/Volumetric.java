@@ -15,22 +15,22 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KDimensional;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Dimensional;
 
 /**
- * Tag interface that will assign 0-d spatial nature to a class, so that inferences can be
+ * Tag interface that will assign 3-d spatial nature to a class, so that inferences can be
  * made when checking units or other types of use.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KPuntal extends KDimensional {
+public interface Volumetric extends Dimensional {
     /**
      * <p>getDimensionCount.</p>
      *
      * @return a int.
      */
     static int getDimensionCount() {
-        return 0;
+        return 3;
     }
 }

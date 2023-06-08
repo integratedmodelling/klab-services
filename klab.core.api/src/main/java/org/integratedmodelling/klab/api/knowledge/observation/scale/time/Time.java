@@ -16,8 +16,8 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KExtent;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.KTopologicallyComparable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
@@ -49,7 +49,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KTime extends KExtent {
+public interface Time extends Extent {
 
     /** Constant <code>MIN_SCALE_RANK=0</code> */
     int MIN_SCALE_RANK = 0;
@@ -224,7 +224,7 @@ public interface KTime extends KExtent {
          * @param end
          * @return
          */
-        double getMultiplier(KTimeInstant start, KTimeInstant end);
+        double getMultiplier(TimeInstant start, TimeInstant end);
 
         /**
          * Get the <em>indicative</em> span of one step in milliseconds. Spans may be
@@ -281,17 +281,17 @@ public interface KTime extends KExtent {
      * against the API, and is the most logical way to enforce that getValueCount() == 1.
      */
     @Override
-    KTime collapse();
+    Time collapse();
 
     @Override
-    KTime getExtent(long stateIndex);
+    Time getExtent(long stateIndex);
 
     /**
      * May be null in partially specified extents.
      *
      * @return start time
      */
-    KTimeInstant getStart();
+    TimeInstant getStart();
 
     /**
      * May be null in partially specified extents. Returns the timestep BEYOND the end of
@@ -300,7 +300,7 @@ public interface KTime extends KExtent {
      *
      * @return end time
      */
-    KTimeInstant getEnd();
+    TimeInstant getEnd();
 
     /**
      * If multiplicity is 1, return the whole temporal extent.
@@ -310,7 +310,7 @@ public interface KTime extends KExtent {
      *
      * @return step if any
      */
-    KTimeDuration getStep();
+    TimeDuration getStep();
 
     /**
      * Resolution of time observation according to this extent.
@@ -384,7 +384,7 @@ public interface KTime extends KExtent {
      * 
      * @return
      */
-    KTime getNext();
+    Time getNext();
 
     /**
      * If this extent is a subdivision of a distributed extent, return the first sub-extent time
@@ -392,7 +392,7 @@ public interface KTime extends KExtent {
      * 
      * @return
      */
-    KTime earliest();
+    Time earliest();
 
     /**
      * If this extent is a subdivision of a distributed extent, return the last sub-extent time that
@@ -400,7 +400,7 @@ public interface KTime extends KExtent {
      * 
      * @return
      */
-    KTime latest();
+    Time latest();
 
     /**
      * A temporal extent always represents a period, but when created from a query may be simply
@@ -410,7 +410,7 @@ public interface KTime extends KExtent {
      * 
      * @return
      */
-    KTimeInstant getFocus();
+    TimeInstant getFocus();
 
     /**
      * Time extents record the actual changes in the observations they describe. This method checks
@@ -419,7 +419,7 @@ public interface KTime extends KExtent {
      * @param time
      * @return
      */
-    boolean hasChangeDuring(KTime time);
+    boolean hasChangeDuring(Time time);
 
     /**
      * Override the result for fluency
@@ -427,18 +427,18 @@ public interface KTime extends KExtent {
      * @return
      */
     @Override
-    KTime getBoundingExtent();
+    Time getBoundingExtent();
 
     /**
      * Override the result for fluency
      */
     @Override
-    KTime mergeContext(KExtent extent);
+    Time mergeContext(Extent extent);
 
     /**
      * Override the result for fluency
      */
     @Override
-    KTime merge(KTopologicallyComparable<?> other, LogicalConnector how, MergingOption... options);
+    Time merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption... options);
 
 }

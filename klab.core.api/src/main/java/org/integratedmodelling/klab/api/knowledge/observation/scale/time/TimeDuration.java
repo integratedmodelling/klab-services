@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KTimeDuration extends Comparable<KTimeDuration> {
+public interface TimeDuration extends Comparable<TimeDuration> {
 
 	/**
 	 * Return a new period anchored to the passed instant.
@@ -31,7 +31,7 @@ public interface KTimeDuration extends Comparable<KTimeDuration> {
 	 * @param instant
 	 * @return
 	 */
-	KTimeDuration anchor(KTimeInstant instant);
+	TimeDuration anchor(TimeInstant instant);
 
 	/**
 	 * True if the period is anchored to a start time.
@@ -45,7 +45,7 @@ public interface KTimeDuration extends Comparable<KTimeDuration> {
 	 * 
 	 * @return
 	 */
-	KTimeInstant getStart();
+	TimeInstant getStart();
 
 	/**
 	 * Return the natural resolution for something whose time is expressed in this
@@ -53,7 +53,7 @@ public interface KTimeDuration extends Comparable<KTimeDuration> {
 	 * 
 	 * @return
 	 */
-	KTime.Resolution.Type getResolution();
+	Time.Resolution.Type getResolution();
 
 	/**
 	 * If false, this is defined in a logical way but the actual duration is
@@ -102,7 +102,7 @@ public interface KTimeDuration extends Comparable<KTimeDuration> {
 	 *
 	 * @return localization
 	 */
-	Pair<KTimeInstant, KTimeInstant> localize();
+	Pair<TimeInstant, TimeInstant> localize();
 
 	/**
 	 * True for a no-duration duration.

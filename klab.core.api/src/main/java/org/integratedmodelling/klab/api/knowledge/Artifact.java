@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Process;
 import org.integratedmodelling.klab.api.knowledge.observation.Subject;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.KTime;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -452,5 +452,5 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
      * @param time
      * @return
      */
-    boolean hasChangedDuring(KTime time);
+    boolean hasChangedDuring(Time time);
 }

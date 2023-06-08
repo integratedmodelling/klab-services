@@ -21,7 +21,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KProjection {
+public interface Projection {
 
 	/**
 	 * Unique identifier of projection, enough to rebuild it at another endpoint.

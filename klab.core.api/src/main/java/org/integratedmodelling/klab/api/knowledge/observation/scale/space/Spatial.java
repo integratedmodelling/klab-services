@@ -6,13 +6,13 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
  * @author ferdinando.villa
  *
  */
-public interface KSpatial {
+public interface Spatial {
 	
 	/**
 	 * Get the shape.
 	 * 
 	 * @return
 	 */
-	KShape getGeometricShape();
+	Shape getGeometricShape();
 	
 }

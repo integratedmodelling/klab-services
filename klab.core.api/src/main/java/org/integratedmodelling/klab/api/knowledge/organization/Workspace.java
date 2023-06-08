@@ -6,7 +6,7 @@ import java.util.Collection;
 
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 
-public interface KWorkspace extends Serializable {
+public interface Workspace extends Serializable {
     
     /**
      * Name of the workspace. May or may not be linked to the name of the root directory.
@@ -20,7 +20,7 @@ public interface KWorkspace extends Serializable {
      * 
      * @return all project names
      */
-    Collection<KProject> getProjects();
+    Collection<Project> getProjects();
 
     /**
      * The URL for the workspace. With content type JSON and proper authorization it should return

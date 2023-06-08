@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @version $Id: $Id
  * @param <T> the generic type
  */
-public interface KTopologicallyComparable<T> {
+public interface TopologicallyComparable<T> {
 
     /**
      * Tentative - options for the merge functions in children.
@@ -73,15 +73,15 @@ public interface KTopologicallyComparable<T> {
      * </p>
      *
      * @param other a
-     *        {@link org.integratedmodelling.klab.api.observations.scale.KTopologicallyComparable}
+     *        {@link org.integratedmodelling.klab.api.observations.scale.TopologicallyComparable}
      *        object.
      * @param how a {@link org.integratedmodelling.klab.common.LogicalConnector} object.
      * @param options affect the merge result
      * @return a
-     *         {@link org.integratedmodelling.klab.api.observations.scale.KTopologicallyComparable}
+     *         {@link org.integratedmodelling.klab.api.observations.scale.TopologicallyComparable}
      *         object.
      */
-    KTopologicallyComparable<? extends T> merge(KTopologicallyComparable<?> other, LogicalConnector how,
+    TopologicallyComparable<? extends T> merge(TopologicallyComparable<?> other, LogicalConnector how,
             MergingOption... options);
 
 }
