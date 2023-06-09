@@ -3,11 +3,13 @@ package org.integratedmodelling.klab.services.reasoner;
 import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
@@ -534,6 +536,12 @@ public class ReasonerClient implements Reasoner {
     public boolean shutdown() {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

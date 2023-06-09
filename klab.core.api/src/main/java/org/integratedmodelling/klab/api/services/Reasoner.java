@@ -3,11 +3,13 @@ package org.integratedmodelling.klab.api.services;
 import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
@@ -25,7 +27,7 @@ public interface Reasoner extends KlabService {
     default String getServiceName() {
         return "klab.reasoner.service";
     }
-    
+
     public static final int DEFAULT_PORT = 8091;
 
     /**
@@ -696,6 +698,17 @@ public interface Reasoner extends KlabService {
      * @return
      */
     Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints);
+
+    /**
+     * Return all the possible strategies to observe the passed observable in this context, in order
+     * of increasing cost/complexity. Except in case of abstract observables, the first should
+     * always be the direct observation of the observable without any additional computation.
+     * 
+     * @param observable
+     * @param scope
+     * @return
+     */
+    List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope);
 
     /**
      * Entry point of the assisted semantic search behind interactive concept definition. If the

@@ -30,6 +30,7 @@ import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -2302,6 +2303,12 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     public boolean shutdown() {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

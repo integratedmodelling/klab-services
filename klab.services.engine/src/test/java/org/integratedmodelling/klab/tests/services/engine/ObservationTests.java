@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.Logging;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.common.Geometry;
 import org.integratedmodelling.klab.exceptions.KlabException;
@@ -69,7 +70,7 @@ public class ObservationTests {
          */
         SessionScope applicationScope = user.runApplication("aries.seea.en");
 
-        user.getService(Reasoner.class).resolveObservable("earth:Region");
+        Observable region = user.getService(Reasoner.class).resolveObservable("earth:Region");
         
         
         /*
