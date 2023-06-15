@@ -7,6 +7,7 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -51,6 +52,7 @@ public class Resolution {
         }
 
         public Coverage merge() {
+        	
             /*
              * make the link between this node and its parent, adding the coverage to what is known
              * so far
@@ -80,6 +82,16 @@ public class Resolution {
          * the original scope coverage.
          */
         Coverage coverage;
+        
+        /**
+         * A resolution edge always contains an observable
+         */
+        Observable observable;
+        
+        /**
+         * And the chosen strategy
+         */
+        ObservationStrategy.Type strategy;
 
     }
 

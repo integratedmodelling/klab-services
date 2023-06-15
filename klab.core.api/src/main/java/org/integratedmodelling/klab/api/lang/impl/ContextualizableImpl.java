@@ -12,11 +12,11 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.impl.KimStatementImpl;
 
 public class ContextualizableImpl extends KimStatementImpl implements Contextualizable {
 

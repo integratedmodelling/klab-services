@@ -36,13 +36,13 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.impl.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -51,6 +51,7 @@ import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
+import org.integratedmodelling.klab.services.resources.lang.KActorsAdapter;
 import org.integratedmodelling.klab.services.resources.lang.KactorsInjectorProvider;
 import org.integratedmodelling.klab.services.resources.lang.KdlInjectorProvider;
 import org.integratedmodelling.klab.services.resources.lang.KimAdapter;
@@ -166,7 +167,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
                 Kim.INSTANCE.setup(kimInjector);
             }
 
-            this.kimLoader = new KimLoader((nss) -> loadNamespaces(nss));
+            this.kimLoader = new KimLoader((nss) -> loadNamespaces(nss), (behaviors) -> loadBehaviors(behaviors));
 
             /*
              * k.DL....
@@ -191,14 +192,22 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
     }
 
-    private void loadNamespaces(List<NamespaceDescriptor> namespaces) {
+    private void loadBehaviors(List<File> behaviors) {
+        for (File behaviorFile : behaviors) {
+            projectLoader.execute(() -> {
+                KActorsBehavior behavior = KActorsAdapter.readBehavior(behaviorFile);
+                this.localBehaviors.put(behavior.getName(), behavior);
+            });
+        }
+	}
+
+	private void loadNamespaces(List<NamespaceDescriptor> namespaces) {
         for (NamespaceDescriptor ns : namespaces) {
             projectLoader.execute(() -> {
                 KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
                 this.localNamespaces.put(namespace.getUrn(), namespace);
             });
         }
-
     }
 
     @Override

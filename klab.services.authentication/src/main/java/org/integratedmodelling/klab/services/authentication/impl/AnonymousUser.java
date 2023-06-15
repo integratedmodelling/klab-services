@@ -4,12 +4,15 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 
 public class AnonymousUser implements UserIdentity {
 
+	private Parameters<String> data = Parameters.create();
+	
     @Override
     public Type getIdentityType() {
         return Type.ENGINE_USER;
@@ -94,5 +97,10 @@ public class AnonymousUser implements UserIdentity {
     public Date getLastLogin() {
         return new Date();
     }
+
+	@Override
+	public Parameters<String> getData() {
+		return data;
+	}
 
 }

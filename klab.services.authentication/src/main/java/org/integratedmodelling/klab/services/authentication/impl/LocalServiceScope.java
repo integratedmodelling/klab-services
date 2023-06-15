@@ -84,6 +84,12 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
         public boolean isOnline() {
             return true;
         }
+
+
+		@Override
+		public Parameters<String> getData() {
+			return LocalService.this.getData();
+		}
         
     }
     

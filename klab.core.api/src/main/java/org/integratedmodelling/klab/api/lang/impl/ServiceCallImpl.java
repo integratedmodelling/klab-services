@@ -20,8 +20,8 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimExpression;
-import org.integratedmodelling.klab.api.lang.kim.impl.KimStatementImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 

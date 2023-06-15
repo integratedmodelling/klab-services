@@ -10,14 +10,16 @@ import java.util.List;
  */
 public interface KActorsAction extends KActorsCodeStatement {
 
-    /**
-     * 
-     * @return
-     */
+	/**
+	 * Action name as declared in the code.
+	 * 
+	 * @return
+	 */
 	String getName();
 
 	/**
-	 * The code for the action, most likely a group at this level.
+	 * The code that constitutes the action, normally a ConcurrentGroup at the top
+	 * level.
 	 * 
 	 * @return
 	 */
@@ -32,10 +34,12 @@ public interface KActorsAction extends KActorsCodeStatement {
 	List<String> getArgumentNames();
 
 	/**
-	 * If this returns true, the action was declared as 'function' and is expected
-	 * to return a value and exit, instead of firing it and continuing.
+	 * If this returns true, the action was declared as 'function' and its firing
+	 * behavior is expected to return a value and exit, as opposed to "firing" and
+	 * continuing.
 	 * 
 	 * @return
 	 */
 	boolean isFunction();
+
 }
