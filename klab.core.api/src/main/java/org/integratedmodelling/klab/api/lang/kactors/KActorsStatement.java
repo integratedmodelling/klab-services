@@ -3,9 +3,9 @@ package org.integratedmodelling.klab.api.lang.kactors;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.collections.impl.TripleImpl;
+import org.integratedmodelling.klab.api.collections.Triple;
 
 /**
  * Statements have a type according to which each can be casted to the corresponding sub-interface.
@@ -39,7 +39,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
         KActorsStatement getThen();
 
-        List<PairImpl<KActorsValue, KActorsStatement>> getElseIfs();
+        List<Pair<KActorsValue, KActorsStatement>> getElseIfs();
 
         KActorsStatement getElse();
 
@@ -57,7 +57,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
          * 
          * @return
          */
-        List<PairImpl<KActorsValue, KActorsStatement>> getGroupActions();
+        List<Pair<KActorsValue, KActorsStatement>> getGroupActions();
 
     }
 
@@ -242,7 +242,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
          * 
          * @return
          */
-        List<TripleImpl<KActorsValue, KActorsStatement, String>> getActions();
+        List<Triple<KActorsValue, KActorsStatement, String>> getActions();
 
         /**
          * Each instantiation action needs a name to reference the actor, so that the parent actors
@@ -306,7 +306,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
          * 
          * @return
          */
-        List<TripleImpl<KActorsValue, KActorsStatement, String>> getActions();
+        List<Triple<KActorsValue, KActorsStatement, String>> getActions();
 
         /**
          * The top-level action call in a statement may be preceded by any number of chained
