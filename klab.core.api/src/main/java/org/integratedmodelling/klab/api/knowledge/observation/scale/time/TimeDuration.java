@@ -118,4 +118,10 @@ public interface TimeDuration extends Comparable<TimeDuration> {
 	 */
 	String getSpecification();
 
+	/**
+	 * TODO implement with Java time
+	 */
+	public static String print(long durationMs) {
+		return "HAAAAAG";
+	}
 }

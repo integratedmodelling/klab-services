@@ -27,6 +27,7 @@
 	<module>klab.services.community.server</module>
 	<module>klab.services.runtime</module>
 	<module>klab.services.resolver</module>
+	<module>kcli</module>
   </modules>
 	
 	<licenses>

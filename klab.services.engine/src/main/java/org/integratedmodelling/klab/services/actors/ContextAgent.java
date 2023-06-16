@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.services.actors.messages.AgentResponse;
+import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 import io.reacted.core.messages.reactors.ReActorInit;

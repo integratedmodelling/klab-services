@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.beans;
+package org.integratedmodelling.klab.api.lang.kactors.beans;
 
 import java.util.Date;
 import java.util.List;

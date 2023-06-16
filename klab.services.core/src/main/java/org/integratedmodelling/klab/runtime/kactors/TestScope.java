@@ -2,33 +2,31 @@ package org.integratedmodelling.klab.runtime.kactors;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.integratedmodelling.kactors.api.IKActorsStatement.Assert.Assertion;
-import org.integratedmodelling.kactors.api.IKActorsStatement.Fail;
-import org.integratedmodelling.kactors.api.IKActorsBehavior;
-import org.integratedmodelling.kactors.api.IKActorsValue;
 import org.integratedmodelling.klab.Version;
-import org.integratedmodelling.klab.api.actors.IBehavior;
-import org.integratedmodelling.klab.api.actors.IBehavior.Action;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assert.Assertion;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Fail;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
-import org.integratedmodelling.klab.api.model.IAnnotation;
-import org.integratedmodelling.klab.api.monitoring.IMessage;
-import org.integratedmodelling.klab.api.runtime.ISession;
+import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
+import org.integratedmodelling.klab.api.lang.kactors.beans.AssertionStatistics;
+import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Option;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Section;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Table;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Table.Span;
 import org.integratedmodelling.klab.monitoring.Message;
-import org.integratedmodelling.klab.rest.ActionStatistics;
-import org.integratedmodelling.klab.rest.AssertionStatistics;
-import org.integratedmodelling.klab.rest.TestStatistics;
 import org.integratedmodelling.klab.utils.LogFile;
 import org.integratedmodelling.klab.utils.NameGenerator;
 import org.integratedmodelling.klab.utils.Path;
@@ -68,8 +66,10 @@ public class TestScope {
 	private TestScope parent;
 	// unique, used for communication organization only
 	private String testScopeId;
+	private Channel monitor;
+	private Identity identity;
 
-	private ISession session;
+//	private ISession session;
 
 	// set only by an explicit fail instruction
 	private String failureMessage;
@@ -80,7 +80,7 @@ public class TestScope {
 	 */
 	public TestScope(TestScope other) {
 
-		this.session = other.session;
+//		this.session = other.session;
 		this.statistics = other.statistics;
 		this.testStatistics = other.testStatistics;
 		this.actionStatistics = other.actionStatistics;
@@ -92,13 +92,16 @@ public class TestScope {
 		this.log = other.log;
 		this.docBuilder = other.docBuilder;
 		this.testScopeId = other.testScopeId;
+		this.monitor = other.monitor;
+		this.identity = other.identity;
 	}
 
-	public TestScope(ISession session) {
-		this.session = session;
+	public TestScope(Identity identity, Channel monitor) {
+		this.identity = identity;
+		this.monitor = monitor;
 		this.statistics = new ArrayList<>();
 		this.docBuilder = new AsciiDocBuilder("Test report",
-				"Run by " + session.getUser() + " on " + TimeInstant.create() + " [k.LAB " + Version.getCurrent() + "]",
+				"Run by " + identity + " on " + TimeInstant.create() + " [k.LAB " + Version.getCurrent() + "]",
 				Option.NUMBER_SECTIONS);
 		this.docSection = this.docBuilder.getRootSection();
 		this.docSection.action(() -> getAsciidocDescription());
@@ -210,8 +213,8 @@ public class TestScope {
 			}
 		}
 
-		this.session.getMonitor().send(Message.create(this.session.getId(), IMessage.MessageClass.UnitTests,
-				IMessage.Type.TestFinished, this.actionStatistics));
+		this.monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.Type.TestFinished,
+				this.actionStatistics));
 
 	}
 
@@ -234,8 +237,7 @@ public class TestScope {
 		ret.setSourceCode(action.getSourceCode());
 		ret.setStart(System.currentTimeMillis());
 
-		this.session.getMonitor().send(
-				Message.create(this.session.getId(), IMessage.MessageClass.UnitTests, IMessage.Type.TestStarted, ret));
+		monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.Type.TestStarted, ret));
 
 		test.getActions().add(ret);
 		return ret;
@@ -252,8 +254,8 @@ public class TestScope {
 		docBuilder.writeToFile(new File(System.getProperty("user.home") + File.separator + "testoutput.adoc").toPath(),
 				Charset.forName("UTF-8"));
 
-		this.session.getMonitor().send(Message.create(this.session.getId(), IMessage.MessageClass.UnitTests,
-				IMessage.Type.TestCaseFinished, this.testStatistics));
+		monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.Type.TestCaseFinished,
+				this.testStatistics));
 
 	}
 
@@ -273,7 +275,7 @@ public class TestScope {
 			}
 
 			buffer.append("Test completed in "
-					+ Time.INSTANCE.printPeriod(ret.actionStatistics.getEnd() - ret.actionStatistics.getStart())
+					+ TimeDuration.print(ret.actionStatistics.getEnd() - ret.actionStatistics.getStart())
 					+ ": result is " + (ret.actionStatistics.getFailure() == 0 ? "[lime]#SUCCESS#" : "[red]#FAIL#")
 					+ "\n\n");
 
@@ -311,13 +313,13 @@ public class TestScope {
 				elapsed += action.getEnd() - action.getStart();
 			}
 
-			if (ret.behavior.getMetadata().containsKey(IMetadata.DC_COMMENT)) {
-				buffer.append("\n" + ret.behavior.getMetadata().get(IMetadata.DC_COMMENT) + "\n");
+			if (ret.behavior.getMetadata().containsKey(Metadata.DC_COMMENT)) {
+				buffer.append("\n" + ret.behavior.getMetadata().get(Metadata.DC_COMMENT) + "\n");
 			}
 
 			buffer.append(
 					"\nTotal tests run: " + (success + failed) + " of which [lime]#" + success + "# successful, [red]#"
-							+ failed + "# failed. Total test run time " + Time.INSTANCE.printPeriod(elapsed) + ".\n");
+							+ failed + "# failed. Total test run time " + TimeDuration.print(elapsed) + ".\n");
 
 			return buffer.toString();
 		});
@@ -367,7 +369,7 @@ public class TestScope {
 			}
 		}
 
-		return (totalOk + totalFail) + " tests run in " + Time.INSTANCE.printPeriod(end - start) + " ([lime]#" + totalOk
+		return (totalOk + totalFail) + " tests run in " + TimeDuration.print(end - start) + " ([lime]#" + totalOk
 				+ "# succeeded, [red]#" + totalFail + "# failed, " + totalSkipped + " skipped)\n\n" + table.toString();
 	}
 

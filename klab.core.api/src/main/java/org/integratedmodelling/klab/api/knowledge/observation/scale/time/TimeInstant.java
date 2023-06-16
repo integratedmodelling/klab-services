@@ -141,4 +141,12 @@ public interface TimeInstant extends Comparable<TimeInstant> {
 	 */
 	TimeInstant endOf(Resolution.Type temporalAggregation);
 
+	/**
+	 * TODO implement this and others with Java time
+	 * 
+	 * @return
+	 */
+	public static TimeInstant create() {
+		return null;
+	}
 }

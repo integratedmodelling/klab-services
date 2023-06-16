@@ -19,8 +19,8 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.services.actors.messages.AgentMessage;
-import org.integratedmodelling.klab.services.actors.messages.AgentResponse;
+import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
+import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 

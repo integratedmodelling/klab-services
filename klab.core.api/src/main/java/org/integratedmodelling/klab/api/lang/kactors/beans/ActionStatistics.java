@@ -1,9 +1,9 @@
-package org.integratedmodelling.klab.runtime.kactors.beans;
+package org.integratedmodelling.klab.api.lang.kactors.beans;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.integratedmodelling.kactors.api.IKActorsStatement.Assert.Assertion;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assert.Assertion;
 
 public class ActionStatistics {
 

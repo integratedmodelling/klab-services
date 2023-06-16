@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.integratedmodelling.kactors.api.IKActorsBehavior;
-import org.integratedmodelling.klab.api.auth.IActorIdentity.KlabMessage;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -15,11 +13,12 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
+import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
+import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.exceptions.KlabActorException;
-import org.integratedmodelling.klab.rest.Layout;
-import org.integratedmodelling.klab.rest.ViewComponent;
+import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
 /**
  * Runtime scope for all k.Actors statements. Root scopes are for each action. Local class so that
@@ -34,8 +33,6 @@ public class KActorsScope {
     
     Scope mainScope;
     
-//    @Deprecated
-//    IRuntimeScope runtimeScope;
     Long listenerId;
     Identity identity;
     Object match;
@@ -398,7 +395,7 @@ public class KActorsScope {
                 if (code.getArguments().getUnnamedArguments().size() > i) {
                     Object argument = code.getArguments().getUnnamedArguments().get(i);
                     value = argument instanceof KActorsValue
-                            ? KActorsVM.evaluateInScope((KActorsValue) argument, this, identity)
+                            ? KActorsVM.evaluateInScope((KActorsValue) argument, this)
                             : argument;
                 }
                 ret.symbolTable.put(farg, value);
@@ -484,6 +481,10 @@ public class KActorsScope {
         return this.semaphore;
     }
 
+    public Identity getIdentity() {
+    	return this.identity;
+    }
+    
 //    @Override
     public ViewScope getViewScope() {
         return this.viewScope;
@@ -499,7 +500,7 @@ public class KActorsScope {
     }
 
 //    @Override
-    public void tellSender(KlabMessage message) {
+    public void tellSender(AgentMessage message) {
         if (this.sender != null) {
             this.sender.tell(message);
         }

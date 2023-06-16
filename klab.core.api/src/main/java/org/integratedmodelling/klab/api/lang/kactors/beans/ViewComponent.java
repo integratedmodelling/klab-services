@@ -1,14 +1,13 @@
-package org.integratedmodelling.klab.runtime.kactors.beans;
+package org.integratedmodelling.klab.api.lang.kactors.beans;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.integratedmodelling.kactors.api.IKActorsBehavior;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.rest.ObservationReference.ValueType;
-import org.integratedmodelling.klab.utils.Pair;
 
 /**
  * The message used by the view actor to request view components. Any number of these may be sent.
@@ -81,7 +80,7 @@ public class ViewComponent {
     private String name;
     private String style;
     private String title;
-    private ValueType contentType;
+    private Artifact.Type contentType;
     private String content;
     private Tree tree;
     private Layout layout;
@@ -136,11 +135,11 @@ public class ViewComponent {
         this.title = title;
     }
 
-    public ValueType getContentType() {
+    public Artifact.Type getContentType() {
         return contentType;
     }
 
-    public void setContentType(ValueType contentType) {
+    public void setContentType(Artifact.Type contentType) {
         this.contentType = contentType;
     }
 

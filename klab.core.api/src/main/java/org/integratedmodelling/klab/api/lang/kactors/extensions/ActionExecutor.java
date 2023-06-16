@@ -43,6 +43,8 @@ public interface ActionExecutor {
 
 	}
 
+	boolean isSynchronized();
+
 //	/**
 //	 * A component is an Actor that reacts through an MVC pattern.
 //	 * 

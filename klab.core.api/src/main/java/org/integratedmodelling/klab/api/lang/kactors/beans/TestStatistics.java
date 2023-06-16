@@ -1,19 +1,19 @@
-package org.integratedmodelling.klab.runtime.kactors.beans;
+package org.integratedmodelling.klab.api.lang.kactors.beans;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.actors.IBehavior;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
 public class TestStatistics {
 
     public TestStatistics() {
     }
 
-    public TestStatistics(IBehavior behavior) {
+    public TestStatistics(KActorsBehavior behavior) {
         this.name = behavior.getName();
-        this.setDescription(behavior.getMetadata().get(IMetadata.DC_COMMENT, (String) null));
+        this.setDescription(behavior.getMetadata().get(Metadata.DC_COMMENT, (String) null));
         this.setStart(System.currentTimeMillis());
     }
 

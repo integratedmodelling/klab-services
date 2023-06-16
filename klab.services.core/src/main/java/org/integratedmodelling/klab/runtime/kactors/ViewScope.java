@@ -1,17 +1,21 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
+import org.integratedmodelling.kactors.api.IKActorsBehavior;
+import org.integratedmodelling.kim.api.IParameters;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
+import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
+import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
+import org.integratedmodelling.klab.api.lang.kactors.beans.ViewPanel;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
-import org.integratedmodelling.klab.runtime.kactors.beans.Layout;
-import org.integratedmodelling.klab.runtime.kactors.beans.ViewComponent;
-import org.integratedmodelling.klab.runtime.kactors.beans.ViewPanel;
 import org.integratedmodelling.klab.utils.Utils;
 
 /**
@@ -64,7 +68,7 @@ public class ViewScope {
         ret.setType(isActive ? ViewComponent.Type.InputGroup : ViewComponent.Type.Group);
         if (group.getGroupMetadata().containsKey("name")) {
             String name = KActorsVM
-                    .evaluateInScope((KActorsValue) group.getGroupMetadata().get("name"), scope, scope.getIdentity()).toString();
+                    .evaluateInScope((KActorsValue) group.getGroupMetadata().get("name"), scope).toString();
             ret.setName(name);
         }
         String id = null;
@@ -91,7 +95,7 @@ public class ViewScope {
                 if (!component.getAttributes().containsKey(key) && Actors.INSTANCE.getLayoutMetadata().contains(key)) {
                     Object param = parameters.get(key);
                     String value = scope.localize(param instanceof KActorsValue
-                            ? KActorsVM.evaluateInScope((KActorsValue) param, scope, scope.getIdentity()).toString()
+                            ? KActorsVM.evaluateInScope((KActorsValue) param, scope).toString()
                             : param.toString());
                     component.getAttributes().put(key, value);
                 }
@@ -141,9 +145,9 @@ public class ViewScope {
                 if (panelLocation != null) {
 
                     panel = new ViewPanel(
-                            annotation.containsKey("id") ? scope.localize(annotation.get("id", String.class)) : action.getId(),
+                            annotation.containsKey("id") ? scope.localize(annotation.get("id", String.class)) : action.getName(),
                             annotation.get("style", String.class));
-                    panel.getAttributes().putAll(ViewBehavior.getMetadata(annotation, scope));
+                    panel.getAttributes().putAll(getMetadata(annotation, scope));
 
                     if (this.layout == null) {
                         this.layout = createLayout(action.getBehavior(), scope);
@@ -180,7 +184,7 @@ public class ViewScope {
              */
             panel = new ViewPanel(action.getBehavior().getId(), action.getBehavior().getStatement().getStyle());
             for (Annotation annotation : action.getAnnotations()) {
-                panel.getAttributes().putAll(ViewBehavior.getMetadata(annotation, scope));
+                panel.getAttributes().putAll(getMetadata(annotation, scope));
             }
         }
 
@@ -204,7 +208,7 @@ public class ViewScope {
         ret.layout.setType("modal".equals(annotation.getName()) ? ViewComponent.Type.ModalWindow : ViewComponent.Type.Window);
         ViewPanel panel = new ViewPanel(annotation.containsKey("id") ? annotation.get("id", String.class) : actionId,
                 annotation.get("style", String.class));
-        panel.getAttributes().putAll(ViewBehavior.getMetadata(annotation, scope));
+        panel.getAttributes().putAll(getMetadata(annotation, scope));
         ret.layout.getPanels().add(panel);
         ret.currentComponent = panel;
         return ret;
@@ -233,8 +237,8 @@ public class ViewScope {
             }
         }
 
-        if (behavior.getStatement().getStyleSpecs() != null) {
-            ret.setStyleSpecs(Utils.Json.printAsJson(behavior.getStatement().getStyleSpecs()));
+        if (behavior.getStyleSpecs() != null) {
+            ret.setStyleSpecs(Utils.Json.printAsJson(behavior.getStyleSpecs()));
         }
         return ret;
     }
@@ -273,6 +277,27 @@ public class ViewScope {
 
     public void setLayout(Layout layout) {
         this.layout = layout;
+    }
+    
+    public static Map<String, String> getMetadata(Parameters<String> arguments, KActorsScope scope) {
+        Map<String, String> ret = new HashMap<>();
+        if (arguments != null) {
+            for (String key : arguments.getNamedKeys()) {
+                Object o = arguments.get(key);
+                if (o instanceof KActorsValue) {
+                    o = ((KActorsValue) o).evaluate(scope, true);
+                }
+                if (o instanceof String) {
+                    o = scope == null ? (String) o : scope.localize((String) o);
+                }
+                if (o == null) {
+                    ret.put(key, "null");
+                } else {
+                    ret.put(key, o.toString());
+                }
+            }
+        }
+        return ret;
     }
 
 }

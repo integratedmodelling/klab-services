@@ -4,39 +4,33 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.lucene.queryparser.ext.Extensions;
-import org.integratedmodelling.kactors.api.IKActorsBehavior;
-import org.integratedmodelling.kactors.api.IKActorsValue;
 import org.integratedmodelling.kim.api.IKimExpression;
-import org.integratedmodelling.kim.api.IKimObservable;
-import org.integratedmodelling.klab.Resources;
 import org.integratedmodelling.klab.Urn;
-import org.integratedmodelling.klab.api.actors.IBehavior;
 import org.integratedmodelling.klab.api.auth.IActorIdentity;
-import org.integratedmodelling.klab.api.auth.IActorIdentity.KlabMessage;
 import org.integratedmodelling.klab.api.auth.IRuntimeIdentity;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.data.adapters.IKlabData;
-import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
+import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assert;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assert.Assertion;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Do;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Fail;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.FireValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.For;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.If;
@@ -45,20 +39,20 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Sequence;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.TextBlock;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.While;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType;
+import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
+import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.lang.kactors.extensions.ActionExecutor;
-import org.integratedmodelling.klab.api.model.IAnnotation;
+import org.integratedmodelling.klab.api.lang.kactors.extensions.WidgetActionExecutor;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.monitoring.IMessage;
-import org.integratedmodelling.klab.api.runtime.monitoring.IMonitor;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.common.Urns;
-import org.integratedmodelling.klab.components.runtime.actors.extensions.Artifact;
-import org.integratedmodelling.klab.components.runtime.artifacts.ObjectArtifact;
-import org.integratedmodelling.klab.data.encoding.VisitingDataBuilder;
 import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.logging.Logging;
-import org.integratedmodelling.klab.rest.Layout;
-import org.integratedmodelling.klab.rest.ViewComponent;
+import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 import org.integratedmodelling.klab.utils.Utils;
 
 /**
@@ -309,8 +303,8 @@ public class KActorsVM {
 							/*
 							 * These should all be messages to the actor ref
 							 */
-							if (identity instanceof Session) {
-								((Session) identity).notifyTestCaseStart(behavior,
+							if (scope.getIdentity() instanceof Session) {
+								((Session) scope.getIdentity()).notifyTestCaseStart(behavior,
 										scope.getTestScope().getTestStatistics());
 							}
 
@@ -342,8 +336,8 @@ public class KActorsVM {
 //							System.out.println(Actors.INSTANCE.dumpView(scope.getViewScope().getLayout()));
 //						}
 						scope.getIdentity().setView(new ViewImpl(scope.getViewScope().getLayout()));
-						scope.getIdentity().getMonitor().send(IMessage.MessageClass.UserInterface,
-								IMessage.Type.SetupInterface, scope.getViewScope().getLayout());
+						scope.getMonitor().send(Message.MessageClass.UserInterface,
+								Message.Type.SetupInterface, scope.getViewScope().getLayout());
 					} /*
 						 * TODO else if we have been spawned by a new component inside a group, we
 						 * should send the group update message
@@ -387,6 +381,11 @@ public class KActorsVM {
 	}
 
 	protected Collection<KActorsAction> getActions(KActorsBehavior behavior, String... nameOrAnnotation) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	protected KActorsAction getAction(KActorsBehavior behavior, String nameOrAnnotation) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -443,7 +442,7 @@ public class KActorsVM {
 //            if (Configuration.INSTANCE.isEchoEnabled()) {
 //                System.out.println(Actors.INSTANCE.dumpView(scope.getViewScope().getLayout()));
 //            }
-			KActorsVM.this.identity.setView(new ViewImpl(scope.getViewScope().getLayout()));
+			scope.getIdentity().setView(new ViewImpl(scope.getViewScope().getLayout()));
 			scope.getMonitor().send(IMessage.MessageClass.UserInterface,
 					"modal".equals(wspecs.getName()) ? IMessage.Type.CreateModalWindow : IMessage.Type.CreateWindow,
 					scope.getViewScope().getLayout());
@@ -513,10 +512,10 @@ public class KActorsVM {
 		return true;
 	}
 
-	private void executeInstantiation(Instantiation code, IBehavior behavior, KActorsScope scope) {
+	private void executeInstantiation(Instantiation code, KActorsBehavior behavior, KActorsScope scope) {
 
-		Behavior<KlabMessage> child = null;
-		if (this.identity instanceof Observation) {
+		Behavior<AgentMessage> child = null;
+		if (scope.getIdentity()I instanceof Observation) {
 			child = ObservationActor.create((Observation) this.identity, null);
 		} else if (this.identity instanceof Session) {
 			/**
@@ -546,7 +545,7 @@ public class KActorsVM {
 
 			MatchActions actions = new MatchActions(behavior, scope);
 			for (Triple<KActorsValue, KActorsStatement, String> adesc : code.getActions()) {
-				actions.matches.add(new Pair<Match, KActorsStatement>(new Match(adesc.getFirst(), adesc.getThird()),
+				actions.matches.add(Pair.of(new Match(adesc.getFirst(), adesc.getThird()),
 						adesc.getSecond()));
 			}
 			this.componentFireListeners.put(actorName, actions);
@@ -560,16 +559,16 @@ public class KActorsVM {
 			 * TODO match the arguments to the correspondent names for the declaration of
 			 * main()
 			 */
-			IBehavior childBehavior = Actors.INSTANCE.getBehavior(code.getBehavior());
+			KActorsBehavior childBehavior = Actors.INSTANCE.getBehavior(code.getBehavior());
 			if (childBehavior == null) {
 				observationScope
 						.error("unreferenced child behavior: " + code.getBehavior() + " when execute instantiation");
 				return;
 			}
-			Action main = childBehavior.getAction("main");
+			KActorsAction main = getAction(childBehavior, "main");
 			int n = 0;
-			for (int i = 0; i < main.getStatement().getArgumentNames().size(); i++) {
-				String arg = main.getStatement().getArgumentNames().get(i);
+			for (int i = 0; i < main.getArgumentNames().size(); i++) {
+				String arg = main.getArgumentNames().get(i);
 				Object value = code.getArguments().get(arg);
 				if (value == null && code.getArguments().getUnnamedKeys().size() > n) {
 					value = code.getArguments().get(code.getArguments().getUnnamedKeys().get(n++));
@@ -588,7 +587,7 @@ public class KActorsVM {
 			}
 		}
 
-		IBehavior actorBehavior = Actors.INSTANCE.getBehavior(code.getBehavior());
+		KActorsBehavior actorBehavior = Actors.INSTANCE.getBehavior(code.getBehavior());
 		if (actorBehavior != null) {
 
 			/*
@@ -632,7 +631,7 @@ public class KActorsVM {
 
 	private void waitForGreen(Semaphore semaphore) {
 
-		while (!Actors.INSTANCE.expired(semaphore)) {
+		while (!Semaphore.expired(semaphore)) {
 			try {
 				Thread.sleep(50);
 			} catch (InterruptedException e) {
@@ -646,11 +645,11 @@ public class KActorsVM {
 
 	}
 
-	private void executeText(TextBlock code, IBehavior behavior, KActorsScope scope) {
+	private void executeText(TextBlock code, KActorsBehavior behavior, KActorsScope scope) {
 		executeCall(new KActorsActionCall(code), behavior, scope);
 	}
 
-	private void executeSequence(Sequence code, IBehavior behavior, KActorsScope scope) {
+	private void executeSequence(Sequence code, KActorsBehavior behavior, KActorsScope scope) {
 		if (code.getStatements().size() == 1) {
 			execute(code.getStatements().get(0), behavior, scope);
 		} else {
@@ -663,7 +662,7 @@ public class KActorsVM {
 		}
 	}
 
-	private void executeGroup(ConcurrentGroup code, IBehavior behavior, KActorsScope scope) {
+	private void executeGroup(ConcurrentGroup code, KActorsBehavior behavior, KActorsScope scope) {
 		KActorsScope groupScope = scope.getChild(code);
 		if (code.getTag() != null) {
 			/*
@@ -680,17 +679,17 @@ public class KActorsVM {
 		}
 	}
 
-	private void executeIf(If code, IBehavior behavior, KActorsScope scope) {
+	private void executeIf(If code, KActorsBehavior behavior, KActorsScope scope) {
 
 		Object check = ((KActorsValue) code.getCondition()).evaluate(scope, identity, true);
-		if (KActorsValue.isTrue(check)) {
+		if (isTrue(check, scope)) {
 			if (code.getThen() != null) {
 				execute(code.getThen(), behavior, scope);
 			}
 		} else {
 			for (Pair<KActorsValue, KActorsStatement> conditions : code.getElseIfs()) {
-				check = ((KActorsValue) conditions.getFirst()).evaluate(scope, identity, true);
-				if (KActorsValue.isTrue(check)) {
+				check = ((KActorsValue) conditions.getFirst()).evaluate(scope, true);
+				if (/* KActorsValue. */isTrue(check, scope)) {
 					execute(conditions.getSecond(), behavior, scope);
 					return;
 				}
@@ -703,7 +702,7 @@ public class KActorsVM {
 	}
 
 	private void executeFor(For code, KActorsBehavior behavior, KActorsScope scope) {
-		for (Object o : getIterable(code.getIterable(), scope, identity)) {
+		for (Object o : getIterable(code.getIterable(), scope)) {
 			if (!execute(code.getBody(), behavior, scope.withValue(code.getVariable(), o))
 					|| scope.getMonitor().isInterrupted()) {
 				break;
@@ -711,7 +710,7 @@ public class KActorsVM {
 		}
 	}
 
-	private void executeAssert(Assert code, IBehavior behavior, KActorsScope scope) {
+	private void executeAssert(Assert code, KActorsBehavior behavior, KActorsScope scope) {
 
 		for (Assertion assertion : code.getAssertions()) {
 			executeCallChain(assertion.getCalls(), behavior, scope);
@@ -724,7 +723,7 @@ public class KActorsVM {
 		}
 	}
 
-	private static Object executeFunctionChain(List<Call> functions, IBehavior behavior, KActorsScope scope) {
+	private static Object executeFunctionChain(List<Call> functions, KActorsBehavior behavior, KActorsScope scope) {
 		Object contextReceiver = null;
 		for (int i = 0; i < functions.size(); i++) {
 			if (scope.getMonitor().isInterrupted()) {
@@ -759,7 +758,7 @@ public class KActorsVM {
 	 * @param calls
 	 * @param scope
 	 */
-	private void executeCallChain(List<Call> calls, IBehavior behavior, KActorsScope scope) {
+	private void executeCallChain(List<Call> calls, KActorsBehavior behavior, KActorsScope scope) {
 
 		Object contextReceiver = null;
 		for (int i = 0; i < calls.size(); i++) {
@@ -786,7 +785,7 @@ public class KActorsVM {
 
 		if (scope.isFunctional()) {
 			// ((AgentScope) scope).hasValueScope = true;
-			((KActorsScope) scope).setValueScope(code.getValue().evaluate(scope, identity, false));
+			((KActorsScope) scope).setValueScope(code.getValue().evaluate(scope, false));
 			return false;
 		}
 
@@ -795,7 +794,7 @@ public class KActorsVM {
 			if (listeners.containsKey(scope.getNotifyId())) {
 				MatchActions actions = listeners.get(scope.getNotifyId());
 				if (actions != null) {
-					actions.match(code.getValue().evaluate(scope, identity, false), scope);
+					actions.match(code.getValue().evaluate(scope, false), scope);
 				}
 			}
 		}
@@ -808,7 +807,7 @@ public class KActorsVM {
 			 * the listener.
 			 */
 			((KActorsScope) scope).getSender()
-					.tell(new Fire(scope.getListenerId(), code.getValue().evaluate(scope, identity, false),
+					.tell(new Fire(scope.getListenerId(), code.getValue().evaluate(scope, false),
 							scope.getAppId(), scope.getSemaphore(), scope.getSymbols(this.identity)));
 
 		} else if (parentActor != null) {
@@ -848,7 +847,7 @@ public class KActorsVM {
 		if (code.getRecipient() != null) {
 			if ("self".equals(code.getRecipient())) {
 				this.identity.getState().put(code.getVariable(),
-						((KActorsValue) code.getValue()).evaluate(scope, identity, false));
+						((KActorsValue) code.getValue()).evaluate(scope, false));
 			} else {
 				// TODO find the actor reference and send it an internal message to set the
 				// state. Should be subject to scope and authorization
@@ -856,7 +855,7 @@ public class KActorsVM {
 			}
 		} else if (((KActorsValue) code.getValue()).getConstructor() != null) {
 
-			Object o = ((KActorsValue) code.getValue()).evaluate(scope, identity, false);
+			Object o = ((KActorsValue) code.getValue()).evaluate(scope, false);
 			this.javaReactors.put(code.getVariable(), o);
 			switch (code.getScope()) {
 			case ACTION:
@@ -870,7 +869,7 @@ public class KActorsVM {
 				break;
 			}
 		} else {
-			Object o = ((KActorsValue) code.getValue()).evaluate(scope, identity, false);
+			Object o = ((KActorsValue) code.getValue()).evaluate(scope, false);
 			switch (code.getScope()) {
 			case ACTION:
 				scope.getSymbolTable().put(code.getVariable(), o);
@@ -886,13 +885,13 @@ public class KActorsVM {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Object evaluateInScope(KActorsValue arg, KActorsScope scope, Identity identity) {
+	public static Object evaluateInScope(KActorsValue arg, KActorsScope scope) {
 
 		Object ret = null;
 
 		switch (arg.getType()) {
 		case OBJECT:
-			ret = Actors.INSTANCE.createJavaObject(arg.getConstructor(), scope, identity);
+			ret = Actors.INSTANCE.createJavaObject(arg.getConstructor(), scope);
 			break;
 		case COMPONENT:
 			ret = arg.getConstructor();
@@ -901,10 +900,10 @@ public class KActorsVM {
 			ret = arg.getStatedValue();
 			break;
 		case OBSERVABLE:
-			if (arg.getData() instanceof IObservable) {
+			if (arg.getData() instanceof Observable) {
 				ret = arg.getData();
-			} else if (arg.getStatedValue() instanceof IKimObservable) {
-				ret = Observables.INSTANCE.declare((IKimObservable) arg.getStatedValue(), identity.getMonitor());
+			} else if (arg.getStatedValue() instanceof KimObservable) {
+				ret = Observables.INSTANCE.declare((KimObservable) arg.getStatedValue(), scope.getMonitor());
 				arg.setData(ret);
 			}
 			break;
@@ -945,7 +944,7 @@ public class KActorsVM {
 				/*
 				 * 'metadata' is bound to the actor metadata map, initialized in the call
 				 */
-				ret = ((ObjectExpression) arg.getData()).eval((IRuntimeScope) scope.getRuntimeScope(), identity,
+				ret = ((ObjectExpression) arg.getData()).eval((IRuntimeScope) scope.getRuntimeScope(), scope.getIdentity(),
 						Parameters.create(scope.getSymbols(identity), "metadata", scope.getMetadata(), "self",
 								identity));
 			} catch (Throwable t) {
@@ -965,7 +964,7 @@ public class KActorsVM {
 			ret = new ArrayList<Object>();
 			for (Object o : (Collection<?>) arg.getStatedValue()) {
 				((List<Object>) ret)
-						.add(o instanceof KActorsValue ? evaluateInScope((KActorsValue) o, scope, identity) : o);
+						.add(o instanceof KActorsValue ? evaluateInScope((KActorsValue) o, scope) : o);
 			}
 			break;
 		case TREE:
@@ -1001,9 +1000,9 @@ public class KActorsVM {
 
 		if (arg.getExpressionType() == ExpressionType.TERNARY_OPERATOR) {
 			if (Actors.INSTANCE.asBooleanValue(ret)) {
-				ret = arg.getTrueCase() == null ? null : evaluateInScope(arg.getTrueCase(), scope, identity);
+				ret = arg.getTrueCase() == null ? null : evaluateInScope(arg.getTrueCase(), scope);
 			} else {
-				ret = arg.getFalseCase() == null ? null : evaluateInScope(arg.getFalseCase(), scope, identity);
+				ret = arg.getFalseCase() == null ? null : evaluateInScope(arg.getFalseCase(), scope);
 			}
 		}
 
@@ -1034,7 +1033,7 @@ public class KActorsVM {
 			notifyId = nextId.incrementAndGet();
 			MatchActions actions = new MatchActions(behavior, scope);
 			for (Triple<KActorsValue, KActorsStatement, String> adesc : code.getActions()) {
-				actions.matches.add(new Pair<Match, KActorsStatement>(new Match(adesc.getFirst(), adesc.getThird()),
+				actions.matches.add(Pair.of(new Match(adesc.getFirst(), adesc.getThird()),
 						adesc.getSecond()));
 			}
 			this.listeners.put(notifyId, actions);
@@ -1049,8 +1048,8 @@ public class KActorsVM {
 		String receiverName = "self";
 		String messageName = code.getMessage();
 		if (messageName.contains(".")) {
-			receiverName = Path.getLeading(messageName, '.');
-			messageName = Path.getLast(messageName, '.');
+			receiverName = Utils.Paths.getLeading(messageName, '.');
+			messageName = Utils.Paths.getLast(messageName, '.');
 		}
 
 		if (!"self".equals(receiverName)) {
@@ -1061,11 +1060,11 @@ public class KActorsVM {
 			 */
 			if (this.javaReactors.containsKey(receiverName)
 					|| scope.getFrameSymbols().containsKey(receiverName)
-							&& !Utils.isPOD(scope.getSymbolTable().get(receiverName))
+							&& !Utils.Data.isPOD(scope.getSymbolTable().get(receiverName))
 					|| scope.getSymbolTable().containsKey(receiverName)
-							&& !Utils.isPOD(scope.getSymbolTable().get(receiverName))
+							&& !Utils.Data.isPOD(scope.getSymbolTable().get(receiverName))
 					|| scope.getGlobalSymbols().containsKey(receiverName)
-							&& !Utils.isPOD(scope.getGlobalSymbols().get(receiverName))) {
+							&& !Utils.Data.isPOD(scope.getGlobalSymbols().get(receiverName))) {
 
 				Object reactor = this.javaReactors.get(receiverName);
 				if (reactor == null) {
@@ -1078,8 +1077,7 @@ public class KActorsVM {
 					reactor = scope.getGlobalSymbols().get(receiverName);
 				}
 				if (reactor != null) {
-					Actors.INSTANCE.invokeReactorMethod(reactor, messageName, code.getArguments(), scope,
-							this.identity);
+					Actors.INSTANCE.invokeReactorMethod(reactor, messageName, code.getArguments(), scope);
 				}
 
 				return;
@@ -1114,7 +1112,7 @@ public class KActorsVM {
 //                    recipient = ((ActorReference) ((IActorIdentity<KlabMessage>) potentialRecipient).getActor()).actor;
 				} catch (Throwable t) {
 					// TODO do something with the failed call, the actor should probably remember
-					if (this.identity instanceof IRuntimeIdentity) {
+					if (scope.getIdentity() instanceof IRuntimeIdentity) {
 						((IRuntimeIdentity) this.identity).getMonitor()
 								.error("error executing actor call " + messageName + ": " + t.getMessage());
 					}
@@ -1138,7 +1136,7 @@ public class KActorsVM {
 			}
 
 			if (synchronize) {
-				scope.getRuntimeScope().getMonitor()
+				scope.getMonitor()
 						.warn("External actor calls are being made within a synchronous scope: this should "
 								+ " never happen. The synchronization is being ignored.");
 			}
@@ -1151,7 +1149,7 @@ public class KActorsVM {
 
 		}
 
-		Action libraryActionCode = null;
+		KActorsAction libraryActionCode = null;
 
 		/*
 		 * check if the call is a method from the library and if it applies to the
@@ -1183,7 +1181,7 @@ public class KActorsVM {
 					 */
 					List<Object> args = new ArrayList<>();
 					for (Object arg : code.getArguments().getUnnamedArguments()) {
-						args.add(arg instanceof KActorsValue ? evaluateInScope((KActorsValue) arg, scope, identity)
+						args.add(arg instanceof KActorsValue ? evaluateInScope((KActorsValue) arg, scope)
 								: arg);
 					}
 					try {
@@ -1208,8 +1206,8 @@ public class KActorsVM {
 		 * at this point if we have a valueScope, we are calling a method on it.
 		 */
 		if (scope.getValueScope() != null) {
-			((KActorsScope) scope).setValueScope(Actors.INSTANCE.invokeReactorMethod(scope.getValueScope(), messageName,
-					code.getArguments(), scope, identity));
+			scope.setValueScope(Actors.INSTANCE.invokeReactorMethod(scope.getValueScope(), messageName,
+					code.getArguments(), scope));
 			return;
 		}
 
@@ -1227,7 +1225,7 @@ public class KActorsVM {
 		// wasn't
 		// explicitly
 		// stated.
-		Action actionCode = behavior.getAction(messageName);
+		KActorsAction actionCode = getAction(behavior, messageName);
 		if (actionCode != null || libraryActionCode != null) {
 			/*
 			 * local action overrides a library action
@@ -1247,10 +1245,10 @@ public class KActorsVM {
 		 * call, so this will be instantiated only if the call has been executed before
 		 * (in a loop or upon repeated calls of the same action).
 		 */
-		KlabActionExecutor executor = actionCache.get(executorId);
+		ActionExecutor executor = actionCache.get(executorId);
 
 		if (executor == null) {
-			Class<? extends KlabActionExecutor> actionClass = Actors.INSTANCE.getActionClass(messageName);
+			Class<? extends ActionExecutor> actionClass = Actors.INSTANCE.getActionClass(messageName);
 			if (actionClass != null) {
 
 				// executor = Actors.INSTANCE.getSystemAction(messageName,
@@ -1267,7 +1265,7 @@ public class KActorsVM {
 
 					actionCache.put(executorId, executor);
 
-					if (executor instanceof KlabActionExecutor.Actor) {
+					if (executor instanceof ActionExecutor.Actor) {
 
 						/*
 						 * if it has a tag, store for later reference.
@@ -1277,9 +1275,9 @@ public class KActorsVM {
 							if (t instanceof KActorsValue) {
 								t = ((KActorsValue) t).evaluate(scope, identity, true);
 							}
-							((KlabActionExecutor.Actor) executor).setName(t.toString());
-							this.localActionExecutors.put(((KlabActionExecutor.Actor) executor).getName(),
-									(KlabActionExecutor.Actor) executor);
+							((ActionExecutor.Actor) executor).setName(t.toString());
+							this.localActionExecutors.put(((ActionExecutor.Actor) executor).getName(),
+									(ActionExecutor.Actor) executor);
 						}
 					}
 
@@ -1293,13 +1291,13 @@ public class KActorsVM {
 			}
 		}
 
-		if (executor instanceof KlabWidgetActionExecutor) {
+		if (executor instanceof WidgetActionExecutor) {
 
 			/*
 			 * the run() method in these is never called: they act through their view
 			 * components
 			 */
-			ViewComponent viewComponent = ((KlabWidgetActionExecutor) executor).getViewComponent();
+			ViewComponent viewComponent = ((WidgetActionExecutor) executor).getViewComponent();
 
 			// may be null if the addition of the component happens as the result of an
 			// action
@@ -1308,13 +1306,13 @@ public class KActorsVM {
 			// after the call.
 			if (viewComponent != null) {
 				scope.getViewScope().setViewMetadata(viewComponent, executor.getArguments(), scope);
-				viewComponent.setIdentity(this.identity.getId());
+				viewComponent.setIdentity(scope.getIdentity().getId());
 				viewComponent.setApplicationId(this.appId);
 				viewComponent.setParentId(code.getCallId()); // check - seems
 																// wrong
 				viewComponent.setId(executorId);
 				viewComponent.setActorPath(this.childActorPath);
-				((KlabWidgetActionExecutor) executor).setInitializedComponent(viewComponent);
+				((WidgetActionExecutor) executor).setInitializedComponent(viewComponent);
 				scope.getViewScope().getCurrentComponent().getComponents().add(viewComponent);
 			}
 
@@ -1332,7 +1330,7 @@ public class KActorsVM {
 	}
 	
     @SuppressWarnings("unchecked")
-    public Iterable<Object> getIterable(KActorsValue iterable, KActorsScope scope, Identity identity) {
+    public Iterable<Object> getIterable(KActorsValue iterable, KActorsScope scope) {
         switch(iterable.getType()) {
         case ANYTHING:
             break;
@@ -1354,7 +1352,7 @@ public class KActorsVM {
         case IDENTIFIER:
         case LIST:
         case SET:
-            Object o = evaluateInScope((KActorsValue) iterable, scope, identity);
+            Object o = evaluateInScope((KActorsValue) iterable, scope);
             if (o instanceof Iterable) {
                 return (Iterable<Object>) o;
             } else if (o instanceof String && Urns.INSTANCE.isUrn(o.toString())) {
@@ -1365,7 +1363,7 @@ public class KActorsVM {
             if (Urns.INSTANCE.isUrn(iterable.getStatedValue().toString())) {
                 return iterateResource(iterable.getStatedValue().toString());
             }
-            return Collections.singletonList(evaluateInScope((KActorsValue) iterable, scope, identity));
+            return Collections.singletonList(evaluateInScope((KActorsValue) iterable, scope));
         case MAP:
             break;
         case NODATA:
@@ -1373,7 +1371,7 @@ public class KActorsVM {
         case NUMBERED_PATTERN:
             break;
         case OBSERVATION:
-            return (Iterable<Object>) evaluateInScope((KActorsValue) iterable, scope, identity);
+            return (Iterable<Object>) evaluateInScope((KActorsValue) iterable, scope);
         case RANGE:
             // TODO iterate the range
             break;
@@ -1384,7 +1382,7 @@ public class KActorsVM {
         case TYPE:
             break;
         case URN:
-            return iterateResource(iterable.getStatedValue().toString();
+            return iterateResource(iterable.getStatedValue().toString());
         default:
             break;
         }
