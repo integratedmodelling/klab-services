@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.integratedmodelling.kim.api.IContextualizable;
 import org.integratedmodelling.kim.api.IKimAcknowledgement;
+import org.integratedmodelling.kim.api.IKimAnnotation;
 import org.integratedmodelling.kim.api.IKimClassification;
 import org.integratedmodelling.kim.api.IKimConcept;
 import org.integratedmodelling.kim.api.IKimConceptStatement;
@@ -42,6 +43,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -73,14 +75,14 @@ public class KimAdapter {
 
         IKimNamespace original = ns.getNamespace();
         KimNamespaceImpl ret = new KimNamespaceImpl();
-        Utils.Kim.copyStatementData(original, ret);
+        Utils.Lang.copyStatementData(original, ret);
 
         ret.setUrn(original.getName());
         for (ICompileNotification notification : ns.getIssues()) {
             // TODO
         }
 
-        ret.setMetadata(Utils.Kim.makeMetadata(ns.getNamespace().getMetadata()));
+        ret.setMetadata(Utils.Lang.makeMetadata(ns.getNamespace().getMetadata()));
         ret.setProjectName(ns.getProjectName());
         for (String imported : ns.getNamespace().getImportedNamespaceIds(false)) {
             /*
@@ -111,7 +113,7 @@ public class KimAdapter {
     public static KimStatementImpl makeStatement(IKimScope statement, String namespace) {
 
         KimStatementImpl ret = null;
-        
+
         if (statement instanceof IKimConceptStatement) {
             ret = adaptConceptStatement((IKimConceptStatement) statement, namespace);
         } else if (statement instanceof IKimModel) {
@@ -121,21 +123,21 @@ public class KimAdapter {
         } else if (statement instanceof IKimAcknowledgement) {
             ret = adaptAcknowledgementStatement((IKimAcknowledgement) statement);
         }
-        
+
         if (ret != null) {
             for (IKimScope child : statement.getChildren()) {
                 ret.getChildren().add(makeStatement(child, namespace));
             }
             return ret;
         }
-        
+
         throw new KIllegalArgumentException("statement " + statement + " cannot be understood");
     }
 
     private static KimStatementImpl adaptAcknowledgementStatement(IKimAcknowledgement statement) {
 
         KimAcknowledgementImpl ret = new KimAcknowledgementImpl();
-        Utils.Kim.copyStatementData(statement, ret);
+        Utils.Lang.copyStatementData(statement, ret);
 
         ret.setDocstring(statement.getDocstring());
         ret.setName(statement.getName());
@@ -153,7 +155,7 @@ public class KimAdapter {
     public static KimObservableImpl adaptKimObservable(IKimObservable parsed) {
 
         KimObservableImpl ret = new KimObservableImpl();
-        Utils.Kim.copyStatementData(parsed, ret);
+        Utils.Lang.copyStatementData(parsed, ret);
 
         ret.setAttributeIdentifier(parsed.hasAttributeIdentifier() ? parsed.getValue().toString() : null);
         ret.setValue(parsed.hasAttributeIdentifier()
@@ -204,7 +206,7 @@ public class KimAdapter {
     public static KimConceptImpl adaptKimConcept(IKimConcept original) {
 
         KimConceptImpl ret = new KimConceptImpl();
-        Utils.Kim.copyStatementData(original, ret);
+        Utils.Lang.copyStatementData(original, ret);
 
         ret.setObservable(original.getObservable() == null ? null : adaptKimConcept(original.getObservable()));
 
@@ -258,7 +260,7 @@ public class KimAdapter {
     public static KimSymbolDefinitionImpl adaptSymbolDefinition(IKimSymbolDefinition statement) {
 
         KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
-        Utils.Kim.copyStatementData(statement, ret);
+        Utils.Lang.copyStatementData(statement, ret);
 
         ret.setDefineClass(statement.getDefineClass());
         ret.setName(statement.getName());
@@ -270,7 +272,7 @@ public class KimAdapter {
     public static KimModelStatementImpl adaptModelStatement(IKimModel statement) {
 
         KimModelStatementImpl ret = new KimModelStatementImpl();
-        Utils.Kim.copyStatementData(statement, ret);
+        Utils.Lang.copyStatementData(statement, ret);
 
         for (IContextualizable contextualizable : statement.getContextualization()) {
             ret.getContextualization().add(adaptContextualization(contextualizable));
@@ -295,7 +297,8 @@ public class KimAdapter {
             ret.getResourceUrns().addAll(statement.getResourceUrns());
         }
         ret.setSemantic(statement.isSemantic());
-        ret.setType(statement.isInactive() ? Artifact.Type.VOID : Artifact.Type.valueOf(statement.getType().name()));
+        ret.setType(
+                statement.isInactive() ? Artifact.Type.VOID : Artifact.Type.valueOf(statement.getType().artifactType().name()));
         ret.setUri(ret.getNamespace() + ":" + ret.getName());
 
         return ret;
@@ -304,7 +307,7 @@ public class KimAdapter {
     private static Contextualizable adaptContextualization(IContextualizable contextualizable) {
 
         ContextualizableImpl ret = new ContextualizableImpl();
-        Utils.Kim.copyStatementData(contextualizable, ret);
+        Utils.Lang.copyStatementData(contextualizable, ret);
 
         ret.setAccordingTo(contextualizable.getAccordingTo());
         ret.setClassification(
@@ -317,10 +320,11 @@ public class KimAdapter {
                         adaptMediator(contextualizable.getConversion().getSecond())));
         ret.setEmpty(contextualizable.isEmpty());
         ret.setExpression(contextualizable.getExpression() == null ? null : adaptKimExpression(contextualizable.getExpression()));
-        ret.setFinal(contextualizable.isFinal());
+//        ret.setFinal(contextualizable.isFinal());
         ret.setGeometry(contextualizable.getGeometry() == null ? null : adaptGeometry(contextualizable.getGeometry()));
         ret.setInputs(contextualizable.getInputs().stream()
-                .map((c) -> new PairImpl<>(c.getFirst(), Artifact.Type.valueOf(c.getSecond().name()))).collect(Collectors.toList()));
+                .map((c) -> new PairImpl<>(c.getFirst(), Artifact.Type.valueOf(c.getSecond().name())))
+                .collect(Collectors.toList()));
         ret.getInteractiveParameters().addAll(contextualizable.getInteractiveParameters());
         ret.setLanguage(contextualizable.getLanguage());
         ret.setLiteral(contextualizable.getLiteral() == null ? null : LiteralImpl.of(contextualizable.getLiteral()));
@@ -353,6 +357,7 @@ public class KimAdapter {
     }
 
     private static KimObservable adaptObservable(IObservable target) {
+        
         IKimObservable parsed = Kim.INSTANCE.declare(target.getDefinition());
         return parsed == null ? null : adaptKimObservable(parsed);
     }
@@ -384,7 +389,7 @@ public class KimAdapter {
     private static KimConceptStatementImpl adaptConceptStatement(IKimConceptStatement statement, String namespace) {
 
         KimConceptStatementImpl ret = new KimConceptStatementImpl();
-        Utils.Kim.copyStatementData(statement, ret);
+        Utils.Lang.copyStatementData(statement, ret);
 
         ret.setAbstract(statement.isAbstract());
         ret.setAlias(statement.isAlias());
@@ -505,11 +510,11 @@ public class KimAdapter {
         for (IKimConcept c : statement.getRequiredRealms()) {
             ret.getRequiredRealms().add(adaptKimConcept(c));
         }
-        
+
         for (IKimRestriction c : statement.getRestrictions()) {
             ret.getRestrictions().add(adaptKimRestriction(c));
         }
-        
+
         for (IKimConcept c : statement.getTraitsConferred()) {
             ret.getTraitsConferred().add(adaptKimConcept(c));
         }

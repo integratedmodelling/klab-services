@@ -1,11 +1,11 @@
 package org.integratedmodelling.klab.api.lang.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -35,16 +35,16 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private KimLookupTable lookupTable;
     private String accordingTo;
     private String urn;
-    private Collection<PairImpl<String, org.integratedmodelling.klab.api.knowledge.Artifact.Type>> inputs;
-    private Parameters<String> parameters;
-    private Collection<String> interactiveParameters;
+    private Collection<Pair<String, Artifact.Type>> inputs;
+    private Parameters<String> parameters = Parameters.create();
+    private Collection<String> interactiveParameters = new ArrayList<>();
     private Contextualizable condition;
     private Pair<ValueMediator, ValueMediator> conversion;
     private boolean negated;
     private boolean mediation;
     private Geometry geometry;
     private boolean variable;
-    private boolean isFinal;
+//    private boolean isFinal;
     private boolean empty;
 
     @Override
@@ -113,7 +113,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     }
 
     @Override
-    public Collection<PairImpl<String, Artifact.Type>> getInputs() {
+    public Collection<Pair<String, Artifact.Type>> getInputs() {
         return this.inputs;
     }
 
@@ -157,10 +157,10 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         return this.variable;
     }
 
-    @Override
-    public boolean isFinal() {
-        return this.isFinal;
-    }
+//    @Override
+//    public boolean isFinal() {
+//        return this.isFinal;
+//    }
 
     @Override
     public boolean isEmpty() {
@@ -219,7 +219,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         this.urn = urn;
     }
 
-    public void setInputs(Collection<PairImpl<String, org.integratedmodelling.klab.api.knowledge.Artifact.Type>> inputs) {
+    public void setInputs(Collection<Pair<String, Artifact.Type>> inputs) {
         this.inputs = inputs;
     }
 
@@ -255,9 +255,9 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         this.variable = variable;
     }
 
-    public void setFinal(boolean isFinal) {
-        this.isFinal = isFinal;
-    }
+//    public void setFinal(boolean isFinal) {
+//        this.isFinal = isFinal;
+//    }
 
     public void setEmpty(boolean empty) {
         this.empty = empty;

@@ -7,7 +7,6 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -390,7 +389,7 @@ public interface Contextualizable extends KimStatement {
 	 * 
 	 * @return the requirements as a collection of name and type pairs.
 	 */
-	Collection<PairImpl<String, Artifact.Type>> getInputs();
+	Collection<Pair<String, Artifact.Type>> getInputs();
 
 	/**
 	 * Any parameters set for the computation, e.g. in the case of a function call
@@ -429,14 +428,6 @@ public interface Contextualizable extends KimStatement {
      * @return a tuple containing the original and target value semantics.
      */
 	Pair<ValueMediator, ValueMediator> getConversion();
-//
-//	/**
-//	 * Add the resolution mode from the originating model to disambiguate resources
-//	 * that can be used in more than one.
-//	 * 
-//	 * @return
-//	 */
-//	public Mode getComputationMode();
 
 	/**
 	 * Only meaningful if this computable is a condition computing a (scalar or
@@ -479,12 +470,12 @@ public interface Contextualizable extends KimStatement {
 	 */
 	boolean isVariable();
 
-	/**
-	 * True if the resource needs no inputs to be contextualized.
-	 * 
-	 * @return
-	 */
-	boolean isFinal();
+//	/**
+//	 * True if the resource needs no inputs to be contextualized.
+//	 * 
+//	 * @return
+//	 */
+//	boolean isFinal();
 
 	/**
 	 * If true, no need for this contextualization to proceed as nothing would

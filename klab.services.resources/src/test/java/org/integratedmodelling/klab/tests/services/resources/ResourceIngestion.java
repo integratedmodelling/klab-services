@@ -15,24 +15,20 @@ class ResourceIngestion {
     /*
      * TODO substitute with online service filled in with as many observable use cases as possible
      */
-    private static String[] testObservables = {
-            "geography:Elevation in m",
-            "geography:Elevation optional",
-            "geography:Elevation in m optional",
-            "any geography:Elevation in m",
-            "geography:Elevation in m > 100",
-            "geography:Elevation in m by landcover:LandCoverType"
-    };
+    private static String[] testObservables = {"geography:Elevation in m", "geography:Elevation optional",
+            "geography:Elevation in m optional", "any geography:Elevation in m", "geography:Elevation in m > 100",
+            "geography:Elevation in m by landcover:LandCoverType"};
 
     @BeforeAll
     static void setUp() throws Exception {
         service = new ResourcesService();
         service.addProjectToLocalWorkspace("worldview", "https://bitbucket.org/integratedmodelling/im.git#develop", false);
+        service.addProjectToLocalWorkspace("tests", "https://bitbucket.org/integratedmodelling/im.testsuite.resolution", false);
     }
 
     @AfterAll
     static void tearDown() throws Exception {
-        service.shutdown(0);
+        service.shutdown(10000);
     }
 
     @Test
@@ -41,7 +37,7 @@ class ResourceIngestion {
         for (String observable : testObservables) {
             KimObservable obs = service.resolveObservable(observable);
             System.out.println(obs);
-            assert(obs != null);
+            assert (obs != null);
         }
     }
 
@@ -56,5 +52,4 @@ class ResourceIngestion {
         }
     }
 
-    
 }

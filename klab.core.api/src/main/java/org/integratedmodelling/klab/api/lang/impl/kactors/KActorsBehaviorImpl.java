@@ -19,7 +19,7 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 	private List<String> imports = new ArrayList<>();
 	private List<KActorsAction> actions = new ArrayList<>();
 	private String style;
-	private List<String> locales;
+	private List<String> locales = new ArrayList<>();
 	private String label;
 	private String description;
 	private String logo;

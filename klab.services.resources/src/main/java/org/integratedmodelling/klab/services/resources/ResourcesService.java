@@ -195,7 +195,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
     private void loadBehaviors(List<File> behaviors) {
         for (File behaviorFile : behaviors) {
             projectLoader.execute(() -> {
-                KActorsBehavior behavior = KActorsAdapter.readBehavior(behaviorFile);
+                KActorsBehavior behavior = KActorsAdapter.INSTANCE.readBehavior(behaviorFile);
                 this.localBehaviors.put(behavior.getName(), behavior);
             });
         }
