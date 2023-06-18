@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.logging.Logging;
@@ -57,6 +58,7 @@ public class JacksonConfiguration {
                     || Pair.class.isAssignableFrom(t.getRawClass()) || Triple.class.isAssignableFrom(t.getRawClass())
                     || Unit.class.isAssignableFrom(t.getRawClass()) || Currency.class.isAssignableFrom(t.getRawClass())
                     || NumericRange.class.isAssignableFrom(t.getRawClass())
+                    || KActorsStatement.class.isAssignableFrom(t.getRawClass())
                     || Notification.class.isAssignableFrom(t.getRawClass())) {
                 return true;
             }

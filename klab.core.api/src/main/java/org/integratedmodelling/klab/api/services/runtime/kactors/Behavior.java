@@ -13,7 +13,7 @@
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned
  * in author tags. All rights reserved.
  */
-package org.integratedmodelling.klab.api.lang.kactors.extensions;
+package org.integratedmodelling.klab.api.services.runtime.kactors;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

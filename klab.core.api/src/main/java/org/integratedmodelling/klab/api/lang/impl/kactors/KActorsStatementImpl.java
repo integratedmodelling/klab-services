@@ -8,6 +8,8 @@ import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 
@@ -114,11 +116,61 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
     }
 
     // case ASSERTION:
-    public static class AssertionImpl extends KActorsStatementImpl implements KActorsStatement.Assert {
+    public static class AssertImpl extends KActorsStatementImpl implements KActorsStatement.Assert {
+
+        public static class AssertionImpl extends KActorsStatementImpl implements Assertion {
+
+            private static final long serialVersionUID = 323694264259675055L;
+
+            private Type type = Type.ASSERTION;
+
+            private List<Call> calls;
+            private KActorsValue expression;
+            private KActorsValue value;
+
+            @Override
+            public Type getType() {
+                return this.type;
+            }
+
+            @Override
+            public List<Call> getCalls() {
+                return this.calls;
+            }
+
+            @Override
+            public KActorsValue getExpression() {
+                return this.expression;
+            }
+
+            @Override
+            public KActorsValue getValue() {
+                return this.value;
+            }
+
+            public void setType(Type type) {
+                this.type = type;
+            }
+
+            public void setCalls(List<Call> calls) {
+                this.calls = calls;
+            }
+
+            public void setExpression(KActorsValue expression) {
+                this.expression = expression;
+            }
+
+            public void setValue(KActorsValue value) {
+                this.value = value;
+            }
+
+        }
 
         private static final long serialVersionUID = 3223282784534460612L;
 
         private Type type = Type.ASSERT_STATEMENT;
+        private Parameters<String> arguments = Parameters.create();
+        private List<Assertion> assertions = new ArrayList<>();
 
         @Override
         public Type getType() {
@@ -127,14 +179,24 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         @Override
         public Parameters<String> getArguments() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.arguments;
         }
 
         @Override
         public List<Assertion> getAssertions() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.assertions;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setArguments(Parameters<String> arguments) {
+            this.arguments = arguments;
+        }
+
+        public void setAssertions(List<Assertion> assertions) {
+            this.assertions = assertions;
         }
 
     }
@@ -144,34 +206,55 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = -7539637852015470864L;
 
+        private Type type = Type.ASSIGNMENT;
+        private String recipient;
+        private String variable;
+        private KActorsValue value;
+        private Scope scope;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public String getRecipient() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.recipient;
         }
 
         @Override
         public String getVariable() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.variable;
         }
 
         @Override
         public KActorsValue getValue() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.value;
         }
 
         @Override
         public Scope getScope() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.scope;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setRecipient(String recipient) {
+            this.recipient = recipient;
+        }
+
+        public void setVariable(String variable) {
+            this.variable = variable;
+        }
+
+        public void setValue(KActorsValue value) {
+            this.value = value;
+        }
+
+        public void setScope(Scope scope) {
+            this.scope = scope;
         }
 
     }
@@ -243,22 +326,35 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = 7461317479122184162L;
 
+        private Type type = Type.DO_STATEMENT;
+        private KActorsValue condition;
+        private KActorsStatement body;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public KActorsValue getCondition() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.condition;
         }
 
         @Override
         public KActorsStatement getBody() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.body;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setCondition(KActorsValue condition) {
+            this.condition = condition;
+        }
+
+        public void setBody(KActorsStatement body) {
+            this.body = body;
         }
 
     }
@@ -267,16 +363,25 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = -4224842263629289954L;
 
+        private Type type = Type.FAIL_STATEMENT;
+        private String message;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public String getMessage() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.message;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
         }
 
     }
@@ -285,16 +390,25 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = -5778811918801633787L;
 
+        private Type type = Type.FIRE_VALUE;
+        private KActorsValue value;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public KActorsValue getValue() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.value;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setValue(KActorsValue value) {
+            this.value = value;
         }
 
     }
@@ -303,28 +417,46 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = 8082208856388206845L;
 
+        private Type type = Type.FOR_STATEMENT;
+
+        private String variable;
+        private KActorsValue iterable;
+        private KActorsStatement body;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public String getVariable() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.variable;
         }
 
         @Override
         public KActorsValue getIterable() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.iterable;
         }
 
         @Override
         public KActorsStatement getBody() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.body;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setVariable(String variable) {
+            this.variable = variable;
+        }
+
+        public void setIterable(KActorsValue iterable) {
+            this.iterable = iterable;
+        }
+
+        public void setBody(KActorsStatement body) {
+            this.body = body;
         }
 
     }
@@ -333,34 +465,56 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = 4140432604976940584L;
 
+        private Type type = Type.IF_STATEMENT;
+
+        private KActorsValue condition;
+        private KActorsStatement thenBody;
+        private List<Pair<KActorsValue, KActorsStatement>> elseIfs = new ArrayList<>();
+        private KActorsStatement elseBody;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public KActorsValue getCondition() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.condition;
         }
 
         @Override
-        public KActorsStatement getThen() {
-            // TODO Auto-generated method stub
-            return null;
+        public KActorsStatement getThenBody() {
+            return this.thenBody;
         }
 
         @Override
         public List<Pair<KActorsValue, KActorsStatement>> getElseIfs() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.elseIfs;
         }
 
         @Override
-        public KActorsStatement getElse() {
-            // TODO Auto-generated method stub
-            return null;
+        public KActorsStatement getElseBody() {
+            return this.elseBody;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setCondition(KActorsValue condition) {
+            this.condition = condition;
+        }
+
+        public void setThenBody(KActorsStatement thenBody) {
+            this.thenBody = thenBody;
+        }
+
+        public void setElseIfs(List<Pair<KActorsValue, KActorsStatement>> elseIfs) {
+            this.elseIfs = elseIfs;
+        }
+
+        public void setElseBody(KActorsStatement elseBody) {
+            this.elseBody = elseBody;
         }
 
     }
@@ -369,34 +523,55 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = 5132585275613790159L;
 
+        private Type type = Type.INSTANTIATION;
+        private String behavior;
+        private Parameters<String> arguments;
+        private List<Triple<KActorsValue, KActorsStatement, String>> actions = new ArrayList<>();
+        private String actorBaseName;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public String getBehavior() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.behavior;
         }
 
         @Override
         public Parameters<String> getArguments() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.arguments;
         }
 
         @Override
         public List<Triple<KActorsValue, KActorsStatement, String>> getActions() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.actions;
         }
 
         @Override
         public String getActorBaseName() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.actorBaseName;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setBehavior(String behavior) {
+            this.behavior = behavior;
+        }
+
+        public void setArguments(Parameters<String> arguments) {
+            this.arguments = arguments;
+        }
+
+        public void setActions(List<Triple<KActorsValue, KActorsStatement, String>> actions) {
+            this.actions = actions;
+        }
+
+        public void setActorBaseName(String actorBaseName) {
+            this.actorBaseName = actorBaseName;
         }
 
     }
@@ -405,16 +580,25 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = -4623874747196805260L;
 
+        private Type type = Type.SEQUENCE;
+        private List<KActorsStatement> statements = new ArrayList<>();
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public List<KActorsStatement> getStatements() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.statements;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setStatements(List<KActorsStatement> statements) {
+            this.statements = statements;
         }
 
     }
@@ -423,16 +607,25 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = 5688683773565546787L;
 
+        private Type type = Type.TEXT_BLOCK;
+        private String text;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public String getText() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.text;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setText(String text) {
+            this.text = text;
         }
 
     }
@@ -441,22 +634,35 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
         private static final long serialVersionUID = -732138882065296927L;
 
+        private Type type = Type.WHILE_STATEMENT;
+        private KActorsValue condition;
+        private KActorsStatement body;
+
         @Override
         public Type getType() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.type;
         }
 
         @Override
         public KActorsValue getCondition() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.condition;
         }
 
         @Override
         public KActorsStatement getBody() {
-            // TODO Auto-generated method stub
-            return null;
+            return this.body;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setCondition(KActorsValue condition) {
+            this.condition = condition;
+        }
+
+        public void setBody(KActorsStatement body) {
+            this.body = body;
         }
 
     }

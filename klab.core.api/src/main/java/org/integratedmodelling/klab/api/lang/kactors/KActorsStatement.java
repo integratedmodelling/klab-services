@@ -37,14 +37,25 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
         KActorsValue getCondition();
 
-        KActorsStatement getThen();
+        KActorsStatement getThenBody();
 
         List<Pair<KActorsValue, KActorsStatement>> getElseIfs();
 
-        KActorsStatement getElse();
+        KActorsStatement getElseBody();
 
     }
 
+    /**
+     * Argument lists can be extended with metadata
+     * 
+     * @author mario
+     *
+     */
+    public interface Arguments extends Parameters<String> {
+
+        List<String> getMetadataKeys();
+    }
+    
     public interface ConcurrentGroup extends KActorsStatement {
 
         public List<KActorsStatement> getStatements();

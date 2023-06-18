@@ -66,9 +66,6 @@
 							<jre>
 								<path>%JAVA_HOME%;%PATH%</path>
 								<minVersion>11</minVersion>
-				                <opts>
-                    				<opt>-Djava.endorsed.dirs=./endorsed</opt>
-                  				</opts>
 							</jre>
 							<versionInfo>
 								<fileVersion>1.0.0.0</fileVersion>
@@ -86,6 +83,33 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>install</phase>
+                <goals>
+                  <goal>copy-dependencies</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
 		</plugins>
 	</build>
+	<dependencies>
+		<!-- https://mvnrepository.com/artifact/org.fusesource.jansi/jansi -->
+		<dependency>
+			<groupId>org.fusesource.jansi</groupId>
+			<artifactId>jansi</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>info.picocli</groupId>
+			<artifactId>picocli-shell-jline3</artifactId>
+			<version>4.7.4</version>
+		</dependency>
+	</dependencies>
 </project>

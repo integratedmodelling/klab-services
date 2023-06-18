@@ -15,8 +15,11 @@ package org.integratedmodelling.klab.api.lang;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -107,12 +110,12 @@ public interface Expression extends Serializable {
          */
         SemanticType getReturnType();
 
-//        /**
-//         * Namespace of evaluation, if any.
-//         * 
-//         * @return
-//         */
-//        INamespace getNamespace();
+        // /**
+        // * Namespace of evaluation, if any.
+        // *
+        // * @return
+        // */
+        // INamespace getNamespace();
 
         /**
          * All known identifiers at the time of evaluation.
@@ -194,6 +197,132 @@ public interface Expression extends Serializable {
     }
 
     /**
+     * The language service can compile a string expression into a descriptor, which can in turn be
+     * compiled into the executable expression. The descriptor contains a list of identifiers and
+     * ideally should be able to determine in which context (scalar value or not) they are used
+     * within the expression.
+     * 
+     * @author Ferd
+     *
+     */
+    interface Descriptor {
+
+        /**
+         * Return all identifiers detected.
+         * 
+         * @return set of identifiers
+         */
+        Collection<String> getIdentifiers();
+
+        /**
+         * Return all contextualizers encountered (in expressions such as "elevation@nw")
+         * 
+         * @return set of contextualizers
+         */
+        Collection<String> getContextualizers();
+
+        /**
+         * True if the expression contains scalar usage for one or more of the identifiers used in a
+         * scalar fashion. This may be false even if the expression was compiled in scalar scope.
+         * 
+         * @return
+         */
+        boolean isScalar();
+
+        /**
+         * Return true if the expression contains scalar usage for the passed identifiers within a
+         * transition (i.e. used alone or with locator semantics for space or other non-temporal
+         * domain).
+         * 
+         * @param identifier identifiers representing states
+         * 
+         * @return true if the identifier is used in a scalar context.
+         */
+        boolean isScalar(String identifier);
+
+        /**
+         * Return true if the expression contains non-scalar usage for the passed identifiers within
+         * a transition (i.e. used as an object, with methods called on it).
+         * 
+         * @param identifier identifiers representing states
+         * 
+         * @return true if the identifier is used in a scalar context.
+         */
+        boolean isNonscalar(String identifier);
+
+        /**
+         * Return true if the expression contains scalar usage for any of the passed identifiers
+         * within a transition (i.e. used alone or with locator semantics for space or other
+         * non-temporal domain).
+         * 
+         * @param stateIdentifiers identifiers representing states
+         * 
+         * @return true if any of the identifiers is used in a scalar context.
+         */
+        boolean isScalar(Collection<String> stateIdentifiers);
+
+        /**
+         * Return true if the expression contains non-scalar usage for any of the passed identifiers
+         * within a transition (i.e. used as an object, with methods called on it).
+         * 
+         * @param stateIdentifiers identifiers representing states
+         * 
+         * @return true if any of the identifiers is used in a scalar context.
+         */
+        boolean isNonscalar(Collection<String> stateIdentifiers);
+
+        /**
+         * In order to avoid duplicated action, the descriptor alone must be enough to compile the
+         * expression. If we have a valid descriptor the returned expression must be valid so no
+         * exceptions are thrown unless the descriptor has errors, which causes an
+         * IllegalArgumentException.
+         * 
+         * @return a compiled expression ready for execution in the context that produced the
+         *         descriptor
+         * @throws IllegalArgumentException if the descriptor has errors
+         */
+        Expression compile();
+
+        /**
+         * 
+         * @return
+         */
+        Collection<String> getIdentifiersInScalarScope();
+
+        /**
+         * 
+         * @return
+         */
+        Collection<String> getIdentifiersInNonscalarScope();
+
+        /**
+         * If the expression was compiled with the {@link CompilerOption#RecontextualizeAsMap}
+         * option, any identifier seen as id@ctx will have been turned into id["ctx"] and the id
+         * plus all the keys will be available here.
+         * 
+         * @return
+         */
+        Map<String, Set<String>> getMapIdentifiers();
+
+        /**
+         * Return the set of options that were passed when this expression was compiled. May be
+         * empty, never null.
+         * 
+         * @return
+         */
+        Collection<CompilerOption> getOptions();
+
+        /**
+         * Predefined variables that have been inserted in the code and whose value is known at the
+         * time of compilation. Typically translations of k.IM identifiers and URNs into the
+         * correspondent objects.
+         * 
+         * @return
+         */
+        Parameters<String> getVariables();
+    }
+
+    /**
      * Execute the expression
      *
      * @param parameters from context or defined in a language call
@@ -205,6 +334,6 @@ public interface Expression extends Serializable {
      * @return the result of evaluating the expression
      * @throws org.integratedmodelling.klab.KException.KlabException TODO
      */
-    Object eval(ContextScope scope, Object... additionalParameters);
+    Object eval(org.integratedmodelling.klab.api.authentication.scope.Scope scope, Object... additionalParameters);
 
 }

@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 
 public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActorsValue {
 
@@ -21,6 +21,7 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 	private boolean deferred;
 	private List<Call> callChain = new ArrayList<>();
 	private DataType cast;
+	private Constructor constructor;
 
 	@Override
 	public ValueType getType() {
@@ -108,5 +109,14 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 	public void setCast(DataType cast) {
 		this.cast = cast;
 	}
+
+	@Override
+    public Constructor getConstructor() {
+        return constructor;
+    }
+
+    public void setConstructor(Constructor constructor) {
+        this.constructor = constructor;
+    }
 
 }

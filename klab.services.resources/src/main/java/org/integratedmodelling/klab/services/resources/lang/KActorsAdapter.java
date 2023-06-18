@@ -12,10 +12,17 @@ import org.eclipse.xtext.testing.util.ParseHelper;
 import org.integratedmodelling.kactors.api.IKActorsAction;
 import org.integratedmodelling.kactors.api.IKActorsBehavior;
 import org.integratedmodelling.kactors.api.IKActorsStatement;
+import org.integratedmodelling.kactors.api.IKActorsStatement.Assert.Assertion;
+import org.integratedmodelling.kactors.api.IKActorsStatement.Call;
+import org.integratedmodelling.kactors.api.IKActorsStatement.Fail;
+import org.integratedmodelling.kactors.api.IKActorsStatement.FireValue;
+import org.integratedmodelling.kactors.api.IKActorsStatement.For;
 import org.integratedmodelling.kactors.api.IKActorsValue;
 import org.integratedmodelling.kactors.kactors.Model;
 import org.integratedmodelling.kactors.model.KActors;
 import org.integratedmodelling.kim.api.IKimAnnotation;
+import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl;
@@ -82,7 +89,7 @@ public enum KActorsAdapter {
         return ret;
     }
 
-    KActorsAction adaptAction(IKActorsAction action) {
+    private KActorsAction adaptAction(IKActorsAction action) {
 
         KActorsActionImpl ret = new KActorsActionImpl();
 
@@ -95,7 +102,7 @@ public enum KActorsAdapter {
         return ret;
     }
 
-    KActorsStatement adaptStatement(IKActorsStatement code) {
+    private KActorsStatement adaptStatement(IKActorsStatement code) {
 
         KActorsStatementImpl ret = null;
 
@@ -103,11 +110,11 @@ public enum KActorsAdapter {
         case ACTION_CALL:
             ret = new KActorsStatementImpl.CallImpl();
             break;
-        // case ASSERTION:
-        // ret = new KActorsStatementImpl.AssertionImpl();
-        // break;
         case ASSERT_STATEMENT:
-            ret = new KActorsStatementImpl.AssertionImpl();
+            ret = new KActorsStatementImpl.AssertImpl();
+            for (Assertion assertion : ((IKActorsStatement.Assert) code).getAssertions()) {
+                ((KActorsStatementImpl.AssertImpl) ret).getAssertions().add(adaptAssertion(assertion));
+            }
             break;
         case ASSIGNMENT:
             ret = new KActorsStatementImpl.AssignmentImpl();
@@ -135,12 +142,17 @@ public enum KActorsAdapter {
             break;
         case FAIL_STATEMENT:
             ret = new KActorsStatementImpl.FailImpl();
+            ((KActorsStatementImpl.FailImpl) ret).setMessage(((Fail) code).getMessage());
             break;
         case FIRE_VALUE:
             ret = new KActorsStatementImpl.FireImpl();
+            ((KActorsStatementImpl.FireImpl)ret).setValue(adaptValue(((FireValue)code).getValue()));
             break;
         case FOR_STATEMENT:
             ret = new KActorsStatementImpl.ForImpl();
+            ((KActorsStatementImpl.ForImpl)ret).setVariable(((For)code).getVariable());
+            ((KActorsStatementImpl.ForImpl)ret).setIterable(adaptValue(((For)code).getIterable()));
+            ((KActorsStatementImpl.ForImpl)ret).setBody(adaptStatement(((For)code).getBody()));
             break;
         case IF_STATEMENT:
             ret = new KActorsStatementImpl.IfImpl();
@@ -150,6 +162,9 @@ public enum KActorsAdapter {
             break;
         case SEQUENCE:
             ret = new KActorsStatementImpl.SequenceImpl();
+            for (IKActorsStatement statement : ((IKActorsStatement.Sequence) code).getStatements()) {
+                ((KActorsStatementImpl.SequenceImpl) ret).getStatements().add(adaptStatement(statement));
+            }
             break;
         case TEXT_BLOCK:
             ret = new KActorsStatementImpl.TextBlockImpl();
@@ -166,9 +181,91 @@ public enum KActorsAdapter {
         return ret;
     }
 
-    private KActorsValue adaptValue(IKActorsValue ikActorsValue) {
+    private KActorsStatement.Assert.Assertion adaptAssertion(Assertion assertion) {
+        KActorsStatementImpl.AssertImpl.AssertionImpl ret = new KActorsStatementImpl.AssertImpl.AssertionImpl();
+        for (Call call : assertion.getCalls()) {
+            ret.getCalls().add((KActorsStatement.Call) adaptStatement(call));
+        }
+        if (assertion.getValue() != null) {
+            ret.setValue(adaptValue(assertion.getValue()));
+        }
+        if (assertion.getExpression() != null) {
+            ret.setExpression(adaptValue(assertion.getExpression()));
+        }
+        return ret;
+    }
+
+    private KActorsValue adaptValue(IKActorsValue value) {
+
         KActorsValueImpl ret = new KActorsValueImpl();
-        // TODO
+
+        ret.setType(ValueType.valueOf(value.getType().name()));
+
+        switch(value.getType()) {
+        case ANNOTATION:
+        case ANYTHING:
+        case ANYTRUE:
+        case ANYVALUE:
+            break;
+        case BOOLEAN:
+        case NUMBER:
+        case STRING:
+            ret.setStatedValue(Literal.of(value.getStatedValue()));
+            break;
+        case CALLCHAIN:
+            break;
+        case CLASS:
+            break;
+        case COMPONENT:
+            break;
+        case CONSTANT:
+            break;
+        case DATE:
+            break;
+        case EMPTY:
+            break;
+        case ERROR:
+            break;
+        case EXPRESSION:
+            break;
+        case IDENTIFIER:
+            break;
+        case LIST:
+            break;
+        case LOCALIZED_KEY:
+            break;
+        case MAP:
+            break;
+        case NODATA:
+            break;
+        case NUMBERED_PATTERN:
+            break;
+        case OBJECT:
+            break;
+        case OBSERVABLE:
+            break;
+        case OBSERVATION:
+            break;
+        case QUANTITY:
+            break;
+        case RANGE:
+            break;
+        case REGEXP:
+            break;
+        case SET:
+            break;
+        case TABLE:
+            break;
+        case TREE:
+            break;
+        case TYPE:
+            break;
+        case URN:
+            break;
+        default:
+            break;
+
+        }
         return ret;
     }
 

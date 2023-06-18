@@ -10,13 +10,14 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
 import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
@@ -26,35 +27,35 @@ import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
  * 
  * @author Ferd
  */
-public class KActorsScope {
+public class KActorsScope implements VM.Scope {
 
-    boolean synchronous = false;
-    KActorsScope parent = null;
+    private boolean synchronous = false;
+//    private KActorsScope parent = null;
     
-    Scope mainScope;
+    private Scope mainScope;
     
-    Long listenerId;
-    Identity identity;
-    Object match;
-    String appId;
-    Map<String, String> localizedSymbols = null;
+    private Long listenerId;
+    private Identity identity;
+    private Object match;
+//    private String appId;
+    private Map<String, String> localizedSymbols = null;
 
     // local symbol table, frame-specific, holds counters and matches only
-    public Map<String, Object> frameSymbols = new HashMap<>();
+    private  Map<String, Object> frameSymbols = new HashMap<>();
     // symbol table is set using 'def' and is local to an action
-    public Map<String, Object> symbolTable = new HashMap<>();
+    private  Map<String, Object> symbolTable = new HashMap<>();
     // global symbols are set using 'set' and include the read-only state of the actor identity
-    public Map<String, Object> globalSymbols;
+    private  Map<String, Object> globalSymbols;
 
-    ViewScope viewScope;
-    Ref sender;
+    private ViewScope viewScope;
+    private Ref sender;
     private boolean initializing;
-    Semaphore semaphore = null;
+    private Semaphore semaphore = null;
     // metadata come with the actor specification if created through instantiation
     // and don't
     // change.
-    Parameters<String> metadata;
-    KActorsBehavior behavior;
+    private Parameters<String> metadata;
+    private KActorsBehavior behavior;
 
     /**
      * The scope is functional if an action that is declared as 'function' is called, or if the
@@ -62,9 +63,9 @@ public class KActorsScope {
      * statement does not fire a value but "returns" it, setting it in the scope and breaking the
      * execution.
      */
-    boolean functional = false;
+    private boolean functional = false;
 
-    Channel monitor;
+    private Channel monitor;
     
     /*
      * the following two support chaining of actions, with the ones before the last "returning"
@@ -72,8 +73,8 @@ public class KActorsScope {
      * passed to the next. Because null is a legitimate value scope, we also use a boolean to check
      * if the scope contains a "context" value from a previous function.
      */
-    boolean hasValueScope = false;
-    Object valueScope = null;
+    private boolean hasValueScope = false;
+    private Object valueScope = null;
 
     /**
      * Only instantiated in tests.
@@ -83,7 +84,7 @@ public class KActorsScope {
     public KActorsScope(Identity identity, String appId, Scope scope, KActorsBehavior behavior) {
         this.mainScope = scope;
         this.identity = identity;
-        this.appId = appId;
+//        this.appId = appId;
         this.viewScope = new ViewScope(this);
         this.metadata = Parameters.create();
         this.behavior = behavior;
@@ -139,14 +140,14 @@ public class KActorsScope {
         this.globalSymbols = scope.globalSymbols;
         this.synchronous = scope.synchronous;
 //        this.runtimeScope = scope.runtimeScope;
-        this.parent = scope;
+//        this.parent = scope;
         this.listenerId = scope.listenerId;
         this.sender = scope.sender;
         this.symbolTable = scope.symbolTable;
         this.frameSymbols.putAll(scope.frameSymbols);
         this.identity = scope.identity;
         this.viewScope = scope.viewScope;
-        this.appId = scope.appId;
+//        this.appId = scope.appId;
         this.semaphore = scope.semaphore;
         this.metadata = scope.metadata;
         this.behavior = scope.behavior;
@@ -154,6 +155,7 @@ public class KActorsScope {
         this.monitor = scope.monitor;
         // TODO check if we need to make a child and pass this
         this.testScope = scope.testScope;
+        this.mainScope = scope.mainScope;
     }
 
     public String toString() {
@@ -205,10 +207,10 @@ public class KActorsScope {
 //        return this.runtimeScope == null ? null : this.runtimeScope.getMonitor();
 //    }
 
-    public KActorsScope withSender(Ref sender, String appId) {
+    public KActorsScope withSender(Ref sender) {
         KActorsScope ret = new KActorsScope(this);
         ret.sender = sender;
-        ret.appId = appId;
+//        ret.appId = appId;
         return ret;
     }
 
@@ -242,9 +244,9 @@ public class KActorsScope {
      * @param action
      * @return
      */
-    public KActorsScope getChild(String appId, KActorsAction action) {
+    public KActorsScope getChild(KActorsAction action) {
         KActorsScope ret = forAction(action);
-        ret.viewScope = this.viewScope.getChild(action, appId, identity, ret);
+        ret.viewScope = this.viewScope.getChild(action, behavior, ret);
         return ret;
     }
 
@@ -540,6 +542,10 @@ public class KActorsScope {
 
     public void setSemaphore(Semaphore semaphore) {
         this.semaphore = semaphore;
+    }
+
+    public Scope getMainScope() {
+        return this.mainScope;
     }
 
 }

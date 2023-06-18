@@ -4,18 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.integratedmodelling.kactors.api.IKActorsBehavior;
-import org.integratedmodelling.kim.api.IParameters;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
 import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewPanel;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.runtime.kactors.view.KActorsView;
 import org.integratedmodelling.klab.utils.Utils;
 
 /**
@@ -39,7 +38,7 @@ public class ViewScope {
 
     String identityId;
     Identity identity;
-    String applicationId;
+//    String applicationId;
     String actorPath = null;
     private Layout layout = null;
     Optional<Boolean> notEmpty;
@@ -48,7 +47,7 @@ public class ViewScope {
     private Integer groupCounter = 0;
 
     public ViewScope(KActorsScope actorScope) {
-        this.applicationId = actorScope.getAppId();
+//        this.applicationId = actorScope.getAppId();
         this.identity = actorScope.getIdentity();
         this.identityId = actorScope.getIdentity().getId();
     }
@@ -62,7 +61,7 @@ public class ViewScope {
         ViewComponent parent = this.currentComponent;
         ViewComponent ret = new ViewComponent();
         ret.setIdentity(identityId);
-        ret.setApplicationId(applicationId);
+//        ret.setApplicationId(applicationId);
         ret.setActorPath(actorPath);
         boolean isActive = group.getGroupMetadata().containsKey("inputgroup");
         ret.setType(isActive ? ViewComponent.Type.InputGroup : ViewComponent.Type.Group);
@@ -92,7 +91,7 @@ public class ViewScope {
     public void setViewMetadata(ViewComponent component, Parameters<String> parameters, KActorsScope scope) {
         if (parameters != null) {
             for (String key : parameters.keySet()) {
-                if (!component.getAttributes().containsKey(key) && Actors.INSTANCE.getLayoutMetadata().contains(key)) {
+                if (!component.getAttributes().containsKey(key) && KActorsView.layoutMetadata.contains(key)) {
                     Object param = parameters.get(key);
                     String value = scope.localize(param instanceof KActorsValue
                             ? KActorsVM.evaluateInScope((KActorsValue) param, scope).toString()
@@ -103,18 +102,18 @@ public class ViewScope {
         }
     }
 
-    public ViewScope(Identity identity, Layout layout, String applicationId, String actorPath) {
+    public ViewScope(Identity identity, Layout layout, String actorPath) {
         this.identity = identity;
         this.layout = layout;
         this.identityId = identity == null ? null : identity.getId();
-        this.applicationId = applicationId;
+//        this.applicationId = applicationId;
         this.actorPath = actorPath;
         this.notEmpty = Optional.of(Boolean.FALSE);
     }
 
     public ViewScope(ViewScope scope) {
         this.layout = scope.layout;
-        this.applicationId = scope.applicationId;
+//        this.applicationId = scope.applicationId;
         this.identityId = scope.identityId;
         this.groupCounter = scope.groupCounter;
         this.actorPath = scope.actorPath;
@@ -132,10 +131,10 @@ public class ViewScope {
      * @param parentDataflow
      * @return
      */
-    public ViewPanel createPanel(KActorsAction action, String appId, Identity identity, KActorsScope scope) {
+    public ViewPanel createPanel(KActorsAction action, KActorsBehavior behavior, KActorsScope scope) {
 
         ViewPanel panel = null;
-        boolean hasView = action.getBehavior().getDestination() == KActorsBehavior.Type.COMPONENT && "main".equals(action.getName());
+        boolean hasView = behavior.getType() == KActorsBehavior.Type.COMPONENT && "main".equals(action.getName());
         if (!hasView) {
             // scan annotations
             for (Annotation annotation : action.getAnnotations()) {
@@ -150,7 +149,7 @@ public class ViewScope {
                     panel.getAttributes().putAll(getMetadata(annotation, scope));
 
                     if (this.layout == null) {
-                        this.layout = createLayout(action.getBehavior(), scope);
+                        this.layout = createLayout(behavior, scope);
                     }
 
                     switch(panelLocation) {
@@ -182,7 +181,7 @@ public class ViewScope {
             /*
              * must have component in scope; panel enters as new component
              */
-            panel = new ViewPanel(action.getBehavior().getId(), action.getBehavior().getStatement().getStyle());
+            panel = new ViewPanel(behavior.getName(), behavior.getStyle());
             for (Annotation annotation : action.getAnnotations()) {
                 panel.getAttributes().putAll(getMetadata(annotation, scope));
             }
@@ -195,7 +194,7 @@ public class ViewScope {
 
         ViewScope ret = new ViewScope(this);
 
-        ret.layout = new Layout(actionId, this.applicationId);
+        ret.layout = new Layout(actionId, scope.getIdentity().getId());
         ret.layout.setStyle(this.layout.getStyle());
         ret.layout.setDestination(this.layout.getDestination());
         ret.layout.setLabel(scope.localize(annotation.get("title", "")));
@@ -203,7 +202,7 @@ public class ViewScope {
         ret.layout.setPlatform(this.layout.getPlatform());
         ret.layout.setLogo(annotation.get("logo", (String) null));
         ret.layout.setProjectId(this.layout.getProjectId());
-        ret.layout.setApplicationId(applicationId);
+        ret.layout.setApplicationId(scope.getIdentity().getId());
         ret.layout.setId(actionId);
         ret.layout.setType("modal".equals(annotation.getName()) ? ViewComponent.Type.ModalWindow : ViewComponent.Type.Window);
         ViewPanel panel = new ViewPanel(annotation.containsKey("id") ? annotation.get("id", String.class) : actionId,
@@ -216,7 +215,7 @@ public class ViewScope {
 
     public Layout createLayout(KActorsBehavior behavior, KActorsScope scope) {
 
-        Layout ret = new Layout(behavior.getName(), this.applicationId);
+        Layout ret = new Layout(behavior.getName(), scope.getIdentity().getId());
         ret.setIdentity(this.identityId);
         ret.setVersionString(behavior.getVersionString());
         ret.setStyle(behavior.getStyle());
@@ -249,11 +248,11 @@ public class ViewScope {
      * @param action
      * @return
      */
-    public ViewScope getChild(KActorsAction action, String appId, Identity identity, KActorsScope scope) {
+    public ViewScope getChild(KActorsAction action, KActorsBehavior behavior, KActorsScope scope) {
 
         // this creates the layout if needed.
-        this.applicationId = appId;
-        ViewPanel panel = createPanel(action, appId, identity, scope);
+//        this.applicationId = appId;
+        ViewPanel panel = createPanel(action, behavior, scope);
         if (panel == null) {
             return this;
         }
@@ -285,7 +284,7 @@ public class ViewScope {
             for (String key : arguments.getNamedKeys()) {
                 Object o = arguments.get(key);
                 if (o instanceof KActorsValue) {
-                    o = ((KActorsValue) o).evaluate(scope, true);
+                    o = KActorsVM.evaluateInScope((KActorsValue) o, scope);
                 }
                 if (o instanceof String) {
                     o = scope == null ? (String) o : scope.localize((String) o);

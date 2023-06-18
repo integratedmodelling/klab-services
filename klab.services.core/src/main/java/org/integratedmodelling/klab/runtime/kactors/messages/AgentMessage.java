@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
+import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
 /**
  * Superclass for messages to/from actor. The general pattern is that whenever an action has
@@ -14,7 +15,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
  * @author Ferd
  *
  */
-public abstract class AgentMessage implements Serializable {
+public abstract class AgentMessage implements Serializable, VM.Message {
 
     private static final long serialVersionUID = 721530303478254820L;
     private static AtomicLong nextId = new AtomicLong(0l);
@@ -22,6 +23,7 @@ public abstract class AgentMessage implements Serializable {
     public AgentResponse response(Status status, Object... data) {
         AgentResponse ret = new AgentResponse();
         ret.setStatus(status);
+        ret.setId(id);
         if (data != null) {
             for (int i = 0; i < data.length; i++) {
                 ret.getData().put(data[i].toString(), data[++i]);

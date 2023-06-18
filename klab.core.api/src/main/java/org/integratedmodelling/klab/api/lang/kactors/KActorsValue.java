@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 
 /**
@@ -34,7 +35,7 @@ public interface KActorsValue extends KActorsCodeStatement {
      * @author Ferd
      *
      */
-    public enum DataType {
+    enum DataType {
         INTEGER, NUMBER, TEXT, CONCEPT, BOOLEAN
     }
 
@@ -47,7 +48,7 @@ public interface KActorsValue extends KActorsCodeStatement {
      * @author Ferd
      *
      */
-    public enum ExpressionType {
+    enum ExpressionType {
 
         /**
          * The default: this value just means itself
@@ -60,7 +61,21 @@ public interface KActorsValue extends KActorsCodeStatement {
          */
         TERNARY_OPERATOR
     }
-
+    
+    /**
+     * Constructor syntactic object that can create Java objects
+     * 
+     * @author mario
+     *
+     */
+    interface Constructor {
+        
+        String getClasspath();
+        String getClassname();
+        String getComponent();
+        Arguments getArguments();
+    }
+    
     /**
      * The value type
      * 
@@ -140,5 +155,12 @@ public interface KActorsValue extends KActorsCodeStatement {
      * @return
      */
     DataType getCast();
+    
+    /**
+     * Java class constructor
+     * 
+     * @return
+     */
+    Constructor getConstructor();
 
 }
