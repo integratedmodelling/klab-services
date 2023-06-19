@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  * @author Ferd
  *
  */
-public abstract class AgentMessage implements Serializable, VM.Message {
+public abstract class AgentMessage implements Serializable, VM.AgentMessage {
 
     private static final long serialVersionUID = 721530303478254820L;
     private static AtomicLong nextId = new AtomicLong(0l);

@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
-import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 

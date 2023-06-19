@@ -100,6 +100,11 @@
 		</plugins>
 	</build>
 	<dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.core</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
 		<!-- https://mvnrepository.com/artifact/org.fusesource.jansi/jansi -->
 		<dependency>
 			<groupId>org.fusesource.jansi</groupId>

@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.knowledge;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -11,6 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.utils.CamelCase;
 import org.integratedmodelling.klab.utils.Utils;
@@ -30,6 +33,7 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
     private String name;
     private String referenceName;
     private boolean isAbstract;
+    private List<Annotation> annotations = new ArrayList<>();
 
     @Override
     public String getUrn() {
@@ -221,6 +225,15 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
         ConceptImpl other = (ConceptImpl) obj;
         return Objects.equals(urn, other.urn);
     }
+
+	@Override
+	public List<Annotation> getAnnotations() {
+		return this.annotations;
+	}
+
+	public void setAnnotations(List<Annotation> annotations) {
+		this.annotations = annotations;
+	}
 
     
     

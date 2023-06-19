@@ -8,11 +8,14 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.LsRemoteCommand;
 import org.eclipse.jgit.api.PullCommand;
@@ -22,21 +25,33 @@ import org.eclipse.jgit.lib.Repository;
 import org.integratedmodelling.kactors.api.IKActorsAction;
 import org.integratedmodelling.kactors.api.IKActorsStatement;
 import org.integratedmodelling.kim.api.IKimAnnotation;
+import org.integratedmodelling.kim.api.IKimConcept.Type;
 import org.integratedmodelling.kim.api.IKimStatement;
 import org.integratedmodelling.kim.api.IParameters;
 import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
+import org.integratedmodelling.klab.api.knowledge.IObservable;
+import org.integratedmodelling.klab.api.knowledge.ISemantic;
+import org.integratedmodelling.klab.api.knowledge.Instance;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsActionImpl;
-import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsCodeStatementImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
+import org.integratedmodelling.klab.api.model.IAcknowledgement;
+import org.integratedmodelling.klab.api.model.IAnnotation;
+import org.integratedmodelling.klab.api.model.IConceptDefinition;
+import org.integratedmodelling.klab.api.model.IKimObject;
+import org.integratedmodelling.klab.api.model.IModel;
 import org.integratedmodelling.klab.data.encoding.JacksonConfiguration;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
@@ -139,6 +154,134 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
             return ret;
         }
+        
+
+    	/**
+    	 * Collect the annotations from an k.IM object and its semantic lineage,
+    	 * ensuring that downstream annotations of the same name override those
+    	 * upstream. Any string parameter filters the annotations collected.
+    	 * 
+    	 * @param object
+    	 * @return all annotations from upstream
+    	 */
+    	public static Collection<Annotation> collectAnnotations(Object... objects) {
+
+    		Map<String, Annotation> ret = new HashMap<>();
+    		for (Object object : objects) {
+    			if (object instanceof KlabAsset) {
+    				collectAnnotations((Knowledge) object, ret);
+    			} else if (object instanceof Statement) {
+    				collectAnnotations((Statement) object, ret);
+    			} else if (object instanceof Artifact) {
+    				for (Annotation annotation : ((Artifact) object).getAnnotations()) {
+    					if (!ret.containsKey(annotation.getName())) {
+    						ret.put(annotation.getName(), annotation);
+    					}
+    				}
+    			}
+    		}
+    		return ret.values();
+    	}
+
+    	/**
+    	 * Collect the annotations from anything semantic lineage, ensuring that
+    	 * downstream annotations of the same name override those upstream.
+    	 * 
+    	 * @param object
+    	 * @return all annotations from upstream
+    	 */
+    	public static Collection<IAnnotation> collectAnnotations(KlabAsset object) {
+    		Map<String, IAnnotation> ret = new HashMap<>();
+    		collectAnnotations(object, ret);
+    		return ret.values();
+    	}
+
+    	private static void collectAnnotations(KlabAsset object, Map<String, Annotation> collection) {
+
+    		for (Annotation annotation : object.getAnnotations()) {
+    			if (!collection.containsKey(annotation.getName())) {
+    				Annotation a = new AnnotationImpl(annotation);
+    				collection.put(a.getName(), a);
+    			}
+    		}
+
+    		/*
+    		 * TODO recurse upwards based on asset type
+    		 */
+    		
+    		if (object instanceof Model) {
+//    			collectAnnotations(((Model) object).getObservables().get(0), collection);
+    		} else if (object instanceof Instance) {
+//    			collectAnnotations(((IModel) object).getObservables().get(0), collection);
+			} /*
+				 * else if (object instanceof KimConceptDefinition) {
+				 * collectAnnotations(((IConceptDefinition) object).getStatement(), collection);
+				 * }
+				 * 
+				 * if (getParent(object) != null) { collectAnnotations(object.getParent(),
+				 * collection); }
+				 */
+    	}
+
+//    	private void collectAnnotations(Knowledge object, Map<String, IAnnotation> collection) {
+//
+//    		for (Annotation annotation : object.getAnnotations()) {
+//    			if (!collection.containsKey(annotation.getName())) {
+//    				collection.put(annotation.getName(), annotation);
+//    			}
+//    		}
+//
+//    	}
+//
+//    	private void collectAnnotations(ISemantic object, Map<String, IAnnotation> collection) {
+//
+//    		if (object instanceof IObservable) {
+//
+//    			for (IAnnotation annotation : ((IObservable)object).getAnnotations()) {
+//    				if (!collection.containsKey(annotation.getName())) {
+//    					collection.put(annotation.getName(), annotation);
+//    				}
+//    			}
+//
+//    			/*
+//    			 * collect from roles, traits and main in this order
+//    			 */
+//    			// for (IConcept role : Roles.INSTANCE.getRoles(((IObservable)
+//    			// object).getType())) {
+//    			// collectAnnotations(role, collection);
+//    			// }
+//    			for (IConcept trait : Traits.INSTANCE.getTraits(((IObservable) object).getType())) {
+//    				// FIXME REMOVE ugly hack: landcover is a type, but it's used as an attribute in
+//    				// various places so the change
+//    				// is deep. This makes landcover colormaps end up in places they shouldn't be.
+//    				// TODO check - may not be relevant anymore now that landcover is correctly a type of and not a trait.
+//    				if (!trait.getNamespace().equals("landcover")) {
+//    					collectAnnotations(trait, collection);
+//    				}
+//    			}
+//
+//    			collectAnnotations(((IObservable) object).getType(), collection);
+//
+//    		} else if (object instanceof IConcept) {
+//    			IKimObject mobject = Resources.INSTANCE.getModelObject(object.toString());
+//    			if (mobject != null) {
+//    				collectAnnotations(mobject, collection);
+//    			}
+//    			if (((IConcept) object).is(Type.CLASS)) {
+//    				// collect annotations from what is classified
+//    				IConcept classified = Observables.INSTANCE.getDescribedType((IConcept) object);
+//    				if (classified != null) {
+//    					collectAnnotations(classified, collection);
+//    				}
+//    			}
+//    			for (IConcept parent : ((IConcept) object).getParents()) {
+//    				if (!CoreOntology.CORE_ONTOLOGY_NAME.equals(parent.getNamespace())) {
+//    					collectAnnotations(parent, collection);
+//    				}
+//    			}
+//    		}
+//    	}
+        
     }
 
     public static class Classpath {

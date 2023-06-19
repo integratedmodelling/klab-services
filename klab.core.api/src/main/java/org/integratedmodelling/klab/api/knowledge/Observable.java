@@ -506,12 +506,6 @@ public interface Observable extends Semantics {
      * 
      * @return
      */
-    Collection<Annotation> getAnnotations();
-
-    /**
-     * 
-     * @return
-     */
     Collection<Concept> abstractPredicates();
 
     /**

@@ -41,7 +41,7 @@ public interface ActionExecutor {
          * @param message
          * @param scope
          */
-        void onMessage(VM.Message message, VM.Scope scope);
+        void onMessage(VM.AgentMessage message, VM.BehaviorScope scope);
 
     }
 
@@ -57,7 +57,7 @@ public interface ActionExecutor {
      */
     Parameters<String> getArguments();
 
-    void run(VM.Scope scope);
+    void run(VM.BehaviorScope scope);
 
     /**
      * A component is an Actor that reacts through an MVC pattern.

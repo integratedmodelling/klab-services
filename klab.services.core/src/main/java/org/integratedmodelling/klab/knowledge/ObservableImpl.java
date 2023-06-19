@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.knowledge;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -58,7 +59,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private Literal defaultValue;
     private Literal value;
     private String statedName;
-    private Collection<Annotation> annotations = new ArrayList<>();
+    private List<Annotation> annotations = new ArrayList<>();
     private Collection<Pair<ValueOperator, Object>> valueOperators;
     private String referenceName;
     private String name;
@@ -149,7 +150,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     }
 
     @Override
-    public Collection<Annotation> getAnnotations() {
+    public List<Annotation> getAnnotations() {
         return annotations;
     }
 
@@ -398,7 +399,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.statedName = statedName;
     }
 
-    public void setAnnotations(Collection<Annotation> annotations) {
+    public void setAnnotations(List<Annotation> annotations) {
         this.annotations = annotations;
     }
 

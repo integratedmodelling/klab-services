@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.kactors;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -10,13 +11,13 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
@@ -27,7 +28,7 @@ import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
  * 
  * @author Ferd
  */
-public class KActorsScope implements VM.Scope {
+public class KActorsScope implements VM.BehaviorScope {
 
     private boolean synchronous = false;
 //    private KActorsScope parent = null;
@@ -64,8 +65,6 @@ public class KActorsScope implements VM.Scope {
      * execution.
      */
     private boolean functional = false;
-
-    private Channel monitor;
     
     /*
      * the following two support chaining of actions, with the ones before the last "returning"
@@ -81,10 +80,9 @@ public class KActorsScope implements VM.Scope {
      */
     TestScope testScope;
 
-    public KActorsScope(Identity identity, String appId, Scope scope, KActorsBehavior behavior) {
+    public KActorsScope(Scope scope, KActorsBehavior behavior) {
         this.mainScope = scope;
-        this.identity = identity;
-//        this.appId = appId;
+        this.identity = scope.getIdentity();
         this.viewScope = new ViewScope(this);
         this.metadata = Parameters.create();
         this.behavior = behavior;
@@ -152,7 +150,6 @@ public class KActorsScope implements VM.Scope {
         this.metadata = scope.metadata;
         this.behavior = scope.behavior;
         this.localizedSymbols = scope.localizedSymbols;
-        this.monitor = scope.monitor;
         // TODO check if we need to make a child and pass this
         this.testScope = scope.testScope;
         this.mainScope = scope.mainScope;
@@ -162,10 +159,6 @@ public class KActorsScope implements VM.Scope {
         return "{S " + listenerId + "}";
     }
     
-    public Channel getMonitor() {
-    	return monitor;
-    }
-
     public KActorsScope synchronous() {
         KActorsScope ret = new KActorsScope(this);
         ret.synchronous = true;
@@ -321,7 +314,7 @@ public class KActorsScope implements VM.Scope {
             int cnt = 0;
             while(!Semaphore.expired(semaphore)) {
 
-                if (this.getMonitor().isInterrupted()) {
+                if (mainScope.isInterrupted()) {
                     break;
                 }
 
@@ -329,7 +322,7 @@ public class KActorsScope implements VM.Scope {
                     Thread.sleep(60);
                     cnt++;
                     if (cnt % 1000 == 0 && !semaphore.isWarned()) {
-                        getMonitor().warn("Blocking action is taking longer than 1 minute at " + getBehavior().getName()
+                        mainScope.warn("Blocking action is taking longer than 1 minute at " + getBehavior().getName()
                                 + ":" + linenumber);
                         semaphore.setWarned();
                     }
@@ -547,5 +540,55 @@ public class KActorsScope implements VM.Scope {
     public Scope getMainScope() {
         return this.mainScope;
     }
+
+	@Override
+	public void info(Object... info) {
+		mainScope.info(info);
+	}
+
+	@Override
+	public void warn(Object... o) {
+		mainScope.warn(o);
+	}
+
+	@Override
+	public void error(Object... o) {
+		mainScope.error(o);
+	}
+
+	@Override
+	public void debug(Object... o) {
+		mainScope.debug(o);
+	}
+
+	@Override
+	public void send(Object... message) {
+		mainScope.send(message);
+	}
+
+	@Override
+	public void post(Consumer<Message> handler, Object... message) {
+		mainScope.post(handler, message);
+	}
+
+	@Override
+	public void addWait(int seconds) {
+		mainScope.addWait(seconds);
+	}
+
+	@Override
+	public int getWaitTime() {
+		return mainScope.getWaitTime();
+	}
+
+	@Override
+	public boolean isInterrupted() {
+		return mainScope.isInterrupted();
+	}
+
+	@Override
+	public boolean hasErrors() {
+		return mainScope.hasErrors();
+	}
 
 }

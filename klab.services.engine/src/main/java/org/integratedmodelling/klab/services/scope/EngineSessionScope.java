@@ -9,8 +9,6 @@ import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
 public class EngineSessionScope extends EngineScope implements SessionScope {
 
-    private static final long serialVersionUID = -5840277560139759406L;
-
     private Status status = Status.STARTED;
     private String name;
 
