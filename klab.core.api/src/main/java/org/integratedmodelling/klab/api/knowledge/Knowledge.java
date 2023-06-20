@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 
 /**
  * All knowledge in k.LAB has a URN and is serializable. Methods in derived classes only use the
@@ -13,32 +14,29 @@ import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
  */
 public interface Knowledge extends KlabAsset {
 
-    public enum KnowledgeClass {
-        CONCEPT, OBSERVABLE, MODEL, INSTANCE, RESOURCE
-    }
+	/**
+	 * Used to streamline code in resolution. Would be unnecessary if Java only had
+	 * a switch on classes.
+	 * 
+	 * @param knowledge
+	 * @return
+	 */
+	public static KnowledgeClass classify(Knowledge knowledge) {
 
-    /**
-     * Used to streamline code in resolution. Would be unnecessary if Java only had a switch on
-     * classes.
-     * 
-     * @param knowledge
-     * @return
-     */
-    public static KnowledgeClass classify(Knowledge knowledge) {
+		if (knowledge instanceof Concept) {
+			return KnowledgeClass.CONCEPT;
+		} else if (knowledge instanceof Observable) {
+			return KnowledgeClass.OBSERVABLE;
+		} else if (knowledge instanceof Model) {
+			return KnowledgeClass.MODEL;
+		} else if (knowledge instanceof Instance) {
+			return KnowledgeClass.INSTANCE;
+		} else if (knowledge instanceof Resource) {
+			return KnowledgeClass.RESOURCE;
+		} else if (knowledge instanceof KimNamespace) {
+			return KnowledgeClass.NAMESPACE;
+		}
 
-        if (knowledge instanceof Concept) {
-            return KnowledgeClass.CONCEPT;
-        } else if (knowledge instanceof Observable) {
-            return KnowledgeClass.OBSERVABLE;
-        } else if (knowledge instanceof Model) {
-            return KnowledgeClass.MODEL;
-        } else if (knowledge instanceof Instance) {
-            return KnowledgeClass.INSTANCE;
-        } else if (knowledge instanceof Resource) {
-            return KnowledgeClass.RESOURCE;
-        }
-
-        throw new KIllegalArgumentException("cannot classify " + knowledge + " as knowledge");
-    }
-
+		throw new KIllegalArgumentException("cannot classify " + knowledge + " as knowledge");
+	}
 }

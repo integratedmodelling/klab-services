@@ -49,7 +49,7 @@ public class Services {
 		public void run() {
 
 			PrintWriter out = commandSpec.commandLine().getOut();
-			
+
 			out.println("Zio = " + ++zio);
 
 			/*

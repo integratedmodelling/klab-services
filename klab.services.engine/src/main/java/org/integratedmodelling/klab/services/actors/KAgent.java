@@ -163,7 +163,7 @@ public class KAgent implements ReActor {
 	}
 
 	protected void run(KActorsBehavior behavior, Scope scope) {
-		if (vm != null) {
+		if (vm == null) {
 			this.vm = new KActorsVM(self, scope, globalState);
 		}
 		this.vm.run(behavior, Parameters.create(scope.getData()), scope);

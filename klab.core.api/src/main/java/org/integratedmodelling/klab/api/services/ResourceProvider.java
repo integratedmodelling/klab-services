@@ -171,6 +171,7 @@ public interface ResourceProvider extends KlabService {
      */
     List<Pair<KimModelStatement, Double>> queryModels(Observable observable, ContextScope scope);
 
+    
     /**
      * Admin interface to submit/remove projects and configure the service.
      * 

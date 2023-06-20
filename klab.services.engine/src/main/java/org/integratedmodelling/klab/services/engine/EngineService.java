@@ -58,7 +58,6 @@ public class EngineService /* implements Engine */ {
         EngineScope ret = userScopes.get(user.getUsername());
         if (ret == null) {
             ret = new EngineScope(user){
-                private static final long serialVersionUID = 2259089014852859140L;
 
                 @SuppressWarnings("unchecked")
                 @Override
@@ -73,6 +72,10 @@ public class EngineService /* implements Engine */ {
                         return (T)runtime;
                     }
                     return null;
+                }
+                
+                public String toString() {
+                	return user.toString();
                 }
 
             };
@@ -95,11 +98,6 @@ public class EngineService /* implements Engine */ {
     public ReActorSystem getActors() {
         return this.actorSystem;
     }
-
-//    public Object getSystemRef() {
-//        // TODO Auto-generated method stub
-//        return null;
-//    }
 
     public Reasoner getReasoner() {
         return reasoner;

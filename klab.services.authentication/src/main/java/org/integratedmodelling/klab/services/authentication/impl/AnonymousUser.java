@@ -102,5 +102,9 @@ public class AnonymousUser implements UserIdentity {
 	public Parameters<String> getData() {
 		return data;
 	}
+	
+	public String toString() {
+		return "anonymous (invalid.email@noservice.com)";
+	}
 
 }

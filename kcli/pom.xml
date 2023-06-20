@@ -13,99 +13,73 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>11</source>
-					<target>11</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>1.7.1</version>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.2.0</version>
 				<executions>
 					<execution>
-						<phase>package</phase>
+						<phase>install</phase>
 						<goals>
-							<goal>shade</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<shadedArtifactAttached>true</shadedArtifactAttached>
-					<shadedClassifierName>shaded</shadedClassifierName>
-					<transformers>
-						<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-							<mainClass>com.howtodoinjava.Main</mainClass>
-						</transformer>
-					</transformers>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>com.akathist.maven.plugins.launch4j</groupId>
-				<artifactId>launch4j-maven-plugin</artifactId>
-				<version>2.3.3</version>
-				<executions>
-					<execution>
-						<id>l4j-clui</id>
-						<phase>package</phase>
-						<goals>
-							<goal>launch4j</goal>
+							<goal>copy-dependencies</goal>
 						</goals>
 						<configuration>
-							<headerType>gui</headerType>
-							<jar>${project.build.directory}/${artifactId}-${version}-shaded.jar</jar>
-							<outfile>${project.build.directory}/kcli.exe</outfile>
-							<downloadUrl>http://java.com/download</downloadUrl>
-							<classPath>
-								<mainClass>org.integratedmodelling.kcli.Application</mainClass>
-								<addDependencies>true</addDependencies>
-								<preCp>anything</preCp>
-							</classPath>
-							<icon>klab.ico</icon>
-							<jre>
-								<path>%JAVA_HOME%;%PATH%</path>
-								<minVersion>11</minVersion>
-							</jre>
-							<versionInfo>
-								<fileVersion>1.0.0.0</fileVersion>
-								<txtFileVersion>${project.version}</txtFileVersion>
-								<fileDescription>${project.name}</fileDescription>
-								<copyright>2023 integratedmodelling.org</copyright>
-								<productVersion>1.0.0.0</productVersion>
-								<txtProductVersion>1.0.0.0</txtProductVersion>
-								<productName>k.LAB CLI</productName>
-								<companyName>integratedmodelling.org</companyName>
-								<internalName>kcli</internalName>
-								<originalFilename>kcli.exe</originalFilename>
-							</versionInfo>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>install</phase>
-                <goals>
-                  <goal>copy-dependencies</goal>
-                </goals>
-                <configuration>
-                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
 		</plugins>
 	</build>
 	<dependencies>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.services.core</artifactId>
-            <version>${klab.version}</version>
-        </dependency>
-		<!-- https://mvnrepository.com/artifact/org.fusesource.jansi/jansi -->
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.engine</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.authentication</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.resources</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.runtime</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.resources.client</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.runtime.client</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.reasoner</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.resolver</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.reasoner.client</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
+			<artifactId>klab.services.resolver.client</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.fusesource.jansi</groupId>
 			<artifactId>jansi</artifactId>

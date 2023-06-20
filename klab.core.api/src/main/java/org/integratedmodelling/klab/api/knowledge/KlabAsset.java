@@ -15,6 +15,10 @@ import org.integratedmodelling.klab.api.lang.Annotation;
  */
 public interface KlabAsset extends Serializable {
 
+	public enum KnowledgeClass {
+		CONCEPT, OBSERVABLE, MODEL, INSTANCE, RESOURCE, NAMESPACE
+	}
+
 	/**
 	 * Anything that represents knowledge must return a stable, unique identifier
 	 * that can be resolved back to the original or to an identical object. Only

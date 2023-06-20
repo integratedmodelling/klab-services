@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.indexing.Indexer;
@@ -60,6 +61,12 @@ class ConceptIngestion {
                     public <T extends KlabService> T getService(Class<T> serviceClass) {
                         throw new KServiceAccessException(serviceClass);
                     }
+
+					@Override
+					public Ref getAgent() {
+						// TODO Auto-generated method stub
+						return null;
+					}
                 };
             }
             

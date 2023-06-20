@@ -11,30 +11,38 @@ import io.reacted.core.reactorsystem.ReActorRef;
 
 public class UserAgent extends KAgent {
 
-    public UserAgent(String name) {
-        super(name);
-    }
+	public UserAgent(String name) {
+		super(name);
+	}
 
-    @Override
-    protected Builder setBehavior() {
-        return super.setBehavior().reAct(CreateSession.class, this::createSession).reAct(CreateApplication.class,
-                this::createApplication);
-    }
+	@Override
+	protected Builder setBehavior() {
+		return super.setBehavior().reAct(CreateSession.class, this::createSession).reAct(CreateApplication.class,
+				this::createApplication);
+	}
 
-    private void createSession(ReActorContext rctx, CreateSession message) {
-        rctx.spawnChild(new SessionAgent(message.getSessionId())).ifSuccess((ref) -> rctx.reply(ref));
-    }
+	private void createSession(ReActorContext rctx, CreateSession message) {
+		rctx.spawnChild(new SessionAgent(message.getSessionId())).ifSuccess((ref) -> rctx.reply(ref));
+	}
 
-    private void createApplication(ReActorContext rctx, CreateApplication message) {
-        KActorsBehavior behavior = message.getScope().getService(ResourceProvider.class)
-                .resolveBehavior(message.getApplicationId(), message.getScope());
-        if (behavior == null) {
-            message.getScope().error("cannot find behavior " + message.getApplicationId());
-            rctx.reply(ReActorRef.NO_REACTOR_REF);
-        } else {
-
-            rctx.spawnChild(new SessionAgent(behavior)).ifSuccess((ref) -> rctx.reply(ref));
-        }
-    }
+	private void createApplication(ReActorContext rctx, CreateApplication message) {
+		KActorsBehavior behavior = message.getScope().getService(ResourceProvider.class)
+				.resolveBehavior(message.getApplicationId(), message.getScope());
+		if (behavior == null) {
+			message.getScope().error("cannot find behavior " + message.getApplicationId());
+			rctx.reply(ReActorRef.NO_REACTOR_REF);
+		} else {
+			if (behavior.getType() == KActorsBehavior.Type.UNITTEST) {
+				rctx.spawnChild(new TestCaseAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
+			} else if (behavior.getType() == KActorsBehavior.Type.SCRIPT) {
+				rctx.spawnChild(new ScriptAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
+			} else if (behavior.getType() == KActorsBehavior.Type.APP) {
+				rctx.spawnChild(new ApplicationAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
+			} else {
+				// ?
+				rctx.spawnChild(new SessionAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
+			}
+		}
+	}
 
 }

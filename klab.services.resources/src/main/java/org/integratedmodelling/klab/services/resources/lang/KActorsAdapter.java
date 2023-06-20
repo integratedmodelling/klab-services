@@ -77,6 +77,7 @@ public enum KActorsAdapter {
         ret.getLocales().addAll(behavior.getLocales());
         ret.setMetadata(Utils.Lang.makeMetadata(behavior.getMetadata()));
         ret.setTag(behavior.getTag());
+        ret.setType(KActorsBehavior.Type.valueOf(behavior.getType().name()));
 
         for (IKActorsAction action : behavior.getActions()) {
             ret.getActions().add(adaptAction(action));

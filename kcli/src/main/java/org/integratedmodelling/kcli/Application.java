@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.fusesource.jansi.AnsiConsole;
+import org.integratedmodelling.kcli.engine.Engine;
+import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
@@ -27,7 +30,6 @@ import org.jline.terminal.TerminalBuilder;
 import org.jline.widget.TailTipWidgets;
 
 import picocli.CommandLine;
-import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -53,13 +55,16 @@ public class Application {
 	 * Top-level command that just prints help.
 	 */
 	@Command(name = "", description = {
-			"Example interactive shell with completion and autosuggestions. "
+			"k.LAB interactive shell with completion and autosuggestions. "
 					+ "Hit @|magenta <TAB>|@ to see available commands.",
 			"Hit @|magenta ALT-S|@ to toggle tailtips.", "" }, footer = { "", "Press Ctrl-D to exit." }, subcommands = {
-					Services.class, Run.class, MyCommand.class, PicocliCommands.ClearScreen.class,
-					CommandLine.HelpCommand.class })
+					Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class, Resources.class,
+					Services.class, Run.class, PicocliCommands.ClearScreen.class, CommandLine.HelpCommand.class,
+					Session.class })
 	static class CliCommands implements Runnable {
+
 		PrintWriter out;
+		Set<SessionScope> running = new HashSet<>();
 
 		CliCommands() {
 		}
@@ -76,7 +81,7 @@ public class Application {
 	@Command(name = "run", mixinStandardHelpOptions = true, description = { "Run scripts, test cases and applications.",
 			"Uses autocompletion for behavior and test case names.", "" })
 	static class Run implements Runnable {
-
+		
 		@Option(names = { "-s", "--synchronous" }, defaultValue = "false", description = {
 				"Run in synchronous mode, returning to the prompt when the script has finished running." }, required = false)
 		boolean synchronous;
@@ -93,73 +98,76 @@ public class Application {
 
 		@Override
 		public void run() {
+			SessionScope application = null;
 			parent.out.println("Running " + scriptName + "...");
+			parent.running.add(application = Engine.INSTANCE.getCurrentUser().runApplication(scriptName));
+			System.out.println(application);
 		}
 	}
 
-	/**
-	 * A command with some options to demonstrate completion.
-	 */
-	@Command(name = "cmd", mixinStandardHelpOptions = true, version = "1.0", description = {
-			"Command with some options to demonstrate TAB-completion.",
-			" (Note that enum values also get completed.)" }, subcommands = { Nested.class,
-					CommandLine.HelpCommand.class })
-	static class MyCommand implements Runnable {
-		@Option(names = { "-v", "--verbose" }, description = { "Specify multiple -v options to increase verbosity.",
-				"For example, `-v -v -v` or `-vvv`" })
-		private boolean[] verbosity = {};
+//	/**
+//	 * A command with some options to demonstrate completion.
+//	 */
+//	@Command(name = "cmd", mixinStandardHelpOptions = true, version = "1.0", description = {
+//			"Command with some options to demonstrate TAB-completion.",
+//			" (Note that enum values also get completed.)" }, subcommands = { Nested.class,
+//					CommandLine.HelpCommand.class })
+//	static class MyCommand implements Runnable {
+//		@Option(names = { "-v", "--verbose" }, description = { "Specify multiple -v options to increase verbosity.",
+//				"For example, `-v -v -v` or `-vvv`" })
+//		private boolean[] verbosity = {};
+//
+//		@ArgGroup(exclusive = false)
+//		private MyDuration myDuration = new MyDuration();
+//
+//		static class MyDuration {
+//			@Option(names = { "-d", "--duration" }, description = "The duration quantity.", required = true)
+//			private int amount;
+//
+//			@Option(names = { "-u", "--timeUnit" }, description = "The duration time unit.", required = true)
+//			private TimeUnit unit;
+//		}
+//
+//		@ParentCommand
+//		CliCommands parent;
+//
+//		public void run() {
+//			if (verbosity.length > 0) {
+//				parent.out.printf("Hi there. You asked for %d %s.%n", myDuration.amount, myDuration.unit);
+//			} else {
+//				parent.out.println("hi!");
+//			}
+//		}
+//	}
 
-		@ArgGroup(exclusive = false)
-		private MyDuration myDuration = new MyDuration();
-
-		static class MyDuration {
-			@Option(names = { "-d", "--duration" }, description = "The duration quantity.", required = true)
-			private int amount;
-
-			@Option(names = { "-u", "--timeUnit" }, description = "The duration time unit.", required = true)
-			private TimeUnit unit;
-		}
-
-		@ParentCommand
-		CliCommands parent;
-
-		public void run() {
-			if (verbosity.length > 0) {
-				parent.out.printf("Hi there. You asked for %d %s.%n", myDuration.amount, myDuration.unit);
-			} else {
-				parent.out.println("hi!");
-			}
-		}
-	}
-
-	@Command(name = "nested", mixinStandardHelpOptions = true, subcommands = {
-			CommandLine.HelpCommand.class }, description = "Hosts more sub-subcommands")
-	static class Nested implements Runnable {
-		public void run() {
-			System.out.println("I'm a nested subcommand. I don't do much, but I have sub-subcommands!");
-		}
-
-		@Command(mixinStandardHelpOptions = true, subcommands = {
-				CommandLine.HelpCommand.class }, description = "Multiplies two numbers.")
-		public void multiply(@Option(names = { "-l", "--left" }, required = true) int left,
-				@Option(names = { "-r", "--right" }, required = true) int right) {
-			System.out.printf("%d * %d = %d%n", left, right, left * right);
-		}
-
-		@Command(mixinStandardHelpOptions = true, subcommands = {
-				CommandLine.HelpCommand.class }, description = "Adds two numbers.")
-		public void add(@Option(names = { "-l", "--left" }, required = true) int left,
-				@Option(names = { "-r", "--right" }, required = true) int right) {
-			System.out.printf("%d + %d = %d%n", left, right, left + right);
-		}
-
-		@Command(mixinStandardHelpOptions = true, subcommands = {
-				CommandLine.HelpCommand.class }, description = "Subtracts two numbers.")
-		public void subtract(@Option(names = { "-l", "--left" }, required = true) int left,
-				@Option(names = { "-r", "--right" }, required = true) int right) {
-			System.out.printf("%d - %d = %d%n", left, right, left - right);
-		}
-	}
+//	@Command(name = "nested", mixinStandardHelpOptions = true, subcommands = {
+//			CommandLine.HelpCommand.class }, description = "Hosts more sub-subcommands")
+//	static class Nested implements Runnable {
+//		public void run() {
+//			System.out.println("I'm a nested subcommand. I don't do much, but I have sub-subcommands!");
+//		}
+//
+//		@Command(mixinStandardHelpOptions = true, subcommands = {
+//				CommandLine.HelpCommand.class }, description = "Multiplies two numbers.")
+//		public void multiply(@Option(names = { "-l", "--left" }, required = true) int left,
+//				@Option(names = { "-r", "--right" }, required = true) int right) {
+//			System.out.printf("%d * %d = %d%n", left, right, left * right);
+//		}
+//
+//		@Command(mixinStandardHelpOptions = true, subcommands = {
+//				CommandLine.HelpCommand.class }, description = "Adds two numbers.")
+//		public void add(@Option(names = { "-l", "--left" }, required = true) int left,
+//				@Option(names = { "-r", "--right" }, required = true) int right) {
+//			System.out.printf("%d + %d = %d%n", left, right, left + right);
+//		}
+//
+//		@Command(mixinStandardHelpOptions = true, subcommands = {
+//				CommandLine.HelpCommand.class }, description = "Subtracts two numbers.")
+//		public void subtract(@Option(names = { "-l", "--left" }, required = true) int left,
+//				@Option(names = { "-r", "--right" }, required = true) int right) {
+//			System.out.printf("%d - %d = %d%n", left, right, left - right);
+//		}
+//	}
 
 	public static void main(String[] args) {
 		AnsiConsole.systemInstall();
@@ -175,6 +183,11 @@ public class Application {
 			builtins.alias("bindkey", "keymap");
 			// set up picocli commands
 			CliCommands commands = new CliCommands();
+
+			/*
+			 * start the engine
+			 */
+			Engine.start();
 
 			PicocliCommandsFactory factory = new PicocliCommandsFactory();
 			// Or, if you have your own factory, you can chain them like this:
@@ -207,7 +220,7 @@ public class Application {
 				KeyMap<Binding> keyMap = reader.getKeyMaps().get("main");
 				keyMap.bind(new Reference("tailtip-toggle"), KeyMap.alt("s"));
 
-				String prompt = "prompt> ";
+				String prompt = "k.LAB> ";
 				String rightPrompt = null;
 
 				// start the shell and process input until the user quits with Ctrl-D

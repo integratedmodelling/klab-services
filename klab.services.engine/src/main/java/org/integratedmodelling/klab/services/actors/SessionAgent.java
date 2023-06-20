@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.actors;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
@@ -14,9 +15,9 @@ public class SessionAgent extends KAgent {
         super(name);
     }
 
-    public SessionAgent(KActorsBehavior application) {
+    public SessionAgent(KActorsBehavior application, Scope scope) {
         super(application.getName());
-        // TODO create VM (must be quick)
+        run(application, scope);
     }
 
     protected ReActions.Builder setBehavior() {

@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -94,6 +95,12 @@ public class TestEngine {
                     // TODO Auto-generated method stub
                     return null;
                 }
+
+				@Override
+				public Ref getAgent() {
+					// TODO Auto-generated method stub
+					return null;
+				}
                 
             };
         }
