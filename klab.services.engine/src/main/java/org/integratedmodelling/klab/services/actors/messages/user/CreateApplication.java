@@ -5,6 +5,8 @@ import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
 public class CreateApplication extends AgentMessage {
 
+    private static final long serialVersionUID = -6105256439472164152L;
+
     private String applicationId;
     private Scope scope;
 
@@ -15,8 +17,6 @@ public class CreateApplication extends AgentMessage {
         this.scope = scope;
         this.applicationId = sessionId;
     }
-
-    private static final long serialVersionUID = -6105256439472164152L;
 
     public String getApplicationId() {
         return applicationId;

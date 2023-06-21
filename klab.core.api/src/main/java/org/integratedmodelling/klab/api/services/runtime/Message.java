@@ -107,7 +107,7 @@ public interface Message {
         /**
          * Messages sent or received by the view actor, called from behaviors.
          */
-        ViewActor
+        ViewActor, ActorCommunication
     }
 
     /**
@@ -395,7 +395,7 @@ public interface Message {
         /*
          * Sent B->F when one or more documentation views have incorporated a new element
          */
-        DocumentationChanged
+        DocumentationChanged, AgentResponse
 
     }
 

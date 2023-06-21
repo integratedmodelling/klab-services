@@ -24,7 +24,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
  */
 public class ParametersImpl<T> implements Parameters<T> {
 
-    private static final long serialVersionUID = 99901513041971570L;
+	private static final long serialVersionUID = 99901513041971570L;
 
     private Map<T, Object> delegate;
     private List<T> unnamedKeys = new ArrayList<>();
@@ -302,7 +302,8 @@ public class ParametersImpl<T> implements Parameters<T> {
         return ret;
     }
 
-    public Parameters<T> with(Parameters<String> state) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	public Parameters<T> with(Parameters<String> state) {
         if (state != null && !state.isEmpty()) {
             ParametersImpl<T> ret = new ParametersImpl(this.delegate, this.unnamedKeys);
             ret.templateVariables = state;
@@ -316,4 +317,11 @@ public class ParametersImpl<T> implements Parameters<T> {
         return this.templateVariables;
     }
 
+    public void setUnnamedKeys(List<T> unnamedKeys) {
+		this.unnamedKeys = unnamedKeys;
+	}
+
+	public void setTemplateVariables(Parameters<String> templateVariables) {
+		this.templateVariables = templateVariables;
+	}
 }

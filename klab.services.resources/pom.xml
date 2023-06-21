@@ -20,6 +20,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
+			<artifactId>org.integratedmodelling.klab.api</artifactId>
+			<version>${klab.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
 			<artifactId>org.integratedmodelling.kim</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
@@ -59,6 +64,6 @@
 			<artifactId>org.eclipse.xtext.testing</artifactId>
 			<version>${xtextVersion}</version>
 		</dependency>
-		
+
 	</dependencies>
 </project>

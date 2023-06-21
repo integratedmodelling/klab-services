@@ -124,7 +124,7 @@ public abstract class EngineScope implements UserScope {
 
 		final EngineSessionScope ret = new EngineSessionScope(this);
 		ret.setStatus(Status.WAITING);
-		Ref sessionAgent = this.agent.ask(new CreateApplication(this, behaviorName), Ref.class);
+		Ref sessionAgent = this.agent.ask(new CreateApplication(ret, behaviorName), Ref.class);
 		if (!sessionAgent.isEmpty()) {
 			ret.setStatus(Status.STARTED);
 			ret.setAgent(sessionAgent);
@@ -200,6 +200,16 @@ public abstract class EngineScope implements UserScope {
 			 * dispatch to the agent. If there's a handler, make a responseHandler and
 			 * ensure that it gets a message
 			 */
+			if (responseHandler != null) {
+				// TODO needs an asynchronous ask()
+				// Message m = Message.create(getIdentity().getId(),
+				// Message.MessageClass.ActorCommunication, Message.Type.AgentResponse,
+				// message[0]);
+//				this.getAgent().ask(m, (VM.AgentMessage)message[0]);
+			} else {
+				this.getAgent().tell((VM.AgentMessage) message[0]);
+			}
+			
 		} else {
 			/*
 			 * usual behavior: make a message and send through whatever channel we have.

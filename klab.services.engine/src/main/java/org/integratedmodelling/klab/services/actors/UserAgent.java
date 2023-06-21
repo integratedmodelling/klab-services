@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 
@@ -39,8 +40,8 @@ public class UserAgent extends KAgent {
 			} else if (behavior.getType() == KActorsBehavior.Type.APP) {
 				rctx.spawnChild(new ApplicationAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
 			} else {
-				// ?
-				rctx.spawnChild(new SessionAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
+				throw new KlabActorException(
+						"unexpected call to createApplication with behavior of type " + behavior.getType());
 			}
 		}
 	}

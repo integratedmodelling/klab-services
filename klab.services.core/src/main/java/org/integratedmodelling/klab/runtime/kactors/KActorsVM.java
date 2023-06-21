@@ -279,6 +279,13 @@ public class KActorsVM implements VM {
 					// KActorsVM.this.appId = message.getApplicationId();
 					// }
 
+					if (behavior.getType() == KActorsBehavior.Type.UNITTEST
+							|| behavior.getType() == KActorsBehavior.Type.SCRIPT) {
+						scope.send(new ScriptEvent(behavior.getName(),
+								behavior.getType() == KActorsBehavior.Type.UNITTEST ? ScriptEvent.Type.CASE_START
+										: ScriptEvent.Type.SCRIPT_START));
+					}
+
 					/*
 					 * Init action called no matter what and before the behavior is set; the onLoad
 					 * callback intervenes afterwards. Do not create UI (use raw scope).
@@ -292,10 +299,6 @@ public class KActorsVM implements VM {
 								|| behavior.getType() == KActorsBehavior.Type.UNITTEST) {
 							initScope = initScope.synchronous();
 						}
-
-						scope.send(new ScriptEvent(behavior.getName(),
-								behavior.getType() == KActorsBehavior.Type.UNITTEST ? ScriptEvent.Type.CASE_START
-										: ScriptEvent.Type.SCRIPT_START));
 
 						KActorsVM.this.run(action, behavior, initScope);
 
@@ -318,6 +321,7 @@ public class KActorsVM implements VM {
 					 * run any main actions. This is the only action that may create a UI.
 					 */
 					for (KActorsAction action : getActions(behavior, "main", "@main")) {
+						
 						KActorsScope ascope = scope.getChild(/* KActorsVM.this.appId, */ action);
 						KActorsVM.this.layout = ascope.getViewScope() == null ? null
 								: ascope.getViewScope().getLayout();
@@ -334,7 +338,7 @@ public class KActorsVM implements VM {
 					}
 
 					if (behavior.getType() == KActorsBehavior.Type.UNITTEST) {
-						
+
 						for (KActorsAction action : getActions(behavior, "@test")) {
 
 							Annotation desc = Utils.Annotations.getAnnotation(action, "test");
@@ -1250,7 +1254,7 @@ public class KActorsVM implements VM {
 		Object contextReceiver = null;
 		for (Call chained : code.getChainedCalls()) {
 			KActorsScope fscope = scope.functional(contextReceiver);
-			executeCall(code, behavior, fscope);
+			executeCall(chained, behavior, fscope);
 			contextReceiver = fscope.getValueScope();
 		}
 

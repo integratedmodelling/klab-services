@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.services.actors;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
 import io.reacted.core.messages.reactors.ReActorInit;
@@ -15,11 +13,6 @@ public class SessionAgent extends KAgent {
         super(name);
     }
 
-    public SessionAgent(KActorsBehavior application, Scope scope) {
-        super(application.getName());
-        run(application, scope);
-    }
-
     protected ReActions.Builder setBehavior() {
         return super.setBehavior().reAct(CreateContext.class, this::createContext);
     }
@@ -27,7 +20,6 @@ public class SessionAgent extends KAgent {
     @Override
     protected void initialize(ReActorContext rctx, ReActorInit message) {
         super.initialize(rctx, message);
-        // TODO start VM if not null
     }
 
     @Override
