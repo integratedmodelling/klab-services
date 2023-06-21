@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.apache.lucene.queryparser.ext.Extensions;
 import org.integratedmodelling.kim.api.IKimExpression;
 import org.integratedmodelling.klab.Urn;
 import org.integratedmodelling.klab.api.auth.IActorIdentity;
@@ -32,6 +33,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Expression;
+import org.integratedmodelling.klab.api.lang.Expression.CompilerScope;
+import org.integratedmodelling.klab.api.lang.Expression.Forcing;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsArguments;
@@ -59,6 +62,8 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.monitoring.IMessage;
 import org.integratedmodelling.klab.api.observations.IObservation;
+import org.integratedmodelling.klab.api.observations.IState;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
@@ -76,10 +81,10 @@ import org.integratedmodelling.klab.runtime.kactors.messages.core.Fire;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.SetState;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.ViewLayout;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utils.Path;
 import org.integratedmodelling.klab.utils.Range;
 import org.integratedmodelling.klab.utils.StringUtil;
-import org.integratedmodelling.klab.utils.Utils;
 
 /**
  * The basic k.Actors VM. Eventually to be used in place of the same code within
@@ -321,7 +326,7 @@ public class KActorsVM implements VM {
 					 * run any main actions. This is the only action that may create a UI.
 					 */
 					for (KActorsAction action : getActions(behavior, "main", "@main")) {
-						
+
 						KActorsScope ascope = scope.getChild(/* KActorsVM.this.appId, */ action);
 						KActorsVM.this.layout = ascope.getViewScope() == null ? null
 								: ascope.getViewScope().getLayout();
@@ -1664,47 +1669,42 @@ public class KActorsVM implements VM {
 		Expression.Descriptor selectDescriptor;
 		Expression selectExpression = null;
 		Map<String, State> states = new HashMap<>();
-
+		Language languageService = scope.getMainScope().getService(Language.class);
+		
 		if (comparison != null) {
 			if (comparison.getType() == ValueType.EXPRESSION) {
 
-				// IKimExpression expr = comparison.as(IKimExpression.class);
-				// compareDescriptor =
-				// Extensions.INSTANCE.getLanguageProcessor(expr.getLanguage())
-				// .describe(expr.getCode(), runtimeScope.getExpressionContext()
-				// .scalar(expr.isForcedScalar() ? Forcing.Always : Forcing.AsNeeded));
-				// compareExpression = compareDescriptor.compile();
-				// for (String input : compareDescriptor.getIdentifiers()) {
-				// if (compareDescriptor.isScalar(input) && runtimeScope.getArtifact(input,
-				// IState.class) != null) {
-				// IState state = runtimeScope.getArtifact(input, IState.class);
-				// if (state != null) {
-				// states.put(state.getObservable().getName(), state);
-				// }
-				// }
-				// }
+				KimExpression expr = comparison.as(KimExpression.class);
+				compareDescriptor = languageService
+						.describe(expr.getCode(), expr.getLanguage(), scope.getMainScope())
+								.scalar(expr.isForcedScalar() ? Forcing.Always : Forcing.AsNeeded);
+				compareExpression = compareDescriptor.compile();
+				for (String input : compareDescriptor.getIdentifiers()) {
+//					if (compareDescriptor.isScalar(input) && runtimeScope.getArtifact(input, IState.class) != null) {
+//						IState state = runtimeScope.getArtifact(input, IState.class);
+//						if (state != null) {
+//							states.put(state.getObservable().getName(), state);
+//						}
+//					}
+				}
 			} else {
 				compareValue = evaluateInScope(comparison, scope);
 			}
 		}
 
 		if (selector != null) {
-			// selectDescriptor =
-			// Extensions.INSTANCE.getLanguageProcessor(selector.getLanguage())
-			// // TODO parameter only if target is a state
-			// .describe(selector.getCode(),
-			// runtimeScope.getExpressionContext(null).withCompilerScope(CompilerScope.Scalar));
-			// selectExpression = selectDescriptor.compile();
-			// for (String input : selectDescriptor.getIdentifiers()) {
-			// if (selectDescriptor.isScalar(input) && runtimeScope.getArtifact(input,
-			// IState.class)
-			// != null) {
-			// IState state = runtimeScope.getArtifact(input, IState.class);
-			// if (state != null) {
-			// states.put(state.getObservable().getName(), state);
-			// }
-			// }
-			// }
+			selectDescriptor = languageService
+					// TODO parameter only if target is a state
+					.describe(selector.getCode(), selector.getLanguage(), scope.getMainScope()).scalar(Forcing.Always);
+			selectExpression = selectDescriptor.compile();
+			for (String input : selectDescriptor.getIdentifiers()) {
+//				if (selectDescriptor.isScalar(input) && runtimeScope.getArtifact(input, IState.class) != null) {
+//					IState state = runtimeScope.getArtifact(input, IState.class);
+//					if (state != null) {
+//						states.put(state.getObservable().getName(), state);
+//					}
+//				}
+			}
 		}
 
 		Parameters<String> args = Parameters.create();

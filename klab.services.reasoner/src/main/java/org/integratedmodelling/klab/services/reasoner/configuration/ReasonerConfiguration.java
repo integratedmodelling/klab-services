@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 
 public class ReasonerConfiguration {
 

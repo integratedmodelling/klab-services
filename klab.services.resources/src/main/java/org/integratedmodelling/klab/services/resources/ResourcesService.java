@@ -57,8 +57,8 @@ import org.integratedmodelling.klab.services.resources.lang.KactorsInjectorProvi
 import org.integratedmodelling.klab.services.resources.lang.KdlInjectorProvider;
 import org.integratedmodelling.klab.services.resources.lang.KimAdapter;
 import org.integratedmodelling.klab.services.resources.lang.KimInjectorProvider;
-import org.integratedmodelling.klab.utils.Utils;
-import org.integratedmodelling.klab.utils.Utils.Git;
+import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.utilities.Utils.Git;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

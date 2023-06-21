@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.services.reasoner.objects.StyledKimToken;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.indexing.SemanticScope.Constraint;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 

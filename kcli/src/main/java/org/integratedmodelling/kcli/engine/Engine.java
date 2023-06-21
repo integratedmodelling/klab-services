@@ -27,7 +27,7 @@ import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.integratedmodelling.klab.services.resources.ResourcesClient;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 
 public class Engine extends EngineService implements Authentication {
 

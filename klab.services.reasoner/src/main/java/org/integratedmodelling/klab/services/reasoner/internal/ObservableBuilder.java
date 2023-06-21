@@ -36,7 +36,7 @@ import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.QualifiedName;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 
 public class ObservableBuilder implements Observable.Builder {
 

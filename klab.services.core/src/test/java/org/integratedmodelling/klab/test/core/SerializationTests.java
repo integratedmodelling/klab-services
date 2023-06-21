@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.junit.jupiter.api.Test;
 
 class SerializationTests {

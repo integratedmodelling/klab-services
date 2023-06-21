@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.integratedmodelling.klab.services.resources.ResourcesClient;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * An "engine" implementation for local testing which will connect to any local services it finds

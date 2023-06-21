@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIden
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityReference;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;

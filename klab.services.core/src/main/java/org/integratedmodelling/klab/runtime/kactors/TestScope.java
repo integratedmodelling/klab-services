@@ -26,11 +26,11 @@ import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Section;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Table;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Table.Span;
 import org.integratedmodelling.klab.monitoring.Message;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utils.LogFile;
 import org.integratedmodelling.klab.utils.NameGenerator;
 import org.integratedmodelling.klab.utils.Path;
 import org.integratedmodelling.klab.utils.TemplateUtil;
-import org.integratedmodelling.klab.utils.Utils;
 
 /**
  * Additional scope for actions in test scripts.

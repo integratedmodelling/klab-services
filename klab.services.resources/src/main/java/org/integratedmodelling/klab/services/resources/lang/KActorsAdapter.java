@@ -14,9 +14,14 @@ import org.integratedmodelling.kactors.api.IKActorsBehavior;
 import org.integratedmodelling.kactors.api.IKActorsStatement;
 import org.integratedmodelling.kactors.api.IKActorsStatement.Assert.Assertion;
 import org.integratedmodelling.kactors.api.IKActorsStatement.Call;
+import org.integratedmodelling.kactors.api.IKActorsStatement.Do;
 import org.integratedmodelling.kactors.api.IKActorsStatement.Fail;
 import org.integratedmodelling.kactors.api.IKActorsStatement.FireValue;
 import org.integratedmodelling.kactors.api.IKActorsStatement.For;
+import org.integratedmodelling.kactors.api.IKActorsStatement.If;
+import org.integratedmodelling.kactors.api.IKActorsStatement.Instantiation;
+import org.integratedmodelling.kactors.api.IKActorsStatement.TextBlock;
+import org.integratedmodelling.kactors.api.IKActorsStatement.While;
 import org.integratedmodelling.kactors.api.IKActorsValue;
 import org.integratedmodelling.kactors.kactors.Model;
 import org.integratedmodelling.kactors.model.KActors;
@@ -31,6 +36,7 @@ import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl.AssignmentImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl.CallImpl;
+import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl.TextBlockImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsValueImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -39,11 +45,12 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Concurrent
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
+import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
+import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.utilities.Utils.Lang;
 import org.integratedmodelling.klab.utils.Pair;
 import org.integratedmodelling.klab.utils.Triple;
-import org.integratedmodelling.klab.utils.Utils;
-import org.integratedmodelling.klab.utils.Utils.Lang;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -111,13 +118,13 @@ public enum KActorsAdapter {
 	}
 
 	private KActorsStatement adaptStatement(IKActorsStatement code) {
-		
+
 		KActorsStatementImpl ret = null;
 
 		if (code == null) {
 			return ret;
 		}
-		
+
 		switch (code.getType()) {
 		case ACTION_CALL:
 			ret = new KActorsStatementImpl.CallImpl();
@@ -170,6 +177,8 @@ public enum KActorsAdapter {
 			break;
 		case DO_STATEMENT:
 			ret = new KActorsStatementImpl.DoImpl();
+			((KActorsStatementImpl.DoImpl) ret).setBody(adaptStatement(((Do) code).getBody()));
+			((KActorsStatementImpl.DoImpl) ret).setCondition(adaptValue(((Do) code).getCondition()));
 			break;
 		case FAIL_STATEMENT:
 			ret = new KActorsStatementImpl.FailImpl();
@@ -187,9 +196,25 @@ public enum KActorsAdapter {
 			break;
 		case IF_STATEMENT:
 			ret = new KActorsStatementImpl.IfImpl();
+			((KActorsStatementImpl.IfImpl) ret).setCondition(adaptValue(((If) code).getCondition()));
+			((KActorsStatementImpl.IfImpl) ret).setThenBody(adaptStatement(((If) code).getThen()));
+			((KActorsStatementImpl.IfImpl) ret).setElseBody(adaptStatement(((If) code).getElse()));
+			for (Pair<IKActorsValue, IKActorsStatement> elseif : ((If) code).getElseIfs()) {
+				((KActorsStatementImpl.IfImpl) ret).getElseIfs().add(org.integratedmodelling.klab.api.collections.Pair
+						.of(adaptValue(elseif.getFirst()), adaptStatement(elseif.getSecond())));
+			}
 			break;
 		case INSTANTIATION:
 			ret = new KActorsStatementImpl.InstantiationImpl();
+			((KActorsStatementImpl.InstantiationImpl) ret).setBehavior(((Instantiation) code).getBehavior());
+			((KActorsStatementImpl.InstantiationImpl) ret).setActorBaseName(((Instantiation) code).getActorBaseName());
+			((KActorsStatementImpl.InstantiationImpl) ret)
+					.setArguments(adaptParameters(((Instantiation) code).getArguments()));
+			for (Triple<IKActorsValue, IKActorsStatement, String> action : ((Instantiation) code).getActions()) {
+				((KActorsStatementImpl.InstantiationImpl) ret).getActions()
+						.add(org.integratedmodelling.klab.api.collections.Triple.of(adaptValue(action.getFirst()),
+								adaptStatement(action.getSecond()), action.getThird()));
+			}
 			break;
 		case SEQUENCE:
 			ret = new KActorsStatementImpl.SequenceImpl();
@@ -199,12 +224,16 @@ public enum KActorsAdapter {
 			break;
 		case TEXT_BLOCK:
 			ret = new KActorsStatementImpl.TextBlockImpl();
+			((TextBlockImpl) ret).setText(((TextBlock) code).getText());
 			break;
 		case WHILE_STATEMENT:
 			ret = new KActorsStatementImpl.WhileImpl();
+			((KActorsStatementImpl.WhileImpl) ret).setBody(adaptStatement(((While) code).getBody()));
+			((KActorsStatementImpl.WhileImpl) ret).setCondition(adaptValue(((While) code).getCondition()));
 			break;
 		default:
-			break;
+			// you never know
+			throw new KlabInternalErrorException("k.Actors adapter: can't handle statement type " + code.getType());
 		}
 
 		Lang.copyStatementData(code, ret);
@@ -217,7 +246,7 @@ public enum KActorsAdapter {
 		if (arguments == null) {
 			return null;
 		}
-		
+
 		org.integratedmodelling.klab.utils.Parameters<String> parms = (org.integratedmodelling.klab.utils.Parameters<String>) arguments;
 		ParametersImpl<String> ret = new ParametersImpl<String>();
 		ret.putAll(parms.getData());
@@ -253,61 +282,85 @@ public enum KActorsAdapter {
 		case ANYVALUE:
 			break;
 		case BOOLEAN:
-		case NUMBER:
+		case NUMBER:		
+		case URN:
 		case STRING:
 			ret.setStatedValue(Literal.of(value.getStatedValue()));
 			break;
 		case CALLCHAIN:
+			System.out.println("ORCODIO " + value);
 			break;
 		case CLASS:
+			System.out.println("ORCODIO " + value);
 			break;
 		case COMPONENT:
+			System.out.println("ORCODIO " + value);
 			break;
 		case CONSTANT:
+			System.out.println("ORCODIO " + value);
 			break;
 		case DATE:
+			System.out.println("ORCODIO " + value);
 			break;
 		case EMPTY:
+			System.out.println("ORCODIO " + value);
 			break;
 		case ERROR:
+			System.out.println("ORCODIO " + value);
 			break;
 		case EXPRESSION:
+			System.out.println("ORCODIO " + value);
 			break;
 		case IDENTIFIER:
+			System.out.println("ORCODIO " + value);
 			break;
 		case LIST:
+			System.out.println("ORCODIO " + value);
 			break;
 		case LOCALIZED_KEY:
+			System.out.println("ORCODIO " + value);
 			break;
 		case MAP:
+			System.out.println("ORCODIO " + value);
 			break;
 		case NODATA:
+			System.out.println("ORCODIO " + value);
 			break;
 		case NUMBERED_PATTERN:
+			System.out.println("ORCODIO " + value);
 			break;
 		case OBJECT:
+			System.out.println("ORCODIO " + value);
 			break;
 		case OBSERVABLE:
+			System.out.println("ORCODIO " + value);
 			break;
 		case OBSERVATION:
+			System.out.println("ORCODIO " + value);
 			break;
 		case QUANTITY:
+			System.out.println("ORCODIO " + value);
 			break;
 		case RANGE:
+			System.out.println("ORCODIO " + value);
 			break;
 		case REGEXP:
+			System.out.println("ORCODIO " + value);
 			break;
 		case SET:
+			System.out.println("ORCODIO " + value);
 			break;
 		case TABLE:
+			System.out.println("ORCODIO " + value);
 			break;
 		case TREE:
+			System.out.println("ORCODIO " + value);
 			break;
 		case TYPE:
-			break;
-		case URN:
+			System.out.println("ORCODIO " + value);
 			break;
 		default:
+			System.out.println("ORCAMADONNA " + value);
 			break;
 
 		}

@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.services.Codelist;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityReference;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 // import org.integratedmodelling.klab.rest.AuthorityIdentity;
 // import org.integratedmodelling.klab.rest.AuthorityReference;
 import org.mapdb.DB;

@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import org.integratedmodelling.kim.api.IContextualizable;
 import org.integratedmodelling.kim.api.IKimAcknowledgement;
-import org.integratedmodelling.kim.api.IKimAnnotation;
 import org.integratedmodelling.kim.api.IKimClassification;
 import org.integratedmodelling.kim.api.IKimConcept;
 import org.integratedmodelling.kim.api.IKimConceptStatement;
@@ -43,7 +42,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -67,7 +65,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimRestriction;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement.Scope;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 
 public class KimAdapter {
 

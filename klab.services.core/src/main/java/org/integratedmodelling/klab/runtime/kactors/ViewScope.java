@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewPanel;
 import org.integratedmodelling.klab.runtime.kactors.view.KActorsView;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Scope used during view extraction as the actor executes view-bound actions. One of these is part

@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.tests.services.resources;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
-import org.integratedmodelling.klab.utils.Utils;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.utils;
+package org.integratedmodelling.klab.utilities;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +56,8 @@ import org.integratedmodelling.klab.data.encoding.JacksonConfiguration;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.klab.utils.Parameters;
+import org.integratedmodelling.klab.utils.Range;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
