@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.KActorsVM;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
+import org.integratedmodelling.klab.utils.NameGenerator;
 
 import io.reacted.core.config.reactors.ReActorConfig;
 import io.reacted.core.messages.reactors.ReActorInit;
@@ -46,12 +47,13 @@ public class KAgent implements ReActor {
 	private Ref self;
 
 	public KAgent(String name) {
-		this.name = name;
+		this.name = name + "." + NameGenerator.shortUUID();
 	}
 
 	public static class KAgentRef implements Ref {
 
 		private static final long serialVersionUID = -519986929796662952L;
+		
 		private ReActorRef ref;
 		private static AtomicLong nextId = new AtomicLong(0);
 
@@ -164,12 +166,15 @@ public class KAgent implements ReActor {
 
 	protected void run(KActorsBehavior behavior, Scope scope) {
 		if (vm == null) {
-			this.vm = new KActorsVM(self, scope, globalState);
+            this.vm = new KActorsVM(/* self, scope, globalState */);
 		}
 		this.vm.run(behavior, Parameters.create(scope.getData()), scope);
-		System.out.println("ZOP");
 	}
 
+	protected Ref self() {
+	    return self;
+	}
+	
 	/*
 	 * ---- message handlers ---------------------------------------------
 	 */

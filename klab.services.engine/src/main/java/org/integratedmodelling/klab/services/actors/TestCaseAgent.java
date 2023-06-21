@@ -28,7 +28,7 @@ public class TestCaseAgent extends SessionAgent {
 	}
 
 	private void handleScriptEvent(ReActorContext rctx, ScriptEvent message) {
-		System.out.println("IPERSPERMA " + message);
+		System.out.println(message);
 	}
 
 	@Override
