@@ -167,6 +167,7 @@ public class KAgent implements ReActor {
 			this.vm = new KActorsVM(self, scope, globalState);
 		}
 		this.vm.run(behavior, Parameters.create(scope.getData()), scope);
+		System.out.println("ZOP");
 	}
 
 	/*

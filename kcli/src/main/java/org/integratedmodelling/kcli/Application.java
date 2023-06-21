@@ -48,6 +48,12 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
  * Run in terminal from the project dir after "mvn install" as <code>
  * java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*" org.integratedmodelling.kcli.Application
  * </code>.
+ * 
+ * A useful alias is 
+ * 
+ * <code>
+ * alias klab="java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*" -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 org.integratedmodelling.kcli.Application"
+ * 
  */
 public class Application {
 
