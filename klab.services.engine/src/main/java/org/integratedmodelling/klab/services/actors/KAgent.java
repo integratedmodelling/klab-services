@@ -2,8 +2,6 @@ package org.integratedmodelling.klab.services.actors;
 
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -14,6 +12,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.KActorsVM;
+import org.integratedmodelling.klab.runtime.kactors.messages.core.SetState;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 import org.integratedmodelling.klab.utils.NameGenerator;
 
@@ -26,14 +25,20 @@ import io.reacted.core.reactorsystem.ReActorContext;
 import io.reacted.core.reactorsystem.ReActorRef;
 
 /**
- * The basic k.LAB actor is a simple object that can run a k.Actors behavior.
- * The behavior runs asynchronously in a separate VM that has a reference to the
- * actor and the scope.
+ * The basic k.LAB actor has a state hash and can run one or more k.Actors
+ * behaviors as a response to a RunBehavior message. The behaviors run
+ * asynchronously in a separate VM (one per agent, running all the behaviors
+ * that were sent in separate threads). Each run uses a run scope that contains
+ * the actor ref and the Scope that the agent was created in.
+ * <p>
+ * Implementations dedicated to running single behaviors (script, application
+ * and test case) will call {@link #run(KActorsBehavior, Scope)} directly upon
+ * initialization.
  * 
  * @author ferdinando villa
  *
  */
-public class KAgent implements ReActor {
+public abstract class KAgent implements ReActor {
 
 	/**
 	 * Max timeout for quick ask in seconds. May be changeable through
@@ -42,7 +47,7 @@ public class KAgent implements ReActor {
 	public static long DEFAULT_TIMEOUT_FOR_ASK = 2;
 
 	private String name;
-	private Map<String, Object> globalState = new HashMap<>();
+	private Parameters<String> globalState = Parameters.create();
 	private VM vm;
 	private Ref self;
 
@@ -53,7 +58,7 @@ public class KAgent implements ReActor {
 	public static class KAgentRef implements Ref {
 
 		private static final long serialVersionUID = -519986929796662952L;
-		
+
 		private ReActorRef ref;
 		private static AtomicLong nextId = new AtomicLong(0);
 
@@ -99,6 +104,10 @@ public class KAgent implements ReActor {
 				referencing = true;
 			}
 
+			/*
+			 * TODO/CHECK this may use the reactor system's spawn() directly instead of this
+			 * involved pattern.
+			 */
 			final Class<? extends R> rClass = replyClass;
 			this.ref.ask(message, replyClass, timeout, "request_" + nextId.incrementAndGet())
 					.whenComplete((reply, failure) -> {
@@ -160,21 +169,24 @@ public class KAgent implements ReActor {
 	 * @return
 	 */
 	protected ReActions.Builder setBehavior() {
-		return ReActions.newBuilder().reAct(ReActorInit.class, this::initialize).reAct(ReActorStop.class, this::stop)
+		return ReActions.newBuilder()
+				.reAct(ReActorInit.class, this::initialize)
+				.reAct(ReActorStop.class, this::stop)
+				.reAct(SetState.class, this::setState)
 				.reAct(RunBehavior.class, this::runBehavior);
 	}
 
 	protected void run(KActorsBehavior behavior, Scope scope) {
 		if (vm == null) {
-            this.vm = new KActorsVM(/* self, scope, globalState */);
+			this.vm = new KActorsVM();
 		}
-		this.vm.run(behavior, Parameters.create(scope.getData()), scope);
+		this.vm.run(behavior, Parameters.create(globalState, scope.getData()), scope);
 	}
 
 	protected Ref self() {
-	    return self;
+		return self;
 	}
-	
+
 	/*
 	 * ---- message handlers ---------------------------------------------
 	 */
@@ -193,7 +205,7 @@ public class KAgent implements ReActor {
 	/**
 	 * TODO message to modify data
 	 */
-	
+
 	/**
 	 * Extend to provide initialization. MUST call super.initialize()!
 	 * 
@@ -204,6 +216,16 @@ public class KAgent implements ReActor {
 		this.self = new KAgentRef(rctx.getSelf());
 	}
 
+	/**
+	 * Extend to provide reaction to states set (call super()!)
+	 * 
+	 * @param rctx
+	 * @param message
+	 */
+	protected void setState(ReActorContext rctx, SetState message) {
+		this.globalState.put(message.getKey(), message.getValue());
+	}
+	
 	/**
 	 * Extend to provide finalization
 	 * 

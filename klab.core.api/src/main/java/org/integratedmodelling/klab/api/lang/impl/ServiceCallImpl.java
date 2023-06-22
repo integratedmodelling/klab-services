@@ -18,10 +18,10 @@ import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
-import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -120,8 +120,8 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
             // TODO table literal
             // TODO must also pass argument list to the same function...
             return "{{" + ret + "}}";
-        } else if (val instanceof KimExpression) {
-            return "[" + ((KimExpression) val).getCode() + "]";
+        } else if (val instanceof ExpressionCode) {
+            return "[" + ((ExpressionCode) val).getCode() + "]";
         } else if (val instanceof ServiceCallImpl) {
             return ((ServiceCallImpl) val).getSourceCode();
         } else if (val instanceof Contextualizable) {

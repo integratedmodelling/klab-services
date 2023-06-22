@@ -11,7 +11,7 @@
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
-package org.integratedmodelling.klab.api.lang;
+package org.integratedmodelling.klab.api.knowledge;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -20,7 +20,6 @@ import java.util.Set;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
@@ -351,8 +350,10 @@ public interface Expression extends Serializable {
 	 *                             monitor in the context} will never be null and
 	 *                             can be used to send messages or interrupt the
 	 *                             computation.
-	 * @param additionalParameters add key, value pairs for any additional parameter
-	 *                             to add
+	 * @param additionalParameters add paired key, value for any additional
+	 *                             parameter to add. If in place of a String key the
+	 *                             system finds a Map, the map will be used to
+	 *                             provide parameters.
 	 * @return the result of evaluating the expression
 	 * @throws org.integratedmodelling.klab.KException.KlabException TODO
 	 */

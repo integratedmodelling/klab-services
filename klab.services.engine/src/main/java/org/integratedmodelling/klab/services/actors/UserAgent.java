@@ -23,10 +23,20 @@ public class UserAgent extends KAgent {
 	}
 
 	private void createSession(ReActorContext rctx, CreateSession message) {
+		/*
+		 * TODO/FIXME using the spawn child directly from the actor system and sending
+		 * an init message would be less complicated
+		 */
 		rctx.spawnChild(new SessionAgent(message.getSessionId())).ifSuccess((ref) -> rctx.reply(ref));
 	}
 
 	private void createApplication(ReActorContext rctx, CreateApplication message) {
+
+		/*
+		 * TODO/FIXME using the spawn child directly from the actor system and sending
+		 * an init message would be less complicated
+		 */
+
 		KActorsBehavior behavior = message.getScope().getService(ResourceProvider.class)
 				.resolveBehavior(message.getApplicationId(), message.getScope());
 		if (behavior == null) {

@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import org.integratedmodelling.klab.api.lang.kim.KimExpression;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 
 /**
  * Just a wrapper for some code and an optional language identifier. Used explicitly only where code
@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimExpression;
  * @author Ferd
  *
  */
-public class KimExpressionImpl implements KimExpression {
+public class ExpressionCodeImpl implements ExpressionCode {
 
     private static final long serialVersionUID = -8760044805799296995L;
 

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 
 /**
  * Syntactic bean for a k.IM classifier, used in both classifications and lookup tables.
@@ -31,7 +32,7 @@ public interface KimClassifier extends KimStatement {
 
     boolean isNullMatch();
 
-    KimExpression getExpressionMatch();
+    ExpressionCode getExpressionMatch();
 
     String getStringMatch();
 

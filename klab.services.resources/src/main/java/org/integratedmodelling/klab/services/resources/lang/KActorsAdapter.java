@@ -25,24 +25,32 @@ import org.integratedmodelling.kactors.api.IKActorsStatement.While;
 import org.integratedmodelling.kactors.api.IKActorsValue;
 import org.integratedmodelling.kactors.kactors.Model;
 import org.integratedmodelling.kactors.model.KActors;
+import org.integratedmodelling.kactors.model.KActorsArguments;
 import org.integratedmodelling.kim.api.IKimAnnotation;
 import org.integratedmodelling.kim.api.IParameters;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsActionImpl;
+import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsArgumentsImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl.AssignmentImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl.CallImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl.TextBlockImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsValueImpl;
+import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsValueImpl.ConstructorImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.Constructor;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.DataType;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
@@ -251,6 +259,7 @@ public enum KActorsAdapter {
 		ParametersImpl<String> ret = new ParametersImpl<String>();
 		ret.putAll(parms.getData());
 		ret.getUnnamedKeys().addAll(parms.getUnnamedKeys());
+		ret.getNamedKeys().addAll(parms.getNamedKeys());
 		ret.setTemplateVariables(adaptParameters(parms.getTemplateVariables()));
 		return ret;
 	}
@@ -271,99 +280,70 @@ public enum KActorsAdapter {
 
 	private KActorsValue adaptValue(IKActorsValue value) {
 
+		if (value == null) {
+			return null;
+		}
+
 		KActorsValueImpl ret = new KActorsValueImpl();
 
 		ret.setType(ValueType.valueOf(value.getType().name()));
-
-		switch (value.getType()) {
-		case ANNOTATION:
-		case ANYTHING:
-		case ANYTRUE:
-		case ANYVALUE:
-			break;
-		case BOOLEAN:
-		case NUMBER:		
-		case URN:
-		case STRING:
+		ret.setDeferred(value.isDeferred());
+		ret.setExclusive(value.isExclusive());
+		ret.setDeprecated(value.isDeprecated());
+		ret.setDeprecation(value.getDeprecation());
+		ret.setSourceCode(value.getSourceCode());
+		ret.setFalseCase(adaptValue(value.getFalseCase()));
+		ret.setTrueCase(adaptValue(value.getTrueCase()));
+		ret.setFirstLine(value.getFirstLine());
+		ret.setLastLine(value.getLastLine());
+		ret.setFirstCharOffset(value.getFirstCharOffset());
+		ret.setLastCharOffset(value.getLastCharOffset());
+		ret.setMetadata(Metadata.create(value.getMetadata()));
+		ret.setExpressionType(ExpressionType.valueOf(value.getExpressionType().name()));
+		ret.setTag(value.getTag());
+		
+		if (value.getStatedValue() != null) {
 			ret.setStatedValue(Literal.of(value.getStatedValue()));
-			break;
-		case CALLCHAIN:
-			System.out.println("ORCODIO " + value);
-			break;
-		case CLASS:
-			System.out.println("ORCODIO " + value);
-			break;
-		case COMPONENT:
-			System.out.println("ORCODIO " + value);
-			break;
-		case CONSTANT:
-			System.out.println("ORCODIO " + value);
-			break;
-		case DATE:
-			System.out.println("ORCODIO " + value);
-			break;
-		case EMPTY:
-			System.out.println("ORCODIO " + value);
-			break;
-		case ERROR:
-			System.out.println("ORCODIO " + value);
-			break;
-		case EXPRESSION:
-			System.out.println("ORCODIO " + value);
-			break;
-		case IDENTIFIER:
-			System.out.println("ORCODIO " + value);
-			break;
-		case LIST:
-			System.out.println("ORCODIO " + value);
-			break;
-		case LOCALIZED_KEY:
-			System.out.println("ORCODIO " + value);
-			break;
-		case MAP:
-			System.out.println("ORCODIO " + value);
-			break;
-		case NODATA:
-			System.out.println("ORCODIO " + value);
-			break;
-		case NUMBERED_PATTERN:
-			System.out.println("ORCODIO " + value);
-			break;
-		case OBJECT:
-			System.out.println("ORCODIO " + value);
-			break;
-		case OBSERVABLE:
-			System.out.println("ORCODIO " + value);
-			break;
-		case OBSERVATION:
-			System.out.println("ORCODIO " + value);
-			break;
-		case QUANTITY:
-			System.out.println("ORCODIO " + value);
-			break;
-		case RANGE:
-			System.out.println("ORCODIO " + value);
-			break;
-		case REGEXP:
-			System.out.println("ORCODIO " + value);
-			break;
-		case SET:
-			System.out.println("ORCODIO " + value);
-			break;
-		case TABLE:
-			System.out.println("ORCODIO " + value);
-			break;
-		case TREE:
-			System.out.println("ORCODIO " + value);
-			break;
-		case TYPE:
-			System.out.println("ORCODIO " + value);
-			break;
-		default:
-			System.out.println("ORCAMADONNA " + value);
-			break;
-
 		}
+		if (value.getCallChain() != null) {
+			for (Call call : value.getCallChain()) {
+				ret.getCallChain().add((KActorsStatement.Call) adaptStatement(call));
+			}
+		}
+		if (value instanceof org.integratedmodelling.kactors.model.KActorsValue
+				&& ((org.integratedmodelling.kactors.model.KActorsValue) value).getConstructor() != null) {
+			ret.setConstructor(
+					adaptConstructor(((org.integratedmodelling.kactors.model.KActorsValue) value).getConstructor()));
+		}
+		if (value.getCast() != null) {
+			ret.setCast(DataType.valueOf(value.getCast().name()));
+		}
+
+		return ret;
+	}
+
+	private Constructor adaptConstructor(org.integratedmodelling.kactors.model.KActorsValue.Constructor constructor) {
+		ConstructorImpl ret = new ConstructorImpl();
+		ret.setClassname(constructor.getClassname());
+		ret.setClasspath(constructor.getClasspath());
+		ret.setComponent(constructor.getComponent());
+		ret.setArguments(adaptArguments(constructor.getArguments()));
+		return ret;
+	}
+
+	Arguments adaptArguments(KActorsArguments arguments) {
+
+		if (arguments == null) {
+			return null;
+		}
+
+		org.integratedmodelling.klab.utils.Parameters<String> parms = (org.integratedmodelling.klab.utils.Parameters<String>) arguments;
+		KActorsArgumentsImpl ret = new KActorsArgumentsImpl();
+		ret.putAll(parms.getData());
+		ret.getUnnamedKeys().addAll(parms.getUnnamedKeys());
+		ret.getNamedKeys().addAll(parms.getNamedKeys());
+		ret.setTemplateVariables(adaptParameters(parms.getTemplateVariables()));
+		ret.getMetadataKeys().addAll(arguments.getMetadataKeys());
 		return ret;
 	}
 

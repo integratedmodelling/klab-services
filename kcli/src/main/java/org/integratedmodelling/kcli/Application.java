@@ -191,11 +191,6 @@ public class Application {
             // set up picocli commands
             CliCommands commands = new CliCommands();
 
-            /*
-             * start the engine
-             */
-            Engine.start();
-
             PicocliCommandsFactory factory = new PicocliCommandsFactory();
             // Or, if you have your own factory, you can chain them like this:
             // MyCustomFactory customFactory = createCustomFactory(); // your application

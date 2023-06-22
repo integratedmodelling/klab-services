@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.lang.kim;
+package org.integratedmodelling.klab.api.lang;
 
 import java.io.Serializable;
 
@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @author Ferd
  *
  */
-public interface KimExpression extends Serializable {
+public interface ExpressionCode extends Serializable {
 
 	String getCode();
 	

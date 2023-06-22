@@ -11,10 +11,10 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
-import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
@@ -30,7 +30,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private String language;
     private Literal literal;
     private ServiceCall serviceCall;
-    private KimExpression expression;
+    private ExpressionCode expression;
     private KimClassification classification;
     private KimLookupTable lookupTable;
     private String accordingTo;
@@ -88,7 +88,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     }
 
     @Override
-    public KimExpression getExpression() {
+    public ExpressionCode getExpression() {
         return this.expression;
     }
 
@@ -199,7 +199,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         this.serviceCall = serviceCall;
     }
 
-    public void setExpression(KimExpression expression) {
+    public void setExpression(ExpressionCode expression) {
         this.expression = expression;
     }
 

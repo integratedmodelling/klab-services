@@ -21,122 +21,129 @@ import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
 
 /**
- * Reference implementation for the new modular engine. Should eventually allow substituting
- * external RPC services for the default ones, based on configuration and a dedicated API.
+ * Reference implementation for the new modular engine. Should eventually allow
+ * substituting external RPC services for the default ones, based on
+ * configuration and a dedicated API.
  * 
  * @author Ferd
  *
  */
-@Service
-public class EngineService /* implements Engine */ {
+public enum EngineService {
 
-    private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
-    private ReActorSystem actorSystem;
+	INSTANCE;
 
-    private Reasoner reasoner;
-    private ResourceProvider resources;
-    private RuntimeService runtime;
-    private Resolver resolver;
+	private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
+	private ReActorSystem actorSystem;
 
-    @Autowired
-    public EngineService() {
-        boot();
-    }
+	private Reasoner reasoner;
+	private ResourceProvider resources;
+	private RuntimeService runtime;
+	private Resolver resolver;
+	private boolean booted;
 
-    public void boot() {
+	@Autowired
+	private EngineService() {
+		boot();
+	}
 
-        /*
-         * boot the actor system
-         */
-        this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-                .initReActorSystem();
+	public void boot() {
 
-    }
+		if (!booted) {
+			booted = true;
+			/*
+			 * boot the actor system
+			 */
+			this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
+					.initReActorSystem();
+		}
 
-    public UserScope login(UserIdentity user) {
+	}
 
-        EngineScope ret = userScopes.get(user.getUsername());
-        if (ret == null) {
-            ret = new EngineScope(user){
+	public UserScope login(UserIdentity user) {
 
-                @SuppressWarnings("unchecked")
-                @Override
-                public <T extends KlabService> T getService(Class<T> serviceClass) {
-                    if (serviceClass.isAssignableFrom(Reasoner.class)) {
-                        return (T)reasoner;
-                    } else if (serviceClass.isAssignableFrom(ResourceProvider.class)) {
-                        return (T)resources;
-                    } else if (serviceClass.isAssignableFrom(Resolver.class)) {
-                        return (T)resolver;
-                    } else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-                        return (T)runtime;
-                    }
-                    return null;
-                }
-                
-                public String toString() {
-                	return user.toString();
-                }
+		EngineScope ret = userScopes.get(user.getUsername());
+		if (ret == null) {
+			ret = new EngineScope(user) {
 
-            };
-            final EngineScope scope = ret;
-            String agentName = user.getUsername();
-            actorSystem.spawn(new UserAgent(agentName)).ifSuccess((t) -> scope.setAgent(KAgentRef.get(t))).orElseSneakyThrow();
-            userScopes.put(user.getUsername(), ret);
-        }
-        return ret;
-    }
+				@SuppressWarnings("unchecked")
+				@Override
+				public <T extends KlabService> T getService(Class<T> serviceClass) {
+					if (serviceClass.isAssignableFrom(Reasoner.class)) {
+						return (T) reasoner;
+					} else if (serviceClass.isAssignableFrom(ResourceProvider.class)) {
+						return (T) resources;
+					} else if (serviceClass.isAssignableFrom(Resolver.class)) {
+						return (T) resolver;
+					} else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+						return (T) runtime;
+					}
+					return null;
+				}
 
-    public void registerScope(EngineScope scope) {
-        userScopes.put(scope.getUser().getUsername(), scope);
-    }
+				public String toString() {
+					return user.toString();
+				}
 
-    public void deregisterScope(String token) {
-        userScopes.remove(token);
-    }
+			};
+			final EngineScope scope = ret;
+			String agentName = user.getUsername();
+			actorSystem.spawn(new UserAgent(agentName)).ifSuccess((t) -> scope.setAgent(KAgentRef.get(t)))
+					.orElseSneakyThrow();
+			userScopes.put(user.getUsername(), ret);
+		}
+		return ret;
+	}
 
-    public ReActorSystem getActors() {
-        return this.actorSystem;
-    }
+	public void registerScope(EngineScope scope) {
+		userScopes.put(scope.getUser().getUsername(), scope);
+	}
 
-    public Reasoner getReasoner() {
-        return reasoner;
-    }
+	public void deregisterScope(String token) {
+		userScopes.remove(token);
+	}
 
-    public void setReasoner(Reasoner reasoner) {
-        this.reasoner = reasoner;
-    }
+	public ReActorSystem getActors() {
+		return this.actorSystem;
+	}
 
-    public ResourceProvider getResources() {
-        return resources;
-    }
+	public Reasoner getReasoner() {
+		return reasoner;
+	}
 
-    public void setResources(ResourceProvider resources) {
-        this.resources = resources;
-    }
+	public void setReasoner(Reasoner reasoner) {
+		this.reasoner = reasoner;
+	}
 
-    public RuntimeService getRuntime() {
-        return runtime;
-    }
+	public ResourceProvider getResources() {
+		return resources;
+	}
 
-    public void setRuntime(RuntimeService runtime) {
-        this.runtime = runtime;
-    }
+	public void setResources(ResourceProvider resources) {
+		this.resources = resources;
+	}
 
-    public Resolver getResolver() {
-        return resolver;
-    }
+	public RuntimeService getRuntime() {
+		return runtime;
+	}
 
-    public void setResolver(Resolver resolver) {
-        this.resolver = resolver;
-    }
+	public void setRuntime(RuntimeService runtime) {
+		this.runtime = runtime;
+	}
 
-    public boolean shutdown() {
-        this.reasoner.shutdown();
-        this.resources.shutdown();
-        this.reasoner.shutdown();
-        this.runtime.shutdown();
-        return true;
-    }
+	public Resolver getResolver() {
+		return resolver;
+	}
+
+	public void setResolver(Resolver resolver) {
+		this.resolver = resolver;
+	}
+
+	public boolean shutdown() {
+		this.reasoner.shutdown();
+		this.resources.shutdown();
+		this.reasoner.shutdown();
+		this.runtime.shutdown();
+		return true;
+	}
 
 }

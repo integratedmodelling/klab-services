@@ -47,7 +47,6 @@ public abstract class EngineScope implements UserScope {
 
 	public EngineScope(UserIdentity user) {
 		this.user = user;
-//        EngineService.INSTANCE.getEngine().registerScope(this);
 	}
 
 	/**
@@ -107,6 +106,10 @@ public abstract class EngineScope implements UserScope {
 	@Override
 	public SessionScope runSession(String sessionName) {
 
+		/*
+		 * TODO/CHECK use ReActorSystem.spawn instead of the ask pattern?
+		 */
+		
 		final EngineSessionScope ret = new EngineSessionScope(this);
 		ret.setStatus(Status.WAITING);
 		Ref sessionAgent = this.agent.ask(new CreateSession(this, sessionName), Ref.class);
@@ -121,6 +124,10 @@ public abstract class EngineScope implements UserScope {
 
 	@Override
 	public SessionScope runApplication(String behaviorName) {
+
+		/*
+		 * TODO/CHECK use ReActorSystem.spawn instead of the ask pattern?
+		 */
 
 		final EngineSessionScope ret = new EngineSessionScope(this);
 		ret.setStatus(Status.WAITING);

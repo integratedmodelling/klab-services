@@ -25,16 +25,17 @@ import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Expression.CompilerScope;
+import org.integratedmodelling.klab.api.knowledge.Expression.Forcing;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.Expression;
-import org.integratedmodelling.klab.api.lang.Expression.CompilerScope;
-import org.integratedmodelling.klab.api.lang.Expression.Forcing;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsArguments;
@@ -59,7 +60,6 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType;
 import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
-import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.monitoring.IMessage;
 import org.integratedmodelling.klab.api.observations.IObservation;
 import org.integratedmodelling.klab.api.observations.IState;
@@ -1631,16 +1631,16 @@ public class KActorsVM implements VM {
         KActorsValue comparison = assertion.getValue();
 
         // TODO Auto-generated method stub
-        KimExpression selector = null;
+        ExpressionCode selector = null;
         ObservationGroup distribute = null;
         boolean ok = false;
 
         if (arguments.containsKey("select")) {
             Object sel = arguments.get("select");
             if (sel instanceof IKimExpression) {
-                selector = (KimExpression) sel;
+                selector = (ExpressionCode) sel;
             } else if (sel instanceof KActorsValue && ((KActorsValue) sel).getType() == ValueType.EXPRESSION) {
-                selector = ((KActorsValue) sel).as(KimExpression.class);
+                selector = ((KActorsValue) sel).as(ExpressionCode.class);
             }
         }
 
@@ -1659,7 +1659,7 @@ public class KActorsVM implements VM {
         if (comparison != null) {
             if (comparison.getType() == ValueType.EXPRESSION) {
 
-                KimExpression expr = comparison.as(KimExpression.class);
+                ExpressionCode expr = comparison.as(ExpressionCode.class);
                 compareDescriptor = languageService.describe(expr.getCode(), expr.getLanguage(), scope.getMainScope())
                         .scalar(expr.isForcedScalar() ? Forcing.Always : Forcing.AsNeeded);
                 compareExpression = compareDescriptor.compile();

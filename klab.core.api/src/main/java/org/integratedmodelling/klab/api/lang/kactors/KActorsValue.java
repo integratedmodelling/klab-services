@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Literal;
@@ -68,7 +69,7 @@ public interface KActorsValue extends KActorsCodeStatement {
      * @author mario
      *
      */
-    interface Constructor {
+    interface Constructor extends Serializable {
         
         String getClasspath();
         String getClassname();

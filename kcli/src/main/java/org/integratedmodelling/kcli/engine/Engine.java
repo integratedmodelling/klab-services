@@ -29,22 +29,17 @@ import org.integratedmodelling.klab.services.resources.ResourcesService;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.integratedmodelling.klab.utilities.Utils;
 
-public class Engine extends EngineService implements Authentication {
+public enum Engine implements Authentication {
 
+	INSTANCE;
+	
 	Map<String, UserScope> authorizedIdentities = new LinkedHashMap<>();
 	UserScope currentUser;
 
-	public static Engine INSTANCE;
-
-	public static Engine start() {
-		INSTANCE = new Engine();
-		return INSTANCE;
-	}
-
 	private Engine() {
 
-		// boot
-		super();
+		// boot right away
+		EngineService.INSTANCE.boot();
 
 		/*
 		 * discover and catalog services
@@ -55,29 +50,35 @@ public class Engine extends EngineService implements Authentication {
 		 * client, otherwise create an embedded service
 		 */
 		if (Utils.Network.isAlive("http://127.0.0.1:" + ResourceProvider.DEFAULT_PORT + " /resources/actuator")) {
-			setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources"));
+			EngineService.INSTANCE
+					.setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources"));
 		} else {
-			setResources(new ResourcesService(this));
+			EngineService.INSTANCE.setResources(new ResourcesService(this));
 		}
 
 		if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {
-			setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
+			EngineService.INSTANCE
+					.setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
 		} else {
-			setReasoner(new ReasonerService(this, getResources(), new Indexer()));
+			EngineService.INSTANCE
+					.setReasoner(new ReasonerService(this, EngineService.INSTANCE.getResources(), new Indexer()));
 		}
 
 		// FIXME mutual dependency between resolver and runtime guarantees screwup
 		if (Utils.Network.isAlive("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver/actuator")) {
-			setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
+			EngineService.INSTANCE
+					.setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
 		} else {
-			setResolver(new ResolverService(this, getResources(), getRuntime()));
+			EngineService.INSTANCE.setResolver(new ResolverService(this, EngineService.INSTANCE.getResources(),
+					EngineService.INSTANCE.getRuntime()));
 		}
 
 		if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
-			setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime"));
+			EngineService.INSTANCE
+					.setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime"));
 		} else {
-			setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this, getResources(),
-					getResolver()));
+			EngineService.INSTANCE.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this,
+					EngineService.INSTANCE.getResources(), EngineService.INSTANCE.getResolver()));
 		}
 
 		/*
@@ -89,7 +90,7 @@ public class Engine extends EngineService implements Authentication {
 
 	@Override
 	public UserScope authorizeUser(UserIdentity user) {
-		return login(user);
+		return EngineService.INSTANCE.login(user);
 	}
 
 	@Override
@@ -100,13 +101,13 @@ public class Engine extends EngineService implements Authentication {
 
 	@Override
 	public UserScope getAnonymousScope() {
-		return login(new AnonymousUser());
+		return EngineService.INSTANCE.login(new AnonymousUser());
 	}
 
 	public UserScope getCurrentUser() {
 		return currentUser;
 	}
-	
+
 	@Override
 	public ServiceScope authorizeService(KlabService service) {
 		return new LocalServiceScope(service) {

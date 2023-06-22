@@ -5,12 +5,60 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 
 public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActorsValue {
 
 	private static final long serialVersionUID = 8055708952216648277L;
+
+	public static class ConstructorImpl implements Constructor {
+
+		private static final long serialVersionUID = -6189776643526310594L;
+
+		private String classpath;
+		private String classname;
+		private String component;
+		private Arguments arguments;
+
+		@Override
+		public String getClasspath() {
+			return this.classpath;
+		}
+
+		@Override
+		public String getClassname() {
+			return this.classname;
+		}
+
+		@Override
+		public String getComponent() {
+			return this.component;
+		}
+
+		@Override
+		public Arguments getArguments() {
+			return this.arguments;
+		}
+
+		public void setClasspath(String classpath) {
+			this.classpath = classpath;
+		}
+
+		public void setClassname(String classname) {
+			this.classname = classname;
+		}
+
+		public void setComponent(String component) {
+			this.component = component;
+		}
+
+		public void setArguments(Arguments arguments) {
+			this.arguments = arguments;
+		}
+
+	}
 
 	private ValueType type;
 	private ExpressionType expressionType;
@@ -111,12 +159,12 @@ public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActor
 	}
 
 	@Override
-    public Constructor getConstructor() {
-        return constructor;
-    }
+	public Constructor getConstructor() {
+		return constructor;
+	}
 
-    public void setConstructor(Constructor constructor) {
-        this.constructor = constructor;
-    }
+	public void setConstructor(Constructor constructor) {
+		this.constructor = constructor;
+	}
 
 }

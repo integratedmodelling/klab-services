@@ -12,7 +12,6 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
-import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
@@ -343,7 +342,7 @@ public interface Contextualizable extends KimStatement {
 	 * 
 	 * @return the expression
 	 */
-	KimExpression getExpression();
+	ExpressionCode getExpression();
 
 	/**
 	 * A classification of the input. Only one among getLiteral(), getServiceCall(),

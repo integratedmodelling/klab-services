@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.kim.KimClassifier;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimDate;
-import org.integratedmodelling.klab.api.lang.kim.KimExpression;
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 
 /**
@@ -28,7 +28,7 @@ public class KimClassifierImpl extends KimStatementImpl implements KimClassifier
     private ArrayList<KimClassifier> classifierMatches;
     private Range intervalMatch;
     private boolean nullMatch;
-    private KimExpression expressionMatch;
+    private ExpressionCode expressionMatch;
     private String stringMatch;
     private ArrayList<KimConcept> conceptMatches;
     private KimQuantity quantityMatch;
@@ -81,7 +81,7 @@ public class KimClassifierImpl extends KimStatementImpl implements KimClassifier
     }
 
     @Override
-    public KimExpression getExpressionMatch() {
+    public ExpressionCode getExpressionMatch() {
         return expressionMatch;
     }
 
@@ -146,7 +146,7 @@ public class KimClassifierImpl extends KimStatementImpl implements KimClassifier
         this.nullMatch = nullMatch;
     }
 
-    public void setExpressionMatch(KimExpression expressionMatch) {
+    public void setExpressionMatch(ExpressionCode expressionMatch) {
         this.expressionMatch = expressionMatch;
     }
 

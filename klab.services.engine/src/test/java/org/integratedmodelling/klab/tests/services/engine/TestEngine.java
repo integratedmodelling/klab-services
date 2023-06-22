@@ -26,95 +26,106 @@ import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /**
- * An "engine" implementation for local testing which will connect to any local services it finds
- * running, and create local embedded services for the others. Only needs to expose a local
- * authentication service to retrieve a user scope for the anonymous user, then the service proxies
- * are available from it.
+ * An "engine" implementation for local testing which will connect to any local
+ * services it finds running, and create local embedded services for the others.
+ * Only needs to expose a local authentication service to retrieve a user scope
+ * for the anonymous user, then the service proxies are available from it.
  * 
  * @author Ferd
  *
  */
 public class TestEngine {
 
-    static class TestAuthentication extends EngineService implements Authentication {
+	static class TestAuthentication implements Authentication {
 
-        TestAuthentication() {
-            /*
-             * check for a locally running service for each category; if existing, create a client,
-             * otherwise create an embedded service
-             */
-            if (Utils.Network.isAlive("http://127.0.0.1:" + ResourceProvider.DEFAULT_PORT + " /resources/actuator")) {
-                setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources"));
-            } else {
-                setResources(new ResourcesService(this));
-            }
+		TestAuthentication() {
+			/*
+			 * check for a locally running service for each category; if existing, create a
+			 * client, otherwise create an embedded service
+			 */
+			if (Utils.Network.isAlive("http://127.0.0.1:" + ResourceProvider.DEFAULT_PORT + " /resources/actuator")) {
+				EngineService.INSTANCE
+						.setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources"));
+			} else {
+				EngineService.INSTANCE.setResources(new ResourcesService(this));
+			}
 
-            if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {
-                setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
-            } else {
-                setReasoner(new ReasonerService(this, getResources(), new Indexer()));
-            }
+			if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {
+				EngineService.INSTANCE
+						.setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
+			} else {
+				EngineService.INSTANCE
+						.setReasoner(new ReasonerService(this, EngineService.INSTANCE.getResources(), new Indexer()));
+			}
 
-            // FIXME mutual dependency between resolver and runtime guarantees screwup
-            if (Utils.Network.isAlive("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver/actuator")) {
-                setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
-            } else {
-                setResolver(new ResolverService(this, getResources(), getRuntime()));
-            }
+			// FIXME mutual dependency between resolver and runtime guarantees screwup
+			if (Utils.Network.isAlive("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver/actuator")) {
+				EngineService.INSTANCE
+						.setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
+			} else {
+				EngineService.INSTANCE.setResolver(new ResolverService(this, EngineService.INSTANCE.getResources(),
+						EngineService.INSTANCE.getRuntime()));
+			}
 
-            if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
-                setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime"));
-            } else {
-                setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this, getResources(), getResolver()));
-            }
+			if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
+				EngineService.INSTANCE
+						.setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime"));
+			} else {
+				EngineService.INSTANCE.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this,
+						EngineService.INSTANCE.getResources(), EngineService.INSTANCE.getResolver()));
+			}
 
-        }
+		}
 
-        @Override
-        public UserScope authorizeUser(UserIdentity user) {
-            return login(user);
-        }
+		@Override
+		public UserScope authorizeUser(UserIdentity user) {
+			return EngineService.INSTANCE.login(user);
+		}
 
-        @Override
-        public boolean checkPermissions(ResourcePrivileges permissions, Scope scope) {
-            // everything is allowed
-            return true;
-        }
+		@Override
+		public boolean checkPermissions(ResourcePrivileges permissions, Scope scope) {
+			// everything is allowed
+			return true;
+		}
 
-        @Override
-        public UserScope getAnonymousScope() {
-            return login(new AnonymousUser());
-        }
+		@Override
+		public UserScope getAnonymousScope() {
+			return EngineService.INSTANCE.login(new AnonymousUser());
+		}
 
-        @Override
-        public ServiceScope authorizeService(KlabService service) {
-            return new LocalServiceScope(service) {
+		@Override
+		public ServiceScope authorizeService(KlabService service) {
+			return new LocalServiceScope(service) {
 
-                @Override
-                public <T extends KlabService> T getService(Class<T> serviceClass) {
-                    // TODO Auto-generated method stub
-                    return null;
-                }
+				@Override
+				public <T extends KlabService> T getService(Class<T> serviceClass) {
+					// TODO Auto-generated method stub
+					return null;
+				}
 
 				@Override
 				public Ref getAgent() {
 					// TODO Auto-generated method stub
 					return null;
 				}
-                
-            };
-        }
 
-    }
+			};
+		}
 
-    /**
-     * Return an authentication service that will only authenticate anonymous users and connect them
-     * with clients for any locally running service, filling in the remaining services with local
-     * instances.
-     * 
-     * @return
-     */
-    public static TestAuthentication setup() {
-        return new TestAuthentication();
-    }
+		public void shutdown() {
+			EngineService.INSTANCE.shutdown();
+		}
+
+	}
+
+	/**
+	 * Return an authentication service that will only authenticate anonymous users
+	 * and connect them with clients for any locally running service, filling in the
+	 * remaining services with local instances.
+	 * 
+	 * @return
+	 */
+	public static TestAuthentication setup() {
+		return new TestAuthentication();
+	}
 }
