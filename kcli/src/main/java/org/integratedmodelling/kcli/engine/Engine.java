@@ -28,11 +28,16 @@ import org.integratedmodelling.klab.services.resources.ResourcesClient;
 import org.integratedmodelling.klab.services.resources.ResourcesService;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.utils.Parameters;
 
 public enum Engine implements Authentication {
 
 	INSTANCE;
-	
+
+	/*
+	 * these are set/unset by the user and can be used for substitutions in CLs
+	 */
+	Parameters<String> userData = Parameters.create();
 	Map<String, UserScope> authorizedIdentities = new LinkedHashMap<>();
 	UserScope currentUser;
 
@@ -108,6 +113,10 @@ public enum Engine implements Authentication {
 		return currentUser;
 	}
 
+	public Parameters<String> getUserData() {
+		return userData;
+	}
+	
 	@Override
 	public ServiceScope authorizeService(KlabService service) {
 		return new LocalServiceScope(service) {

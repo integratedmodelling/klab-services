@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 public interface KlabAsset extends Serializable {
 
 	public enum KnowledgeClass {
-		CONCEPT, OBSERVABLE, MODEL, INSTANCE, RESOURCE, NAMESPACE
+		CONCEPT, OBSERVABLE, MODEL, INSTANCE, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT, PROJECT
 	}
 
 	/**

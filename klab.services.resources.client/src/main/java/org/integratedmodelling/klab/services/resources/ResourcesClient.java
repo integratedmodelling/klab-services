@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -140,5 +141,11 @@ public class ResourcesClient implements ResourceProvider {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

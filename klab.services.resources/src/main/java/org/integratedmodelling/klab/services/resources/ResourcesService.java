@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,6 +34,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -581,6 +583,53 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	public List<Pair<KimModelStatement, Double>> queryModels(Observable observable, ContextScope scope) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
+		
+		List<String> ret = new ArrayList<>();
+		Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
+		if (resourceTypes != null && resourceTypes.length > 0) {
+			for (KnowledgeClass k : resourceTypes) {
+				wanted.add(k);
+			}
+		} else {
+			// we want them all
+			for (KnowledgeClass k : KnowledgeClass.values()) {
+				wanted.add(k);
+			}
+		}
+		
+		if (wanted.contains(KnowledgeClass.RESOURCE)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.MODEL)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.SCRIPT)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.APPLICATION)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.BEHAVIOR)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.COMPONENT)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.NAMESPACE)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.PROJECT)) {
+			
+		}
+		if (wanted.contains(KnowledgeClass.INSTANCE)) {
+			
+		}
+		
+		return ret;
 	}
 
 }

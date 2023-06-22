@@ -26,6 +26,10 @@ public class Resources {
 				"List test cases" }, required = false)
 		boolean tests;
 
+		@Option(names = { "-s", "--scripts" }, defaultValue = "false", description = {
+				"List scripts" }, required = false)
+		boolean scripts;
+
 		@Option(names = { "-a", "--applications" }, defaultValue = "false", description = {
 				"List applications" }, required = false)
 		boolean applications;
@@ -36,7 +40,7 @@ public class Resources {
 
 		@Parameters(description = "A query with wildcards. If not passed, all matches are returned.")
 		String query;
-		
+
 		@Override
 		public void run() {
 			if (applications) {

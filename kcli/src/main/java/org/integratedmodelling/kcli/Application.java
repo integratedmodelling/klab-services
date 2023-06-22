@@ -17,6 +17,7 @@ import org.jline.console.impl.Builtins;
 import org.jline.console.impl.SystemRegistryImpl;
 import org.jline.keymap.KeyMap;
 import org.jline.reader.Binding;
+import org.jline.reader.Completer;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -209,10 +210,10 @@ public class Application {
                 SystemRegistry systemRegistry = new SystemRegistryImpl(parser, terminal, workDir, null);
                 systemRegistry.setCommandRegistries(builtins, picocliCommands);
                 systemRegistry.register("help", picocliCommands);
-
+                KlabCompleter completer = new KlabCompleter(systemRegistry.completer());
                 LineReader reader = LineReaderBuilder.builder()
                         .terminal(terminal)
-                        .completer(systemRegistry.completer())
+                        .completer(completer)
                         .parser(parser)
                         .variable(LineReader.LIST_MAX, 50) // candidates
                         .build();
@@ -235,6 +236,7 @@ public class Application {
                     try {
                         systemRegistry.cleanUp();
                         line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
+                        completer.resetSemanticSearch();
                         systemRegistry.execute(line);
                     } catch (UserInterruptException e) {
                         // Ignore
