@@ -1,13 +1,18 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent;
+import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent.Type;
 
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactorsystem.ReActorContext;
 
 public class TestCaseAgent extends SessionAgent {
+
+	private long start;
+	private long end;
 
 	public TestCaseAgent(String name, Scope scope) {
 		super(name, scope);
@@ -18,7 +23,12 @@ public class TestCaseAgent extends SessionAgent {
 	}
 
 	private void handleScriptEvent(ReActorContext rctx, ScriptEvent message) {
-		System.out.println(message);
+		if (message.getType() == Type.CASE_END) {
+			scope.setStatus(Status.FINISHED);
+			this.end = System.currentTimeMillis();
+		} else if (message.getType() == Type.CASE_START) {
+			this.start = System.currentTimeMillis();
+		}
 	}
 
 	@Override

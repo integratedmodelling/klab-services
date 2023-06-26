@@ -67,6 +67,12 @@ class ConceptIngestion {
 						// TODO Auto-generated method stub
 						return null;
 					}
+
+					@Override
+					public void stop() {
+						// TODO Auto-generated method stub
+						
+					}
                 };
             }
             

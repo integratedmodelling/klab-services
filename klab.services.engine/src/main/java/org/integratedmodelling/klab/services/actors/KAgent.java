@@ -27,7 +27,7 @@ import io.reacted.core.reactorsystem.ReActorRef;
 
 /**
  * The basic k.LAB actor is created in a k.LAB scope, it has a "global" state
- * hash, and can run one or more k.Actors behaviors as a response to a
+ * hash, and can run one (or more) k.Actors behaviors as a response to a
  * RunBehavior message. The behaviors run asynchronously in a separate VM (one
  * per agent, running all the behaviors that were sent in separate threads).
  * Each run uses a run scope that contains the actor ref and the Scope that the
@@ -49,6 +49,7 @@ public abstract class KAgent implements ReActor {
 	private VM vm;
 	protected Scope scope;
 	private Ref self;
+	private File scratchPath;
 
 	public KAgent(String name, Scope scope) {
 		this.name = name + "." + NameGenerator.shortUUID();
@@ -62,6 +63,9 @@ public abstract class KAgent implements ReActor {
 	 * @return
 	 */
 	public File getScratchPath() {
+		if (scratchPath == null) {
+			// create, mkdirs and register for deletion
+		}
 		return null;
 	}
 
@@ -239,6 +243,9 @@ public abstract class KAgent implements ReActor {
 	protected void stop(ReActorContext rctx, ReActorStop message) {
 		if (vm != null) {
 			vm.stop();
+		}
+		if (scratchPath != null) {
+			// TODO delete all contents
 		}
 	}
 

@@ -16,7 +16,7 @@ import io.reacted.core.reactorsystem.ReActorContext;
  *
  */
 public class ApplicationAgent extends SessionAgent {
-
+	
 	public ApplicationAgent(String application, Scope scope) {
 		super(application, scope);
 	}

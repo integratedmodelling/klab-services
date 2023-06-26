@@ -560,16 +560,6 @@ public class KActorsScope implements VM.BehaviorScope {
 	}
 
 	@Override
-	public void addWait(int seconds) {
-		mainScope.addWait(seconds);
-	}
-
-	@Override
-	public int getWaitTime() {
-		return mainScope.getWaitTime();
-	}
-
-	@Override
 	public boolean isInterrupted() {
 		return mainScope.isInterrupted();
 	}

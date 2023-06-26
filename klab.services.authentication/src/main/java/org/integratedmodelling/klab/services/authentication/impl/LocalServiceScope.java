@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 public abstract class LocalServiceScope extends Monitor implements ServiceScope {
 
     KlabService service;
+    Status status;
     
     class LocalService implements ServiceIdentity {
 
@@ -97,8 +98,6 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
         setIdentity(new LocalService(service));
     }
 
-    private static final long serialVersionUID = -2392904937443296107L;
-
     private Parameters<String> data = Parameters.create();
     
     @Override
@@ -120,5 +119,20 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
     public boolean isDedicated() {
         return true;
     }
+
+	@Override
+	public Status getStatus() {
+		return status;
+	}
+
+	@Override
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	@Override
+	public void setData(String key, Object value) {
+		this.data.put(key, value);
+	}
 
 }

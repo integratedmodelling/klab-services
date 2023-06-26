@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
 public class EngineSessionScope extends EngineScope implements SessionScope {
 
-	private Status status = Status.STARTED;
 	private String name;
 
 	public void setName(String name) {
@@ -45,15 +44,6 @@ public class EngineSessionScope extends EngineScope implements SessionScope {
 	@Override
 	public String getName() {
 		return this.name;
-	}
-
-	@Override
-	public Status getStatus() {
-		return this.status;
-	}
-
-	public void setStatus(Status status) {
-		this.status = status;
 	}
 
 	@Override

@@ -17,12 +17,13 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
 /**
- * The resolution associates a resolution graph with some {@link Knowledge} to
- * be resolved in a {@link ContextScope}. When successful, the overall
- * {@link #getCoverage()} will have a sufficient coverage percent according to
- * configuration. The resolution graph is made of models with accumulated
- * coverage and there may be zero or more "root" nodes, with an overall coverage
- * equal to the union of the coverage of the root nodes.
+ * The resolution is intended to be associated with a context scope, associates
+ * a resolution graph with some {@link Knowledge} to be resolved in a
+ * {@link ContextScope}. When successful, the overall {@link #getCoverage()}
+ * will have a sufficient coverage percent according to configuration. The
+ * resolution graph is made of models with accumulated coverage and there may be
+ * zero or more "root" nodes, with an overall coverage equal to the union of the
+ * coverage of the root nodes.
  * <p>
  * 
  * 
@@ -32,50 +33,14 @@ import org.jgrapht.graph.DefaultEdge;
 public class Resolution {
 
 	/**
-	 * Each vertex in the resolution graph is a model that represents the chosen
-	 * resolution of the root resolvable in the context scope. The way this resolves
-	 * the model is stored in the edge and deferring resolution to after an initial
-	 * contextualization may be necessary to complete the query. Each element has
-	 * its coverage, expressing its "natural" one intersected with the coverage of
-	 * any incoming nodes.
+	 * Get a new root node to resolve the passed resolvable in the passed context
+	 * scope.
 	 * 
-	 * @author Ferd
-	 *
+	 * @param resolvable
+	 * @return
 	 */
-	public class Node {
-
-		public Model model;
-		public Coverage coverage;
-
-		/**
-		 * The resolve method is called by the resolver at every resolution, after which
-		 * the coverage is inspected to determine if resolution is finished.
-		 * <p>
-		 * A new link is stored and coverage is adjusted according to context, which the
-		 * resolver communicates using a logical operator (AND for dependencies, OR for
-		 * alternative resolutions).
-		 */
-		public Coverage resolve() {
-			// TODO
-			return coverage;
-		}
-
-		/**
-		 * At each dependent resolution, a new empty child is created which, if
-		 * {@link #resolve(Model)} is called on it, will be connected to the root.
-		 * 
-		 * @param toResolve
-		 * @param contribution
-		 * @return
-		 */
-		public Node newChild(Observable toResolve, Model model, LogicalConnector contribution) {
-			return null;
-		}
-
-		/*
-		 * TODO we should have a resolving() method returning all the incoming nodes or
-		 * a visitor.
-		 */
+	public Node getNode(Knowledge resolvable) {
+		return new Node(promoteResolvable(resolvable), LogicalConnector.UNION);
 	}
 
 	/*
@@ -94,13 +59,96 @@ public class Resolution {
 	private Graph<Node, ResolutionEdge> resolutionGraph = new DefaultDirectedGraph<>(ResolutionEdge.class);
 	private List<Node> roots = new ArrayList<>();
 	private Coverage coverage;
-	private Knowledge resolvable;
+
+	/**
+	 * Each vertex in the resolution graph is a model that represents the chosen
+	 * resolution of the root resolvable in the context scope. The way this resolves
+	 * the model is stored in the edge and deferring resolution to after an initial
+	 * contextualization may be necessary to complete the query. Each element has
+	 * its coverage, expressing its "natural" one intersected with the coverage of
+	 * any incoming nodes, and a merging strategy (UNION or INTERSECTION, maybe
+	 * eventually EXCLUSION) to merge the coverage of its children.
+	 * 
+	 * @author Ferd
+	 *
+	 */
+	public class Node {
+
+		public Observable observable;
+		public Model model;
+		public Coverage coverage;
+		public LogicalConnector mergeStrategy;
+		Map<Observable, Node> accepted = new HashMap<>();
+
+		public Node(Observable observable, LogicalConnector mergeStrategy) {
+			this.observable = observable;
+			this.mergeStrategy = mergeStrategy;
+			this.accepted.putAll(nodes);
+		}
+
+		/**
+		 * The resolve method is called by the resolver at every resolution, after which
+		 * the coverage is inspected to determine if resolution is finished.
+		 * <p>
+		 * A new link is stored and coverage is adjusted according to context, which the
+		 * resolver communicates using a logical operator (AND for dependencies, OR for
+		 * alternative resolutions).
+		 */
+		public Coverage resolve(Node child, ResolutionEdge.Type resolutionType) {
+			coverage = coverage == null ? child.coverage : coverage.merge(child.coverage, mergeStrategy);
+			nodes.putAll(accepted);
+			resolutionGraph.addVertex(child);
+			resolutionGraph.addEdge(child, this, new ResolutionEdge(resolutionType, child.observable));
+			return coverage;
+		}
+
+		public Resolution resolution() {
+			return Resolution.this;
+		}
+
+		/**
+		 * At each dependent resolution, a new empty child is created which, if
+		 * {@link #resolve(Model)} is called on it, will be connected to the root.
+		 * 
+		 * @param toResolve
+		 * @param contribution
+		 * @return
+		 */
+		public Node newChild(Observable toResolve, LogicalConnector mergeStrategy) {
+			return new Node(toResolve, mergeStrategy);
+		}
+
+		public Coverage getCoverage() {
+			return coverage;
+		}
+
+		/*
+		 * TODO we should have a resolving() method returning all the incoming nodes or
+		 * a visitor.
+		 */
+	}
 
 	/*
 	 * Promote the passed knowledge to a suitable observable, possibly (creating
 	 * and) caching a pre-resolved model.
 	 */
 	private Observable promoteResolvable(Knowledge resolvable) {
+
+		// reduce to either observable or instance
+		switch (Knowledge.classify(resolvable)) {
+		case CONCEPT:
+			// promote to observable
+			break;
+		case MODEL:
+			// same
+			break;
+		case RESOURCE:
+			// same
+			break;
+		default:
+			break;
+		}
+
 		return null;
 	}
 
@@ -158,11 +206,15 @@ public class Resolution {
 		 */
 		Type strategy;
 
+		public ResolutionEdge(Type resolutionType, Observable observable) {
+			this.strategy = resolutionType;
+			this.observable = observable;
+		}
+
 	}
 
-	public Resolution(Knowledge resolvable, ContextScope scope) {
+	public Resolution(ContextScope scope) {
 		this.scope = scope;
-		this.resolvable = resolvable;
 		this.coverage = Coverage.create(scope.getGeometry(), 0.0);
 	}
 
@@ -190,14 +242,6 @@ public class Resolution {
 
 	public void setRoots(List<Node> roots) {
 		this.roots = roots;
-	}
-
-	public Knowledge getResolvable() {
-		return resolvable;
-	}
-
-	public void setResolvable(Knowledge resolvable) {
-		this.resolvable = resolvable;
 	}
 
 	public void setCoverage(Coverage coverage) {

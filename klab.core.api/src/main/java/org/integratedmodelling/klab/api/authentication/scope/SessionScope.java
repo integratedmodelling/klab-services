@@ -40,11 +40,5 @@ public interface SessionScope extends UserScope {
      */
     ContextScope createContext(String urn);
 
-    /**
-     * Return the status of the session scope at the time of the call.
-     * 
-     * @return
-     */
-    Status getStatus();
 
 }

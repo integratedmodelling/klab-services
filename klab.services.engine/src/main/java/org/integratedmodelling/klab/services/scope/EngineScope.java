@@ -27,6 +27,8 @@ import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 
+import io.reacted.core.messages.reactors.ReActorStop;
+
 /**
  * Implementations must fill in the getService() strategy. This is a scope that
  * contains an agent ref. Any communication with the agent will pass the scope,
@@ -42,6 +44,8 @@ public abstract class EngineScope implements UserScope {
 	private UserIdentity user;
 	private Ref agent;
 	protected EngineScope parentScope;
+	private Status status = Status.STARTED;
+
 	private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers = Collections
 			.synchronizedMap(new HashMap<>());
 
@@ -129,6 +133,7 @@ public abstract class EngineScope implements UserScope {
 		if (!sessionAgent.isEmpty()) {
 			ret.setStatus(Status.STARTED);
 			ret.setAgent(sessionAgent);
+			ret.setName(behaviorName);
 			sessionAgent.tell(new RunBehavior(behaviorName));
 		} else {
 			ret.setStatus(Status.ABORTED);
@@ -226,21 +231,8 @@ public abstract class EngineScope implements UserScope {
 	}
 
 	@Override
-	public void addWait(int seconds) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public int getWaitTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
 	public boolean isInterrupted() {
-		// TODO Auto-generated method stub
-		return false;
+		return status == Status.INTERRUPTED;
 	}
 
 	@Override
@@ -252,6 +244,29 @@ public abstract class EngineScope implements UserScope {
 	@Override
 	public Identity getIdentity() {
 		return getUser();
+	}
+
+	@Override
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	@Override
+	public Status getStatus() {
+		return this.status;
+	}
+
+	@Override
+	public void setData(String key, Object value) {
+		this.data.put(key, value);
+	}
+
+	@Override
+	public void stop() {
+		agent.tell(ReActorStop.STOP);
+		this.data.clear();
+		this.agent = null;
+		setStatus(Status.EMPTY);
 	}
 
 }

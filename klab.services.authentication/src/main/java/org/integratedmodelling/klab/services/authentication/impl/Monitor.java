@@ -192,17 +192,6 @@ public class Monitor implements Channel {
         return isInterrupted.get();
     }
 
-    @Override
-    public void addWait(int seconds) {
-        this.waitTime = seconds;
-        warn("Please try this operation again in " + seconds + " seconds");
-    }
-
-    @Override
-    public int getWaitTime() {
-        return this.waitTime;
-    }
-
     public int getErrorCount() {
         return errorCount;
     }

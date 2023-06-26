@@ -133,22 +133,22 @@ public interface Channel {
 	 */
 	void post(Consumer<Message> handler, Object... message);
 
-	/**
-	 * Use to communicate that a wait is necessary. The receiving end should check
-	 * getWaitTime().
-	 * 
-	 * @param seconds
-	 */
-	void addWait(int seconds);
-
-	/**
-	 * When an operation that may require to wait is called, this should be checked
-	 * (with a client-side timeout) until it returns 0 or times out at the server
-	 * side (-1).
-	 * 
-	 * @return
-	 */
-	int getWaitTime();
+//	/**
+//	 * Use to communicate that a wait is necessary. The receiving end should check
+//	 * getWaitTime().
+//	 * 
+//	 * @param seconds
+//	 */
+//	void addWait(int seconds);
+//
+//	/**
+//	 * When an operation that may require to wait is called, this should be checked
+//	 * (with a client-side timeout) until it returns 0 or times out at the server
+//	 * side (-1).
+//	 * 
+//	 * @return
+//	 */
+//	int getWaitTime();
 
 	/**
 	 * Check if the monitored identity has been interrupted by a client action.
