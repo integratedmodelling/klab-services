@@ -1,19 +1,18 @@
 package org.integratedmodelling.klab.services.actors;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 
 import io.reacted.core.reactors.ReActions.Builder;
 import io.reacted.core.reactorsystem.ReActorContext;
-import io.reacted.core.reactorsystem.ReActorRef;
 
 public class UserAgent extends KAgent {
 
-	public UserAgent(String name) {
-		super(name);
+	public UserAgent(String name, Scope scope) {
+		super(name, scope);
 	}
 
 	@Override
@@ -23,36 +22,23 @@ public class UserAgent extends KAgent {
 	}
 
 	private void createSession(ReActorContext rctx, CreateSession message) {
-		/*
-		 * TODO/FIXME using the spawn child directly from the actor system and sending
-		 * an init message would be less complicated
-		 */
-		rctx.spawnChild(new SessionAgent(message.getSessionId())).ifSuccess((ref) -> rctx.reply(ref));
+		rctx.spawnChild(new SessionAgent(message.getSessionId(), message.getScope()))
+				.ifSuccess((ref) -> rctx.reply(ref));
 	}
 
 	private void createApplication(ReActorContext rctx, CreateApplication message) {
-
-		/*
-		 * TODO/FIXME using the spawn child directly from the actor system and sending
-		 * an init message would be less complicated
-		 */
-
-		KActorsBehavior behavior = message.getScope().getService(ResourceProvider.class)
-				.resolveBehavior(message.getApplicationId(), message.getScope());
-		if (behavior == null) {
-			message.getScope().error("cannot find behavior " + message.getApplicationId());
-			rctx.reply(ReActorRef.NO_REACTOR_REF);
+		if (message.getBehaviorType() == KActorsBehavior.Type.UNITTEST) {
+			rctx.spawnChild(new TestCaseAgent(message.getBehaviorName(), message.getScope()))
+					.ifSuccess((ref) -> rctx.reply(ref));
+		} else if (message.getBehaviorType() == KActorsBehavior.Type.SCRIPT) {
+			rctx.spawnChild(new ScriptAgent(message.getBehaviorName(), message.getScope()))
+					.ifSuccess((ref) -> rctx.reply(ref));
+		} else if (message.getBehaviorType() == KActorsBehavior.Type.APP) {
+			rctx.spawnChild(new ApplicationAgent(message.getBehaviorName(), message.getScope()))
+					.ifSuccess((ref) -> rctx.reply(ref));
 		} else {
-			if (behavior.getType() == KActorsBehavior.Type.UNITTEST) {
-				rctx.spawnChild(new TestCaseAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
-			} else if (behavior.getType() == KActorsBehavior.Type.SCRIPT) {
-				rctx.spawnChild(new ScriptAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
-			} else if (behavior.getType() == KActorsBehavior.Type.APP) {
-				rctx.spawnChild(new ApplicationAgent(behavior, message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
-			} else {
-				throw new KlabActorException(
-						"unexpected call to createApplication with behavior of type " + behavior.getType());
-			}
+			throw new KlabActorException(
+					"unexpected call to createApplication with behavior of type " + message.getBehaviorType());
 		}
 	}
 

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.actors;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
 import io.reacted.core.messages.reactors.ReActorInit;
@@ -9,8 +10,8 @@ import io.reacted.core.reactorsystem.ReActorContext;
 
 public class SessionAgent extends KAgent {
 
-    public SessionAgent(String name) {
-        super(name);
+    public SessionAgent(String name, Scope scope) {
+        super(name, scope);
     }
 
     protected ReActions.Builder setBehavior() {

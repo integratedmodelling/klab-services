@@ -25,13 +25,11 @@ public class ContextAgent extends KAgent {
      * The geometry of focus when the context was created.
      */
     private final Geometry focalGeometry;
-    private final ContextScope scope;
     private Geometry currentGeometry;
 
     public ContextAgent(String name, ContextScope scope) {
-        super(name);
+        super(name, scope);
         this.focalGeometry = scope.getGeometry();
-        this.scope = scope;
     }
 
     protected ReActions.Builder setBehavior() {

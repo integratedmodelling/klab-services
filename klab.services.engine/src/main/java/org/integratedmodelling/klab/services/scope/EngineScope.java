@@ -17,11 +17,13 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
+import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 
@@ -106,13 +108,9 @@ public abstract class EngineScope implements UserScope {
 	@Override
 	public SessionScope runSession(String sessionName) {
 
-		/*
-		 * TODO/CHECK use ReActorSystem.spawn instead of the ask pattern?
-		 */
-		
 		final EngineSessionScope ret = new EngineSessionScope(this);
 		ret.setStatus(Status.WAITING);
-		Ref sessionAgent = this.agent.ask(new CreateSession(this, sessionName), Ref.class);
+		Ref sessionAgent = this.agent.ask(new CreateSession(ret, sessionName), Ref.class);
 		if (!sessionAgent.isEmpty()) {
 			ret.setStatus(Status.STARTED);
 			ret.setAgent(sessionAgent);
@@ -123,18 +121,15 @@ public abstract class EngineScope implements UserScope {
 	}
 
 	@Override
-	public SessionScope runApplication(String behaviorName) {
-
-		/*
-		 * TODO/CHECK use ReActorSystem.spawn instead of the ask pattern?
-		 */
+	public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
 
 		final EngineSessionScope ret = new EngineSessionScope(this);
 		ret.setStatus(Status.WAITING);
-		Ref sessionAgent = this.agent.ask(new CreateApplication(ret, behaviorName), Ref.class);
+		Ref sessionAgent = this.agent.ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
 		if (!sessionAgent.isEmpty()) {
 			ret.setStatus(Status.STARTED);
 			ret.setAgent(sessionAgent);
+			sessionAgent.tell(new RunBehavior(behaviorName));
 		} else {
 			ret.setStatus(Status.ABORTED);
 		}
@@ -216,7 +211,7 @@ public abstract class EngineScope implements UserScope {
 			} else {
 				this.getAgent().tell((VM.AgentMessage) message[0]);
 			}
-			
+
 		} else {
 			/*
 			 * usual behavior: make a message and send through whatever channel we have.

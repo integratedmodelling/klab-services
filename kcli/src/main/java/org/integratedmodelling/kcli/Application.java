@@ -11,6 +11,8 @@ import java.util.function.Supplier;
 import org.fusesource.jansi.AnsiConsole;
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
@@ -31,6 +33,7 @@ import org.jline.widget.TailTipWidgets;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
@@ -38,10 +41,11 @@ import picocli.shell.jline3.PicocliCommands;
 import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
 
 /**
- * Example that demonstrates how to build an interactive shell with JLine3 and picocli. This example
- * requires JLine 3.16+ and picocli 4.4+.
+ * Example that demonstrates how to build an interactive shell with JLine3 and
+ * picocli. This example requires JLine 3.16+ and picocli 4.4+.
  * <p>
- * The built-in {@code PicocliCommands.ClearScreen} command was introduced in picocli 4.6.
+ * The built-in {@code PicocliCommands.ClearScreen} command was introduced in
+ * picocli 4.6.
  * </p>
  * 
  * Run in terminal from the project dir after "mvn install" as <code>
@@ -50,206 +54,221 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
  * 
  * A useful alias is
  * 
- * <code> alias klab="java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*" -Xmx4096M
- * -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
+ * <code> alias klab="java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*"
+ * -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
  * org.integratedmodelling.kcli.Application"
  * 
  */
 public class Application {
 
-    /**
-     * Top-level command that just prints help.
-     */
-    @Command(name = "", description = {
-            "k.LAB interactive shell with completion and autosuggestions. " + "Hit @|magenta <TAB>|@ to see available commands.",
-            "Hit @|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"", "Press Ctrl-D to exit."}, subcommands = {Auth.class,
-                    Expressions.class, Reasoner.class, Report.class, Resolver.class, Resources.class, Services.class, Run.class,
-                    PicocliCommands.ClearScreen.class, CommandLine.HelpCommand.class, Session.class})
-    static class CliCommands implements Runnable {
+	/**
+	 * Top-level command that just prints help.
+	 */
+	@Command(name = "", description = {
+			"k.LAB interactive shell with completion and autosuggestions. "
+					+ "Hit @|magenta <TAB>|@ to see available commands.",
+			"Hit @|magenta ALT-S|@ to toggle tailtips.", "" }, footer = { "", "Press Ctrl-D to exit." }, subcommands = {
+					Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class, Resources.class,
+					Services.class, Run.class, PicocliCommands.ClearScreen.class, CommandLine.HelpCommand.class,
+					Session.class })
+	static class CliCommands implements Runnable {
 
-        PrintWriter out;
-        Set<SessionScope> running = new HashSet<>();
+		PrintWriter out;
+		Set<SessionScope> running = new HashSet<>();
 
-        CliCommands() {
-        }
+		CliCommands() {
+		}
 
-        public void setReader(LineReader reader) {
-            out = reader.getTerminal().writer();
-        }
+		public void setReader(LineReader reader) {
+			out = reader.getTerminal().writer();
+		}
 
-        public void run() {
-            out.println(new CommandLine(this).getUsageMessage());
-        }
-    }
+		public void run() {
+			out.println(new CommandLine(this).getUsageMessage());
+		}
+	}
 
-    @Command(name = "run", mixinStandardHelpOptions = true, description = {"Run scripts, test cases and applications.",
-            "Uses autocompletion for behavior and test case names.", ""})
-    static class Run implements Runnable {
+	@Command(name = "run", mixinStandardHelpOptions = true, description = { "Run scripts, test cases and applications.",
+			"Uses autocompletion for behavior and test case names.", "" })
+	static class Run implements Runnable {
 
-        @Option(names = {"-s", "--synchronous"}, defaultValue = "false", description = {
-                "Run in synchronous mode, returning to the prompt when the script has finished running."}, required = false)
-        boolean synchronous;
+		@Option(names = { "-s", "--synchronous" }, defaultValue = "false", description = {
+				"Run in synchronous mode, returning to the prompt when the script has finished running." }, required = false)
+		boolean synchronous;
 
-        @Parameters(description = {"The full name of a script, test case or application.",
-                "If not present locally, resolve through the k.LAB network."})
-        String scriptName;
+		@Parameters(description = { "The full name of a script, test case or application.",
+				"If not present locally, resolve through the k.LAB network." })
+		String scriptName;
 
-        @ParentCommand
-        CliCommands parent;
+		@ParentCommand
+		CliCommands parent;
 
-        public Run() {
-        }
+		public Run() {
+		}
 
-        @Override
-        public void run() {
-            SessionScope application = null;
-            parent.out.println("Running " + scriptName + "...");
-            parent.running.add(application = Engine.INSTANCE.getCurrentUser().runApplication(scriptName));
-            System.out.println(application);
-        }
-    }
+		@Override
+		public void run() {
+			
+			KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser().getService(ResourceProvider.class)
+					.resolveBehavior(scriptName, Engine.INSTANCE.getCurrentUser());
 
-    // /**
-    // * A command with some options to demonstrate completion.
-    // */
-    // @Command(name = "cmd", mixinStandardHelpOptions = true, version = "1.0", description = {
-    // "Command with some options to demonstrate TAB-completion.",
-    // " (Note that enum values also get completed.)" }, subcommands = { Nested.class,
-    // CommandLine.HelpCommand.class })
-    // static class MyCommand implements Runnable {
-    // @Option(names = { "-v", "--verbose" }, description = { "Specify multiple -v options to
-    // increase verbosity.",
-    // "For example, `-v -v -v` or `-vvv`" })
-    // private boolean[] verbosity = {};
-    //
-    // @ArgGroup(exclusive = false)
-    // private MyDuration myDuration = new MyDuration();
-    //
-    // static class MyDuration {
-    // @Option(names = { "-d", "--duration" }, description = "The duration quantity.", required =
-    // true)
-    // private int amount;
-    //
-    // @Option(names = { "-u", "--timeUnit" }, description = "The duration time unit.", required =
-    // true)
-    // private TimeUnit unit;
-    // }
-    //
-    // @ParentCommand
-    // CliCommands parent;
-    //
-    // public void run() {
-    // if (verbosity.length > 0) {
-    // parent.out.printf("Hi there. You asked for %d %s.%n", myDuration.amount, myDuration.unit);
-    // } else {
-    // parent.out.println("hi!");
-    // }
-    // }
-    // }
+			if (behavior == null) {
+				parent.out.println(Ansi.AUTO.string("Behavior @|red " + scriptName + "|@ unknown or not available"));
+			} else {
+				parent.out.println("Running " + scriptName + "...");
+				parent.running.add(Engine.INSTANCE.getCurrentUser().run(scriptName, behavior.getType()));
+			}
+		}
+	}
 
-    // @Command(name = "nested", mixinStandardHelpOptions = true, subcommands = {
-    // CommandLine.HelpCommand.class }, description = "Hosts more sub-subcommands")
-    // static class Nested implements Runnable {
-    // public void run() {
-    // System.out.println("I'm a nested subcommand. I don't do much, but I have sub-subcommands!");
-    // }
-    //
-    // @Command(mixinStandardHelpOptions = true, subcommands = {
-    // CommandLine.HelpCommand.class }, description = "Multiplies two numbers.")
-    // public void multiply(@Option(names = { "-l", "--left" }, required = true) int left,
-    // @Option(names = { "-r", "--right" }, required = true) int right) {
-    // System.out.printf("%d * %d = %d%n", left, right, left * right);
-    // }
-    //
-    // @Command(mixinStandardHelpOptions = true, subcommands = {
-    // CommandLine.HelpCommand.class }, description = "Adds two numbers.")
-    // public void add(@Option(names = { "-l", "--left" }, required = true) int left,
-    // @Option(names = { "-r", "--right" }, required = true) int right) {
-    // System.out.printf("%d + %d = %d%n", left, right, left + right);
-    // }
-    //
-    // @Command(mixinStandardHelpOptions = true, subcommands = {
-    // CommandLine.HelpCommand.class }, description = "Subtracts two numbers.")
-    // public void subtract(@Option(names = { "-l", "--left" }, required = true) int left,
-    // @Option(names = { "-r", "--right" }, required = true) int right) {
-    // System.out.printf("%d - %d = %d%n", left, right, left - right);
-    // }
-    // }
+	// /**
+	// * A command with some options to demonstrate completion.
+	// */
+	// @Command(name = "cmd", mixinStandardHelpOptions = true, version = "1.0",
+	// description = {
+	// "Command with some options to demonstrate TAB-completion.",
+	// " (Note that enum values also get completed.)" }, subcommands = {
+	// Nested.class,
+	// CommandLine.HelpCommand.class })
+	// static class MyCommand implements Runnable {
+	// @Option(names = { "-v", "--verbose" }, description = { "Specify multiple -v
+	// options to
+	// increase verbosity.",
+	// "For example, `-v -v -v` or `-vvv`" })
+	// private boolean[] verbosity = {};
+	//
+	// @ArgGroup(exclusive = false)
+	// private MyDuration myDuration = new MyDuration();
+	//
+	// static class MyDuration {
+	// @Option(names = { "-d", "--duration" }, description = "The duration
+	// quantity.", required =
+	// true)
+	// private int amount;
+	//
+	// @Option(names = { "-u", "--timeUnit" }, description = "The duration time
+	// unit.", required =
+	// true)
+	// private TimeUnit unit;
+	// }
+	//
+	// @ParentCommand
+	// CliCommands parent;
+	//
+	// public void run() {
+	// if (verbosity.length > 0) {
+	// parent.out.printf("Hi there. You asked for %d %s.%n", myDuration.amount,
+	// myDuration.unit);
+	// } else {
+	// parent.out.println("hi!");
+	// }
+	// }
+	// }
 
-    public static void main(String[] args) {
-        AnsiConsole.systemInstall();
-        try {
-            Supplier<Path> workDir = () -> Paths
-                    .get(System.getProperty("user.dir") + File.pathSeparator + ".klab" + File.pathSeparator + "kcli");
-            // set up JLine built-in commands
-            workDir.get().toFile().mkdirs();
-            ConfigurationPath configPath = new ConfigurationPath(workDir.get(), workDir.get());
-            Builtins builtins = new Builtins(workDir, configPath, null);
-            builtins.rename(Builtins.Command.TTOP, "top");
-            builtins.alias("zle", "widget");
-            builtins.alias("bindkey", "keymap");
-            // set up picocli commands
-            CliCommands commands = new CliCommands();
+	// @Command(name = "nested", mixinStandardHelpOptions = true, subcommands = {
+	// CommandLine.HelpCommand.class }, description = "Hosts more sub-subcommands")
+	// static class Nested implements Runnable {
+	// public void run() {
+	// System.out.println("I'm a nested subcommand. I don't do much, but I have
+	// sub-subcommands!");
+	// }
+	//
+	// @Command(mixinStandardHelpOptions = true, subcommands = {
+	// CommandLine.HelpCommand.class }, description = "Multiplies two numbers.")
+	// public void multiply(@Option(names = { "-l", "--left" }, required = true) int
+	// left,
+	// @Option(names = { "-r", "--right" }, required = true) int right) {
+	// System.out.printf("%d * %d = %d%n", left, right, left * right);
+	// }
+	//
+	// @Command(mixinStandardHelpOptions = true, subcommands = {
+	// CommandLine.HelpCommand.class }, description = "Adds two numbers.")
+	// public void add(@Option(names = { "-l", "--left" }, required = true) int
+	// left,
+	// @Option(names = { "-r", "--right" }, required = true) int right) {
+	// System.out.printf("%d + %d = %d%n", left, right, left + right);
+	// }
+	//
+	// @Command(mixinStandardHelpOptions = true, subcommands = {
+	// CommandLine.HelpCommand.class }, description = "Subtracts two numbers.")
+	// public void subtract(@Option(names = { "-l", "--left" }, required = true) int
+	// left,
+	// @Option(names = { "-r", "--right" }, required = true) int right) {
+	// System.out.printf("%d - %d = %d%n", left, right, left - right);
+	// }
+	// }
 
-            PicocliCommandsFactory factory = new PicocliCommandsFactory();
-            // Or, if you have your own factory, you can chain them like this:
-            // MyCustomFactory customFactory = createCustomFactory(); // your application
-            // custom
-            // factory
-            // PicocliCommandsFactory factory = new PicocliCommandsFactory(customFactory);
-            // // chain
-            // the factories
+	public static void main(String[] args) {
+		AnsiConsole.systemInstall();
+		try {
+			Supplier<Path> workDir = () -> Paths
+					.get(System.getProperty("user.dir") + File.pathSeparator + ".klab" + File.pathSeparator + "kcli");
+			// set up JLine built-in commands
+			workDir.get().toFile().mkdirs();
+			ConfigurationPath configPath = new ConfigurationPath(workDir.get(), workDir.get());
+			Builtins builtins = new Builtins(workDir, configPath, null);
+			builtins.rename(Builtins.Command.TTOP, "top");
+			builtins.alias("zle", "widget");
+			builtins.alias("bindkey", "keymap");
+			// set up picocli commands
+			CliCommands commands = new CliCommands();
 
-            CommandLine cmd = new CommandLine(commands, factory);
-            PicocliCommands picocliCommands = new PicocliCommands(cmd);
+			PicocliCommandsFactory factory = new PicocliCommandsFactory();
+			// Or, if you have your own factory, you can chain them like this:
+			// MyCustomFactory customFactory = createCustomFactory(); // your application
+			// custom
+			// factory
+			// PicocliCommandsFactory factory = new PicocliCommandsFactory(customFactory);
+			// // chain
+			// the factories
 
-            Parser parser = new DefaultParser();
-            try (Terminal terminal = TerminalBuilder.builder().build()) {
+			CommandLine cmd = new CommandLine(commands, factory);
+			PicocliCommands picocliCommands = new PicocliCommands(cmd);
 
-                SystemRegistry systemRegistry = new SystemRegistryImpl(parser, terminal, workDir, null);
-                systemRegistry.setCommandRegistries(builtins, picocliCommands);
-                systemRegistry.register("help", picocliCommands);
-                KlabCompleter completer = new KlabCompleter(systemRegistry.completer());
-                LineReader reader = LineReaderBuilder.builder()
-                        .terminal(terminal)
-                        .completer(completer)
-                        .parser(parser)
-                        .variable(LineReader.LIST_MAX, 50) // candidates
-                        .build();
+			Parser parser = new DefaultParser();
+			try (Terminal terminal = TerminalBuilder.builder().build()) {
 
-                builtins.setLineReader(reader);
-                commands.setReader(reader);
-                factory.setTerminal(terminal);
-                TailTipWidgets widgets = new TailTipWidgets(reader, systemRegistry::commandDescription, 5,
-                        TailTipWidgets.TipType.COMPLETER);
-                widgets.enable();
-                KeyMap<Binding> keyMap = reader.getKeyMaps().get("main");
-                keyMap.bind(new Reference("tailtip-toggle"), KeyMap.alt("s"));
+				SystemRegistry systemRegistry = new SystemRegistryImpl(parser, terminal, workDir, null);
+				systemRegistry.setCommandRegistries(builtins, picocliCommands);
+				systemRegistry.register("help", picocliCommands);
+				KlabCompleter completer = new KlabCompleter(systemRegistry.completer());
+				LineReader reader = LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser)
+						.variable(LineReader.LIST_MAX, 50) // candidates
+						.build();
 
-                String prompt = "k.LAB> ";
-                String rightPrompt = null;
+				builtins.setLineReader(reader);
+				commands.setReader(reader);
+				factory.setTerminal(terminal);
+				TailTipWidgets widgets = new TailTipWidgets(reader, systemRegistry::commandDescription, 5,
+						TailTipWidgets.TipType.COMPLETER);
+				widgets.enable();
+				KeyMap<Binding> keyMap = reader.getKeyMaps().get("main");
+				keyMap.bind(new Reference("tailtip-toggle"), KeyMap.alt("s"));
 
-                // start the shell and process input until the user quits with Ctrl-D
-                String line;
-                while(true) {
-                    try {
-                        systemRegistry.cleanUp();
-                        line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
-                        completer.resetSemanticSearch();
-                        systemRegistry.execute(line);
-                    } catch (UserInterruptException e) {
-                        // Ignore
-                    } catch (EndOfFileException e) {
-                        return;
-                    } catch (Exception e) {
-                        systemRegistry.trace(e);
-                    }
-                }
-            }
-        } catch (Throwable t) {
-            t.printStackTrace();
-        } finally {
-            AnsiConsole.systemUninstall();
-        }
-    }
+				String prompt = "k.LAB> ";
+				String rightPrompt = null;
+
+				// start the shell and process input until the user quits with Ctrl-D
+				String line;
+				while (true) {
+					try {
+						systemRegistry.cleanUp();
+						line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
+						completer.resetSemanticSearch();
+						systemRegistry.execute(line);
+					} catch (UserInterruptException e) {
+						// Ignore
+					} catch (EndOfFileException e) {
+						return;
+					} catch (Exception e) {
+						systemRegistry.trace(e);
+					}
+				}
+			}
+		} catch (Throwable t) {
+			t.printStackTrace();
+		} finally {
+			AnsiConsole.systemUninstall();
+		}
+	}
 }

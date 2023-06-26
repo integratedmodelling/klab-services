@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -15,7 +16,6 @@ import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.scope.EngineScope;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
@@ -63,6 +63,7 @@ public enum EngineService {
 
 		EngineScope ret = userScopes.get(user.getUsername());
 		if (ret == null) {
+
 			ret = new EngineScope(user) {
 
 				@SuppressWarnings("unchecked")
@@ -85,10 +86,12 @@ public enum EngineService {
 				}
 
 			};
-			final EngineScope scope = ret;
+
 			String agentName = user.getUsername();
-			actorSystem.spawn(new UserAgent(agentName)).ifSuccess((t) -> scope.setAgent(KAgentRef.get(t)))
-					.orElseSneakyThrow();
+			Ref agent = KAgentRef.get(actorSystem.spawn(new UserAgent(agentName, ret)).get());
+			ret.setAgent(agent);
+
+			
 			userScopes.put(user.getUsername(), ret);
 		}
 		return ret;

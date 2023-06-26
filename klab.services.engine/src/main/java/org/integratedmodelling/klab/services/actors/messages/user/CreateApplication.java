@@ -1,37 +1,48 @@
 package org.integratedmodelling.klab.services.actors.messages.user;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
 public class CreateApplication extends AgentMessage {
 
-    private static final long serialVersionUID = -6105256439472164152L;
+	private static final long serialVersionUID = -6105256439472164152L;
 
-    private String applicationId;
-    private Scope scope;
+	private Scope scope;
+	private KActorsBehavior.Type behaviorType;
+	private String behaviorName;
 
-    public CreateApplication() {
-    }
+	public KActorsBehavior.Type getBehaviorType() {
+		return behaviorType;
+	}
 
-    public CreateApplication(Scope scope, String sessionId) {
-        this.scope = scope;
-        this.applicationId = sessionId;
-    }
+	public void setBehaviorType(KActorsBehavior.Type behaviorType) {
+		this.behaviorType = behaviorType;
+	}
 
-    public String getApplicationId() {
-        return applicationId;
-    }
+	public CreateApplication() {
+	}
 
-    public void setApplicationId(String applicationId) {
-        this.applicationId = applicationId;
-    }
+	public CreateApplication(Scope scope, String behaviorName, KActorsBehavior.Type behaviorType) {
+		this.scope = scope;
+		this.behaviorType = behaviorType;
+		this.behaviorName = behaviorName;
+	}
+	
+	public Scope getScope() {
+		return scope;
+	}
 
-    public Scope getScope() {
-        return scope;
-    }
+	public void setScope(Scope scope) {
+		this.scope = scope;
+	}
 
-    public void setScope(Scope scope) {
-        this.scope = scope;
-    }
+	public String getBehaviorName() {
+		return behaviorName;
+	}
+
+	public void setBehaviorName(String behaviorName) {
+		this.behaviorName = behaviorName;
+	}
 
 }

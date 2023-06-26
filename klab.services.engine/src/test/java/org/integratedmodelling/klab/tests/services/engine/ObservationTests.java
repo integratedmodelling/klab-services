@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.common.Geometry;
 import org.integratedmodelling.klab.exceptions.KlabException;
@@ -68,7 +69,7 @@ public class ObservationTests {
          * Default instrumentation should depend on the type of application, overriddable in the
          * call.
          */
-        SessionScope applicationScope = user.runApplication("aries.seea.en");
+        SessionScope applicationScope = user.run("aries.seea.en", KActorsBehavior.Type.APP);
 
         Observable region = user.getService(Reasoner.class).resolveObservable("earth:Region");
         
