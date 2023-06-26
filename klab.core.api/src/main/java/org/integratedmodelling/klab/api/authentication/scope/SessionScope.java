@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.authentication.scope;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
  * Session scopes are stateful.
@@ -17,7 +17,7 @@ public interface SessionScope extends UserScope {
      * 
      * @return
      */
-    Geometry getGeometry();
+    Scale getGeometry();
 
     /**
      * A session may represent a raw session, a script or an application. In each case a name is

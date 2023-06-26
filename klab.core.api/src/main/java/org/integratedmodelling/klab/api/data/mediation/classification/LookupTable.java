@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
  * @author Ferd
  *
  */
-public interface KLookupTable extends KDataKey {
+public interface LookupTable extends DataKey {
 
 	/**
 	 * Each argument to be matched can be an id (pointing to a dependency name) or a

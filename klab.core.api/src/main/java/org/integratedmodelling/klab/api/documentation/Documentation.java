@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.services.runtime.Report;
  * @author ferdinando.villa
  *
  */
-public interface KDocumentation {
+public interface Documentation {
 
     /**
      * Flags for display; not used in IDocumentation at the moment, but possibly used elsewhere,
@@ -131,7 +131,7 @@ public interface KDocumentation {
          * 
          * @return
          */
-        KDocumentation getDocumentation();
+        Documentation getDocumentation();
 
         /**
          * Unique ID for caching and processing. Not seen by users.

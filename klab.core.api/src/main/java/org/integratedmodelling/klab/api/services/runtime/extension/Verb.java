@@ -11,7 +11,7 @@
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
-package org.integratedmodelling.klab.api.services.runtime.kactors;
+package org.integratedmodelling.klab.api.services.runtime.extension;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -19,19 +19,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-
 /**
- * Tags a class that can be imported with an "import" instruction from k.Actors. Some libraries are
- * pre-loaded in test cases and scripts.
+ * Tags a method that can be used as a functional verb in k.Actors. Must be defined for public
+ * methods of classes tagged with {@link Library}. In a call chain, the first argument is the
+ * "receiver" from the previous call.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Library {
+@Target(ElementType.METHOD)
+public @interface Verb {
 
     /**
      * ID of the component. Must be unique, please use unambiguous paths like package or project
@@ -39,15 +38,7 @@ public @interface Library {
      * 
      * @return component id
      */
-    String name();
-
-    /**
-     * If this library should be loaded by default into a particular type of behavior (e.g. test
-     * case), set the type(s) here.
-     * 
-     * @return
-     */
-    KActorsBehavior.Type[] defaultFor() default {};
+    String name() default "";
 
     /**
      * List of other project or component IDs that this one depends on.
@@ -62,5 +53,12 @@ public @interface Library {
      * @return
      */
     String description() default "";
+
+    /**
+     * Return type, if any. By default returns any object.
+     * 
+     * @return
+     */
+    Class<?> returns() default Object.class;
 
 }

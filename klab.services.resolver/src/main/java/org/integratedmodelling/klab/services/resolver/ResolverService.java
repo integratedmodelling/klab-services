@@ -16,7 +16,6 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowService;
 import org.integratedmodelling.klab.services.resolver.resolution.Resolution;
-import org.integratedmodelling.klab.services.resolver.resolution.Resolution.Node;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ResolverService implements Resolver {
@@ -26,14 +25,11 @@ public class ResolverService implements Resolver {
     // TODO autowire? For now only a "service" by name. Need to expose Resolution at the API level
     // for this to change.
     private DataflowService dataflowService = new DataflowService();
-    private ResourceProvider resources;
-    private RuntimeService runtime;
     private ServiceScope serviceScope;
 
     @Autowired
     public ResolverService(Authentication authentication, ResourceProvider resources, RuntimeService runtime) {
         this.serviceScope = authentication.authorizeService(this);
-        this.resources = resources;
     }
     
     @Override
@@ -86,9 +82,9 @@ public class ResolverService implements Resolver {
         }
 
         if (resolvable instanceof Observable) {
-            resolveObservable((Observable) resolvable, resolution.root());
+            resolveObservable((Observable) resolvable, resolution);
         } else if (resolvable instanceof Instance) {
-            resolveInstance((Instance) resolvable, resolution.root());
+            resolveInstance((Instance) resolvable, resolution);
         }
 
         if (resolution.getCoverage().isRelevant()) {
@@ -100,17 +96,17 @@ public class ResolverService implements Resolver {
                 resolution.getCoverage());
     }
 
-    private void resolveInstance(Instance resolvable, Node root) {
+    private void resolveInstance(Instance resolvable, Resolution root) {
         // TODO Auto-generated method stub
 
     }
 
-    private void resolveObservable(Observable resolvable, Node root) {
+    private void resolveObservable(Observable resolvable, Resolution root) {
         // TODO Auto-generated method stub
         System.out.println("ZIO PONTE");
     }
 
-    private Collection<Observable> resolveAbstractPredicates(Observable observable, Node resolution) {
+	private Collection<Observable> resolveAbstractPredicates(Observable observable, Resolution resolution) {
      
         Set<Observable> ret = new HashSet<>();
                 

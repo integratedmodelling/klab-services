@@ -11,7 +11,7 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.documentation.KDocumentation;
+import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.Prototype;
@@ -363,7 +363,7 @@ public class PrototypeImpl implements Prototype {
 		if (flags != null) {
 			boolean tags = false;
 			for (Integer flag : flags) {
-				if (flag == KDocumentation.DOC_HTMLTAGS) {
+				if (flag == Documentation.DOC_HTMLTAGS) {
 					tags = true;
 				}
 			}

@@ -11,9 +11,9 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.data.mediation.classification.KClassification;
-import org.integratedmodelling.klab.api.data.mediation.classification.KClassifier;
-import org.integratedmodelling.klab.api.data.mediation.classification.KLookupTable;
+import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
+import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
+import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -108,14 +108,14 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
             return ret + "}";
         } else if (val instanceof Range) {
             return ((Range) val).getLowerBound() + " to " + ((Range) val).getUpperBound();
-        } else if (val instanceof KClassification) {
+        } else if (val instanceof Classification) {
             String ret = "";
-            for (Pair<Concept, KClassifier> o : ((KClassification) val)) {
+            for (Pair<Concept, Classifier> o : ((Classification) val)) {
                 ret += (ret.isEmpty() ? "" : ", ") + o.getSecond().getSourceCode() + " : '" + o.getFirst()
                         + "'";
             }
             return "{" + ret + "}";
-        } else if (val instanceof KLookupTable) {
+        } else if (val instanceof LookupTable) {
             String ret = "";
             // TODO table literal
             // TODO must also pass argument list to the same function...

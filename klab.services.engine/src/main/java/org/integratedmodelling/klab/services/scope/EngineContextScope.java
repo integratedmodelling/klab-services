@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
@@ -28,7 +29,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     DirectObservation context;
     Set<String> scenarios;
     EngineContextScope parent;
-    Geometry geometry;
+    Scale geometry;
     String token;
     Map<Observable, Observation> catalog = new HashMap<>();
 
@@ -53,7 +54,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public Geometry getGeometry() {
+    public Scale getGeometry() {
         return geometry;
     }
 

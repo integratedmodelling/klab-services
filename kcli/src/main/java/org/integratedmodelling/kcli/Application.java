@@ -17,7 +17,6 @@ import org.jline.console.impl.Builtins;
 import org.jline.console.impl.SystemRegistryImpl;
 import org.jline.keymap.KeyMap;
 import org.jline.reader.Binding;
-import org.jline.reader.Completer;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;

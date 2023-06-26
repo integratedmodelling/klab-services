@@ -17,7 +17,6 @@ package org.integratedmodelling.klab.api.data.mediation.classification;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 
 /**
@@ -26,7 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KClassification extends KDataKey, Iterable<Pair<Concept, KClassifier>> {
+public interface Classification extends DataKey, Iterable<Pair<Concept, Classifier>> {
 
 	/**
 	 * Return the main concept that subsumes all those expressed by the classifiers.

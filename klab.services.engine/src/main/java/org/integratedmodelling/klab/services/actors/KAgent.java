@@ -175,8 +175,11 @@ public abstract class KAgent implements ReActor {
      * @return
      */
     protected ReActions.Builder setBehavior() {
-        return ReActions.newBuilder().reAct(ReActorInit.class, this::initialize).reAct(ReActorStop.class, this::stop)
-                .reAct(SetState.class, this::setState).reAct(RunBehavior.class, this::runBehavior);
+        return ReActions.newBuilder()
+        		.reAct(ReActorInit.class, this::initialize)
+        		.reAct(ReActorStop.class, this::stop)
+                .reAct(SetState.class, this::setState)
+                .reAct(RunBehavior.class, this::runBehavior);
     }
 
     protected void run(KActorsBehavior behavior, Scope scope) {
@@ -203,11 +206,7 @@ public abstract class KAgent implements ReActor {
             message.getScope().error("behavior " + message.getBehavior() + " cannot be found in scope " + message.getScope());
         }
     }
-
-    /**
-     * TODO message to modify data
-     */
-
+    
     /**
      * Extend to provide initialization. MUST call super.initialize()!
      * 
@@ -235,7 +234,9 @@ public abstract class KAgent implements ReActor {
      * @param message
      */
     protected void stop(ReActorContext rctx, ReActorStop message) {
-
+    	if (vm != null) {
+    		vm.stop();
+    	}
     }
 
 }

@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
  * @author Ferd
  *
  */
-public interface KDataKey {
+public interface DataKey {
 
 	/**
 	 * The total amount of categories, rows or other mappings used in this key.

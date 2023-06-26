@@ -128,16 +128,6 @@ public interface Scale extends Locator, Geometry, Topology<Scale> {
     Scale merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption... options);
 
     /**
-     * Mimics {@link org.integratedmodelling.klab.api.data.Geometry.Dimension#shape()} passing the
-     * type of the desired dimension.
-     *
-     * @param dimension the dimension we need the shape of
-     * @return the shape of the passed dimension
-     * @throws java.lang.IllegalArgumentException if the dimension is not known in this scale
-     */
-    long[] shape(Dimension.Type dimension);
-
-    /**
      * Return the scale at the beginning of time, or the scale itself if there is no time at all.
      */
     Scale initialization();
@@ -163,61 +153,6 @@ public interface Scale extends Locator, Geometry, Topology<Scale> {
      */
     @Override
     Scale at(Object... dimensions);
-
-    /**
-     * Return whether the passed dimensions are regular, i.e. the extent in each sub-extent is the
-     * same. If no dimensions are passed, check them all. If a non-existent dimension is passed,
-     * return true for it.
-     * 
-     * @param dimensions
-     * @return
-     */
-    boolean isRegular(Geometry.Dimension.Type... dimensions);
-
-    /**
-     * Return a scale optimized for iterating along the dimensions passed here (use the same call
-     * logics as in {@link Geometry#at(Object...)}}. At worst the implementation can return the
-     * same scale if the iterated class is compatible, but ideally it should return a wrapper that
-     * makes iteration as fast as possible. Ensure that the returned iterator is thread-safe (i.e.,
-     * if objects are reused ensure they are thread local).
-     * <p>
-     * Dimensions that are not mentioned in the parameters should be removed from the offsets if the
-     * desired locator is an offset and their multiplicity is one.
-     * <p>
-     * Example: to scan a scale along a spatial grid using simple <x,y> offsets when it is known
-     * that space is gridded and time is not there or is one-dimensional:
-     * 
-     * <pre>
-     * for (Offset offset : scale.scan(Offset.class, IGrid.class)) {
-     * 	... use spatial-only offset
-     * }
-     * </pre>
-     * 
-     * This will return offsets with only two dimensions (x,y for the grid coordinates) and ensure
-     * that the grid is scanned in the quickest way possible. An even more API-friendly way (but
-     * potentially slower due to retrieving the cell) would be
-     * 
-     * <pre>
-     * for (Cell cell : scale.scan(Cell.class, IGrid.class)) {
-     * 	... use cell as is
-     * }
-     * </pre>
-     * 
-     * All these are optimized versions of
-     * 
-     * <pre>
-     * for (ILocator locator : scale) {
-     * 	...
-     * }
-     * </pre>
-     * 
-     * which would need a call to locator.as(...) to obtain the desired info and would therefore
-     * iterate more slowly due to the reinterpretation of the offsets at each call to next().
-     * 
-     * @return the desired iterable
-     * @throw {@link IllegalArgumentException} if the parameters cannot be understood or honored.
-     */
-    <T extends Locator> Iterable<T> scan(Class<T> desiredLocatorClass, Object... dimensionIdentifiers);
 
     /**
      * Return the same scale but with multiplicity 1 and all extents collapsed to their containing

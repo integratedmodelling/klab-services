@@ -13,7 +13,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge;
 
-import org.integratedmodelling.klab.api.data.mediation.classification.KDataKey;
+import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 
@@ -110,7 +110,7 @@ public interface DataArtifact extends Artifact {
      * 
      * @return the data key, or null.
      */
-    KDataKey getDataKey();
+    DataKey getDataKey();
 
     /**
      * Return a value aggregated over the passed geometry and converted to the passed type if

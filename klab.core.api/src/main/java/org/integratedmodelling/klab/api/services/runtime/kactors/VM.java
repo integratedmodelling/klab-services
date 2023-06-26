@@ -51,4 +51,9 @@ public interface VM {
 	 */
 	void run(KActorsBehavior behavior, Parameters<String> arguments, Scope scope);
 
+	/**
+	 * Stop any running behavior and reclaim any storage and cache.
+	 */
+	void stop();
+
 }

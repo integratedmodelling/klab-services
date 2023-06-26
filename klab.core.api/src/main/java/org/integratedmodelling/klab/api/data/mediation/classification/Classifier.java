@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Re
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface KClassifier {
+public interface Classifier {
 
 	/**
 	 * True if passed object matches the conditions of the classifier.

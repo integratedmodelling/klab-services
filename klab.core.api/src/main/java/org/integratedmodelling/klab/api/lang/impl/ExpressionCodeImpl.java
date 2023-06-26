@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.lang.impl.kim;
+package org.integratedmodelling.klab.api.lang.impl;
 
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 
