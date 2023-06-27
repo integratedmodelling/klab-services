@@ -15,8 +15,8 @@ import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowService;
-import org.integratedmodelling.klab.services.resolver.resolution.Resolution;
-import org.integratedmodelling.klab.services.resolver.resolution.Resolution.Node;
+import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph;
+import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph.Resolution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ResolverService implements Resolver {
@@ -68,38 +68,44 @@ public class ResolverService implements Resolver {
 	@Override
 	public Dataflow<?> resolve(Knowledge resolvable, ContextScope scope) {
 
-		Resolution resolution = getResolution(scope);
-		Node node = resolve(resolution.getNode(resolvable));
+		ResolutionGraph resolutionGraph = getResolution(scope);
 
-		if (node.getCoverage().isRelevant()) {
+		Resolution resolution = resolve(resolutionGraph.newResolution(resolvable));
+		if (resolution.isComplete()) {
 			return dataflowService.compile(resolution);
 		}
 
 		return Dataflow.empty(
 				resolvable instanceof Observable ? (Observable) resolvable : ((Instance) resolvable).getObservable(),
-				resolution.getCoverage());
+				resolutionGraph.getCoverage());
 	}
 
-	private Resolution getResolution(ContextScope scope) {
+	private ResolutionGraph getResolution(ContextScope scope) {
 		if (!scope.getData().containsKey(RESOLUTION_KEY)) {
-			scope.setData(RESOLUTION_KEY, new Resolution(scope));
+			scope.setData(RESOLUTION_KEY, new ResolutionGraph(scope));
 		}
-		return scope.getData().get(RESOLUTION_KEY, Resolution.class);
+		return scope.getData().get(RESOLUTION_KEY, ResolutionGraph.class);
 	}
 
 	/**
 	 * Top-level: resolve the observable that's already in the node and put a model
-	 * and a coverage in it. Return the same node.
+	 * and a coverage in it. Return the same node with updated data.
 	 * 
 	 * @param node
 	 * @return
 	 */
-	private Node resolve(Node node) {
-		// TODO Auto-generated method stub
+	private Resolution resolve(Resolution node) {
+
+		// check for pre-resolved in this branch
+		Resolution previous = node.getResolution(node.observable);
+		if (previous != null) {
+			return previous;
+		}
+		
 		return node;
 	}
 
-	private Collection<Observable> resolveAbstractPredicates(Observable observable, Resolution resolution) {
+	private Collection<Observable> resolveAbstractPredicates(Observable observable, ResolutionGraph resolution) {
 
 		Set<Observable> ret = new HashSet<>();
 
