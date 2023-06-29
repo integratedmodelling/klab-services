@@ -23,7 +23,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale;
  * @version $Id: $Id
  * @param <T> the generic type
  */
-public interface Topology<T> extends TopologicallyComparable<T> {
+public interface Topology<T> extends TopologicallyComparable<T>, Iterable<T> {
 
     /**
      * Return the total number of distinct subdivisions in this topology. {@link #INFINITE} is

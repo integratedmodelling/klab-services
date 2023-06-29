@@ -40,7 +40,7 @@ import org.integratedmodelling.klab.api.geometry.impl.Offset;
  * @author Ferd
  *
  */
-public interface Locator extends Iterable<Locator> {
+public interface Locator {
 
     /**
      * Use UniversalLocator.INSTANCE instead of null to pass to extent functions when the entire
@@ -49,11 +49,6 @@ public interface Locator extends Iterable<Locator> {
     public class UniversalLocator implements Locator {
 
         public static UniversalLocator INSTANCE = new UniversalLocator();
-
-        @Override
-        public Iterator<Locator> iterator() {
-            return null;
-        }
 
         @Override
         public Geometry geometry() {

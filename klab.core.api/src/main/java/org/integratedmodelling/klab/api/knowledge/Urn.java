@@ -2,9 +2,12 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 
 
 /**
@@ -19,10 +22,6 @@ import org.integratedmodelling.klab.api.data.Version;
 public class Urn {
 
 	final public static String SINGLE_PARAMETER_KEY = "value";
-    final public static String KLAB_URN_PREFIX = "urn:klab:";
-    final public static String LOCAL_URN_PREFIX = "urn:klab:local:";
-    final public static String VOID_URN_PREFIX = "urn:klab:void:";
-    final public static String LOCAL_FILE_PREFIX = "file:";
 
     final public static Pattern URN_RESOURCE_PATTERN = Pattern.compile("[A-z]+:[A-z]+:[A-z]+:[A-z]+(#.+)?");
     final public static Pattern URN_KIM_OBJECT_PATTERN = Pattern.compile("[a-z]+(\\.[a-z]+)+");
@@ -219,5 +218,105 @@ public class Urn {
 	    
 	    return Type.UNKNOWN;
 	}
+	
+	final public static String KLAB_URN_PREFIX = "urn:klab:";
+	final public static String LOCAL_URN_PREFIX = "urn:klab:local:";
+	final public static String VOID_URN_PREFIX = "urn:klab:void:";
+	final public static String LOCAL_FILE_PREFIX = "file:";
+
+	public static boolean isLocal(String urn) {
+		return urn.startsWith(LOCAL_URN_PREFIX) || urn.startsWith("local:") || urn.startsWith(LOCAL_FILE_PREFIX);
+	}
+
+	public static boolean isUniversal(String urn) {
+		return urn.startsWith(KLAB_URN_PREFIX) || urn.startsWith("klab:");
+	}
+
+	public String getLocalUrn(String resourceId, Project project, String owner) {
+		return "local:" + owner + ":" + project.getName() + ":" + resourceId;
+	}
+
+	/**
+	 * Create a new local URN with the passed project instead of the original.
+	 * 
+	 * @param originalUrn
+	 * @param name
+	 * @return
+	 */
+	public static String changeLocalProject(String urn, String projectName) {
+
+		if (!isLocal(urn)) {
+			throw new IllegalArgumentException("cannot change project name in non-local URN " + urn);
+		}
+		int fieldIndex = urn.startsWith(LOCAL_URN_PREFIX) ? 4 : 2;
+		String ret = "";
+		int i = 0;
+		for (String field : urn.split(":")) {
+			ret += (ret.isEmpty() ? "" : ":") + (i == fieldIndex ? projectName : field);
+			i++;
+		}
+		return ret;
+	}
+
+	public static Map<String, String> parseParameters(String uu) {
+		Map<String, String> ret = new HashMap<>();
+		for (String s : uu.split("&")) {
+			if (s.contains("=")) {
+				String[] kv = s.split("=");
+				ret.put(kv[0], kv[1]);
+			} else {
+				ret.put(Urn.SINGLE_PARAMETER_KEY, s);
+			}
+		}
+		return ret;
+	}
+	
+	/**
+	 * Split off the fragment and return the parsed parameter map along with the
+	 * clean URN.
+	 * 
+	 * @param urn
+	 * @return
+	 */
+	public static Pair<String, Map<String, String>> resolveParameters(String urn) {
+		Map<String, String> parameters = new HashMap<>();
+		String clean = urn;
+		if (urn.contains("#")) {
+			String[] uu = urn.split("#");
+			clean = uu[0];
+			for (String s : uu[1].split("&")) {
+				if (s.contains("=")) {
+					String[] kv = s.split("=");
+					parameters.put(kv[0], kv[1]);
+				} else {
+					parameters.put(Urn.SINGLE_PARAMETER_KEY, s);
+				}
+			}
+		}
+		return Pair.of(clean, parameters);
+	}
+
+	public boolean isUrn(String urn) {
+		// at least two colons in successive positions with something in the middle
+		int ln =  urn.indexOf(':');
+		return ln > 0 && urn.lastIndexOf(':') > (ln +1);
+	}
+
+	public static String applyParameters(String urn, Map<String, String> urnParameters) {
+		String ret = removeParameters(urn);
+		if (urnParameters != null && !urnParameters.isEmpty()) {
+			boolean first = true;
+			for (Entry<String, String> entry : urnParameters.entrySet()) {
+				ret += (first ? "#" : "&") + entry.getKey() + "=" + entry.getValue();
+			}
+		}
+		return ret;
+	}
+
+	public static String removeParameters(String urn) {
+		int pound = urn.indexOf(':');
+		return pound > 0 ? urn.substring(0, pound) : urn;
+	}
+
 
 }

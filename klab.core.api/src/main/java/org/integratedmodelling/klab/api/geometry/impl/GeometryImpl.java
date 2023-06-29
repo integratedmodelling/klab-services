@@ -1377,7 +1377,7 @@ public class GeometryImpl implements Geometry {
     // return geometry.getCursor().getElementIndexes(pos);
     // }
 
-    @Override
+//    @Override
     public Iterator<Locator> iterator() {
         return new GeometryIterator(this);
     }

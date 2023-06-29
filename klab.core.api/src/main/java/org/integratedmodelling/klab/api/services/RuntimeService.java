@@ -4,15 +4,16 @@ import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public interface RuntimeService extends KlabService {
-	
-    default String getServiceName() {
-        return "klab.runtime.service";
-    }
-    
-    public static final int DEFAULT_PORT = 8094;
+
+	default String getServiceName() {
+		return "klab.runtime.service";
+	}
+
+	public static final int DEFAULT_PORT = 8094;
 
 	/**
 	 * All services publish capabilities and have a call to obtain them.
@@ -21,17 +22,29 @@ public interface RuntimeService extends KlabService {
 	 *
 	 */
 	interface Capabilities extends ServiceCapabilities {
-	    
+		
 	}
 
 	Capabilities getCapabilities();
-	
+
 	/**
 	 * 
 	 * @param dataflow
 	 * @param scope
 	 * @return
 	 */
-	Future<Observation> run(Dataflow<?> dataflow, ContextScope scope); 
+	Future<Observation> run(Dataflow<?> dataflow, ContextScope scope);
+
+	/**
+	 * Create and return a Contextualizer or Verb implementation from a known
+	 * library, validating the arguments at the same time. The service may override
+	 * any method through configuration and plug-ins.
+	 * 
+	 * @param <T>
+	 * @param call
+	 * @param resultClass
+	 * @return
+	 */
+	<T> T getLibraryMethod(ServiceCall call, Class<T> resultClass);
 
 }

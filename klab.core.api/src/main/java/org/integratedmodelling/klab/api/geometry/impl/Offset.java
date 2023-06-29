@@ -337,7 +337,7 @@ public class Offset implements Locator {
         return true;
     }
 
-    @Override
+//    @Override
     public Iterator<Locator> iterator() {
         return new GeometryIterator(geometry, this);
     }

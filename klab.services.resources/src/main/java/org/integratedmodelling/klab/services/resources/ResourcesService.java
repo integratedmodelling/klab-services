@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
@@ -49,6 +50,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.common.Urns;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.logging.Logging;
@@ -84,6 +86,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	transient Map<String, Project> localProjects = Collections.synchronizedMap(new HashMap<>());
 	transient Map<String, Workspace> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
 	transient Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
+	transient Map<String, Resource> localResources = Collections.synchronizedMap(new HashMap<>());
 	transient Map<String, KActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
 
 	/*
@@ -277,8 +280,8 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 	@Override
 	public Resource resolveResource(String urn, Scope scope) {
-		// TODO Auto-generated method stub
-		return null;
+		Resource resource = localResources.get(Urn.removeParameters(urn));
+		return resource;
 	}
 
 	@Override

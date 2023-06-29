@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -113,6 +114,12 @@ public class ResolverService implements Resolver {
 		ret.add(observable);
 
 		return ret;
+	}
+
+	@Override
+	public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

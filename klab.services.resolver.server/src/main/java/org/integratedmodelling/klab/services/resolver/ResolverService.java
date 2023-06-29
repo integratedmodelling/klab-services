@@ -62,4 +62,10 @@ public class ResolverService implements Resolver, Resolver.Admin {
         return null;
     }
 
+	@Override
+	public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

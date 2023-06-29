@@ -13,61 +13,64 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
-import java.util.Collections;
-import java.util.List;
-
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.runtime.impl.DataflowImpl;
 
 /**
- * Dataflows in k.LAB represent "raw" computations, which create, compute and link
- * {@link org.integratedmodelling.klab.api.data.ObjectArtifact.IObjectArtifact}s in response to a request
- * for observation of a given semantic
- * {@link org.integratedmodelling.klab.api.resolution.IResolvable}. The computation is stripped of
- * all semantics; therefore it can be run by a semantically-unaware workflow system.
+ * Dataflows in k.LAB represent "raw" computations, which create, compute and
+ * link
+ * {@link org.integratedmodelling.klab.api.data.ObjectArtifact.IObjectArtifact}s
+ * in response to a request for observation of a given semantic
+ * {@link org.integratedmodelling.klab.api.resolution.IResolvable}. The
+ * computation is stripped of all semantics; therefore it can be run by a
+ * semantically-unaware workflow system.
  * <p>
  * Dataflows are serialized and rebuilt from KDL specifications by
- * {@link org.integratedmodelling.klab.api.services.IDataflowService}. Dataflows are also built by
- * the engine after resolving a IResolvable, and can be serialized to KDL if necessary using
- * {@link #getKdlCode()}.
+ * {@link org.integratedmodelling.klab.api.services.IDataflowService}. Dataflows
+ * are also built by the engine after resolving a IResolvable, and can be
+ * serialized to KDL if necessary using {@link #getKdlCode()}.
  * <p>
- * The end result of {@link #run(Scale, IMonitor) running a dataflow} in a given scale is a
- * {@link org.integratedmodelling.klab.api.provenance.Artifact}. In k.LAB, this corresponds to
- * either a {@link org.integratedmodelling.klab.api.Observation.IObservation} (the usual case) or a
- * {@link org.integratedmodelling.klab.api.Model.IModel} (when the computation is a learning
- * activity, which builds an explanation of a process). Dataflows built
- * {@link org.integratedmodelling.klab.api.services.IObservationService#resolve(String, org.integratedmodelling.klab.api.runtime.ISession, String[])
- * within the k.LAB runtime} as a result of a semantic resolution will produce {@link Observation
- * observations}, i.e. semantic artifacts. But if those dataflows are {@link #getKdlCode()
- * serialized}, loaded and run, they will produce non-semantic artifacts as the semantic information
- * is not preserved in the dataflow specifications.
+ * The end result of {@link #run(Scale, IMonitor) running a dataflow} in a given
+ * scale is a {@link org.integratedmodelling.klab.api.provenance.Artifact}. In
+ * k.LAB, this corresponds to either a
+ * {@link org.integratedmodelling.klab.api.Observation.IObservation} (the usual
+ * case) or a {@link org.integratedmodelling.klab.api.Model.IModel} (when the
+ * computation is a learning activity, which builds an explanation of a
+ * process). Dataflows built
+ * {@link org.integratedmodelling.klab.api.services.IObservationService#resolveKnowledge(String, org.integratedmodelling.klab.api.runtime.ISession, String[])
+ * within the k.LAB runtime} as a result of a semantic resolution will produce
+ * {@link Observation observations}, i.e. semantic artifacts. But if those
+ * dataflows are {@link #getKdlCode() serialized}, loaded and run, they will
+ * produce non-semantic artifacts as the semantic information is not preserved
+ * in the dataflow specifications.
  * <p>
- * Dataflows written by users or created by k.LAB can be stored on k.LAB nodes as URN-specified
- * computations, which can be referenced in k.LAB models. The KDL language that specified dataflows
- * is also used to define service contracts for k.IM-callable services or remote computations
- * accessed through REST calls.
+ * Dataflows written by users or created by k.LAB can be stored on k.LAB nodes
+ * as URN-specified computations, which can be referenced in k.LAB models. The
+ * KDL language that specified dataflows is also used to define service
+ * contracts for k.IM-callable services or remote computations accessed through
+ * REST calls.
  * <p>
- * A dataflow is the top-level {@link Actuator actuator} of a k.LAB computation. It adds top-level
- * semantics to the actuator's contract. Only a dataflow can be run and serialized from the API.
+ * A dataflow is the top-level {@link Actuator actuator} of a k.LAB computation.
+ * It adds top-level semantics to the actuator's contract. Only a dataflow can
+ * be run and serialized from the API.
  * <p>
- * The KDL specification and the parser provided in the klab-kdl project provide a bridge to
- * different workflow systems. Models of computation are inferred in k.LAB and depend on the
- * specific {@link IRuntimeProvider runtime} adopted as well as on the semantics of the services
- * (actors) used; exposing the computational model is work in progress.
+ * The KDL specification and the parser provided in the klab-kdl project provide
+ * a bridge to different workflow systems. Models of computation are inferred in
+ * k.LAB and depend on the specific {@link IRuntimeProvider runtime} adopted as
+ * well as on the semantics of the services (actors) used; exposing the
+ * computational model is work in progress.
  * <p>
  * TODO expose all metadata and context fields.
  * <p>
  *
  * @author ferdinando.villa
  * @version $Id: $Id
- * @param <T> the most specific type of artifact this dataflow will build when run.
+ * @param <T> the most specific type of artifact this dataflow will build when
+ *            run.
  * @since 0.10.0
  */
 public interface Dataflow<T extends Artifact> extends Actuator {
@@ -117,126 +120,18 @@ public interface Dataflow<T extends Artifact> extends Actuator {
 //     */
 //    void export(String baseName, File directory);
 
-    /**
-     * An empty dataflow is a valid dataflow that produces an
-     * {@link org.integratedmodelling.klab.api.provenance.Artifact#isEmpty() empty artifact} when
-     * run in its scale.
-     *
-     * @return true if the dataflow is empty
-     */
-    boolean isEmpty();
+	/**
+	 * An empty dataflow is a valid dataflow that produces an
+	 * {@link org.integratedmodelling.klab.api.provenance.Artifact#isEmpty() empty
+	 * artifact} when run in its scale.
+	 *
+	 * @return true if the dataflow is empty
+	 */
+	@Override
+	boolean isEmpty();
 
-    static Dataflow<?> empty(Observable observable, Coverage coverage) {
-        return new Dataflow<Artifact>() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public String getName() {
-                return "empty";
-            }
-
-            @Override
-            public String getAlias() {
-                return null;
-            }
-
-            @Override
-            public String getAlias(Observable observable) {
-                return null;
-            }
-
-            @Override
-            public Type getType() {
-                return Type.VOID;
-            }
-
-            @Override
-            public Observable getObservable() {
-                return observable;
-            }
-
-            @Override
-            public List<Actuator> getChildren() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public List<Actuator> getInputs() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public List<Actuator> getActuators() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public List<Dataflow<?>> getDataflows() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public List<Actuator> getOutputs() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public List<Contextualizable> getComputation() {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public boolean isInput() {
-                return false;
-            }
-
-            @Override
-            public boolean isFilter() {
-                return false;
-            }
-
-            @Override
-            public boolean isComputed() {
-                return false;
-            }
-
-            @Override
-            public boolean isReference() {
-                return false;
-            }
-
-            @Override
-            public Coverage getCoverage() {
-                return coverage;
-            }
-
-            @Override
-            public Parameters<String> getData() {
-                return Parameters.create();
-            }
-
-            @Override
-            public String getId() {
-                return "empty";
-            }
-
-            @Override
-            public long getTimestamp() {
-                return 0;
-            }
-
-            @Override
-            public Provenance getProvenance() {
-                return Provenance.empty();
-            }
-
-            @Override
-            public boolean isEmpty() {
-                return true;
-            }
-            
-        };
-    }
+	static Dataflow<?> empty(Observable observable, Coverage coverage) {
+		return new DataflowImpl<Artifact>("empty", observable, coverage);
+	}
 
 }

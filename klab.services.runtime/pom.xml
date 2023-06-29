@@ -9,12 +9,6 @@
 	<dependencies>
 
 		<dependency>
-			<groupId>org.ojalgo</groupId>
-			<artifactId>ojalgo</artifactId>
-			<version>53.0.0</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.integratedmodelling</groupId>
 			<artifactId>klab.services.core</artifactId>
 			<version>${klab.version}</version>

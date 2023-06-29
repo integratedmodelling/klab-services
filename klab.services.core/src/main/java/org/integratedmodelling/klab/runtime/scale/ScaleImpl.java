@@ -35,7 +35,7 @@ public class ScaleImpl implements Scale {
 	}
 
 	@Override
-	public Iterator<Locator> iterator() {
+	public Iterator<Scale> iterator() {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -49,5 +50,11 @@ public class ResolverClient implements Resolver {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

@@ -107,12 +107,12 @@ public interface Provenance {
 		 */
 		long getTimestamp();
 
-		/**
-		 * Return the graph we're part of.
-		 * 
-		 * @return the provenance graph
-		 */
-		Provenance getProvenance();
+//		/**
+//		 * Return the graph we're part of.
+//		 * 
+//		 * @return the provenance graph
+//		 */
+//		Provenance getProvenance();
 
 		/**
 		 * Workflows that end in disappointment produce these.

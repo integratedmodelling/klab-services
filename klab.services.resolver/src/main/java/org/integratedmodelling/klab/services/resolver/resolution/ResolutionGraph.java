@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -28,10 +29,10 @@ import org.jgrapht.graph.DefaultEdge;
  * according to configuration. The dataflow must generate them in the order
  * given to preserve referential integrity.
  * <p>
- * The resolution graph contains models with their accumulated coverage. There
- * may be zero or more "root" nodes, with an overall coverage equal to the union
- * of the coverage of the root nodes. Each root node will generate a portion of
- * the dataflow in the context scope.
+ * The resolution graph contains models paired with their accumulated coverage.
+ * There may be zero or more "root" nodes, with an overall coverage equal to the
+ * union of the coverage of the root nodes. Each root node will generate a
+ * portion of the dataflow in the context scope.
  * <p>
  * 
  * 
@@ -84,7 +85,6 @@ public class ResolutionGraph {
 		public Coverage coverage;
 		public LogicalConnector mergeStrategy;
 		Map<Observable, Resolution> accepted = new HashMap<>();
-		Resolution parent = null;
 
 		/**
 		 * Any new node is initialized with the accepted overall nodes in the graph.
@@ -92,10 +92,9 @@ public class ResolutionGraph {
 		 * @param observable
 		 * @param mergeStrategy
 		 */
-		public Resolution(Observable observable, LogicalConnector mergeStrategy, Resolution parent) {
+		public Resolution(Observable observable, LogicalConnector mergeStrategy) {
 			this.observable = observable;
 			this.mergeStrategy = mergeStrategy;
-			this.parent = parent;
 			this.accepted.putAll(nodes);
 		}
 
@@ -114,22 +113,49 @@ public class ResolutionGraph {
 		 * accepted nodes so far.
 		 */
 		public Resolution resolve(Resolution child, ResolutionEdge.Type resolutionType) {
+
 			coverage = coverage == null ? child.coverage : coverage.merge(child.coverage, mergeStrategy);
+
 			if (model != null && !coverage.isEmpty()) {
 				resolutionGraph.addVertex(this);
 				resolutionGraph.addVertex(child);
 				resolutionGraph.addEdge(child, this, new ResolutionEdge(resolutionType, child.observable));
 				accepted.putAll(child.accepted);
+				// all observables of the accepted model are now available for resolution
 				for (int i = 1; i < model.getObservables().size(); i++) {
-					nodes.put(model.getObservables().get(i), this);
+					accepted.put(model.getObservables().get(i), this);
 				}
-				if (parent == null && coverage.isComplete()) {
-					// root model: complete the overall catalog but only when the coverage is full
-					nodes.putAll(accepted);
-					nodes.put(observable, this);
+				if (roots.contains(this) && coverage.isComplete()) {
+					accept();
 				}
 			}
 			return this;
+		}
+
+		/**
+		 * Called only on a complete root resolution to accept it and merge the results
+		 * into the overall graph. Any other use will be rewarded with an illegal state
+		 * exception. It only needs to be called explicitly if for any reason the
+		 * resolver ends up not calling
+		 * {@link #resolve(Resolution, ResolutionGraph.ResolutionEdge.Type)} on a node
+		 * that should be accepted in the graph, which shouldn't really happen.
+		 */
+		public void accept() {
+
+			if (!roots.contains(this) || !isComplete()) {
+				throw new KIllegalStateException("logical error: accept() called on a non-root resolution node");
+			}
+
+			// root model: complete the overall catalog but only when the coverage is full
+			nodes.putAll(accepted);
+			nodes.put(observable, this);
+
+			// update the overall coverage
+			if (ResolutionGraph.this.coverage == null) {
+				ResolutionGraph.this.coverage = this.coverage;
+			} else {
+				ResolutionGraph.this.coverage.merge(this.coverage, this.mergeStrategy);
+			}
 		}
 
 		public boolean isComplete() {
@@ -168,7 +194,7 @@ public class ResolutionGraph {
 		 * @return
 		 */
 		public Resolution newResolution(Observable toResolve, LogicalConnector mergeStrategy) {
-			return new Resolution(toResolve, mergeStrategy, this);
+			return new Resolution(toResolve, mergeStrategy);
 		}
 
 		public Coverage getCoverage() {
@@ -200,7 +226,7 @@ public class ResolutionGraph {
 	 * @return
 	 */
 	public Resolution newResolution(Knowledge resolvable) {
-		Resolution ret = new Resolution(promoteResolvable(resolvable), LogicalConnector.UNION, null);
+		Resolution ret = new Resolution(promoteResolvable(resolvable), LogicalConnector.UNION);
 		roots.add(ret);
 		return ret;
 	}

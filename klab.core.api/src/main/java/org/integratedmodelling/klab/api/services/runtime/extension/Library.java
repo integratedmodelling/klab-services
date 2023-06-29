@@ -27,6 +27,10 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
  * are used to provide k.Actors actions and k.IM contextualizers through static
  * inner classes, which should bear the annotation {@link Verb} or
  * {@link KlabContextualizer}.
+ * <p>
+ * Contextualizers implementations from the core libraries can be overridden
+ * from configuration using classes from loaded plug-ins, so that the runtime
+ * can be customized to specific needs in terms of accuracy or logics.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
