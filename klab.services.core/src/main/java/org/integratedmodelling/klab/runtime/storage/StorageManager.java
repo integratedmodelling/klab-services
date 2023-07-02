@@ -27,7 +27,7 @@ public enum StorageManager {
 	 * isn't necessary.
 	 * 
 	 * @param state
-	 * @param scope       the scale we must go over. This may have the effect of
+	 * @param scope       provides scale and runtime environment
 	 * @param parallelism only advisory
 	 * @return
 	 */
@@ -36,66 +36,63 @@ public enum StorageManager {
 	}
 
 	/**
-	 * Return a boxing storage for the requested geometry, semantics, expected
-	 * parallelism, and JVM environment. Use only if there is no way to predict the
-	 * type of the stored data.
+	 * Return a native double storage for the requested geometry, semantics,
+	 * expected parallelism, and JVM environment. While the most expensive in terms
+	 * of space, this is likely to be the fastest storage possible due to emphasis
+	 * on doubles in the underlying libraries.
 	 * 
 	 * TODO check if file-mapped storage works in parallel and if so, parallelism
 	 * isn't necessary.
 	 * 
 	 * @param state
-	 * @param scope       the scale we must go over. This may have the effect of
+	 * @param scope       provides scale and runtime environment
 	 * @param parallelism only advisory
 	 * @return
 	 */
 	public DoubleStorage getDoubleStorage(State state, ContextScope scope, Parallelism parallelism) {
 		return null;
 	}
-	
+
 	/**
-	 * Return a boxing storage for the requested geometry, semantics, expected
-	 * parallelism, and JVM environment. Use only if there is no way to predict the
-	 * type of the stored data.
+	 * Return a native integer storage for the requested geometry, semantics,
+	 * expected parallelism, and JVM environment.
 	 * 
 	 * TODO check if file-mapped storage works in parallel and if so, parallelism
 	 * isn't necessary.
 	 * 
 	 * @param state
-	 * @param scope       the scale we must go over. This may have the effect of
+	 * @param scope       provides scale and runtime environment
 	 * @param parallelism only advisory
 	 * @return
 	 */
 	public IntStorage getIntStorage(State state, ContextScope scope, Parallelism parallelism) {
 		return null;
 	}
-	
+
 	/**
-	 * Return a boxing storage for the requested geometry, semantics, expected
-	 * parallelism, and JVM environment. Use only if there is no way to predict the
-	 * type of the stored data.
+	 * Return a key/value storage based on native integers and a fast lookup table.
 	 * 
 	 * TODO check if file-mapped storage works in parallel and if so, parallelism
 	 * isn't necessary.
 	 * 
 	 * @param state
-	 * @param scope       the scale we must go over. This may have the effect of
+	 * @param scope       provides scale and runtime environment
 	 * @param parallelism only advisory
 	 * @return
 	 */
 	public KeyedStorage getKeyedStorage(State state, ContextScope scope, Parallelism parallelism) {
 		return null;
 	}
-	
+
 	/**
-	 * Return a boxing storage for the requested geometry, semantics, expected
-	 * parallelism, and JVM environment. Use only if there is no way to predict the
-	 * type of the stored data.
+	 * Return a native float storage for the requested geometry, semantics, expected
+	 * parallelism, and JVM environment.
 	 * 
 	 * TODO check if file-mapped storage works in parallel and if so, parallelism
 	 * isn't necessary.
 	 * 
 	 * @param state
-	 * @param scope       the scale we must go over. This may have the effect of
+	 * @param scope       provides scale and runtime environment
 	 * @param parallelism only advisory
 	 * @return
 	 */

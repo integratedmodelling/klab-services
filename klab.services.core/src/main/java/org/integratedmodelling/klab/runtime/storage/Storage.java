@@ -9,4 +9,14 @@ package org.integratedmodelling.klab.runtime.storage;
  */
 public abstract class Storage {
 
+	public enum Type {
+		BOXING,
+		DOUBLE,
+		FLOAT,
+		INTEGER,
+		KEYED
+	}
+	
+	public abstract Type getType();
+	
 }

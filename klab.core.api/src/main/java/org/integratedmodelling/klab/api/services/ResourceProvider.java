@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -20,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 
 public interface ResourceProvider extends KlabService {
@@ -107,6 +107,16 @@ public interface ResourceProvider extends KlabService {
 	 * @return
 	 */
 	Resource resolveResource(String urn, Scope scope);
+
+	/**
+	 * Inquire about resource availability for the passed urn and scope. Should work
+	 * for all types of assets.
+	 * 
+	 * @param urn
+	 * @param scope
+	 * @return
+	 */
+	ResourceStatus resourceStatus(String urn, Scope scope);
 
 	/**
 	 * 

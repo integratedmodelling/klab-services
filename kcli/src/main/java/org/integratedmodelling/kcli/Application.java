@@ -73,12 +73,13 @@ public class Application {
 			"Hit @|magenta ALT-S|@ to toggle tailtips.", "" }, footer = { "", "Press Ctrl-D to exit." }, subcommands = {
 					Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class, Resources.class,
 					Services.class, Run.class, PicocliCommands.ClearScreen.class, CommandLine.HelpCommand.class,
-					Session.class })
+					Session.class, Context.class })
 	static class CliCommands implements Runnable {
 
 		PrintWriter out;
 
 		CliCommands() {
+			System.out.println("MI HA CHIAMATO! MI HA CHIAMATO! OUT e' " + out);
 		}
 
 		public void setReader(LineReader reader) {
@@ -93,7 +94,7 @@ public class Application {
 	@Command(name = "run", mixinStandardHelpOptions = true, description = { "Run scripts, test cases and applications.",
 			"Uses autocompletion for behavior and test case names.",
 			"" }, subcommands = { Run.List.class, Run.Purge.class })
-	static class Run implements Runnable {
+	static class Run extends Monitor implements Runnable {
 
 		Set<SessionScope> running = new LinkedHashSet<>();
 
@@ -122,7 +123,7 @@ public class Application {
 
 				for (String scriptName : scriptNames) {
 
-					KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser().getService(ResourceProvider.class)
+					KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser(true, null).getService(ResourceProvider.class)
 							.resolveBehavior(scriptName, Engine.INSTANCE.getCurrentUser());
 
 					if (behavior == null) {

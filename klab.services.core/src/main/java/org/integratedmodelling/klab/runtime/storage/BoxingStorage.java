@@ -9,16 +9,15 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  * @author Ferd
  *
  */
-public class FloatStorage extends Storage {
-
-
+public class BoxingStorage extends Storage {
+	
 	@Override
 	public Type getType() {
-		return Type.FLOAT	;
+		return Type.BOXING;
 	}
 
-	public void set(float value, Locator locator) {
+	public void set(Object value, Locator locator) {
 		
 	}
-	
+
 }

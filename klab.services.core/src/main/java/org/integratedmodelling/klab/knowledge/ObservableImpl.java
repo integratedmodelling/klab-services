@@ -17,14 +17,13 @@ import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.klab.api.provenance.Activity;
-import org.integratedmodelling.klab.api.provenance.Activity.Description;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.util.StringUtils;
@@ -38,7 +37,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private Concept semantics;
     private Version version;
     private DirectObservation observer;
-    private Activity.Description descriptionType;
+    private DescriptionType descriptionType;
     private Artifact.Type artifactType;
     private boolean isAbstract;
     private String urn;
@@ -160,7 +159,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     }
 
     @Override
-    public Description getDescriptionType() {
+    public DescriptionType getDescriptionType() {
         return this.descriptionType;
     }
 
@@ -284,7 +283,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.observer = observer;
     }
 
-    public void setDescriptionType(Activity.Description descriptionType) {
+    public void setDescriptionType(DescriptionType descriptionType) {
         this.descriptionType = descriptionType;
     }
 
@@ -510,7 +509,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
             ret.referenceName = concept.getNamespace() + "_" + concept.getName();
         }
         ret.artifactType = Artifact.Type.forSemantics(concept.getType());
-        ret.descriptionType = Description.forSemantics(concept.getType(), false);
+        ret.descriptionType = DescriptionType.forSemantics(concept.getType(), false);
 
         return ret;
     }

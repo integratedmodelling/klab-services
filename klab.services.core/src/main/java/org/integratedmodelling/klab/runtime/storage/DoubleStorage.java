@@ -9,10 +9,15 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  * @author Ferd
  *
  */
-public class DoubleStorage {
+public class DoubleStorage extends Storage {
 	
 	public void set(double value, Locator locator) {
 		
+	}
+
+	@Override
+	public Type getType() {
+		return Type.DOUBLE;
 	}
 
 }

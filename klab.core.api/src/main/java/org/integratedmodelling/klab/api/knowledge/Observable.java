@@ -545,7 +545,7 @@ public interface Observable extends Semantics {
 	 *
 	 * @return the necessary observation type
 	 */
-	Activity.Description getDescriptionType();
+	DescriptionType getDescriptionType();
 
 	/**
 	 * Return the type of the artifact correspondent to an observation of this

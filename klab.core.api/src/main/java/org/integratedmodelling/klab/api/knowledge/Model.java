@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.knowledge;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 
 public interface Model extends Knowledge {
 
@@ -22,6 +23,14 @@ public interface Model extends Knowledge {
 	Artifact.Type getType();
 
 	/**
+	 * The kind of description this model represents. Instantiators return
+	 * {@link DescriptionType#INSTANTIATION}.
+	 * 
+	 * @return
+	 */
+	DescriptionType getDescriptionType();
+
+	/**
 	 * All the observables contextualized by the model, including the "root" one
 	 * that defines the model semantics.
 	 * 
@@ -30,7 +39,9 @@ public interface Model extends Knowledge {
 	List<Observable> getObservables();
 
 	/**
-	 * All the observables needed by the model before contextualization.
+	 * All the observables needed by the model before contextualization. If the list
+	 * has size 0, the model is resolved, i.e. it can be computed without
+	 * referencing any other observation.
 	 * 
 	 * @return
 	 */
@@ -45,5 +56,13 @@ public interface Model extends Knowledge {
 	 * @return
 	 */
 	Geometry getCoverage();
+
+	/**
+	 * The sequence of contextualizables (resources, function calls, expressions
+	 * etc.) that composes the computable part of the model.
+	 * 
+	 * @return
+	 */
+	List<Contextualizable> getComputation();
 
 }

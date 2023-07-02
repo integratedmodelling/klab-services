@@ -11,6 +11,11 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  */
 public class KeyedStorage extends IntStorage {
 	
+	@Override
+	public Type getType() {
+		return Type.KEYED;
+	}
+
 	public void set(Object value, Locator locator) {
 		
 	}

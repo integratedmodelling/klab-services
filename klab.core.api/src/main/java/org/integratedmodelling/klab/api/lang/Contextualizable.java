@@ -263,16 +263,6 @@ public interface Contextualizable extends KimStatement {
 	String getTargetId();
 
 	/**
-	 * This should produce a resource through the resource service and host it
-	 * internally for successive calls. Called only if {@link #getType()} is
-	 * resource and {@link #getUrn()} is not null. The implementation must take care
-	 * of contextualizing resources appropriately, including merged resource sets.
-	 * 
-	 * @return
-	 */
-	Resource getResource();
-
-	/**
 	 * The target observable for this computation, correspondent to the target ID.
 	 * Accessible only during contextualization. Null if the target is the main
 	 * observable in the correspondent actuator. Otherwise the computation affects

@@ -36,6 +36,8 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     public List<Notification> validateUsage(Set<Artifact.Type> expectedType) {
         return null;// Kim.INSTANCE.validateFunctionCall(this, expectedType);
     }
+    
+    public ServiceCallImpl() {}
 
     @SuppressWarnings("unchecked")
     public ServiceCallImpl(String name, Object[] parameters) {

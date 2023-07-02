@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import org.integratedmodelling.contrib.jgrapht.traverse.TopologicalOrderIterator
 import org.integratedmodelling.kactors.model.KActors;
 import org.integratedmodelling.kdl.model.Kdl;
 import org.integratedmodelling.kim.api.IKimObservable;
+import org.integratedmodelling.kim.api.IKimProject;
 import org.integratedmodelling.kim.model.Kim;
 import org.integratedmodelling.kim.model.KimLoader;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
@@ -49,11 +51,12 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.common.Urns;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.klab.rest.ResourceReference;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.resources.lang.KActorsAdapter;
@@ -157,7 +160,29 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	}
 
 	private synchronized void loadProject(final ProjectConfiguration projectConfiguration) {
-		kimLoader.loadProject(projectConfiguration.getLocalPath());
+		IKimProject project = kimLoader.loadProject(projectConfiguration.getLocalPath());
+
+		/*
+		 * load legacy resources
+		 */
+		File resourceDir = new File(project.getRoot() + File.separator + "resources");
+		for (File subdir : resourceDir.listFiles(new FileFilter() {
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.isDirectory() && pathname.canRead();
+			}
+		})) {
+			if ("unreviewed".equals(Utils.Files.getFileBaseName(subdir))) {
+				// add resource metadata to separate catalog
+			} else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
+				// add resource metadata to separate catalog
+			} else {
+				// legacy resource: treat as unreviewed but remember it's legacy
+				Resource resource = KimAdapter.adaptResource(
+						Utils.Json.load(new File(subdir + File.separator + "resource.json"), ResourceReference.class));
+				localResources.put(resource.getUrn(), resource);
+			}
+		}
 	}
 
 	private void initializeLanguageServices() {
@@ -508,7 +533,21 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 				namespaces.add(ns);
 			}
 		}
-		return Utils.Resources.create(this, namespaces.toArray(new KlabAsset[namespaces.size()]));
+		List<KActorsBehavior> behaviors = new ArrayList<>();
+		for (KActorsBehavior behavior : localBehaviors.values()) {
+			if (behavior.getProjectId().equals(projectName)) {
+				behaviors.add(behavior);
+			}
+		}
+		List<Resource> resources = new ArrayList<>();
+		for (Resource resource : this.localResources.values()) {
+			if (resource.getLocalProjectName().equals(projectName)) {
+				resources.add(resource);
+			}
+		}
+
+		return Utils.Resources.create(this, Utils.Collections.shallowCollection(namespaces, behaviors, resources)
+				.toArray(new KlabAsset[namespaces.size()]));
 	}
 
 	@Override
@@ -590,7 +629,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 	@Override
 	public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
-		
+
 		List<String> ret = new ArrayList<>();
 		Set<KnowledgeClass> wanted = EnumSet.noneOf(KnowledgeClass.class);
 		if (resourceTypes != null && resourceTypes.length > 0) {
@@ -603,36 +642,42 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 				wanted.add(k);
 			}
 		}
-		
+
 		if (wanted.contains(KnowledgeClass.RESOURCE)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.MODEL)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.SCRIPT)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.APPLICATION)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.BEHAVIOR)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.COMPONENT)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.NAMESPACE)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.PROJECT)) {
-			
+
 		}
 		if (wanted.contains(KnowledgeClass.INSTANCE)) {
-			
+
 		}
-		
+
 		return ret;
+	}
+
+	@Override
+	public ResourceStatus resourceStatus(String urn, Scope scope) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

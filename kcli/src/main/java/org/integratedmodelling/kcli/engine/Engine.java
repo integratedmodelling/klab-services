@@ -5,8 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
@@ -16,6 +18,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
@@ -40,6 +43,8 @@ public enum Engine implements Authentication {
 	Parameters<String> userData = Parameters.create();
 	Map<String, UserScope> authorizedIdentities = new LinkedHashMap<>();
 	UserScope currentUser;
+	SessionScope currentSession;
+	ContextScope currentContext;
 
 	private Engine() {
 
@@ -109,14 +114,45 @@ public enum Engine implements Authentication {
 		return EngineService.INSTANCE.login(new AnonymousUser());
 	}
 
+	/**
+	 * Get or optionally create the current user. Report using the channel.
+	 * 
+	 * @param createIfNull
+	 * @param channel
+	 * @return
+	 */
+	public UserScope getCurrentUser(boolean loginAnonymousIfNull, Channel channel) {
+		return currentUser;
+	}
+
+	/**
+	 * Use this when you know it's there
+	 * 
+	 * @return
+	 */
 	public UserScope getCurrentUser() {
 		return currentUser;
+	}
+
+	/**
+	 * Get or optionally create the current session. Report using the channel.
+	 * 
+	 * @param createIfNull
+	 * @param channel
+	 * @return
+	 */
+	public SessionScope getCurrentSession(boolean createIfNull, Channel channel) {
+		return null;
+	}
+
+	public SessionScope getCurrentContext(boolean createIfNull) {
+		return null;
 	}
 
 	public Parameters<String> getUserData() {
 		return userData;
 	}
-	
+
 	@Override
 	public ServiceScope authorizeService(KlabService service) {
 		return new LocalServiceScope(service) {
@@ -136,7 +172,7 @@ public enum Engine implements Authentication {
 			@Override
 			public void stop() {
 				// TODO Auto-generated method stub
-				
+
 			}
 
 		};

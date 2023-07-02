@@ -24,7 +24,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
 
     private Type type;
     private String targetId;
-    private Resource resource;
     private KimObservable target;
     private String mediationTargetId;
     private String language;
@@ -55,11 +54,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     @Override
     public String getTargetId() {
         return this.targetId;
-    }
-
-    @Override
-    public Resource getResource() {
-        return this.resource;
     }
 
     @Override
@@ -174,11 +168,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     public void setTargetId(String targetId) {
         this.targetId = targetId;
     }
-
-    public void setResource(Resource resource) {
-        this.resource = resource;
-    }
-
+    
     public void setTarget(KimObservable target) {
         this.target = target;
     }

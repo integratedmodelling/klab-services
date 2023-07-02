@@ -9,8 +9,13 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  * @author Ferd
  *
  */
-public class IntStorage {
+public class IntStorage extends Storage {
 	
+	@Override
+	public Type getType() {
+		return Type.INTEGER;
+	}
+
 	public void set(int value, Locator locator) {
 		
 	}
