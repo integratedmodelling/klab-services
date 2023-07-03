@@ -5,9 +5,8 @@ import java.util.Collection;
 /**
  * A classification of the primary observation activity (odo:Description) that
  * can produce an observation of this observable. Encodes the same
- * classification in ODO-IM. The descriptions specialize
- * {@link IResolutionScope#Mode}, which is captured by exposing its
- * correspondent value.
+ * classification in ODO-IM. The descriptions capture the higher-level
+ * "countable" taxonomy through boolean inspection methods.
  * 
  * @author ferdinando.villa
  *
@@ -17,7 +16,9 @@ public enum DescriptionType {
 	/**
 	 * The observation activity that produces a countable object. Acknowledgement is
 	 * a special case of instantiation, limited to a subject and performed on a fiat
-	 * basis (in k.IM through an <code>observe</code> statement).
+	 * basis (in k.IM through an <code>observe</code> statement). The instantiation
+	 * of relationships ({@link #CONNECTION}) is handled separately because of the
+	 * non-independence from its targets.
 	 */
 	INSTANTIATION(true),
 	/**
@@ -67,7 +68,12 @@ public enum DescriptionType {
 	 * Acknowledgements can also be explicitly programmed in k.IM through the
 	 * <code>observe</code> statement.
 	 */
-	ACKNOWLEDGEMENT(false);
+	ACKNOWLEDGEMENT(false),
+	/**
+	 * Instantiation of relationships, requiring the "connected" countables to be
+	 * observed as well.
+	 */
+	CONNECTION(true);
 
 	boolean instantiation;
 
@@ -75,8 +81,8 @@ public enum DescriptionType {
 	 * Return whether this description activity is an instantiation, i.e. is
 	 * resolved by creating zero or more of its target observations. The observation
 	 * is not completed until the resulting observations are also resolved.
-	 * Descriptions can instantiate countables (through {@link #INSTANTIATION} or
-	 * predicates (through {@link #CLASSIFICATION}).
+	 * Descriptions can instantiate countables (through {@link #INSTANTIATION},
+	 * {@link #CONNECTION} or predicates (through {@link #CLASSIFICATION}).
 	 * 
 	 * @return
 	 */
@@ -112,6 +118,8 @@ public enum DescriptionType {
 			return SIMULATION;
 		} else if (type.contains(SemanticType.TRAIT)) {
 			return CLASSIFICATION;
+		}  else if (type.contains(SemanticType.RELATIONSHIP)) {
+			return CONNECTION;
 		} else if (type.contains(SemanticType.DIRECT_OBSERVABLE)) {
 			return distributed ? INSTANTIATION : ACKNOWLEDGEMENT;
 		}

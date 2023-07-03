@@ -16,8 +16,6 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
  * The Interface ISpace.
@@ -25,30 +23,13 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Space extends Extent, Spatial {
+public interface Space extends Extent<Space>, Spatial {
 
 	/** Constant <code>MIN_SCALE_RANK=0</code> */
 	int MIN_SCALE_RANK = 0;
 	/** Constant <code>MAX_SCALE_RANK=21</code> */
 	int MAX_SCALE_RANK = 21;
 
-	@Override
-	Space getExtent(long stateIndex);
-	
-	/**
-	 * Get the envelope, providing boundaries.
-	 *
-	 * @return the referenced envelope
-	 */
-	Envelope getEnvelope();
-
-	/**
-	 * Projection. Just repeats same in envelope and shape. It's not legal to have
-	 * different projections in different elements of a spatial extent.
-	 *
-	 * @return coordinate reference system
-	 */
-	Projection getProjection();
 
 	/**
 	 * Volume in standard SI units (square meters), NaN if < 3D.
@@ -107,39 +88,5 @@ public interface Space extends Extent, Spatial {
 	 * @return the distance
 	 */
 	double getStandardizedDistance(Space extent);
-
-	/**
-	 * Override the result for fluency
-	 */
-	@Override
-	Space getBoundingExtent();
-
-	/**
-     * Override the result for fluency
-     */
-    @Override
-	Space mergeContext(Extent extent);
-
-    /**
-     * Override the result for fluency
-     */
-	@Override
-	Space merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption...options);
-
-	/**
-	 * Quickly check if the passed string looks like a WKT string in the k.LAB
-	 * supported format (potentially with a projection). No validation, just simple
-	 * heuristics to discriminate URNs or other obviously different strings.
-	 * 
-	 * @param urn
-	 * @return
-	 */
-	static boolean isWKT(String urn) {
-		if ((urn.contains("POLYGON") || urn.contains("POINT") || urn.contains("LINESTRING")) && urn.contains("(")
-				&& urn.contains(")")) {
-			return true;
-		}
-		return false;
-	}
 
 }

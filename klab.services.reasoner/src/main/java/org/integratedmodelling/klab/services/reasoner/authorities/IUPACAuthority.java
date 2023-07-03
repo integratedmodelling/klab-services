@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,7 +14,6 @@ import org.integratedmodelling.klab.api.services.Codelist;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityReference;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -54,7 +52,7 @@ public class IUPACAuthority implements Authority {
     public IUPACAuthority() {
         this.db = DBMaker.fileDB(Configuration.INSTANCE.getDataPath("authorities") + File.separator + "iupac_ids.db")
                 .closeOnJvmShutdown().transactionEnable().make();
-        this.cache = db.treeMap("collectionName", Serializer.STRING, Serializer.STRING).createOrOpen();
+        this.cache = db.treeMap("iupacAuthority", Serializer.STRING, Serializer.STRING).createOrOpen();
         Unirest.config().verifySsl(false);
         this.capabilities = new AuthorityReference();
         this.capabilities.setSearchable(true);

@@ -604,7 +604,7 @@ public class GeometryImpl implements Geometry {
         this.coverage = coverage;
     }
 
-    static class DimensionImpl implements Dimension {
+    public static class DimensionImpl implements Dimension {
 
         private static final long serialVersionUID = 4771639998858599355L;
 
@@ -671,12 +671,7 @@ public class GeometryImpl implements Geometry {
             }
             return ret;
         }
-
-        // @Override
-        // public long[] getShape() {
-        // return shape == null ? Utils.newArray(UNDEFINED, dimensionality) : shape;
-        // }
-
+        
         @Override
         public String encode(Encoding... options) {
             return encodeDimension(this);
@@ -808,7 +803,6 @@ public class GeometryImpl implements Geometry {
 
     // private MultidimensionalCursor cursor;
 
-    @Override
     public double getCoverage() {
         return this.coverage;
     }
@@ -1647,9 +1641,9 @@ public class GeometryImpl implements Geometry {
         return ret;
     }
 
-    @Override
-    public Geometry geometry() {
-        return this;
-    }
+//    @Override
+//    public Geometry geometry() {
+//        return this;
+//    }
 
 }

@@ -7,11 +7,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -51,8 +53,11 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.logging.Logging;
@@ -66,6 +71,9 @@ import org.integratedmodelling.klab.services.resources.lang.KimAdapter;
 import org.integratedmodelling.klab.services.resources.lang.KimInjectorProvider;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utilities.Utils.Git;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+import org.mapdb.serializer.GroupSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -89,8 +97,13 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	transient Map<String, Project> localProjects = Collections.synchronizedMap(new HashMap<>());
 	transient Map<String, Workspace> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
 	transient Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
-	transient Map<String, Resource> localResources = Collections.synchronizedMap(new HashMap<>());
 	transient Map<String, KActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
+
+	/**
+	 * We keep a hash of all the resource URNs we serve for quick reference and
+	 * search
+	 */
+	transient Set<String> localResources = new HashSet<>();
 
 	/*
 	 * Dirty namespaces are kept in order of dependency and reloaded sequentially.
@@ -98,6 +111,17 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	transient Set<String> dirtyNamespaces = Collections.synchronizedSet(new LinkedHashSet<>());
 	transient Set<String> dirtyProjects = Collections.synchronizedSet(new LinkedHashSet<>());
 	transient Set<String> dirtyWorkspaces = Collections.synchronizedSet(new LinkedHashSet<>());
+
+	/**
+	 * the only persistent info in this implementation is the catalog of resource
+	 * status info. This is used for individual resources and whole projects. It
+	 * also holds and maintains the review status, which in the case of projects
+	 * propagates to the namespaces and models. Reviews and the rest of the
+	 * editorial material should be part of the provenance info associated to the
+	 * items.
+	 */
+	transient DB db = null;
+	transient ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
 
 	/**
 	 * Always load projects and namespaces sequentially.
@@ -109,10 +133,17 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	 */
 	private long DEFAULT_GIT_SYNC_INTERVAL = 15l * 60l * 60l * 1000l;
 
+	@SuppressWarnings("unchecked")
 	public ResourcesService() {
 		this.localName = "klab.services.resources." + UUID.randomUUID();
 		Services.INSTANCE.setResources(this);
 		initializeLanguageServices();
+
+		this.db = DBMaker
+				.fileDB(Configuration.INSTANCE.getDataPath("resources/catalog") + File.separator + "gbif_ids.db")
+				.transactionEnable().closeOnJvmShutdown().make();
+		this.catalog = db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
+
 		File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
 		if (config.exists()) {
 			configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
@@ -136,6 +167,13 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	public ResourcesService(ResourcesService self) {
 		this.localName = self.localName;
 		this.url = self.url;
+		this.db = self.db;
+		this.scope = self.scope;
+		this.DEFAULT_GIT_SYNC_INTERVAL = self.DEFAULT_GIT_SYNC_INTERVAL;
+		this.authenticationService = self.authenticationService;
+		this.catalog = self.catalog;
+		this.localResources = self.localResources;
+		this.localProjects = self.localProjects;
 		this.configuration = self.configuration;
 		this.localNamespaces = self.localNamespaces;
 		this.localWorkspaces = self.localWorkspaces;
@@ -160,29 +198,68 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	}
 
 	private synchronized void loadProject(final ProjectConfiguration projectConfiguration) {
-		IKimProject project = kimLoader.loadProject(projectConfiguration.getLocalPath());
 
 		/*
-		 * load legacy resources
+		 * this automatically loads namespaces and behaviors through callbacks.
 		 */
+		IKimProject project = kimLoader.loadProject(projectConfiguration.getLocalPath());
 		File resourceDir = new File(project.getRoot() + File.separator + "resources");
-		for (File subdir : resourceDir.listFiles(new FileFilter() {
+		loadResources(resourceDir, 0, true);
+
+		/*
+		 * commit any DB changes
+		 */
+		db.commit();
+	}
+
+	private void loadResources(File resourceDir, int level, boolean legacy) {
+
+		/*
+		 * load new and legacy resources. This thing returns null if the dir does not
+		 * exist.
+		 */
+		File[] files = resourceDir.listFiles(new FileFilter() {
 			@Override
 			public boolean accept(File pathname) {
 				return pathname.isDirectory() && pathname.canRead();
 			}
-		})) {
-			if ("unreviewed".equals(Utils.Files.getFileBaseName(subdir))) {
-				// add resource metadata to separate catalog
-			} else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
-				// add resource metadata to separate catalog
-			} else {
-				// legacy resource: treat as unreviewed but remember it's legacy
-				Resource resource = KimAdapter.adaptResource(
-						Utils.Json.load(new File(subdir + File.separator + "resource.json"), ResourceReference.class));
-				localResources.put(resource.getUrn(), resource);
+		});
+		if (files != null) {
+			for (File subdir : files) {
+				Resource resource = null;
+				if ("unreviewed".equals(Utils.Files.getFileBaseName(subdir))) {
+					loadResources(subdir, 0, false);
+				} else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
+					loadResources(subdir, 1, false);
+				} else {
+					resource = KimAdapter.adaptResource(Utils.Json
+							.load(new File(subdir + File.separator + "resource.json"), ResourceReference.class));
+				}
+				if (resource != null) {
+					localResources.add(resource.getUrn());
+					ResourceStatus status = catalog.get(resource.getUrn());
+					if (status == null) {
+						status = new ResourceStatus();
+						status.setReviewStatus(level);
+						status.setFileLocation(subdir);
+						status.setType(hasErrors(resource) ? Type.OFFLINE : Type.AVAILABLE);
+						status.setLegacy(legacy);
+						status.setKnowledgeClass(KnowledgeClass.RESOURCE);
+						// TODO fill in the rest
+						catalog.put(resource.getUrn(), status);
+					}
+				}
 			}
 		}
+	}
+
+	private boolean hasErrors(Resource resource) {
+		for (Notification notification : resource.getNotifications()) {
+			if (notification.getLevel() == Level.Error) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void initializeLanguageServices() {
@@ -305,8 +382,10 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 	@Override
 	public Resource resolveResource(String urn, Scope scope) {
-		Resource resource = localResources.get(Urn.removeParameters(urn));
-		return resource;
+		if (localResources.contains(Urn.removeParameters(urn))) {
+
+		}
+		return null;
 	}
 
 	@Override
@@ -535,19 +614,15 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 		}
 		List<KActorsBehavior> behaviors = new ArrayList<>();
 		for (KActorsBehavior behavior : localBehaviors.values()) {
-			if (behavior.getProjectId().equals(projectName)) {
+			if (projectName.equals(behavior.getProjectId())) {
 				behaviors.add(behavior);
 			}
 		}
-		List<Resource> resources = new ArrayList<>();
-		for (Resource resource : this.localResources.values()) {
-			if (resource.getLocalProjectName().equals(projectName)) {
-				resources.add(resource);
-			}
-		}
 
-		return Utils.Resources.create(this, Utils.Collections.shallowCollection(namespaces, behaviors, resources)
-				.toArray(new KlabAsset[namespaces.size()]));
+		// Resources work independently and do not come with the project data.
+
+		return Utils.Resources.create(this,
+				Utils.Collections.shallowCollection(namespaces, behaviors).toArray(new KlabAsset[namespaces.size()]));
 	}
 
 	@Override
@@ -676,8 +751,13 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 	@Override
 	public ResourceStatus resourceStatus(String urn, Scope scope) {
-		// TODO Auto-generated method stub
-		return null;
+		ResourceStatus ret = catalog.get(urn);
+		if (ret != null && (ret.getType().isUsable())) {
+			/*
+			 * TODO check the resource status at this time and in this scope
+			 */
+		}
+		return ret;
 	}
 
 }

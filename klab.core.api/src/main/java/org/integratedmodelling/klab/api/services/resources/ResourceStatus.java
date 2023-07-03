@@ -1,10 +1,12 @@
 package org.integratedmodelling.klab.api.services.resources;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -15,7 +17,11 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * other information is stored reflecting the status for the service at the time
  * of last update, the availability ({@link #getType()} should always be
  * assessed in scope and in realtime when this is retrieved from the API
- * ({@link ResourceProvider#resourceStatus(String, Scope)}).
+ * ({@link ResourceProvider#resourceStatus(String, Scope)}), reflecting
+ * permissions, server status, adapter status, availability of dependencies and
+ * any other needed factor. The stored type should be AUTHORIZED or DEPRECATED,
+ * OFFLINE only if it starts its lifecycle with compilation errors, and never
+ * UNAUTHORIZED or DELAYED.
  * 
  * @author Ferd
  *
@@ -23,12 +29,22 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public class ResourceStatus {
 
 	public enum Type {
-		AVAILABLE, DELAYED, UNAUTHORIZED, OFFLINE,
+		AVAILABLE(true), DELAYED(true), UNAUTHORIZED(false), OFFLINE(false),
 		/**
 		 * Deprecated also implies AVAILABLE. Delayed or Partial status resources that
 		 * are deprecated are considered unavailable for now.
 		 */
-		DEPRECATED
+		DEPRECATED(true);
+		
+		private boolean usable;
+
+		private Type(boolean usable) {
+			this.usable = usable;
+		}
+
+		public boolean isUsable() {
+			return usable;
+		}
 	}
 
 	private Type type;
@@ -37,6 +53,9 @@ public class ResourceStatus {
 	private int reviewStatus;
 	private ResourcePrivileges privileges = ResourcePrivileges.empty();
 	private String owner;
+	private File fileLocation;
+	private boolean legacy;
+	private KnowledgeClass knowledgeClass;
 
 	public Type getType() {
 		return type;
@@ -101,7 +120,9 @@ public class ResourceStatus {
 
 	/**
 	 * Privileges start empty, which enables use only for the resource owner and
-	 * (according to implementation) administrators, auditors and reviewers.
+	 * (according to implementation) administrators, auditors and reviewers. The
+	 * owner of the resource is not necessarily the holder of the copyright or of
+	 * any license set for the resource.
 	 * 
 	 * @return
 	 */
@@ -125,6 +146,35 @@ public class ResourceStatus {
 
 	public void setOwner(String owner) {
 		this.owner = owner;
+	}
+
+	public File getFileLocation() {
+		return fileLocation;
+	}
+
+	public void setFileLocation(File fileLocation) {
+		this.fileLocation = fileLocation;
+	}
+
+	/**
+	 * True if pre-k.LAB 12.0
+	 * 
+	 * @return
+	 */
+	public boolean isLegacy() {
+		return legacy;
+	}
+
+	public void setLegacy(boolean legacy) {
+		this.legacy = legacy;
+	}
+
+	public KnowledgeClass getKnowledgeClass() {
+		return knowledgeClass;
+	}
+
+	public void setKnowledgeClass(KnowledgeClass knowledgeClass) {
+		this.knowledgeClass = knowledgeClass;
 	}
 
 }

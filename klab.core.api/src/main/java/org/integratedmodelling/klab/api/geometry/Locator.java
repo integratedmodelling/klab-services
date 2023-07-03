@@ -1,11 +1,9 @@
 package org.integratedmodelling.klab.api.geometry;
 
-import java.util.Iterator;
-
 import org.integratedmodelling.klab.api.geometry.impl.Offset;
 
 /**
- * Locators are topological subdivisions that can be used to locate and subset observations. A
+ * Locators are topological pointers that can be used to locate and subset observations. A
  * locator is a geometry that comes from a geometry that contains it, and maintains the relationship
  * with the geometry that it locates.
  * <p>
@@ -51,43 +49,11 @@ public interface Locator {
         public static UniversalLocator INSTANCE = new UniversalLocator();
 
         @Override
-        public Geometry geometry() {
-            return null;
-        }
-
-        @Override
-        public double getCoverage() {
-            return 0;
-        }
-
-        @Override
         public <T extends Locator> T as(Class<T> cls) {
             return null;
         }
 
     }
-
-    /**
-     * The geometry this locates. Should never be null.
-     * 
-     * @return
-     */
-    Geometry geometry();
-
-    /**
-     * Return a number between 0 and 1 that represents the amount of extent covered by this locator
-     * in its location. If the locator represents more than one locator, the coverage should be a
-     * weighted average; if the locator represents more than one extent, the coverage should be the
-     * product of the respective coverages. Measures should be taken so that computing the coverage
-     * is done on demand if the computation is expensive, as only extensive observations will need
-     * to worry about coverage.
-     * <p>
-     * The default value of the coverage should be 1 and in no instance this should ever return 0,
-     * as a locator with zero coverage does not locate anything.
-     * 
-     * @return
-     */
-    double getCoverage();
 
     /**
      * Adapt the locator to another with the needed API. If the parameter is the class or the type

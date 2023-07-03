@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import java.util.List;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 
 public interface Model extends Knowledge {
@@ -50,12 +50,12 @@ public interface Model extends Knowledge {
 	/**
 	 * Models may have a coverage, either explicitly set in the model definition or
 	 * in the namespace, or inherited by their resources. Models with universal
-	 * coverage should return an empty geometry. FIXME maybe there should be a
-	 * "universal" geometry that isn't empty.
+	 * coverage should return an empty scale. FIXME there should be a "universal"
+	 * scale that isn't empty.
 	 * 
 	 * @return
 	 */
-	Geometry getCoverage();
+	Scale getCoverage();
 
 	/**
 	 * The sequence of contextualizables (resources, function calls, expressions

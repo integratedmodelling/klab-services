@@ -13,20 +13,20 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  */
 public class GeometryIterator implements Iterator<Locator> {
 
-	MultidimensionalCursor cursor;
+	NDCursor cursor;
 	Geometry geometry;
 	long[] locked;
 	long offset = 0;
 
 	public GeometryIterator(Geometry geometry, Offset offset) {
 		this.locked = offset.pos;
-		this.cursor = new MultidimensionalCursor(geometry, locked);
+		this.cursor = new NDCursor(geometry, locked);
 		this.geometry = geometry;
 	}
 
 	public GeometryIterator(GeometryImpl geometry) {
 		this.geometry = geometry;
-		this.cursor = new MultidimensionalCursor(geometry);
+		this.cursor = new NDCursor(geometry);
 	}
 
 	@Override
@@ -36,7 +36,7 @@ public class GeometryIterator implements Iterator<Locator> {
 
 	@Override
 	public Locator next() {
-		long[] pos = cursor.getElementIndexes(offset++);
+		long[] pos = cursor.getIndices(offset++);
 		boolean scalar = true;
 		if (locked != null) {
 			for (int i = 0; i < pos.length; i++) {

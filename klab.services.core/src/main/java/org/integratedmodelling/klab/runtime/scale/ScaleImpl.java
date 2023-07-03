@@ -6,6 +6,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
@@ -17,16 +18,88 @@ public class ScaleImpl implements Scale {
 
 	private static final long serialVersionUID = -4518044986262539876L;
 
-	@Override
-	public Geometry geometry() {
-		return null;
+	/**
+	 * Internal locator class f. Uses the enclosing scale in a lazy fashion for
+	 * everything and just maintains the offset[s] and the index[es] of the extend
+	 * that is changing.
+	 * 
+	 * TODO make 2 more that consider masking in extents
+	 * 
+	 * @author Ferd
+	 *
+	 */
+	abstract class ScaleLocator extends ScaleImpl {
+		private static final long serialVersionUID = 797929992176158102L;
+		boolean empty;
+		long offset;
+
+		abstract Scale advance();
 	}
 
-	@Override
-	public double getCoverage() {
-		// TODO Auto-generated method stub
-		return 0;
+	/**
+	 * For >1 extents changing at the same time.
+	 * @author Ferd
+	 *
+	 */
+	class ScaleLocatorND extends ScaleLocator {
+
+		private static final long serialVersionUID = 2969366247696737476L;
+		NDCursor cursor;
+
+		Scale advance() {
+			return this;
+		}
+
 	}
+
+	/**
+	 * Internal locator class for the situation where a single dimension is
+	 * changing and the others are locked at a specified extent.
+	 * 
+	 * @author Ferd
+	 *
+	 */
+	class ScaleLocator1D extends ScaleLocator {
+
+		private static final long serialVersionUID = -4207775306893203109L;
+		long offset;
+		int changingIndex;
+		long[] extents;
+		boolean empty;
+
+		Scale advance() {
+			return this;
+		}
+
+	}
+
+	/**
+	 * The scale iterator uses a threadlocal locator to avoid constant object
+	 * instantiation.
+	 * 
+	 * @author Ferd
+	 *
+	 */
+	class ScaleIterator implements Iterator<Scale> {
+
+		ThreadLocal<ScaleLocator> locator = new ThreadLocal<>();
+
+		ScaleIterator() {
+			// TODO initialize the locator to the most appropriate of the above, pointing at
+			// the first usable offset
+		}
+
+		@Override
+		public boolean hasNext() {
+			return !locator.get().empty;
+		}
+
+		@Override
+		public Scale next() {
+			return locator.get().advance();
+		}
+
+	};
 
 	@Override
 	public <T extends Locator> T as(Class<T> cls) {
@@ -36,8 +109,7 @@ public class ScaleImpl implements Scale {
 
 	@Override
 	public Iterator<Scale> iterator() {
-		// TODO Auto-generated method stub
-		return null;
+		return new ScaleIterator();
 	}
 
 	@Override
@@ -167,11 +239,11 @@ public class ScaleImpl implements Scale {
 	}
 
 	@Override
-	public Scale merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption... options) {
+	public Scale merge(Scale other, LogicalConnector how) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
 	public Scale initialization() {
 		// TODO Auto-generated method stub
@@ -195,9 +267,15 @@ public class ScaleImpl implements Scale {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
 	public Scale collapse(Type... dimensions) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Scale except(Type dimension) {
 		// TODO Auto-generated method stub
 		return null;
 	}

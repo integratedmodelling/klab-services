@@ -148,7 +148,7 @@ public class CaliperAuthority implements Authority {
     public CaliperAuthority() {
         this.db = DBMaker.fileDB(Configuration.INSTANCE.getDataPath("authorities") + File.separator + "caliper_ids.db")
                 .transactionEnable().closeOnJvmShutdown().make();
-        this.cache = db.treeMap("caliper", Serializer.STRING, Serializer.STRING).createOrOpen();
+        this.cache = db.treeMap("caliperAuthority", Serializer.STRING, Serializer.STRING).createOrOpen();
         this.capabilities = new AuthorityReference();
         this.capabilities.setSearchable(true);
         this.capabilities.setFuzzy(true);

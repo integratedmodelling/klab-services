@@ -76,7 +76,7 @@ public interface Coverage extends Scale {
 	 * Must not modify the original scales.
 	 */
 	@Override
-	Coverage merge(TopologicallyComparable<?> coverage, LogicalConnector how, MergingOption... options);
+	Coverage merge(Scale coverage, LogicalConnector how);
 
 	/**
 	 * Like {@link #merge(TopologicallyComparable, LogicalConnector)} but only

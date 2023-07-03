@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Resource extends Knowledge {
 
@@ -112,26 +112,6 @@ public interface Resource extends Knowledge {
 	 * @return the type
 	 */
 	Artifact.Type getType();
-
-//	/**
-//	 * Each resource may admit specific export formats within those supported by its
-//	 * adapter, so the resource must be able to list them. The format is the same as
-//	 * {@link IResourceImporter#getExportCapabilities(IResource)}. This is
-//	 * replicated here to allow clients to provide export options without having to
-//	 * consult the adapter's API.
-//	 * 
-//	 * @return
-//	 */
-//	Map<String, String> getExports();
-//
-//	/**
-//	 * This should be called after contextualizing and before requesting data to
-//	 * ensure the resource is available and to check on possible wait times before
-//	 * it is.
-//	 * 
-//	 * @return
-//	 */
-//	AvailabilityReference getAvailability();
 
 	/**
 	 * The descriptor for each attribute. Not much at the moment.
@@ -533,4 +513,14 @@ public interface Resource extends Knowledge {
 	 * @return
 	 */
 	List<String> getCodelists();
+
+	/**
+	 * A resource may come with notifications from the validator or importer,
+	 * including error notifications. The online/offline status should first of all
+	 * check for error notifications, which must be removed when the resource is
+	 * updated to fix errors.
+	 * 
+	 * @return
+	 */
+	List<Notification> getNotifications();
 }

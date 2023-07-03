@@ -6,30 +6,30 @@ import org.integratedmodelling.klab.api.knowledge.Authority;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 
 /**
- * Enumerated extent, which details a coverage over a conceptual space, either the semantic closure
- * of a base identity or an authority.
+ * Enumerated extent, which details a coverage over a conceptual space including
+ * the semantic closure of a stated concept.
  * 
  * @author Ferd
  *
  */
-public interface EnumeratedExtent extends Extent {
+public interface EnumeratedExtent extends Extent<EnumeratedExtent> {
 
-    /**
-     * 
-     * @return
-     */
-    Authority getAuthority();
+	/**
+	 * 
+	 * @return
+	 */
+	Authority getAuthority();
 
-    /**
-     * 
-     * @return
-     */
-    Concept getBaseIdentity();
+	/**
+	 * 
+	 * @return
+	 */
+	Concept getBaseIdentity();
 
-    /**
-     * Return all the concepts that make up the extent of this domain.
-     * 
-     * @return
-     */
-    Collection<Concept> getExtension();
+	/**
+	 * Return all the concepts that make up the extent of this domain.
+	 * 
+	 * @return
+	 */
+	Collection<Concept> getExtension();
 }

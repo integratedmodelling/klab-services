@@ -16,8 +16,8 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -34,43 +34,13 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * {IGeometry#UNDEFINED} and the shape returned by {{@link #shape()} will never
  * contain undefined values.
  *
- * {@code IExtent}s can be used as {@link Locator locators} to address the
- * value space of observations.
+ * {@code IExtent}s can be used as {@link Locator locators} to address the value
+ * space of observations.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
-
-	/**
-	 * Merge in another extent from the overall context, producing an extent that is
-	 * complete and conformant (this one may be partially specified) ready for
-	 * contextualization in it. This is called during resolution to establish the
-	 * final scale of contextualization for actuators in a dataflow. Allows
-	 * specifications with partially specified extents (where {@link #isGeneric()}
-	 * returns true) to inform the scale of the final contextualization. This should
-	 * build conformant extents, i.e. only offset mediation should be necessary to
-	 * address either topology.
-	 * <p>
-	 * The logic to produce the result extent should be:
-	 * <ul>
-	 * <li>Boundaries should be inherited from the passed extent, compatibly with
-	 * the receiving boundaries. The result can shrink but it cannot grow beyond the
-	 * common boundaries.</li>
-	 * <li>If this is distributed, the result should stay distributed. If the
-	 * incoming extent is distributed and this is not, the result should become
-	 * distributed. If both are distributed, choices of representation may need to
-	 * be made: the result's representation should remain the incoming one as much
-	 * as possible, to prevent costly mediations.</li>
-	 * <li>If the result is distributed, the resolution should be our resolution if
-	 * this was distributed, or the incoming resolution if not.</li>
-	 * </ul>
-	 * 
-	 * @param extent an extent of the same dimension type as ours (not necessarily
-	 *               the same class, although usually implementing the same extent
-	 *               interface) from the prospective contextualization scale.
-	 */
-	Extent mergeContext(Extent extent);
+public interface Extent<T extends TopologicallyComparable<T>> extends Locator, Topology<T>, Geometry.Dimension {
 
 	/**
 	 * Locate the extent and return another with the original located extent and
@@ -81,7 +51,7 @@ public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
 	 * @param locator
 	 * @return the extent, or null if location is impossible.
 	 */
-	Extent at(Object... locators);
+	T at(Object... locators);
 
 	/**
 	 * Each extent must be able to return a worldview-dependent integer scale rank,
@@ -97,7 +67,7 @@ public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
 	 * @return an integer summarizing the extent's size within the range covered by
 	 *         the worldview
 	 */
-	int getScaleRank();
+	int getRank();
 
 	/**
 	 * Collapse the multiplicity and return the extent that represents the full
@@ -106,7 +76,7 @@ public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
 	 *
 	 * @return a new extent with size() == 1.
 	 */
-	Extent collapse();
+	T collapse();
 
 	/**
 	 * Return the simplest boundary that can be compared to another coming from an
@@ -116,10 +86,11 @@ public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
 	 * 
 	 * @return the boundary.
 	 */
-	Extent getBoundingExtent();
+	T getBoundingExtent();
 
 	/**
-	 * Return the dimensional coverage in the passed unit, which must be compatible.
+	 * Return the dimensional coverage in the passed unit, which must be compatible
+	 * or a {@link KIllegalArgumentException} should be thrown.
 	 * 
 	 * @param unit
 	 * @return
@@ -134,32 +105,10 @@ public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
 	 */
 	Pair<Double, Unit> getStandardizedDimension(Locator locator);
 
-	/**
-	 * If this extent specifies a larger portion of the topology than the modeled
-	 * world contains, return a < 1.0 coverage. This can happen when the extent
-	 * semantics constrains the representation - e.g. regular spatial grids covering
-	 * more space than there actually is. Coverage = 0 should never happen as
-	 * extents with no coverage can't provide topology for an observation, and as
-	 * such should not be returned by any function.
-	 *
-	 * @return coverage in the range (0 1]
-	 */
-	double getCoverage();
-
-	/**
-	 * Get a state mediator to the passed extent. If extent is incompatible return
-	 * null; if no mediation is needed, return an identity mediator, which all
-	 * implementations should provide.
-	 * 
-	 * @param extent the foreign extent to mediate to and from.
-	 * @return the configured mediator or null
-	 * @throw {@link IllegalArgumentException} if called improperly
-	 */
-	public abstract ScaleMediator getMediator(Extent extent);
 
 	/** {@inheritDoc} */
 	@Override
-	Extent merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption...options);
+	T merge(T other, LogicalConnector how);
 
 	/**
 	 * Return the n-th state of the ordered topology as a new extent with one state.
@@ -168,6 +117,6 @@ public interface Extent extends Locator, Topology<Extent>, Geometry.Dimension {
 	 * @return a new extent with getValueCount() == 1, or this if it is 1-sized and
 	 *         0 is passed.
 	 */
-	Extent getExtent(long stateIndex);
+	T getExtent(long stateIndex);
 
 }

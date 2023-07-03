@@ -49,12 +49,12 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Time extends Extent {
+public interface Time extends Extent<Time> {
 
     /** Constant <code>MIN_SCALE_RANK=0</code> */
     int MIN_SCALE_RANK = 0;
-    /** Constant <code>MAX_SCALE_RANK=19</code> */
-    int MAX_SCALE_RANK = 19;
+    /** Constant <code>MAX_SCALE_RANK=10</code> */
+    int MAX_SCALE_RANK = 10;
 
     static public interface Resolution {
 
@@ -420,25 +420,5 @@ public interface Time extends Extent {
      * @return
      */
     boolean hasChangeDuring(Time time);
-
-    /**
-     * Override the result for fluency
-     * 
-     * @return
-     */
-    @Override
-    Time getBoundingExtent();
-
-    /**
-     * Override the result for fluency
-     */
-    @Override
-    Time mergeContext(Extent extent);
-
-    /**
-     * Override the result for fluency
-     */
-    @Override
-    Time merge(TopologicallyComparable<?> other, LogicalConnector how, MergingOption... options);
 
 }

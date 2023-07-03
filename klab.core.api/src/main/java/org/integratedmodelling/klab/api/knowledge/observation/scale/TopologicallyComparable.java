@@ -22,17 +22,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @version $Id: $Id
  * @param <T> the generic type
  */
-public interface TopologicallyComparable<T> {
-
-    /**
-     * Tentative - options for the merge functions in children.
-     * 
-     * @author Ferd
-     *
-     */
-    enum MergingOption {
-        BOUNDARIES_ONLY
-    }
+public interface TopologicallyComparable<T extends TopologicallyComparable<T>> {
 
     /**
      * <p>
@@ -81,7 +71,6 @@ public interface TopologicallyComparable<T> {
      *         {@link org.integratedmodelling.klab.api.observations.scale.TopologicallyComparable}
      *         object.
      */
-    TopologicallyComparable<? extends T> merge(TopologicallyComparable<?> other, LogicalConnector how,
-            MergingOption... options);
+    T merge(T other, LogicalConnector how);
 
 }

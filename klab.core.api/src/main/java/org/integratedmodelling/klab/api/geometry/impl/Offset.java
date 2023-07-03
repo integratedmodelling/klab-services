@@ -70,7 +70,7 @@ public class Offset implements Locator {
      */
     private Geometry geometry = null;
 
-    private MultidimensionalCursor cursor;
+    private NDCursor cursor;
 
     Offset() {
     }
@@ -97,9 +97,9 @@ public class Offset implements Locator {
         this.coverage = coverage;
     }
 
-    public MultidimensionalCursor getCursor() {
+    public NDCursor getCursor() {
         if (this.cursor == null) {
-            this.cursor = new MultidimensionalCursor(geometry);
+            this.cursor = new NDCursor(geometry);
         }
         return this.cursor;
     }
@@ -109,7 +109,7 @@ public class Offset implements Locator {
     }
 
     public long[] computeOffsets(long pos, Geometry geometry) {
-        return getCursor().getElementIndexes(pos);
+        return getCursor().getIndices(pos);
     }
 
     /**
@@ -259,11 +259,11 @@ public class Offset implements Locator {
         }
         throw new IllegalArgumentException("cannot adapt this offset to a " + cls.getCanonicalName());
     }
-
-    @Override
-    public Geometry geometry() {
-        return geometry;
-    }
+//
+//    @Override
+//    public Geometry geometry() {
+//        return geometry;
+//    }
 
     public void setGeometry(Geometry geometry) {
         this.geometry = geometry;
@@ -346,7 +346,7 @@ public class Offset implements Locator {
         return new Offset();
     }
 
-    @Override
+//    @Override
     public double getCoverage() {
         return coverage;
     }

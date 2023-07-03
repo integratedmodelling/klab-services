@@ -73,7 +73,7 @@ public class GBIFAuthority implements Authority {
         
         this.db = DBMaker.fileDB(Configuration.INSTANCE.getDataPath("authorities") + File.separator + "gbif_ids.db")
                 .transactionEnable().closeOnJvmShutdown().make();
-        this.cache = db.treeMap("collectionName", GroupSerializer.STRING, GroupSerializer.STRING).createOrOpen();
+        this.cache = db.treeMap("gbifAuthority", GroupSerializer.STRING, GroupSerializer.STRING).createOrOpen();
 
         this.capabilities = new AuthorityReference();
         this.capabilities.setSearchable(true);
