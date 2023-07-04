@@ -32,27 +32,15 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 	}
 
 	@Override
-	public Time getBoundingExtent() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public double getDimensionSize(Unit unit) {
+	public double getDimensionSize() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
-	public Pair<Double, Unit> getStandardizedDimension(Locator locator) {
+	public double getStandardizedDimension(Locator locator) {
 		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Time merge(Time other, LogicalConnector how) {
-		// TODO Auto-generated method stub
-		return null;
+		return 0;
 	}
 
 	@Override
@@ -86,7 +74,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 	}
 
 	@Override
-	public Time collapse() {
+	public Time collapsed() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -191,6 +179,24 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 	public boolean hasChangeDuring(Time time) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public Unit getDimensionUnit() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isEmpty() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Extent<?> merge(Extent<?> other, LogicalConnector how) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

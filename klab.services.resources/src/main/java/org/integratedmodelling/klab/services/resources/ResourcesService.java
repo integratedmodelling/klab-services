@@ -34,7 +34,6 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -48,7 +47,6 @@ import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.Authentication;
@@ -334,7 +332,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 		} else if (!this.scope.isExclusive()) {
 
-			for (ResourceProvider service : Services.INSTANCE.getFederatedResources()) {
+			for (ResourceProvider service : Services.INSTANCE.getFederatedResources(scope)) {
 				KimNamespace candidate = service.resolveNamespace(urn, scope);
 				if (candidate != null) {
 					// FIXME this causes more traffic than we should cause - maybe limit full scan
@@ -364,7 +362,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 			return ret;
 		} else if (!this.scope.isExclusive()) {
 
-			for (ResourceProvider service : Services.INSTANCE.getFederatedResources()) {
+			for (ResourceProvider service : Services.INSTANCE.getFederatedResources(scope)) {
 				KActorsBehavior candidate = service.resolveBehavior(urn, scope);
 				if (candidate != null) {
 					// FIXME this causes more traffic than we should cause - maybe limit full scan
@@ -697,7 +695,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	}
 
 	@Override
-	public List<Pair<KimModelStatement, Double>> queryModels(Observable observable, ContextScope scope) {
+	public ResourceSet queryModels(Observable observable, ContextScope scope) {
 		// TODO Auto-generated method stub
 		return null;
 	}

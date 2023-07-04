@@ -270,15 +270,15 @@ public interface Geometry extends Serializable, Locator {
      */
     String encode(Encoding... options);
 
-    /**
-     * A geometry may imply another for component objects. E.g. spatial data may have geometry and
-     * define objects within it, with different geometry constrained by this.
-     * 
-     * Was using Optional but it does not serialize well - do not do that.
-     * 
-     * @return the optional child geometry, or null.
-     */
-    Geometry getChild();
+//    /**
+//     * A geometry may imply another for component objects. E.g. spatial data may have geometry and
+//     * define objects within it, with different geometry constrained by this.
+//     * 
+//     * Was using Optional but it does not serialize well - do not do that.
+//     * 
+//     * @return the optional child geometry, or null.
+//     */
+//    Geometry getChild();
 
     /**
      * Return all the dimensions this geometry. Dimensions are reinterpreted through the worldview
@@ -376,15 +376,15 @@ public interface Geometry extends Serializable, Locator {
      */
     boolean infiniteTime();
 
-    /**
-     * Quickly check for dimensional compatibility with the geometry specified by the passed string.
-     * Intended for simple tests for type, dimensionality, regularity and shape if defined by both
-     * this and the operand.
-     * 
-     * @param string
-     * @return true if compatible.
-     */
-    boolean is(String dimensionSpecifications);
+//    /**
+//     * Quickly check for dimensional compatibility with the geometry specified by the passed string.
+//     * Intended for simple tests for type, dimensionality, regularity and shape if defined by both
+//     * this and the operand.
+//     * 
+//     * @param string
+//     * @return true if compatible.
+//     */
+//    boolean is(String dimensionSpecifications);
 
 
 }

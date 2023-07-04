@@ -77,7 +77,7 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 *
 	 * @return the extents
 	 */
-	List<Extent> getExtents();
+	List<Extent<?>> getExtents();
 
 	/**
 	 * Return true only if he scale has > 0 extents and any of them is empty, so
@@ -87,35 +87,35 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 */
 	boolean isEmpty();
 
-	/**
-	 * Merge in another scale (possibly limited to specified extents) to return a
-	 * new scale that best represents the common traits in both, seeing the passed
-	 * scale as a constraint. Used to build the "common" scale of a dataflow before
-	 * contextualization, where the passed scale is that of the desired context and
-	 * this is the scale of a model or computation used in it.
-	 * 
-	 * In detail, for each extent of the outgoing scale:
-	 * <ul>
-	 * <li>If this does not have an extent that the passed scale has, the result
-	 * should adopt it as is.</li>
-	 * <li>If this has an extent that the passed scale does not have, the result
-	 * should <em>not</em> contain it.</li>
-	 * <li>Boundaries should be inherited from the passed scale. The result can
-	 * shrink but it cannot grow beyond the common boundaries.</li>
-	 * <li>If this is distributed in the common extents, the result should stay
-	 * distributed. If the incoming scale is distributed and this is not, the result
-	 * should become distributed. If both are distributed, choices of representation
-	 * may need to be made: the result's representation should be the incoming one
-	 * as much as possible, to prevent costly mediations.</li>
-	 * <li>If the result is distributed, the resolution should be our resolution if
-	 * this was distributed, or the incoming resolution if not.</li>
-	 * </ul>
-	 * 
-	 * @param scale      the scale to merge in
-	 * @param dimensions the dimension on which to perform the merge; if no
-	 *                   dimensions are passed, merge all dimensions
-	 */
-	public Scale mergeContext(Scale scale, Dimension.Type... dimensions);
+//	/**
+//	 * Merge in another scale (possibly limited to specified extents) to return a
+//	 * new scale that best represents the common traits in both, seeing the passed
+//	 * scale as a constraint. Used to build the "common" scale of a dataflow before
+//	 * contextualization, where the passed scale is that of the desired context and
+//	 * this is the scale of a model or computation used in it.
+//	 * 
+//	 * In detail, for each extent of the outgoing scale:
+//	 * <ul>
+//	 * <li>If this does not have an extent that the passed scale has, the result
+//	 * should adopt it as is.</li>
+//	 * <li>If this has an extent that the passed scale does not have, the result
+//	 * should <em>not</em> contain it.</li>
+//	 * <li>Boundaries should be inherited from the passed scale. The result can
+//	 * shrink but it cannot grow beyond the common boundaries.</li>
+//	 * <li>If this is distributed in the common extents, the result should stay
+//	 * distributed. If the incoming scale is distributed and this is not, the result
+//	 * should become distributed. If both are distributed, choices of representation
+//	 * may need to be made: the result's representation should be the incoming one
+//	 * as much as possible, to prevent costly mediations.</li>
+//	 * <li>If the result is distributed, the resolution should be our resolution if
+//	 * this was distributed, or the incoming resolution if not.</li>
+//	 * </ul>
+//	 * 
+//	 * @param scale      the scale to merge in
+//	 * @param dimensions the dimension on which to perform the merge; if no
+//	 *                   dimensions are passed, merge all dimensions
+//	 */
+//	public Scale mergeContext(Scale scale, Dimension.Type... dimensions);
 
 	/**
 	 * {@inheritDoc}
@@ -130,7 +130,6 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 * <p>
 	 * Must not modify the original scales.
 	 */
-	@Override
 	Scale merge(Scale other, LogicalConnector how);
 
 	/**
@@ -147,6 +146,14 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 */
 	Scale termination();
 
+	/**
+	 * Get the extent of the specified type, or null.
+	 * 
+	 * @param extentType
+	 * @return
+	 */
+	Extent<?> extent(Dimension.Type extentType);
+	
 	/**
 	 * Return a new scale that will iterate through all dimensions except the passed
 	 * one. To be used in an outer for() loop when a particular dimension must be

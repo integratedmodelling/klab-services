@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
@@ -11,7 +12,8 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
-public class RuntimeService implements org.integratedmodelling.klab.api.services.RuntimeService {
+public class RuntimeService implements org.integratedmodelling.klab.api.services.RuntimeService,
+		org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
 	private static final long serialVersionUID = -3119521647259754846L;
 
@@ -67,6 +69,12 @@ public class RuntimeService implements org.integratedmodelling.klab.api.services
 	 */
 	@Override
 	public <T> T getLibraryMethod(ServiceCall call, Class<T> resultClass) {
+		return null;
+	}
+
+	@Override
+	public Map<String, String> getExceptionTestcases(boolean deleteExisting) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 

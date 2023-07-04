@@ -18,23 +18,25 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Topologicall
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
- * A {@code ICoverage} A coverage is a scale that keeps information about how
- * much of its extents is being covered by other extents. Coverage is
- * initialized at 0 or 1 and can be modified only by merging in conformant
- * scales. It represents the total coverage for an observation or a computation
- * during or after resolution. Merge operations do not change the underlying
- * scale but will modify the fraction of the original extents that is covered.
+ * A {@code Coverage} is a scale that only uses collapsed extents
+ * ({@link #size()} == 1}) and keeps information about how much of its extents
+ * is being covered by any other extents merged into it, so that successive
+ * merges can be compared for contribution. Coverage is initialized at 0 or 1
+ * and can be modified only by merging in conformant scales, which either
+ * subtract (if merged with {@link LogicalConnector#INTERSECTION} mode) or add (
+ * {@link LogicalConnector#UNION}) to the covered proportion of extent.
+ *
  * <p>
- * A {@code ICoverage} redefines the
- * {@link org.integratedmodelling.klab.api.Scale.scale.IScale#merge(TopologicallyComparable, LogicalConnector)}
- * method to only perform a union when the resulting coverage adds enough
- * coverage. The {@link #getGain()} can be called on the result to check if the
- * merge produced any significant increment or decrement in coverage.
+ * A {@code Coverage} redefines the
+ * {@link Scale#merge(TopologicallyComparable, LogicalConnector)} method to only
+ * perform a union when the resulting coverage adds enough coverage. The
+ * {@link #getGain()} can be called on the result to check if the merge produced
+ * any significant increment or decrement in coverage.
  * <p>
- * Due to the reinterpretation of the meaning of merging, it is essential that a
- * coverage is not used as a scale when merging is involved. Implementations
- * should provide type safety through using explicit types and not interfaces in
- * crucial APIs.
+ * Due to the collapsing of extents and the reinterpretation of the meaning of
+ * merging, it is essential that a coverage is not used as a regular scale, with
+ * which it is compatible otherwise. Also note that
+ * {@link LogicalConnector#EXCLUSION} merging is unimplemented at the moment.
  * <p>
  *
  * @author Ferd

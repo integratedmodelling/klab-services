@@ -15,9 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -71,52 +69,63 @@ public interface Extent<T extends TopologicallyComparable<T>> extends Locator, T
 
 	/**
 	 * Collapse the multiplicity and return the extent that represents the full
-	 * extent of our topology in one single state. This extent may not be of the
-	 * same class.
+	 * extent of our topology with one single state. This extent may not be of the
+	 * same class. Coverage must be accurate and the "boundaries" should be the
+	 * same.
 	 *
 	 * @return a new extent with size() == 1.
 	 */
-	T collapse();
+	Extent<T> collapsed();
 
 	/**
-	 * Return the simplest boundary that can be compared to another coming from an
-	 * extent of the same type. This should be a "bounding box" that ignores
-	 * internal structure and shape and behaves with optimal efficiency when merged
-	 * with others.
-	 * 
-	 * @return the boundary.
-	 */
-	T getBoundingExtent();
-
-	/**
-	 * Return the dimensional coverage in the passed unit, which must be compatible
-	 * or a {@link KIllegalArgumentException} should be thrown.
+	 * Return the dimensional coverage in the unit returned by
+	 * {@link #getDimensionUnit()}.
 	 * 
 	 * @param unit
 	 * @return
 	 */
-	double getDimensionSize(Unit unit);
+	double getDimensionSize();
 
 	/**
-	 * Return the standardized (SI) dimension of the extent at the passed locator
-	 * along with the unit it's in.
+	 * The unit of the dimensional coverage. May be null if the dimension is not
+	 * physical.
 	 * 
 	 * @return
 	 */
-	Pair<Double, Unit> getStandardizedDimension(Locator locator);
-
-
-	/** {@inheritDoc} */
-	@Override
-	T merge(T other, LogicalConnector how);
+	Unit getDimensionUnit();
 
 	/**
-	 * Return the n-th state of the ordered topology as a new extent with one state.
+	 * Return the standardized (SI) dimension of the extent at the passed locator in
+	 * the unit returned by {@link #getDimensionUnit()}.
+	 * 
+	 * @return
+	 */
+	double getStandardizedDimension(Locator locator);
+
+	/**
+	 * Produce the most suitable merged extent from a merge with the passed other.
+	 * 
+	 * @param other
+	 * @param how
+	 * @return
+	 */
+	Extent<?> merge(Extent<?> other, LogicalConnector how);
+
+	/**
+	 * Return the n-th state of the ordered topology as a new extent.
 	 * 
 	 * @param stateIndex must be between 0 and {@link #size()}, exclusive.
-	 * @return a new extent with getValueCount() == 1, or this if it is 1-sized and
-	 *         0 is passed.
+	 * @return a new extent, normally with {@link #size()} == 1, or this if it is
+	 *         1-sized and 0 is passed.
 	 */
 	T getExtent(long stateIndex);
+
+	/**
+	 * An empty extent covers nothing, has {@link #size()} == 0 and implies an empty
+	 * observation.
+	 * 
+	 * @return
+	 */
+	boolean isEmpty();
 
 }

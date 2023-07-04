@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
@@ -22,7 +23,7 @@ public interface RuntimeService extends KlabService {
 	 *
 	 */
 	interface Capabilities extends ServiceCapabilities {
-		
+
 	}
 
 	Capabilities getCapabilities();
@@ -46,5 +47,18 @@ public interface RuntimeService extends KlabService {
 	 * @return
 	 */
 	<T> T getLibraryMethod(ServiceCall call, Class<T> resultClass);
+
+	interface Admin {
+
+		/**
+		 * If runtime exceptions have caused the building of test cases, retrieve them
+		 * as a map of case class->source code, with the option of deleting them after
+		 * responding.
+		 * 
+		 * @param deleteExisting
+		 * @return
+		 */
+		Map<String, String> getExceptionTestcases(boolean deleteExisting);
+	}
 
 }

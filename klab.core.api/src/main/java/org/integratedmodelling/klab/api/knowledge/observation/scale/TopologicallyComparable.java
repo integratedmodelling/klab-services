@@ -57,20 +57,5 @@ public interface TopologicallyComparable<T extends TopologicallyComparable<T>> {
      */
     boolean intersects(T o);
 
-    /**
-     * <p>
-     * merge.
-     * </p>
-     *
-     * @param other a
-     *        {@link org.integratedmodelling.klab.api.observations.scale.TopologicallyComparable}
-     *        object.
-     * @param how a {@link org.integratedmodelling.klab.common.LogicalConnector} object.
-     * @param options affect the merge result
-     * @return a
-     *         {@link org.integratedmodelling.klab.api.observations.scale.TopologicallyComparable}
-     *         object.
-     */
-    T merge(T other, LogicalConnector how);
 
 }

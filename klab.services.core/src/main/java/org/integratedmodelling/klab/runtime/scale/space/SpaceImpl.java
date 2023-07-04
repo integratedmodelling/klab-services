@@ -2,9 +2,9 @@ package org.integratedmodelling.klab.runtime.scale.space;
 
 import java.util.Iterator;
 
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
@@ -31,32 +31,18 @@ public class SpaceImpl extends ExtentImpl<Space> implements Space {
 	}
 
 	@Override
-	public Space collapse() {
+	public Space collapsed() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Space getBoundingExtent() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public double getDimensionSize(Unit unit) {
+	public double getDimensionSize() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	@Override
-	public Pair<Double, Unit> getStandardizedDimension(Locator locator) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Space merge(Space other, LogicalConnector how) {
-		// TODO Auto-generated method stub
+	public Unit getDimensionUnit() {
 		return null;
 	}
 
@@ -162,6 +148,21 @@ public class SpaceImpl extends ExtentImpl<Space> implements Space {
 		return 0;
 	}
 
+	@Override
+	public double getStandardizedDimension(Locator locator) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 
+	@Override
+	public boolean isEmpty() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
+	@Override
+	public Extent<?> merge(Extent<?> other, LogicalConnector how) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

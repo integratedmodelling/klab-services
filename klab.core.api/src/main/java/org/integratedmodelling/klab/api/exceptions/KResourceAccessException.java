@@ -46,20 +46,20 @@ public class KResourceAccessException extends KException {
 		super(message);
 	}
 
-	/**
-	 * @param message
-	 * @param scope
-	 */
-	public KResourceAccessException(String message, Artifact scope) {
-		super(message, scope);
-	}
-
-	/**
-	 * @param message
-	 * @param scope
-	 */
-	public KResourceAccessException(Throwable message, Artifact scope) {
-		super(message, scope);
-	}
+//	/**
+//	 * @param message
+//	 * @param scope
+//	 */
+//	public KResourceAccessException(String message, Artifact scope) {
+//		super(message, scope);
+//	}
+//
+//	/**
+//	 * @param message
+//	 * @param scope
+//	 */
+//	public KResourceAccessException(Throwable message, Artifact scope) {
+//		super(message, scope);
+//	}
 
 }

@@ -281,7 +281,7 @@ public interface Time extends Extent<Time> {
      * against the API, and is the most logical way to enforce that getValueCount() == 1.
      */
     @Override
-    Time collapse();
+    Time collapsed();
 
     @Override
     Time getExtent(long stateIndex);

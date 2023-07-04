@@ -807,7 +807,7 @@ public class GeometryImpl implements Geometry {
         return this.coverage;
     }
 
-    @Override
+//    @Override
     public Geometry getChild() {
         return child;
     }
@@ -1548,7 +1548,7 @@ public class GeometryImpl implements Geometry {
         return null;
     }
 
-    @Override
+//    @Override
     public boolean is(String string) {
 
         /*

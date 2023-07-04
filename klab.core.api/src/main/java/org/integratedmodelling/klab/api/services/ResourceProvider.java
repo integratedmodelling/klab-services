@@ -7,7 +7,6 @@ import java.util.List;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -16,11 +15,10 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
 public interface ResourceProvider extends KlabService {
 
@@ -188,15 +186,17 @@ public interface ResourceProvider extends KlabService {
 	List<String> queryResources(String urnPattern, KlabAsset.KnowledgeClass... resourceTypes);
 
 	/**
-	 * Return the list of candidate models for the passed observables in the passed
-	 * scope (which will provide the reasoner service), accompanied by their score,
-	 * in decreasing score order.
+	 * Return the candidate models for the passed observables in the passed scope
+	 * (which will provide the reasoner service). The result should contain an
+	 * unordered list of candidate model URNs (in {@link ResourceSet#getUrns()})
+	 * along with the needed resources, namespaces and behaviors needed to run them.
+	 * Prioritization happens in the resolver.
 	 * 
 	 * @param observable
 	 * @param scope
 	 * @return
 	 */
-	List<Pair<KimModelStatement, Double>> queryModels(Observable observable, ContextScope scope);
+	ResourceSet queryModels(Observable observable, ContextScope scope);
 
 	/**
 	 * Admin interface to submit/remove projects and configure the service.

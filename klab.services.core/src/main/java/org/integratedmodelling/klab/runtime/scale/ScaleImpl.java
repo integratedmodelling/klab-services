@@ -1,15 +1,14 @@
 package org.integratedmodelling.klab.runtime.scale;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -17,6 +16,8 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 public class ScaleImpl implements Scale {
 
 	private static final long serialVersionUID = -4518044986262539876L;
+
+	Extent<?>[] extents;
 
 	/**
 	 * Internal locator class f. Uses the enclosing scale in a lazy fashion for
@@ -28,7 +29,8 @@ public class ScaleImpl implements Scale {
 	 * @author Ferd
 	 *
 	 */
-	abstract class ScaleLocator extends ScaleImpl {
+	abstract class ScaleLocator extends DelegatingScale {
+		
 		private static final long serialVersionUID = 797929992176158102L;
 		boolean empty;
 		long offset;
@@ -38,6 +40,7 @@ public class ScaleImpl implements Scale {
 
 	/**
 	 * For >1 extents changing at the same time.
+	 * 
 	 * @author Ferd
 	 *
 	 */
@@ -53,8 +56,8 @@ public class ScaleImpl implements Scale {
 	}
 
 	/**
-	 * Internal locator class for the situation where a single dimension is
-	 * changing and the others are locked at a specified extent.
+	 * Internal locator class for the situation where a single dimension is changing
+	 * and the others are locked at a specified extent.
 	 * 
 	 * @author Ferd
 	 *
@@ -101,6 +104,19 @@ public class ScaleImpl implements Scale {
 
 	};
 
+	public ScaleImpl(Iterable<Extent<?>> extents) {
+		// TODO Auto-generated constructor stub
+	}
+	
+	protected void adoptExtents(Collection<Extent<?>> extents) {
+		// TODO was setExtents()
+	}
+	
+    protected void sort() {
+    	// TODO
+	}
+
+
 	@Override
 	public <T extends Locator> T as(Class<T> cls) {
 		// TODO Auto-generated method stub
@@ -114,12 +130,6 @@ public class ScaleImpl implements Scale {
 
 	@Override
 	public String encode(Encoding... options) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Geometry getChild() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -162,12 +172,6 @@ public class ScaleImpl implements Scale {
 
 	@Override
 	public boolean infiniteTime() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean is(String dimensionSpecifications) {
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -221,7 +225,7 @@ public class ScaleImpl implements Scale {
 	}
 
 	@Override
-	public List<Extent> getExtents() {
+	public List<Extent<?>> getExtents() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -232,7 +236,7 @@ public class ScaleImpl implements Scale {
 		return false;
 	}
 
-	@Override
+//	@Override
 	public Scale mergeContext(Scale scale, Type... dimensions) {
 		// TODO Auto-generated method stub
 		return null;
@@ -279,5 +283,170 @@ public class ScaleImpl implements Scale {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public Extent<?> extent(Type extentType) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	/*
+	 * Default base for locators, delegating anything not explicitly overridden to
+	 * the containing instance.
+	 * 
+	 * @author Ferd
+	 *
+	 */
+	class DelegatingScale implements Scale {
+
+		private static final long serialVersionUID = -8416028789360949571L;
+
+		@Override
+		public String encode(Encoding... options) {
+			return ScaleImpl.this.encode(options);
+		}
+
+		@Override
+		public List<Dimension> getDimensions() {
+			return ScaleImpl.this.getDimensions();
+		}
+
+		@Override
+		public Dimension dimension(Type type) {
+			return ScaleImpl.this.dimension(type);
+		}
+
+		@Override
+		public Granularity getGranularity() {
+			return ScaleImpl.this.getGranularity();
+		}
+
+		@Override
+		public boolean isGeneric() {
+			return ScaleImpl.this.isGeneric();
+		}
+
+		@Override
+		public boolean isScalar() {
+			return ScaleImpl.this.isScalar();
+		}
+
+		@Override
+		public long size() {
+			return ScaleImpl.this.size();
+		}
+
+		@Override
+		public boolean infiniteTime() {
+			return ScaleImpl.this.infiniteTime();
+		}
+		
+		@Override
+		public <T extends Locator> T as(Class<T> cls) {
+			return ScaleImpl.this.as(cls);
+		}
+
+		@Override
+		public boolean contains(Scale o) {
+			return ScaleImpl.this.contains(o);
+		}
+
+		@Override
+		public boolean overlaps(Scale o) {
+			return ScaleImpl.this.overlaps(o);
+		}
+
+		@Override
+		public boolean intersects(Scale o) {
+			return ScaleImpl.this.intersects(o);
+		}
+
+		@Override
+		public Iterator<Scale> iterator() {
+			return ScaleImpl.this.iterator();
+		}
+
+		@Override
+		public Space getSpace() {
+			return ScaleImpl.this.getSpace();
+		}
+
+		@Override
+		public Time getTime() {
+			return ScaleImpl.this.getTime();
+		}
+
+		@Override
+		public boolean isTemporallyDistributed() {
+			return ScaleImpl.this.isTemporallyDistributed();
+		}
+
+		@Override
+		public boolean isSpatiallyDistributed() {
+			return ScaleImpl.this.isSpatiallyDistributed();
+		}
+
+		@Override
+		public int getExtentCount() {
+			return ScaleImpl.this.getExtentCount();
+		}
+
+		@Override
+		public List<Extent<?>> getExtents() {
+			return ScaleImpl.this.getExtents();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return ScaleImpl.this.isEmpty();
+		}
+
+//		@Override
+//		public Scale mergeContext(Scale scale, Type... dimensions) {
+//			return ScaleImpl.this.mergeContext(scale, dimensions);
+//		}
+
+		@Override
+		public Scale merge(Scale other, LogicalConnector how) {
+			return ScaleImpl.this.merge(other, how);
+		}
+
+		@Override
+		public Scale initialization() {
+			return ScaleImpl.this.initialization();
+		}
+
+		@Override
+		public Scale termination() {
+			return ScaleImpl.this.termination();
+		}
+
+		@Override
+		public Scale except(Type dimension) {
+			return ScaleImpl.this.except(dimension);
+		}
+
+		@Override
+		public Scale without(Type dimension) {
+			return ScaleImpl.this.without(dimension);
+		}
+
+		@Override
+		public Scale at(Object... dimensions) {
+			return ScaleImpl.this.at(dimensions);
+		}
+
+		@Override
+		public Scale collapse(Type... dimensions) {
+			return ScaleImpl.this.collapse(dimensions);
+		}
+
+		@Override
+		public Extent<?> extent(Type extentType) {
+			return ScaleImpl.this.extent(extentType);
+		}
+
+	}
+
 
 }

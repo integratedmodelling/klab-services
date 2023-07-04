@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.Collection;
 
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-
 public interface Workspace extends Serializable {
     
     /**
@@ -16,7 +14,7 @@ public interface Workspace extends Serializable {
     String getName();
 
     /**
-     * Names of all projects managed under this workspace.
+     * All projects managed under this workspace.
      * 
      * @return all project names
      */
@@ -30,11 +28,4 @@ public interface Workspace extends Serializable {
      */
     URL getURL();
 
-    /**
-     * Find the named namespace in all the projects this workspace manages.
-     * 
-     * @param id
-     * @return the namespace or null
-     */
-    KimNamespace findNamespace(String id);
 }

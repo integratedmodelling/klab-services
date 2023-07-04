@@ -18,8 +18,6 @@ package org.integratedmodelling.klab.api.exceptions;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-
 /**
  * The Class KlabException.
  *
@@ -29,7 +27,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 public class KException extends RuntimeException {
 
     private static final long serialVersionUID = 5999457326224959271L;
-    private Artifact scope;
+//    private Artifact scope;
 
     /**
      * Instantiates a new klab exception.
@@ -68,27 +66,27 @@ public class KException extends RuntimeException {
         super(arg0);
     }
     
-    /**
-     * Instantiates a new klab exception.
-     *
-     * @param arg0 the arg 0
-     * @param scope the scope
-     */
-    public KException(String arg0, Artifact scope) {
-        super(arg0);
-        this.scope = scope;
-    }
+//    /**
+//     * Instantiates a new klab exception.
+//     *
+//     * @param arg0 the arg 0
+//     * @param scope the scope
+//     */
+//    public KException(String arg0, Artifact scope) {
+//        super(arg0);
+//        this.scope = scope;
+//    }
 
-    /**
-     * Instantiates a new klab exception.
-     *
-     * @param arg0 the arg 0
-     * @param scope the scope
-     */
-    public KException(Throwable arg0, Artifact scope) {
-        super(arg0);
-        this.scope = scope;
-    }
+//    /**
+//     * Instantiates a new klab exception.
+//     *
+//     * @param arg0 the arg 0
+//     * @param scope the scope
+//     */
+//    public KException(Throwable arg0, Artifact scope) {
+//        super(arg0);
+//        this.scope = scope;
+//    }
 
     /**
      * Stack trace.
@@ -101,13 +99,13 @@ public class KException extends RuntimeException {
         return sw.toString();
     }
 
-    /**
-     * Gets the scope.
-     *
-     * @return the scope
-     */
-    public Artifact getScope() {
-        return scope;
-    }
+//    /**
+//     * Gets the scope.
+//     *
+//     * @return the scope
+//     */
+//    public Artifact getScope() {
+//        return scope;
+//    }
 
 }

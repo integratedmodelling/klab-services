@@ -15,9 +15,7 @@ import org.integratedmodelling.klab.api.services.CurrencyService;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
-import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
@@ -121,7 +119,7 @@ public enum Services {
 //		this.runtime = runtime;
 //	}
 
-	public List<Reasoner> getFederatedRuntimes() {
+	public List<Reasoner> getFederatedRuntimes(Scope scope) {
 		return federatedRuntimes;
 	}
 
@@ -129,7 +127,7 @@ public enum Services {
 //		this.federatedRuntimes = federatedRuntimes;
 //	}
 
-	public List<ResourceProvider> getFederatedResources() {
+	public List<ResourceProvider> getFederatedResources(Scope scope) {
 		return federatedResources;
 	}
 

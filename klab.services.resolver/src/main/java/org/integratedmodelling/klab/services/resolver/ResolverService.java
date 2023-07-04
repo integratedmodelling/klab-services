@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resolver;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
@@ -9,6 +10,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -102,7 +104,7 @@ public class ResolverService implements Resolver {
 		if (previous != null) {
 			return previous;
 		}
-		
+
 		return node;
 	}
 
@@ -119,6 +121,21 @@ public class ResolverService implements Resolver {
 	@Override
 	public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * Query all the resource servers available in the scope to find the models that
+	 * can observe the passed observable. The result should be ranked in decreasing
+	 * order of fit to the context and the RESOLUTION_SCORE ranking should be in
+	 * their metadata.
+	 * 
+	 * @param observable
+	 * @param scope
+	 * @return
+	 */
+	@Override
+	public List<Model> queryModels(Observable observable, ContextScope scope) {
 		return null;
 	}
 
