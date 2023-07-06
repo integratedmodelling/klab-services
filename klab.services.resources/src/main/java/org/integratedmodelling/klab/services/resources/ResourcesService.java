@@ -54,8 +54,6 @@ import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.logging.Logging;
@@ -240,7 +238,8 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 						status = new ResourceStatus();
 						status.setReviewStatus(level);
 						status.setFileLocation(subdir);
-						status.setType(hasErrors(resource) ? Type.OFFLINE : Type.AVAILABLE);
+						status.setType(Utils.Notifications.hasErrors(resource.getNotifications()) ? Type.OFFLINE
+								: Type.AVAILABLE);
 						status.setLegacy(legacy);
 						status.setKnowledgeClass(KnowledgeClass.RESOURCE);
 						// TODO fill in the rest
@@ -249,15 +248,6 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 				}
 			}
 		}
-	}
-
-	private boolean hasErrors(Resource resource) {
-		for (Notification notification : resource.getNotifications()) {
-			if (notification.getLevel() == Level.Error) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private void initializeLanguageServices() {

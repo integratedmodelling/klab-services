@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The syntactic peer of a k.LAB namespace. To be renamed when we rename the interfaces and the
@@ -42,6 +43,7 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
     private Map<String, List<String>> imports = new HashMap<>();
     private String projectName;
     private Version version;
+    private Collection<Notification> notifications = new ArrayList<>();
 
     @Override
     public String getUrn() {
@@ -195,5 +197,14 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
     public void setVersion(Version version) {
         this.version = version;
     }
+
+    @Override
+	public Collection<Notification> getNotifications() {
+		return notifications;
+	}
+
+	public void setNotifications(Collection<Notification> notifications) {
+		this.notifications = notifications;
+	}
 
 }

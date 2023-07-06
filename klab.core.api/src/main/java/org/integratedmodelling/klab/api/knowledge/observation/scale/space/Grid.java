@@ -27,8 +27,12 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
 /**
- * A grid is simply a specification for a square-tiled Tile extent. It can be
- * passed to a Tile constructor to ensure alignment of grids.
+ * A grid is the specification for a square-tiled Tile extent. It can be passed
+ * to a Tile constructor to ensure alignment of grids. Every Tile extent that is
+ * made of rectangular tiles must be able to produce the Grid that defines it.
+ * <p>
+ * Grids can be defined as k.IM class defines so that they can be stored and
+ * used to define consistent gridded spatial contexts.
  * 
  * @author Ferd
  *

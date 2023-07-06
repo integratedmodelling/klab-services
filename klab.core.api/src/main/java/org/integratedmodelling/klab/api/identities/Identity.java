@@ -174,7 +174,7 @@ public abstract interface Identity {
 	 * True if the identity is of the passed type.
 	 *
 	 * @param type a
-	 *             {@link org.integratedmodelling.klab.api.Identity.IIdentity.Type}
+	 *             {@link org.integratedmodelling.klab.api.services.resources.adapters.Identity.IIdentity.Type}
 	 *             object.
 	 * @return a boolean.
 	 */

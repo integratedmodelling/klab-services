@@ -74,7 +74,6 @@ import org.integratedmodelling.klab.api.runtime.rest.INotification;
 import org.integratedmodelling.klab.api.services.resources.impl.AttributeImpl;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 import org.integratedmodelling.klab.rest.ResourceReference;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -305,7 +304,7 @@ public class KimAdapter {
 		if (statement.getResourceUrns() != null) {
 			ret.getResourceUrns().addAll(statement.getResourceUrns());
 		}
-		ret.setSemantic(statement.isSemantic());
+//		ret.setSemantic(statement.isSemantic());
 		ret.setType(statement.isInactive() ? Artifact.Type.VOID
 				: Artifact.Type.valueOf(statement.getType().artifactType().name()));
 		ret.setUri(ret.getNamespace() + ":" + ret.getName());

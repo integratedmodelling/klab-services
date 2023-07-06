@@ -6,11 +6,16 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+import org.locationtech.jts.geom.Geometry;
 
 public class ShapeImpl extends SpaceImpl implements Shape {
 
 	private static final long serialVersionUID = 5154895981013940462L;
 
+	private Geometry geometry;
+
+	transient private Geometry standardizedGeometry;
+	
 	@Override
 	public ShapeImpl at(Object... locators) {
 		// TODO Auto-generated method stub
@@ -24,7 +29,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 	}
 
 	@Override
-	public org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape.Type getGeometryType() {
+	public Shape.Type getGeometryType() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -99,6 +104,10 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 	public double getComplexity() {
 		// TODO Auto-generated method stub
 		return 0;
+	}
+
+	public Geometry standardizedGeometry() {
+		return this.geometry;
 	}
 
 }

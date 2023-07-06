@@ -53,6 +53,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 
 public class Utils {
 
@@ -356,6 +357,15 @@ public class Utils {
 			}
 
 			return Pair.of(ret.toString(), ntype);
+		}
+
+		public static boolean hasErrors(Collection<Notification> notifications) {
+			for (Notification notification : notifications) {
+				if (notification.getLevel() == Level.Error) {
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
@@ -2839,6 +2849,14 @@ public class Utils {
 
 	public static class Data {
 
+		public static boolean isData(Object c) {
+			return c != null && !(c instanceof Number && ((Number)c).doubleValue() == Double.NaN);
+		}
+		
+		public static boolean isNodata(Object c) {
+			return !isData(c);
+		}
+		
 		@SuppressWarnings("unchecked")
 		public static <E> E emptyValue(Class<E> cls) {
 			if (cls.isAssignableFrom(Collection.class)) {

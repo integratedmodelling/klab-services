@@ -57,7 +57,7 @@ public interface Shape extends Referenced, Space {
 	 * @return true if not really a shape
 	 */
 	boolean isEmpty();
-
+	
 	/**
 	 * Return the shape transformed to the passed projection.
 	 *

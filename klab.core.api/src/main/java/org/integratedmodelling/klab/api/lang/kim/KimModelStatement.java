@@ -43,12 +43,12 @@ public interface KimModelStatement extends KimActiveStatement {
 
     String getDocstring();
 
-    /**
-     * Normally true, it will return false in models that were expressed as non-semantic operations,
-     * using the 'number', 'text', etc. keywords. These are also, by default, private and are used
-     * only directly by name.
-     * 
-     * @return
-     */
-    boolean isSemantic();
+//    /**
+//     * Normally true, it will return false in models that were expressed as non-semantic operations,
+//     * using the 'number', 'text', etc. keywords. These are also, by default, private and are used
+//     * only directly by name.
+//     * 
+//     * @return
+//     */
+//    boolean isSemantic();
 }

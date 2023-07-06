@@ -16,7 +16,9 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
 /**
- * The scope for a context and any observations made within it.
+ * The scope for a context and any observations made within it. A scope is also
+ * passed around during resolution and carries scope info (namespace, project,
+ * scenarios) that is relevant to the resolver.
  * 
  * @author Ferd
  *
@@ -162,5 +164,28 @@ public interface ContextScope extends SessionScope {
 	 * @return
 	 */
 	Map<Observable, Observation> getCatalog();
+
+	/**
+	 * When resolving, the resolution namespace that provides the resolution scope
+	 * must be provided. In other situations this will be null.
+	 * 
+	 * @return
+	 */
+	String getResolutionNamespace();
+
+	/**
+	 * Same as {@link #getResolutionNamespace()}, reporting the project in scope
+	 * during resolution.
+	 * 
+	 * @return
+	 */
+	String getResolutionProject();
+
+	/**
+	 * Any scenarios set during the resolution.
+	 * 
+	 * @return
+	 */
+	Collection<String> getResolutionScenarios();
 
 }

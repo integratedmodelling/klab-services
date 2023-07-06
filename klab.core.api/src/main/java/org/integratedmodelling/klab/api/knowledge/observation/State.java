@@ -43,7 +43,7 @@ public interface State extends Observation, DataArtifact {
 	 * If this is called with a type different from the original one returned by
 	 * {@link #getType()}, an additional layer of storage is created and a
 	 * corresponding state view is returned, preserving the mapping so that calling
-	 * {@link #as(org.integratedmodelling.klab.api.provenance.SemanticType.Type)} on
+	 * {@link #as(org.integratedmodelling.klab.api.services.resources.adapters.SemanticType.Type)} on
 	 * the returned state with the original type will yield back this state. This is
 	 * used to enable differently typed intermediate computations when creating an
 	 * artifact.

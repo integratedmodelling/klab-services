@@ -18,7 +18,7 @@ public class KimModelStatementImpl extends KimActiveStatementImpl implements Kim
     private List<KimObservable> dependencies = new ArrayList<>();
     private List<KimObservable> observables = new ArrayList<>();
     private Type type;
-    private List<String> resourceUrns = new ArrayList();
+    private List<String> resourceUrns = new ArrayList<>();
     private boolean learningModel;
     private boolean interpreter;
     private boolean instantiator;
@@ -26,7 +26,7 @@ public class KimModelStatementImpl extends KimActiveStatementImpl implements Kim
     private Literal inlineValue;
     private List<Contextualizable> contextualization = new ArrayList<>();
     private String docstring;
-    private boolean semantic;
+//    private boolean semantic;
 
     @Override
     public KimConcept getReinterpretingRole() {
@@ -88,10 +88,10 @@ public class KimModelStatementImpl extends KimActiveStatementImpl implements Kim
         return this.docstring;
     }
 
-    @Override
-    public boolean isSemantic() {
-        return this.semantic;
-    }
+//    @Override
+//    public boolean isSemantic() {
+//        return this.semantic;
+//    }
 
     public void setReinterpretingRole(KimConcept reinterpretingRole) {
         this.reinterpretingRole = reinterpretingRole;
@@ -141,8 +141,8 @@ public class KimModelStatementImpl extends KimActiveStatementImpl implements Kim
         this.docstring = docstring;
     }
 
-    public void setSemantic(boolean semantic) {
-        this.semantic = semantic;
-    }
+//    public void setSemantic(boolean semantic) {
+//        this.semantic = semantic;
+//    }
 
 }

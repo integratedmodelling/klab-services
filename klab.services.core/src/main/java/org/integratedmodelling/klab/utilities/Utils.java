@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +29,12 @@ import org.integratedmodelling.kactors.api.IKActorsStatement;
 import org.integratedmodelling.kim.api.IKimAnnotation;
 import org.integratedmodelling.kim.api.IKimStatement;
 import org.integratedmodelling.kim.api.IParameters;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -45,6 +48,8 @@ import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsActionImpl;
 import org.integratedmodelling.klab.api.lang.impl.kactors.KActorsStatementImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.model.IAnnotation;
 import org.integratedmodelling.klab.data.encoding.JacksonConfiguration;
 import org.integratedmodelling.klab.exceptions.KlabException;
@@ -70,6 +75,21 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
 	public static class Collections {
+
+		public static <T1, T2> List<T1> sortMatching(List<T1> toSort, List<T2> toMatch, Comparator<T2> comparator) {
+			MatchedSorter<T1, T2> sorter = new MatchedSorter<>(toSort, toMatch, comparator);
+			return sorter.getSortedValues();
+		}
+
+		public static <T1, T2> List<Pair<T1, T2>> sortMatchingPairs(List<T1> toSort, List<T2> toMatch,
+				Comparator<T2> comparator) {
+			MatchedSorter<T1, T2> sorter = new MatchedSorter<>(toSort, toMatch, comparator);
+			List<Pair<T1, T2>> ret = new ArrayList<>();
+			for (int i = 0; i < sorter.getSortedCriteria().size(); i++) {
+				ret.add(Pair.of(sorter.getSortedValues().get(i), sorter.getSortedCriteria().get(i)));
+			}
+			return ret;
+		}
 
 		public static <T> List<T> arrayToList(T[] objects) {
 			List<T> ret = new ArrayList<>();
@@ -115,7 +135,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 				if (o instanceof Collection) {
 					ret.addAll((Collection<T>) o);
 				} else {
-					ret.add((T)o);
+					ret.add((T) o);
 				}
 			}
 			return ret;
@@ -284,22 +304,57 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 				}
 			}
 
-			/*
-			 * TODO recurse upwards based on asset type
-			 */
+			if (object instanceof KimObservable) {
 
-			if (object instanceof Model) {
-//    			collectAnnotations(((Model) object).getObservables().get(0), collection);
+//    			/*
+//    			 * collect from roles, traits and main in this order
+//    			 */
+//    			// for (IConcept role : Roles.INSTANCE.getRoles(((IObservable)
+//    			// object).getType())) {
+//    			// collectAnnotations(role, collection);
+//    			// }
+//    			for (IConcept trait : Traits.INSTANCE.getTraits(((IObservable) object).getType())) {
+//    				// FIXME REMOVE ugly hack: landcover is a type, but it's used as an attribute in
+//    				// various places so the change
+//    				// is deep. This makes landcover colormaps end up in places they shouldn't be.
+//    				// TODO check - may not be relevant anymore now that landcover is correctly a type of and not a trait.
+//    				if (!trait.getNamespace().equals("landcover")) {
+//    					collectAnnotations(trait, collection);
+//    				}
+//    			}
+//
+//    			collectAnnotations(((IObservable) object).getType(), collection);
+			} else if (object instanceof KimConcept) {
+//    			IKimObject mobject = Resources.INSTANCE.getModelObject(object.toString());
+//    			if (mobject != null) {
+//    				collectAnnotations(mobject, collection);
+//    			}
+//    			if (((IConcept) object).is(Type.CLASS)) {
+//    				// collect annotations from what is classified
+//    				IConcept classified = Observables.INSTANCE.getDescribedType((IConcept) object);
+//    				if (classified != null) {
+//    					collectAnnotations(classified, collection);
+//    				}
+//    			}
+//    			for (IConcept parent : ((IConcept) object).getParents()) {
+//    				if (!CoreOntology.CORE_ONTOLOGY_NAME.equals(parent.getNamespace())) {
+//    					collectAnnotations(parent, collection);
+//    				}
+//    			}
+			} else if (object instanceof Concept) {
+				// TODO
+			} else if (object instanceof Observable) {
+				// TODO
+			} else if (object instanceof Model) {
+				collectAnnotations(((Model) object).getObservables().get(0), collection);
 			} else if (object instanceof Instance) {
-//    			collectAnnotations(((IModel) object).getObservables().get(0), collection);
-			} /*
-				 * else if (object instanceof KimConceptDefinition) {
-				 * collectAnnotations(((IConceptDefinition) object).getStatement(), collection);
-				 * }
-				 * 
-				 * if (getParent(object) != null) { collectAnnotations(object.getParent(),
-				 * collection); }
-				 */
+				collectAnnotations(((Instance) object).getObservable(), collection);
+			}
+//
+//			if (getParent(object) != null) {
+//				collectAnnotations(object.getParent(), collection);
+//			}
+
 		}
 
 //    	private void collectAnnotations(Knowledge object, Map<String, IAnnotation> collection) {
@@ -870,6 +925,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 			return FileUtils.deleteQuietly(pdir);
 		}
 
+		public static void copyDirectory(File directory, File backupDir) {
+			try {
+				FileUtils.copyDirectory(directory, backupDir);
+			} catch (IOException e) {
+				throw new KIOException(e);
+			}
+		}
+
 	}
 
 	public static class Markdown {
@@ -1124,4 +1187,105 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
 	}
 
+	/**
+	 * Sorts an array according to the sort order of a matched other using a given
+	 * comparator. Makes up for the lovely matched sort available in C# and missing
+	 * in Java collections.
+	 *
+	 * @author Ferd
+	 * @version $Id: $Id
+	 * @param <T1> the generic type
+	 * @param <T2> the generic type
+	 */
+	private static class MatchedSorter<T1, T2> {
+
+		List<T1> _a;
+		List<T2> _criteria;
+		Comparator<T2> _comparator;
+
+		/**
+		 * Instantiates a new matched sorter.
+		 *
+		 * @param a          the a
+		 * @param criteria   the criteria
+		 * @param comparator the comparator
+		 */
+		public MatchedSorter(List<T1> a, List<T2> criteria, Comparator<T2> comparator) {
+			_a = a;
+			_criteria = criteria;
+			_comparator = comparator;
+			if (a.size() > 0) {
+				quicksort(0, a.size() - 1);
+			}
+		}
+
+		/**
+		 * Gets the sorted values.
+		 *
+		 * @return the sorted values
+		 */
+		public List<T1> getSortedValues() {
+			return _a;
+		}
+
+		/**
+		 * Gets the sorted criteria.
+		 *
+		 * @return the sorted criteria
+		 */
+		public List<T2> getSortedCriteria() {
+			return _criteria;
+		}
+
+		private void swap(int lft, int rt) {
+			T1 temp;
+			temp = _a.get(lft);
+			_a.set(lft, _a.get(rt));
+			_a.set(rt, temp);
+
+			T2 otemp = _criteria.get(lft);
+			_criteria.set(lft, _criteria.get(rt));
+			_criteria.set(rt, otemp);
+		}
+
+		private void quicksort(int low, int high) {
+
+			int i = low, j = high;
+
+			// Get the pivot element from the middle of the list
+			T2 pivot = _criteria.get(low + (high - low) / 2);
+
+			// Divide into two lists
+			while (i <= j) {
+				// If the current value from the left list is smaller then the pivot
+				// element then get the next element from the left list
+				while (_comparator.compare(_criteria.get(i), pivot) < 0) {
+					i++;
+				}
+				// If the current value from the right list is larger then the pivot
+				// element then get the next element from the right list
+				while (_comparator.compare(_criteria.get(j), pivot) > 0) {
+					j--;
+				}
+
+				// If we have found a values in the left list which is larger then
+				// the pivot element and if we have found a value in the right list
+				// which is smaller then the pivot element then we exchange the
+				// values.
+				// As we are done we can increase i and j
+				if (i <= j) {
+					swap(i, j);
+					i++;
+					j--;
+				}
+			}
+
+			// Recursion
+			if (low < j)
+				quicksort(low, j);
+			if (i < high)
+				quicksort(i, high);
+		}
+
+	}
 }

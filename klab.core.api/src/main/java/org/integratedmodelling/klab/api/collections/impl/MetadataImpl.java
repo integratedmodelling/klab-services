@@ -13,11 +13,14 @@
  */
 package org.integratedmodelling.klab.api.collections.impl;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.MetadataConvention;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The Class Metadata.
@@ -95,5 +98,11 @@ public class MetadataImpl extends ParametersImpl<String> implements Metadata {
     public String getUrl() {
         return get(DC_URL, "No URL");
     }
+
+	@Override
+	public Collection<Notification> validate(MetadataConvention convention) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
