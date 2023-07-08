@@ -3,19 +3,20 @@ package org.integratedmodelling.klab.api.knowledge;
 import java.util.Collection;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.provenance.Activity;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**
@@ -809,4 +810,12 @@ public interface Observable extends Semantics {
 	 */
 	String getModelReference();
 
+	public static Observable promote(Concept concept) {
+		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+		if (configuration == null) {
+			throw new KIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+		}
+		return configuration.promoteConceptToObservable(concept);
+	}
+	
 }

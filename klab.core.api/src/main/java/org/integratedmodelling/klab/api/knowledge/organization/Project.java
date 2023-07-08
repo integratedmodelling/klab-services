@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -113,5 +114,13 @@ public interface Project extends Serializable {
 	 * @return
 	 */
 	List<Notification> getNotifications();
+
+	/**
+	 * Return any user/group privileges set for the project. If none are set, return
+	 * {@link ResourcePrivileges#PUBLIC}.
+	 * 
+	 * @return
+	 */
+	ResourcePrivileges getPrivileges();
 
 }

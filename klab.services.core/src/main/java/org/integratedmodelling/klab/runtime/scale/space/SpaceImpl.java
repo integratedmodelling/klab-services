@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
+import java.util.Collection;
 import java.util.Iterator;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
@@ -164,5 +165,11 @@ public class SpaceImpl extends ExtentImpl<Space> implements Space {
 	public Extent<?> merge(Extent<?> other, LogicalConnector how) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean matches(Collection<Constraint> constraints) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

@@ -14,6 +14,8 @@ public interface KimModelStatement extends KimActiveStatement {
 
     List<KimObservable> getObservables();
 
+    List<KimObservable> getAttributeObservables();
+
     /**
      * Data type of primary observable meant to discriminate void and non-semantic models from the
      * semantic ones. Can be either of VOID, CONCEPT, NUMBER, TEXT or BOOLEAN.
@@ -43,6 +45,8 @@ public interface KimModelStatement extends KimActiveStatement {
 
     String getDocstring();
 
+    String getProjectName();
+    
 //    /**
 //     * Normally true, it will return false in models that were expressed as non-semantic operations,
 //     * using the 'number', 'text', etc. keywords. These are also, by default, private and are used

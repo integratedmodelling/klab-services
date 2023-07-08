@@ -544,4 +544,10 @@ public class ReasonerClient implements Reasoner {
         return null;
     }
 
+	@Override
+	public boolean hasDistributedInherency(Concept c) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

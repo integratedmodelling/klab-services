@@ -257,6 +257,8 @@ public interface Geometry extends Serializable, Locator {
 
     }
 
+    public static Geometry EMPTY = create("X"); 
+    
     public static Geometry create(String geometry) {
         return GeometryImpl.makeGeometry(geometry, 0);
     }

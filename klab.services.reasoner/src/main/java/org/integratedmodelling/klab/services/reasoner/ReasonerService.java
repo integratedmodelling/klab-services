@@ -2311,4 +2311,9 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
         return null;
     }
 
+	@Override
+	public boolean hasDistributedInherency(Concept c) {
+		return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
+	}
+
 }

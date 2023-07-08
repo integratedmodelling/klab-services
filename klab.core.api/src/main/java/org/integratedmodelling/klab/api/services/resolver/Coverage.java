@@ -25,7 +25,12 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * and can be modified only by merging in conformant scales, which either
  * subtract (if merged with {@link LogicalConnector#INTERSECTION} mode) or add (
  * {@link LogicalConnector#UNION}) to the covered proportion of extent.
- *
+ * <p>
+ * In addition to the percent covered, a coverage may also include scale
+ * constraints that restrict the type of scales an asset can be used in. This
+ * includes specific extents, resolutions, or ranges thereof for each of the
+ * extents, or the statement that a specific extent must be present without
+ * further specification.
  * <p>
  * A {@code Coverage} redefines the
  * {@link Scale#merge(TopologicallyComparable, LogicalConnector)} method to only
@@ -90,6 +95,14 @@ public interface Coverage extends Scale {
 	 * @return
 	 */
 	Coverage mergeExtents(Coverage coverage, LogicalConnector how);
+
+	/**
+	 * Check that the passed scale matches any constraints built into the coverage.
+	 * 
+	 * @param geometry
+	 * @return
+	 */
+	boolean checkConstraints(Scale geometry);
 
 	/**
 	 * True if the coverage is less than the global setting defining a usable

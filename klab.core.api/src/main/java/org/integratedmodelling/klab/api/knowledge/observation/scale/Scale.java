@@ -13,9 +13,15 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -153,7 +159,7 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 * @return
 	 */
 	Extent<?> extent(Dimension.Type extentType);
-	
+
 	/**
 	 * Return a new scale that will iterate through all dimensions except the passed
 	 * one. To be used in an outer for() loop when a particular dimension must be
@@ -198,4 +204,27 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 */
 	Scale collapse(Dimension.Type... dimensions);
 
+	public static Scale create(String geometrySpecifications) {
+		return create(Geometry.create(geometrySpecifications));
+	}
+
+	public static Scale create(Collection<Extent<?>> extents) {
+		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+		if (configuration == null) {
+			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+		}
+		return configuration.createScaleFromExtents(extents);
+	}
+
+	public static Scale create(Extent<?>... extents) {
+		return extents == null ? create(Geometry.EMPTY) : create(Arrays.asList(extents));
+	}
+
+	public static Scale create(Geometry geometry) {
+		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+		if (configuration == null) {
+			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+		}
+		return configuration.promoteGeometryToScale(geometry);
+	}
 }

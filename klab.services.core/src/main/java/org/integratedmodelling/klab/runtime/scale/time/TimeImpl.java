@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.scale.time;
 
+import java.util.Collection;
 import java.util.Iterator;
 
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -197,6 +198,12 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 	public Extent<?> merge(Extent<?> other, LogicalConnector how) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public boolean matches(Collection<Constraint> constraints) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 }

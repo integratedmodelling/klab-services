@@ -7,15 +7,18 @@ import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
@@ -149,6 +152,18 @@ public class ResourcesClient implements ResourceProvider {
 
 	@Override
 	public ResourceStatus resourceStatus(String urn, Scope scope) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Project resolveProject(String projectName, Scope scope) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException {
 		// TODO Auto-generated method stub
 		return null;
 	}

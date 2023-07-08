@@ -14,15 +14,14 @@ import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
-import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.EnumeratedExtent;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.EnumeratedExtension;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
@@ -30,27 +29,25 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.model.IModel;
 import org.integratedmodelling.klab.api.observations.scale.space.ISpace;
 import org.integratedmodelling.klab.api.observations.scale.time.ITime;
-import org.integratedmodelling.klab.api.runtime.monitoring.IMonitor;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabStorageException;
+import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.persistence.h2.SQL;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
+import org.integratedmodelling.klab.services.resources.persistence.ModelReference.Mediation;
 import org.locationtech.jts.geom.Geometry;
 
 public class ModelKbox extends ObservableKbox {
 
-	private boolean workRemotely = !Configuration.INSTANCE.isOffline();
+//	private boolean workRemotely = !Configuration.INSTANCE.isOffline();
 	private boolean initialized = false;
-	private Scope scope;
-	private ResourceProvider resourceService;
 
 	/**
 	 * Create a kbox with the passed name. If the kbox exists, open it and return
@@ -64,8 +61,7 @@ public class ModelKbox extends ObservableKbox {
 	}
 
 	private ModelKbox(String name, Scope scope) {
-		super(name);
-		this.scope = scope;
+		super(name, scope);
 	}
 
 	@Override
@@ -115,7 +111,7 @@ public class ModelKbox extends ObservableKbox {
 					long tid = requireConceptId(model.getObservableConcept(), monitor);
 
 					String ret = "INSERT INTO model VALUES (" + primaryKey + ", " + "'" + cn(model.getServerId())
-							+ "', " + "'" + cn(model.getId()) + "', " + "'" + cn(model.getName()) + "', " + "'"
+							+ "', " + "'" + cn(model.getName()) + "', " + "'" + cn(model.getName()) + "', " + "'"
 							+ cn(model.getNamespaceId()) + "', " + "'" + cn(model.getProjectId()) + "', " + tid + ", "
 							+ /* observation concept is obsolete oid */ 0 + ", '" + (model.getScope().name()) + "', "
 							+ (model.isResolved() ? "TRUE" : "FALSE") + ", "
@@ -259,19 +255,15 @@ public class ModelKbox extends ObservableKbox {
 	public List<ModelReference> queryModels(Observable observable, ContextScope context) {
 
 		List<ModelReference> ret = new ArrayList<>();
-//		UserIdentity user = context.getIdentity();
-		Collection<ResolutionConstraint> constraints = context.getData().getResolutionConstraints();
-//		Set<String> userPermissions = new HashSet<>(
-//				user.getGroups().stream().map((g) -> g.getName()).collect(Collectors.toList()));
 
 		if (!database.hasTable("model")) {
 			return ret;
 		}
 
 		String query = "SELECT model.oid FROM model WHERE ";
-		Concept contextObservable = context.getContextObservable() == null ? null
-				: context.getContextObservable().getType();
-		String typequery = observableQuery(observable, contextObservable, context.getMode());
+		Concept contextObservable = context.getResolutionObservation() == null ? null
+				: context.getResolutionObservation().getObservable().getSemantics();
+		String typequery = observableQuery(observable, contextObservable);
 
 		if (typequery == null) {
 			return ret;
@@ -279,14 +271,14 @@ public class ModelKbox extends ObservableKbox {
 
 		query += "(" + scopeQuery(context, observable) + ")";
 		query += " AND (" + typequery + ")";
-		if (context.getCoverage().getSpace() != null) {
-			String sq = spaceQuery(context.getCoverage().getSpace());
+		if (context.getGeometry().getSpace() != null) {
+			String sq = spaceQuery(context.getGeometry().getSpace());
 			if (!sq.isEmpty()) {
 				query += " AND (" + sq + ")";
 			}
 		}
 
-		String tquery = timeQuery(context.getCoverage().getTime());
+		String tquery = timeQuery(context.getGeometry().getTime());
 		if (!tquery.isEmpty()) {
 			query += " AND (" + tquery + ");";
 		}
@@ -297,8 +289,16 @@ public class ModelKbox extends ObservableKbox {
 
 		for (long l : oids) {
 			ModelReference model = retrieveModel(l, context);
-			if (model != null && model.getPermissions().checkAuthorization(context)) {
-				ret.add(model);
+			if (model != null) {
+				if (model.getPermissions().checkAuthorization(context)) {
+					Coverage coverage = resourceService.modelGeometry(model.getName());
+					if (!coverage.checkConstraints(context.getGeometry())) {
+						resourceService.scope().debug("model " + model.getName() + " of " + observable
+								+ " discarded because of coverage constraints mismatch");
+						continue;
+					}
+					ret.add(model);
+				}
 			}
 		}
 
@@ -393,13 +393,16 @@ public class ModelKbox extends ObservableKbox {
 	 */
 	private String spaceQuery(Space space) {
 
-		if (space instanceof EnumeratedExtent) {
+		space = resolveEnumeratedExtensions(space);
+
+		if (space instanceof EnumeratedExtension) {
 			// Accept anything that is from the same authority or baseconcept. If the
 			// requesting
 			// context needs specific values, these should be checked later in the
 			// prioritizer.
-			Pair<String, String> defs = ((EnumeratedExtent) space).getExtentDescriptors();
-			return "model.enumeratedspacedomain = '" + defs.getFirst() + "'";
+//			Pair<String, String> defs = ((EnumeratedExtension) space).getExtentDescriptors();
+//			return "model.enumeratedspacedomain = '" + defs.getFirst() + "'";
+			throw new KlabUnimplementedException("enumerated extension");
 		}
 
 		if (space.getShape().isEmpty()) {
@@ -426,6 +429,13 @@ public class ModelKbox extends ObservableKbox {
 	 * dimensionality!
 	 */
 	private String timeQuery(Time time) {
+
+		time = resolveEnumeratedExtensions(time);
+
+		if (time /* still */ instanceof EnumeratedExtension) {
+			// TODO
+			throw new KlabUnimplementedException("enumerated extension");
+		}
 
 		String ret = "";
 		boolean checkBoundaries = false;
@@ -482,12 +492,12 @@ public class ModelKbox extends ObservableKbox {
 					ret.setObservable(getTypeDefinition(tyid));
 
 					ret.setServerId(nullify(srs.getString(2)));
-					ret.setId(srs.getString(3));
+//					ret.setId(srs.getString(3));
 
 					ret.setNamespaceId(srs.getString(5));
 					ret.setProjectId(nullify(srs.getString(6)));
 
-					ret.setScope(Scope.valueOf(srs.getString(9)));
+					ret.setScope(KimStatement.Scope.valueOf(srs.getString(9)));
 					ret.setResolved(srs.getBoolean(10));
 					ret.setReification(srs.getBoolean(11));
 					ret.setInScenario(srs.getBoolean(12));
@@ -507,7 +517,7 @@ public class ModelKbox extends ObservableKbox {
 					ret.setMaxTimeScaleFactor(srs.getInt(26));
 					Geometry geometry = srs.getGeometry(27);
 					if (!geometry.isEmpty()) {
-						ret.setShape(Shape.create(geometry, Projection.getLatLon())); // +
+						ret.setShape(Shape.create(geometry.toText(), Projection.getLatLon())); // +
 					}
 				} catch (SQLException e) {
 					throw new KlabStorageException(e);
@@ -668,7 +678,7 @@ public class ModelKbox extends ObservableKbox {
 	 * @param monitor
 	 * @return the models implied by the statement
 	 */
-	public static Collection<ModelReference> inferModels(KimModelStatement model, Channel monitor) {
+	public Collection<ModelReference> inferModels(KimModelStatement model, Channel monitor) {
 
 		List<ModelReference> ret = new ArrayList<>();
 
@@ -677,34 +687,40 @@ public class ModelKbox extends ObservableKbox {
 			return ret;
 		}
 
+		Observable mainObservable = reasoner.declareObservable(model.getObservables().get(0));
+
 		for (ModelReference m : getModelDescriptors(model, monitor)) {
 			ret.add(m);
 		}
 
 		if (ret.size() > 0) {
 
-			for (IObservable attr : model.getAttributeObservables().values()) {
+			for (KimObservable attr : model.getAttributeObservables()) {
+
+				Observable observable = reasoner.declareObservable(attr);
 
 				if (attr == null) {
 					// only in error
 					continue;
 				}
 
-				// attribute type must have inherent type added if it's an instantiated quality
-				// (from an instantiator or as a secondary
-				// observable of a resolver with explicit, specialized inherency)
-				Concept type = attr.getType();
+				/*
+				 * attribute type must have inherent type added if it's an instantiated quality
+				 * (from an instantiator or as a secondary observable of a resolver with
+				 * explicit, specialized inherency)
+				 */
+				Concept type = observable.getSemantics();
 				if (model.isInstantiator()) {
-					IConcept context = Observables.INSTANCE.getContextType(type);
-					if (context == null || !context.is(model.getObservables().get(0))) {
-						type = attr.getBuilder(monitor).of(model.getObservables().get(0).getType()).buildConcept();
+					Concept context = reasoner.context(type);
+					if (context == null || !context.is(mainObservable.getSemantics())) {
+						type = observable.builder().of(mainObservable.getSemantics()).buildConcept();
 					}
 				}
 				ModelReference m = ret.get(0).copy();
-				m.setObservable(type.getDefinition());
-				m.setObservableConcept(type.getType());
-				m.setObservationType(attr.getArtifactType().name());
-				m.setDereifyingAttribute(attr.getName());
+				m.setObservable(type.getUrn());
+				m.setObservableConcept(type);
+				m.setObservationType(observable.getDescriptionType().name());
+				m.setDereifyingAttribute(attr.getFormalName());
 				m.setMediation(Mediation.DEREIFY_QUALITY);
 				m.setPrimaryObservable(!model.isInstantiator());
 				ret.add(m);
@@ -719,16 +735,10 @@ public class ModelKbox extends ObservableKbox {
 		return ret;
 	}
 
-	private static Collection<ModelReference> getModelDescriptors(KimModelStatement model, Channel monitor) {
+	private Collection<ModelReference> getModelDescriptors(KimModelStatement model, Channel monitor) {
 
 		List<ModelReference> ret = new ArrayList<>();
-		Scale scale = null;
-
-		try {
-			scale = model.getCoverage(monitor);
-		} catch (Exception e) {
-			return ret;
-		}
+		Coverage scale = resourceService.modelGeometry(model.getName());
 
 		Shape spaceExtent = null;
 		Time timeExtent = null;
@@ -741,64 +751,83 @@ public class ModelKbox extends ObservableKbox {
 		boolean isTemporal = false;
 		String enumeratedSpaceDomain = null;
 		String enumeratedSpaceLocation = null;
-		Project project = model.getNamespace().getProject();
+		Project project = resourceService.resolveProject(model.getProjectName(), scope);
+		KimNamespace namespace = resourceService.resolveNamespace(model.getNamespace(), scope);
 
 		if (scale != null) {
 
 			scaleMultiplicity = scale.size();
-			if (scale.getSpace() instanceof EnumeratedExtent) {
-				Pair<String, String> defs = ((EnumeratedExtent) scale.getSpace()).getExtentDescriptors();
-				enumeratedSpaceDomain = defs.getFirst();
-				enumeratedSpaceLocation = defs.getSecond();
-			} else if (scale.getSpace() != null) {
-				spaceExtent = scale.getSpace().getGeometricShape();
+
+			/*
+			 * If the runtime allows, resolve any enumeration to physical extents
+			 */
+			Space space = resolveEnumeratedExtensions(scale.getSpace());
+			Time time = resolveEnumeratedExtensions(scale.getTime());
+
+			if (space /* still */ instanceof EnumeratedExtension) {
+				/*
+				 * TODO handle the enumerated extension
+				 */
+				throw new KlabUnimplementedException("enumerated extension");
+				// Pair<String, String> defs = ((EnumeratedExtension)
+				// scale.getSpace()).getExtension();
+//				enumeratedSpaceDomain = defs.getFirst();
+//				enumeratedSpaceLocation = defs.getSecond();
+			} else if (space != null) {
+				spaceExtent = space.getGeometricShape();
 				// may be null when we just say 'over space'.
 				if (spaceExtent != null) {
 					spaceExtent = spaceExtent.transform(Projection.getLatLon());
-					spaceMultiplicity = scale.getSpace().size();
+					spaceMultiplicity = space.size();
 				}
 				isSpatial = true;
 			}
 
-			if (scale.getTime() != null) {
-				timeExtent = scale.getTime().collapsed();
-				if (timeExtent != null) {
-					if (timeExtent.getStart() != null) {
-						timeStart = timeExtent.getStart().getMilliseconds();
+			if (time != null) {
+				if (time /* still */ instanceof EnumeratedExtension) {
+					// TODO
+					throw new KlabUnimplementedException("enumerated extension");
+				} else {
+					timeExtent = time.collapsed();
+					if (timeExtent != null) {
+						if (timeExtent.getStart() != null) {
+							timeStart = timeExtent.getStart().getMilliseconds();
+						}
+						if (timeExtent.getEnd() != null) {
+							timeEnd = timeExtent.getEnd().getMilliseconds();
+						}
 					}
-					if (timeExtent.getEnd() != null) {
-						timeEnd = timeExtent.getEnd().getMilliseconds();
-					}
-					timeMultiplicity = scale.getTime().size();
 				}
+				timeMultiplicity = time.size();
 				isTemporal = true;
 			}
 		}
 
 		boolean first = true;
-		KimObservable main = null;
-		for (KimObservable oobs : model.getObservables()) {
+		Observable main = null;
+		for (KimObservable kobs : model.getObservables()) {
+
+			Observable oobs = reasoner.declareObservable(kobs);
 
 			if (first) {
 				main = oobs;
 			}
 
-			for (KimObservable obs : unpackObservables(oobs, main, first, monitor)) {
+			for (Observable obs : unpackObservables(oobs, main, first, monitor)) {
 
 				ModelReference m = new ModelReference();
 
-				m.setId(model.getId());
 				m.setName(model.getName());
-				m.setNamespaceId(model.getNamespace().getName());
-				if (model.getNamespace().getProject() != null) {
-					m.setProjectId(model.getNamespace().getProject().getName());
-					if (model.getNamespace().getProject().isRemote()) {
-						m.setServerId(model.getNamespace().getProject().getOriginatingNodeId());
-					}
-				}
+				m.setNamespaceId(model.getNamespace());
+//				if (model.getNamespace().getProject() != null) {
+				m.setProjectId(model.getProjectName());
+//					if (model.getNamespace().getProject().isRemote()) {
+//						m.setServerId(model.getNamespace().getProject().getOriginatingNodeId());
+//					}
+//				}
 
 				if (project != null) {
-					m.getPermissions().addAll(Authentication.INSTANCE.getProjectPermissions(project.getName()));
+					m.setPermissions(project.getPrivileges());
 				}
 
 				m.setTimeEnd(timeEnd);
@@ -814,15 +843,16 @@ public class ModelKbox extends ObservableKbox {
 
 				m.setObservable(obs.getUrn());
 				m.setObservationType(obs.getDescriptionType().name());
-				m.setObservableConcept(obs.getType());
+				m.setObservableConcept(obs.getSemantics());
 				// m.setObservationConcept(obs.getObservationType());
 
 				m.setScope(model.getScope());
-				m.setInScenario(model.getNamespace().isScenario());
+				m.setInScenario(namespace.isScenario());
 				m.setReification(model.isInstantiator());
-				m.setResolved(model.isResolved());
-				m.setHasDirectData(model.isResolved() && model.getObservables().get(0).is(Type.QUALITY));
-				m.setHasDirectObjects(model.isResolved() && model.getObservables().get(0).is(Type.DIRECT_OBSERVABLE));
+				m.setResolved(model.getDependencies().size() == 0);
+				m.setHasDirectData(m.isResolved() && model.getObservables().get(0).getMain().is(SemanticType.QUALITY));
+				m.setHasDirectObjects(
+						m.isResolved() && model.getObservables().get(0).getMain().is(SemanticType.DIRECT_OBSERVABLE));
 
 				m.setMinSpatialScaleFactor(
 						model.getMetadata().get(IMetadata.IM_MIN_SPATIAL_SCALE, ISpace.MIN_SCALE_RANK));
@@ -862,8 +892,15 @@ public class ModelKbox extends ObservableKbox {
 		return ret;
 	}
 
-	private static List<Observable> unpackObservables(KimObservable oobs, KimObservable main, boolean first,
-			Channel monitor) {
+	@SuppressWarnings("unchecked")
+	private <T extends Extent<T>> T resolveEnumeratedExtensions(T extent) {
+		if (extent instanceof EnumeratedExtension) {
+			return (T) ((EnumeratedExtension<?>) extent).getPhysicalExtent();
+		}
+		return extent;
+	}
+
+	private List<Observable> unpackObservables(Observable oobs, Observable main, boolean first, Channel monitor) {
 
 		List<Observable> ret = new ArrayList<>();
 		if (!first) {
@@ -871,16 +908,17 @@ public class ModelKbox extends ObservableKbox {
 			 * Subsequent observables inherit any explicit specialization in the main
 			 * observable of a model
 			 */
-			KimConcept specialized = Observables.INSTANCE.getDirectContextType(main.getType());
-			if (specialized != null && (oobs.getContext() == null || !oobs.getContext().is(specialized))) {
-				oobs = oobs.getBuilder(monitor).within(specialized).buildObservable();
+			Concept specialized = reasoner.directContext(main.getSemantics());
+			Concept oobsContext = reasoner.context(oobs);
+			if (specialized != null && (oobsContext == null || !oobsContext.is(specialized))) {
+				oobs = oobs.builder().within(specialized).buildObservable();
 			}
 		}
 		ret.add(oobs);
 		return ret;
 	}
 
-	private static Map<String, String> translateMetadata(IMetadata metadata) {
+	private static Map<String, String> translateMetadata(Metadata metadata) {
 		Map<String, String> ret = new HashMap<>();
 		for (String key : metadata.keySet()) {
 			ret.put(key, metadata.get(key) == null ? "null" : metadata.get(key).toString());

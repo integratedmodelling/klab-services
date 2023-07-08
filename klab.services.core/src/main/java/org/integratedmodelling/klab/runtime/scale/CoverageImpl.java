@@ -416,4 +416,10 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 		this.minRequiredCoverage = d;
 	}
 
+	@Override
+	public boolean checkConstraints(Scale geometry) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

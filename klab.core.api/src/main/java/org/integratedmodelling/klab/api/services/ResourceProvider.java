@@ -8,15 +8,18 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
@@ -186,6 +189,17 @@ public interface ResourceProvider extends KlabService {
 	List<String> queryResources(String urnPattern, KlabAsset.KnowledgeClass... resourceTypes);
 
 	/**
+	 * Return the actual (local) project with its contents. Used mostly internally
+	 * with a likely heavy result payload, should not resolve the project beyond the
+	 * local workspaces.
+	 * 
+	 * @param projectName
+	 * @param scope
+	 * @return
+	 */
+	Project resolveProject(String projectName, Scope scope);
+
+	/**
 	 * Return the candidate models for the passed observables in the passed scope
 	 * (which will provide the reasoner service). The result should contain an
 	 * unordered list of candidate model URNs (in {@link ResourceSet#getUrns()})
@@ -197,6 +211,31 @@ public interface ResourceProvider extends KlabService {
 	 * @return
 	 */
 	ResourceSet queryModels(Observable observable, ContextScope scope);
+
+	/**
+	 * Compute and return the geometry for the model identified by this URN. The
+	 * geometry comes from the namespace coverage merged with the model's own, which
+	 * in turn is the intersected coverage of its resources plus any model scale
+	 * constraints, if any are specified. Models may also restrict their geometry to
+	 * specific representations of space/time using annotations or generic
+	 * specifications (for example request a grid or a temporal range without
+	 * specifying a resolution, or specifying only a range of them, or a resolution
+	 * without extent). This information is needed at resolution, so computations
+	 * should be cached to avoid wasting CPU in complex operations on repeated
+	 * calls.
+	 * <p>
+	 * The coverage should honor any constraints expressed in the coverage
+	 * specifications or annotations, and report a coverage percentage == 0 when
+	 * {@link Coverage#getCoverage()} is called whenever any of those aren't met.
+	 * 
+	 * @param model a known model URN. If the URN is unknown a
+	 *              {@link KIllegalArgumentException} should be thrown.
+	 * @return the coverage of the model, reporting coverage == 1 unless constraints
+	 *         are not met.
+	 * @throws KIllegalArgumentException if the URN isn't recognized or does not
+	 *                                   specify a model.
+	 */
+	Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException;
 
 	/**
 	 * Admin interface to submit/remove projects and configure the service.

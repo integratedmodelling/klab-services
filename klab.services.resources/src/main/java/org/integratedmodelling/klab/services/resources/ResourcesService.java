@@ -36,6 +36,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -51,6 +52,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
@@ -746,6 +748,18 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 			 */
 		}
 		return ret;
+	}
+
+	@Override
+	public Project resolveProject(String projectName, Scope scope) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

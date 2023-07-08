@@ -15,6 +15,8 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
+import java.util.Collection;
+
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
@@ -39,6 +41,16 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @version $Id: $Id
  */
 public interface Extent<T extends TopologicallyComparable<T>> extends Locator, Topology<T>, Geometry.Dimension {
+
+	/**
+	 * TODO fill in and specialize in each extent implementation.
+	 * 
+	 * @author Ferd
+	 *
+	 */
+	interface Constraint {
+
+	}
 
 	/**
 	 * Locate the extent and return another with the original located extent and
@@ -127,5 +139,14 @@ public interface Extent<T extends TopologicallyComparable<T>> extends Locator, T
 	 * @return
 	 */
 	boolean isEmpty();
+
+	/**
+	 * Check conformance with the passed extent constraints. Used in resolution and
+	 * hard to cache, so best implemented efficiently.
+	 * 
+	 * @param constraints
+	 * @return
+	 */
+	boolean matches(Collection<Constraint> constraints);
 
 }

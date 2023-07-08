@@ -10,10 +10,29 @@ import org.integratedmodelling.klab.api.lang.Statement;
  */
 public interface KimStatement extends Statement, KimScope {
 
-    enum Scope {
-        PUBLIC, PRIVATE, PROJECT_PRIVATE
-    }
+	/**
+	 * Scope is relevant to models and namespaces, where it affects resolution
+	 * of models.
+	 * 
+	 * @author Ferd
+	 *
+	 */
+	public enum Scope {
 
+        PUBLIC, PRIVATE, PROJECT_PRIVATE;
+
+		public Scope narrowest(Scope... scopes) {
+			Scope ret = scopes == null || scopes.length == 0 ? null : scopes[0];
+			if (ret != null) {
+				for (int i = 1; i < scopes.length; i++) {
+					if (scopes[i].ordinal() < ret.ordinal()) {
+						ret = scopes[i];
+					}
+				}
+			}
+			return ret;
+		}
+	}
     /**
      * Documentation metadata is the content of the @documentation annotation if present.
      * @return the documentation

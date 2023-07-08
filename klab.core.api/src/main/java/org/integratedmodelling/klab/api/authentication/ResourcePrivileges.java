@@ -5,6 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 /**
  * Permissions in k.LAB are either "*" for public and/or a list of
@@ -25,6 +28,13 @@ public class ResourcePrivileges {
 	private Set<String> allowedUsers = new HashSet<>();
 	private Set<String> excludedUsers = new HashSet<>();
 
+	static public ResourcePrivileges PUBLIC;
+	
+	static {
+		PUBLIC = new ResourcePrivileges();
+		PUBLIC.setPublic(true);
+	}
+	
 	public ResourcePrivileges() {
 	}
 
@@ -77,7 +87,13 @@ public class ResourcePrivileges {
 	}
 
 	public boolean checkAuthorization(Scope scope) {
-		// TODO figure out the identity from the scope and call the one below
+		@SuppressWarnings("unchecked")
+		Collection<ResolutionConstraint> constraints = scope.getData()
+				.get(ResolutionConstraint.RESOLUTION_CONSTRAINTS_METADATA_KEY, Collection.class);
+		UserIdentity user = scope instanceof UserScope ? ((UserScope)scope).getUser() : null;
+
+		// TODO!
+		
 		return false;
 	}
 

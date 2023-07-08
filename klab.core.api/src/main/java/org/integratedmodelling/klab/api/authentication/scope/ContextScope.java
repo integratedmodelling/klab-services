@@ -188,4 +188,14 @@ public interface ContextScope extends SessionScope {
 	 */
 	Collection<String> getResolutionScenarios();
 
+	/**
+	 * A context is born "empty" and since k.LAB 0.12 does not have a root
+	 * observation, but when used in resolution may acquire a root observation which
+	 * serves as context for the resolution.
+	 * 
+	 * @return
+	 */
+	Observation getResolutionObservation();
+
+
 }

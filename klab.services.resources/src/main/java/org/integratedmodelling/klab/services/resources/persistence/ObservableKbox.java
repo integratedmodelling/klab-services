@@ -37,7 +37,9 @@ import java.util.Set;
 
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.transform.trait.Traits;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.exceptions.KException;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IConcept;
 import org.integratedmodelling.klab.api.knowledge.IObservable;
@@ -48,6 +50,7 @@ import org.integratedmodelling.klab.api.model.INamespace;
 import org.integratedmodelling.klab.api.resolution.IResolutionScope;
 import org.integratedmodelling.klab.api.runtime.monitoring.IMonitor;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.exceptions.KlabException;
@@ -88,7 +91,10 @@ public abstract class ObservableKbox extends H2Kbox {
 	private Map<Long, String> typeHash = new HashMap<>();
 	private Map<String, Set<String>> coreTypeHash = new HashMap<>();
 	private Map<String, Concept> conceptHash = new HashMap<>();
-	private Reasoner reasoner;
+
+	protected Reasoner reasoner;
+	protected Scope scope;
+	protected ResourceProvider resourceService;
 
 	/**
 	 * The version is used to create storage on the file system. Change this when
@@ -105,10 +111,11 @@ public abstract class ObservableKbox extends H2Kbox {
 
 	public Observable getType(long id) {
 		if (typeHash.containsKey(id)) {
-			if (typeHash.get(id).startsWith("nonsemantic:")) {
-				return Observable.promote(Concepts.c(typeHash.get(id)));
-			}
-			return Observables.INSTANCE.declare(typeHash.get(id));
+			// FIXME this looks yucky - nonsemantic must compile just like the others
+//			if (typeHash.get(id).startsWith("nonsemantic:")) {
+//				return reasoner.declareObservable(resourceService.resolveObservable(typeHash.get(id)));
+//			}
+			return reasoner.declareObservable(resourceService.resolveObservable(typeHash.get(id)));
 		}
 		return null;
 	}
@@ -332,8 +339,14 @@ public abstract class ObservableKbox extends H2Kbox {
 			 * the "specialized" flag, we don't compare the inherency, letting through
 			 * models that are contextualized to specialized contexts
 			 */
-			if (candidate.getSemanticDistance(observable, context, !observable.isSpecialized(),
-					((Observable) observable).getResolvedPredicates()) >= 0) {
+
+			if (reasoner.semanticDistance(candidate, observable,
+					context)/*
+						     * TODO handle the resolved predicates?
+							 * candidate.getSemanticDistance(observable, context,
+							 * !observable.isSpecialized(), ((Observable)
+							 * observable).getResolvedPredicates())
+							 */ >= 0) {
 				// System.out.println(" YES");
 				long id = getConceptId(candidate);
 				if (id >= 0) {
@@ -361,7 +374,7 @@ public abstract class ObservableKbox extends H2Kbox {
 
 					if (candidate.is(SemanticType.PREDICATE)) {
 						// inherency must align with the resolution mode
-						boolean hasDistributedInherency = Observables.INSTANCE.hasDistributedInherency(candidate);
+						boolean hasDistributedInherency = reasoner.hasDistributedInherency(candidate);
 						ok = (hasDistributedInherency && instantiation) || (!hasDistributedInherency && !instantiation);
 					}
 					if (ok) {
@@ -402,7 +415,7 @@ public abstract class ObservableKbox extends H2Kbox {
 		if (resolvedPredicates != null && !resolvedPredicates.isEmpty()) {
 			List<Concept> rabs = new ArrayList<>();
 			for (Concept r : ret) {
-				rabs.add(Concepts.INSTANCE.replaceComponent(r, Maps.inverse(resolvedPredicates)));
+				rabs.add(replaceComponent(r, Maps.inverse(resolvedPredicates)));
 			}
 			ret.addAll(rabs);
 		}
@@ -410,10 +423,18 @@ public abstract class ObservableKbox extends H2Kbox {
 		return ret;
 	}
 
-	public ObservableKbox(String name) {
+	public ObservableKbox(String name, Scope scope) {
 
 		super(name);
-
+		
+		this.scope = scope;
+		this.reasoner = scope.getService(Reasoner.class);
+		this.resourceService = scope.getService(ResourceProvider.class);
+		
+		if (this.reasoner == null || this.resourceService == null) {
+			throw new KIllegalStateException("cannot initialize kbox without a valid reasoner or resource service");
+		}
+		
 		setSchema(IConcept.class, new ObservableSchema());
 		setSchema(INamespace.class, new NamespaceSchema());
 		setSerializer(INamespace.class, new NamespaceSerializer());
@@ -607,5 +628,31 @@ public abstract class ObservableKbox extends H2Kbox {
 		}
 		return string;
 	}
+	
+
+	/**
+	 * TODO use a proper builder
+	 * @param original
+	 * @param replacements
+	 * @return
+	 */
+	protected Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
+
+		if (replacements.isEmpty()) {
+			return original;
+		}
+
+		String declaration = original.getUrn();
+		for (Concept key : replacements.keySet()) {
+			String rep = replacements.get(key).getUrn();
+			if (rep.contains(" ")) {
+				rep = "(" + rep + ")";
+			}
+			declaration = declaration.replace(key.getUrn(), rep);
+		}
+
+		return reasoner.declareConcept(resourceService.resolveConcept(declaration));
+	}
+
 
 }
