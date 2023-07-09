@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.scale;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,10 +10,10 @@ import java.util.stream.Collectors;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent.Constraint;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.observations.scale.IExtent;
-import org.integratedmodelling.klab.api.observations.scale.time.ITime;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -46,16 +47,21 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 	private double minRequiredCoverage = MIN_REQUIRED_COVERAGE;
 
 	List<Pair<Extent<?>, Double>> coverages = new ArrayList<>();
-	double coverage;
-	double gain = 0;
+	private double coverage;
+	private double gain = 0;
 
 	/*
 	 * Keep all the (collapsed) merge history in subextents in their current
 	 * situation. At each merge, all the extents are combined again, any resulting
 	 * empty extents eliminated.
 	 */
-	Map<Dimension.Type, List<Pair<LogicalConnector, IExtent>>> merged = new HashMap<>();
+	private Map<Dimension.Type, List<Pair<LogicalConnector, Extent<?>>>> merged = new HashMap<>();
 
+	/*
+	 * constraints specified for this coverage, if any.
+	 */
+	private List<Constraint> constraints = new ArrayList<>();
+	
 	/**
 	 * Create a coverage with full coverage, which can be reduced by successive AND
 	 * merges.
@@ -320,7 +326,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 
 		Extent<?> orig = extent(type);
 
-		if (orig instanceof ITime && ((ITime) orig).is(ITime.Type.INITIALIZATION)) {
+		if (orig instanceof Time && ((Time) orig).is(Time.Type.INITIALIZATION)) {
 			return Pair.of(orig, 1.0);
 		}
 
@@ -420,6 +426,12 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 	public boolean checkConstraints(Scale geometry) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public Collection<Constraint> getConstraints() {
+		// TODO Auto-generated method stub
+		return this.constraints;
 	}
 
 }

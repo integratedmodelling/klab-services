@@ -13,6 +13,9 @@
  */
 package org.integratedmodelling.klab.api.services.resolver;
 
+import java.util.Collection;
+
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent.Constraint;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -103,6 +106,13 @@ public interface Coverage extends Scale {
 	 * @return
 	 */
 	boolean checkConstraints(Scale geometry);
+
+	/**
+	 * Return any constraints specified for this coverage, or an empty collection.
+	 * 
+	 * @return
+	 */
+	Collection<Constraint> getConstraints();
 
 	/**
 	 * True if the coverage is less than the global setting defining a usable

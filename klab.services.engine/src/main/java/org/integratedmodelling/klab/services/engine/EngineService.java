@@ -2,7 +2,9 @@ package org.integratedmodelling.klab.services.engine;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -12,6 +14,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourceProvider;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.scope.EngineScope;
@@ -55,6 +58,24 @@ public enum EngineService {
 			 */
 			this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
 					.initReActorSystem();
+
+			/*
+			 * Components
+			 */
+			Set<String> extensionPackages = new LinkedHashSet<>();
+			extensionPackages.add("org.integratedmodelling.klab");
+			/*
+			 * Check for updates, load and scan all new plug-ins, returning the main
+			 * packages to scan
+			 */
+			extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents());
+
+			/*
+			 * Scan all packages registered under the parent package of all k.LAB services.
+			 */
+			for (String pack : extensionPackages) {
+				Configuration.INSTANCE.scanPackage(pack);
+			}
 		}
 
 	}
@@ -91,7 +112,6 @@ public enum EngineService {
 			Ref agent = KAgentRef.get(actorSystem.spawn(new UserAgent(agentName, ret)).get());
 			ret.setAgent(agent);
 
-			
 			userScopes.put(user.getUsername(), ret);
 		}
 		return ret;

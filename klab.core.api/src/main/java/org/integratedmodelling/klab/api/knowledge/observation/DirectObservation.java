@@ -15,63 +15,63 @@ package org.integratedmodelling.klab.api.knowledge.observation;
 
 import java.util.Collection;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.ObjectArtifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 
 /**
- * The Interface IDirectObservation, i.e. an observation that can be acknowledged on its own without
- * referencing another. Basically every observation except qualities and processes. Direct
- * observations are scopes for other observations.
+ * An observation that can be acknowledged on its own without referencing
+ * another. Every observation except qualities, processes and configurations is
+ * direct. All direct observations can own {@link State}s that contextualize
+ * their observed qualities.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public abstract interface DirectObservation extends Observation, ObjectArtifact, ContextScope {
+public abstract interface DirectObservation extends Observation, ObjectArtifact {
 
-    /**
-     * <p>
-     * All direct observations have naming dignity.
-     * </p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    String getName();
+	/**
+	 * <p>
+	 * All direct observations have naming dignity.
+	 * </p>
+	 *
+	 * @return a {@link java.lang.String} object.
+	 */
+	String getName();
 
-    /**
-     * Direct observations may have children. This is a convenience method to find a particular
-     * child artifact.
-     * 
-     * @param observable
-     * @return
-     */
-    Observation getChildObservation(Observable observable);
+	/**
+	 * Direct observations may have children. This is a convenience method to find a
+	 * particular child artifact.
+	 * 
+	 * @param observable
+	 * @return
+	 */
+	Observation getChildObservation(Observable observable);
 
-    /**
-     * <p>
-     * Direct observations may have states of their own.
-     * </p>
-     *
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<State> getStates();
+	/**
+	 * <p>
+	 * Direct observations may have states of their own.
+	 * </p>
+	 *
+	 * @return a {@link java.util.Collection} object.
+	 */
+	Collection<State> getStates();
 
-    @Override
-    DirectObservation at(Locator locator);
+	@Override
+	DirectObservation at(Locator locator);
 
-    /**
-     * If the observation derives from an emerging pattern, return it here.
-     * 
-     * @return
-     */
-    Pattern getOriginatingPattern();
+	/**
+	 * If the observation derives from an emerging pattern, return it here.
+	 * 
+	 * @return
+	 */
+	Pattern getOriginatingPattern();
 
-    /**
-     * Direct observations may die in action.
-     * 
-     * @return true if alive, i.e. receiving events from scheduler and context.
-     */
-    boolean isActive();
+	/**
+	 * Direct observations may die in action.
+	 * 
+	 * @return true if alive, i.e. receiving events from scheduler and context.
+	 */
+	boolean isActive();
 
 }

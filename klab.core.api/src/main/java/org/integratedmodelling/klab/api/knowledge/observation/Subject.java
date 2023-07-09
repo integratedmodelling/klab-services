@@ -16,115 +16,67 @@ package org.integratedmodelling.klab.api.knowledge.observation;
 import java.util.Collection;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 
 /**
- * A subject can be inside a root observation or (unique among observation) <i>be</i> a root
- * observation itself. As identity, all Subjects in a session have the parent
- * {@link org.integratedmodelling.klab.api.runtime.ISession} as the parent identity. As
- * observations, their lineage is accessible through the
- * {@link org.integratedmodelling.klab.api.Observation.IObservation} API. Only subjects can have
- * events, processes, relationships, configurations and other subjects as children. In addition,
- * subjects and all other direct observations can have states as children.
+ * A subject can be inside a root observation or (unique among observation)
+ * <i>be</i> a root observation itself. As identities, all Subjects in a session
+ * can also be observers for other observations, even in different contexts. As
+ * observations, their lineage is accessible through their {@link ContextScope},
+ * which is also where observations are made. Only subjects can be the context
+ * of all the other observations: events, processes, relationships,
+ * configurations and other subjects.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Subject extends DirectObservation {
+public interface Subject extends DirectObservation, Identity {
 
-    /**
-     * <p>
-     * getEvents.
-     * </p>
-     *
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Event> getEvents();
+	/**
+	 * <p>
+	 * getEvents.
+	 * </p>
+	 *
+	 * @return a {@link java.util.Collection} object.
+	 */
+	Collection<Event> getEvents();
 
-    /**
-     * <p>
-     * getProcesses.
-     * </p>
-     *
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Process> getProcesses();
+	/**
+	 * <p>
+	 * getProcesses.
+	 * </p>
+	 *
+	 * @return a {@link java.util.Collection} object.
+	 */
+	Collection<Process> getProcesses();
 
-    /**
-     * <p>
-     * getSubjects.
-     * </p>
-     *
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Subject> getSubjects();
+	/**
+	 * <p>
+	 * getSubjects.
+	 * </p>
+	 *
+	 * @return a {@link java.util.Collection} object.
+	 */
+	Collection<Subject> getSubjects();
 
-    /**
-     * <p>
-     * getRelationships.
-     * </p>
-     *
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Relationship> getRelationships();
+	/**
+	 * <p>
+	 * getRelationships.
+	 * </p>
+	 *
+	 * @return a {@link java.util.Collection} object.
+	 */
+	Collection<Relationship> getRelationships();
 
-    /**
-     * <p>
-     * getIncomingRelationships.
-     * </p>
-     *
-     * @param subject a {@link org.integratedmodelling.klab.api.Subject.ISubject} object.
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Relationship> getIncomingRelationships(Subject subject);
-
-    /**
-     * <p>
-     * getOutgoingRelationships.
-     * </p>
-     *
-     * @param subject a {@link org.integratedmodelling.klab.api.Subject.ISubject} object.
-     * @return a {@link java.util.Collection} object.
-     */
-    Collection<Relationship> getOutgoingRelationships(Subject subject);
-
-    /**
-     * <p>
-     * getConfigurations.
-     * </p>
-     *
-     * @return a {@link java.util.Map} object.
-     */
-    Map<Concept, Configuration> getConfigurations();
-//
-//    /**
-//     * Observe the passed observable in this context, returning an asynchronous future that will
-//     * produce an observation. This is the primary, asynchronous context observation method for the
-//     * k.LAB modeling API. Interactive sessions and applications use the {@link ISessionState} to
-//     * organize and schedule observations. When this method is used, the task returned is only
-//     * started when get() or start() are called on it manually, so scenarios and listeners can be
-//     * added to the task after it is returned.
-//     * 
-//     * @param observable an observable that is compatible with this subject's semantics as its
-//     *        context.
-//     * @return a paused task to optionally configure and use by calling get() or start().
-//     */
-//    ITask<IObservation> observe(IObservable observable);
-
-    /*
-     * ----------------------------------------------------------------------------- ---------
-     * Runtime functions below
-     * ----------------------------------------------------------------------------- ---------
-     */
-
-//    /**
-//     * Call this on the root observation to create the logical peers of an observation tree in the
-//     * passed ontology.
-//     *
-//     * @param ontology an ontology, usually empty (may be created with
-//     *        {@link org.integratedmodelling.klab.api.services.IOntologyService#require(String)}).
-//     * @return the individual corresponding to this subject.
-//     */
-//    IIndividual instantiate(IOntology ontology);
+	/**
+	 * <p>
+	 * getConfigurations.
+	 * </p>
+	 *
+	 * @return a {@link java.util.Map} object.
+	 */
+	Map<Concept, Configuration> getConfigurations();
 
 }

@@ -679,7 +679,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     public int coreDistance(Concept from, Concept to, Concept context, boolean compareInherency,
             Map<Concept, Concept> resolvedAbstractPredicates) {
 
-        if (this == to || this.equals(to)) {
+        if (from == to || from.equals(to)) {
             return 0;
         }
 

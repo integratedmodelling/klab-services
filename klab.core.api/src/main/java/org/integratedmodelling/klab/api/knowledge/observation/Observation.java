@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -34,7 +35,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Observation extends Identity, Artifact {
+public interface Observation extends Artifact {
 
 	/**
 	 * Return the observable.
@@ -44,6 +45,14 @@ public interface Observation extends Identity, Artifact {
 	Observable getObservable();
 
 	/**
+	 * All observations are made in a context scope, which is the handle for the
+	 * "digital twin" this is part of.
+	 * 
+	 * @return
+	 */
+	ContextScope getScope();
+
+	/**
 	 * The observer that/who made the observation. Never null.
 	 * 
 	 * @return
@@ -51,14 +60,9 @@ public interface Observation extends Identity, Artifact {
 	Identity getObserver();
 
 	/**
-	 * Return the scale seen by this object, merging all the extents declared for
-	 * the subject in the observation context. This could simply override
-	 * {@link org.integratedmodelling.klab.api.provenance.Artifact#getGeometry()}
-	 * as a {@link org.integratedmodelling.klab.api.Scale.scale.IScale} is a
-	 * {@link org.integratedmodelling.klab.api.data.Geometry}, and in a standard
-	 * implementation should do just that, but a
-	 * {@link org.integratedmodelling.klab.api.Scale.scale.IScale} is
-	 * important enough to deserve its own accessor.
+	 * Return the scale where this is contextualized. It may differ from the scale
+	 * of the context although the latter should always contain the scale of all
+	 * observations and observers in it.
 	 *
 	 * @return the observation's scale
 	 */
@@ -86,14 +90,6 @@ public interface Observation extends Identity, Artifact {
 	 * @return the context for the observation, if any.
 	 */
 	DirectObservation getContext();
-
-	/**
-	 * The top-level context. If this observation is the top-level context, return
-	 * itself.
-	 * 
-	 * @return the top-level context for the observation. Never null.
-	 */
-	DirectObservation getRootContext();
 
 	/**
 	 * True if our scale has an observation of space with more than one state value.
@@ -141,32 +137,32 @@ public interface Observation extends Identity, Artifact {
 	boolean isDynamic();
 
 	/**
-	 * Time of creation. If the context has no time, this is equal to the
-	 * {@link Artifact#getTimestamp()}; otherwise it is the time reported by the
-	 * scheduler at the moment of construction.
+	 * Time of creation according to context time, not to be confused with the
+	 * system creation time returned by {@link #getTimestamp()}.
 	 * 
 	 * @return the time of creation
 	 */
 	long getCreationTime();
 
 	/**
-	 * Time of exit. If the context has no time or the object is current, this is
-	 * -1L; otherwise it is the time reported by
-	 * {@link IScheduler#getSliceOffsetInBackend()} at the moment of exit.
+	 * Time of "exit", i.e. end of life of the observation according to context
+	 * time. If the context has no time or the object is current, this is -1L.
 	 * 
 	 * @return the time of exit
 	 */
 
 	long getExitTime();
 
-	/**
-	 * All times when the observation was modified, corresponding to the end of any
-	 * temporal transitions that changed it.This will always contain at least a 0
-	 * for initialization, except for events, event groups and qualities that have
-	 * no initial value because they describe a process.
-	 * 
-	 * @return
-	 */
-	long[] getUpdateTimestamps();
+	// TODO find something more elegant (change events?) but light - maybe just ObjectArtifacts with metadata that can be turned
+	// into events as needed
+//	/**
+//	 * All times when the observation was modified, corresponding to the end of any
+//	 * temporal transitions that changed it.This will always contain at least a 0
+//	 * for initialization, except for events, event groups and qualities that have
+//	 * no initial value because they describe a process.
+//	 * 
+//	 * @return
+//	 */
+//	long[] getUpdateTimestamps();
 
 }

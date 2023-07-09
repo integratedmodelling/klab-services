@@ -516,13 +516,13 @@ public interface Message {
         ret.setPayload(notification.getMessage());
         ret.setPayloadClass("String");
 
-        if (notification.getLevel().equals(Level.FINE.getName())) {
+        if (notification.getLevel().equals(Notification.Level.Debug)) {
             ret.setType(Type.Debug);
-        } else if (notification.getLevel().equals(Level.INFO.getName())) {
+        } else if (notification.getLevel().equals(Notification.Level.Info)) {
             ret.setType(Type.Info);
-        } else if (notification.getLevel().equals(Level.WARNING.getName())) {
+        } else if (notification.getLevel().equals(Notification.Level.Warning)) {
             ret.setType(Type.Warning);
-        } else if (notification.getLevel().equals(Level.SEVERE.getName())) {
+        } else if (notification.getLevel().equals(Notification.Level.Error)) {
             ret.setType(Type.Error);
         }
 
