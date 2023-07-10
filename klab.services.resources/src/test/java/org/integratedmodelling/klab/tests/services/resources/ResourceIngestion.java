@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.tests.services.resources;
 
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
-import org.integratedmodelling.klab.services.resources.ResourcesService;
+import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 class ResourceIngestion {
 
-    private static ResourcesService service = null;
+    private static ResourcesProvider service = null;
 
     /*
      * TODO substitute with online service filled in with as many observable use cases as possible
@@ -21,7 +21,7 @@ class ResourceIngestion {
 
     @BeforeAll
     static void setUp() throws Exception {
-        service = new ResourcesService();
+        service = new ResourcesProvider();
         service.addProjectToLocalWorkspace("worldview", "https://bitbucket.org/integratedmodelling/im.git#develop", false);
         service.addProjectToLocalWorkspace("tests", "https://bitbucket.org/integratedmodelling/im.testsuite.resolution", false);
     }

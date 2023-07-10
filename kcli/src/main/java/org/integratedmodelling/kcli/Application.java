@@ -15,7 +15,7 @@ import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
@@ -119,7 +119,7 @@ public class Application {
 
 				for (String scriptName : scriptNames) {
 
-					KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser(true, null).getService(ResourceProvider.class)
+					KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser(true, null).getService(ResourcesService.class)
 							.resolveBehavior(scriptName, Engine.INSTANCE.getCurrentUser());
 
 					if (behavior == null) {

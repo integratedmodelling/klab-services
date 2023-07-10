@@ -55,6 +55,11 @@ public class ResolutionGraph {
 	private Graph<Resolution, ResolutionEdge> resolutionGraph = new DefaultDirectedGraph<>(ResolutionEdge.class);
 	private List<Resolution> roots = new ArrayList<>();
 	private Coverage coverage;
+	private Map<Model, Metadata> resolutionMetadata = new HashMap<>();
+
+	public Map<Model, Metadata> getResolutionMetadata() {
+		return resolutionMetadata;
+	}
 
 	/**
 	 * Each vertex in the resolution graph contains the resolved observable, a model
@@ -87,7 +92,6 @@ public class ResolutionGraph {
 		public Coverage coverage;
 		public LogicalConnector mergeStrategy;
 		Map<Observable, Resolution> accepted = new HashMap<>();
-		Map<Model, Metadata> resolutionMetadata = new HashMap<>();
 
 		/**
 		 * Any new node is initialized with the accepted overall nodes in the graph.

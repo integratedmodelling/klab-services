@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
@@ -59,7 +59,7 @@ public class ContextAgent extends KAgent {
             case REMOTE_URL:
                 break;
             case RESOURCE:
-                resolvable = scope.getService(ResourceProvider.class).resolveResource(message.getUrn(), message.getScope());
+                resolvable = scope.getService(ResourcesService.class).resolveResource(message.getUrn(), message.getScope());
                 break;
             case UNKNOWN:
                 break;

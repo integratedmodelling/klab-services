@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.authorities.CaliperAuthority;
 import org.integratedmodelling.klab.services.reasoner.authorities.GBIFAuthority;
 import org.integratedmodelling.klab.services.reasoner.authorities.IUPACAuthority;
-import org.integratedmodelling.klab.services.resources.ResourcesService;
+import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +36,7 @@ class ConceptIngestion {
             "geography:Elevation in m optional", "any geography:Elevation in m", "geography:Elevation in m > 100",
             "geography:Elevation in m by landcover:LandCoverType"};
 
-    private static ResourcesService resourcesService;
+    private static ResourcesProvider resourcesService;
     private static ReasonerService reasonerService;
     private static Indexer indexingService;
     private static Scope scope = null;
@@ -79,7 +79,7 @@ class ConceptIngestion {
         };
         scope = authenticationService.getAnonymousScope();
         reasonerService = new ReasonerService(authenticationService,
-                resourcesService = new ResourcesService(authenticationService), indexingService = new Indexer());
+                resourcesService = new ResourcesProvider(authenticationService), indexingService = new Indexer());
         Services.INSTANCE.registerAuthority(new GBIFAuthority());
         Services.INSTANCE.registerAuthority(new IUPACAuthority());
         Services.INSTANCE.registerAuthority(new CaliperAuthority());

@@ -60,7 +60,7 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.monitoring.IMessage;
 import org.integratedmodelling.klab.api.observations.IObservation;
 import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.api.services.runtime.kactors.WidgetActionExecutor;
@@ -642,7 +642,7 @@ public class KActorsVM implements VM {
 			 * TODO match the arguments to the correspondent names for the declaration of
 			 * main()
 			 */
-			KActorsBehavior childBehavior = scope.getMainScope().getService(ResourceProvider.class)
+			KActorsBehavior childBehavior = scope.getMainScope().getService(ResourcesService.class)
 					.resolveBehavior(code.getBehavior(), scope.getMainScope());
 			if (childBehavior == null) {
 				scope.error("unreferenced child behavior: " + code.getBehavior() + " when execute instantiation");
@@ -670,7 +670,7 @@ public class KActorsVM implements VM {
 			}
 		}
 
-		KActorsBehavior actorBehavior = scope.getMainScope().getService(ResourceProvider.class)
+		KActorsBehavior actorBehavior = scope.getMainScope().getService(ResourcesService.class)
 				.resolveBehavior(code.getBehavior(), scope.getMainScope());
 		if (actorBehavior != null) {
 

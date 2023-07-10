@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.indexing.Indexer;
@@ -28,7 +28,7 @@ import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.resolver.ResolverClient;
 import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.integratedmodelling.klab.services.resources.ResourcesClient;
-import org.integratedmodelling.klab.services.resources.ResourcesService;
+import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utils.Parameters;
@@ -59,11 +59,11 @@ public enum Engine implements Authentication {
 		 * check for a locally running service for each category; if existing, create a
 		 * client, otherwise create an embedded service
 		 */
-		if (Utils.Network.isAlive("http://127.0.0.1:" + ResourceProvider.DEFAULT_PORT + " /resources/actuator")) {
+		if (Utils.Network.isAlive("http://127.0.0.1:" + ResourcesService.DEFAULT_PORT + " /resources/actuator")) {
 			EngineService.INSTANCE
 					.setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources"));
 		} else {
-			EngineService.INSTANCE.setResources(new ResourcesService(this));
+			EngineService.INSTANCE.setResources(new ResourcesProvider(this));
 		}
 
 		if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {

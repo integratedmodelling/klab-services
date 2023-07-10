@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowService;
@@ -35,7 +35,7 @@ public class ResolverService implements Resolver {
 	private ServiceScope serviceScope;
 
 	@Autowired
-	public ResolverService(Authentication authentication, ResourceProvider resources, RuntimeService runtime) {
+	public ResolverService(Authentication authentication, ResourcesService resources, RuntimeService runtime) {
 		this.serviceScope = authentication.authorizeService(this);
 	}
 

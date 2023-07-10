@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
-public interface ResourceProvider extends KlabService {
+public interface ResourcesService extends KlabService {
 
 	public static final int DEFAULT_PORT = 8092;
 
@@ -331,11 +331,12 @@ public interface ResourceProvider extends KlabService {
 		void removeWorkspace(String workspaceName);
 
 		/**
-		 * Return a list of all the workspaces available with their contents.
+		 * Return a list of all the workspaces available with their contents. Bound to
+		 * produce a large payload.
 		 * 
 		 * @return
 		 */
-		List<Workspace> getWorkspaces();
+		Collection<Workspace> getWorkspaces();
 
 	}
 

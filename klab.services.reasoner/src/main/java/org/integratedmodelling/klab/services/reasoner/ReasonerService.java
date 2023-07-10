@@ -49,7 +49,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -132,7 +132,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     private String url;
     private String localName;
 
-    transient private ResourceProvider resourceService;
+    transient private ResourcesService resourceService;
     transient private Authentication authenticationService;
     transient private ReasonerConfiguration configuration = new ReasonerConfiguration();
     transient private ServiceScope scope;
@@ -259,7 +259,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Autowired
-    public ReasonerService(Authentication authenticationService, ResourceProvider resourceService, Indexer indexer) {
+    public ReasonerService(Authentication authenticationService, ResourcesService resourceService, Indexer indexer) {
 
         Services.INSTANCE.setReasoner(this);
 
@@ -1210,7 +1210,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 
         boolean ret = true;
         for (Resource namespace : resources.getNamespaces()) {
-            ResourceProvider service = resources.getServices().get(namespace.getServiceId());
+            ResourcesService service = resources.getServices().get(namespace.getServiceId());
             KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(), scope);
             if (parsed != null && !parsed.isErrors()) {
                 for (KimStatement statement : parsed.getStatements()) {

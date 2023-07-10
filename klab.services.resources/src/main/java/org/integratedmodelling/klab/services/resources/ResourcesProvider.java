@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,9 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -43,6 +46,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -51,7 +55,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.Authentication;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
@@ -60,6 +64,9 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.rest.ResourceReference;
+import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
+import org.integratedmodelling.klab.services.resources.assets.ProjectImpl.ManifestImpl;
+import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.resources.lang.KActorsAdapter;
@@ -67,6 +74,7 @@ import org.integratedmodelling.klab.services.resources.lang.KactorsInjectorProvi
 import org.integratedmodelling.klab.services.resources.lang.KdlInjectorProvider;
 import org.integratedmodelling.klab.services.resources.lang.KimAdapter;
 import org.integratedmodelling.klab.services.resources.lang.KimInjectorProvider;
+import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utilities.Utils.Git;
 import org.mapdb.DB;
@@ -78,7 +86,7 @@ import org.springframework.stereotype.Service;
 import com.google.inject.Injector;
 
 @Service
-public class ResourcesService implements ResourceProvider, ResourceProvider.Admin {
+public class ResourcesProvider implements ResourcesService, ResourcesService.Admin {
 
 	private static final long serialVersionUID = 6589150530995037678L;
 
@@ -106,9 +114,9 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	/*
 	 * Dirty namespaces are kept in order of dependency and reloaded sequentially.
 	 */
-	transient Set<String> dirtyNamespaces = Collections.synchronizedSet(new LinkedHashSet<>());
-	transient Set<String> dirtyProjects = Collections.synchronizedSet(new LinkedHashSet<>());
-	transient Set<String> dirtyWorkspaces = Collections.synchronizedSet(new LinkedHashSet<>());
+//	transient Set<String> dirtyNamespaces = Collections.synchronizedSet(new LinkedHashSet<>());
+//	transient Set<String> dirtyProjects = Collections.synchronizedSet(new LinkedHashSet<>());
+//	transient Set<String> dirtyWorkspaces = Collections.synchronizedSet(new LinkedHashSet<>());
 
 	/**
 	 * the only persistent info in this implementation is the catalog of resource
@@ -120,11 +128,12 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	 */
 	transient DB db = null;
 	transient ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
+	transient ModelKbox kbox;
 
-	/**
-	 * Always load projects and namespaces sequentially.
-	 */
-	transient ExecutorService projectLoader = Executors.newSingleThreadExecutor();
+//	/**
+//	 * Always load projects and namespaces sequentially.
+//	 */
+//	transient ExecutorService projectLoader = Executors.newSingleThreadExecutor();
 
 	/**
 	 * Default interval to check for changes in Git (15 minutes in milliseconds)
@@ -132,7 +141,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	private long DEFAULT_GIT_SYNC_INTERVAL = 15l * 60l * 60l * 1000l;
 
 	@SuppressWarnings("unchecked")
-	public ResourcesService() {
+	public ResourcesProvider() {
 		this.localName = "klab.services.resources." + UUID.randomUUID();
 		Services.INSTANCE.setResources(this);
 		initializeLanguageServices();
@@ -150,7 +159,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	}
 
 	@Autowired
-	public ResourcesService(Authentication authenticationService) {
+	public ResourcesProvider(Authentication authenticationService) {
 		this();
 		this.authenticationService = authenticationService;
 		this.scope = authenticationService.authorizeService(this);
@@ -162,7 +171,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	 * 
 	 * @param self
 	 */
-	public ResourcesService(ResourcesService self) {
+	public ResourcesProvider(ResourcesProvider self) {
 		this.localName = self.localName;
 		this.url = self.url;
 		this.db = self.db;
@@ -175,11 +184,11 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 		this.configuration = self.configuration;
 		this.localNamespaces = self.localNamespaces;
 		this.localWorkspaces = self.localWorkspaces;
-		this.projectLoader = self.projectLoader;
+//		this.projectLoader = self.projectLoader;
 		this.kimLoader = self.kimLoader;
-		this.dirtyNamespaces = self.dirtyNamespaces;
-		this.dirtyProjects = self.dirtyProjects;
-		this.dirtyWorkspaces = self.dirtyWorkspaces;
+//		this.dirtyNamespaces = self.dirtyNamespaces;
+//		this.dirtyProjects = self.dirtyProjects;
+//		this.dirtyWorkspaces = self.dirtyWorkspaces;
 	}
 
 	private void saveConfiguration() {
@@ -188,29 +197,91 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	}
 
 	private void loadWorkspaces() {
-		for (String workspace : configuration.getWorkspaces().keySet()) {
-			for (String project : configuration.getWorkspaces().get(workspace)) {
-				loadProject(configuration.getProjectConfiguration().get(project));
+		for (String workspaceName : configuration.getWorkspaces().keySet()) {
+			Workspace workspace = getWorkspace(workspaceName);
+			for (String project : configuration.getWorkspaces().get(workspaceName)) {
+				workspace.getProjects().add(loadProject(project, configuration.getProjectConfiguration().get(project)));
 			}
 		}
 	}
 
-	private synchronized void loadProject(final ProjectConfiguration projectConfiguration) {
+	private Workspace getWorkspace(String workspaceName) {
+		Workspace ret = localWorkspaces.get(workspaceName);
+		if (ret == null) {
+			ret = new WorkspaceImpl();
+			((WorkspaceImpl) ret).setName(workspaceName);
+//			((WorkspaceImpl)ret).setUrl(this.url + "/workspaces/" + workspaceName);
+			this.localWorkspaces.put(workspaceName, ret);
+		}
+		return ret;
+	}
+
+	private synchronized Project loadProject(String projectName, final ProjectConfiguration projectConfiguration) {
 
 		/*
 		 * this automatically loads namespaces and behaviors through callbacks.
 		 */
-		IKimProject project = kimLoader.loadProject(projectConfiguration.getLocalPath());
-		File resourceDir = new File(project.getRoot() + File.separator + "resources");
-		loadResources(resourceDir, 0, true);
+		ProjectImpl project = new ProjectImpl();
+		project.setName(projectName);
+//		project.setUrl(this.url + "/projects/" + kimProject.getName());
+		localProjects.put(projectName, project);
+		IKimProject kimProject = kimLoader.loadProject(projectConfiguration.getLocalPath());
+		File resourceDir = new File(kimProject.getRoot() + File.separator + "resources");
+		loadResources(resourceDir, project, 0, true);
+		project.setManifest(readManifest(kimProject));
+		project.getMetadata().putAll(readMetadata(kimProject, project.getManifest()));
 
 		/*
-		 * commit any DB changes
+		 * TODO check notifications in namespaces and behaviors and ensure the project
+		 * reports errors in its components. Resources are managed indepenendently of
+		 * the projects they belong to. FIXME probably the resource permissions could be
+		 * intersected, but it's probably confusing although restrictions in projects
+		 * should be the default for resources..
 		 */
+		/*
+		 * TODO add a ResourceStatus record for the project
+		 */
+
 		db.commit();
+
+		return project;
+
 	}
 
-	private void loadResources(File resourceDir, int level, boolean legacy) {
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> readMetadata(IKimProject kimProject, Manifest manifest) {
+		File manifestFile = new File(
+				kimProject.getRoot() + File.separator + "META-INF" + File.separator + "metadata.json");
+		if (manifestFile.exists()) {
+			return Utils.Json.load(manifestFile, Map.class);
+		}
+		Map<String, Object> ret = new LinkedHashMap<>();
+		for (Object key : kimProject.getProperties().keySet()) {
+			ret.put(key.toString(), kimProject.getProperties().getProperty(key.toString()));
+		}
+		if (!ret.containsKey(Metadata.DC_COMMENT)) {
+			ret.put(Metadata.DC_COMMENT, manifest.getDescription());
+		}
+		return ret;
+	}
+
+	private Manifest readManifest(IKimProject project) {
+		File manifestFile = new File(
+				project.getRoot() + File.separator + "META-INF" + File.separator + "manifest.json");
+		if (manifestFile.exists()) {
+			return Utils.Json.load(manifestFile, ManifestImpl.class);
+		}
+		ManifestImpl ret = new ManifestImpl();
+		ret.setWorldview(project.getWorldview());
+		ret.setDefinedWorldview(project.getDefinedWorldview());
+		for (String proj : project.getRequiredProjectNames()) {
+			ret.getPrerequisiteProjects().add(Pair.of(proj, Version.EMPTY_VERSION));
+		}
+		Utils.Json.save(ret, manifestFile);
+		return ret;
+	}
+
+	private void loadResources(File resourceDir, ProjectImpl project, int level, boolean legacy) {
 
 		/*
 		 * load new and legacy resources. This thing returns null if the dir does not
@@ -226,9 +297,9 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 			for (File subdir : files) {
 				Resource resource = null;
 				if ("unreviewed".equals(Utils.Files.getFileBaseName(subdir))) {
-					loadResources(subdir, 0, false);
+					loadResources(subdir, project, 0, false);
 				} else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
-					loadResources(subdir, 1, false);
+					loadResources(subdir, project, 1, false);
 				} else {
 					resource = KimAdapter.adaptResource(Utils.Json
 							.load(new File(subdir + File.separator + "resource.json"), ResourceReference.class));
@@ -292,19 +363,24 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 	private void loadBehaviors(List<File> behaviors) {
 		for (File behaviorFile : behaviors) {
-			projectLoader.execute(() -> {
-				KActorsBehavior behavior = KActorsAdapter.INSTANCE.readBehavior(behaviorFile);
-				this.localBehaviors.put(behavior.getName(), behavior);
-			});
+//			projectLoader.execute(() -> {
+			KActorsBehavior behavior = KActorsAdapter.INSTANCE.readBehavior(behaviorFile);
+			if (behavior.getProjectId() != null) {
+				localProjects.get(behavior.getProjectId()).getBehaviors().add(behavior);
+			}
+			this.localBehaviors.put(behavior.getName(), behavior);
+//			});
 		}
 	}
 
 	private void loadNamespaces(List<NamespaceDescriptor> namespaces) {
 		for (NamespaceDescriptor ns : namespaces) {
-			projectLoader.execute(() -> {
-				KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
-				this.localNamespaces.put(namespace.getUrn(), namespace);
-			});
+//			projectLoader.execute(() -> {
+			KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
+			Project project = localProjects.get(namespace.getProjectName());
+			project.getNamespaces().add(namespace);
+			this.localNamespaces.put(namespace.getUrn(), namespace);
+//			});
 		}
 	}
 
@@ -324,7 +400,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 		} else if (!this.scope.isExclusive()) {
 
-			for (ResourceProvider service : Services.INSTANCE.getFederatedResources(scope)) {
+			for (ResourcesService service : Services.INSTANCE.getFederatedResources(scope)) {
 				KimNamespace candidate = service.resolveNamespace(urn, scope);
 				if (candidate != null) {
 					// FIXME this causes more traffic than we should cause - maybe limit full scan
@@ -354,7 +430,7 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 			return ret;
 		} else if (!this.scope.isExclusive()) {
 
-			for (ResourceProvider service : Services.INSTANCE.getFederatedResources(scope)) {
+			for (ResourcesService service : Services.INSTANCE.getFederatedResources(scope)) {
 				KActorsBehavior candidate = service.resolveBehavior(urn, scope);
 				if (candidate != null) {
 					// FIXME this causes more traffic than we should cause - maybe limit full scan
@@ -420,12 +496,17 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 			}
 		}
 
+		File workspace = Configuration.INSTANCE.getDataPath(configuration.getServicePath() + File.separator
+				+ configuration.getLocalResourcePath() + File.separator + workspaceName);
+		workspace.mkdirs();
+
 		if (Utils.Git.isRemoteGitURL(projectUrl)) {
 
-			File workspace = Configuration.INSTANCE.getDataPath(configuration.getServicePath() + File.separator
-					+ configuration.getLocalResourcePath() + File.separator + workspaceName);
-			workspace.mkdirs();
 			try {
+
+				/**
+				 * This should be the main use of project resources. TODO handle credentials
+				 */
 
 				projectName = Git.clone(projectUrl, workspace, false);
 				ProjectConfiguration configuration = new ProjectConfiguration();
@@ -440,13 +521,13 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 					this.configuration.getWorkspaces().put(workspaceName, projects);
 				}
 				projects.add(projectName);
+				Project project = loadProject(projectName, configuration);
+				configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
 				this.configuration.getProjectConfiguration().put(projectName, configuration);
 				saveConfiguration();
 
-				dirtyWorkspaces.add(workspaceName);
-				dirtyProjects.add(projectName);
-
-				loadProject(configuration);
+//				dirtyWorkspaces.add(workspaceName);
+//				dirtyProjects.add(projectName);
 
 			} catch (Throwable t) {
 				return false;
@@ -455,9 +536,13 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 		} else if (projectUrl.startsWith("http")) {
 
 			/*
+			 * TODO
+			 * 
 			 * Load from another service. These projects may be served as mirrors or just
 			 * kept to meet dependencies, according to the 'served' bit in the
-			 * configuration.
+			 * configuration. The source of truth should remain the source code, hosted in a
+			 * single place (the remote service); mechanisms should be in place to store the
+			 * original server and check for changes and new versions.
 			 */
 
 		} else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
@@ -473,20 +558,43 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 	@Override
 	public void removeProjectFromLocalWorkspace(String workspaceName, String projectName) {
-		// TODO Auto-generated method stub
-		// ProjectConfiguration configuration =
+
+		ProjectConfiguration configuration = this.configuration.getProjectConfiguration().get(projectName);
+		Project project = this.localProjects.get(projectName);
+		Workspace workspace = this.localWorkspaces.get(workspaceName);
+		Utils.Files.deleteQuietly(configuration.getLocalPath());
+		if (this.configuration.getWorkspaces().get(workspaceName) != null) {
+			this.configuration.getWorkspaces().get(workspaceName).remove(projectName);
+		}
+		// remove namespaces, behaviors and resources
+		for (KimNamespace namespace : project.getNamespaces()) {
+			this.localNamespaces.remove(namespace.getNamespace());
+		}
+		for (KActorsBehavior behavior : project.getBehaviors()) {
+			this.localBehaviors.remove(behavior.getName());
+		}
+		for (String resource : project.getResourceUrns()) {
+			localResources.remove(resource);
+			catalog.remove(resource);
+		}
+		this.localProjects.remove(projectName);
+		workspace.getProjects().remove(project);
+		saveConfiguration();
+		db.commit();
 	}
 
 	@Override
 	public void removeWorkspace(String workspaceName) {
-		// TODO Auto-generated method stub
-
+		Workspace workspace = this.localWorkspaces.get(workspaceName);
+		for (Project project : workspace.getProjects()) {
+			removeProjectFromLocalWorkspace(workspaceName, project.getName());
+		}
+		this.localWorkspaces.remove(workspaceName);
 	}
 
 	@Override
-	public List<Workspace> getWorkspaces() {
-		// TODO Auto-generated method stub
-		return null;
+	public Collection<Workspace> getWorkspaces() {
+		return localWorkspaces.values();
 	}
 
 	@Override
@@ -495,13 +603,13 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 	}
 
 	public boolean shutdown(int secondsToWait) {
-		try {
-			projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
-			return true;
-		} catch (InterruptedException e) {
-			Logging.INSTANCE.error("Error during thread termination", e);
-		}
-		return false;
+//		try {
+//			projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
+		return true;
+//		} catch (InterruptedException e) {
+//			Logging.INSTANCE.error("Error during thread termination", e);
+//		}
+//		return false;
 	}
 
 	@Override
@@ -531,11 +639,8 @@ public class ResourcesService implements ResourceProvider, ResourceProvider.Admi
 
 		ResourceSet ret = new ResourceSet();
 
-		/*
-		 * find all the worldview projects
-		 */
 		for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
-			ProjectConfiguration project = this.configuration.getProjectConfiguration().get(projectName);
+//			ProjectConfiguration project = this.configuration.getProjectConfiguration().get(projectName);
 			if (projects.contains(projectName)) {
 				ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
 			}

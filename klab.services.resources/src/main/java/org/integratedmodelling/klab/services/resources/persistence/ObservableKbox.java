@@ -50,7 +50,7 @@ import org.integratedmodelling.klab.api.model.INamespace;
 import org.integratedmodelling.klab.api.resolution.IResolutionScope;
 import org.integratedmodelling.klab.api.runtime.monitoring.IMonitor;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.exceptions.KlabException;
@@ -94,7 +94,7 @@ public abstract class ObservableKbox extends H2Kbox {
 
 	protected Reasoner reasoner;
 	protected Scope scope;
-	protected ResourceProvider resourceService;
+	protected ResourcesService resourceService;
 
 	/**
 	 * The version is used to create storage on the file system. Change this when
@@ -429,7 +429,7 @@ public abstract class ObservableKbox extends H2Kbox {
 		
 		this.scope = scope;
 		this.reasoner = scope.getService(Reasoner.class);
-		this.resourceService = scope.getService(ResourceProvider.class);
+		this.resourceService = scope.getService(ResourcesService.class);
 		
 		if (this.reasoner == null || this.resourceService == null) {
 			throw new KIllegalStateException("cannot initialize kbox without a valid reasoner or resource service");

@@ -26,9 +26,22 @@ public interface Project extends Serializable {
 	 */
 	interface Manifest extends Serializable {
 
-		String getName();
-
 		String getDescription();
+
+		/**
+		 * Worldview that the project is committed to. Should never be null.
+		 * 
+		 * @return
+		 */
+		String getWorldview();
+
+		/**
+		 * If this returns non-null, this project contributes to the passed worldview
+		 * and cannot contain resources or models.
+		 * 
+		 * @return
+		 */
+		String getDefinedWorldview();
 
 		ResourcePrivileges getPrivileges();
 
@@ -52,14 +65,6 @@ public interface Project extends Serializable {
 	Metadata getMetadata();
 
 	/**
-	 * If this returns non-null, this project contributes to the passed worldview
-	 * and cannot contain resources or models.
-	 * 
-	 * @return
-	 */
-	String getDefinedWorldview();
-
-	/**
 	 * Name of the project, unique in the k.LAB ecosystem and consisting of
 	 * lowercase IDs in dot-separated reverse domain order syntax.
 	 * 
@@ -76,33 +81,17 @@ public interface Project extends Serializable {
 	URL getURL();
 
 	/**
-	 * Worldview that the project is committed to. Should never be null.
-	 * 
-	 * @return
-	 */
-	String getWorldview();
-
-	/**
-	 * 
-	 * @param id
-	 * @return
-	 */
-	KimNamespace getNamespace(String id);
-
-	/**
-	 * Any projects that this directly depends on. Load order should be determined
-	 * after retrieval.
-	 * 
-	 * @return
-	 */
-	Collection<String> getRequiredProjectNames();
-
-	/**
 	 * 
 	 * @return
 	 */
 	List<KimNamespace> getNamespaces();
 
+	/**
+	 * 
+	 * @return
+	 */
+	List<String> getResourceUrns();
+	
 	/**
 	 * All the legitimate behaviors (in the source files)
 	 * 
@@ -137,12 +126,5 @@ public interface Project extends Serializable {
 	 */
 	List<Notification> getNotifications();
 
-	/**
-	 * Return any user/group privileges set for the project. If none are set, return
-	 * {@link ResourcePrivileges#PUBLIC}.
-	 * 
-	 * @return
-	 */
-	ResourcePrivileges getPrivileges();
 
 }

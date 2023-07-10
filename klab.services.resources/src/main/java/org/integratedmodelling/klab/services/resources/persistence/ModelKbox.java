@@ -827,7 +827,7 @@ public class ModelKbox extends ObservableKbox {
 //				}
 
 				if (project != null) {
-					m.setPermissions(project.getPrivileges());
+					m.setPermissions(project.getManifest().getPrivileges());
 				}
 
 				m.setTimeEnd(timeEnd);

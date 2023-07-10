@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
@@ -39,7 +39,7 @@ public enum EngineService {
 	private ReActorSystem actorSystem;
 
 	private Reasoner reasoner;
-	private ResourceProvider resources;
+	private ResourcesService resources;
 	private RuntimeService runtime;
 	private Resolver resolver;
 	private boolean booted;
@@ -94,7 +94,7 @@ public enum EngineService {
 				public <T extends KlabService> T getService(Class<T> serviceClass) {
 					if (serviceClass.isAssignableFrom(Reasoner.class)) {
 						return (T) reasoner;
-					} else if (serviceClass.isAssignableFrom(ResourceProvider.class)) {
+					} else if (serviceClass.isAssignableFrom(ResourcesService.class)) {
 						return (T) resources;
 					} else if (serviceClass.isAssignableFrom(Resolver.class)) {
 						return (T) resolver;
@@ -139,11 +139,11 @@ public enum EngineService {
 		this.reasoner = reasoner;
 	}
 
-	public ResourceProvider getResources() {
+	public ResourcesService getResources() {
 		return resources;
 	}
 
-	public void setResources(ResourceProvider resources) {
+	public void setResources(ResourcesService resources) {
 		this.resources = resources;
 	}
 

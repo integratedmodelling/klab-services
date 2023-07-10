@@ -7,7 +7,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -17,11 +17,16 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * other information is stored reflecting the status for the service at the time
  * of last update, the availability ({@link #getType()} should always be
  * assessed in scope and in realtime when this is retrieved from the API
- * ({@link ResourceProvider#resourceStatus(String, Scope)}), reflecting
+ * ({@link ResourcesService#resourceStatus(String, Scope)}), reflecting
  * permissions, server status, adapter status, availability of dependencies and
  * any other needed factor. The stored type should be AUTHORIZED or DEPRECATED,
  * OFFLINE only if it starts its lifecycle with compilation errors, and never
  * UNAUTHORIZED or DELAYED.
+ * <p>
+ * Much of the information here comes from the persistent ResourceConfiguration
+ * in ResourceSet, although it could change based on context, scope or
+ * contingencies. In turn, that information could come from the manifest in the
+ * resources themselves or be added later, possibly to override the former.
  * 
  * @author Ferd
  *
@@ -35,7 +40,7 @@ public class ResourceStatus {
 		 * are deprecated are considered unavailable for now.
 		 */
 		DEPRECATED(true);
-		
+
 		private boolean usable;
 
 		private Type(boolean usable) {

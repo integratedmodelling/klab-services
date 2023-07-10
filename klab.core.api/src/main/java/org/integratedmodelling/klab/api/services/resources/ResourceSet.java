@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 
 /**
  * The output of any resources GET endpoint that provides models, projects,
@@ -75,7 +75,7 @@ public class ResourceSet implements Serializable {
 
 	}
 
-	private Map<String, ResourceProvider> services = new HashMap<>();
+	private Map<String, ResourcesService> services = new HashMap<>();
 	private List<Resource> namespaces = new ArrayList<>();
 	private List<Resource> behaviors = new ArrayList<>();
 	private List<Resource> resources = new ArrayList<>();
@@ -115,11 +115,11 @@ public class ResourceSet implements Serializable {
 		this.empty = empty;
 	}
 
-	public Map<String, ResourceProvider> getServices() {
+	public Map<String, ResourcesService> getServices() {
 		return services;
 	}
 
-	public void setServices(Map<String, ResourceProvider> services) {
+	public void setServices(Map<String, ResourcesService> services) {
 		this.services = services;
 	}
 

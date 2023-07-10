@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public class RuntimeService implements org.integratedmodelling.klab.api.services.RuntimeService,
@@ -17,7 +17,7 @@ public class RuntimeService implements org.integratedmodelling.klab.api.services
 
 	private static final long serialVersionUID = -3119521647259754846L;
 
-	public RuntimeService(Authentication testAuthentication, ResourceProvider resources, Resolver resolver) {
+	public RuntimeService(Authentication testAuthentication, ResourcesService resources, Resolver resolver) {
 		// TODO Auto-generated constructor stub
 	}
 

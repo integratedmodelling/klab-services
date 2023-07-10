@@ -17,12 +17,12 @@ import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
-public class ResourcesClient implements ResourceProvider {
+public class ResourcesClient implements ResourcesService {
 
     private static final long serialVersionUID = 4305387731730961701L;
 

@@ -50,7 +50,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
-import org.integratedmodelling.klab.api.services.ResourceProvider;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
@@ -77,7 +77,7 @@ public class Utils {
 		 *                  return false.
 		 * @return
 		 */
-		public static ResourceSet create(ResourceProvider service, KlabAsset... resources) {
+		public static ResourceSet create(ResourcesService service, KlabAsset... resources) {
 			ResourceSet ret = new ResourceSet();
 			ret.getServices().put(service.getLocalName(), service);
 			if (resources != null) {

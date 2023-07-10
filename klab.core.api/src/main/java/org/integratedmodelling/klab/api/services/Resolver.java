@@ -84,9 +84,10 @@ public interface Resolver extends KlabService {
 	 * models (by scale and semantics) should happen in the resource servers with
 	 * help from the reasoner, yielding a {@link ResourceSet} from
 	 * (ResourceProvider{@link #queryModels(Observable, ContextScope)}}). The
-	 * conversion to {@link Model}, ranking and prioritization should be done inside
-	 * the resolver. Resolvers should cache the build {@link Model}s and refresh the
-	 * cache based on version matching.
+	 * validation, conversion to {@link Model}, ranking and prioritization should be
+	 * done inside the resolver. Matching models that are accessible to the
+	 * Resolvers but invalid should generate an info message. Should cache the build
+	 * {@link Model}s and refresh the cache based on version matching.
 	 * 
 	 * @param observable
 	 * @param scope

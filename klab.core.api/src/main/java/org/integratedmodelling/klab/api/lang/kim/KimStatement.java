@@ -11,15 +11,15 @@ import org.integratedmodelling.klab.api.lang.Statement;
 public interface KimStatement extends Statement, KimScope {
 
 	/**
-	 * Scope is relevant to models and namespaces, where it affects resolution
-	 * of models.
+	 * Scope is relevant to models and namespaces, where it affects resolution of
+	 * models.
 	 * 
 	 * @author Ferd
 	 *
 	 */
 	public enum Scope {
 
-        PUBLIC, PRIVATE, PROJECT_PRIVATE;
+		PUBLIC, PRIVATE, PROJECT_PRIVATE;
 
 		public Scope narrowest(Scope... scopes) {
 			Scope ret = scopes == null || scopes.length == 0 ? null : scopes[0];
@@ -33,25 +33,30 @@ public interface KimStatement extends Statement, KimScope {
 			return ret;
 		}
 	}
-    /**
-     * Documentation metadata is the content of the @documentation annotation if present.
-     * @return the documentation
-     */
-    Parameters<String> getDocumentationMetadata();
 
-    /**
-     * The namespace ID for this object. Coincides with getName() if this is a IKimNamespace.
-     * 
-     * @return
-     */
-    String getNamespace();
+	/**
+	 * Documentation metadata is the content of the @documentation annotation if
+	 * present.
+	 * 
+	 * @return the documentation
+	 */
+	Parameters<String> getDocumentationMetadata();
 
-    /**
-     * Scope can be declared for namespaces and models. Default is public or whatever the containing
-     * namespace scope is. Concepts unfortunately cannot be scoped with current infrastructure.
-     * 
-     * @return
-     */
-    Scope getScope();
+	/**
+	 * The namespace ID for this object. For a KimNamespace it's also the official
+	 * name (there is no getName()).
+	 * 
+	 * @return
+	 */
+	String getNamespace();
+
+	/**
+	 * Scope can be declared for namespaces and models. Default is public or
+	 * whatever the containing namespace scope is. Concepts unfortunately cannot be
+	 * scoped with current infrastructure.
+	 * 
+	 * @return
+	 */
+	Scope getScope();
 
 }
