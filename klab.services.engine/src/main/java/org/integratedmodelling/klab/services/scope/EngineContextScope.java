@@ -175,4 +175,10 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 		return context;
 	}
 
+	@Override
+	public <T extends Observation> T getObservation(String localName, Class<T> cls) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

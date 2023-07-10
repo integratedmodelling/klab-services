@@ -14,7 +14,8 @@ import picocli.CommandLine.Spec;
 public class Services {
 
 	@Command(name = "list", mixinStandardHelpOptions = true, description = { "List the services available",
-			"Colors show services connected (yellow), online (white) or offline (grey)" })
+			"Colors show services connected (yellow), online and available (green) or offline (grey).",
+			"The default service for requests is indicated with an asterisk." })
 	static class List implements Runnable {
 
 		int zio = 0;
@@ -71,8 +72,13 @@ public class Services {
 
 	}
 
-	@Command(name = "connect", mixinStandardHelpOptions = true, description = { "Connect to an available service", "" })
+	@Command(name = "connect", mixinStandardHelpOptions = true, description = { "Connect to an available service",
+			"Makes the service available for requests." })
 	static class Connect implements Runnable {
+
+		@Option(names = { "-d", "--default" }, defaultValue = "false", description = {
+				"Make the connected service also the default to answer requests." }, required = false)
+		boolean makeDefault = false;
 
 		@Override
 		public void run() {

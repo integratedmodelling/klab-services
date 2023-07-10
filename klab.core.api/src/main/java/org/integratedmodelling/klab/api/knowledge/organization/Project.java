@@ -6,7 +6,9 @@ import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.MetadataConvention;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -15,11 +17,31 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public interface Project extends Serializable {
 
 	/**
-	 * Versioning info is mandatory @since k.LAB 12.0.
+	 * Each project must publish a manifest with all the needed information. In
+	 * source project this should be in META-INF/manifest.json. Much of the manifest
+	 * also ends up in the metadata based on the schema.
 	 * 
-	 * @return
+	 * @author Ferd
+	 *
 	 */
-	Version getVersion();
+	interface Manifest extends Serializable {
+
+		String getName();
+
+		String getDescription();
+
+		ResourcePrivileges getPrivileges();
+
+		Version getVersion();
+
+		Collection<MetadataConvention> getMetadataConventions();
+		
+		List<Pair<String, Version>> getPrerequisiteProjects();
+
+		List<Pair<String, Version>> getPrerequisiteComponents();
+	}
+
+	Manifest getManifest();
 
 	/**
 	 * Metadata in projects with revision ranking >= 1 are mandatory and validated

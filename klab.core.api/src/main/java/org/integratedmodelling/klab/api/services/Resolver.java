@@ -75,12 +75,18 @@ public interface Resolver extends KlabService {
 	 * Query all the resource servers available to find models that can observe the
 	 * passed observable in the scope. The result should be merged to keep the
 	 * latest available versions and ranked in decreasing order of fit to the
-	 * context; the {@link #RESOLUTION_SCORE} ranking and corresponding
-	 * {@link #RESOLUTION_DATA} should be in their metadata.
+	 * context. A map linking resolution metadata to each model resolved (optionally
+	 * including those not chosen) should be available for inspection, reporting and
+	 * debugging in the resolution graph connected to the {@link ContextScope}.
 	 * <p>
-	 * While search for models (by scale and semantics) should happen in the
-	 * resource servers with help from the reasoner, yielding a ResourceSet through
-	 * TODO, the ranking should be done inside the resolver.
+	 * This method is where the {@link Model} objects are created from the
+	 * {@link KimModelStatement} managed by the resource services. The search for
+	 * models (by scale and semantics) should happen in the resource servers with
+	 * help from the reasoner, yielding a {@link ResourceSet} from
+	 * (ResourceProvider{@link #queryModels(Observable, ContextScope)}}). The
+	 * conversion to {@link Model}, ranking and prioritization should be done inside
+	 * the resolver. Resolvers should cache the build {@link Model}s and refresh the
+	 * cache based on version matching.
 	 * 
 	 * @param observable
 	 * @param scope

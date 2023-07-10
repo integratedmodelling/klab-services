@@ -28,6 +28,13 @@ public interface VM {
 	 */
 	interface BehaviorScope extends Channel {
 
+		/**
+		 * The authorized runtime scope for the behavior execution.
+		 * 
+		 * @return
+		 */
+		Scope getMainScope();
+
 	}
 
 	/**
@@ -44,6 +51,7 @@ public interface VM {
 
 	/**
 	 * Run the passed behavior with the passed parameters in the passed scope.
+	 * Should create the {@link BehaviorScope} internally.
 	 * 
 	 * @param behavior
 	 * @param arguments

@@ -6,12 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph.ResolutionEdge;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -85,6 +87,7 @@ public class ResolutionGraph {
 		public Coverage coverage;
 		public LogicalConnector mergeStrategy;
 		Map<Observable, Resolution> accepted = new HashMap<>();
+		Map<Model, Metadata> resolutionMetadata = new HashMap<>();
 
 		/**
 		 * Any new node is initialized with the accepted overall nodes in the graph.

@@ -7,17 +7,35 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**
- * The scope is a communication channel that holds the truth about knowledge
- * environments in the engine. Scopes are not sent through endpoints so they are
- * not Serializable; rather, scopes for endpoints that serve remote engines
- * should be recreated based on the authentication info sent with the request,
- * and set up to modify the "peer" scope at client side through RPC when setting
- * methods or any of the {@link Channel} methods are called.
+ * The scope is a communication channel that holds all information about the
+ * knowledge environment in the service. That includes other services, which
+ * must be set into the scope in either an embedded or client implementation and
+ * are made available through {@link #getService(Class)}. Scopes are passed to
+ * most functions in k.LAB.
  * <p>
  * There are three major classes of scope: authentication produces a
  * {@link UserScope}, which can spawn sessions and applications as "child"
  * scopes. Within these, {@link ContextScope}s are used to make and manage
- * observations.
+ * observations. In addition, a {@link ServiceScope} is used by each service to
+ * access logging, the owning identity, and other services.
+ * <p>
+ * The scope API exposes an agent handle through {@link #getAgent()} which is
+ * used to communicate with an underlying software agent, incarnating the
+ * identity that owns the scope in a reactive environment. According to
+ * implementation, the agent may or may not be present.
+ * <p>
+ * In a server context, the authentication mechanism is responsible for
+ * maintaing a valid hierarchy of scopes based on the authorization token.
+ * Scopes should never be transferred through REST calls (they do not implement
+ * Serializable on purpose) unless embedded in authorization tokens, from which
+ * they should be extracted and sent to calls that require scopes. A "remote"
+ * scope MUST implement {@link #send(Object...)} and the logging methods (with
+ * the possible exception of {@link #debug(Object...)}) so that they communicate
+ * their arguments to the client-side scope using a suitable RPC mechanism.
+ * <p>
+ * At the moment, there is no requirement for the remote scope to be able to
+ * communicate with a remote agent in case {@link #getAgent()} isn't null at the
+ * client side. This may become a requirement in the future.
  * 
  * @author Ferd
  *
@@ -25,7 +43,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 public abstract interface Scope extends Channel {
 
 	enum Status {
-		WAITING, STARTED, CHANGED, FINISHED, ABORTED, /* this only sent by UIs for now */ INTERRUPTED, EMPTY
+		WAITING, STARTED, CHANGED, FINISHED, ABORTED, INTERRUPTED, EMPTY
 	}
 
 	enum Type {

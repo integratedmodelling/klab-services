@@ -166,6 +166,16 @@ public interface ContextScope extends SessionScope {
 	Map<Observable, Observation> getCatalog();
 
 	/**
+	 * Retrieve the observation recognized in this context with the passed name.
+	 * 
+	 * @param <T>
+	 * @param localName
+	 * @param cls
+	 * @return
+	 */
+	<T extends Observation> T getObservation(String localName, Class<T> cls);
+
+	/**
 	 * When resolving, the resolution namespace that provides the resolution scope
 	 * must be provided. In other situations this will be null.
 	 * 
@@ -196,6 +206,5 @@ public interface ContextScope extends SessionScope {
 	 * @return
 	 */
 	Observation getResolutionObservation();
-
 
 }

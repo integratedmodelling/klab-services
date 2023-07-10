@@ -72,6 +72,8 @@ public enum EngineService {
 
 			/*
 			 * Scan all packages registered under the parent package of all k.LAB services.
+			 * TODO all assets from there should be given default permissions (or those
+			 * encoded with their annotations) that are exposed to the admin API.
 			 */
 			for (String pack : extensionPackages) {
 				Configuration.INSTANCE.scanPackage(pack);

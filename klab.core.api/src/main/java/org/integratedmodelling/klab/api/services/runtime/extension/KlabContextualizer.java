@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
@@ -43,14 +44,21 @@ public @interface KlabContextualizer {
 	}
 
 	/**
-	 * The namespace should be provided unless the annotated class is within a
-	 * {@link Library}-annotated class, whose name provides the namespace.
+	 * Single, lowercase name. Will be compoundend with the enclosing library's
+	 * namespace to build a path that must be unique.
 	 * 
 	 * @return
 	 */
-	String namespace() default "";
-
 	String name();
+
+	/**
+	 * Version is mandatory and should be coded to reflect the version of any
+	 * components that the contextualizer is part of. Must be a semantic version
+	 * parseable by {@link Version}.
+	 * 
+	 * @return
+	 */
+	String version();
 
 	String description();
 

@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.KActorsVM;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.SetState;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utils.NameGenerator;
 
 import io.reacted.core.config.reactors.ReActorConfig;
@@ -26,12 +27,17 @@ import io.reacted.core.reactorsystem.ReActorContext;
 import io.reacted.core.reactorsystem.ReActorRef;
 
 /**
- * The basic k.LAB actor is created in a k.LAB scope, it has a "global" state
- * hash, and can run one (or more) k.Actors behaviors as a response to a
- * RunBehavior message. The behaviors run asynchronously in a separate VM (one
- * per agent, running all the behaviors that were sent in separate threads).
- * Each run uses a run scope that contains the actor ref and the Scope that the
- * agent was created in.
+ * The basic k.LAB agent is created in a k.LAB scope, has a "global" state hash,
+ * and can run one or more k.Actors behaviors as a response to a RunBehavior
+ * message. The behaviors run asynchronously in a VM instantiated on a per-agent
+ * basis, which runs all the behaviors sent concurrently in separate threads;
+ * the agent still processes any messages sent to it (explicitly or through
+ * behavior execution) sequentially. Each run uses a run scope that contains the
+ * actor ref and the Scope that the agent was created in.
+ * <p>
+ * In this implementation, users, sessions/scripts/applications, top-level
+ * contexts and individual observations bound to behaviors wrap an agent and can
+ * run k.Actors behaviors.
  * 
  * @author ferdinando villa
  *
@@ -66,7 +72,7 @@ public abstract class KAgent implements ReActor {
 		if (scratchPath == null) {
 			// create, mkdirs and register for deletion
 		}
-		return null;
+		return scratchPath;
 	}
 
 	public static class KAgentRef implements Ref {
@@ -245,7 +251,7 @@ public abstract class KAgent implements ReActor {
 			vm.stop();
 		}
 		if (scratchPath != null) {
-			// TODO delete all contents
+			Utils.Files.deleteQuietly(scratchPath);
 		}
 	}
 

@@ -25,10 +25,13 @@ public class KlabCompleter implements Completer {
 	}
 
 	/**
-	 * Recognize the type of knowledge we are trying to match. If the current word
+	 * Recognize the type of knowledge we are trying to match based on the command
+	 * and the context. If the current command and line context are not suitable,
+	 * return null to defer control to the standard completer. If the current word
 	 * is empty, suggest "all" resources if possible or return null. If we are
-	 * matching concepts, use the semantic search context, which is reset at every
-	 * command execution.
+	 * matching concepts, use the semantic search context, which is reset in the
+	 * main command loop by calling {@link #resetSemanticSearch()} at every command
+	 * execution.
 	 * 
 	 * @param line
 	 * @return
