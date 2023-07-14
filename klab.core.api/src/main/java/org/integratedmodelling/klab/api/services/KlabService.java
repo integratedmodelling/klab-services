@@ -32,7 +32,7 @@ public interface KlabService extends Serializable {
         String getServiceName();
     }
 
-    ServiceCapabilities getCapabilities();
+    ServiceCapabilities capabilities();
 
     /**
      * Get the URL to this service. If this is null, the service cannot be used except through

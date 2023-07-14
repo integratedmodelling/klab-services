@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resources;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,9 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.eclipse.xtext.testing.IInjectorProvider;
 import org.integratedmodelling.contrib.jgrapht.Graph;
@@ -62,7 +62,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
-import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.rest.ResourceReference;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl.ManifestImpl;
@@ -111,13 +110,6 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	 */
 	transient Set<String> localResources = new HashSet<>();
 
-	/*
-	 * Dirty namespaces are kept in order of dependency and reloaded sequentially.
-	 */
-//	transient Set<String> dirtyNamespaces = Collections.synchronizedSet(new LinkedHashSet<>());
-//	transient Set<String> dirtyProjects = Collections.synchronizedSet(new LinkedHashSet<>());
-//	transient Set<String> dirtyWorkspaces = Collections.synchronizedSet(new LinkedHashSet<>());
-
 	/**
 	 * the only persistent info in this implementation is the catalog of resource
 	 * status info. This is used for individual resources and whole projects. It
@@ -130,10 +122,10 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	transient ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
 	transient ModelKbox kbox;
 
-//	/**
-//	 * Always load projects and namespaces sequentially.
-//	 */
-//	transient ExecutorService projectLoader = Executors.newSingleThreadExecutor();
+	/*
+	 * "fair" read/write lock to ensure no reading during updates
+	 */
+	ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
 
 	/**
 	 * Default interval to check for changes in Git (15 minutes in milliseconds)
@@ -184,11 +176,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 		this.configuration = self.configuration;
 		this.localNamespaces = self.localNamespaces;
 		this.localWorkspaces = self.localWorkspaces;
-//		this.projectLoader = self.projectLoader;
 		this.kimLoader = self.kimLoader;
-//		this.dirtyNamespaces = self.dirtyNamespaces;
-//		this.dirtyProjects = self.dirtyProjects;
-//		this.dirtyWorkspaces = self.dirtyWorkspaces;
 	}
 
 	private void saveConfiguration() {
@@ -483,117 +471,144 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	}
 
 	@Override
-	public synchronized boolean addProjectToLocalWorkspace(String workspaceName, String projectUrl,
+	public synchronized boolean addProject(String workspaceName, String projectUrl,
 			boolean overwriteIfExisting) {
 
-		String projectName = Utils.URLs.getURLBaseName(projectUrl);
-		ProjectConfiguration config = this.configuration.getProjectConfiguration().get(projectName);
-		if (config != null) {
-			if (overwriteIfExisting) {
-				removeProjectFromLocalWorkspace(config.getWorkspaceName(), projectName);
-			} else {
-				return false;
+		boolean ret = false;
+
+		updateLock.writeLock().lock();
+
+		try {
+
+			String projectName = Utils.URLs.getURLBaseName(projectUrl);
+			ProjectConfiguration config = this.configuration.getProjectConfiguration().get(projectName);
+			if (config != null) {
+				if (overwriteIfExisting) {
+					removeProject(projectName);
+				} else {
+					return false;
+				}
 			}
-		}
 
-		File workspace = Configuration.INSTANCE.getDataPath(configuration.getServicePath() + File.separator
-				+ configuration.getLocalResourcePath() + File.separator + workspaceName);
-		workspace.mkdirs();
+			File workspace = Configuration.INSTANCE.getDataPath(
+					configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
+			workspace.mkdirs();
 
-		if (Utils.Git.isRemoteGitURL(projectUrl)) {
+			if (Utils.Git.isRemoteGitURL(projectUrl)) {
 
-			try {
+				try {
 
-				/**
-				 * This should be the main use of project resources. TODO handle credentials
+					/**
+					 * This should be the main use of project resources. TODO handle credentials
+					 */
+
+					projectName = Git.clone(projectUrl, workspace, false);
+					ProjectConfiguration configuration = new ProjectConfiguration();
+					configuration.setLocalPath(new File(workspace + File.separator + projectName));
+					configuration.setSourceUrl(projectUrl);
+					configuration.setWorkspaceName(workspaceName);
+					configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
+
+					Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
+					if (projects == null) {
+						projects = new LinkedHashSet<>();
+						this.configuration.getWorkspaces().put(workspaceName, projects);
+					}
+					projects.add(projectName);
+					Project project = loadProject(projectName, configuration);
+					configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
+					this.configuration.getProjectConfiguration().put(projectName, configuration);
+					saveConfiguration();
+
+				} catch (Throwable t) {
+					ret = false;
+				}
+
+			} else if (projectUrl.startsWith("http")) {
+
+				/*
+				 * TODO
+				 * 
+				 * Load from another service. These projects may be served as mirrors or just
+				 * kept to meet dependencies, according to the 'served' bit in the
+				 * configuration. The source of truth should remain the source code, hosted in a
+				 * single place (the remote service); mechanisms should be in place to store the
+				 * original server and check for changes and new versions.
 				 */
 
-				projectName = Git.clone(projectUrl, workspace, false);
-				ProjectConfiguration configuration = new ProjectConfiguration();
-				configuration.setLocalPath(new File(workspace + File.separator + projectName));
-				configuration.setSourceUrl(projectUrl);
-				configuration.setWorkspaceName(workspaceName);
-				configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
+			} else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
 
-				Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
-				if (projects == null) {
-					projects = new LinkedHashSet<>();
-					this.configuration.getWorkspaces().put(workspaceName, projects);
-				}
-				projects.add(projectName);
-				Project project = loadProject(projectName, configuration);
-				configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
-				this.configuration.getProjectConfiguration().put(projectName, configuration);
-				saveConfiguration();
+				/*
+				 * import a zipped project (from a publish operation) or connect a directory.
+				 */
 
-//				dirtyWorkspaces.add(workspaceName);
-//				dirtyProjects.add(projectName);
-
-			} catch (Throwable t) {
-				return false;
 			}
-
-		} else if (projectUrl.startsWith("http")) {
-
-			/*
-			 * TODO
-			 * 
-			 * Load from another service. These projects may be served as mirrors or just
-			 * kept to meet dependencies, according to the 'served' bit in the
-			 * configuration. The source of truth should remain the source code, hosted in a
-			 * single place (the remote service); mechanisms should be in place to store the
-			 * original server and check for changes and new versions.
-			 */
-
-		} else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
-
-			/*
-			 * import a zipped project (from a publish operation) or connect a directory
-			 */
-
+		} finally {
+			updateLock.writeLock().unlock();
 		}
 
-		return false;
+		return ret;
 	}
 
 	@Override
-	public void removeProjectFromLocalWorkspace(String workspaceName, String projectName) {
+	public void removeProject(String projectName) {
 
-		ProjectConfiguration configuration = this.configuration.getProjectConfiguration().get(projectName);
-		Project project = this.localProjects.get(projectName);
-		Workspace workspace = this.localWorkspaces.get(workspaceName);
-		Utils.Files.deleteQuietly(configuration.getLocalPath());
-		if (this.configuration.getWorkspaces().get(workspaceName) != null) {
-			this.configuration.getWorkspaces().get(workspaceName).remove(projectName);
+		updateLock.writeLock().lock();
+
+		try {
+			ProjectConfiguration configuration = this.configuration.getProjectConfiguration().get(projectName);
+			Project project = this.localProjects.get(projectName);
+			String workspaceName = getWorkspace(project);
+			Workspace workspace = this.localWorkspaces.get(workspaceName);
+			Utils.Files.deleteQuietly(configuration.getLocalPath());
+			if (this.configuration.getWorkspaces().get(workspaceName) != null) {
+				this.configuration.getWorkspaces().get(workspaceName).remove(projectName);
+			}
+			// remove namespaces, behaviors and resources
+			for (KimNamespace namespace : project.getNamespaces()) {
+				this.localNamespaces.remove(namespace.getNamespace());
+			}
+			for (KActorsBehavior behavior : project.getBehaviors()) {
+				this.localBehaviors.remove(behavior.getName());
+			}
+			for (String resource : project.getResourceUrns()) {
+				localResources.remove(resource);
+				catalog.remove(resource);
+			}
+			this.localProjects.remove(projectName);
+			workspace.getProjects().remove(project);
+			saveConfiguration();
+			db.commit();
+		} finally {
+			updateLock.writeLock().unlock();
 		}
-		// remove namespaces, behaviors and resources
-		for (KimNamespace namespace : project.getNamespaces()) {
-			this.localNamespaces.remove(namespace.getNamespace());
+	}
+
+	private String getWorkspace(Project project) {
+		for (String ret : this.configuration.getWorkspaces().keySet()) {
+			if (this.configuration.getWorkspaces().get(ret).contains(project.getName())) {
+				return ret;
+			}
 		}
-		for (KActorsBehavior behavior : project.getBehaviors()) {
-			this.localBehaviors.remove(behavior.getName());
-		}
-		for (String resource : project.getResourceUrns()) {
-			localResources.remove(resource);
-			catalog.remove(resource);
-		}
-		this.localProjects.remove(projectName);
-		workspace.getProjects().remove(project);
-		saveConfiguration();
-		db.commit();
+		return null;
 	}
 
 	@Override
 	public void removeWorkspace(String workspaceName) {
 		Workspace workspace = this.localWorkspaces.get(workspaceName);
 		for (Project project : workspace.getProjects()) {
-			removeProjectFromLocalWorkspace(workspaceName, project.getName());
+			removeProject(project.getName());
 		}
-		this.localWorkspaces.remove(workspaceName);
+		try {
+			updateLock.writeLock().lock();
+			this.localWorkspaces.remove(workspaceName);
+		} finally {
+			updateLock.writeLock().unlock();
+		}
 	}
 
 	@Override
-	public Collection<Workspace> getWorkspaces() {
+	public Collection<Workspace> listWorkspaces() {
 		return localWorkspaces.values();
 	}
 
@@ -613,7 +628,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	}
 
 	@Override
-	public Capabilities getCapabilities() {
+	public Capabilities capabilities() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -744,13 +759,13 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	}
 
 	@Override
-	public String addResourceToLocalWorkspace(Resource resource) {
+	public String addResource(Resource resource) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public String addResourceToLocalWorkspace(File resourcePath) {
+	public String addResource(File resourcePath) {
 		// TODO Auto-generated method stub
 		// Concept
 		return null;
@@ -865,6 +880,21 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	public Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public KActorsBehavior readBehavior(URL url) {
+		return KActorsAdapter.INSTANCE.readBehavior(url);
+	}
+
+	@Override
+	public Collection<Project> listProjects() {
+		return localProjects.values();
+	}
+
+	@Override
+	public Collection<String> listResourceUrns() {
+		return localResources;
 	}
 
 }

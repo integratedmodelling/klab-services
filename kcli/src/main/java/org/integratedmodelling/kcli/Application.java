@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
@@ -343,4 +344,16 @@ public class Application {
 			AnsiConsole.systemUninstall();
 		}
 	}
+	
+	public static void printResourceSet(ResourceSet resourceSet, PrintWriter out) {
+
+		if (resourceSet == null) {
+			out.println("Null resource set");
+		} else if (resourceSet.isEmpty()) {
+			out.println("Empty resource set");
+		} else {
+			
+		}
+	}
+
 }

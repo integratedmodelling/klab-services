@@ -209,8 +209,15 @@ public abstract class KAgent implements ReActor {
 	 */
 
 	private void runBehavior(ReActorContext rctx, RunBehavior message) {
-		KActorsBehavior behavior = scope.getService(ResourcesService.class).resolveBehavior(message.getBehavior(),
-				scope);
+
+		KActorsBehavior behavior = null;
+
+		if (message.getBehaviorUrl() != null) {
+			behavior = scope.getService(ResourcesService.class).readBehavior(message.getBehaviorUrl());
+		} else if (message.getBehavior() != null) {
+			behavior = scope.getService(ResourcesService.class).resolveBehavior(message.getBehavior(), scope);
+		}
+		
 		if (behavior != null) {
 			run(behavior, scope);
 		} else {

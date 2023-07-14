@@ -26,7 +26,7 @@ public interface RuntimeService extends KlabService {
 
 	}
 
-	Capabilities getCapabilities();
+	Capabilities capabilities();
 
 	/**
 	 * 

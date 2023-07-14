@@ -55,7 +55,7 @@ public class ResolverService implements Resolver, Resolver.Admin {
     }
 
     @Override
-    public Capabilities getCapabilities() {
+    public Capabilities capabilities() {
         // TODO Auto-generated method stub
         return null;
     }

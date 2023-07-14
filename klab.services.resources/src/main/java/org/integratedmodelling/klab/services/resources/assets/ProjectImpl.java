@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services.resources.assets;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -109,7 +108,6 @@ public class ProjectImpl implements Project {
 	private Manifest manifest;
 	private Metadata metadata = Metadata.create();
 	private String name;
-	private URL url;
 	private List<KimNamespace> namespaces = new ArrayList<>();
 	private List<KActorsBehavior> behaviors = new ArrayList<>();
 	private List<KActorsBehavior> apps = new ArrayList<>();
@@ -130,11 +128,6 @@ public class ProjectImpl implements Project {
 	@Override
 	public String getName() {
 		return this.name;
-	}
-
-	@Override
-	public URL getURL() {
-		return this.url;
 	}
 
 	@Override
@@ -160,14 +153,6 @@ public class ProjectImpl implements Project {
 	@Override
 	public List<Notification> getNotifications() {
 		return this.notifications;
-	}
-
-	public URL getUrl() {
-		return url;
-	}
-
-	public void setUrl(URL url) {
-		this.url = url;
 	}
 
 	public void setManifest(Manifest manifest) {

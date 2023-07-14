@@ -46,7 +46,7 @@ public class RuntimeService implements org.integratedmodelling.klab.api.services
 	}
 
 	@Override
-	public Capabilities getCapabilities() {
+	public Capabilities capabilities() {
 		// TODO Auto-generated method stub
 		return null;
 	}

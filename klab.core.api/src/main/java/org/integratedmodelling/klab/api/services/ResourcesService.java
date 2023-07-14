@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -17,12 +19,50 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
+/**
+ * Resource managements. Assets handled include projects with all their assets
+ * (namespaces, models, behaviors and local resources) plus any independently
+ * submitted resource and component plug-ins as jar/zips. All assets are
+ * versioned and history is maintained. Permissions and review-driven ranking
+ * are enabled for all primary assets, i.e. projects, components and independent
+ * resources. Assets that are parts of projects get their permissions and ranks
+ * from the project they are part of.
+ * <p>
+ * The resource manager can also turn a behavior specification in k.Actors
+ * located at a given URL into its correspondent serialized, executable
+ * {@link KActorsBehavior}.
+ * <p>
+ * Endpoints are part of three main families:
+ * <dl>
+ * <dt>get..()</dt>
+ * <dd>endpoints retrieve assets in their serialized form. The <code>get</code>
+ * prefix is omitted in this implementation.</dd>
+ * <dt>resolve..()</dt>
+ * <dd>endpoints retrieve {@link ResourceSet}s that contain all the information
+ * needed to reconstruct and use the asset requested at the requesting end,
+ * including any dependent assets and their sources;</dd>
+ * <dt>{list|add|remove|update}..()</dt>
+ * <dd>endpoints manage inquiry and CRUD operations, part of the
+ * {@link ResourcesServices.Admin} API</dd>
+ * </dl>
+ * 
+ * In addition, the resource manager exposes querying methods, either based on
+ * semantics and context ({@link #queryModels(Observable, ContextScope)}) or on
+ * textual search ({@link #queryResources(String, KnowledgeClass...)}). The
+ * semantic query model uses the connected reasoner and will only return a
+ * ResourceSet listing {@link KimModelStatement}s and their requirements,
+ * leaving ranking and prioritization to the caller.
+ * 
+ * @author Ferd
+ *
+ */
 public interface ResourcesService extends KlabService {
 
 	public static final int DEFAULT_PORT = 8092;
@@ -45,7 +85,7 @@ public interface ResourcesService extends KlabService {
 		return "klab.resources.service";
 	}
 
-	Capabilities getCapabilities();
+	Capabilities capabilities();
 
 	/**
 	 * Get the contents of a set of projects. Assumes that the capabilities have
@@ -238,6 +278,13 @@ public interface ResourcesService extends KlabService {
 	Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException;
 
 	/**
+	 * Read a behavior from the passed URL and return the parsed behavior.
+	 * 
+	 * @param url
+	 */
+	KActorsBehavior readBehavior(URL url);
+
+	/**
 	 * Admin interface to submit/remove projects and configure the service.
 	 * 
 	 * @author Ferd
@@ -257,7 +304,7 @@ public interface ResourcesService extends KlabService {
 		 * @return true if operation succeeded and anything was done (false if project
 		 *         existed and wasn't overwritten)
 		 */
-		boolean addProjectToLocalWorkspace(String workspaceName, String projectUrl, boolean overwriteIfExisting);
+		boolean addProject(String workspaceName, String projectUrl, boolean overwriteIfExisting);
 
 		/**
 		 * Publish a project with the passed privileges. The project must has been added
@@ -286,7 +333,7 @@ public interface ResourcesService extends KlabService {
 		 * @param resource
 		 * @return the resource URN, potentially modified w.r.t. the one in the request.
 		 */
-		String addResourceToLocalWorkspace(Resource resource);
+		String addResource(Resource resource);
 
 		/**
 		 * Add a resource with file content to those managed by this service. Resource
@@ -298,7 +345,7 @@ public interface ResourcesService extends KlabService {
 		 *                     anything else required by the adapter.
 		 * @return the resource URN, potentially modified w.r.t. the one in the request.
 		 */
-		String addResourceToLocalWorkspace(File resourcePath);
+		String addResource(File resourcePath);
 
 		/**
 		 * 
@@ -321,7 +368,7 @@ public interface ResourcesService extends KlabService {
 		 * @param projectName
 		 * @return true if operation was carried out
 		 */
-		void removeProjectFromLocalWorkspace(String workspaceName, String projectName);
+		void removeProject(String projectName);
 
 		/**
 		 * Remove an entire workspace and all the projects and resources in it.
@@ -336,7 +383,22 @@ public interface ResourcesService extends KlabService {
 		 * 
 		 * @return
 		 */
-		Collection<Workspace> getWorkspaces();
+		Collection<Workspace> listWorkspaces();
+
+		/**
+		 * Return a list of all the projects available with their contents. Bound to
+		 * produce a large payload.
+		 * 
+		 * @return
+		 */
+		Collection<Project> listProjects();
+
+		/**
+		 * Return the URNs of all the resources available locally.
+		 * 
+		 * @return
+		 */
+		Collection<String> listResourceUrns();
 
 	}
 

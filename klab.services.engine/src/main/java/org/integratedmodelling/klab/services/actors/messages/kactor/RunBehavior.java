@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.actors.messages.kactor;
 
+import java.net.URL;
+
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
 /**
@@ -15,7 +17,8 @@ public class RunBehavior extends AgentMessage {
 	private static final long serialVersionUID = 5539640073416217055L;
 
 	private String behavior;
-
+	private URL behaviorUrl;
+	
 	public RunBehavior() {
 	}
 
@@ -29,6 +32,14 @@ public class RunBehavior extends AgentMessage {
 
 	public void setBehavior(String behavior) {
 		this.behavior = behavior;
+	}
+
+	public URL getBehaviorUrl() {
+		return behaviorUrl;
+	}
+
+	public void setBehaviorUrl(URL behaviorUrl) {
+		this.behaviorUrl = behaviorUrl;
 	}
 
 }

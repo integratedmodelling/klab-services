@@ -26,7 +26,7 @@ public class AssistController {
     @ApiOperation(value = "Obtain the reasoner service capabilities")
     @GetMapping(ServicesAPI.CAPABILITIES)
     public Capabilities getCapabilities() {
-        return reasoner.getCapabilities();
+        return reasoner.capabilities();
     }
 
     @ApiOperation(value = "Perform guided semantic search, composing a valid logical expression incrementally")

@@ -8,7 +8,7 @@ public class CommunityService implements Community {
     private static final long serialVersionUID = -7321738633095243998L;
 
     @Override
-    public ServiceCapabilities getCapabilities() {
+    public ServiceCapabilities capabilities() {
         // TODO Auto-generated method stub
         return null;
     }

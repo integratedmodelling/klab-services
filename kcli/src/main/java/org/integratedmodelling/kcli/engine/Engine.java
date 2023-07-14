@@ -109,6 +109,21 @@ public enum Engine implements Authentication {
 		return true;
 	}
 
+	/**
+	 * Return the specific service among the various available. The "local" keyword
+	 * returns the service installed as the default in the user scope. The "active"
+	 * keyword should get the currently active service. Anything else will look up
+	 * the service using the discovery mechanism.
+	 * 
+	 * @param <T>
+	 * @param name
+	 * @param serviceClass
+	 * @return
+	 */
+	public <T extends KlabService> T getServiceNamed(String name, Class<T> serviceClass) {
+		return "local".equals(name) ? currentUser.getService(serviceClass) : /* TODO */ null;
+	}
+
 	@Override
 	public UserScope getAnonymousScope() {
 		return EngineService.INSTANCE.login(new AnonymousUser());

@@ -1,6 +1,12 @@
 package org.integratedmodelling.kcli;
 
+import java.io.PrintStream;
+import java.net.URL;
+
+import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -21,6 +27,42 @@ public class Resources {
 			// TODO Auto-generated method stub
 			System.out.println("list services");
 		}
+	}
+
+	@Command(name = "resolve", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+			"Resolve a URN and describe the resulting resource set.", "" }, subcommands = {})
+	public static class Resolve implements Runnable {
+
+		@Option(names = { "-s", "--service" }, defaultValue = "local" /* TODO initialize at null */, description = {
+				"Resource service to connect to" }, required = false)
+		private String service;
+
+		@Parameters
+		String urn;
+
+		@Override
+		public void run() {
+
+			/**
+			 * TODO if service is not specified, it should lookup the URN in all available
+			 * services
+			 */
+
+			switch (Urn.classify(urn)) {
+			case KIM_OBJECT:
+
+				break;
+			case OBSERVABLE:
+				break;
+			case REMOTE_URL:
+				break;
+			case RESOURCE:
+				break;
+			case UNKNOWN:
+				break;
+			}
+		}
+
 	}
 
 	@Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -55,42 +97,105 @@ public class Resources {
 				"List resources" }, required = false)
 		boolean resources;
 
-		@Parameters(description = "A query with wildcards. If not passed, all matches are returned.")
+		@Option(names = { "-c", "--components" }, defaultValue = "false", description = {
+				"List components" }, required = false)
+		boolean components;
+
+		@Option(names = { "-v", "--verbose" }, defaultValue = "false", description = {
+				"List projects in each workspace" }, required = false)
+		private boolean verbose;
+
+		@Parameters(description = "A query with wildcards. If not passed, all matches are returned.", defaultValue = "__ALL__")
 		String query;
+
+		// TODO
+		PrintStream out = System.out;
 
 		@Override
 		public void run() {
+			if (namespaces) {
+				out.println("Namespaces:");
+				listNamespaces();
+			}
+			if (resources) {
+				out.println("Resources:");
+				listResources();
+			}
+			if (scripts) {
+				out.println("Scripts:");
+				listScripts();
+			}
+			if (tests) {
+				out.println("Test cases:");
+				listTestCases();
+			}
+			if (behaviors) {
+				out.println("Behaviors:");
+				listBehaviors();
+			}
 			if (applications) {
-//				Engine.INSTANCE.getResources().query(query == null ? "*" : query);
+				out.println("Applications:");
+				listApplications();
+			}
+			if (components) {
+				out.println("Components:");
+				listComponents();
+			}
+		}
+
+		private void listNamespaces() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		private void listComponents() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		private void listBehaviors() {
+			// TODO Auto-generated method stub
+
+		}
+
+		private void listTestCases() {
+			// TODO Auto-generated method stub
+
+		}
+
+		private void listScripts() {
+			// TODO Auto-generated method stub
+
+		}
+
+		private void listApplications() {
+			// TODO Auto-generated method stub
+
+		}
+
+		public void listResources() {
+			var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+			if (service instanceof ResourcesService.Admin) {
+				for (var urn : ((ResourcesService.Admin) service).listResourceUrns()) {
+					System.out.println("   " + urn);
+				}
 			}
 		}
 
 	}
 
 	@Command(name = "workspace", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-			"Workspace operations", "" }, subcommands = { Resources.Workspace.List.class, Resources.Workspace.Add.class,
-					Resources.Workspace.Remove.class })
+			"Workspace operations",
+			"" }, subcommands = { Resources.Workspace.List.class, Resources.Workspace.Remove.class })
 	public static class Workspace {
 
 		@Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
 				"List and describe local workspaces.", "" }, subcommands = {})
 		public static class List implements Runnable {
 
-			@Option(names = { "-s", "--service" }, defaultValue = "local", description = {
-					"Resource service to connect to" }, required = false)
-			private String service;
-
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list workspace");
-			}
-
-		}
-
-		@Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-				"Add a new workspace to the scope of this service.", "" }, subcommands = {})
-		public static class Add implements Runnable {
+			@Option(names = { "-v", "--verbose" }, defaultValue = "false", description = {
+					"List projects in each workspace" }, required = false)
+			private boolean verbose;
 
 			@Option(names = { "-s", "--service" }, defaultValue = "local", description = {
 					"Resource service to connect to" }, required = false)
@@ -98,8 +203,17 @@ public class Resources {
 
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list project");
+				var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+				if (service instanceof ResourcesService.Admin) {
+					for (var workspace : ((ResourcesService.Admin) service).listWorkspaces()) {
+						System.out.println("   " + workspace.getName());
+						if (verbose) {
+							for (var project : workspace.getProjects()) {
+								System.out.println("      " + project.getName());
+							}
+						}
+					}
+				}
 			}
 
 		}
@@ -111,11 +225,15 @@ public class Resources {
 			@Option(names = { "-s", "--service" }, defaultValue = "local", description = {
 					"Resource service to connect to" }, required = false)
 			private String service;
+			@Parameters
+			private String workspace;
 
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list project");
+				var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+				if (service instanceof ResourcesService.Admin) {
+					((ResourcesService.Admin) service).removeWorkspace(workspace);
+				}
 			}
 		}
 
@@ -136,8 +254,12 @@ public class Resources {
 
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list project");
+				var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+				if (service instanceof ResourcesService.Admin) {
+					for (var project : ((ResourcesService.Admin) service).listProjects()) {
+						System.out.println("   " + project.getName());
+					}
+				}
 			}
 
 		}
@@ -150,10 +272,25 @@ public class Resources {
 					"Resource service to connect to" }, required = false)
 			private String service;
 
+			@Option(names = { "-w", "--workspace" }, defaultValue = "local", description = {
+					"Workspace for the imported project" }, required = false)
+			private String workspace;
+
+			@Parameters
+			private URL projectUrl;
+
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list project");
+				var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+				if (service instanceof ResourcesService.Admin) {
+					if (!((ResourcesService.Admin) service).addProject(workspace, projectUrl.toString(), false)) {
+						System.out.println("project " + projectUrl + " was present or in error, not added");
+					} else {
+						System.out.println("project " + projectUrl + " added to workspace " + workspace);
+					}
+				} else {
+					System.out.println("service " + this.service + " does not have admin permissions in this scope");
+				}
 			}
 
 		}
@@ -165,11 +302,15 @@ public class Resources {
 			@Option(names = { "-s", "--service" }, defaultValue = "local", description = {
 					"Resource service to connect to" }, required = false)
 			private String service;
+			@Parameters
+			private String project;
 
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list project");
+				var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+				if (service instanceof ResourcesService.Admin) {
+					((ResourcesService.Admin) service).removeProject(project);
+				}
 			}
 
 		}
@@ -190,8 +331,7 @@ public class Resources {
 
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list project");
+
 			}
 
 		}
@@ -203,6 +343,9 @@ public class Resources {
 			@Option(names = { "-s", "--service" }, defaultValue = "local", description = {
 					"Resource service to connect to" }, required = false)
 			private String service;
+
+			@Parameters
+			String componentUrl;
 
 			@Override
 			public void run() {
@@ -220,10 +363,11 @@ public class Resources {
 					"Resource service to connect to" }, required = false)
 			private String service;
 
+			@Parameters
+			String componentName;
+
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("list project");
 			}
 
 		}

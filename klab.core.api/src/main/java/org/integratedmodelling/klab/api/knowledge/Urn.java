@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 
-
 /**
  * Simple helper to decompose a URN into its constituents and access them with
  * proper semantics.
@@ -23,39 +22,40 @@ public class Urn {
 
 	final public static String SINGLE_PARAMETER_KEY = "value";
 
-    final public static Pattern URN_RESOURCE_PATTERN = Pattern.compile("[A-z]+:[A-z]+:[A-z]+:[A-z]+(#.+)?");
-    final public static Pattern URN_KIM_OBJECT_PATTERN = Pattern.compile("[a-z]+(\\.[a-z]+)+");
-    final public static Pattern URN_CONCEPT_PATTERN = Pattern.compile("[a-z]+:[A-Z]+");
-    
+	final public static Pattern URN_RESOURCE_PATTERN = Pattern.compile("[A-z]+:[A-z]+:[A-z]+:[A-z]+(#.+)?");
+	final public static Pattern URN_KIM_OBJECT_PATTERN = Pattern.compile("[a-z]+(\\.[a-z]+)+");
+	final public static Pattern URN_CONCEPT_PATTERN = Pattern.compile("[a-z]+:[A-Z]+");
+
 	private String urn;
 	private String fullUrn;
 	private String[] tokens;
 	private Map<String, String> parameters = new HashMap<>();
 
 	public enum Type {
-	    /**
-	     * A resource URN
-	     */
-	    RESOURCE,
-	    /**
-	     * A model, acknowledgement, namespace/scenario, or define
-	     */
-	    KIM_OBJECT,
-	    /**
-	     * A concept or observable (no guarantee that it's meaningful)
-	     */
-	    OBSERVABLE,
-	    /**
-	     * An http-based URL, observable only when it points to a remote observation (no guarantee)
-	     */
-	    REMOTE_URL,
-	    /**
-	     * Returned by classify() when the passed string cannot be understood as one of the above
-	     */
-	    UNKNOWN
+		/**
+		 * A resource URN
+		 */
+		RESOURCE,
+		/**
+		 * A model, acknowledgement, namespace/scenario, project or define
+		 */
+		KIM_OBJECT,
+		/**
+		 * A concept or observable (no guarantee that it's meaningful)
+		 */
+		OBSERVABLE,
+		/**
+		 * An http-based URL, observable only when it points to a remote observation (no
+		 * guarantee)
+		 */
+		REMOTE_URL,
+		/**
+		 * Returned by classify() when the passed string cannot be understood as one of
+		 * the above
+		 */
+		UNKNOWN
 	}
-	
-	
+
 	/**
 	 * Pass a valid URN string. For now does no validation.
 	 * 
@@ -120,11 +120,12 @@ public class Urn {
 	public boolean isLocal() {
 		return getNodeName().equals("local");
 	}
-	
+
 	/**
-	 * Return either an empty array for no parameter present, or an array of
-	 * values with one or more values for the passed parameter set in the url
-	 * as independent parts. E.g. url#a&b&C would return a, b, C.
+	 * Return either an empty array for no parameter present, or an array of values
+	 * with one or more values for the passed parameter set in the url as
+	 * independent parts. E.g. url#a&b&C would return a, b, C.
+	 * 
 	 * @param parameter
 	 * @return
 	 */
@@ -203,22 +204,22 @@ public class Urn {
 	public Map<String, String> getParameters() {
 		return parameters;
 	}
-		
+
 	public static Type classify(String urn) {
-	    
-	    if (urn.startsWith("http") && urn.contains("//:")) {
-	        return Type.REMOTE_URL;
-	    } else if (URN_RESOURCE_PATTERN.matcher(urn).find()) {
-	        return Type.RESOURCE;
-	    } else if (URN_KIM_OBJECT_PATTERN.matcher(urn).find()) {
-            return Type.KIM_OBJECT;
-        } else if (URN_CONCEPT_PATTERN.matcher(urn).find()) {
-            return Type.OBSERVABLE;
-        }
-	    
-	    return Type.UNKNOWN;
+
+		if (urn.startsWith("http") && urn.contains("//:")) {
+			return Type.REMOTE_URL;
+		} else if (URN_RESOURCE_PATTERN.matcher(urn).find()) {
+			return Type.RESOURCE;
+		} else if (URN_KIM_OBJECT_PATTERN.matcher(urn).find()) {
+			return Type.KIM_OBJECT;
+		} else if (URN_CONCEPT_PATTERN.matcher(urn).find()) {
+			return Type.OBSERVABLE;
+		}
+
+		return Type.UNKNOWN;
 	}
-	
+
 	final public static String KLAB_URN_PREFIX = "urn:klab:";
 	final public static String LOCAL_URN_PREFIX = "urn:klab:local:";
 	final public static String VOID_URN_PREFIX = "urn:klab:void:";
@@ -270,7 +271,7 @@ public class Urn {
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Split off the fragment and return the parsed parameter map along with the
 	 * clean URN.
@@ -298,8 +299,8 @@ public class Urn {
 
 	public boolean isUrn(String urn) {
 		// at least two colons in successive positions with something in the middle
-		int ln =  urn.indexOf(':');
-		return ln > 0 && urn.lastIndexOf(':') > (ln +1);
+		int ln = urn.indexOf(':');
+		return ln > 0 && urn.lastIndexOf(':') > (ln + 1);
 	}
 
 	public static String applyParameters(String urn, Map<String, String> urnParameters) {
@@ -317,6 +318,5 @@ public class Urn {
 		int pound = urn.indexOf(':');
 		return pound > 0 ? urn.substring(0, pound) : urn;
 	}
-
 
 }

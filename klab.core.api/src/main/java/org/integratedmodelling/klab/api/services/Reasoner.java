@@ -48,7 +48,7 @@ public interface Reasoner extends KlabService {
 	 * @return
 	 */
 	@Override
-	Capabilities getCapabilities();
+	Capabilities capabilities();
 
 	/**
 	 * 

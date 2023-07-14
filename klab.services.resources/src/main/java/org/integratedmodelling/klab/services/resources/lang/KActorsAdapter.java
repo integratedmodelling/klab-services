@@ -78,6 +78,11 @@ public enum KActorsAdapter {
 		}
 	}
 
+	public KActorsBehavior readBehavior(URL behaviorUrl) {
+		IKActorsBehavior behavior = declare(behaviorUrl);
+		return adapt(behavior);
+	}
+
 	public KActorsBehavior readBehavior(File behaviorFile) {
 		IKActorsBehavior behavior = declare(behaviorFile);
 		return adapt(behavior);

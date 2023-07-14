@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resources;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
@@ -55,7 +56,7 @@ public class ResourcesClient implements ResourcesService {
     }
 
     @Override
-    public Capabilities getCapabilities() {
+    public Capabilities capabilities() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -164,6 +165,12 @@ public class ResourcesClient implements ResourcesService {
 
 	@Override
 	public Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public KActorsBehavior readBehavior(URL url) {
 		// TODO Auto-generated method stub
 		return null;
 	}

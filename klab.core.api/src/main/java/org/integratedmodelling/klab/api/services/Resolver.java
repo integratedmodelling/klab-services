@@ -44,7 +44,7 @@ public interface Resolver extends KlabService {
 	 * 
 	 * @return
 	 */
-	Capabilities getCapabilities();
+	Capabilities capabilities();
 
 	/**
 	 * Resolve a model or an instance, using the resources service to obtain the

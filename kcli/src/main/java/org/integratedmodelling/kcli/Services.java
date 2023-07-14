@@ -69,7 +69,6 @@ public class Services {
 			 */
 
 		}
-
 	}
 
 	@Command(name = "connect", mixinStandardHelpOptions = true, description = { "Connect to an available service",

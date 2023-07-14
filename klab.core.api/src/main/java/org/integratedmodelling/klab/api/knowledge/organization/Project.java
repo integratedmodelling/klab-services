@@ -73,14 +73,6 @@ public interface Project extends Serializable {
 	String getName();
 
 	/**
-	 * The URL for the project. With content type JSON and proper authorization it
-	 * should return the parsed projects.
-	 * 
-	 * @return the workspace URL.
-	 */
-	URL getURL();
-
-	/**
 	 * 
 	 * @return
 	 */

@@ -44,7 +44,7 @@ public class ResolverClient implements Resolver {
     }
 
     @Override
-    public Capabilities getCapabilities() {
+    public Capabilities capabilities() {
         // TODO Auto-generated method stub
         return null;
     }

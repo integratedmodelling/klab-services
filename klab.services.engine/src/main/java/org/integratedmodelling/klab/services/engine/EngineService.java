@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.services.engine;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -17,6 +19,7 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
+import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 import org.integratedmodelling.klab.services.scope.EngineScope;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -115,10 +118,21 @@ public enum EngineService {
 			ret.setAgent(agent);
 
 			userScopes.put(user.getUsername(), ret);
+
+			File userBehavior = new File(Configuration.INSTANCE.getDataPath() + File.separator + "user.kactors");
+			if (userBehavior.isFile() && userBehavior.canRead()) {
+				try {
+					var message = new RunBehavior();
+					message.setBehaviorUrl(userBehavior.toURI().toURL());
+					agent.tell(message);
+				} catch (MalformedURLException e) {
+					ret.error(e, "while reading user.kactors behavior");
+				}
+			}
 		}
 		return ret;
 	}
-
+	
 	public void registerScope(EngineScope scope) {
 		userScopes.put(scope.getUser().getUsername(), scope);
 	}

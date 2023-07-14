@@ -1045,7 +1045,7 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
     }
 
     @Override
-    public Capabilities getCapabilities() {
+    public Capabilities capabilities() {
         return this.capabilities;
     }
 

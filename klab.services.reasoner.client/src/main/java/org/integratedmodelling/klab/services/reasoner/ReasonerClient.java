@@ -47,7 +47,7 @@ public class ReasonerClient implements Reasoner {
     }
 
     @Override
-    public Capabilities getCapabilities() {
+    public Capabilities capabilities() {
         // TODO Auto-generated method stub
         return null;
     }
