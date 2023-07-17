@@ -6,10 +6,10 @@ import org.integratedmodelling.klab.Logging;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.common.Geometry;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.tests.services.engine.TestEngine.TestAuthentication;
 import org.junit.AfterClass;
@@ -83,9 +83,9 @@ public class ObservationTests {
          * different runtime, or switch services. If so, the service proxies in the scope will be
          * automatically switched.
          */
-        ContextScope context = sessionScope.createContext("test.context");
+        ContextScope context = sessionScope.createContext("test.context", Geometry.EMPTY);
 
-        context.observe("earth:Region", Geometry.builder().build());
+        context.observe("earth:Region", /* TODO */ Geometry.EMPTY);
         
         System.out.println(sessionScope);
 

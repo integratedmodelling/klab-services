@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.actors.messages.user;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
 public class CreateContext extends AgentMessage {
@@ -9,13 +10,15 @@ public class CreateContext extends AgentMessage {
 
     private String contextId;
     private ContextScope scope;
-
+	private Geometry geometry;
+    
     public CreateContext() {
     }
     
-    public CreateContext(ContextScope scope, String contextId) {
+    public CreateContext(ContextScope scope, String contextId, Geometry geometry) {
         this.setScope(scope);
         this.contextId = contextId;
+        this.setGeometry(geometry);
     }
 
     public String getContextId() {
@@ -33,5 +36,13 @@ public class CreateContext extends AgentMessage {
     public void setScope(ContextScope scope) {
         this.scope = scope;
     }
+
+	public Geometry getGeometry() {
+		return geometry;
+	}
+
+	public void setGeometry(Geometry geometry) {
+		this.geometry = geometry;
+	}
 
 }

@@ -116,6 +116,7 @@ public abstract class EngineScope implements UserScope {
 		ret.setStatus(Status.WAITING);
 		Ref sessionAgent = this.agent.ask(new CreateSession(ret, sessionName), Ref.class);
 		if (!sessionAgent.isEmpty()) {
+			ret.setName(sessionName);
 			ret.setStatus(Status.STARTED);
 			ret.setAgent(sessionAgent);
 		} else {

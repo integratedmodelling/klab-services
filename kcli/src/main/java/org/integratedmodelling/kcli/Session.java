@@ -1,9 +1,8 @@
 package org.integratedmodelling.kcli;
 
 import java.io.PrintWriter;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
+import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.utils.NameGenerator;
@@ -19,9 +18,6 @@ import picocli.CommandLine.Spec;
 		"Commands to find, access and manipulate resources.",
 		"" }, subcommands = { Session.List.class, Session.New.class, Session.Connect.class })
 public class Session {
-
-	Map<String, SessionScope> sessions = new LinkedHashMap<>();
-	SessionScope current;
 
 	@Command(name = "new", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
 			"Create a new session and make it current.", "" }, subcommands = {})
@@ -46,11 +42,12 @@ public class Session {
 				name = NameGenerator.shortUUID();
 			}
 
-			if (parent.sessions.containsKey(name)) {
-				out.println(Ansi.AUTO.string("Session @|ret " + name + "|@ already exists!"));
+			if (Engine.INSTANCE.getSession(name) != null) {
+				out.println(Ansi.AUTO.string("Session @|red " + name + "|@ already exists!"));
+			} else {
+				SessionScope session = Engine.INSTANCE.createSession(name, true);
+				out.println(Ansi.AUTO.string("Session @|green " + session.getName() + "|@ created and selected."));
 			}
-			
-			out.println(Ansi.AUTO.string("Session @|yellow " + name + "|@ created and selected."));
 		}
 
 	}
@@ -59,13 +56,24 @@ public class Session {
 			"Connect to an existing session.", "" }, subcommands = {})
 	public static class Connect implements Runnable {
 
-		@ParentCommand
-		Session parent;
-
+		@Spec
+		CommandSpec commandSpec;
+		
+		@Parameters(description = { "Name of the session to connect to." })
+		String name;
+		
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
-			System.out.println("Hola");
+
+			PrintWriter out = commandSpec.commandLine().getOut();
+			
+			SessionScope session = Engine.INSTANCE.getSession(name);
+			if (session == null) {
+				out.println(Ansi.AUTO.string("Session @|red " + name + "|@ does not exist!"));
+			} else {
+				Engine.INSTANCE.setDefaultSession(session);
+				out.println(Ansi.AUTO.string("Session @|green " + name + "|@ is now the default session"));
+			}
 		}
 
 	}

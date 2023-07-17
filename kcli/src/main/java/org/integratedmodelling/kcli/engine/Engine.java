@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.authentication.scope.UserScope;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.Authentication;
@@ -31,6 +32,7 @@ import org.integratedmodelling.klab.services.resources.ResourcesClient;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.utils.NameGenerator;
 import org.integratedmodelling.klab.utils.Parameters;
 
 public enum Engine implements Authentication {
@@ -42,9 +44,13 @@ public enum Engine implements Authentication {
 	 */
 	Parameters<String> userData = Parameters.create();
 	Map<String, UserScope> authorizedIdentities = new LinkedHashMap<>();
+
 	UserScope currentUser;
 	SessionScope currentSession;
 	ContextScope currentContext;
+
+	Map<String, SessionScope> sessions = new LinkedHashMap<>();
+	Map<String, ContextScope> contexts = new LinkedHashMap<>();
 
 	private Engine() {
 
@@ -157,11 +163,23 @@ public enum Engine implements Authentication {
 	 * @return
 	 */
 	public SessionScope getCurrentSession(boolean createIfNull, Channel channel) {
-		return null;
+		if (currentSession == null) {
+			currentSession = createSession(NameGenerator.shortUUID(), true);
+		}
+		return currentSession;
 	}
 
-	public SessionScope getCurrentContext(boolean createIfNull) {
-		return null;
+	/**
+	 * Return the current session or null.
+	 * 
+	 * @return
+	 */
+	public SessionScope getCurrentSession() {
+		return currentSession;
+	}
+
+	public ContextScope getCurrentContext(boolean createIfNull) {
+		return currentContext;
 	}
 
 	public Parameters<String> getUserData() {
@@ -195,6 +213,41 @@ public enum Engine implements Authentication {
 
 	public Collection<UserScope> getUsers() {
 		return authorizedIdentities.values();
+	}
+
+	public SessionScope getSession(String name) {
+		return this.sessions.get(name);
+	}
+
+	public SessionScope createSession(String name, boolean makeCurrent) {
+
+		if (currentUser == null) {
+			throw new KIllegalStateException("no current user scope: cannot create session " + name);
+		}
+		if (this.sessions.containsKey(name)) {
+			throw new KIllegalStateException("session already exists: cannot create session " + name);
+		}
+
+		SessionScope ret = currentUser.runSession(name);
+		this.sessions.put(name, ret);
+
+		if (makeCurrent) {
+			this.currentSession = ret;
+		}
+		return ret;
+	}
+
+	public void setDefaultSession(SessionScope session) {
+		this.currentSession = session;
+	}
+
+	public void setCurrentContext(ContextScope context) {
+		this.contexts.put(context.getName(), context);
+		this.currentContext = context;
+	}
+
+	public ContextScope getContext(String context) {
+		return this.contexts.get(context);
 	}
 
 }

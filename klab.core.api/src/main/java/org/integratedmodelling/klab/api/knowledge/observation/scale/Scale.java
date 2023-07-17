@@ -221,6 +221,9 @@ public interface Scale extends Geometry, Topology<Scale> {
 	}
 
 	public static Scale create(Geometry geometry) {
+		if (geometry instanceof Scale) {
+			return (Scale)geometry;
+		}
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
 		if (configuration == null) {
 			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");

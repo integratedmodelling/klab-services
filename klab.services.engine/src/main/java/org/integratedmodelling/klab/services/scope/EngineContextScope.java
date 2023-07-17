@@ -181,4 +181,11 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 		return null;
 	}
 
+	@Override
+	public ContextScope withGeometry(Geometry geometry) {
+		EngineContextScope ret = new EngineContextScope(this);
+		ret.geometry = Scale.create(geometry);
+		return ret;
+	}
+
 }

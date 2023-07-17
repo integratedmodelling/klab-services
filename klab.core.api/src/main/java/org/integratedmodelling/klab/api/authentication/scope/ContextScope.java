@@ -51,6 +51,17 @@ public interface ContextScope extends SessionScope {
 	ContextScope withScenarios(String... scenarios);
 
 	/**
+	 * Create a context with the passed geometry to replace the one currently
+	 * active. Any observations made in it must be consistent with the overall
+	 * geometry and context observations; if observations of direct observables are
+	 * made, the parent's geometry should be updated to reflect it.
+	 * 
+	 * @param geometry
+	 * @return
+	 */
+	ContextScope withGeometry(Geometry geometry);
+
+	/**
 	 * Make an observation. Must be called on a context scope, possibly focused on a
 	 * given root observation using {@link #within(DirectObservation)}. If no root
 	 * observation is present in the scope, the arguments must fully specify a
