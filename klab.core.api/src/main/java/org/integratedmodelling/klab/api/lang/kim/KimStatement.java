@@ -1,7 +1,11 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import java.util.Set;
+
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Statement;
+import org.integratedmodelling.klab.api.lang.kim.KimMacro.Field;
 
 /**
  * 
@@ -9,6 +13,30 @@ import org.integratedmodelling.klab.api.lang.Statement;
  *
  */
 public interface KimStatement extends Statement, KimScope {
+
+	/**
+	 * Visitor allows traversing all concept declarations and references.
+	 * 
+	 */
+	public static interface KimVisitor extends Visitor {
+
+		void visitAuthority(String authority, String term);
+
+		void visitDeclaration(KimConcept declaration);
+
+		void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent);
+
+		void visitNamespace(KimNamespace kimNamespace);
+
+		void visitModel(KimModelStatement kimNamespace);
+
+		void visitObserver(KimInstance kimNamespace);
+
+		void visitConceptStatement(KimConceptStatement kimNamespace);
+
+        void visitTemplate(Field valueOf, KimConcept validParent, boolean mandatory);
+
+	}
 
 	/**
 	 * Scope is relevant to models and namespaces, where it affects resolution of

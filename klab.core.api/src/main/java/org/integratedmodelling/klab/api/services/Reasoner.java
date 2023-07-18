@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
@@ -56,6 +57,17 @@ public interface Reasoner extends KlabService {
 	 * @return
 	 */
 	Concept resolveConcept(String definition);
+
+	/**
+	 * Extract any component concept from the concept definition that matches all
+	 * the semantic types passed. For example, pass {@link SemanticType#ABSTRACT}
+	 * and {@link SemanticType#PREDICATE} to obtain all the abstract predicates
+	 * involved in the concept definition.
+	 * 
+	 * @param concept
+	 * @return
+	 */
+	Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> type);
 
 	/**
 	 * 
@@ -745,6 +757,16 @@ public interface Reasoner extends KlabService {
 	 * @param request
 	 */
 	SemanticSearchResponse semanticSearch(SemanticSearchRequest request);
+
+	/**
+	 * Replace conceptual components as requested in the conceptual expression
+	 * defining the concept and return the result.
+	 * 
+	 * @param original
+	 * @param replacements
+	 * @return
+	 */
+	Concept replaceComponent(Concept original, Map<Concept, Concept> replacements);
 
 	/**
 	 * Administration of a semantic server includes loading specific knowledge and

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.reasoner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
@@ -548,6 +549,18 @@ public class ReasonerClient implements Reasoner {
 	public boolean hasDistributedInherency(Concept c) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> type) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

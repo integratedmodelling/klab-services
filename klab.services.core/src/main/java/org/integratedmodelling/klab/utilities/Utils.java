@@ -12,7 +12,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -161,6 +163,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 					ret.add(o);
 				}
 			}
+		}
+
+		@SuppressWarnings("unchecked")
+		public static <T> Set<T> asSet(Collection<T> items) {
+			if (items instanceof Set) {
+				return (Set<T>) items;
+			}
+
+			if (items instanceof Enum) {
+				return EnumSet.copyOf((Collection) items);
+			}
+
+			return new HashSet<>(items);
 		}
 	}
 

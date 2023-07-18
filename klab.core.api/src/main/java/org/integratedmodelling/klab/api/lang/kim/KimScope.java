@@ -9,29 +9,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimMacro.Field;
 
 public interface KimScope extends Serializable {
 
-	/**
-	 * Visitor allows traversing all concept declarations and references.
-	 * 
-	 */
-	public static interface Visitor {
-
-		void visitAuthority(String authority, String term);
-
-		void visitDeclaration(KimConcept declaration);
-
-		void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent);
-
-		void visitNamespace(KimNamespace kimNamespace);
-
-		void visitModel(KimModelStatement kimNamespace);
-
-		void visitObserver(KimInstance kimNamespace);
-
-		void visitConceptStatement(KimConceptStatement kimNamespace);
-
-        void visitTemplate(Field valueOf, KimConcept validParent, boolean mandatory);
-
-	}
 
 	List<KimScope> getChildren();
 
@@ -43,7 +20,5 @@ public interface KimScope extends Serializable {
 	String getLocationDescriptor();
 
 	String getUri();
-
-	void visit(Visitor visitor);
 
 }

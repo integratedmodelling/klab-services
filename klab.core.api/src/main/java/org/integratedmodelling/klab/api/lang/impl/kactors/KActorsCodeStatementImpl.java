@@ -139,4 +139,10 @@ public class KActorsCodeStatementImpl implements KActorsCodeStatement 	{
 	public void setTag(String tag) {
 		this.tag = tag;
 	}
+
+	@Override
+	public void visit(Visitor visitor) {
+		// TODO Auto-generated method stub
+		
+	}
 }

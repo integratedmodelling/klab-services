@@ -216,6 +216,8 @@ public class KimAdapter {
 
 		ret.setObservable(original.getObservable() == null ? null : adaptKimConcept(original.getObservable()));
 
+		ret.setParent(original.getValidParent() == null ? null : adaptKimConcept(original.getValidParent()));
+
 		ret.setFundamentalType(original.getFundamentalType() == null ? null
 				: SemanticType.valueOf(original.getFundamentalType().name()));
 		ret.getType().addAll(
