@@ -183,6 +183,14 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
 	@Override
 	public ContextScope withGeometry(Geometry geometry) {
+
+		// CHECK this may be unexpected behavior, but it should never be right to pass
+		// null, except when a geometry is unset in the parent but may be set in the
+		// child.
+		if (geometry == null) {
+			return this;
+		}
+
 		EngineContextScope ret = new EngineContextScope(this);
 		ret.geometry = Scale.create(geometry);
 		return ret;

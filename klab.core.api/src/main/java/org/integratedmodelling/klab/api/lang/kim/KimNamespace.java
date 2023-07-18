@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * @author ferdinando.villa
  *
  */
-public interface KimNamespace extends KimStatement, Knowledge {
+public interface KimNamespace extends KimStatement, KlabAsset {
 
 	/**
 	 * Roles a namespace can play within a project. Not fully integrated at the

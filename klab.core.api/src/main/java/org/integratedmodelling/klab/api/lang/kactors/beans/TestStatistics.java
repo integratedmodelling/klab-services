@@ -12,7 +12,7 @@ public class TestStatistics {
     }
 
     public TestStatistics(KActorsBehavior behavior) {
-        this.name = behavior.getName();
+        this.name = behavior.getUrn();
         this.setDescription(behavior.getMetadata().get(Metadata.DC_COMMENT, (String) null));
         this.setStart(System.currentTimeMillis());
     }

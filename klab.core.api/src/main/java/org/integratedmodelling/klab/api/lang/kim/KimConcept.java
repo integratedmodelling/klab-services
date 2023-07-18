@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 import java.util.List;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
  * @author ferdinando.villa
  *
  */
-public interface KimConcept extends KimStatement, Knowledge {
+public interface KimConcept extends KimStatement, KlabAsset {
 
     enum Expression {
         SINGLETON, UNION, INTERSECTION

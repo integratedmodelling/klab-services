@@ -5,6 +5,8 @@ import java.util.List;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Instance;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -13,15 +15,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public interface Resolver extends KlabService {
-
-	/**
-	 * Metadata key for the ranking score
-	 */
-	public static final String RESOLUTION_SCORE = "klab.resolution.score";
-	/**
-	 * Metadata key for the detailed ranking data (a map in metadata)
-	 */
-	public static final String RESOLUTION_DATA = "klab.resolution.data";
 
 	default String getServiceName() {
 		return "klab.resolver.service";
@@ -47,9 +40,18 @@ public interface Resolver extends KlabService {
 	Capabilities capabilities();
 
 	/**
-	 * Resolve a model or an instance, using the resources service to obtain the
-	 * requested knowledge object, and loading the closure of all knowledge needed
-	 * to understand it.
+	 * The resolver holds the translation of the lexical {@link KlabAsset}s into
+	 * resolvable {@link Knowledge}, using the {@link ResourcesService} in the scope
+	 * to build them when necessary. This method resolves a {@link Model} or an
+	 * {@link Instance} from their syntactic peers in resources, efficiently loading
+	 * and validating the closure of all other knowledge needed to understand it.
+	 * <p>
+	 * The search for models (by scale and semantics) should happen in the resource
+	 * servers with help from the reasoner, yielding a {@link ResourceSet} from
+	 * {@link ResourcesService#queryModels(Observable, ContextScope)}}. Models that
+	 * are accessible to the Resolvers but invalid should generate an info message.
+	 * Should cache the build {@link Model}s and refresh the cache based on version
+	 * matching.
 	 * 
 	 * @param urn
 	 * @param scope
@@ -59,11 +61,11 @@ public interface Resolver extends KlabService {
 
 	/**
 	 * The main function of the resolver is to resolve knowledge to a dataflow (in a
-	 * context scope). Returns a dataflow that must be executed by a runtime
-	 * service. Observable may be or resolve to any knowledge compatible with the
-	 * observation scope. If the scope is a session scope, the observable must be an
-	 * acknowledgement unless the scope has a set scale, in which case it can be a
-	 * subject concept.
+	 * context scope). This method returns a dataflow that can be executed by a
+	 * runtime service. Any {@link Knowledge} object can be resolved, compatibly
+	 * with the observation scope. If the scope is empty, the resolvable must be an
+	 * {@link Instance} unless the scope has a set focal scale, in which case it can
+	 * be a subject observable.
 	 * 
 	 * @param resolvable
 	 * @param scope
@@ -75,19 +77,11 @@ public interface Resolver extends KlabService {
 	 * Query all the resource servers available to find models that can observe the
 	 * passed observable in the scope. The result should be merged to keep the
 	 * latest available versions and ranked in decreasing order of fit to the
-	 * context. A map linking resolution metadata to each model resolved (optionally
-	 * including those not chosen) should be available for inspection, reporting and
-	 * debugging in the resolution graph connected to the {@link ContextScope}.
-	 * <p>
-	 * This method is where the {@link Model} objects are created from the
-	 * {@link KimModelStatement} managed by the resource services. The search for
-	 * models (by scale and semantics) should happen in the resource servers with
-	 * help from the reasoner, yielding a {@link ResourceSet} from
-	 * (ResourceProvider{@link #queryModels(Observable, ContextScope)}}). The
-	 * validation, conversion to {@link Model}, ranking and prioritization should be
-	 * done inside the resolver. Matching models that are accessible to the
-	 * Resolvers but invalid should generate an info message. Should cache the build
-	 * {@link Model}s and refresh the cache based on version matching.
+	 * context. Once the choice is made, {@link #resolve(Knowledge, ContextScope)}
+	 * should be used to populate the inner knowledge repository. Resolution
+	 * metadata for each model resolved (optionally including those not chosen)
+	 * should be available for inspection, reporting and debugging in the resolution
+	 * graph connected to the {@link ContextScope}.
 	 * 
 	 * @param observable
 	 * @param scope

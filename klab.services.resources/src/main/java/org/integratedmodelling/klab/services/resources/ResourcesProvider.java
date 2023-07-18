@@ -356,7 +356,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 			if (behavior.getProjectId() != null) {
 				localProjects.get(behavior.getProjectId()).getBehaviors().add(behavior);
 			}
-			this.localBehaviors.put(behavior.getName(), behavior);
+			this.localBehaviors.put(behavior.getUrn(), behavior);
 //			});
 		}
 	}
@@ -423,8 +423,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 				if (candidate != null) {
 					// FIXME this causes more traffic than we should cause - maybe limit full scan
 					// to option
-					if (ret == null || (ret != null && new Version(candidate.getVersionString())
-							.greater(new Version(ret.getVersionString())))) {
+					if (ret == null || (ret != null && candidate.getVersion().greater(ret.getVersion()))) {
 						ret = candidate;
 					}
 				}
@@ -471,8 +470,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	}
 
 	@Override
-	public synchronized boolean addProject(String workspaceName, String projectUrl,
-			boolean overwriteIfExisting) {
+	public synchronized boolean addProject(String workspaceName, String projectUrl, boolean overwriteIfExisting) {
 
 		boolean ret = false;
 
@@ -569,7 +567,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 				this.localNamespaces.remove(namespace.getNamespace());
 			}
 			for (KActorsBehavior behavior : project.getBehaviors()) {
-				this.localBehaviors.remove(behavior.getName());
+				this.localBehaviors.remove(behavior.getUrn());
 			}
 			for (String resource : project.getResourceUrns()) {
 				localResources.remove(resource);

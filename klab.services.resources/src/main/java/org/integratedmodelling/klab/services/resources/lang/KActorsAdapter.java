@@ -92,7 +92,7 @@ public enum KActorsAdapter {
 
 		KActorsBehaviorImpl ret = new KActorsBehaviorImpl();
 
-		ret.setName(behavior.getName());
+		ret.setUrn(behavior.getName());
 		ret.setDeprecated(behavior.isDeprecated());
 		ret.setErrors(behavior.isErrors());
 		ret.setDescription(behavior.getDescription());

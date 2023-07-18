@@ -284,7 +284,7 @@ public class KActorsVM implements VM {
 
 					if (behavior.getType() == KActorsBehavior.Type.UNITTEST
 							|| behavior.getType() == KActorsBehavior.Type.SCRIPT) {
-						scope.send(new ScriptEvent(behavior.getName(),
+						scope.send(new ScriptEvent(behavior.getUrn(),
 								behavior.getType() == KActorsBehavior.Type.UNITTEST ? ScriptEvent.Type.CASE_START
 										: ScriptEvent.Type.SCRIPT_START));
 					}
@@ -363,7 +363,7 @@ public class KActorsVM implements VM {
 								KActorsScope testScope = scope.forTest(action);
 								testScope.setMetadata(Parameters.create(scope.getMetadata()));
 								testScope.setLocalizedSymbols(getLocalization(behavior));
-								testScope.info(behavior.getName() + ": running test " + action.getName());
+								testScope.info(behavior.getUrn() + ": running test " + action.getName());
 
 								KActorsVM.this.run(action, behavior, testScope);
 
@@ -375,7 +375,7 @@ public class KActorsVM implements VM {
 							}
 
 						}
-						scope.info(behavior.getName() + ": done running tests");
+						scope.info(behavior.getUrn() + ": done running tests");
 					}
 
 					/*
@@ -419,7 +419,7 @@ public class KActorsVM implements VM {
 					 * communicate end of script to session
 					 */
 					// ((Session) scope.getIdentity()).notifyScriptEnd(KActorsVM.this.appId);
-					scope.send(new ScriptEvent(behavior.getName(),
+					scope.send(new ScriptEvent(behavior.getUrn(),
 							behavior.getType() == KActorsBehavior.Type.UNITTEST ? ScriptEvent.Type.CASE_END
 									: ScriptEvent.Type.SCRIPT_END));
 					// }

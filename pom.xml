@@ -62,12 +62,6 @@
 			<organization>HydroloGIS Environmental Engineering</organization>
 			<organizationUrl>https://www.hydrologis.com/</organizationUrl>
 		</developer>
-		<developer>
-			<name>J.Luke Scott</name>
-			<email>luke@cron.works</email>
-			<organization>CronWorks Software, LLC</organization>
-			<organizationUrl>http://cronworks.net</organizationUrl>
-		</developer>
 	</developers>
 
 	<scm>

@@ -299,7 +299,7 @@ public class TestScope {
 		ret.parentBehavior = this.behavior;
 		ret.behavior = behavior;
 		ret.level = this.level + 1;
-		ret.docSection = this.docSection.getChild("anchor:" + behavior.getName() + "[]" + behavior.getName());
+		ret.docSection = this.docSection.getChild("anchor:" + behavior.getUrn() + "[]" + behavior.getUrn());
 		ret.parent = this;
 		ret.testStatistics = new TestStatistics(behavior);
 		ret.docSection.action(() -> {

@@ -5,6 +5,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+
 
 /**
  * The syntactic peer resulting from parsing a .kactor file. Specifies a {@link IBehavior} to be
@@ -17,7 +19,7 @@ import java.util.Map;
  * @author Ferd
  *
  */
-public interface KActorsBehavior extends KActorsCodeStatement {
+public interface KActorsBehavior extends KActorsCodeStatement, KlabAsset {
 
     enum Type {
         /**
@@ -158,7 +160,7 @@ public interface KActorsBehavior extends KActorsCodeStatement {
      * 
      * @return
      */
-    String getName();
+    String getUrn();
 
     /**
      * Who this behavior is for
@@ -257,13 +259,6 @@ public interface KActorsBehavior extends KActorsCodeStatement {
      * @return
      */
     boolean isPublic();
-
-    /**
-     * Any version for display set in the app file.
-     * 
-     * @return
-     */
-    String getVersionString();
 
     /**
      * Visit all actions and statements in a behavior.

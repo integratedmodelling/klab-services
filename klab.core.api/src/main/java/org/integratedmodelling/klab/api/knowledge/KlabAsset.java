@@ -6,9 +6,20 @@ import java.util.List;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 
 /**
- * All k.LAB assets have a URN, a version, and metadata.
+ * All k.LAB assets have a URN, a version, and metadata. They are
+ * <em>syntactic</em> resources, created by users through k.IM and k.Actors
+ * language specifications. Assets are managed by the {@link ResourcesService},
+ * which handles review, versioning and dependencies but knows no semantics;
+ * they are retrieved and promoted to {@link Knowledge} in other services to
+ * become operational. The needed assets are transferred to the {@link Reasoner}
+ * (yielding {@link Concept}s and {@link Observable}s) and to the
+ * {@link Resolver} (yielding {@link Model}s and {@link Instance}s) to play
+ * their role within the k.LAB ecosystem.
  * 
  * @author Ferd
  *
@@ -16,7 +27,8 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 public interface KlabAsset extends Serializable {
 
 	public enum KnowledgeClass {
-		CONCEPT, OBSERVABLE, MODEL, INSTANCE, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT, PROJECT
+		CONCEPT, OBSERVABLE, MODEL, INSTANCE, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT,
+		PROJECT
 	}
 
 	/**

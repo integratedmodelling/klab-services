@@ -181,7 +181,7 @@ public class ViewScope {
             /*
              * must have component in scope; panel enters as new component
              */
-            panel = new ViewPanel(behavior.getName(), behavior.getStyle());
+            panel = new ViewPanel(behavior.getUrn(), behavior.getStyle());
             for (Annotation annotation : action.getAnnotations()) {
                 panel.getAttributes().putAll(getMetadata(annotation, scope));
             }
@@ -215,9 +215,9 @@ public class ViewScope {
 
     public Layout createLayout(KActorsBehavior behavior, KActorsScope scope) {
 
-        Layout ret = new Layout(behavior.getName(), scope.getIdentity().getId());
+        Layout ret = new Layout(behavior.getUrn(), scope.getIdentity().getId());
         ret.setIdentity(this.identityId);
-        ret.setVersionString(behavior.getVersionString());
+        ret.setVersionString(behavior.getVersion().toString());
         ret.setStyle(behavior.getStyle());
         ret.setDestination(behavior.getType());
         ret.setLabel(scope.localize(behavior.getLabel()));

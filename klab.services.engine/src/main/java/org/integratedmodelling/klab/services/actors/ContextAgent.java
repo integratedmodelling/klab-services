@@ -59,7 +59,7 @@ public class ContextAgent extends KAgent {
             case REMOTE_URL:
                 break;
             case RESOURCE:
-                resolvable = scope.getService(ResourcesService.class).resolveResource(message.getUrn(), message.getScope());
+//                resolvable = scope.getService(ResourcesService.class).resolveResource(message.getUrn(), message.getScope());
                 break;
             case UNKNOWN:
                 break;

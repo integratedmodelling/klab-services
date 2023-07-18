@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -19,6 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -27,27 +29,41 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
 /**
- * Resource managements. Assets handled include projects with all their assets
- * (namespaces, models, behaviors and local resources) plus any independently
- * submitted resource and component plug-ins as jar/zips. All assets are
- * versioned and history is maintained. Permissions and review-driven ranking
- * are enabled for all primary assets, i.e. projects, components and independent
- * resources. Assets that are parts of projects get their permissions and ranks
- * from the project they are part of.
+ * Management of all {@link KlabAsset}s, collectively called "resources"
+ * (although this conflicts with {@link Resource}, which is a specific type of
+ * KlabAsset). Assets handled include projects with all their contents
+ * (namespaces with {@link KimConceptStatement}, {@link KimModelStatement} and
+ * other definitions, {@link KActorsBehavior} behaviors, and local
+ * {@link Resource}s), plus any published, independently managed
+ * {@link Resource}s, and any component plug-ins, managed directly as jar/zips.
+ * All assets are versioned and history is maintained. Permissions and
+ * review-driven ranking are enabled for all primary assets, i.e. projects,
+ * components and published resources. Assets that come as content of projects
+ * get their permissions and ranks from the project they are part of.
  * <p>
- * The resource manager can also turn a behavior specification in k.Actors
- * located at a given URL into its correspondent serialized, executable
- * {@link KActorsBehavior}.
+ * The resource manager holds all language parsers and can also turn a behavior
+ * specification in k.Actors located at a given URL into its correspondent
+ * serialized, executable {@link KActorsBehavior}. This should normally only
+ * happen for scripts, applications and user behaviors, which can exist
+ * independent of projects.
+ * <p>
+ * If a community service is available in the service scope, the resource
+ * manager initiates, and reacts to, events that create the review history of an
+ * asset. Primary assets (projects, components and published resources) are
+ * subject to review and the resulting rank and history is held by the resources
+ * service.
  * <p>
  * Endpoints are part of three main families:
  * <dl>
  * <dt>get..()</dt>
- * <dd>endpoints retrieve assets in their serialized form. The <code>get</code>
- * prefix is omitted in this implementation.</dd>
+ * <dd>endpoints retrieve URN-named assets in their serialized form. The
+ * <code>get</code> prefix is omitted in this implementation.</dd>
  * <dt>resolve..()</dt>
  * <dd>endpoints retrieve {@link ResourceSet}s that contain all the information
- * needed to reconstruct and use the asset requested at the requesting end,
- * including any dependent assets and their sources;</dd>
+ * needed to operationalize the asset requested at the requesting end, including
+ * any dependent assets and their sources. For example, retrieval of a
+ * {@link KimModelStatement} is used in the {@link Resolver} to build a
+ * {@link Model} with all its dependencies satisfied.</dd>
  * <dt>{list|add|remove|update}..()</dt>
  * <dd>endpoints manage inquiry and CRUD operations, part of the
  * {@link ResourcesServices.Admin} API</dd>

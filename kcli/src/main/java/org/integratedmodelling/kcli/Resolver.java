@@ -11,7 +11,7 @@ public class Resolver {
 
 	
 	@Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-			"List and describe local or remote resources.",
+			"List and describe models known to the resolver.",
 			"" }, subcommands = {})
 	public static class List implements Runnable {
 

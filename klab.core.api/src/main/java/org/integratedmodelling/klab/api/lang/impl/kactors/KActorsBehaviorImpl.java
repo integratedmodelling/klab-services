@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
@@ -12,7 +13,7 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 
 	private static final long serialVersionUID = 6651874316547941092L;
 
-	private String name;
+	private String urn;
 	private Type type;
 	private Platform platform;
 	private String output;
@@ -26,11 +27,11 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 	private String projectId;
 	private Map<String, String> styleSpecs = new HashMap<>();
 	private boolean isPublic;
-	private String versionString;
+	private Version version;
 
 	@Override
-	public String getName() {
-		return this.name;
+	public String getUrn() {
+		return this.urn;
 	}
 
 	@Override
@@ -98,13 +99,8 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 		return this.isPublic;
 	}
 
-	@Override
-	public String getVersionString() {
-		return this.versionString;
-	}
-
-	public void setName(String name) {
-		this.name = name;
+	public void setUrn(String urn) {
+		this.urn = urn;
 	}
 
 	public void setType(Type type) {
@@ -159,12 +155,16 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 		this.isPublic = isPublic;
 	}
 
-	public void setVersionString(String versionString) {
-		this.versionString = versionString;
-	}
-
 	@Override
 	public void visit(Visitor visitor) {
+	}
+
+	public Version getVersion() {
+		return version;
+	}
+
+	public void setVersion(Version version) {
+		this.version = version;
 	}
 
 }

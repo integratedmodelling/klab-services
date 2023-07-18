@@ -312,7 +312,7 @@ public class KActorsScope implements VM.BehaviorScope {
 					Thread.sleep(60);
 					cnt++;
 					if (cnt % 1000 == 0 && !semaphore.isWarned()) {
-						mainScope.warn("Blocking action is taking longer than 1 minute at " + getBehavior().getName()
+						mainScope.warn("Blocking action is taking longer than 1 minute at " + getBehavior().getUrn()
 								+ ":" + linenumber);
 						semaphore.setWarned();
 					}
