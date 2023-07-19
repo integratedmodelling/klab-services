@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.integratedmodelling.kim.api.IKimScope;
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
@@ -66,6 +65,7 @@ import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
@@ -88,7 +88,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 
 @Service
-public class ReasonerService implements Reasoner, Reasoner.Admin {
+public class ReasonerService extends BaseService implements Reasoner, Reasoner.Admin {
 
 	@Serial
 	private static final long serialVersionUID = 380622027752591182L;
@@ -2438,6 +2438,12 @@ public class ReasonerService implements Reasoner, Reasoner.Admin {
 				KimConcept validParent, boolean mandatory) {
 		}
 
+	}
+
+	@Override
+	public void initializeService(Scope scope) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

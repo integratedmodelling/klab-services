@@ -132,6 +132,10 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 	 */
 	private long DEFAULT_GIT_SYNC_INTERVAL = 15l * 60l * 60l * 1000l;
 
+	/**
+	 * If this is used, {@link #loadWorkspaces()} must be called explicitly after
+	 * the service scope is set.
+	 */
 	@SuppressWarnings("unchecked")
 	public ResourcesProvider() {
 		this.localName = "klab.services.resources." + UUID.randomUUID();
@@ -147,7 +151,6 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 		if (config.exists()) {
 			configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
 		}
-		loadWorkspaces();
 	}
 
 	@Autowired
@@ -155,6 +158,9 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 		this();
 		this.authenticationService = authenticationService;
 		this.scope = authenticationService.authorizeService(this);
+		this.kbox = ModelKbox.create(localName, scope);
+
+		loadWorkspaces();
 	}
 
 	/**
@@ -184,7 +190,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 		Utils.YAML.save(this.configuration, config);
 	}
 
-	private void loadWorkspaces() {
+	public void loadWorkspaces() {
 		for (String workspaceName : configuration.getWorkspaces().keySet()) {
 			Workspace workspace = getWorkspace(workspaceName);
 			for (String project : configuration.getWorkspaces().get(workspaceName)) {
@@ -368,6 +374,7 @@ public class ResourcesProvider implements ResourcesService, ResourcesService.Adm
 			Project project = localProjects.get(namespace.getProjectName());
 			project.getNamespaces().add(namespace);
 			this.localNamespaces.put(namespace.getUrn(), namespace);
+			this.kbox.store(namespace, this.scope);
 //			});
 		}
 	}

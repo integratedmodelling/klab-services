@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -11,8 +12,9 @@ import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.services.base.BaseService;
 
-public class RuntimeService implements org.integratedmodelling.klab.api.services.RuntimeService,
+public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService,
 		org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
 	private static final long serialVersionUID = -3119521647259754846L;
@@ -76,6 +78,12 @@ public class RuntimeService implements org.integratedmodelling.klab.api.services
 	public Map<String, String> getExceptionTestcases(boolean deleteExisting) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void initializeService(Scope scope) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

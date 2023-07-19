@@ -22,6 +22,7 @@ class ResourceIngestion {
     @BeforeAll
     static void setUp() throws Exception {
         service = new ResourcesProvider();
+        ((ResourcesProvider)service).loadWorkspaces();
         service.addProject("worldview", "https://bitbucket.org/integratedmodelling/im.git#develop", false);
         service.addProject("tests", "https://bitbucket.org/integratedmodelling/im.testsuite.resolution", false);
     }

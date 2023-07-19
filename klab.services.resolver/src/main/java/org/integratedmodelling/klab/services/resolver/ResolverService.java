@@ -17,12 +17,13 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowService;
 import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph;
 import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph.Resolution;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class ResolverService implements Resolver {
+public class ResolverService extends BaseService implements Resolver {
 
 	private static final long serialVersionUID = 5606716353692671802L;
 
@@ -137,6 +138,12 @@ public class ResolverService implements Resolver {
 	@Override
 	public List<Model> queryModels(Observable observable, ContextScope scope) {
 		return null;
+	}
+
+	@Override
+	public void initializeService(Scope scope) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
