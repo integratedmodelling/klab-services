@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 
+import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -15,11 +16,13 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
 
     KlabService service;
     Status status;
+    Scope delegate;
     
     class LocalService implements ServiceIdentity {
 
         Date boot = new Date();
         KlabService service;
+        Scope delegate;
         
         public LocalService(KlabService service) {
             this.service = service;
@@ -94,7 +97,8 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
         
     }
     
-    public LocalServiceScope(KlabService service) {
+    public LocalServiceScope(KlabService service, Scope delegate) {
+    	this.delegate = delegate;
         setIdentity(new LocalService(service));
     }
 
@@ -134,5 +138,12 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
 	public void setData(String key, Object value) {
 		this.data.put(key, value);
 	}
+
+	@Override
+	public <T extends KlabService> T getService(Class<T> serviceClass) {
+		return delegate.getService(serviceClass);
+	}
+	
+	
 
 }

@@ -54,8 +54,7 @@ public class TestEngine {
 				EngineService.INSTANCE
 						.setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
 			} else {
-				EngineService.INSTANCE
-						.setReasoner(new ReasonerService(this, EngineService.INSTANCE.getResources(), new Indexer()));
+				EngineService.INSTANCE.setReasoner(new ReasonerService(this, new Indexer()));
 			}
 
 			// FIXME mutual dependency between resolver and runtime guarantees screwup
@@ -63,16 +62,15 @@ public class TestEngine {
 				EngineService.INSTANCE
 						.setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
 			} else {
-				EngineService.INSTANCE.setResolver(new ResolverService(this, EngineService.INSTANCE.getResources(),
-						EngineService.INSTANCE.getRuntime()));
+				EngineService.INSTANCE.setResolver(new ResolverService(this));
 			}
 
 			if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
 				EngineService.INSTANCE
 						.setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime"));
 			} else {
-				EngineService.INSTANCE.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this,
-						EngineService.INSTANCE.getResources(), EngineService.INSTANCE.getResolver()));
+				EngineService.INSTANCE
+						.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this));
 			}
 
 		}
@@ -95,13 +93,7 @@ public class TestEngine {
 
 		@Override
 		public ServiceScope authorizeService(KlabService service) {
-			return new LocalServiceScope(service) {
-
-				@Override
-				public <T extends KlabService> T getService(Class<T> serviceClass) {
-					// TODO Auto-generated method stub
-					return null;
-				}
+			return new LocalServiceScope(service, null) {
 
 				@Override
 				public Ref getAgent() {
@@ -112,7 +104,7 @@ public class TestEngine {
 				@Override
 				public void stop() {
 					// TODO Auto-generated method stub
-					
+
 				}
 
 			};

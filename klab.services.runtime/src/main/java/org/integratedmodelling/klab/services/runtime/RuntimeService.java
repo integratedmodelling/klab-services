@@ -9,8 +9,6 @@ import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.Authentication;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.base.BaseService;
 
@@ -19,10 +17,16 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
 	private static final long serialVersionUID = -3119521647259754846L;
 
-	public RuntimeService(Authentication testAuthentication, ResourcesService resources, Resolver resolver) {
+	public RuntimeService(Authentication testAuthentication) {
 		// TODO Auto-generated constructor stub
 	}
 
+	@Override
+	public void initializeService(Scope scope) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 	@Override
 	public String getUrl() {
 		// TODO Auto-generated method stub
@@ -80,10 +84,5 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 		return null;
 	}
 
-	@Override
-	public void initializeService(Scope scope) {
-		// TODO Auto-generated method stub
-		
-	}
 
 }

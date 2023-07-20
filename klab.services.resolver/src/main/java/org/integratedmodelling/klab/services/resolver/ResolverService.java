@@ -36,7 +36,7 @@ public class ResolverService extends BaseService implements Resolver {
 	private ServiceScope serviceScope;
 
 	@Autowired
-	public ResolverService(Authentication authentication, ResourcesService resources, RuntimeService runtime) {
+	public ResolverService(Authentication authentication) {
 		this.serviceScope = authentication.authorizeService(this);
 	}
 

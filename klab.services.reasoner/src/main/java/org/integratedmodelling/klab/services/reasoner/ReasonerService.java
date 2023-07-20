@@ -137,8 +137,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 	private String url;
 	private String localName;
 
-	transient private ResourcesService resourceService;
-	transient private Authentication authenticationService;
+//	transient private ResourcesService resourceService;
+//	transient private Authentication authenticationService;
 	transient private ReasonerConfiguration configuration = new ReasonerConfiguration();
 	transient private ServiceScope scope;
 
@@ -154,7 +154,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 			// .expireAfterAccess(10, TimeUnit.MINUTES)
 			.build(new CacheLoader<String, Concept>() {
 				public Concept load(String key) {
-					KimConcept parsed = resourceService.resolveConcept(key);
+					KimConcept parsed = scope.getService(ResourcesService.class).resolveConcept(key);
 					return declareConcept(parsed);
 				}
 			});
@@ -163,7 +163,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 			// .expireAfterAccess(10, TimeUnit.MINUTES)
 			.build(new CacheLoader<String, Observable>() {
 				public Observable load(String key) { // no checked exception
-					KimObservable parsed = resourceService.resolveObservable(key);
+					KimObservable parsed = scope.getService(ResourcesService.class).resolveObservable(key);
 					return declareObservable(parsed);
 				}
 			});
@@ -178,6 +178,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 			.expireAfterAccess(10, TimeUnit.MINUTES).build();
 
 	private Capabilities capabilities = new ReasonerCapabilities();
+
+	private Authentication authenticationService;
 
 	static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
 
@@ -270,17 +272,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 	}
 
 	@Autowired
-	public ReasonerService(Authentication authenticationService, ResourcesService resourceService, Indexer indexer) {
-
-		Services.INSTANCE.setReasoner(this);
-
+	public ReasonerService(Authentication authenticationService, Indexer indexer) {
 		this.authenticationService = authenticationService;
-		this.scope = authenticationService.authorizeService(this);
 		this.indexer = indexer;
+	}
+
+	@Override
+	public void initializeService(Scope scope) {
+
+		this.scope = authenticationService.authorizeService(this);
 
 		OWL.INSTANCE.initialize(this.scope);
-
-		this.resourceService = resourceService;
 
 		File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
 		if (config.exists()) {
@@ -295,13 +297,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 				.collect(Collectors.toSet());
 
 		if (!worldview.isEmpty()) {
-			ResourceSet projectSet = this.resourceService.projects(worldview, scope);
+			ResourceSet projectSet = this.scope.getService(ResourcesService.class).projects(worldview, scope);
 			boolean ok = loadKnowledge(projectSet, scope);
 			/*
 			 * TODO log and report
 			 */
 		}
-
 	}
 
 	@SuppressWarnings("unchecked")
@@ -2358,7 +2359,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 	@Override
 	public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
 		Set<Concept> ret = new HashSet<>();
-		KimConcept peer = resourceService.resolveConcept(concept.getUrn());
+		KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
 		peer.visit(new DefaultVisitor() {
 			@Override
 			public void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent) {
@@ -2393,7 +2394,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 			declaration = declaration.replace(key.getUrn(), rep);
 		}
 
-		return declareConcept(resourceService.resolveConcept(declaration));
+		return declareConcept(scope.getService(ResourcesService.class).resolveConcept(declaration));
 	}
 
 	/**
@@ -2438,12 +2439,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 				KimConcept validParent, boolean mandatory) {
 		}
 
-	}
-
-	@Override
-	public void initializeService(Scope scope) {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

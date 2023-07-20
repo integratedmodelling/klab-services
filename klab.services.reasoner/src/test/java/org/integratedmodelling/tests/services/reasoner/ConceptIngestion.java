@@ -54,15 +54,9 @@ class ConceptIngestion {
 
             @Override
             public ServiceScope authorizeService(KlabService service) {
-                // TODO Auto-generated method stub
-                return new LocalServiceScope(service) {
-                    
-                    @Override
-                    public <T extends KlabService> T getService(Class<T> serviceClass) {
-                        throw new KServiceAccessException(serviceClass);
-                    }
-
-					@Override
+                // TODO create the root scope
+                return new LocalServiceScope(service, /* TODO */ null) {
+                    					@Override
 					public Ref getAgent() {
 						// TODO Auto-generated method stub
 						return null;
@@ -78,8 +72,7 @@ class ConceptIngestion {
             
         };
         scope = authenticationService.getAnonymousScope();
-        reasonerService = new ReasonerService(authenticationService,
-                resourcesService = new ResourcesProvider(authenticationService), indexingService = new Indexer());
+        reasonerService = new ReasonerService(authenticationService, indexingService = new Indexer());
         Services.INSTANCE.registerAuthority(new GBIFAuthority());
         Services.INSTANCE.registerAuthority(new IUPACAuthority());
         Services.INSTANCE.registerAuthority(new CaliperAuthority());
