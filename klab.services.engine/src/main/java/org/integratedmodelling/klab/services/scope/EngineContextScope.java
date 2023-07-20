@@ -196,4 +196,10 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 		return ret;
 	}
 
+	@Override
+	public void runTransitions() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

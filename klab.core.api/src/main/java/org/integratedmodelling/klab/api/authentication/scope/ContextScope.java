@@ -96,6 +96,13 @@ public interface ContextScope extends SessionScope {
 	Future<Observation> observe(Object... observables);
 
 	/**
+	 * Start the scheduling if the context occurs; do nothing if not. This can be
+	 * called again at each observation, with intelligent "replay" of any
+	 * transitions that need to be seen again.
+	 */
+	void runTransitions();
+
+	/**
 	 * <p>
 	 * getProvenance.
 	 * </p>
