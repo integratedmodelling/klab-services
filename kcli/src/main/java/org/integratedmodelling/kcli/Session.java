@@ -4,7 +4,7 @@ import java.io.PrintWriter;
 
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.Version;
-import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.utils.NameGenerator;
 
 import picocli.CommandLine.Command;

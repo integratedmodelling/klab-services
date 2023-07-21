@@ -3,11 +3,11 @@ package org.integratedmodelling.klab.services.runtime.library.core;
 import java.util.List;
 
 import org.integratedmodelling.klab.Version;
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instantiator;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabContextualizer;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabContextualizer.Argument;

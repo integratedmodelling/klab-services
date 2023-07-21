@@ -12,9 +12,9 @@ import java.util.function.Supplier;
 
 import org.fusesource.jansi.AnsiConsole;
 import org.integratedmodelling.kcli.engine.Engine;
-import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
-import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.jline.builtins.ConfigurationPath;

@@ -1,5 +1,6 @@
-package org.integratedmodelling.klab.api.authentication.scope;
+package org.integratedmodelling.klab.api.scope;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -16,14 +17,29 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
 /**
- * The scope for a context and any observations made within it. A scope is also
+ * The scope for a context and any observations made within it. The context
+ * scope is the "digital twin" of the observations made in it. A scope is also
  * passed around during resolution and carries scope info (namespace, project,
  * scenarios) that is relevant to the resolver.
+ * <p>
+ * The context scope has a URL and can be connected to another to become part of
+ * a larger scope.
  * 
  * @author Ferd
  *
  */
 public interface ContextScope extends SessionScope {
+
+	/**
+	 * Context scopes have a URL that enables communication with clients but also
+	 * allows other contexts to connect to them and become part of federated
+	 * contexts to form distributed digital twins. When connected, contexts share
+	 * events and state through messaging, with the visibility defined by their
+	 * authenticated agreement.
+	 * 
+	 * @return
+	 */
+	URL getUrl();
 
 	/**
 	 * Return the observer for this context. The original observation scope has the
@@ -62,6 +78,15 @@ public interface ContextScope extends SessionScope {
 	ContextScope withGeometry(Geometry geometry);
 
 	/**
+	 * Add another context to this one to build a higher-level one. Authentication
+	 * details will define what is seen and done.
+	 * 
+	 * @param remoteContext
+	 * @return
+	 */
+	ContextScope connect(URL remoteContext);
+
+	/**
 	 * Make an observation. Must be called on a context scope, possibly focused on a
 	 * given root observation using {@link #within(DirectObservation)}. If no root
 	 * observation is present in the scope, the arguments must fully specify a
@@ -94,6 +119,26 @@ public interface ContextScope extends SessionScope {
 	 * @return a future for the observation being contextualized.
 	 */
 	Future<Observation> observe(Object... observables);
+
+	/**
+	 * Return all observations affected by the passed one in this scope, either
+	 * through model dependencies or behaviors. "Affected" is any kind of reaction,
+	 * not necessarily implied by semantics.
+	 * 
+	 * @param observation
+	 * @return
+	 */
+	Collection<Observation> affects(Observation observation);
+
+	/**
+	 * Return all observations that the passed one affects in this scope, either
+	 * through model dependencies or behaviors. "Affected" is any kind of reaction,
+	 * not necessarily implied by semantics.
+	 * 
+	 * @param observation
+	 * @return
+	 */
+	Collection<Observation> affected(Observation observation);
 
 	/**
 	 * Start the scheduling if the context occurs; do nothing if not. This can be

@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
  * The object that creates a ranking of whatever object is being used to

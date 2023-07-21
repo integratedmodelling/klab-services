@@ -16,9 +16,9 @@ package org.integratedmodelling.klab.api.knowledge.observation;
 import java.util.Collection;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
  * A subject can be inside a root observation or (unique among observation)

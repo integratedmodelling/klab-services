@@ -3,12 +3,12 @@ package org.integratedmodelling.klab.tests.services.engine;
 import java.util.function.Consumer;
 
 import org.integratedmodelling.klab.Logging;
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
-import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
-import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.tests.services.engine.TestEngine.TestAuthentication;

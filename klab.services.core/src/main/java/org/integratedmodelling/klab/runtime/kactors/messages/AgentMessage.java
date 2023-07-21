@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.runtime.kactors.messages;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
+import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
 /**

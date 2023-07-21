@@ -1,4 +1,6 @@
-package org.integratedmodelling.klab.api.authentication.scope;
+package org.integratedmodelling.klab.api.scope;
+
+import java.net.URL;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -10,7 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  *
  */
 public interface SessionScope extends UserScope {
-
+	
 	/**
 	 * Never null. The session scope's geometry is the "focal" geometry of the user
 	 * (where/when the user agent is looking); the geometry in each

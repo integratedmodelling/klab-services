@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.testing.exceptions;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.exceptions.KException;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.testing.TestCases;
 
 /**

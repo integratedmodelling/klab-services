@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.community;
 
-import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Community;
 
 public class CommunityService implements Community {

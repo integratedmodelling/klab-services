@@ -3,9 +3,9 @@ package org.integratedmodelling.klab.services.authentication;
 import java.io.Serial;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
-import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
 import org.springframework.stereotype.Service;

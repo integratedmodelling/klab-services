@@ -13,7 +13,7 @@
  */
 package org.integratedmodelling.klab.api.identities;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
  * The Interface ITaskIdentity.

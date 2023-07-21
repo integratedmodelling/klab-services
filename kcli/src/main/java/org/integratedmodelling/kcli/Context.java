@@ -5,9 +5,9 @@ import java.io.PrintWriter;
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.engine.Geometries;
 import org.integratedmodelling.klab.Version;
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
-import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.utils.NameGenerator;
 

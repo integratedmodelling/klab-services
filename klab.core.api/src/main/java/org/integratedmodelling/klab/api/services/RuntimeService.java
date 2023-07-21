@@ -3,9 +3,9 @@ package org.integratedmodelling.klab.api.services;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public interface RuntimeService extends KlabService {

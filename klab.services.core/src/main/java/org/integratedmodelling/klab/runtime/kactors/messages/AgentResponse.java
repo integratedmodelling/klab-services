@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.runtime.kactors.messages;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
+import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.utils.Parameters;
 

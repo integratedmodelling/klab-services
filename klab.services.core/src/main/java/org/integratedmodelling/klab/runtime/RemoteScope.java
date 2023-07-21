@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.runtime;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**

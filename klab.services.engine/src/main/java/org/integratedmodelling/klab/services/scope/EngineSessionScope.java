@@ -3,11 +3,11 @@ package org.integratedmodelling.klab.services.scope;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
-import org.integratedmodelling.klab.api.authentication.scope.SessionScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 

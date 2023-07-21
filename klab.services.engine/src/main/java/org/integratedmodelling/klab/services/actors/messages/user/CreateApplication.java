@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.actors.messages.user;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
 public class CreateApplication extends AgentMessage {

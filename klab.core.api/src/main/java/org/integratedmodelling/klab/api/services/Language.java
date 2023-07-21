@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.api.services;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
+import org.integratedmodelling.klab.api.scope.Scope;
 
 /**
  * The language service provides validation and compilation for expressions used

@@ -18,9 +18,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**
@@ -357,6 +357,6 @@ public interface Expression extends Serializable {
 	 * @return the result of evaluating the expression
 	 * @throws org.integratedmodelling.klab.KException.KlabException TODO
 	 */
-	Object eval(org.integratedmodelling.klab.api.authentication.scope.Scope scope, Object... additionalParameters);
+	Object eval(org.integratedmodelling.klab.api.scope.Scope scope, Object... additionalParameters);
 
 }

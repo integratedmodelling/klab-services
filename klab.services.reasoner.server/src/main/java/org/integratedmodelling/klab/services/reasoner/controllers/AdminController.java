@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.services.reasoner.controllers;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.springframework.beans.factory.annotation.Autowired;

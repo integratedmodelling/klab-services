@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.actors;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;

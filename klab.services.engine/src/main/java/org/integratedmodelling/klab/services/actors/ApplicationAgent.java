@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.actors;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.ViewAction;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.ViewLayout;
 

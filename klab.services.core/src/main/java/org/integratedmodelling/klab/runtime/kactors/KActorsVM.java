@@ -14,8 +14,6 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.integratedmodelling.kim.api.IKimExpression;
 import org.integratedmodelling.klab.Urn;
 import org.integratedmodelling.klab.api.auth.IActorIdentity;
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -59,6 +57,8 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.monitoring.IMessage;
 import org.integratedmodelling.klab.api.observations.IObservation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;

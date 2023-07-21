@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.ojalgo.concurrent.Parallelism;
 
 /**

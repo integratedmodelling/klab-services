@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -19,6 +18,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
@@ -28,12 +28,13 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 	private Identity observer;
 	private DirectObservation context;
 	private Set<String> resolutionScenarios;
-	private EngineContextScope parent;
 	private Scale geometry;
-	private String token;
 	private String resolutionNamespace;
 	private String resolutionProject;
 	private Map<Observable, Observation> catalog = new HashMap<>();
+	private URL url;
+
+	protected EngineContextScope parent;
 
 	EngineContextScope(EngineSessionScope parent) {
 		super(parent);
@@ -199,7 +200,30 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 	@Override
 	public void runTransitions() {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	@Override
+	public Collection<Observation> affects(Observation observation) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Collection<Observation> affected(Observation observation) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public URL getUrl() {
+		return url;
+	}
+
+	@Override
+	public ContextScope connect(URL remoteContext) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

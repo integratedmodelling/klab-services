@@ -8,9 +8,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -41,10 +41,10 @@ public enum EngineService {
 	private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
 	private ReActorSystem actorSystem;
 
-	private Reasoner reasoner;
-	private ResourcesService resources;
-	private RuntimeService runtime;
-	private Resolver resolver;
+	private Reasoner defaultReasoner;
+	private ResourcesService defaultResourcesService;
+	private RuntimeService defaultRuntime;
+	private Resolver defaultResolver;
 	private boolean booted;
 
 	@Autowired
@@ -96,13 +96,13 @@ public enum EngineService {
 				@Override
 				public <T extends KlabService> T getService(Class<T> serviceClass) {
 					if (serviceClass.isAssignableFrom(Reasoner.class)) {
-						return (T) reasoner;
+						return (T) defaultReasoner;
 					} else if (serviceClass.isAssignableFrom(ResourcesService.class)) {
-						return (T) resources;
+						return (T) defaultResourcesService;
 					} else if (serviceClass.isAssignableFrom(Resolver.class)) {
-						return (T) resolver;
+						return (T) defaultResolver;
 					} else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-						return (T) runtime;
+						return (T) defaultRuntime;
 					}
 					return null;
 				}
@@ -146,42 +146,42 @@ public enum EngineService {
 	}
 
 	public Reasoner getReasoner() {
-		return reasoner;
+		return defaultReasoner;
 	}
 
 	public void setReasoner(Reasoner reasoner) {
-		this.reasoner = reasoner;
+		this.defaultReasoner = reasoner;
 	}
 
 	public ResourcesService getResources() {
-		return resources;
+		return defaultResourcesService;
 	}
 
 	public void setResources(ResourcesService resources) {
-		this.resources = resources;
+		this.defaultResourcesService = resources;
 	}
 
 	public RuntimeService getRuntime() {
-		return runtime;
+		return defaultRuntime;
 	}
 
 	public void setRuntime(RuntimeService runtime) {
-		this.runtime = runtime;
+		this.defaultRuntime = runtime;
 	}
 
 	public Resolver getResolver() {
-		return resolver;
+		return defaultResolver;
 	}
 
 	public void setResolver(Resolver resolver) {
-		this.resolver = resolver;
+		this.defaultResolver = resolver;
 	}
 
 	public boolean shutdown() {
-		this.reasoner.shutdown();
-		this.resources.shutdown();
-		this.reasoner.shutdown();
-		this.runtime.shutdown();
+		this.defaultReasoner.shutdown();
+		this.defaultResourcesService.shutdown();
+		this.defaultReasoner.shutdown();
+		this.defaultRuntime.shutdown();
 		return true;
 	}
 

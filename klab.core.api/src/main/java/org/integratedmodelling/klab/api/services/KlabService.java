@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import java.io.Serializable;
 
-import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation

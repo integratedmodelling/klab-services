@@ -2,14 +2,14 @@ package org.integratedmodelling.tests.services.reasoner;
 
 import java.util.List;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
-import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
-import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.indexing.Indexer;

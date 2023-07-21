@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
-import org.integratedmodelling.klab.api.authentication.scope.ServiceScope;
-import org.integratedmodelling.klab.api.authentication.scope.UserScope;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 
 /**
  * Proxy to whatever authentication strategy is used in the system. Responsible for building the

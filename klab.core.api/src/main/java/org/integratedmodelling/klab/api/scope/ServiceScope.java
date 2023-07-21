@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.authentication.scope;
+package org.integratedmodelling.klab.api.scope;
 
 /**
  * A service scope is obtained upon authentication of a service.

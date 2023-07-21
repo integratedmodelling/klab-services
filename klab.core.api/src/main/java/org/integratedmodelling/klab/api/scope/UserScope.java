@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.authentication.scope;
+package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;

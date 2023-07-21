@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
-import org.integratedmodelling.klab.api.authentication.scope.ContextScope;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 public interface Resolver<T extends Observation> extends Contextualizer {
 

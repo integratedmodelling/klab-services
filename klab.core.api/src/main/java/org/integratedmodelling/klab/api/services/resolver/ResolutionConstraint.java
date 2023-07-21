@@ -2,10 +2,10 @@ package org.integratedmodelling.klab.api.services.resolver;
 
 import javax.xml.stream.events.Namespace;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.scope.Scope;
 
 /**
  * One or more resolution constraints may be added to a session through k.Actors

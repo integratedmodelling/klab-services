@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.actors;
 
-import org.integratedmodelling.klab.api.authentication.scope.Scope;
-import org.integratedmodelling.klab.api.authentication.scope.Scope.Status;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent.Type;
 
