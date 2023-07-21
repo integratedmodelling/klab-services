@@ -140,7 +140,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 	@SuppressWarnings("unchecked")
 	public ResourcesProvider() {
 		this.localName = "klab.services.resources." + UUID.randomUUID();
-		Services.INSTANCE.setResources(this);
+//		Services.INSTANCE.setResources(this);
 		initializeLanguageServices();
 
 		this.db = DBMaker

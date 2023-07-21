@@ -200,7 +200,10 @@ public abstract class ObservableKbox extends H2Kbox {
 
 		@Override
 		public String getCreateSQL() {
-			return "CREATE TABLE namespaces (" + "id VARCHAR(256) PRIMARY KEY, " + "timestamp LONG, "
+			// TODO FIXME primary key on NS URN is giving errors although there seems to be no violation. Must investigate.
+//			return "CREATE TABLE namespaces (" + "id VARCHAR(256) PRIMARY KEY, " + "timestamp LONG, "
+//					+ "isscenario BOOLEAN" + "); " + "CREATE INDEX namespace_id_index ON namespaces(id); ";
+			return "CREATE TABLE namespaces (" + "id VARCHAR(256), " + "timestamp LONG, "
 					+ "isscenario BOOLEAN" + "); " + "CREATE INDEX namespace_id_index ON namespaces(id); ";
 		}
 

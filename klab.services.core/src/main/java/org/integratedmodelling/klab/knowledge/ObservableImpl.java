@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -24,7 +25,6 @@ import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.util.StringUtils;
 
@@ -83,16 +83,16 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         return semantics;
     }
 
-    @Override
-    public Semantics domain() {
-        return semantics == null ? null : semantics.domain();
-    }
+//    @Override
+//    public Semantics domain() {
+//        return semantics == null ? null : semantics.domain();
+//    }
 
-    @Override
-    public boolean is(Semantics other) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+//    @Override
+//    public boolean is(Semantics other) {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
 
     @Override
     public boolean is(SemanticType type) {
@@ -343,7 +343,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
     @Override
     public Builder builder() {
-        return Services.INSTANCE.getReasoner().observableBuilder(this);
+        return Klab.INSTANCE.getConfiguration().getObservableBuilder(this);
     }
 
     public void setSpecialized(boolean specialized) {

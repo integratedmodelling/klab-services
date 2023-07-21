@@ -48,14 +48,15 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
  * returned should be the one with the lightest load and shouldn't be saved.
  * 
  * @author Ferd
- *
+ * @deprecated this should be almost entirely absorbed in the scope. Only
+ *             "minor" services (not KlabService) may be handled here.
  */
 public enum Services {
 
 	INSTANCE;
 
-	private Reasoner reasoner;
-	private ResourcesService resources;
+//	private Reasoner reasoner;
+//	private ResourcesService resources;
 //	private Resolver resolver;
 //	private RuntimeService runtime;
 	private UnitService unitService;
@@ -66,9 +67,9 @@ public enum Services {
 	private List<ResourcesService> federatedResources = new ArrayList<>();
 	private Language languageService;
 
-	public Reasoner getReasoner() {
-		return reasoner;
-	}
+//	public Reasoner getReasoner() {
+//		return reasoner;
+//	}
 
 	/**
 	 * Return the resource providers available to the passed scope, best matches
@@ -91,17 +92,17 @@ public enum Services {
 //		return null;
 //	}
 //
-	public void setReasoner(Reasoner reasoner) {
-		this.reasoner = reasoner;
-	}
-
-	public ResourcesService getResources() {
-		return resources;
-	}
-
-	public void setResources(ResourcesService resources) {
-		this.resources = resources;
-	}
+//	public void setReasoner(Reasoner reasoner) {
+//		this.reasoner = reasoner;
+//	}
+//
+//	public ResourcesService getResources() {
+//		return resources;
+//	}
+//
+//	public void setResources(ResourcesService resources) {
+//		this.resources = resources;
+//	}
 
 //	public Resolver getResolver() {
 //		return resolver;

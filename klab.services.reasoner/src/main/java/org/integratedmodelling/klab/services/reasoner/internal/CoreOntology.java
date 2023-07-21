@@ -23,6 +23,7 @@ public class CoreOntology {
 
     private File root;
     private Map<SemanticType, Concept> worldviewCoreConcepts = Collections.synchronizedMap(new HashMap<>());
+	private OWL owl;
     private static Map<SemanticType, String> coreConceptIds = Collections.synchronizedMap(new HashMap<>());
 
     public static final String CORE_ONTOLOGY_NAME = "odo-im";
@@ -236,8 +237,9 @@ public class CoreOntology {
         public static final String CORE_EXTENT = "observation:Extent";
     }
 
-    public CoreOntology(File directory) {
+    public CoreOntology(File directory, OWL owl) {
         this.root = directory;
+        this.owl = owl;
         Utils.Classpath.extractKnowledgeFromClasspath(this.root);
     }
 
@@ -285,7 +287,7 @@ public class CoreOntology {
     public Concept getCoreType(Set<SemanticType> type) {
 
         if (type.contains(SemanticType.NOTHING)) {
-            return OWL.INSTANCE.getNothing();
+            return owl.getNothing();
         }
 
         SemanticType coreType = getRepresentativeCoreSemanticType(type);
@@ -296,7 +298,7 @@ public class CoreOntology {
         if (ret == null) {
             String id = coreConceptIds.get(coreType);
             if (id != null) {
-                ret = OWL.INSTANCE.getConcept(id);
+                ret = owl.getConcept(id);
             }
         }
 
@@ -417,7 +419,7 @@ public class CoreOntology {
     }
 
     public String importOntology(String url, String prefix, Channel monitor) {
-        return OWL.INSTANCE.importExternal(url, prefix, monitor);
+        return owl.importExternal(url, prefix, monitor);
     }
 
     public void setAsCoreType(Concept concept) {

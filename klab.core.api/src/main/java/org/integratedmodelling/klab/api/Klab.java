@@ -31,6 +31,8 @@ public enum Klab {
 
 		Observable.Builder getObservableBuilder(Concept observable);
 
+		Observable.Builder getObservableBuilder(Observable observable);
+
 		Scale promoteGeometryToScale(Geometry geometry);
 
 		Projection getDefaultSpatialProjection();

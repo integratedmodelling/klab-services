@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 import org.integratedmodelling.klab.Configuration;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -53,10 +52,11 @@ import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Authority.Identity;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Services;
@@ -115,9 +115,7 @@ import com.google.common.collect.Sets;
  *
  * @author Ferd
  */
-public enum OWL {
-
-	INSTANCE;
+public class OWL {
 
 	public static final String DEFAULT_ONTOLOGY_PREFIX = "http://integratedmodelling.org/ks";
 	public static final String INTERNAL_ONTOLOGY_PREFIX = "http://integratedmodelling.org/ks/internal";
@@ -130,7 +128,8 @@ public enum OWL {
 	private BiMap<Long, OWLClass> owlClasses = HashBiMap.create();
 	private BiMap<Long, ConceptImpl> conceptsById = HashBiMap.create();
 	private AtomicLong classId = new AtomicLong(1l);
-
+	private Scope scope;
+	
 	private boolean reasonerActive;
 	private boolean reasonerSynchronizing = false;
 	private Ontology mergedReasonerOntology;
@@ -148,6 +147,10 @@ public enum OWL {
 
 	private CoreOntology coreOntology;
 
+	public OWL(Scope scope) {
+		this.scope = scope;
+	}
+	
 	/**
 	 * Source of truth for identifier-friendly reference names
 	 * 
@@ -243,7 +246,7 @@ public enum OWL {
 		Ontology ret = null;
 		try {
 			OWLOntology o = manager.createOntology(IRI.create(prefix + "/" + id));
-			ret = new Ontology(o, id);
+			ret = new Ontology(this, o, id);
 			ontologies.put(id, ret);
 			iri2ns.put(((Ontology) ret).getPrefix(), id);
 		} catch (OWLOntologyCreationException e) {
@@ -291,11 +294,11 @@ public enum OWL {
 	 * 
 	 * @throws KlabException
 	 */
-	public void initialize(Channel monitor) {
+	public void initialize() {
 
 		manager = OWLManager.createOWLOntologyManager();
 		// this.loadPath = loadPath;
-		coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"));
+		coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"), this);
 		// coreOntology.load(monitor);
 		load(coreOntology.getRoot());
 
@@ -359,7 +362,7 @@ public enum OWL {
 	String importOntology(OWLOntology ontology, String resource, String namespace, boolean imported, Channel monitor) {
 
 		if (!ontologies.containsKey(namespace)) {
-			ontologies.put(namespace, new Ontology(ontology, namespace));
+			ontologies.put(namespace, new Ontology(this, ontology, namespace));
 		}
 
 		/*
@@ -585,7 +588,7 @@ public enum OWL {
 
 				OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
 				input.close();
-				Ontology ont = new Ontology(ontology, pth);
+				Ontology ont = new Ontology(this, ontology, pth);
 				ont.setResourceUrl(f.toURI().toURL().toString());
 				ontologies.put(pth, ont);
 				iri2ns.put(ont.getPrefix(), pth);
@@ -597,7 +600,7 @@ public enum OWL {
 				 */
 				OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
 				if (ont != null && ontologies.get(pth) == null) {
-					Ontology o = new Ontology(ont, pth);
+					Ontology o = new Ontology(this, ont, pth);
 					try {
 						o.setResourceUrl(f.toURI().toURL().toString());
 					} catch (MalformedURLException e1) {
@@ -639,8 +642,8 @@ public enum OWL {
 		}
 
 		String oid = "auth_" + Path.getFirst(identity.getAuthorityName(), ".").toLowerCase();
-		boolean isNew = OWL.INSTANCE.getOntology(oid) == null;
-		Ontology ontology = OWL.INSTANCE.requireOntology(oid, OWL.INTERNAL_ONTOLOGY_PREFIX);
+		boolean isNew = getOntology(oid) == null;
+		Ontology ontology = requireOntology(oid, OWL.INTERNAL_ONTOLOGY_PREFIX);
 
 		if (isNew) {
 			ontology.setInternal(true);
@@ -715,7 +718,7 @@ public enum OWL {
 			input = url.openStream();
 			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(input);
 			input.close();
-			ret = new Ontology(ontology, id);
+			ret = new Ontology(this, ontology, id);
 			ret.setResourceUrl(url.toString());
 			ontologies.put(id, ret);
 			iri2ns.put(ret.getPrefix(), id);
@@ -727,7 +730,7 @@ public enum OWL {
 			 */
 			OWLOntology ont = manager.getOntology(e.getOntologyID().getOntologyIRI());
 			if (ont != null && ontologies.get(id) == null) {
-				Ontology ontology = new Ontology(ont, id);
+				Ontology ontology = new Ontology(this, ont, id);
 				ontologies.put(id, ontology);
 				iri2ns.put(ontology.getPrefix(), id);
 			}
@@ -856,10 +859,10 @@ public enum OWL {
 	public Concept getDirectRestrictedClass(Concept target, Property restricted) {
 		OWLClass owl = getOWLClass(target);
 		synchronized (owl) {
-			for (OWLClassExpression s : owl.getSuperClasses(OWL.INSTANCE.manager.getOntologies())) {
+			for (OWLClassExpression s : owl.getSuperClasses(manager.getOntologies())) {
 				if (s instanceof OWLQuantifiedRestriction) {
 					if (getPropertyFor((OWLProperty<?, ?>) ((OWLQuantifiedRestriction<?, ?, ?>) s).getProperty())
-							.is(restricted)
+							.is(restricted, this)
 							&& ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller() instanceof OWLClassExpression) {
 						Collection<Concept> concepts = unwrap(
 								(OWLClassExpression) ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller());
@@ -884,10 +887,10 @@ public enum OWL {
 		Set<Concept> ret = new HashSet<>();
 		OWLClass owl = getOWLClass(target);
 		synchronized (owl) {
-			for (OWLClassExpression s : owl.getSuperClasses(OWL.INSTANCE.manager.getOntologies())) {
+			for (OWLClassExpression s : owl.getSuperClasses(manager.getOntologies())) {
 				if (s instanceof OWLQuantifiedRestriction) {
 					if (getPropertyFor((OWLProperty<?, ?>) ((OWLQuantifiedRestriction<?, ?, ?>) s).getProperty())
-							.is(restricted)
+							.is(restricted, this)
 							&& ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller() instanceof OWLClassExpression) {
 						ret.addAll(unwrap((OWLClassExpression) ((OWLQuantifiedRestriction<?, ?, ?>) s).getFiller()));
 					}
@@ -907,11 +910,11 @@ public enum OWL {
 	 * @return the concepts restricted in the target by the property
 	 */
 	public Collection<Concept> getRestrictedClasses(Concept target, Property restricted) {
-		return new SpecializingRestrictionVisitor(target, restricted, true).getResult();
+		return new SpecializingRestrictionVisitor(target, restricted, true, this).getResult();
 	}
 
 	public Collection<Concept> getRestrictedClasses(Concept target, Property restricted, boolean useSuperproperties) {
-		return new SpecializingRestrictionVisitor(target, restricted, useSuperproperties).getResult();
+		return new SpecializingRestrictionVisitor(target, restricted, useSuperproperties, this).getResult();
 	}
 
 	public void restrictSome(Concept target, Property property, Concept filler, Ontology ontology) {
@@ -964,7 +967,7 @@ public enum OWL {
 		OWLClassExpression union = how.equals(LogicalConnector.UNION) ? factory.getOWLObjectUnionOf(classes)
 				: factory.getOWLObjectIntersectionOf(classes);
 		OWLClassExpression restriction = factory.getOWLObjectSomeValuesFrom(property._owl.asOWLObjectProperty(), union);
-		manager.addAxiom(((Ontology) property.getOntology()).ontology,
+		manager.addAxiom(((Ontology) property.getOntology(this)).ontology,
 				factory.getOWLSubClassOfAxiom(getOWLClass(target), restriction));
 	}
 
@@ -1072,7 +1075,7 @@ public enum OWL {
 	 * @return true if restriction exists and is optional
 	 */
 	public boolean isRestrictionOptional(Concept type, Concept concept) {
-		return new ConceptRestrictionVisitor(type, concept).isOptional();
+		return new ConceptRestrictionVisitor(type, concept, this).isOptional();
 	}
 
 	/**
@@ -1084,11 +1087,19 @@ public enum OWL {
 	 * @return true if restriction exists and is a negation
 	 */
 	public boolean isRestrictionDenied(Concept type, Concept concept) {
-		return new ConceptRestrictionVisitor(type, concept).isDenied();
+		return new ConceptRestrictionVisitor(type, concept, this).isDenied();
 	}
 
+	public org.integratedmodelling.klab.api.services.Reasoner reasoner() {
+		return scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+	}
+
+	public ResourcesService resources() { 
+		return scope.getService(ResourcesService.class);
+	}
+	
 	public Property getRestrictingProperty(Concept type, Concept concept) {
-		ConceptRestrictionVisitor visitor = new ConceptRestrictionVisitor(type, concept);
+		ConceptRestrictionVisitor visitor = new ConceptRestrictionVisitor(type, concept, this);
 		if (visitor.getRestriction() != null) {
 			return getPropertyFor((OWLProperty<?, ?>) visitor.getRestriction().getProperty());
 		}
@@ -1266,7 +1277,7 @@ public enum OWL {
 
 	public Ontology readOntology(String string) {
 		try {
-			return new Ontology(manager.loadOntology(IRI.create(string)), Utils.URLs.getURLBaseName(string));
+			return new Ontology(this, manager.loadOntology(IRI.create(string)), Utils.URLs.getURLBaseName(string));
 		} catch (OWLOntologyCreationException e) {
 			throw new KIOException(e);
 		}
@@ -1281,7 +1292,7 @@ public enum OWL {
 		 */
 		Map<Concept, List<Concept>> pairs = new HashMap<>();
 		for (Concept t : fillers) {
-			Concept base = Services.INSTANCE.getReasoner().baseParentTrait(t);
+			Concept base = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class).baseParentTrait(t);
 			if (base == null) {
 				System.err.println("HOSTIA no  base trait for " + t);
 				continue;
@@ -1304,7 +1315,7 @@ public enum OWL {
 					throw new KValidationException("cannot find a property to restrict for trait " + base);
 				}
 			}
-			OWL.INSTANCE.restrictSome(target, getProperty(prop), how, pairs.get(base), (Ontology) ontology);
+			restrictSome(target, getProperty(prop), how, pairs.get(base), (Ontology) ontology);
 		}
 	}
 
@@ -1338,13 +1349,14 @@ public enum OWL {
 	 */
 	public Pair<Concept, Collection<Concept>> separateAttributes(Concept observable) {
 
-		Concept obs = Services.INSTANCE.getReasoner().coreObservable(observable);
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+		Concept obs = reas.coreObservable(observable);
 		ArrayList<Concept> tret = new ArrayList<>();
 		ArrayList<Concept> keep = new ArrayList<>();
 
-		for (Concept zt : Services.INSTANCE.getReasoner().traits(observable)) {
-			if (zt.is(OWL.INSTANCE.getConcept(CoreOntology.NS.CORE_IDENTITY))
-					|| zt.is(getConcept(CoreOntology.NS.CORE_REALM))) {
+		for (Concept zt : reas.traits(observable)) {
+			if (reas.subsumes(zt, getConcept(CoreOntology.NS.CORE_IDENTITY))
+					|| reas.subsumes(zt, getConcept(CoreOntology.NS.CORE_REALM))) {
 				keep.add(zt);
 			} else {
 				tret.add(zt);
@@ -1376,6 +1388,8 @@ public enum OWL {
 
 	public Concept makeNegation(Concept attribute, Ontology ontology) {
 
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+
 		String orig = attribute.getMetadata().get(NS.IS_NEGATION_OF, String.class);
 		if (orig != null) {
 			return getConcept(orig);
@@ -1385,7 +1399,7 @@ public enum OWL {
 		String prop = attribute.getMetadata().get(CoreOntology.NS.TRAIT_RESTRICTING_PROPERTY, String.class);
 		String conceptId = "Not" + getCleanId(attribute);
 		Concept ret = ontology.getConcept(conceptId);
-		Concept parent = attribute.parent();
+		Concept parent = reas.parent(attribute);
 
 		if (ret == null) {
 
@@ -1408,7 +1422,7 @@ public enum OWL {
 
 			ret = aontology.getConcept(conceptId);
 
-			OWL.INSTANCE.restrictSome(ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology) ontology);
+			restrictSome(ret, getProperty(CoreOntology.NS.IS_NEGATION_OF), attribute, (Ontology) ontology);
 		}
 
 		return ret;
@@ -1428,8 +1442,9 @@ public enum OWL {
 	}
 
 	void _flattenOperands(Concept trigger, Set<Concept> ret) {
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 		if (trigger.is(SemanticType.INTERSECTION) || trigger.is(SemanticType.UNION)) {
-			for (Concept tr : trigger.operands()) {
+			for (Concept tr : reas.operands(trigger)) {
 				_flattenOperands(tr, ret);
 			}
 		} else {
@@ -1471,11 +1486,12 @@ public enum OWL {
 		}
 
 		// this.hasUnaryOp = true;
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
 		String definition = UnarySemanticOperator.CHANGE.declaration[0] + " " + concept.getUrn();
 		Ontology ontology = getOntology(concept.getNamespace());
 		String conceptId = ontology.getIdForDefinition(definition);
-		Concept context = Services.INSTANCE.getReasoner().context(concept);
+		Concept context = reas.context(concept);
 
 		if (conceptId == null) {
 
@@ -1500,9 +1516,9 @@ public enum OWL {
 
 			Concept ret = ontology.getConcept(conceptId);
 
-			OWL.INSTANCE.restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept,
+			restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept,
 					ontology);
-			OWL.INSTANCE.restrictSome(ret, getProperty(CoreOntology.NS.CHANGES_PROPERTY), concept, ontology);
+			restrictSome(ret, getProperty(CoreOntology.NS.CHANGES_PROPERTY), concept, ontology);
 
 			/*
 			 * context of the change is the same context as the quality it describes - FIXME
@@ -1510,7 +1526,7 @@ public enum OWL {
 			 * context.
 			 */
 			if (context != null) {
-				OWL.INSTANCE.restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+				restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
 			}
 
 		}
@@ -1540,11 +1556,12 @@ public enum OWL {
 		}
 
 		// this.hasUnaryOp = true;
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
 		String definition = UnarySemanticOperator.RATE.declaration[0] + " " + concept.getUrn();
 		Ontology ontology = getOntology(concept.getNamespace());
 		String conceptId = ontology.getIdForDefinition(definition);
-		Concept context = Services.INSTANCE.getReasoner().context(concept);
+		Concept context = reas.context(concept);
 
 		if (conceptId == null) {
 
@@ -1569,7 +1586,7 @@ public enum OWL {
 
 			Concept ret = ontology.getConcept(conceptId);
 
-			OWL.INSTANCE.restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept,
+			restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept,
 					ontology);
 
 			/*
@@ -1578,7 +1595,7 @@ public enum OWL {
 			 * context.
 			 */
 			if (context != null) {
-				OWL.INSTANCE.restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+				restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
 			}
 
 		}
@@ -1608,11 +1625,12 @@ public enum OWL {
 		}
 
 		// this.hasUnaryOp = true;
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
 		String definition = UnarySemanticOperator.CHANGED.declaration[0] + " " + concept.getUrn();
 		Ontology ontology = getOntology(concept.getNamespace());
 		String conceptId = ontology.getIdForDefinition(definition);
-		Concept context = Services.INSTANCE.getReasoner().context(concept);
+		Concept context = reas.context(concept);
 
 		if (conceptId == null) {
 
@@ -1991,7 +2009,7 @@ public enum OWL {
 			/*
 			 * probability is inherent to the event that's possible.
 			 */
-			OWL.INSTANCE.restrictSome(ret, getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
+			restrictSome(ret, getProperty(NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
 		}
 
 		return ontology.getConcept(conceptId);
@@ -2313,6 +2331,7 @@ public enum OWL {
 		String definition = UnarySemanticOperator.TYPE.declaration[0] + " " + classified.getUrn();
 		Ontology ontology = getOntology(classified.getNamespace());
 		String conceptId = ontology.getIdForDefinition(definition);
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
 		// this.hasUnaryOp = true;
 
@@ -2342,7 +2361,7 @@ public enum OWL {
 			/*
 			 * types inherit the context from their trait
 			 */
-			Concept context = Services.INSTANCE.getReasoner().context(classified);
+			Concept context = reas.context(classified);
 			if (context != null) {
 				restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
 			}
@@ -2394,19 +2413,21 @@ public enum OWL {
 	 * @return true
 	 */
 	public boolean is(Semantics c1, Semantics c2) {
+		
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
 		if (c1 instanceof Concept && c2 instanceof Concept) {
 
 			if (reasoner == null) {
-				return c1.is(c2);
+				return reas.subsumes(c1, c2);
 			}
-			return getSubClasses(OWL.INSTANCE.getOWLClass(c2.asConcept()), false)
-					.containsEntity(OWL.INSTANCE.getOWLClass(c1.asConcept()));
+			return getSubClasses(getOWLClass(c2.asConcept()), false)
+					.containsEntity(getOWLClass(c1.asConcept()));
 
 		} else if (c1 instanceof Property && c2 instanceof Property) {
 
 			if (reasoner == null || (((Property) c1).isAnnotation() && ((Property) c2).isAnnotation())) {
-				return ((Property) c1).is(c2);
+				return ((Property) c1).is(c2, this);
 			}
 
 			if (((Property) c1).isObjectProperty() && ((Property) c2).isObjectProperty()) {
@@ -2428,7 +2449,7 @@ public enum OWL {
 	 * @return true if concept is consistent.
 	 */
 	public boolean isSatisfiable(Semantics c) {
-		return reasoner == null ? true : isSatisfiable(OWL.INSTANCE.getOWLClass(c.asConcept()));
+		return reasoner == null ? true : isSatisfiable(getOWLClass(c.asConcept()));
 	}
 
 	/**
@@ -2440,19 +2461,22 @@ public enum OWL {
 	 * @return the parent closure of the concept
 	 */
 	public Set<Concept> getParentClosure(Concept main) {
+		
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+
 		Set<Concept> ret = new HashSet<>();
 		if (reasoner != null) {
-			for (OWLClass cls : getSuperClasses(OWL.INSTANCE.getOWLClass(main.asConcept()), false).getFlattened()) {
+			for (OWLClass cls : getSuperClasses(getOWLClass(main.asConcept()), false).getFlattened()) {
 				if (cls.isBottomEntity() || cls.isTopEntity()) {
 					continue;
 				}
-				Concept cc = OWL.INSTANCE.getConceptFor(cls);
+				Concept cc = getConceptFor(cls);
 				if (cc != null) {
 					ret.add(cc);
 				}
 			}
 		} else {
-			ret.addAll(Services.INSTANCE.getReasoner().allParents(main));
+			ret.addAll(reas.allParents(main));
 		}
 		return ret;
 
@@ -2467,20 +2491,22 @@ public enum OWL {
 	 * @return the semantic closure of the concept
 	 */
 	public Collection<Concept> getSemanticClosure(Concept main) {
+
 		if (reasoner != null) {
 			Set<Concept> ret = new HashSet<>();
-			for (OWLClass cls : getSubClasses(OWL.INSTANCE.getOWLClass(main.asConcept()), false).getFlattened()) {
+			for (OWLClass cls : getSubClasses(getOWLClass(main.asConcept()), false).getFlattened()) {
 				if (cls.isBottomEntity() || cls.isTopEntity()) {
 					continue;
 				}
-				Concept cc = OWL.INSTANCE.getConceptFor(cls);
+				Concept cc = getConceptFor(cls);
 				if (cc != null) {
 					ret.add(cc);
 				}
 			}
 			return ret;
 		}
-		return Services.INSTANCE.getReasoner().allChildren(main);
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+		return reas.allChildren(main);
 	}
 
 	/*
@@ -2709,13 +2735,16 @@ public enum OWL {
 	}
 
 	public Concept getLeastGeneralCommonConcept(Concept reference, Concept otherConcept) {
+
+		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+
 		Concept ret = null;
 		if (otherConcept == null) {
 			ret = reference;
 		}
-		if (reference.is(otherConcept)) {
+		if (reas.subsumes(reference, otherConcept)) {
 			ret = otherConcept;
-		} else if (otherConcept.is(reference)) {
+		} else if (reas.subsumes(otherConcept, reference)) {
 			ret = reference;
 		} else {
 			for (Concept pp : getParents(reference)) {

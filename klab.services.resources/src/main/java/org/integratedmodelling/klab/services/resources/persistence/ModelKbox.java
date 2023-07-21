@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.h2gis.utilities.SpatialResultSet;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IMetadata;
@@ -33,6 +32,7 @@ import org.integratedmodelling.klab.api.observations.scale.space.ISpace;
 import org.integratedmodelling.klab.api.observations.scale.time.ITime;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -712,7 +712,8 @@ public class ModelKbox extends ObservableKbox {
 				Concept type = observable.getSemantics();
 				if (model.isInstantiator()) {
 					Concept context = reasoner.context(type);
-					if (context == null || !context.is(mainObservable.getSemantics())) {
+					if (context == null
+							|| !scope.getService(Reasoner.class).subsumes(context, mainObservable.getSemantics())) {
 						type = observable.builder().of(mainObservable.getSemantics()).buildConcept();
 					}
 				}
@@ -910,7 +911,8 @@ public class ModelKbox extends ObservableKbox {
 			 */
 			Concept specialized = reasoner.directContext(main.getSemantics());
 			Concept oobsContext = reasoner.context(oobs);
-			if (specialized != null && (oobsContext == null || !oobsContext.is(specialized))) {
+			if (specialized != null
+					&& (oobsContext == null || !scope.getService(Reasoner.class).subsumes(oobsContext, specialized))) {
 				oobs = oobs.builder().within(specialized).buildObservable();
 			}
 		}

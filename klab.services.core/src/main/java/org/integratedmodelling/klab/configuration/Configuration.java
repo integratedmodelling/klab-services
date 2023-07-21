@@ -122,6 +122,12 @@ public enum Configuration {
 				// TODO Auto-generated method stub
 				throw new KException("IMPLEMENTAMI OSTIA");
 			}
+
+			@Override
+			public Builder getObservableBuilder(Observable observable) {
+				// TODO Auto-generated method stub
+				throw new KException("IMPLEMENTAMI OSTIA");
+			}
 		});
 
 	}

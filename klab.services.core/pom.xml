@@ -57,7 +57,7 @@
 		<dependency>
 			<groupId>org.orbisgis</groupId>
 			<artifactId>h2gis</artifactId>
-			<version>2.1.0</version>
+			<version>2.2.0</version>
 		</dependency>
 
 		<dependency>
@@ -109,18 +109,18 @@
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-core</artifactId>
-			<version>9.5.0</version>
+			<version>9.7.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-suggest</artifactId>
-			<version>9.5.0</version>
+			<version>9.7.0</version>
 		</dependency>
 		<!-- query parser is just for testing at the moment -->
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-queryparser</artifactId>
-			<version>9.5.0</version>
+			<version>9.7.0</version>
 		</dependency>
 
 		<dependency>

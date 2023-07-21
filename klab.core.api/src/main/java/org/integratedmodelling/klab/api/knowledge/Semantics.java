@@ -53,25 +53,25 @@ public interface Semantics extends Knowledge {
 	 */
 	Semantics semantics();
 
-	/**
-	 * All semantic knowledge in a worldview should exist in a conceptual domain so
-	 * this should not return null, although at the moment this is not enforced.
-	 * 
-	 * @return
-	 */
-	Semantics domain();
+//	/**
+//	 * All semantic knowledge in a worldview should exist in a conceptual domain so
+//	 * this should not return null, although at the moment this is not enforced.
+//	 * 
+//	 * @return
+//	 */
+//	Semantics domain();
 
-	/**
-	 * Basic subsumption check. Implementations may decide otherwise, but normally
-	 * this uses the classified ontology including any inferred hierarchy. Use only
-	 * when {@link #is(SemanticType)} does not fit the requirements, and cache as
-	 * appropriate if needed, as this will never be fast enough for massive
-	 * repetition.
-	 * 
-	 * @param other
-	 * @return
-	 */
-	boolean is(Semantics other);
+//	/**
+//	 * Basic subsumption check. Implementations may decide otherwise, but normally
+//	 * this uses the classified ontology including any inferred hierarchy. Use only
+//	 * when {@link #is(SemanticType)} does not fit the requirements, and cache as
+//	 * appropriate if needed, as this will never be fast enough for massive
+//	 * repetition.
+//	 * 
+//	 * @param other
+//	 * @return
+//	 */
+//	boolean is(Semantics other);
 
 	/**
 	 * Logical, fast check for basic semantic type, no reasoning is performed.

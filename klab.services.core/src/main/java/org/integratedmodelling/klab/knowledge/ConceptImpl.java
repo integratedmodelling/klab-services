@@ -45,10 +45,10 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
         return type;
     }
 
-    @Override
-    public boolean is(Semantics other) {
-        return Services.INSTANCE.getReasoner().subsumes(this, other);
-    }
+//    @Override
+//    public boolean is(Semantics other) {
+//        return Services.INSTANCE.getReasoner().subsumes(this, other);
+//    }
 
     @Override
     public boolean is(SemanticType type) {
@@ -102,45 +102,45 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
         this.referenceName = referenceName;
     }
 
-    @Override
-    public Collection<Concept> operands() {
-        return Services.INSTANCE.getReasoner().operands(this);
-    }
-
-    @Override
-    public Collection<Concept> children() {
-        return Services.INSTANCE.getReasoner().children(this);
-    }
-
-    @Override
-    public Collection<Concept> parents() {
-        return Services.INSTANCE.getReasoner().parents(this);
-    }
-
-    @Override
-    public Collection<Concept> allChildren() {
-        return Services.INSTANCE.getReasoner().allChildren(this);
-    }
-
-    @Override
-    public Collection<Concept> allParents() {
-        return Services.INSTANCE.getReasoner().allParents(this);
-    }
-
-    @Override
-    public Collection<Concept> closure() {
-        return Services.INSTANCE.getReasoner().closure(this);
-    }
-
-    @Override
-    public Semantics domain() {
-        return Services.INSTANCE.getReasoner().domain(this);
-    }
-
-    @Override
-    public Concept parent() {
-        return Services.INSTANCE.getReasoner().parent(this);
-    }
+//    @Override
+//    public Collection<Concept> operands() {
+//        return Services.INSTANCE.getReasoner().operands(this);
+//    }
+//
+//    @Override
+//    public Collection<Concept> children() {
+//        return Services.INSTANCE.getReasoner().children(this);
+//    }
+//
+//    @Override
+//    public Collection<Concept> parents() {
+//        return Services.INSTANCE.getReasoner().parents(this);
+//    }
+//
+//    @Override
+//    public Collection<Concept> allChildren() {
+//        return Services.INSTANCE.getReasoner().allChildren(this);
+//    }
+//
+//    @Override
+//    public Collection<Concept> allParents() {
+//        return Services.INSTANCE.getReasoner().allParents(this);
+//    }
+//
+//    @Override
+//    public Collection<Concept> closure() {
+//        return Services.INSTANCE.getReasoner().closure(this);
+//    }
+//
+//    @Override
+//    public Semantics domain() {
+//        return Services.INSTANCE.getReasoner().domain(this);
+//    }
+//
+//    @Override
+//    public Concept parent() {
+//        return Services.INSTANCE.getReasoner().parent(this);
+//    }
 
     @Override
     public String getNamespace() {

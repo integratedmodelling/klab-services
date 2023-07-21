@@ -34,10 +34,10 @@ public class ConceptRestrictionVisitor
         return this.restriction;
     }
 
-    public ConceptRestrictionVisitor(Concept concept, Concept filler) {
-        this.onts = OWL.INSTANCE.manager.getOntologies();
-        this.filler = OWL.INSTANCE.getOWLClass(filler);
-        OWL.INSTANCE.getOWLClass(concept).accept(this);
+    public ConceptRestrictionVisitor(Concept concept, Concept filler, OWL owl) {
+        this.onts = owl.manager.getOntologies();
+        this.filler = owl.getOWLClass(filler);
+        owl.getOWLClass(concept).accept(this);
     }
 
     @Override

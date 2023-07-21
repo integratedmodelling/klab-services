@@ -64,12 +64,12 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public boolean is(Object s) {
+    public boolean is(Object s, OWL owl) {
         /*
          * TODO use reasoner as appropriate
          */
 //        Property p = s instanceof Property ? (Property)s : s.getType();
-        return s instanceof Property && (s.equals(this) || getAllParents().contains(s));
+        return s instanceof Property && (s.equals(this) || getAllParents(owl).contains(s));
     }
 
 //    @Override
@@ -78,9 +78,9 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Ontology getOntology() {
-        return OWL.INSTANCE.getOntology(getNamespace());
-    }
+	public Ontology getOntology(OWL owl) {
+		return owl.getOntology(getNamespace());
+	}
 
 //    @Override
 //    public boolean isClassification() {
@@ -108,13 +108,13 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
     
 //    @Override
-    public Property getInverseProperty() {
+    public Property getInverseProperty(OWL owl) {
         Property ret = null;
 
         synchronized (_owl) {
             if (_owl.isOWLObjectProperty()) {
 
-                Set<OWLObjectPropertyExpression> dio = _owl.asOWLObjectProperty().getInverses(ontology());
+                Set<OWLObjectPropertyExpression> dio = _owl.asOWLObjectProperty().getInverses(ontology(owl));
 
                 if (dio.size() > 1)
                     throw new KValidationException("taking the inverse of property " + this
@@ -122,7 +122,7 @@ public class Property /* extends Knowledge implements IProperty */ {
 
                 if (dio.size() > 0) {
                     OWLObjectProperty op = dio.iterator().next().asOWLObjectProperty();
-                    ret = new Property(op, OWL.INSTANCE.getConceptSpace(op.getIRI()));
+                    ret = new Property(op, owl.getConceptSpace(op.getIRI()));
                 }
             }
         }
@@ -130,16 +130,16 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Collection<Concept> getRange() {
+    public Collection<Concept> getRange(OWL owl) {
         Set<Concept> ret = new HashSet<>();
         synchronized (_owl) {
             if (_owl.isOWLDataProperty()) {
 
-                for (OWLDataRange c : _owl.asOWLDataProperty().getRanges(OWL.INSTANCE.manager.getOntologies())) {
+                for (OWLDataRange c : _owl.asOWLDataProperty().getRanges(owl.manager.getOntologies())) {
 
                     if (c.isDatatype()) {
                         OWLDatatype type = c.asOWLDatatype();
-                        Concept tltype = OWL.INSTANCE.getDatatypeMapping(type.getIRI().toString());
+                        Concept tltype = owl.getDatatypeMapping(type.getIRI().toString());
                         if (tltype != null) {
                             ret.add(tltype);
                         }
@@ -147,9 +147,9 @@ public class Property /* extends Knowledge implements IProperty */ {
                 }
             } else if (_owl.isOWLObjectProperty()) {
                 for (OWLClassExpression c : _owl.asOWLObjectProperty().getRanges(
-                        OWL.INSTANCE.manager.getOntologies())) {
+                        owl.manager.getOntologies())) {
                     if (!c.isAnonymous())
-                        ret.add(OWL.INSTANCE.getExistingOrCreate(c.asOWLClass()));
+                        ret.add(owl.getExistingOrCreate(c.asOWLClass()));
                 }
             }
         }
@@ -157,19 +157,19 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Collection<Concept> getPropertyDomain() {
+    public Collection<Concept> getPropertyDomain(OWL owl) {
 
         Set<Concept> ret = new HashSet<>();
         synchronized (this._owl) {
             if (_owl.isOWLDataProperty()) {
                 for (OWLClassExpression c : _owl.asOWLDataProperty().getDomains(
-                        OWL.INSTANCE.manager.getOntologies())) {
-                    ret.add(OWL.INSTANCE.getExistingOrCreate(c.asOWLClass()));
+                        owl.manager.getOntologies())) {
+                    ret.add(owl.getExistingOrCreate(c.asOWLClass()));
                 }
             } else if (_owl.isOWLObjectProperty()) {
                 for (OWLClassExpression c : _owl.asOWLObjectProperty().getDomains(
-                        OWL.INSTANCE.manager.getOntologies())) {
-                    ret.add(OWL.INSTANCE.getExistingOrCreate(c.asOWLClass()));
+                        owl.manager.getOntologies())) {
+                    ret.add(owl.getExistingOrCreate(c.asOWLClass()));
                 }
             }
         }
@@ -183,9 +183,9 @@ public class Property /* extends Knowledge implements IProperty */ {
 //    }
 
 //    @Override
-    public Property getParent() {
+    public Property getParent(OWL owl) {
 
-        Collection<Property> pars = getParents();
+        Collection<Property> pars = getParents(owl);
 
         if (pars.size() > 1)
             throw new KValidationException("asking for single parent of multiple-inherited property "
@@ -194,10 +194,10 @@ public class Property /* extends Knowledge implements IProperty */ {
         return pars.size() == 0 ? null : pars.iterator().next();
     }
 
-    public Collection<Property> getParents() {
+    public Collection<Property> getParents(OWL owl) {
 
         Set<Property> ret = new HashSet<Property>();
-        Set<OWLOntology> onts = OWL.INSTANCE.manager.getOntologies();
+        Set<OWLOntology> onts = owl.manager.getOntologies();
 
         /*
          * TODO use reasoner as appropriate
@@ -206,14 +206,14 @@ public class Property /* extends Knowledge implements IProperty */ {
             if (_owl.isOWLDataProperty()) {
                 for (OWLOntology o : onts) {
                     for (OWLDataPropertyExpression p : _owl.asOWLDataProperty().getSuperProperties(o)) {
-                        ret.add(new Property(p.asOWLDataProperty(), OWL.INSTANCE.getConceptSpace(p
+                        ret.add(new Property(p.asOWLDataProperty(), owl.getConceptSpace(p
                                 .asOWLDataProperty().getIRI())));
                     }
                 }
             } else if (_owl.isOWLObjectProperty()) {
                 for (OWLOntology o : onts) {
                     for (OWLObjectPropertyExpression p : _owl.asOWLObjectProperty().getSuperProperties(o)) {
-                        ret.add(new Property(p.asOWLObjectProperty(), OWL.INSTANCE.getConceptSpace(p
+                        ret.add(new Property(p.asOWLObjectProperty(), owl.getConceptSpace(p
                                 .asOWLObjectProperty().getIRI())));
                     }
                 }
@@ -224,7 +224,7 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Collection<Property> getAllParents() {
+    public Collection<Property> getAllParents(OWL owl) {
         Set<Property> ret = new HashSet<>();
 
         synchronized (_owl) {
@@ -260,9 +260,9 @@ public class Property /* extends Knowledge implements IProperty */ {
 //
 //            } else {
 
-                for (Property c : getParents()) {
+                for (Property c : getParents(owl)) {
                     ret.add(c);
-                    ret.addAll(c.getAllParents());
+                    ret.addAll(c.getAllParents(owl));
                 }
 //            }
         }
@@ -270,17 +270,17 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Collection<Property> getChildren() {
+    public Collection<Property> getChildren(OWL owl) {
 
         Set<Property> ret = new HashSet<>();
 
-        Set<OWLOntology> onts = OWL.INSTANCE.manager.getOntologies();
+        Set<OWLOntology> onts = owl.manager.getOntologies();
 
         if (_owl.isOWLDataProperty()) {
             for (OWLOntology o : onts) {
                 synchronized (this._owl) {
                     for (OWLDataPropertyExpression p : _owl.asOWLDataProperty().getSubProperties(o)) {
-                        ret.add(new Property(p.asOWLDataProperty(), OWL.INSTANCE.getConceptSpace(p
+                        ret.add(new Property(p.asOWLDataProperty(), owl.getConceptSpace(p
                                 .asOWLDataProperty().getIRI())));
                     }
                 }
@@ -289,7 +289,7 @@ public class Property /* extends Knowledge implements IProperty */ {
             for (OWLOntology o : onts) {
                 synchronized (this._owl) {
                     for (OWLObjectPropertyExpression p : _owl.asOWLObjectProperty().getSubProperties(o)) {
-                        ret.add(new Property(p.asOWLObjectProperty(), OWL.INSTANCE.getConceptSpace(p
+                        ret.add(new Property(p.asOWLObjectProperty(), owl.getConceptSpace(p
                                 .asOWLObjectProperty().getIRI())));
                     }
                 }
@@ -300,14 +300,14 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public Collection<Property> getAllChildren() {
+    public Collection<Property> getAllChildren(OWL owl) {
 
         Set<Property> ret = new HashSet<>();
-        for (Property c : getChildren()) {
+        for (Property c : getChildren(owl)) {
 
             ret.add(c);
-            for (Property p : c.getChildren()) {
-                ret.addAll(p.getAllChildren());
+            for (Property p : c.getChildren(owl)) {
+                ret.addAll(p.getAllChildren(owl));
             }
         }
 
@@ -315,18 +315,18 @@ public class Property /* extends Knowledge implements IProperty */ {
     }
 
 //    @Override
-    public boolean isFunctional() {
-        return _owl.isOWLDataProperty() ? _owl.asOWLDataProperty().isFunctional(ontology()) : _owl
-                .asOWLObjectProperty().isFunctional(ontology());
+    public boolean isFunctional(OWL owl) {
+        return _owl.isOWLDataProperty() ? _owl.asOWLDataProperty().isFunctional(ontology(owl)) : _owl
+                .asOWLObjectProperty().isFunctional(ontology(owl));
     }
 
 //    @Override
-    public OWLMetadata getMetadata() {
-        return new OWLMetadata(_owl, ((Ontology) getOntology()).ontology);
+    public OWLMetadata getMetadata(OWL owl) {
+        return new OWLMetadata(_owl, ((Ontology) getOntology(owl)).ontology);
     }
 
-    private OWLOntology ontology() {
-        return ((Ontology) getOntology()).ontology;
+    private OWLOntology ontology(OWL owl) {
+        return ((Ontology) getOntology(owl)).ontology;
     }
 
     @Override
