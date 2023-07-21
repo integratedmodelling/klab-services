@@ -41,12 +41,14 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Services;
@@ -65,10 +67,14 @@ public class Indexer {
 	private ReferenceManager<IndexSearcher> searcherManager;
 	private ControlledRealTimeReopenThread<IndexSearcher> nrtReopenThread;
 	// private QueryParser namespaceRemover;
-
+	private Scope scope;
+	
 	public static final int MAX_RESULT_COUNT = 9;
 
-	public Indexer() {
+	public Indexer(Scope scope) {
+	    
+	    this.scope = scope;
+	    
 		try {
 			this.index = new ByteBuffersDirectory(); // new
 			// MMapDirectory(Configuration.INSTANCE.getDataPath("index").toPath());
@@ -374,7 +380,7 @@ public class Indexer {
 				for (ScoreDoc hit : hits) {
 
 					Document document = searcher.doc(hit.doc);
-					Concept concept = Services.INSTANCE.getReasoner().resolveConcept(document.get("id"));
+					Concept concept = scope.getService(Reasoner.class).resolveConcept(document.get("id"));
 					SemanticMatch.Type matchType = SemanticMatch.Type.values()[Integer
 							.parseInt(document.get("vmtype"))];
 

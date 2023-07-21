@@ -54,7 +54,7 @@ public class TestEngine {
 				EngineService.INSTANCE
 						.setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
 			} else {
-				EngineService.INSTANCE.setReasoner(new ReasonerService(this, new Indexer()));
+				EngineService.INSTANCE.setReasoner(new ReasonerService(this));
 			}
 
 			// FIXME mutual dependency between resolver and runtime guarantees screwup

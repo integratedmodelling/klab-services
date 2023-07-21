@@ -17,6 +17,8 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch.TokenClass;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -61,7 +63,7 @@ public class SearchContext {
                 switch(match.getMatchType()) {
                 case CONCEPT:
                 case PRESET_OBSERVABLE:
-                    Concept concept = Services.INSTANCE.getReasoner().resolveObservable(match.getId()).getSemantics();
+                    Concept concept = scope.getService(Reasoner.class).resolveObservable(match.getId()).getSemantics();
                     if (concept != null) {
                         if (concept.is(SemanticType.OBSERVABLE)) {
                             this.observable = concept;
@@ -143,9 +145,14 @@ public class SearchContext {
     private TokenClass nextTokenType = TokenClass.TOKEN;
     private SearchContext childContext;
     private int parenthesisDepth;
+    private Scope scope;
 
-    public static SearchContext createNew() {
-        SearchContext ret = new SearchContext();
+    private SearchContext(Scope scope) {
+        this.scope = scope;
+    }
+
+    public static SearchContext createNew(Scope scope) {
+        SearchContext ret = new SearchContext(scope);
         ret.allow(Constraint.allPrefixOperators());
         ret.allow(Constraint.allObservables(false));
         ret.allow(Constraint.allTraits(false));
@@ -397,7 +404,7 @@ public class SearchContext {
             return ret;
         }
 
-        public static Constraint otherTraits(Collection<Concept> traits) {
+        public static Constraint otherTraits(Collection<Concept> traits, Scope scope) {
             Constraint ret = new Constraint(SemanticMatch.Type.CONCEPT);
             ret.semantics = EnumSet.of(SemanticType.TRAIT);
             ret.query = true;
@@ -405,7 +412,7 @@ public class SearchContext {
             ret.allowAbstract = true;
             ret.baseTraitBlacklist = new HashSet<>();
             for (Concept trait : traits) {
-                Concept base = Services.INSTANCE.getReasoner().baseParentTrait(trait);
+                Concept base = scope.getService(Reasoner.class).baseParentTrait(trait);
                 if (base != null) {
                     ret.baseTraitBlacklist.add(base);
                 }
@@ -820,7 +827,7 @@ public class SearchContext {
                 ret.allow(Constraint.modifiersFor(meaning.getSemantics()));
             } else {
                 // add traits with another base trait
-                ret.allow(Constraint.otherTraits(meaning.getTraits()).applyingTo(meaning.getSemantics()));
+                ret.allow(Constraint.otherTraits(meaning.getTraits(), scope).applyingTo(meaning.getSemantics()));
                 ret.allow(Constraint.allObservables(false).applicableTo(meaning.getTraits()));
             }
 
@@ -867,8 +874,8 @@ public class SearchContext {
         return previous;
     }
 
-    public static SearchContext createNew(Set<SemanticMatch.Type> matchTypes, Set<SemanticType> semanticTypes) {
-        SearchContext ret = new SearchContext();
+    public static SearchContext createNew(Set<SemanticMatch.Type> matchTypes, Set<SemanticType> semanticTypes, Scope scope) {
+        SearchContext ret = new SearchContext(scope);
         if (matchTypes.isEmpty() && semanticTypes.isEmpty()) {
             // first context can select operators, non-abstract traits or non-abstract
             // observables

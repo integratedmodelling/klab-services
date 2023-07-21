@@ -22,8 +22,9 @@ import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.StyledKimToken;
-import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.indexing.SemanticScope.Constraint;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
@@ -127,7 +128,7 @@ public class SemanticExpression {
                 return null;
             }
             try {
-                return Services.INSTANCE.getReasoner().resolveObservable(declaration);
+                return SemanticExpression.this.scope.getService(Reasoner.class).resolveObservable(declaration);
             } catch (Throwable t) {
                 //
             }
@@ -185,8 +186,10 @@ public class SemanticExpression {
     private String error = null;
     private Graph<SemanticToken, SemanticLink> graph = new DefaultDirectedGraph<>(SemanticLink.class);
     private Map<String, Object> data = new HashMap<>();
+    private Scope scope;
 
-    private SemanticExpression() {
+    private SemanticExpression(Scope scope) {
+        this.scope = scope;
         this.current = this.head = new SemanticToken();
         this.current.scope = SemanticScope.root();
         this.graph.addVertex(this.head);
@@ -318,7 +321,7 @@ public class SemanticExpression {
         } else if (token instanceof String) {
 
             if ("(".equals(token)) {
-            
+
                 link.observableRole = SemanticRole.GROUP_OPEN;
                 added.scope = new SemanticScope();
 
@@ -347,9 +350,9 @@ public class SemanticExpression {
                 }
                 parent.previous.push(this.current);
                 this.current = parent;
-                
+
                 System.out.println(this);
-                
+
                 return true;
 
             } else {
@@ -366,7 +369,7 @@ public class SemanticExpression {
         this.current = added;
 
         System.out.println(this);
-        
+
         return true;
     }
 
@@ -534,7 +537,7 @@ public class SemanticExpression {
     public SemanticType getObservableType() {
         Concept concept = buildConcept();
         if (concept != null) {
-            return  SemanticType.fundamentalType(concept.getType());
+            return SemanticType.fundamentalType(concept.getType());
         }
         return null;
     }
@@ -552,8 +555,8 @@ public class SemanticExpression {
         this.data.put(key, value);
     }
 
-    public static SemanticExpression create() {
-        return new SemanticExpression();
+    public static SemanticExpression create(Scope scope) {
+        return new SemanticExpression(scope);
     }
 
     public String dump() {
