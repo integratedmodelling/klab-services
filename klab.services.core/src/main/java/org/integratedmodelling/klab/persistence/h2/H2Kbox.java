@@ -88,7 +88,6 @@ public abstract class H2Kbox {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked")
 	private <T> Deserializer getDeserializer(Class<? extends T> cls) {
 		Deserializer ret = null;
 		for (Class<?> cl : deserializers.keySet()) {

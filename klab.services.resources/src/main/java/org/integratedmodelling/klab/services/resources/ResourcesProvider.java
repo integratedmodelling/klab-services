@@ -47,7 +47,6 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -64,7 +63,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.rest.ResourceReference;
-import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl.ManifestImpl;
@@ -160,24 +158,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 	public ResourcesProvider(Authentication authenticationService) {
 		this();
 		this.authenticationService = authenticationService;
-//		this.scope = authenticationService.authorizeService(this);
 	}
 	
 
 	@Override
-	public void initializeService(Scope scope) {
-		this.scope = new LocalServiceScope(this, scope) {
-
-			@Override
-			public Ref getAgent() {
-				return null;
-			}
-
-			@Override
-			public void stop() {
-			}
-			
-		};
+	public void initializeService(ServiceScope scope) {
+		this.scope = scope;
 		this.kbox = ModelKbox.create(localName, this.scope);
 		loadWorkspaces();
 	}

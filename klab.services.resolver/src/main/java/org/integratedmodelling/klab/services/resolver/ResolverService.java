@@ -37,7 +37,6 @@ public class ResolverService extends BaseService implements Resolver {
 
 	@Autowired
 	public ResolverService(Authentication authentication) {
-		this.serviceScope = authentication.authorizeService(this);
 	}
 
 	@Override
@@ -141,9 +140,8 @@ public class ResolverService extends BaseService implements Resolver {
 	}
 
 	@Override
-	public void initializeService(Scope scope) {
-		// TODO Auto-generated method stub
-		
+	public void initializeService(ServiceScope scope) {
+		this.serviceScope = scope;
 	}
 
 }

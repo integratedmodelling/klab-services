@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -20,6 +21,8 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scope.EngineScope;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -47,20 +50,26 @@ public enum EngineService {
 	private Resolver defaultResolver;
 	private boolean booted;
 
-	@Autowired
-	private EngineService() {
-		boot();
-	}
-
+	/**
+	 * The boot process creates the servicontexce scope for all services and calls
+	 * initialization on all services that are a BaseService. When called, the
+	 * services must be all defined.
+	 */
 	public void boot() {
 
 		if (!booted) {
+
 			booted = true;
 			/*
 			 * boot the actor system
 			 */
 			this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
 					.initReActorSystem();
+
+			if (defaultReasoner == null || defaultResourcesService == null || defaultResolver == null
+					|| defaultRuntime == null) {
+				throw new KIllegalStateException("one or more services are not available: cannot boot the engine");
+			}
 
 			/*
 			 * Components
@@ -81,6 +90,46 @@ public enum EngineService {
 			for (String pack : extensionPackages) {
 				Configuration.INSTANCE.scanPackage(pack);
 			}
+
+			/*
+			 * Create the service scope for all embedded services. The order of
+			 * initialization is resources, reasoner, resolver and runtime. The community
+			 * service should always be remote except in test situations.
+			 */
+			for (KlabService service : new KlabService[] { defaultResourcesService, defaultReasoner, defaultResolver,
+					defaultRuntime }) {
+				if (service instanceof BaseService) {
+					((BaseService) service).initializeService(new LocalServiceScope(service) {
+
+						// no agents for services
+						@Override
+						public Ref getAgent() {
+							return null;
+						}
+
+						@SuppressWarnings("unchecked")
+						@Override
+						public <T extends KlabService> T getService(Class<T> serviceClass) {
+							if (serviceClass.isAssignableFrom(Reasoner.class)) {
+								return (T) defaultReasoner;
+							} else if (serviceClass.isAssignableFrom(ResourcesService.class)) {
+								return (T) defaultResourcesService;
+							} else if (serviceClass.isAssignableFrom(Resolver.class)) {
+								return (T) defaultResolver;
+							} else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+								return (T) defaultRuntime;
+							}
+							return null;
+						}
+
+						@Override
+						public void stop() {
+							// TODO (?)
+						}
+					});
+				}
+			}
+
 		}
 
 	}
@@ -132,7 +181,7 @@ public enum EngineService {
 		}
 		return ret;
 	}
-	
+
 	public void registerScope(EngineScope scope) {
 		userScopes.put(scope.getUser().getUsername(), scope);
 	}

@@ -341,7 +341,7 @@ public class H2Database {
 			return;
 		}
 
-//		System.out.println(sql);
+		System.out.println(sql);
 
 		Connection connection = null;
 		try {
@@ -349,7 +349,7 @@ public class H2Database {
 			connection.createStatement().execute(sql);
 			connection.commit();
 			// connection.close();
-		} catch (SQLException e) {
+		} catch (Throwable e) {
 			throw new KlabStorageException(e);
 		} finally {
 			try {

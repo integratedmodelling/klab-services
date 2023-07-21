@@ -16,7 +16,6 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
 
     KlabService service;
     Status status;
-    Scope delegate;
     
     class LocalService implements ServiceIdentity {
 
@@ -97,8 +96,7 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
         
     }
     
-    public LocalServiceScope(KlabService service, Scope delegate) {
-    	this.delegate = delegate;
+    public LocalServiceScope(KlabService service) {
         setIdentity(new LocalService(service));
     }
 
@@ -138,12 +136,6 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
 	public void setData(String key, Object value) {
 		this.data.put(key, value);
 	}
-
-	@Override
-	public <T extends KlabService> T getService(Class<T> serviceClass) {
-		return delegate.getService(serviceClass);
-	}
-	
 	
 
 }

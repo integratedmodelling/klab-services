@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.services;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 
 /**
@@ -32,15 +31,6 @@ public interface Authentication {
      * @return
      */
     UserScope getAnonymousScope();
-
-    /**
-     * Authenticate the passed service and return a scope. If the service cannot or isn't meant to
-     * be authenticated, return the local scope.
-     * 
-     * @param service
-     * @return
-     */
-    ServiceScope authorizeService(KlabService service);
 
     /**
      * Authenticate a user of a given service and return the result of calling the user scope

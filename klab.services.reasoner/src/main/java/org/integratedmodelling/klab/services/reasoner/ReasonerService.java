@@ -45,10 +45,10 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement.KimVisitor;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -278,9 +278,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 	}
 
 	@Override
-	public void initializeService(Scope scope) {
+	public void initializeService(ServiceScope scope) {
 
-		this.scope = authenticationService.authorizeService(this);
+		this.scope = scope;
 
 		OWL.INSTANCE.initialize(this.scope);
 

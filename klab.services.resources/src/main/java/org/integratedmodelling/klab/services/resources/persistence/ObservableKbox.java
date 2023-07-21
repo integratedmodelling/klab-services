@@ -36,29 +36,21 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.groovy.util.Maps;
-import org.codehaus.groovy.transform.trait.Traits;
-import org.integratedmodelling.klab.api.exceptions.KException;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.model.INamespace;
-import org.integratedmodelling.klab.api.resolution.IResolutionScope;
-import org.integratedmodelling.klab.api.runtime.monitoring.IMonitor;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.persistence.h2.H2Database;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox;
 import org.integratedmodelling.klab.persistence.h2.SQL;
-import org.integratedmodelling.klab.utils.Escape;
+import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * Design principles:
@@ -218,14 +210,14 @@ public abstract class ObservableKbox extends H2Kbox {
 		}
 	}
 
-	static class NamespaceSerializer implements Serializer<INamespace> {
+	static class NamespaceSerializer implements Serializer<KimNamespace> {
 
 		@Override
-		public String serialize(INamespace ns, long primaryKey, long foreignKey) {
+		public String serialize(KimNamespace ns, long primaryKey, long foreignKey) {
 
 			String ret = null;
 			if (ns != null) {
-				ret = "INSERT INTO namespaces VALUES ('" + ns.getName() + "', " + ns.getTimeStamp() + ", "
+				ret = "INSERT INTO namespaces VALUES ('" + Utils.Escape.forSQL(ns.getUrn()) + "', " + ns.getTimestamp() + ", "
 						+ (ns.isScenario() ? "TRUE" : "FALSE") + ");";
 			}
 			return ret;
@@ -342,7 +334,7 @@ public abstract class ObservableKbox extends H2Kbox {
 
 			if (reasoner.semanticDistance(candidate, observable,
 					context)/*
-						     * TODO handle the resolved predicates?
+							 * TODO handle the resolved predicates?
 							 * candidate.getSemanticDistance(observable, context,
 							 * !observable.isSpecialized(), ((Observable)
 							 * observable).getResolvedPredicates())
@@ -426,18 +418,18 @@ public abstract class ObservableKbox extends H2Kbox {
 	public ObservableKbox(String name, Scope scope) {
 
 		super(name);
-		
+
 		this.scope = scope;
 		this.reasoner = scope.getService(Reasoner.class);
 		this.resourceService = scope.getService(ResourcesService.class);
-		
+
 		if (this.reasoner == null || this.resourceService == null) {
 			throw new KIllegalStateException("cannot initialize kbox without a valid reasoner or resource service");
 		}
-		
-		setSchema(IConcept.class, new ObservableSchema());
-		setSchema(INamespace.class, new NamespaceSchema());
-		setSerializer(INamespace.class, new NamespaceSerializer());
+
+		setSchema(Concept.class, new ObservableSchema());
+		setSchema(KimNamespace.class, new NamespaceSchema());
+		setSerializer(KimNamespace.class, new NamespaceSerializer());
 
 		try {
 			loadConcepts();
@@ -617,8 +609,8 @@ public abstract class ObservableKbox extends H2Kbox {
 		if (!database.hasTable("namespaces")) {
 			return 0l;
 		}
-		List<Long> ret = database
-				.queryIds("SELECT timestamp FROM namespaces WHERE id = '" + Escape.forSQL(namespace.getUrn()) + "';");
+		List<Long> ret = database.queryIds(
+				"SELECT timestamp FROM namespaces WHERE id = '" + Utils.Escape.forSQL(namespace.getUrn()) + "';");
 		return ret.size() > 0 ? ret.get(0) : 0l;
 	}
 
@@ -628,10 +620,10 @@ public abstract class ObservableKbox extends H2Kbox {
 		}
 		return string;
 	}
-	
 
 	/**
 	 * TODO use a proper builder
+	 * 
 	 * @param original
 	 * @param replacements
 	 * @return
@@ -653,6 +645,5 @@ public abstract class ObservableKbox extends H2Kbox {
 
 		return reasoner.declareConcept(resourceService.resolveConcept(declaration));
 	}
-
 
 }

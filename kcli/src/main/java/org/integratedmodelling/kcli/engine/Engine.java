@@ -7,10 +7,8 @@ import java.util.Map;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authentication;
@@ -22,7 +20,6 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
-import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.engine.EngineService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
@@ -54,9 +51,6 @@ public enum Engine implements Authentication {
 
 	private Engine() {
 
-		// boot right away
-		EngineService.INSTANCE.boot();
-
 		/*
 		 * discover and catalog services
 		 */
@@ -76,8 +70,7 @@ public enum Engine implements Authentication {
 			EngineService.INSTANCE
 					.setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
 		} else {
-			EngineService.INSTANCE
-					.setReasoner(new ReasonerService(this, new Indexer()));
+			EngineService.INSTANCE.setReasoner(new ReasonerService(this, new Indexer()));
 		}
 
 		// FIXME mutual dependency between resolver and runtime guarantees screwup
@@ -94,6 +87,9 @@ public enum Engine implements Authentication {
 		} else {
 			EngineService.INSTANCE.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this));
 		}
+
+		// Boot will initialize all embedded services
+		EngineService.INSTANCE.boot();
 
 		/*
 		 * add the anonymous identity
@@ -182,25 +178,6 @@ public enum Engine implements Authentication {
 
 	public Parameters<String> getUserData() {
 		return userData;
-	}
-
-	@Override
-	public ServiceScope authorizeService(KlabService service) {
-		return new LocalServiceScope(service, /* TODO */ null) {
-
-			@Override
-			public Ref getAgent() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public void stop() {
-				// TODO Auto-generated method stub
-
-			}
-
-		};
 	}
 
 	public Collection<UserScope> getUsers() {

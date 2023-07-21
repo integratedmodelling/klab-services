@@ -91,25 +91,6 @@ public class TestEngine {
 			return EngineService.INSTANCE.login(new AnonymousUser());
 		}
 
-		@Override
-		public ServiceScope authorizeService(KlabService service) {
-			return new LocalServiceScope(service, null) {
-
-				@Override
-				public Ref getAgent() {
-					// TODO Auto-generated method stub
-					return null;
-				}
-
-				@Override
-				public void stop() {
-					// TODO Auto-generated method stub
-
-				}
-
-			};
-		}
-
 		public void shutdown() {
 			EngineService.INSTANCE.shutdown();
 		}
