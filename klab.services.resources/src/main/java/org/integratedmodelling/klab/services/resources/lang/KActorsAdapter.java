@@ -51,6 +51,8 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.Constructor;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.DataType;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
@@ -94,7 +96,9 @@ public enum KActorsAdapter {
 
 		ret.setUrn(behavior.getName());
 		ret.setDeprecated(behavior.isDeprecated());
-		ret.setErrors(behavior.isErrors());
+		if (behavior.isErrors()) {
+		    ret.getNotifications().add(Notification.of("Errors in behavior " + behavior.getName(), Level.Error));
+		}
 		ret.setDescription(behavior.getDescription());
 		ret.setLogo(behavior.getLogo());
 		ret.setLabel(behavior.getName());

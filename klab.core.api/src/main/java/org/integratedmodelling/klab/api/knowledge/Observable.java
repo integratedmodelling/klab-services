@@ -229,10 +229,9 @@ public interface Observable extends Semantics {
 		 * logically inconsistent declarations can be reported.
 		 * 
 		 * @param declaration (may be null)
-		 * @param monitor
 		 * @return the same builder this was called on, for chaining calls
 		 */
-		Builder withDeclaration(KimConcept declaration, Channel monitor);
+		Builder withDeclaration(KimConcept declaration);
 
 		/**
 		 * 

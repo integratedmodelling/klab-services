@@ -135,36 +135,35 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     private String url;
     private String localName;
+    private ReasonerConfiguration configuration = new ReasonerConfiguration();
+    private Map<String, String> coreConceptPeers = new HashMap<>();
+    private Map<Concept, Emergence> emergent = new HashMap<>();
+    private IntelligentMap<Set<Emergence>> emergence;
 
-    // transient private ResourcesService resourceService;
-    // transient private Authentication authenticationService;
-    transient private ReasonerConfiguration configuration = new ReasonerConfiguration();
-    transient private ServiceScope scope;
+    private Map<String, Concept> concepts = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, Observable> observables = Collections.synchronizedMap(new HashMap<>());
 
-    transient private Map<String, String> coreConceptPeers = new HashMap<>();
-    transient private Map<Concept, Emergence> emergent = new HashMap<>();
-    transient private IntelligentMap<Set<Emergence>> emergence;
-
-    /**
-     * Caches for concepts and observables, linked to the URI in the corresponding {@link KimScope}.
-     */
-    transient private LoadingCache<String, Concept> concepts = CacheBuilder.newBuilder()
-            // .expireAfterAccess(10, TimeUnit.MINUTES)
-            .build(new CacheLoader<String, Concept>(){
-                public Concept load(String key) {
-                    KimConcept parsed = scope.getService(ResourcesService.class).resolveConcept(key);
-                    return declareConcept(parsed);
-                }
-            });
-
-    transient private LoadingCache<String, Observable> observables = CacheBuilder.newBuilder()
-            // .expireAfterAccess(10, TimeUnit.MINUTES)
-            .build(new CacheLoader<String, Observable>(){
-                public Observable load(String key) { // no checked exception
-                    KimObservable parsed = scope.getService(ResourcesService.class).resolveObservable(key);
-                    return declareObservable(parsed);
-                }
-            });
+    // /**
+    // * Caches for concepts and observables, linked to the URI in the corresponding {@link
+    // KimScope}.
+    // */
+    // private LoadingCache<String, Concept> concepts = CacheBuilder.newBuilder()
+    // // .expireAfterAccess(10, TimeUnit.MINUTES)
+    // .build(new CacheLoader<String, Concept>(){
+    // public Concept load(String key) {
+    // KimConcept parsed = scope.getService(ResourcesService.class).resolveConcept(key);
+    // return declareConcept(parsed);
+    // }
+    // });
+    //
+    // private LoadingCache<String, Observable> observables = CacheBuilder.newBuilder()
+    // // .expireAfterAccess(10, TimeUnit.MINUTES)
+    // .build(new CacheLoader<String, Observable>(){
+    // public Observable load(String key) { // no checked exception
+    // KimObservable parsed = scope.getService(ResourcesService.class).resolveObservable(key);
+    // return declareObservable(parsed);
+    // }
+    // });
 
     Indexer indexer;
 
@@ -268,18 +267,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Autowired
-    public ReasonerService(Authentication authenticationService) {
+    public ReasonerService(Authentication authenticationService, ServiceScope scope) {
+        super(scope);
         this.authenticationService = authenticationService;
-    }
-
-    @Override
-    public void initializeService(ServiceScope scope) {
-
-        this.scope = scope;
         this.owl = new OWL(scope);
         this.owl.initialize();
         this.indexer = new Indexer(scope);
         this.emergence = new IntelligentMap<>(scope);
+    }
+
+    @Override
+    public void initializeService() {
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         if (config.exists()) {
@@ -288,17 +286,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         for (ProjectConfiguration authority : configuration.getAuthorities()) {
             loadAuthority(authority);
-        }
-
-        Set<String> worldview = configuration.getWorldview().stream().map(ProjectConfiguration::getProject)
-                .collect(Collectors.toSet());
-
-        if (!worldview.isEmpty()) {
-            ResourceSet projectSet = this.scope.getService(ResourcesService.class).projects(worldview, scope);
-            boolean ok = loadKnowledge(projectSet, scope);
-            /*
-             * TODO log and report
-             */
         }
     }
 
@@ -332,20 +319,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Concept resolveConcept(String definition) {
-        try {
-            return concepts.get(definition);
-        } catch (ExecutionException e) {
-            return errorConcept(definition);
+        Concept ret = concepts.get(definition);
+        if (ret == null) {
+            KimConcept parsed = scope.getService(ResourcesService.class).resolveConcept(definition);
+            if (parsed != null) {
+                ret = declareConcept(parsed);
+                concepts.put(definition, ret);
+            } else {
+                // TODO add an error concept in case of errors or null
+            }
         }
+        return ret;
     }
 
     @Override
     public Observable resolveObservable(String definition) {
-        try {
-            return observables.get(definition);
-        } catch (ExecutionException e) {
-            return errorObservable(definition);
+        Observable ret = observables.get(definition);
+        if (ret == null) {
+            KimObservable parsed = scope.getService(ResourcesService.class).resolveObservable(definition);
+            if (parsed != null) {
+                ret = declareObservable(parsed);
+                observables.put(definition, ret);
+            } else {
+                // TODO add an error observable in case of errors or null
+            }
         }
+        return ret;
     }
 
     private Observable errorObservable(String definition) {
@@ -1221,7 +1220,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (Resource namespace : resources.getNamespaces()) {
             ResourcesService service = resources.getServices().get(namespace.getServiceId());
             KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(), scope);
-            if (parsed != null && !parsed.isErrors()) {
+            if (parsed != null && !Utils.Notifications.hasErrors(parsed.getNotifications())) {
                 for (KimStatement statement : parsed.getStatements()) {
                     if (statement instanceof KimConceptStatement) {
                         defineConcept((KimConceptStatement) statement, scope);
@@ -1525,11 +1524,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public ServiceScope scope() {
-        return this.scope;
-    }
-
-    @Override
     public Builder observableBuilder(Observable observableImpl) {
         return ObservableBuilder.getBuilder(observableImpl, scope, owl);
     }
@@ -1546,7 +1540,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         coreConceptPeers.put(worldviewConcept, coreConcept);
     }
 
-    public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject, Channel monitor) {
+    public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject, Scope monitor) {
 
         if (concept.isMacro()) {
             return null;
@@ -1645,7 +1639,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     private Concept buildInternal(final KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject,
-            final Channel monitor) {
+            final Scope monitor) {
 
         Concept main = null;
         String mainId = concept.getName();
@@ -1927,13 +1921,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
     }
 
-    private Concept declare(KimConcept concept, Ontology ontology, Channel monitor) {
+    private Concept declare(KimConcept concept, Ontology ontology, Scope monitor) {
         return declareInternal(concept, ontology, monitor);
     }
 
-    private Concept declareInternal(KimConcept concept, Ontology ontology, Channel monitor) {
+    private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
 
-        Concept existing = concepts.getIfPresent(concept.getUrn());
+        Concept existing = concepts.get(concept.getUrn());
         if (existing != null) {
             return existing;
         }
@@ -1950,7 +1944,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             return null;
         }
 
-        Observable.Builder builder = new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept, monitor);
+        Observable.Builder builder = new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
 
         if (concept.getDistributedInherent() != null) {
             builder.withDistributedInherency(true);
@@ -2104,7 +2098,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return ret;
     }
 
-    public Observable declare(KimObservable concept, Ontology declarationOntology, Channel monitor) {
+    public Observable declare(KimObservable concept, Ontology declarationOntology, Scope monitor) {
 
         if (concept.getNonSemanticType() != null) {
             Concept nsmain = this.owl.getNonsemanticPeer(concept.getModelReference(), concept.getNonSemanticType());

@@ -67,6 +67,7 @@ public class ContextAgent extends KAgent {
 
             if (resolvable == null) {
                 scope.send(message.response(Status.ABORTED, AgentResponse.ERROR, "Cannot resolve URN " + message.getUrn()));
+                return;
             }
 
             /*
@@ -89,11 +90,6 @@ public class ContextAgent extends KAgent {
                     status = Status.FINISHED;
                 }
             }
-
-            /*
-             * Send the message response back with status and results
-             */
-
             
         } catch (Throwable e) {
             scope.error(e);

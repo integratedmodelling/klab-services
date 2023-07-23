@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
@@ -25,12 +26,13 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
     private String deprecation;
     private boolean deprecated;
     private String sourceCode;
-    private boolean errors;
-    private boolean warnings;
+//    private boolean errors;
+//    private boolean warnings;
     private Metadata metadata;
     private Parameters<String> documentationMetadata;
     private String namespace;
     private Scope scope;
+    private List<Notification> notifications = new ArrayList<>();
 //    private String kimStatementClass;
     
 //    public KimStatement() {
@@ -76,16 +78,16 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
     public String getSourceCode() {
         return this.sourceCode;
     }
-
-    @Override
-    public boolean isErrors() {
-        return this.errors;
-    }
-
-    @Override
-    public boolean isWarnings() {
-        return this.warnings;
-    }
+//
+//    @Override
+//    public boolean isErrors() {
+//        return this.errors;
+//    }
+//
+//    @Override
+//    public boolean isWarnings() {
+//        return this.warnings;
+//    }
 
     @Override
     public Metadata getMetadata() {
@@ -145,13 +147,13 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
         this.sourceCode = sourceCode;
     }
 
-    public void setErrors(boolean errors) {
-        this.errors = errors;
-    }
-
-    public void setWarnings(boolean warnings) {
-        this.warnings = warnings;
-    }
+//    public void setErrors(boolean errors) {
+//        this.errors = errors;
+//    }
+//
+//    public void setWarnings(boolean warnings) {
+//        this.warnings = warnings;
+//    }
 
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
@@ -183,6 +185,15 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
             return getSourceCode();
         }
         return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
+    }
+
+    @Override
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+        this.notifications = notifications;
     }
     
 }

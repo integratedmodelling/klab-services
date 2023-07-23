@@ -128,7 +128,7 @@ public class Indexer {
 		SemanticMatch ret = null;
 		Set<SemanticType> semanticType = null;
 
-		if (object.isErrors()) {
+		if (Utils.Notifications.hasErrors(object.getNotifications())) {
 			return null;
 		}
 

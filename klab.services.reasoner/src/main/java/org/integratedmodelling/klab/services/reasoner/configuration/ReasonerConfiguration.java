@@ -109,7 +109,7 @@ public class ReasonerConfiguration {
     private int refreshIntervalMinutes = 10;
     private List<String> allowedGroups = new ArrayList<>();
     private String url = null;
-    private List<ProjectConfiguration> worldview = new ArrayList<>();
+//    private List<ProjectConfiguration> worldview = new ArrayList<>();
     private List<ProjectConfiguration> authorities = new ArrayList<>();
 
     public int getRefreshIntervalMinutes() {
@@ -130,12 +130,12 @@ public class ReasonerConfiguration {
     public void setUrl(String url) {
         this.url = url;
     }
-    public List<ProjectConfiguration> getWorldview() {
-        return worldview;
-    }
-    public void setWorldview(List<ProjectConfiguration> worldview) {
-        this.worldview = worldview;
-    }
+//    public List<ProjectConfiguration> getWorldview() {
+//        return worldview;
+//    }
+//    public void setWorldview(List<ProjectConfiguration> worldview) {
+//        this.worldview = worldview;
+//    }
 
     public Services getServices() {
         return services;
@@ -154,8 +154,8 @@ public class ReasonerConfiguration {
     public static void main(String[] deus) {
         
         ReasonerConfiguration ret = new ReasonerConfiguration();
-        ProjectConfiguration prt = new ProjectConfiguration();
-        prt.setProject("im");
+//        ProjectConfiguration prt = new ProjectConfiguration();
+//        prt.setProject("im");
         ProjectConfiguration aut1 = new ProjectConfiguration();
         aut1.setProject("GBIF");
         aut1.setServe(false);
@@ -169,7 +169,7 @@ public class ReasonerConfiguration {
         aut3.setServe(false);
         aut3.setUrl("classpath:org.integratedmodelling.klab.services.reasoner.authorities.IUPACAuthority");
         
-        ret.getWorldview().add(prt);
+//        ret.getWorldview().add(prt);
         ret.getAuthorities().add(aut1);
         ret.getAuthorities().add(aut2);
         ret.getAuthorities().add(aut3);

@@ -15,15 +15,14 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 		org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
 	private static final long serialVersionUID = -3119521647259754846L;
-	private ServiceScope scope;
 
-	public RuntimeService(Authentication testAuthentication) {
+	public RuntimeService(Authentication testAuthentication, ServiceScope scope) {
 		// TODO Auto-generated constructor stub
+	    super(scope);
 	}
 
 	@Override
-	public void initializeService(ServiceScope scope) {
-		this.scope = scope;
+	public void initializeService() {
 	}
 	
 	@Override
@@ -34,12 +33,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
 	@Override
 	public String getLocalName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ServiceScope scope() {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -16,18 +16,17 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
 
     KlabService service;
     Status status;
-    
+
     class LocalService implements ServiceIdentity {
 
         Date boot = new Date();
         KlabService service;
         Scope delegate;
-        
+
         public LocalService(KlabService service) {
             this.service = service;
         }
-        
-        
+
         @Override
         public boolean stop() {
             return false;
@@ -88,20 +87,21 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
             return true;
         }
 
+        @Override
+        public Parameters<String> getData() {
+            return LocalService.this.getData();
+        }
 
-		@Override
-		public Parameters<String> getData() {
-			return LocalService.this.getData();
-		}
-        
     }
-    
-    public LocalServiceScope(KlabService service) {
-        setIdentity(new LocalService(service));
+
+    public LocalServiceScope(Class<? extends KlabService> serviceClass) {
+        this.serviceClass = serviceClass;
     }
 
     private Parameters<String> data = Parameters.create();
-    
+    private Identity serviceIdentity;
+    private Class<? extends KlabService> serviceClass;
+
     @Override
     public Parameters<String> getData() {
         return data;
@@ -122,20 +122,27 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
         return true;
     }
 
-	@Override
-	public Status getStatus() {
-		return status;
-	}
+    @Override
+    public Status getStatus() {
+        return status;
+    }
+    
+    @Override
+    public Identity getIdentity() {
+        if (this.serviceIdentity != null) {
+            this.serviceIdentity = new LocalService(getService(this.serviceClass));
+        }
+        return this.serviceIdentity;
+    }
 
-	@Override
-	public void setStatus(Status status) {
-		this.status = status;
-	}
+    @Override
+    public void setStatus(Status status) {
+        this.status = status;
+    }
 
-	@Override
-	public void setData(String key, Object value) {
-		this.data.put(key, value);
-	}
-	
+    @Override
+    public void setData(String key, Object value) {
+        this.data.put(key, value);
+    }
 
 }
