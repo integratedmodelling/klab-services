@@ -150,4 +150,6 @@ public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
 	public static TimeInstant create() {
 		return null;
 	}
+
+    String toRFC3339String();
 }

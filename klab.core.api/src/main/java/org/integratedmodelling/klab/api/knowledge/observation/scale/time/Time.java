@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.ResolutionImpl;
 
 /**
  * Time, as seen by k.LAB when the default contextualizer time() is used.
@@ -234,6 +235,16 @@ public interface Time extends Extent<Time> {
          */
         long getSpan();
 
+        /**
+         * 
+         * @param multiplier
+         * @param type
+         * @return
+         */
+        static Resolution of(int multiplier, Type type) {
+            return new ResolutionImpl(type, multiplier);
+        }
+
     }
 
     static public enum Type {
@@ -418,5 +429,6 @@ public interface Time extends Extent<Time> {
      * @return
      */
     boolean hasChangeDuring(Time time);
+    
 
 }
