@@ -24,26 +24,6 @@ public class TimeInstantImpl implements TimeInstant {
     ZonedDateTime time;
     static ZoneId utc = ZoneId.of("UTC");
 
-    public static TimeInstant create(int year, int month, int day) {
-        return new TimeInstantImpl(year, month, day);
-    }
-
-    public static TimeInstant create(int year) {
-        return new TimeInstantImpl(year);
-    }
-
-    public static TimeInstant create(ZonedDateTime time) {
-        return new TimeInstantImpl(time);
-    }
-
-    public static TimeInstant create(long milliseconds) {
-        return new TimeInstantImpl(milliseconds);
-    }
-
-    public static TimeInstant create() {
-        return new TimeInstantImpl();
-    }
-
     public TimeInstantImpl(int year) {
         time = ZonedDateTime.of(LocalDate.of(year, 1, 1), LocalTime.of(0, 0), utc);
     }

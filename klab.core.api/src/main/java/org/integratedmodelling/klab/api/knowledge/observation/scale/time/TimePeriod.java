@@ -15,7 +15,6 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
-// TODO: Auto-generated Javadoc
 /**
  * Authoritative type for expressing an anchored (specific start/end) duration of time.
  *
@@ -78,5 +77,11 @@ public interface TimePeriod extends Time {
      * @return duration in ms
      */
     public long getMillis();
+
+    
+    public static TimePeriod create(long start, long end) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

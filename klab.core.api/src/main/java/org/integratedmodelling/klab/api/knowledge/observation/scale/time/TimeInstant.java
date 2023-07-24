@@ -16,8 +16,10 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
 import java.io.Serializable;
+import java.time.ZonedDateTime;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimeInstantImpl;
 
 /**
  * 
@@ -142,14 +144,25 @@ public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
 	 */
 	TimeInstant endOf(Resolution.Type temporalAggregation);
 
-	/**
-	 * TODO implement this and others with Java time
-	 * 
-	 * @return
-	 */
-	public static TimeInstant create() {
-		return null;
-	}
-
     String toRFC3339String();
+    
+    public static TimeInstant create(int year, int month, int day) {
+        return new TimeInstantImpl(year, month, day);
+    }
+
+    public static TimeInstant create(int year) {
+        return new TimeInstantImpl(year);
+    }
+
+    public static TimeInstant create(ZonedDateTime time) {
+        return new TimeInstantImpl(time);
+    }
+
+    public static TimeInstant create(long milliseconds) {
+        return new TimeInstantImpl(milliseconds);
+    }
+
+    public static TimeInstant create() {
+        return new TimeInstantImpl();
+    }
 }
