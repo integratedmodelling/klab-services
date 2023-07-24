@@ -15,6 +15,8 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
+import java.io.Serializable;
+
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 
 /**
@@ -22,7 +24,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Re
  * @author Ferd
  *
  */
-public interface TimeInstant extends Comparable<TimeInstant> {
+public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
 
 	/**
 	 * <p>

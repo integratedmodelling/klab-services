@@ -15,6 +15,8 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
+import java.io.Serializable;
+
 import org.integratedmodelling.klab.api.collections.Pair;
 
 /**
@@ -23,7 +25,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface TimeDuration extends Comparable<TimeDuration> {
+public interface TimeDuration extends Serializable, Comparable<TimeDuration> {
 
 	/**
 	 * Return a new period anchored to the passed instant.
