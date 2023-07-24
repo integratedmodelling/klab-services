@@ -230,4 +230,8 @@ public interface Scale extends Geometry, Topology<Scale> {
 		}
 		return configuration.promoteGeometryToScale(geometry);
 	}
+
+	public static Scale empty() {
+		return create(Geometry.EMPTY);
+	}
 }

@@ -17,8 +17,6 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
  * Time, as seen by k.LAB when the default contextualizer time() is used.
@@ -277,8 +275,8 @@ public interface Time extends Extent<Time> {
     /**
      * {@inheritDoc}
      *
-     * Overriding to require that the collapsed type is ITimePeriod. This allows simpler coding
-     * against the API, and is the most logical way to enforce that getValueCount() == 1.
+     * Overriding to require that the collapsed type is Time. This allows simpler coding
+     * against the API, and is the most logical way to enforce that {@link #size()} == 1.
      */
     @Override
     Time collapsed();

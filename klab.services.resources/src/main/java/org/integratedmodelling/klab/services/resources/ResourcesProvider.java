@@ -77,6 +77,7 @@ import org.integratedmodelling.klab.services.resources.lang.KdlInjectorProvider;
 import org.integratedmodelling.klab.services.resources.lang.KimAdapter;
 import org.integratedmodelling.klab.services.resources.lang.KimInjectorProvider;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
+import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utilities.Utils.Git;
 import org.mapdb.DB;
@@ -820,8 +821,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public ResourceSet queryModels(Observable observable, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
+    	ResourceSet results = new ResourceSet();
+    	for (ModelReference model : this.kbox.query(observable, scope)) {
+    		results.getUrns().add(model.getName());
+    	}
+    	return results;
     }
 
     @Override

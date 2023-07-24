@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.runtime.scale;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
@@ -12,12 +14,16 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
+import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
 
 public class ScaleImpl implements Scale {
 
 	private static final long serialVersionUID = -4518044986262539876L;
 
 	Extent<?>[] extents;
+	long size;
 
 	/**
 	 * Internal locator class f. Uses the enclosing scale in a lazy fashion for
@@ -30,7 +36,7 @@ public class ScaleImpl implements Scale {
 	 *
 	 */
 	abstract class ScaleLocator extends DelegatingScale {
-		
+
 		private static final long serialVersionUID = 797929992176158102L;
 		boolean empty;
 		long offset;
@@ -104,22 +110,38 @@ public class ScaleImpl implements Scale {
 
 	};
 
-	public ScaleImpl(Iterable<Extent<?>> extents) {
-		// TODO Auto-generated constructor stub
+	public ScaleImpl(Geometry geometry) {
+		List<Extent<?>> extents = new ArrayList<>(3);
+		for (Geometry.Dimension dimension : geometry.getDimensions()) {
+			if (dimension.getType() == Type.SPACE) {
+				extents.add(SpaceImpl.create(dimension));
+			} else if (dimension.getType() == Type.TIME) {
+				extents.add(TimeImpl.create(dimension));
+			} else if (dimension.getType() == Type.NUMEROSITY) {
+				// TODO
+				throw new KlabUnimplementedException("numerosity extent");
+			}
+		}
+		
 	}
-	
+
+	public ScaleImpl(Iterable<Extent<?>> extents) {
+
+	}
+
 	protected void adoptExtents(Collection<Extent<?>> extents) {
 		// TODO was setExtents()
 	}
-	
-    protected void sort() {
-    	// TODO
-	}
 
+	protected void sort() {
+		// TODO
+	}
 
 	@Override
 	public <T extends Locator> T as(Class<T> cls) {
-		// TODO Auto-generated method stub
+		if (Geometry.class.equals(cls)) {
+
+		}
 		return null;
 	}
 
@@ -289,7 +311,7 @@ public class ScaleImpl implements Scale {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	/*
 	 * Default base for locators, delegating anything not explicitly overridden to
 	 * the containing instance.
@@ -340,7 +362,7 @@ public class ScaleImpl implements Scale {
 		public boolean infiniteTime() {
 			return ScaleImpl.this.infiniteTime();
 		}
-		
+
 		@Override
 		public <T extends Locator> T as(Class<T> cls) {
 			return ScaleImpl.this.as(cls);
@@ -447,6 +469,5 @@ public class ScaleImpl implements Scale {
 		}
 
 	}
-
 
 }

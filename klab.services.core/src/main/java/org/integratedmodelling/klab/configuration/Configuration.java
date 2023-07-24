@@ -47,6 +47,7 @@ import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.integratedmodelling.klab.utils.MiscUtilities;
 import org.integratedmodelling.klab.utils.NameGenerator;
 import org.integratedmodelling.klab.utils.OS;
@@ -83,8 +84,7 @@ public enum Configuration {
 
 			@Override
 			public Scale promoteGeometryToScale(Geometry geometry) {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return new ScaleImpl(geometry);
 			}
 
 			@Override

@@ -4,7 +4,9 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
@@ -172,4 +174,22 @@ public class SpaceImpl extends ExtentImpl<Space> implements Space {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+	public static Space create(Dimension dimension) {
+
+		if (dimension.isRegular()) {
+
+			if (dimension.getParameters().containsKey(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION)) {
+
+			} else if (dimension.getParameters().containsKey(GeometryImpl.PARAMETER_SPACE_SHAPE)) {
+
+			}
+		} else if (dimension.size() > 1) {
+
+		} else {
+			
+		}
+		return null;
+	}
+
 }

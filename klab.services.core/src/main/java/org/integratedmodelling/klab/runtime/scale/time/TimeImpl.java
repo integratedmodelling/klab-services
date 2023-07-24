@@ -3,22 +3,21 @@ package org.integratedmodelling.klab.runtime.scale.time;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.observations.scale.ITopologicallyComparable.MergingOption;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
 
 public class TimeImpl extends ExtentImpl<Time> implements Time {
 
 	private static final long serialVersionUID = 5936628543110335175L;
+	
+	Resolution resolution;
 
 	@Override
 	public Time at(Object... locators) {
@@ -28,9 +27,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
 	@Override
 	public int getRank() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+		return resolution.getType().getRank();	}
 
 	@Override
 	public double getDimensionSize() {
@@ -204,6 +201,12 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 	public boolean matches(Collection<Constraint> constraints) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public static Time create(Dimension dimension) {
+		TimeImpl ret = new TimeImpl();
+		// TODO
+		return ret;
 	}
 
 }

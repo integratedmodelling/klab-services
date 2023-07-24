@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -27,8 +28,8 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
 	private Identity observer;
 	private DirectObservation context;
-	private Set<String> resolutionScenarios;
-	private Scale geometry;
+	private Set<String> resolutionScenarios = new LinkedHashSet<>();
+	private Scale geometry = Scale.empty();
 	private String resolutionNamespace;
 	private String resolutionProject;
 	private Map<Observable, Observation> catalog = new HashMap<>();

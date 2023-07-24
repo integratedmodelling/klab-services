@@ -18,10 +18,9 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 
 /**
- * The Interface ITimeInstant.
+ * 
+ * @author Ferd
  *
- * @author ferdinando.villa
- * @version $Id: $Id
  */
 public interface TimeInstant extends Comparable<TimeInstant> {
 

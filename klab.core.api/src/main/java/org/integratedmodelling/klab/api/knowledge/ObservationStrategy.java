@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -61,5 +62,57 @@ public interface ObservationStrategy {
      * @return
      */
     List<Contextualizable> getComputations();
+    
+    public static ObservationStrategy direct(Observable observable) {
+    	return new ObservationStrategy() {
+
+			@Override
+			public Type getType() {
+				return Type.DIRECT;
+			}
+
+			@Override
+			public Observable getObservable() {
+				return observable;
+			}
+
+			@Override
+			public List<ObservationStrategy> getChildStrategies() {
+				return Collections.emptyList();
+			}
+
+			@Override
+			public List<Contextualizable> getComputations() {
+				return Collections.emptyList();
+			}
+    		
+    	};
+    }
+
+    public static ObservationStrategy resolved(Observable observable) {
+    	return new ObservationStrategy() {
+
+			@Override
+			public Type getType() {
+				return Type.RESOLVED;
+			}
+
+			@Override
+			public Observable getObservable() {
+				return observable;
+			}
+
+			@Override
+			public List<ObservationStrategy> getChildStrategies() {
+				return Collections.emptyList();
+			}
+
+			@Override
+			public List<Contextualizable> getComputations() {
+				return Collections.emptyList();
+			}
+    		
+    	};
+    }
 
 }

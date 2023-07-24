@@ -13,10 +13,11 @@ import java.util.function.Supplier;
 import org.fusesource.jansi.AnsiConsole;
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
@@ -24,6 +25,7 @@ import org.jline.console.impl.SystemRegistryImpl;
 import org.jline.keymap.KeyMap;
 import org.jline.reader.Binding;
 import org.jline.reader.EndOfFileException;
+import org.jline.reader.History;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.MaskingCallback;
@@ -31,6 +33,7 @@ import org.jline.reader.Parser;
 import org.jline.reader.Reference;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultParser;
+import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.widget.TailTipWidgets;
@@ -48,7 +51,14 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
 
 /**
  * Command line for the next k.LAB. No longer tied to an engine.
- * 
+ * <p>
+ * Commands can be bare Runnables or the specialized FunctionalCommand, which
+ * manages a stack of values that the command execution can push. Any pushed
+ * values are matched into a global stack, and they can be referred as $
+ * (equivalent to $0) or $n (n = depth into stack) by commands that are prepared
+ * to receive them. Commands that push variables into the stack should notify
+ * that to the user.
+ * <p>
  * TESTING SETUP
  * ==============================================================================================
  * 
@@ -74,7 +84,7 @@ public class Application {
 			"Hit @|magenta ALT-S|@ to toggle tailtips.", "" }, footer = { "", "Press Ctrl-D to exit." }, subcommands = {
 					Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class, Resources.class,
 					Services.class, Run.class, PicocliCommands.ClearScreen.class, CommandLine.HelpCommand.class,
-					Session.class, Context.class, Components.class })
+					Session.class, Context.class, Components.class, Stack.class })
 	static class CliCommands implements Runnable {
 
 		PrintWriter out;
@@ -120,7 +130,8 @@ public class Application {
 
 				for (String scriptName : scriptNames) {
 
-					KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser(true, null).getService(ResourcesService.class)
+					KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser(true, null)
+							.getService(ResourcesService.class)
 							.resolveBehavior(scriptName, Engine.INSTANCE.getCurrentUser());
 
 					if (behavior == null) {
@@ -285,7 +296,6 @@ public class Application {
 			builtins.alias("bindkey", "keymap");
 			// set up picocli commands
 			CliCommands commands = new CliCommands();
-
 			PicocliCommandsFactory factory = new PicocliCommandsFactory();
 			// Or, if you have your own factory, you can chain them like this:
 			// MyCustomFactory customFactory = createCustomFactory(); // your application
@@ -297,7 +307,7 @@ public class Application {
 
 			CommandLine cmd = new CommandLine(commands, factory);
 			PicocliCommands picocliCommands = new PicocliCommands(cmd);
-
+			File historyFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "kcli.history");
 			Parser parser = new DefaultParser();
 			try (Terminal terminal = TerminalBuilder.builder().build()) {
 
@@ -305,13 +315,16 @@ public class Application {
 				systemRegistry.setCommandRegistries(builtins, picocliCommands);
 				systemRegistry.register("help", picocliCommands);
 				KlabCompleter completer = new KlabCompleter(systemRegistry.completer());
+				History history = new DefaultHistory();
 				LineReader reader = LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser)
 						.variable(LineReader.LIST_MAX, 50) // candidates
-						.build();
+						.history(history).build();
 
 				builtins.setLineReader(reader);
 				commands.setReader(reader);
 				factory.setTerminal(terminal);
+				history.attach(reader);
+
 				TailTipWidgets widgets = new TailTipWidgets(reader, systemRegistry::commandDescription, 5,
 						TailTipWidgets.TipType.COMPLETER);
 				widgets.enable();
@@ -321,6 +334,10 @@ public class Application {
 				String prompt = "k.LAB> ";
 				String rightPrompt = null;
 
+				if (historyFile.exists()) {
+					history.read(historyFile.toPath(), true);
+				}
+
 				// start the shell and process input until the user quits with Ctrl-D
 				String line;
 				while (true) {
@@ -329,6 +346,7 @@ public class Application {
 						line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
 						completer.resetSemanticSearch();
 						systemRegistry.execute(line);
+						history.write(historyFile.toPath(), true);
 					} catch (UserInterruptException e) {
 						// Ignore
 					} catch (EndOfFileException e) {
@@ -344,7 +362,7 @@ public class Application {
 			AnsiConsole.systemUninstall();
 		}
 	}
-	
+
 	public static void printResourceSet(ResourceSet resourceSet, PrintWriter out) {
 
 		if (resourceSet == null) {
@@ -352,7 +370,7 @@ public class Application {
 		} else if (resourceSet.isEmpty()) {
 			out.println("Empty resource set");
 		} else {
-			
+
 		}
 	}
 
