@@ -24,6 +24,7 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.LsRemoteCommand;
 import org.eclipse.jgit.api.PullCommand;
+import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Repository;
@@ -1019,7 +1020,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 					Logging.INSTANCE.info("fetch/merge changes in repository: " + git.getRepository());
 
 					PullCommand pullCmd = git.pull();
-					pullCmd.call();
+					PullResult result = pullCmd.call();
+//					return result != null && result.getFetchResult() != null && result.getFetchResult().
 
 				} catch (Throwable e) {
 					throw new KlabIOException(

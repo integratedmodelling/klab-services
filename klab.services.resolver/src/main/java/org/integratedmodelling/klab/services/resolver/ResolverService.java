@@ -315,19 +315,49 @@ public class ResolverService extends BaseService implements Resolver {
 
         switch(Urn.classify(urn)) {
         case KIM_OBJECT:
-            // model or instance in namespace
+            ResourceSet set = resources.resolve(urn, scope);
+            if (set.getResults().size() == 1) {
+                ret = loadKnowledge(set, scope);
+            }
             break;
         case OBSERVABLE:
             ret = reasoner.resolveObservable(urn);
             break;
         case RESOURCE:
             var resource = resources.resolveResource(urn, scope);
+            // TODO make a KimModelStatement that observes this.
             break;
         case REMOTE_URL:
         case UNKNOWN:
+            scope.error("cannot resolve URN '" + urn + "' to observable knowledge");
             break;
         }
         return (T) ret;
+    }
+
+    /**
+     * Return the first resource in results, or null.
+     * 
+     * @param set
+     * @param scope
+     * @return
+     */
+    private Knowledge loadKnowledge(ResourceSet set, Scope scope) {
+        List<Knowledge> result = loadResourceSet(set, scope);
+        return result.size() > 0 ? result.get(0) : null;
+    }
+
+    /**
+     * Load all the knowledge in the set from the respective services in scope, including resolving
+     * components if any.
+     * 
+     * @param set
+     * @param scope
+     * @return
+     */
+    private List<Knowledge> loadResourceSet(ResourceSet set, Scope scope) {
+        List<Knowledge> ret = new ArrayList<>();
+        return ret;
     }
 
     /**
@@ -347,8 +377,8 @@ public class ResolverService extends BaseService implements Resolver {
 
         // TODO use and merge all available resource services
         ResourceSet models = resources.queryModels(observable, scope);
-        for (String urn : models.getUrns()) {
-            ret.add(makeModel(resources.model(urn, scope)));
+        for (ResourceSet.Resource urn : models.getResults()) {
+            ret.add(makeModel(resources.model(urn.getResourceUrn(), scope)));
         }
         return ret;
     }

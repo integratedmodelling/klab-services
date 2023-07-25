@@ -129,6 +129,12 @@ public interface ResourcesService extends KlabService {
     ResourceSet model(String modelName, Scope scope);
 
     /**
+     * Resolve a specific URN to the object that is represented by it, which must be returned in
+     * {@link ResourceSet#setResults(java.util.Set)}. Return an empty resultset if not found.
+     */
+    ResourceSet resolve(String urn, Scope scope);
+
+    /**
      * Return the parsed contents of a namespace. This only be called after a request that returned
      * a ResourceSet to ensure correct dependency handling.
      * 

@@ -175,4 +175,10 @@ public class ResourcesClient implements ResourcesService {
 		return null;
 	}
 
+    @Override
+    public ResourceSet resolve(String urn, Scope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

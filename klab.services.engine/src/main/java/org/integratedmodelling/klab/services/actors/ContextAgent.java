@@ -2,13 +2,16 @@ package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
@@ -41,29 +44,13 @@ public class ContextAgent extends KAgent {
         Knowledge resolvable = null;
         Observation result = null;
 
+        var resolver = scope.getService(Resolver.class);
+
         scope.send(message.response(Status.STARTED));
 
         try {
 
-            /*
-             * Establish URN type and resolve through the scope
-             */
-            switch(Urn.classify(message.getUrn())) {
-            case KIM_OBJECT:
-                // scope.getService(ResourceProvider.class).
-                break;
-            case OBSERVABLE:
-                resolvable = scope.getService(Reasoner.class).resolveObservable(message.getUrn());
-                break;
-            case REMOTE_URL:
-                break;
-            case RESOURCE:
-//                resolvable = scope.getService(ResourcesService.class).resolveResource(message.getUrn(), message.getScope());
-                break;
-            case UNKNOWN:
-                break;
-            }
-
+            resolvable = resolver.resolveKnowledge(message.getUrn(), Knowledge.class, scope);
             if (resolvable == null) {
                 scope.send(message.response(Status.ABORTED, AgentResponse.ERROR, "Cannot resolve URN " + message.getUrn()));
                 return;
@@ -73,7 +60,6 @@ public class ContextAgent extends KAgent {
              * Build the dataflow in the scope
              */
             Dataflow<?> dataflow = scope.getService(Resolver.class).resolve(resolvable, message.getScope());
-
 
             if (!dataflow.isEmpty()) {
 
@@ -89,7 +75,7 @@ public class ContextAgent extends KAgent {
                     status = Status.FINISHED;
                 }
             }
-            
+
         } catch (Throwable e) {
             scope.error(e);
             status = Status.ABORTED;

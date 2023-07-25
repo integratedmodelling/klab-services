@@ -52,7 +52,7 @@ import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.ContextualizableImpl;
 import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimAcknowledgementImpl;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimInstanceImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimClassificationImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptStatementImpl;
@@ -144,7 +144,7 @@ public class KimAdapter {
 
     private static KimStatementImpl adaptAcknowledgementStatement(IKimAcknowledgement statement) {
 
-        KimAcknowledgementImpl ret = new KimAcknowledgementImpl();
+        KimInstanceImpl ret = new KimInstanceImpl();
         Utils.Lang.copyStatementData(statement, ret);
 
         ret.setDocstring(statement.getDocstring());

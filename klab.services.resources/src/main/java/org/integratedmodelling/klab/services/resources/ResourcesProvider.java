@@ -49,6 +49,7 @@ import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -112,6 +113,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private Set<String> localResources = new HashSet<>();
 
     /**
+     * record the time of last update of each project
+     */
+    private Map<String, Long> lastUpdate = new HashMap<>();
+
+    /**
      * the only persistent info in this implementation is the catalog of resource status info. This
      * is used for individual resources and whole projects. It also holds and maintains the review
      * status, which in the case of projects propagates to the namespaces and models. Reviews and
@@ -162,6 +168,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public void initializeService() {
         this.kbox = ModelKbox.create(localName, this.scope);
+        updateProjects();
+        /*
+         * TODO launch update service
+         */
     }
 
     // /**
@@ -215,6 +225,34 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return ret;
     }
 
+    /**
+     * Called after startup and by the update timer at regular intervals. TODO must check if changes
+     * were made and reload the affected workspaces if so.
+     * 
+     * Projects with update frequency == 0 do not get updated.
+     */
+    private void updateProjects() {
+        for (String projectName : configuration.getProjectConfiguration().keySet()) {
+            ProjectConfiguration project = configuration.getProjectConfiguration().get(projectName);
+            Long lastUpdate = this.lastUpdate.get(projectName);
+            if (Git.isRemoteGitURL(project.getSourceUrl())) {
+                if (lastUpdate == null
+                        || (lastUpdate > 0 && (System.currentTimeMillis() - lastUpdate) >= project.getSyncIntervalMs())) {
+                    Git.pull(project.getLocalPath());
+                    this.lastUpdate.put(projectName, System.currentTimeMillis());
+                }
+            }
+
+        }
+    }
+
+    /**
+     * TODO this must load to a staging area and commit the project after approval.
+     * 
+     * @param projectName
+     * @param projectConfiguration
+     * @return
+     */
     private synchronized Project loadProject(String projectName, final ProjectConfiguration projectConfiguration) {
 
         /*
@@ -537,7 +575,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                     configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
                     saveConfiguration();
                     return true;
-                    
+
                 } catch (Throwable t) {
                     File ws = new File(workspace + File.separator + projectName);
                     if (ws.exists()) {
@@ -831,12 +869,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public ResourceSet queryModels(Observable observable, ContextScope scope) {
-    	ResourceSet results = new ResourceSet();
-    	// TODO use resource set properly, merging results
-    	for (ModelReference model : this.kbox.query(observable, scope)) {
-    		results.getUrns().add(model.getName());
-    	}
-    	return results;
+        ResourceSet results = new ResourceSet();
+        // TODO use resource set properly, merging results
+        for (ModelReference model : this.kbox.query(observable, scope)) {
+            results.getResults()
+                    .add(new ResourceSet.Resource(this.url, model.getUrn(), model.getVersion(), KnowledgeClass.MODEL));
+        }
+        return results;
     }
 
     @Override
@@ -933,6 +972,56 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             }
         }
         return projects(projects, scope);
+    }
+
+    @Override
+    public ResourceSet resolve(String urn, Scope scope) {
+
+        ResourceSet ret = new ResourceSet();
+
+        /*
+         * Check if it's a project
+         */
+        if (localProjects.containsKey(urn)) {
+
+        } else if (localNamespaces.containsKey(urn)) {
+
+            /*
+             * If not, check for namespace
+             */
+
+        } else if (localBehaviors.containsKey(urn)) {
+
+            /*
+             * If not, check for behavior
+             */
+
+        } else if (urn.contains(".")) {
+
+            /*
+             * if not, extract namespace and check for that.
+             */
+            String ns = Utils.Paths.getLeading(urn, '.');
+            String nm = Utils.Paths.getLast(urn, '.');
+            KimNamespace namespace = localNamespaces.get(ns);
+            if (namespace != null) {
+                for (KimStatement statement : namespace.getStatements()) {
+                    if (statement instanceof KimModelStatement && urn.equals(((KimModelStatement) statement).getName())) {
+                        ret.getResults()
+                                .add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(), KnowledgeClass.MODEL));
+                    } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
+                        ret.getResults()
+                                .add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(), KnowledgeClass.INSTANCE));
+                    }
+                }
+            }
+        }
+
+        /*
+         * TODO add dependencies to resource set, including merging any remote
+         */
+
+        return ret;
     }
 
 }

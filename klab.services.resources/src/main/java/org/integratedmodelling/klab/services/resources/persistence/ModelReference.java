@@ -18,8 +18,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.kim.api.IKimStatement.Scope;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
@@ -113,7 +113,8 @@ public class ModelReference {
 	private int priority = 0;
 	private boolean specializedObservable = false;
 	private ResourcePrivileges permissions = new ResourcePrivileges();
-
+	private Version version;
+	
 	transient private Concept observableConcept;
 	transient private Shape shape;
 
@@ -843,5 +844,13 @@ public class ModelReference {
 	public void setPermissions(ResourcePrivileges permissions) {
 		this.permissions = permissions;
 	}
+
+    public Version getVersion() {
+        return version;
+    }
+
+    public void setVersion(Version version) {
+        this.version = version;
+    }
 
 }

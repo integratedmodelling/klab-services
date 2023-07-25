@@ -5,7 +5,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
-public class KimAcknowledgementImpl extends KimActiveStatementImpl implements KimInstance {
+public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstance {
 
     private static final long serialVersionUID = -2269601151635547580L;
 
