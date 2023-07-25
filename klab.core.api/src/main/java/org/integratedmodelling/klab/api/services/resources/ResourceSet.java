@@ -11,6 +11,7 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * The output of any resources GET endpoint that provides models, projects, worldview, behaviors or
@@ -24,7 +25,8 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
  * objects that must be loaded to make use of it.
  * <p>
  * A method isEmpty() is provided to streamline usage and possibly differentiate from a resource set
- * that contains no resources but actually represents as a non-empty result.
+ * that contains no resources but actually represents as a non-empty result. A ResultSet can also
+ * carry notifications so that the reasons for a non-expected empty set can be investigated.
  * 
  * @author Ferd
  *
@@ -97,6 +99,7 @@ public class ResourceSet implements Serializable {
     private List<Resource> behaviors = new ArrayList<>();
     private List<Resource> resources = new ArrayList<>();
     private Set<Resource> results = new HashSet<>();
+    private List<Notification> notifications = new ArrayList<>();
 
     private boolean empty;
 
@@ -152,6 +155,14 @@ public class ResourceSet implements Serializable {
 
     public void setResults(Set<Resource> urns) {
         this.results = urns;
+    }
+
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+        this.notifications = notifications;
     }
 
 }

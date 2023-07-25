@@ -29,7 +29,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
@@ -99,7 +98,7 @@ public class ObservableBuilder implements Observable.Builder {
     // marks the observable to build as dereifying for a resolution of inherents
     private boolean dereified = false;
 
-    private boolean global;
+    // private boolean global;
 
     private boolean hasUnaryOp;
 
@@ -154,11 +153,11 @@ public class ObservableBuilder implements Observable.Builder {
         this.goal = owl.reasoner().directGoal(observable.getSemantics());
         this.compresent = owl.reasoner().directCompresent(observable.getSemantics());
         this.declaration = getDeclaration(observable.getSemantics());
-        this.mustContextualize = observable.isMustContextualizeAtResolution();
-        this.temporalInherent = observable.temporalInherent();
+        // this.mustContextualize = observable.isMustContextualizeAtResolution();
+        // this.temporalInherent = observable.temporalInherent();
         this.annotations.addAll(observable.getAnnotations());
-        this.incarnatedAbstractObservable = observable.getIncarnatedAbstractObservable();
-        this.deferredTarget = observable.getDeferredTarget();
+        // this.incarnatedAbstractObservable = observable.getIncarnatedAbstractObservable();
+        // this.deferredTarget = observable.getDeferredTarget();
         this.defaultValue = observable.getDefaultValue();
         this.resolutionExceptions.addAll(observable.getResolutionExceptions());
 
@@ -203,7 +202,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.declaration = other.declaration;
         this.scope = other.scope;
         this.valueOperators.addAll(other.valueOperators);
-        this.mustContextualize = other.mustContextualize;
+        // this.mustContextualize = other.mustContextualize;
         this.annotations.addAll(other.annotations);
         this.temporalInherent = other.temporalInherent;
         this.statedName = other.statedName;
@@ -362,7 +361,7 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (incarnatedAbstractObservable != null) {
-            incarnatedAbstractObservable = incarnatedAbstractObservable.builder().as(type, participants).buildObservable();
+            incarnatedAbstractObservable = incarnatedAbstractObservable.builder(scope).as(type, participants).buildObservable();
         }
 
         if (argument != null) {
@@ -1359,20 +1358,20 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         ret.setStatedName(this.statedName);
-        ret.setTargetPredicate(targetPredicate);
+        // ret.setTargetPredicate(targetPredicate);
         ret.setOptional(this.optional);
-        ret.setMustContextualizeAtResolution(mustContextualize);
+        // ret.setMustContextualizeAtResolution(mustContextualize);
         ret.getAnnotations().addAll(annotations);
         ret.setDistributedInherency(distributedInherency);
-        ret.setTemporalInherent(temporalInherent);
+        // ret.setTemporalInherent(temporalInherent);
         ret.setDereifiedAttribute(this.dereifiedAttribute);
-        ret.setDereified(this.dereified);
+        // ret.setDereified(this.dereified);
         ret.setGeneric(this.generic);
         ret.setResolution(this.resolution);
-        ret.setGlobal(this.global);
-        ret.setIncarnatedAbstractObservable(this.incarnatedAbstractObservable);
-        ret.setDeferredTarget(this.deferredTarget);
-        ret.setUrl(this.url);
+        // ret.setGlobal(this.global);
+        // ret.setIncarnatedAbstractObservable(this.incarnatedAbstractObservable);
+        // ret.setDeferredTarget(this.deferredTarget);
+        // ret.setUrl(this.url);
 
         // if (Units.INSTANCE.needsUnits(ret) && this.unit == null && this.currency ==
         // null) {
@@ -1474,11 +1473,11 @@ public class ObservableBuilder implements Observable.Builder {
         return this.axiomsAdded;
     }
 
-    @Override
-    public Observable.Builder setDereified() {
-        this.dereified = true;
-        return this;
-    }
+    // @Override
+    // public Observable.Builder setDereified() {
+    // this.dereified = true;
+    // return this;
+    // }
 
     @Override
     public Observable.Builder named(String name, String referenceName) {
@@ -1534,17 +1533,17 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Observable.Builder global(boolean global) {
-        this.global = global;
-        return this;
-    }
+    // @Override
+    // public Observable.Builder global(boolean global) {
+    // this.global = global;
+    // return this;
+    // }
 
-    @Override
-    public Observable.Builder withUrl(String uri) {
-        this.url = uri;
-        return this;
-    }
+    // @Override
+    // public Observable.Builder withUrl(String uri) {
+    // this.url = uri;
+    // return this;
+    // }
 
     @Override
     public Observable.Builder withDefaultValue(Object defaultValue) {

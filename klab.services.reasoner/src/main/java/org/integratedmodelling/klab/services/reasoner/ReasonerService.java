@@ -2187,7 +2187,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 			builder = builder.withRange(concept.getRange());
 		}
 
-		builder = builder.optional(concept.isOptional()).generic(concept.isGeneric()).global(concept.isGlobal())
+        builder = builder.optional(concept.isOptional()).generic(concept
+                .isGeneric())/* .global(concept.isGlobal()) */
 				.named(concept.getFormalName());
 
 		if (concept.isExclusive()) {

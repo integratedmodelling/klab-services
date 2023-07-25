@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+import org.integratedmodelling.klab.api.scope.Scope;
 
 /**
  * Holds global configurations and functions that allow generic interfaces to
@@ -29,9 +30,9 @@ public enum Klab {
 
 		Observable promoteConceptToObservable(Concept concept);
 
-		Observable.Builder getObservableBuilder(Concept observable);
+		Observable.Builder getObservableBuilder(Concept observable, Scope scope);
 
-		Observable.Builder getObservableBuilder(Observable observable);
+		Observable.Builder getObservableBuilder(Observable observable, Scope scope);
 
 		Scale promoteGeometryToScale(Geometry geometry);
 

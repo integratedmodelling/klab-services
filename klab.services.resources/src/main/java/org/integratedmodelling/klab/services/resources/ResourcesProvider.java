@@ -1004,6 +1004,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             String ns = Utils.Paths.getLeading(urn, '.');
             String nm = Utils.Paths.getLast(urn, '.');
             KimNamespace namespace = localNamespaces.get(ns);
+            /*
+             * TODO check permissions!
+             */
             if (namespace != null) {
                 for (KimStatement statement : namespace.getStatements()) {
                     if (statement instanceof KimModelStatement && urn.equals(((KimModelStatement) statement).getName())) {
@@ -1014,14 +1017,35 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                                 .add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(), KnowledgeClass.INSTANCE));
                     }
                 }
+
+                if (ret.getResults().size() > 0) {
+                    ret.getNamespaces().add(new ResourceSet.Resource(getUrl(), namespace.getUrn(), namespace.getVersion(),
+                            KnowledgeClass.NAMESPACE));
+                }
+
             }
         }
 
+        return addDependencies(ret, scope);
+    }
+
+    /*
+     * TODO add dependencies to resource set containing only local resources, including merging any
+     * remote resources in view of the passed scope. SET TO EMPTY if dependencies cannot be resolved
+     * in this scope.
+     */
+    private ResourceSet addDependencies(ResourceSet resourceSet, Scope scope) {
+
         /*
-         * TODO add dependencies to resource set, including merging any remote
+         * add components and action libraries to behaviors
+         * 
+         * add loaded namespaces and the deps (projects, components) of all projects that are
+         * required by their projects. Function calls may reference local resources.
+         * 
+         * Resources may be using other resources
          */
 
-        return ret;
+        return resourceSet;
     }
 
 }

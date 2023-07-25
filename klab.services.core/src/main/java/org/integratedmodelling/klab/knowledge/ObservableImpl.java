@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.util.StringUtils;
 
@@ -44,14 +45,14 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private Unit unit;
     private Currency currency;
     private NumericRange range;
-    private String url;
-    private boolean specialized;
-    private boolean dereified;
+//    private String url;
+//    private boolean specialized;
+//    private boolean dereified;
     private Map<Concept, Concept> resolvedPredicates;
-    private Collection<Concept> abstractPredicates;
+//    private Collection<Concept> abstractPredicates;
     private Collection<Concept> contextualRoles;
     private Resolution resolution;
-    private boolean global;
+//    private boolean global;
     private boolean optional;
     private boolean generic;
     private Collection<ResolutionException> resolutionExceptions;
@@ -63,13 +64,13 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private String referenceName;
     private String name;
     private String namespace;
-    private boolean mustContextualizeAtResolution;
-    private Concept targetPredicate;
+//    private boolean mustContextualizeAtResolution;
+//    private Concept targetPredicate;
     private boolean distributedInherency;
-    private Concept temporalInherent;
+//    private Concept temporalInherent;
     private String dereifiedAttribute;
-    private Observable incarnatedAbstractObservable;
-    private Observable deferredTarget;
+//    private Observable incarnatedAbstractObservable;
+//    private Observable deferredTarget;
     private String modelReference;
     private Metadata metadata = Metadata.create();
 
@@ -153,10 +154,10 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         return annotations;
     }
 
-    @Override
-    public Collection<Concept> abstractPredicates() {
-        return abstractPredicates;
-    }
+//    @Override
+//    public Collection<Concept> abstractPredicates() {
+//        return abstractPredicates;
+//    }
 
     @Override
     public DescriptionType getDescriptionType() {
@@ -183,23 +184,23 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         return value;
     }
 
-    @Override
-    public Concept context() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Concept inherent() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Concept temporalInherent() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+//    @Override
+//    public Concept context() {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
+//
+//    @Override
+//    public Concept inherent() {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
+//
+//    @Override
+//    public Concept temporalInherent() {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
 
     @Override
     public Literal getDefaultValue() {
@@ -225,11 +226,11 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     public DirectObservation getObserver() {
         return observer;
     }
-
-    @Override
-    public boolean isGlobal() {
-        return global;
-    }
+//
+//    @Override
+//    public boolean isGlobal() {
+//        return global;
+//    }
 
     @Override
     public Resolution getResolution() {
@@ -240,32 +241,32 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     public Collection<Concept> getContextualRoles() {
         return contextualRoles;
     }
-
-    @Override
-    public boolean resolves(Observable other, Concept context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Collection<Concept> getAbstractPredicates() {
-        return abstractPredicates;
-    }
+//
+//    @Override
+//    public boolean resolves(Observable other, Concept context) {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
+//
+//    @Override
+//    public Collection<Concept> getAbstractPredicates() {
+//        return abstractPredicates;
+//    }
 
     @Override
     public Map<Concept, Concept> getResolvedPredicates() {
         return resolvedPredicates;
     }
-
-    @Override
-    public boolean isDereified() {
-        return dereified;
-    }
-
-    @Override
-    public boolean isSpecialized() {
-        return specialized;
-    }
+//
+//    @Override
+//    public boolean isDereified() {
+//        return dereified;
+//    }
+//
+//    @Override
+//    public boolean isSpecialized() {
+//        return specialized;
+//    }
 
     public NumericRange getRange() {
         return range;
@@ -342,26 +343,26 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     }
 
     @Override
-    public Builder builder() {
-        return Klab.INSTANCE.getConfiguration().getObservableBuilder(this);
+    public Builder builder(Scope scope) {
+        return Klab.INSTANCE.getConfiguration().getObservableBuilder(this, scope);
     }
 
-    public void setSpecialized(boolean specialized) {
-        this.specialized = specialized;
-    }
-
-    public void setDereified(boolean dereified) {
-        this.dereified = dereified;
-    }
+//    public void setSpecialized(boolean specialized) {
+//        this.specialized = specialized;
+//    }
+//
+//    public void setDereified(boolean dereified) {
+//        this.dereified = dereified;
+//    }
 
     public void setResolvedPredicates(Map<Concept, Concept> resolvedPredicates) {
         this.resolvedPredicates = resolvedPredicates;
     }
 
-    public void setAbstractPredicates(Collection<Concept> abstractPredicates) {
-        this.abstractPredicates = abstractPredicates;
-    }
-
+//    public void setAbstractPredicates(Collection<Concept> abstractPredicates) {
+//        this.abstractPredicates = abstractPredicates;
+//    }
+//
     public void setContextualRoles(Collection<Concept> contextualRoles) {
         this.contextualRoles = contextualRoles;
     }
@@ -370,9 +371,9 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.resolution = resolution;
     }
 
-    public void setGlobal(boolean global) {
-        this.global = global;
-    }
+//    public void setGlobal(boolean global) {
+//        this.global = global;
+//    }
 
     public void setOptional(boolean optional) {
         this.optional = optional;
@@ -418,23 +419,23 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.namespace = namespace;
     }
 
-    @Override
-    public boolean isMustContextualizeAtResolution() {
-        return mustContextualizeAtResolution;
-    }
+//    @Override
+//    public boolean isMustContextualizeAtResolution() {
+//        return mustContextualizeAtResolution;
+//    }
+//
+//    public void setMustContextualizeAtResolution(boolean mustContextualizeAtResolution) {
+//        this.mustContextualizeAtResolution = mustContextualizeAtResolution;
+//    }
 
-    public void setMustContextualizeAtResolution(boolean mustContextualizeAtResolution) {
-        this.mustContextualizeAtResolution = mustContextualizeAtResolution;
-    }
+//    @Override
+//    public Concept getTargetPredicate() {
+//        return targetPredicate;
+//    }
 
-    @Override
-    public Concept getTargetPredicate() {
-        return targetPredicate;
-    }
-
-    public void setTargetPredicate(Concept targetPredicate) {
-        this.targetPredicate = targetPredicate;
-    }
+//    public void setTargetPredicate(Concept targetPredicate) {
+//        this.targetPredicate = targetPredicate;
+//    }
 
     @Override
     public boolean isDistributedInherency() {
@@ -445,14 +446,14 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.distributedInherency = distributedInherency;
     }
 
-    @Override
-    public Concept getTemporalInherent() {
-        return temporalInherent;
-    }
+//    @Override
+//    public Concept getTemporalInherent() {
+//        return temporalInherent;
+//    }
 
-    public void setTemporalInherent(Concept temporalInherent) {
-        this.temporalInherent = temporalInherent;
-    }
+//    public void setTemporalInherent(Concept temporalInherent) {
+//        this.temporalInherent = temporalInherent;
+//    }
 
     @Override
     public String getDereifiedAttribute() {
@@ -463,37 +464,37 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.dereifiedAttribute = dereifiedAttribute;
     }
 
-    @Override
-    public Observable getIncarnatedAbstractObservable() {
-        return incarnatedAbstractObservable;
-    }
+//    @Override
+//    public Observable getIncarnatedAbstractObservable() {
+//        return incarnatedAbstractObservable;
+//    }
 
-    public void setIncarnatedAbstractObservable(Observable incarnatedAbstractObservable) {
-        this.incarnatedAbstractObservable = incarnatedAbstractObservable;
-    }
+//    public void setIncarnatedAbstractObservable(Observable incarnatedAbstractObservable) {
+//        this.incarnatedAbstractObservable = incarnatedAbstractObservable;
+//    }
 
-    @Override
-    public Observable getDeferredTarget() {
-        return deferredTarget;
-    }
+//    @Override
+//    public Observable getDeferredTarget() {
+//        return deferredTarget;
+//    }
 
-    public void setDeferredTarget(Observable deferredTarget) {
-        this.deferredTarget = deferredTarget;
-    }
+//    public void setDeferredTarget(Observable deferredTarget) {
+//        this.deferredTarget = deferredTarget;
+//    }
 
     public void setSemantics(Concept semantics) {
         this.semantics = semantics;
     }
 
-    @Override
-    public String getUrl() {
-        return url;
-    }
+//    @Override
+//    public String getUrl() {
+//        return url;
+//    }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
+//    public void setUrl(String url) {
+//        this.url = url;
+//    }
+//
     public static ObservableImpl promote(Concept concept) {
 
         ObservableImpl ret = new ObservableImpl();

@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabStorageException;
@@ -101,7 +102,7 @@ public abstract class H2Kbox {
 		return ret;
 	}
 
-	public long store(Object o, Channel monitor) throws KlabException {
+	public long store(Object o, Scope monitor) throws KlabException {
 		return database.storeObject(o, 0l, getSerializer(o.getClass()), monitor);
 	}
 

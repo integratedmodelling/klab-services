@@ -217,7 +217,7 @@ public class ResolverService extends BaseService implements Resolver {
                     /*
                      * resolve in current scope: keep the inherency from the original concept
                      */
-                    var builder = Observable.promote(predicate).builder();
+                    var builder = Observable.promote(predicate).builder(resolution.getScope());
                     if (reasoner.inherent(observable) != null) {
                         builder = builder.of(reasoner.inherent(observable));
                     }

@@ -629,7 +629,7 @@ public class ModelKbox extends ObservableKbox {
     }
 
     @Override
-    public long store(Object o, Channel monitor) {
+    public long store(Object o, Scope monitor) {
 
         initialize(monitor);
 
@@ -671,7 +671,7 @@ public class ModelKbox extends ObservableKbox {
      * @param monitor
      * @return the models implied by the statement
      */
-    public Collection<ModelReference> inferModels(KimModelStatement model, Channel monitor) {
+    public Collection<ModelReference> inferModels(KimModelStatement model, Scope monitor) {
 
         List<ModelReference> ret = new ArrayList<>();
 
@@ -706,7 +706,7 @@ public class ModelKbox extends ObservableKbox {
                 if (model.isInstantiator()) {
                     Concept context = reasoner.context(type);
                     if (context == null || !scope.getService(Reasoner.class).subsumes(context, mainObservable.getSemantics())) {
-                        type = observable.builder().of(mainObservable.getSemantics()).buildConcept();
+                        type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
                     }
                 }
                 ModelReference m = ret.get(0).copy();
@@ -728,7 +728,7 @@ public class ModelKbox extends ObservableKbox {
         return ret;
     }
 
-    private Collection<ModelReference> getModelDescriptors(KimModelStatement model, Channel monitor) {
+    private Collection<ModelReference> getModelDescriptors(KimModelStatement model, Scope monitor) {
 
         List<ModelReference> ret = new ArrayList<>();
         Coverage scale = resourceService.modelGeometry(model.getName());
@@ -854,9 +854,9 @@ public class ModelKbox extends ObservableKbox {
 
                 m.setPrimaryObservable(first);
 
-                if (first && obs.isSpecialized()) {
-                    m.setSpecializedObservable(true);
-                }
+//                if (first && obs.isSpecialized()) {
+//                    m.setSpecializedObservable(true);
+//                }
 
                 first = false;
 
@@ -890,7 +890,7 @@ public class ModelKbox extends ObservableKbox {
         return extent;
     }
 
-    private List<Observable> unpackObservables(Observable oobs, Observable main, boolean first, Channel monitor) {
+    private List<Observable> unpackObservables(Observable oobs, Observable main, boolean first, Scope monitor) {
 
         List<Observable> ret = new ArrayList<>();
         if (!first) {
@@ -902,7 +902,7 @@ public class ModelKbox extends ObservableKbox {
             Concept oobsContext = reasoner.context(oobs);
             if (specialized != null
                     && (oobsContext == null || !scope.getService(Reasoner.class).subsumes(oobsContext, specialized))) {
-                oobs = oobs.builder().within(specialized).buildObservable();
+                oobs = oobs.builder(monitor).within(specialized).buildObservable();
             }
         }
         ret.add(oobs);

@@ -43,6 +43,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
@@ -94,7 +95,7 @@ public enum Configuration {
 			}
 
 			@Override
-			public Builder getObservableBuilder(Concept observable) {
+			public Builder getObservableBuilder(Concept observable, Scope scope) {
 				// TODO Auto-generated method stub
 				throw new KException("IMPLEMENTAMI OSTIA");
 			}
@@ -124,7 +125,7 @@ public enum Configuration {
 			}
 
 			@Override
-			public Builder getObservableBuilder(Observable observable) {
+			public Builder getObservableBuilder(Observable observable, Scope scope) {
 				// TODO Auto-generated method stub
 				throw new KException("IMPLEMENTAMI OSTIA");
 			}
