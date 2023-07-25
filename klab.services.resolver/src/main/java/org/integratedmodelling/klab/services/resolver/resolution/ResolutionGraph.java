@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -281,7 +282,7 @@ public class ResolutionGraph {
 	 * @param resolvable
 	 * @return
 	 */
-	public Resolution newResolution(Knowledge resolvable) {
+	public Resolution newResolution(Knowledge resolvable, Scale scale) {
 		Resolution ret = new Resolution(promoteResolvable(resolvable), LogicalConnector.UNION);
 		roots.add(ret);
 		return ret;

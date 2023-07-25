@@ -173,7 +173,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 	}
 
 	@Override
-	public Observation getResolutionObservation() {
+	public DirectObservation getResolutionObservation() {
 		return context;
 	}
 

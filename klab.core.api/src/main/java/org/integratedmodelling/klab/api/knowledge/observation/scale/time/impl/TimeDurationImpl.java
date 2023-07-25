@@ -22,6 +22,12 @@ public class TimeDurationImpl implements TimeDuration {
     private TimeDurationImpl(Duration period, TimeInstant start) {
         this.period = period;
         this.start = start;
+        this.resolution = Resolution.of(period.toMillis()).getType();
+    }
+
+    public TimeDurationImpl(Duration period, Resolution.Type resolution) {
+        this.period = period;
+        this.resolution = resolution;
     }
 
     private TimeDurationImpl(Duration period, TimeInstant start, Resolution.Type resolution) {
@@ -35,36 +41,6 @@ public class TimeDurationImpl implements TimeDuration {
 
     @Override
     public Resolution.Type getResolution() {
-
-        if (this.resolution == null) {
-
-            // order of magnitude
-            Range order = Range.create(1, 9.999, false);
-
-            if (order.contains(getMilliseconds() / Resolution.Type.MILLENNIUM.getMilliseconds())) {
-                this.resolution = Resolution.Type.MILLENNIUM;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.CENTURY.getMilliseconds())) {
-                this.resolution = Resolution.Type.CENTURY;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.DECADE.getMilliseconds())) {
-                this.resolution = Resolution.Type.DECADE;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.YEAR.getMilliseconds())) {
-                this.resolution = Resolution.Type.YEAR;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.MONTH.getMilliseconds())) {
-                this.resolution = Resolution.Type.MONTH;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.WEEK.getMilliseconds())) {
-                this.resolution = Resolution.Type.WEEK;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.DAY.getMilliseconds())) {
-                this.resolution = Resolution.Type.DAY;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.HOUR.getMilliseconds())) {
-                this.resolution = Resolution.Type.HOUR;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.MINUTE.getMilliseconds())) {
-                this.resolution = Resolution.Type.MINUTE;
-            } else if (order.contains(getMilliseconds() / Resolution.Type.SECOND.getMilliseconds())) {
-                this.resolution = Resolution.Type.SECOND;
-            } else {
-                this.resolution = Resolution.Type.MILLISECOND;
-            }
-        }
         return this.resolution;
     }
 

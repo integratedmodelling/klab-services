@@ -28,7 +28,7 @@ public class ResourcesConfiguration implements Serializable {
         private String doi;
         private int revisionTier;
         private String localPath;
-        
+
         public ResourcePrivileges getPrivileges() {
             return privileges;
         }
@@ -141,11 +141,14 @@ public class ResourcesConfiguration implements Serializable {
     }
 
     /**
-     * The service work directory path within the work directory
+     * The service work directory path within the k.LAB work directory
      */
     private String servicePath = "resources";
-    private String localResourcePath = "resources/local";
-    private String publicResourcePath = "resources/public";
+    /**
+     * all other paths are relative to the service path
+     */
+    private String localResourcePath = "local";
+    private String publicResourcePath = "public";
 
     /**
      * Each workspace name is a subdirectory with a number of projects in them. All are relative to

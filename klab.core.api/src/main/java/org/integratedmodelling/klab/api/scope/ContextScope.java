@@ -268,6 +268,6 @@ public interface ContextScope extends SessionScope {
 	 * 
 	 * @return
 	 */
-	Observation getResolutionObservation();
+	DirectObservation getResolutionObservation();
 
 }

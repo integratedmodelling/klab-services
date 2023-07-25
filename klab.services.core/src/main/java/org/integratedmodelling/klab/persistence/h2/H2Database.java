@@ -341,7 +341,7 @@ public class H2Database {
 			return;
 		}
 
-		System.out.println(sql);
+//		System.out.println(sql);
 
 		Connection connection = null;
 		try {

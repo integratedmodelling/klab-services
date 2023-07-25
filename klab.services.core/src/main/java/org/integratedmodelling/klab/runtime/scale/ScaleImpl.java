@@ -254,8 +254,7 @@ public class ScaleImpl implements Scale {
 
 	@Override
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
+		return extents == null || extents.length == 0;
 	}
 
 //	@Override

@@ -390,13 +390,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public KimNamespace resolveNamespace(String urn, Scope scope) {
 
         KimNamespace ret = localNamespaces.get(urn);
-        if (ret != null) {
+        if (ret != null && !(scope instanceof ServiceScope)) {
             /*
              * check permissions; if not allowed, log and set ret = null
              */
             ProjectConfiguration pconf = this.configuration.getProjectConfiguration().get(ret.getProjectName());
             if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
-                // scope.info("");
+                scope.debug("trying to access unauthorized namespace " + urn);
                 ret = null;
             }
 
@@ -520,6 +520,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                     configuration.setSourceUrl(projectUrl);
                     configuration.setWorkspaceName(workspaceName);
                     configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
+                    /*
+                     * Default privileges are exclusive to the service
+                     */
+                    configuration.setPrivileges(ResourcePrivileges.empty());
+                    // this must happen before loadProject is called.
+                    this.configuration.getProjectConfiguration().put(projectName, configuration);
 
                     Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
                     if (projects == null) {
@@ -529,10 +535,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                     projects.add(projectName);
                     Project project = loadProject(projectName, configuration);
                     configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
-                    this.configuration.getProjectConfiguration().put(projectName, configuration);
                     saveConfiguration();
-
+                    return true;
+                    
                 } catch (Throwable t) {
+                    File ws = new File(workspace + File.separator + projectName);
+                    if (ws.exists()) {
+                        Utils.Files.deleteQuietly(ws);
+                    }
                     ret = false;
                 }
 
@@ -822,6 +832,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public ResourceSet queryModels(Observable observable, ContextScope scope) {
     	ResourceSet results = new ResourceSet();
+    	// TODO use resource set properly, merging results
     	for (ModelReference model : this.kbox.query(observable, scope)) {
     		results.getUrns().add(model.getName());
     	}

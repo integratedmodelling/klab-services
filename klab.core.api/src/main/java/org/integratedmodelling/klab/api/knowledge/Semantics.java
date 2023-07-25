@@ -49,6 +49,7 @@ public interface Semantics extends Knowledge {
 	 * Return the raw semantics for this object, normally a Concept. If this is a
 	 * Concept, return self.
 	 * 
+	 * @deprecated makes no sense
 	 * @return
 	 */
 	Semantics semantics();

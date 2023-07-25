@@ -14,10 +14,12 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.ResolutionImpl;
+import org.integratedmodelling.klab.api.lang.Quantity;
 
 /**
  * Time, as seen by k.LAB when the default contextualizer time() is used.
@@ -241,8 +243,51 @@ public interface Time extends Extent<Time> {
          * @param type
          * @return
          */
-        static Resolution of(int multiplier, Type type) {
+        static Resolution of(double multiplier, Type type) {
             return new ResolutionImpl(type, multiplier);
+        }
+
+        public static Resolution of(Quantity spec) {
+            return new ResolutionImpl(Resolution.Type.parse(spec.getUnit().toString()), spec.getValue().doubleValue());
+        }
+
+        public static Resolution of(TimeInstant start, TimeInstant end) {
+            return of(end.getMilliseconds() - start.getMilliseconds());
+        }
+
+        public static Resolution of(long ms) {
+
+            Type type = Resolution.Type.MILLISECOND;
+            // order of magnitude
+            Range order = Range.create(1, 9.999, false);
+
+            if (order.contains(ms / Resolution.Type.MILLENNIUM.getMilliseconds())) {
+                type = Resolution.Type.MILLENNIUM;
+            } else if (order.contains(ms / Resolution.Type.CENTURY.getMilliseconds())) {
+                type = Resolution.Type.CENTURY;
+            } else if (order.contains(ms / Resolution.Type.DECADE.getMilliseconds())) {
+                type = Resolution.Type.DECADE;
+            } else if (order.contains(ms / Resolution.Type.YEAR.getMilliseconds())) {
+                type = Resolution.Type.YEAR;
+            } else if (order.contains(ms / Resolution.Type.MONTH.getMilliseconds())) {
+                type = Resolution.Type.MONTH;
+            } else if (order.contains(ms / Resolution.Type.WEEK.getMilliseconds())) {
+                type = Resolution.Type.WEEK;
+            } else if (order.contains(ms / Resolution.Type.DAY.getMilliseconds())) {
+                type = Resolution.Type.DAY;
+            } else if (order.contains(ms / Resolution.Type.HOUR.getMilliseconds())) {
+                type = Resolution.Type.HOUR;
+            } else if (order.contains(ms / Resolution.Type.MINUTE.getMilliseconds())) {
+                type = Resolution.Type.MINUTE;
+            } else if (order.contains(ms / Resolution.Type.SECOND.getMilliseconds())) {
+                type = Resolution.Type.SECOND;
+            }
+
+            return new ResolutionImpl(type, (double) ms / (double) type.getMilliseconds());
+        }
+
+        public static Resolution parse(String string) {
+            return Resolution.of(Quantity.parse(string));
         }
 
     }
@@ -286,8 +331,8 @@ public interface Time extends Extent<Time> {
     /**
      * {@inheritDoc}
      *
-     * Overriding to require that the collapsed type is Time. This allows simpler coding
-     * against the API, and is the most logical way to enforce that {@link #size()} == 1.
+     * Overriding to require that the collapsed type is Time. This allows simpler coding against the
+     * API, and is the most logical way to enforce that {@link #size()} == 1.
      */
     @Override
     Time collapsed();
@@ -429,6 +474,5 @@ public interface Time extends Extent<Time> {
      * @return
      */
     boolean hasChangeDuring(Time time);
-    
 
 }
