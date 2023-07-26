@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
@@ -12,7 +13,7 @@ public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstan
     private String urn;
     private String name;
     private KimObservable observable;
-    private List<KimObservable> states;
+    private List<KimObservable> states = new ArrayList<>();
     private String docstring;
 
     @Override

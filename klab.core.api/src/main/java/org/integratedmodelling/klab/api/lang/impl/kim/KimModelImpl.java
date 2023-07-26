@@ -8,10 +8,10 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
-public class KimModelStatementImpl extends KimActiveStatementImpl implements KimModelStatement {
+public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 
 	private static final long serialVersionUID = -6068429551009652469L;
 	private KimConcept reinterpretingRole;

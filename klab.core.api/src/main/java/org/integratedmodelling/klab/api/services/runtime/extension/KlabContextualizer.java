@@ -11,14 +11,17 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
  * This annotation can be used along with a Contextualizer class to declare the
- * contextualizer without needing to provide a k.DL prototype for it.
+ * contextualizer without needing to provide a k.DL prototype for it. It is also
+ * allowed to specify the annotation over a method for those calls that can be
+ * used functionally, such as the runtime generators for space and time, or any
+ * function to be called as arguments in a k.IM or k.Actors call.
  * 
  * @author Ferd
  *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ ElementType.TYPE, ElementType.METHOD })
 public @interface KlabContextualizer {
 
 	/**
@@ -61,6 +64,15 @@ public @interface KlabContextualizer {
 	String version();
 
 	String description();
+
+	/**
+	 * If this is true, one instance of the associated contextualizer class or
+	 * method is created and reused. Otherwise a new one is obtained at each
+	 * reference in the dataflow.
+	 * 
+	 * @return
+	 */
+	boolean reentrant() default false;
 
 	String dataflowLabel() default "";
 

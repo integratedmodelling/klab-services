@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -767,6 +768,30 @@ public interface Reasoner extends KlabService {
 	 * @return
 	 */
 	Concept replaceComponent(Concept original, Map<Concept, Concept> replacements);
+
+	/**
+	 * Send a build strategy constructed through a builder and return the result as
+	 * a concept.
+	 * 
+	 * TODO this must return a response with inspectable fields to fulfill all the
+	 * Builder contract.
+	 * 
+	 * @param builder
+	 * @return
+	 */
+	Concept buildConcept(ObservableBuildStrategy builder);
+
+	/**
+	 * Send a build strategy constructed through a builder and return the result as
+	 * an observable.
+	 * 
+	 * TODO this must return a response with inspectable fields to fulfill all the
+	 * Builder contract.
+	 * 
+	 * @param builder
+	 * @return
+	 */
+	Observable buildObservable(ObservableBuildStrategy builder);
 
 	/**
 	 * Administration of a semantic server includes loading specific knowledge and

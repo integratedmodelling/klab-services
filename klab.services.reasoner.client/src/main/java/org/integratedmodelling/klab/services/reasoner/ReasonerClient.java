@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
@@ -559,6 +560,18 @@ public class ReasonerClient implements Reasoner {
 
 	@Override
 	public Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Concept buildConcept(ObservableBuildStrategy builder) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Observable buildObservable(ObservableBuildStrategy builder) {
 		// TODO Auto-generated method stub
 		return null;
 	}

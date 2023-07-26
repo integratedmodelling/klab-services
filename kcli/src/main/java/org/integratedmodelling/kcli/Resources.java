@@ -1,21 +1,31 @@
 package org.integratedmodelling.kcli;
 
+import java.io.File;
 import java.io.PrintStream;
 import java.net.URL;
 
 import org.integratedmodelling.kcli.engine.Engine;
+import org.integratedmodelling.kim.model.KimModel;
 import org.integratedmodelling.klab.Version;
-import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.KimInstance;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
+import org.integratedmodelling.klab.utilities.Utils;
 
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-		"Commands to find, access and manipulate resources.", "" }, subcommands = { Resources.List.class,
+		"Commands to find, list, access and manipulate resources.", "" }, subcommands = { Resources.List.class,
 				Resources.Services.class, Resources.Workspace.class, Resources.Project.class,
-				Resources.Components.class })
+				Resources.Components.class, Resources.Resolve.class })
 public class Resources {
 
 	@Command(name = "services", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -37,29 +47,71 @@ public class Resources {
 				"Resource service to connect to" }, required = false)
 		private String service;
 
+		@Option(names = { "-c", "--source-code" }, defaultValue = "false", description = {
+				"Print the original source code, if applicable, instead of the JSON specification" }, required = false)
+		private boolean source;
+
+		@Option(names = { "-o", "--output" }, description = {
+				"File to output the results to" }, required = false, defaultValue = Parameters.NULL_VALUE)
+		private File output;
+
 		@Parameters
 		String urn;
 
+		// TODO
+		PrintStream out = System.out;
+
 		@Override
 		public void run() {
+			var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+			if (service != null) {
+				ResourceSet asset = service.resolve(urn, Engine.INSTANCE.getCurrentUser());
+				out.println("Resource set: (TODO)");
+				Application.printResourceSet(asset, out, 3);
+				out.println("Results:");
+				for (Resource result : asset.getResults()) {
 
-			/**
-			 * TODO if service is not specified, it should lookup the URN in all available
-			 * services
-			 */
+					String text = result.getResourceUrn();
 
-			switch (Urn.classify(urn)) {
-			case KIM_OBJECT:
+					out.println(Ansi.AUTO
+							.string("   " + Utils.Strings.capitalize(result.getKnowledgeClass().name().toLowerCase())
+									+ " @|green " + result.getResourceUrn() + "|@ listing:"));
 
-				break;
-			case OBSERVABLE:
-				break;
-			case REMOTE_URL:
-				break;
-			case RESOURCE:
-				break;
-			case UNKNOWN:
-				break;
+					switch (result.getKnowledgeClass()) {
+					case APPLICATION:
+					case BEHAVIOR:
+					case SCRIPT:
+					case TESTCASE:
+						text = listApplication(result.getResourceUrn(), source, service);
+						break;
+					case INSTANCE:
+					case MODEL:
+					case RESOURCE:
+						text = listObject(result.getResourceUrn(), source, service, result.getKnowledgeClass());
+						break;
+					case NAMESPACE:
+						text = listNamespace(result.getResourceUrn(), source, service);
+						break;
+					case OBSERVABLE:
+						break;
+					case PROJECT:
+						break;
+					case COMPONENT:
+						break;
+					case CONCEPT:
+						break;
+					default:
+						break;
+
+					}
+
+					if (output == null) {
+						out.println(Utils.Strings.indent(text, 6));
+					} else {
+						Utils.Files.writeStringToFile(text, output);
+						out.println(Ansi.AUTO.string("      Result written to @|yellow " + output + "|@"));
+					}
+				}
 			}
 		}
 
@@ -145,12 +197,12 @@ public class Resources {
 
 		private void listNamespaces() {
 			// TODO Auto-generated method stub
-			
+
 		}
 
 		private void listComponents() {
 			// TODO Auto-generated method stub
-			
+
 		}
 
 		private void listBehaviors() {
@@ -261,7 +313,6 @@ public class Resources {
 					}
 				}
 			}
-
 		}
 
 		@Command(name = "add", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -292,7 +343,6 @@ public class Resources {
 					System.out.println("service " + this.service + " does not have admin permissions in this scope");
 				}
 			}
-
 		}
 
 		@Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -312,7 +362,6 @@ public class Resources {
 					((ResourcesService.Admin) service).removeProject(project);
 				}
 			}
-
 		}
 	}
 
@@ -371,6 +420,36 @@ public class Resources {
 			}
 
 		}
+	}
+
+	public static String listApplication(String resourceUrn, boolean source, ResourcesService service) {
+		KActorsBehavior behavior = service.resolveBehavior(resourceUrn, Engine.INSTANCE.getCurrentUser());
+		return source ? behavior.getSourceCode() : Utils.Json.printAsJson(behavior);
+	}
+
+	public static String listNamespace(String resourceUrn, boolean source, ResourcesService service) {
+		KimNamespace namespace = service.resolveNamespace(resourceUrn, Engine.INSTANCE.getCurrentUser());
+		return source ? namespace.getSourceCode() : Utils.Json.printAsJson(namespace);
+	}
+
+	public static String listObject(String resourceUrn, boolean source, ResourcesService service,
+			KnowledgeClass knowledgeClass) {
+
+		String ns = Utils.Paths.getLeading(resourceUrn, '.');
+		String on = Utils.Paths.getLast(resourceUrn, '.');
+
+		KimNamespace namespace = service.resolveNamespace(ns, Engine.INSTANCE.getCurrentUser());
+		for (KimStatement statement : namespace.getStatements()) {
+			if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance
+					&& on.equals(((KimInstance) statement).getName())) {
+				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
+			} else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
+					&& resourceUrn.equals(((KimModel) statement).getName())) {
+				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
+			}
+		}
+		
+		return null;
 	}
 
 }

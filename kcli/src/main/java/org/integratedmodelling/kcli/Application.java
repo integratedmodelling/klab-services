@@ -1,6 +1,7 @@
 package org.integratedmodelling.kcli;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,6 +18,7 @@ import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
@@ -205,106 +207,23 @@ public class Application {
 
 	}
 
-	// /**
-	// * A command with some options to demonstrate completion.
-	// */
-	// @Command(name = "cmd", mixinStandardHelpOptions = true, version = "1.0",
-	// description = {
-	// "Command with some options to demonstrate TAB-completion.",
-	// " (Note that enum values also get completed.)" }, subcommands = {
-	// Nested.class,
-	// CommandLine.HelpCommand.class })
-	// static class MyCommand implements Runnable {
-	// @Option(names = { "-v", "--verbose" }, description = { "Specify multiple -v
-	// options to
-	// increase verbosity.",
-	// "For example, `-v -v -v` or `-vvv`" })
-	// private boolean[] verbosity = {};
-	//
-	// @ArgGroup(exclusive = false)
-	// private MyDuration myDuration = new MyDuration();
-	//
-	// static class MyDuration {
-	// @Option(names = { "-d", "--duration" }, description = "The duration
-	// quantity.", required =
-	// true)
-	// private int amount;
-	//
-	// @Option(names = { "-u", "--timeUnit" }, description = "The duration time
-	// unit.", required =
-	// true)
-	// private TimeUnit unit;
-	// }
-	//
-	// @ParentCommand
-	// CliCommands parent;
-	//
-	// public void run() {
-	// if (verbosity.length > 0) {
-	// parent.out.printf("Hi there. You asked for %d %s.%n", myDuration.amount,
-	// myDuration.unit);
-	// } else {
-	// parent.out.println("hi!");
-	// }
-	// }
-	// }
-
-	// @Command(name = "nested", mixinStandardHelpOptions = true, subcommands = {
-	// CommandLine.HelpCommand.class }, description = "Hosts more sub-subcommands")
-	// static class Nested implements Runnable {
-	// public void run() {
-	// System.out.println("I'm a nested subcommand. I don't do much, but I have
-	// sub-subcommands!");
-	// }
-	//
-	// @Command(mixinStandardHelpOptions = true, subcommands = {
-	// CommandLine.HelpCommand.class }, description = "Multiplies two numbers.")
-	// public void multiply(@Option(names = { "-l", "--left" }, required = true) int
-	// left,
-	// @Option(names = { "-r", "--right" }, required = true) int right) {
-	// System.out.printf("%d * %d = %d%n", left, right, left * right);
-	// }
-	//
-	// @Command(mixinStandardHelpOptions = true, subcommands = {
-	// CommandLine.HelpCommand.class }, description = "Adds two numbers.")
-	// public void add(@Option(names = { "-l", "--left" }, required = true) int
-	// left,
-	// @Option(names = { "-r", "--right" }, required = true) int right) {
-	// System.out.printf("%d + %d = %d%n", left, right, left + right);
-	// }
-	//
-	// @Command(mixinStandardHelpOptions = true, subcommands = {
-	// CommandLine.HelpCommand.class }, description = "Subtracts two numbers.")
-	// public void subtract(@Option(names = { "-l", "--left" }, required = true) int
-	// left,
-	// @Option(names = { "-r", "--right" }, required = true) int right) {
-	// System.out.printf("%d - %d = %d%n", left, right, left - right);
-	// }
-	// }
-
 	public static void main(String[] args) {
 		AnsiConsole.systemInstall();
 		try {
 			Supplier<Path> workDir = () -> Paths
 					.get(System.getProperty("user.dir") + File.pathSeparator + ".klab" + File.pathSeparator + "kcli");
-			// set up JLine built-in commands
+			
+			// jline built-in commands
 			workDir.get().toFile().mkdirs();
 			ConfigurationPath configPath = new ConfigurationPath(workDir.get(), workDir.get());
 			Builtins builtins = new Builtins(workDir, configPath, null);
 			builtins.rename(Builtins.Command.TTOP, "top");
 			builtins.alias("zle", "widget");
 			builtins.alias("bindkey", "keymap");
-			// set up picocli commands
+
+			// picocli
 			CliCommands commands = new CliCommands();
 			PicocliCommandsFactory factory = new PicocliCommandsFactory();
-			// Or, if you have your own factory, you can chain them like this:
-			// MyCustomFactory customFactory = createCustomFactory(); // your application
-			// custom
-			// factory
-			// PicocliCommandsFactory factory = new PicocliCommandsFactory(customFactory);
-			// // chain
-			// the factories
-
 			CommandLine cmd = new CommandLine(commands, factory);
 			PicocliCommands picocliCommands = new PicocliCommands(cmd);
 			File historyFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "kcli.history");
@@ -342,11 +261,13 @@ public class Application {
 				String line;
 				while (true) {
 					try {
+						
 						systemRegistry.cleanUp();
 						line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
 						completer.resetSemanticSearch();
 						systemRegistry.execute(line);
-						history.write(historyFile.toPath(), true);
+						history.write(historyFile.toPath(), false);
+						
 					} catch (UserInterruptException e) {
 						// Ignore
 					} catch (EndOfFileException e) {
@@ -363,14 +284,13 @@ public class Application {
 		}
 	}
 
-	public static void printResourceSet(ResourceSet resourceSet, PrintWriter out) {
+	public static void printResourceSet(ResourceSet resourceSet, PrintStream out, int indent) {
 
 		if (resourceSet == null) {
-			out.println("Null resource set");
+			out.println(Utils.Strings.spaces(indent) + "Null resource set");
 		} else if (resourceSet.isEmpty()) {
-			out.println("Empty resource set");
+			out.println(Utils.Strings.spaces(indent) +"Empty resource set");
 		} else {
-
 		}
 	}
 

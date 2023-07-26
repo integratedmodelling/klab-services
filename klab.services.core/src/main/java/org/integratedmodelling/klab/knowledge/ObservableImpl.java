@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -33,56 +34,56 @@ import groovy.lang.GroovyObjectSupport;
 
 public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
-    private static final long serialVersionUID = 6188649888474774359L;
+	private static final long serialVersionUID = 6188649888474774359L;
 
-    private Concept semantics;
-    private Version version;
-    private DirectObservation observer;
-    private DescriptionType descriptionType;
-    private Artifact.Type artifactType;
-    private boolean isAbstract;
-    private String urn;
-    private Unit unit;
-    private Currency currency;
-    private NumericRange range;
+	private Concept semantics;
+	private Version version;
+	private DirectObservation observer;
+	private DescriptionType descriptionType;
+	private Artifact.Type artifactType;
+	private boolean isAbstract;
+	private String urn;
+	private Unit unit;
+	private Currency currency;
+	private NumericRange range;
 //    private String url;
 //    private boolean specialized;
 //    private boolean dereified;
-    private Map<Concept, Concept> resolvedPredicates;
+	private Map<Concept, Concept> resolvedPredicates;
 //    private Collection<Concept> abstractPredicates;
-    private Collection<Concept> contextualRoles;
-    private Resolution resolution;
+	private Collection<Concept> contextualRoles;
+	private Resolution resolution;
 //    private boolean global;
-    private boolean optional;
-    private boolean generic;
-    private Collection<ResolutionException> resolutionExceptions;
-    private Literal defaultValue;
-    private Literal value;
-    private String statedName;
-    private List<Annotation> annotations = new ArrayList<>();
-    private Collection<Pair<ValueOperator, Object>> valueOperators;
-    private String referenceName;
-    private String name;
-    private String namespace;
+	private boolean optional;
+	private boolean generic;
+	private Collection<ResolutionException> resolutionExceptions;
+	private Literal defaultValue;
+	private Literal value;
+	private String statedName;
+	private List<Annotation> annotations = new ArrayList<>();
+	private Collection<Pair<ValueOperator, Object>> valueOperators;
+	private String referenceName;
+	private String name;
+	private String namespace;
 //    private boolean mustContextualizeAtResolution;
 //    private Concept targetPredicate;
-    private boolean distributedInherency;
+	private boolean distributedInherency;
 //    private Concept temporalInherent;
-    private String dereifiedAttribute;
+	private String dereifiedAttribute;
 //    private Observable incarnatedAbstractObservable;
 //    private Observable deferredTarget;
-    private String modelReference;
-    private Metadata metadata = Metadata.create();
+	private String modelReference;
+	private Metadata metadata = Metadata.create();
 
-    @Override
-    public String getUrn() {
-        return urn;
-    }
+	@Override
+	public String getUrn() {
+		return urn;
+	}
 
-    @Override
-    public Semantics semantics() {
-        return semantics;
-    }
+	@Override
+	public Semantics semantics() {
+		return semantics;
+	}
 
 //    @Override
 //    public Semantics domain() {
@@ -95,94 +96,94 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        return false;
 //    }
 
-    @Override
-    public boolean is(SemanticType type) {
-        return semantics.is(type);
-    }
+	@Override
+	public boolean is(SemanticType type) {
+		return semantics.is(type);
+	}
 
-    @Override
-    public boolean isAbstract() {
-        return isAbstract;
-    }
+	@Override
+	public boolean isAbstract() {
+		return isAbstract;
+	}
 
-    @Override
-    public String getNamespace() {
-        return namespace;
-    }
+	@Override
+	public String getNamespace() {
+		return namespace;
+	}
 
-    @Override
-    public String getName() {
-        return name;
-    }
+	@Override
+	public String getName() {
+		return name;
+	}
 
-    @Override
-    public String getReferenceName() {
-        return referenceName;
-    }
+	@Override
+	public String getReferenceName() {
+		return referenceName;
+	}
 
-    @Override
-    public Version getVersion() {
-        return version;
-    }
+	@Override
+	public Version getVersion() {
+		return version;
+	}
 
-    public void setVersion(Version version) {
-        this.version = version;
-    }
+	public void setVersion(Version version) {
+		this.version = version;
+	}
 
-    @Override
-    public Concept getSemantics() {
-        return this.semantics;
-    }
+	@Override
+	public Concept getSemantics() {
+		return this.semantics;
+	}
 
-    @Override
-    public Unit getUnit() {
-        return unit;
-    }
+	@Override
+	public Unit getUnit() {
+		return unit;
+	}
 
-    @Override
-    public Currency getCurrency() {
-        return currency;
-    }
+	@Override
+	public Currency getCurrency() {
+		return currency;
+	}
 
-    @Override
-    public Collection<Pair<ValueOperator, Object>> getValueOperators() {
-        return valueOperators;
-    }
+	@Override
+	public Collection<Pair<ValueOperator, Object>> getValueOperators() {
+		return valueOperators;
+	}
 
-    @Override
-    public List<Annotation> getAnnotations() {
-        return annotations;
-    }
+	@Override
+	public List<Annotation> getAnnotations() {
+		return annotations;
+	}
 
 //    @Override
 //    public Collection<Concept> abstractPredicates() {
 //        return abstractPredicates;
 //    }
 
-    @Override
-    public DescriptionType getDescriptionType() {
-        return this.descriptionType;
-    }
+	@Override
+	public DescriptionType getDescriptionType() {
+		return this.descriptionType;
+	}
 
-    @Override
-    public Type getArtifactType() {
-        return this.artifactType;
-    }
+	@Override
+	public Type getArtifactType() {
+		return this.artifactType;
+	}
 
-    @Override
-    public String getStatedName() {
-        return statedName;
-    }
+	@Override
+	public String getStatedName() {
+		return statedName;
+	}
 
-    @Override
-    public ValueMediator mediator() {
-        return this.unit == null ? (this.range == null ? this.currency : this.range) : this.unit;
-    }
+	@Override
+	public ValueMediator mediator() {
+		return this.unit == null ? (this.range == null ? this.currency : this.range) : this.unit;
+	}
 
-    @Override
-    public Literal getValue() {
-        return value;
-    }
+	@Override
+	public Literal getValue() {
+		return value;
+	}
 
 //    @Override
 //    public Concept context() {
@@ -202,45 +203,45 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        return null;
 //    }
 
-    @Override
-    public Literal getDefaultValue() {
-        return defaultValue;
-    }
+	@Override
+	public Literal getDefaultValue() {
+		return defaultValue;
+	}
 
-    @Override
-    public Collection<ResolutionException> getResolutionExceptions() {
-        return resolutionExceptions;
-    }
+	@Override
+	public Collection<ResolutionException> getResolutionExceptions() {
+		return resolutionExceptions;
+	}
 
-    @Override
-    public boolean isGeneric() {
-        return generic;
-    }
+	@Override
+	public boolean isGeneric() {
+		return generic;
+	}
 
-    @Override
-    public boolean isOptional() {
-        return optional;
-    }
+	@Override
+	public boolean isOptional() {
+		return optional;
+	}
 
-    @Override
-    public DirectObservation getObserver() {
-        return observer;
-    }
+	@Override
+	public DirectObservation getObserver() {
+		return observer;
+	}
 //
 //    @Override
 //    public boolean isGlobal() {
 //        return global;
 //    }
 
-    @Override
-    public Resolution getResolution() {
-        return resolution;
-    }
+	@Override
+	public Resolution getResolution() {
+		return resolution;
+	}
 
-    @Override
-    public Collection<Concept> getContextualRoles() {
-        return contextualRoles;
-    }
+	@Override
+	public Collection<Concept> getContextualRoles() {
+		return contextualRoles;
+	}
 //
 //    @Override
 //    public boolean resolves(Observable other, Concept context) {
@@ -253,10 +254,10 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        return abstractPredicates;
 //    }
 
-    @Override
-    public Map<Concept, Concept> getResolvedPredicates() {
-        return resolvedPredicates;
-    }
+	@Override
+	public Map<Concept, Concept> getResolvedPredicates() {
+		return resolvedPredicates;
+	}
 //
 //    @Override
 //    public boolean isDereified() {
@@ -268,84 +269,84 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        return specialized;
 //    }
 
-    public NumericRange getRange() {
-        return range;
-    }
+	public NumericRange getRange() {
+		return range;
+	}
 
-    public void setRange(NumericRange range) {
-        this.range = range;
-    }
+	public void setRange(NumericRange range) {
+		this.range = range;
+	}
 
-    public void setSemantics(ConceptImpl semantics) {
-        this.semantics = semantics;
-    }
+	public void setSemantics(ConceptImpl semantics) {
+		this.semantics = semantics;
+	}
 
-    public void setObserver(DirectObservation observer) {
-        this.observer = observer;
-    }
+	public void setObserver(DirectObservation observer) {
+		this.observer = observer;
+	}
 
-    public void setDescriptionType(DescriptionType descriptionType) {
-        this.descriptionType = descriptionType;
-    }
+	public void setDescriptionType(DescriptionType descriptionType) {
+		this.descriptionType = descriptionType;
+	}
 
-    public void setArtifactType(Artifact.Type artifactType) {
-        this.artifactType = artifactType;
-    }
+	public void setArtifactType(Artifact.Type artifactType) {
+		this.artifactType = artifactType;
+	}
 
-    public void setAbstract(boolean isAbstract) {
-        this.isAbstract = isAbstract;
-    }
+	public void setAbstract(boolean isAbstract) {
+		this.isAbstract = isAbstract;
+	}
 
-    public void setUrn(String urn) {
-        this.urn = urn;
-    }
+	public void setUrn(String urn) {
+		this.urn = urn;
+	}
 
-    public void setUnit(Unit unit) {
-        this.unit = unit;
-    }
+	public void setUnit(Unit unit) {
+		this.unit = unit;
+	}
 
-    public void setCurrency(Currency currency) {
-        this.currency = currency;
-    }
+	public void setCurrency(Currency currency) {
+		this.currency = currency;
+	}
 
-    @Override
-    public String displayName() {
+	@Override
+	public String displayName() {
 
-        String ret = getSemantics().displayName();
+		String ret = getSemantics().displayName();
 
-        for (Pair<ValueOperator, Object> operator : getValueOperators()) {
+		for (Pair<ValueOperator, Object> operator : getValueOperators()) {
 
-            ret += StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_'));
+			ret += StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_'));
 
-            if (operator.getSecond() instanceof Concept) {
-                ret += ((Concept) operator.getSecond()).displayName();
-            } else if (operator.getSecond() instanceof Observable) {
-                ret += ((Observable) operator.getSecond()).displayName();
-            } else {
-                ret += "_" + operator.getSecond().toString().replace(' ', '_');
-            }
-        }
-        return ret;
-    }
+			if (operator.getSecond() instanceof Concept) {
+				ret += ((Concept) operator.getSecond()).displayName();
+			} else if (operator.getSecond() instanceof Observable) {
+				ret += ((Observable) operator.getSecond()).displayName();
+			} else {
+				ret += "_" + operator.getSecond().toString().replace(' ', '_');
+			}
+		}
+		return ret;
+	}
 
-    @Override
-    public String displayLabel() {
-        String ret = displayName();
-        if (!ret.contains(" ")) {
-            ret = StringUtils.capitalize(CamelCase.toLowerCase(ret, ' '));
-        }
-        return ret;
-    }
+	@Override
+	public String displayLabel() {
+		String ret = displayName();
+		if (!ret.contains(" ")) {
+			ret = StringUtils.capitalize(CamelCase.toLowerCase(ret, ' '));
+		}
+		return ret;
+	}
 
-    @Override
-    public String codeName() {
-        return getSemantics().codeName();
-    }
+	@Override
+	public String codeName() {
+		return getSemantics().codeName();
+	}
 
-    @Override
-    public Builder builder(Scope scope) {
-        return Klab.INSTANCE.getConfiguration().getObservableBuilder(this, scope);
-    }
+	@Override
+	public Builder builder(Scope scope) {
+		return new ObservableBuildStrategy(this, scope);
+	}
 
 //    public void setSpecialized(boolean specialized) {
 //        this.specialized = specialized;
@@ -355,69 +356,69 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        this.dereified = dereified;
 //    }
 
-    public void setResolvedPredicates(Map<Concept, Concept> resolvedPredicates) {
-        this.resolvedPredicates = resolvedPredicates;
-    }
+	public void setResolvedPredicates(Map<Concept, Concept> resolvedPredicates) {
+		this.resolvedPredicates = resolvedPredicates;
+	}
 
 //    public void setAbstractPredicates(Collection<Concept> abstractPredicates) {
 //        this.abstractPredicates = abstractPredicates;
 //    }
 //
-    public void setContextualRoles(Collection<Concept> contextualRoles) {
-        this.contextualRoles = contextualRoles;
-    }
+	public void setContextualRoles(Collection<Concept> contextualRoles) {
+		this.contextualRoles = contextualRoles;
+	}
 
-    public void setResolution(Resolution resolution) {
-        this.resolution = resolution;
-    }
+	public void setResolution(Resolution resolution) {
+		this.resolution = resolution;
+	}
 
 //    public void setGlobal(boolean global) {
 //        this.global = global;
 //    }
 
-    public void setOptional(boolean optional) {
-        this.optional = optional;
-    }
+	public void setOptional(boolean optional) {
+		this.optional = optional;
+	}
 
-    public void setGeneric(boolean generic) {
-        this.generic = generic;
-    }
+	public void setGeneric(boolean generic) {
+		this.generic = generic;
+	}
 
-    public void setResolutionExceptions(Collection<ResolutionException> resolutionExceptions) {
-        this.resolutionExceptions = resolutionExceptions;
-    }
+	public void setResolutionExceptions(Collection<ResolutionException> resolutionExceptions) {
+		this.resolutionExceptions = resolutionExceptions;
+	}
 
-    public void setDefaultValue(Literal defaultValue) {
-        this.defaultValue = defaultValue;
-    }
+	public void setDefaultValue(Literal defaultValue) {
+		this.defaultValue = defaultValue;
+	}
 
-    public void setValue(Literal value) {
-        this.value = value;
-    }
+	public void setValue(Literal value) {
+		this.value = value;
+	}
 
-    public void setStatedName(String statedName) {
-        this.statedName = statedName;
-    }
+	public void setStatedName(String statedName) {
+		this.statedName = statedName;
+	}
 
-    public void setAnnotations(List<Annotation> annotations) {
-        this.annotations = annotations;
-    }
+	public void setAnnotations(List<Annotation> annotations) {
+		this.annotations = annotations;
+	}
 
-    public void setValueOperators(Collection<Pair<ValueOperator, Object>> valueOperators) {
-        this.valueOperators = valueOperators;
-    }
+	public void setValueOperators(Collection<Pair<ValueOperator, Object>> valueOperators) {
+		this.valueOperators = valueOperators;
+	}
 
-    public void setReferenceName(String referenceName) {
-        this.referenceName = referenceName;
-    }
+	public void setReferenceName(String referenceName) {
+		this.referenceName = referenceName;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
+	}
 
 //    @Override
 //    public boolean isMustContextualizeAtResolution() {
@@ -437,14 +438,14 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        this.targetPredicate = targetPredicate;
 //    }
 
-    @Override
-    public boolean isDistributedInherency() {
-        return distributedInherency;
-    }
+	@Override
+	public boolean isDistributedInherency() {
+		return distributedInherency;
+	}
 
-    public void setDistributedInherency(boolean distributedInherency) {
-        this.distributedInherency = distributedInherency;
-    }
+	public void setDistributedInherency(boolean distributedInherency) {
+		this.distributedInherency = distributedInherency;
+	}
 
 //    @Override
 //    public Concept getTemporalInherent() {
@@ -455,14 +456,14 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        this.temporalInherent = temporalInherent;
 //    }
 
-    @Override
-    public String getDereifiedAttribute() {
-        return dereifiedAttribute;
-    }
+	@Override
+	public String getDereifiedAttribute() {
+		return dereifiedAttribute;
+	}
 
-    public void setDereifiedAttribute(String dereifiedAttribute) {
-        this.dereifiedAttribute = dereifiedAttribute;
-    }
+	public void setDereifiedAttribute(String dereifiedAttribute) {
+		this.dereifiedAttribute = dereifiedAttribute;
+	}
 
 //    @Override
 //    public Observable getIncarnatedAbstractObservable() {
@@ -482,9 +483,9 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        this.deferredTarget = deferredTarget;
 //    }
 
-    public void setSemantics(Concept semantics) {
-        this.semantics = semantics;
-    }
+	public void setSemantics(Concept semantics) {
+		this.semantics = semantics;
+	}
 
 //    @Override
 //    public String getUrl() {
@@ -495,64 +496,64 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //        this.url = url;
 //    }
 //
-    public static ObservableImpl promote(Concept concept) {
+	public static ObservableImpl promote(Concept concept) {
 
-        ObservableImpl ret = new ObservableImpl();
+		ObservableImpl ret = new ObservableImpl();
 
-        ret.semantics = concept;
-        ret.urn = concept.getUrn();
-        ret.isAbstract = concept.isAbstract();
-        // ret.generic = concept.is(SemanticType.ROLE);
-        ret.referenceName = concept.getReferenceName();
-        ret.name = concept.codeName();
-        if (ret.referenceName == null) {
-            // only happens with non-standard observables from system ontologies
-            ret.referenceName = concept.getNamespace() + "_" + concept.getName();
-        }
-        ret.artifactType = Artifact.Type.forSemantics(concept.getType());
-        ret.descriptionType = DescriptionType.forSemantics(concept.getType(), false);
+		ret.semantics = concept;
+		ret.urn = concept.getUrn();
+		ret.isAbstract = concept.isAbstract();
+		// ret.generic = concept.is(SemanticType.ROLE);
+		ret.referenceName = concept.getReferenceName();
+		ret.name = concept.codeName();
+		if (ret.referenceName == null) {
+			// only happens with non-standard observables from system ontologies
+			ret.referenceName = concept.getNamespace() + "_" + concept.getName();
+		}
+		ret.artifactType = Artifact.Type.forSemantics(concept.getType());
+		ret.descriptionType = DescriptionType.forSemantics(concept.getType(), false);
 
-        return ret;
-    }
+		return ret;
+	}
 
-    @Override
-    public Concept asConcept() {
-        return semantics;
-    }
+	@Override
+	public Concept asConcept() {
+		return semantics;
+	}
 
-    @Override
-    public Metadata getMetadata() {
-        return metadata;
-    }
+	@Override
+	public Metadata getMetadata() {
+		return metadata;
+	}
 
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
+	public void setMetadata(Metadata metadata) {
+		this.metadata = metadata;
+	}
 
-    @Override
-    public String getModelReference() {
-        return modelReference;
-    }
+	@Override
+	public String getModelReference() {
+		return modelReference;
+	}
 
-    public void setModelReference(String modelReference) {
-        this.modelReference = modelReference;
-    }
+	public void setModelReference(String modelReference) {
+		this.modelReference = modelReference;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(descriptionType, urn);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(descriptionType, urn);
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ObservableImpl other = (ObservableImpl) obj;
-        return descriptionType == other.descriptionType && Objects.equals(urn, other.urn);
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ObservableImpl other = (ObservableImpl) obj;
+		return descriptionType == other.descriptionType && Objects.equals(urn, other.urn);
+	}
 
 }

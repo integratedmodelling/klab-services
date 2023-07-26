@@ -50,7 +50,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
@@ -416,7 +416,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             this.localNamespaces.put(namespace.getUrn(), namespace);
             this.kbox.store(namespace, this.scope);
             for (KimStatement statement : namespace.getStatements()) {
-                if (statement instanceof KimModelStatement && !Utils.Notifications.hasErrors(statement.getNotifications())) {
+                if (statement instanceof KimModel && !Utils.Notifications.hasErrors(statement.getNotifications())) {
                     this.kbox.store(statement, scope);
                 }
             }
@@ -1009,7 +1009,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
              */
             if (namespace != null) {
                 for (KimStatement statement : namespace.getStatements()) {
-                    if (statement instanceof KimModelStatement && urn.equals(((KimModelStatement) statement).getName())) {
+                    if (statement instanceof KimModel && urn.equals(((KimModel) statement).getName())) {
                         ret.getResults()
                                 .add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(), KnowledgeClass.MODEL));
                     } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {

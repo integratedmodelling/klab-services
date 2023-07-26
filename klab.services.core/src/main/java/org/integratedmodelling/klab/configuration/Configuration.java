@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -43,7 +44,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.extension.KlabContextualizer;
+import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
@@ -61,6 +66,8 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
+import javassist.Modifier;
+
 /**
  * TODO use a declarative approach for all properties, so that there is one
  * place for all default settings and it's possible to override any of them
@@ -75,6 +82,18 @@ public enum Configuration {
 
 	PluginManager componentManager = new DefaultPluginManager();
 	UpdateManager componentUpdateManager;
+	Map<String, Prototype> libraryFunctions = new HashMap<>();
+
+	/**
+	 * Standard library loader. Must be registered explicitly when calling
+	 * {@link #scanPackage(String, Map)}. Not registering this along with the
+	 * {@link Library} annotation can lead to interesting behaviors.
+	 */
+	public BiConsumer<Annotation, Class<?>> LIBRARY_LOADER = (annotation, cls) -> {
+		for (Prototype prototype : loadLibrary((Library) annotation, cls)) {
+			libraryFunctions.put(prototype.getName(), prototype);
+		}
+	};
 
 	static {
 
@@ -245,7 +264,6 @@ public enum Configuration {
 	private File dataPath;
 	private Level loggingLevel = Level.SEVERE;
 	private Level notificationLevel = Level.INFO;
-	private Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers = new HashMap<>();
 
 	/** The klab relative work path. */
 	public String KLAB_RELATIVE_WORK_PATH = ".klab";
@@ -286,17 +304,39 @@ public enum Configuration {
 			throw new KlabIOException("cannot read configuration properties");
 		}
 
-		/*
-		 * TODO register handlers for the annotations providing core functionalities:
-		 * adapters, contextualizers, libraries, prototypes
-		 */
+	}
 
-		/*
-		 * TODO configure plugin management. Should have a repositories.json managed
-		 * through the API; each repository's content and plugins.json should be
-		 * verified, managed and installed via admin API.
-		 */
+	public List<Prototype> loadLibrary(Library annotation, Class<?> cls) {
 
+		List<Prototype> ret = new ArrayList<>();
+		String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" : (annotation.name() + ".");
+
+		for (Class<?> clss : cls.getClasses()) {
+			if (cls.isAnnotationPresent(KlabContextualizer.class)) {
+				ret.add(createContextualizerPrototype(namespacePrefix, cls.getAnnotation(KlabContextualizer.class),
+						clss, null));
+			} else if (cls.isAnnotationPresent(Verb.class)) {
+				ret.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), clss));
+			}
+		}
+
+		// annotated methods
+		for (Method method : cls.getDeclaredMethods()) {
+			if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(KlabContextualizer.class)) {
+				ret.add(createContextualizerPrototype(namespacePrefix, cls.getAnnotation(KlabContextualizer.class), cls,
+						method));
+			}
+		}
+		return ret;
+	}
+
+	public Prototype createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss) {
+		return null;
+	}
+
+	public Prototype createContextualizerPrototype(String namespacePrefix, KlabContextualizer annotation, Class<?> clss,
+			Method method) {
+		return null;
 	}
 
 	/**
@@ -307,14 +347,14 @@ public enum Configuration {
 	 * 
 	 * @return
 	 */
-	public Set<String> updateAndLoadComponents() {
+	public Set<String> updateAndLoadComponents(String serviceName) {
 
 		Set<String> ret = new LinkedHashSet<>();
 		if (componentUpdateManager == null) {
 			componentUpdateManager = new UpdateManager(componentManager, new ArrayList<>());
-			componentUpdateManager.addRepository(new LocalComponentRepository());
+			componentUpdateManager.addRepository(new LocalComponentRepository(serviceName));
 		}
-		
+
 		if (componentUpdateManager.hasUpdates()) {
 			List<PluginInfo> updates = componentUpdateManager.getUpdates();
 			Logging.INSTANCE.debug("Found {} updates", updates.size());
@@ -363,18 +403,6 @@ public enum Configuration {
 	}
 
 	/**
-	 * Register a class annotation and its handler for processing when
-	 * {@link #scanPackage(String)} is called.
-	 * 
-	 * @param annotationClass
-	 * @param handler
-	 */
-	public void registerAnnotationHandler(Class<? extends Annotation> annotationClass,
-			BiConsumer<Annotation, Class<?>> handler) {
-		annotationHandlers.put(annotationClass, handler);
-	}
-
-	/**
 	 * Single scanning loop for all registered annotations in a package. Done on the
 	 * main codebase and in each component based on the declared packages.
 	 * 
@@ -382,7 +410,9 @@ public enum Configuration {
 	 * @return all annotations found with the corresponding class
 	 * @throws KlabException
 	 */
-	public List<Pair<Annotation, Class<?>>> scanPackage(String packageId) throws KlabException {
+	public List<Pair<Annotation, Class<?>>> scanPackage(String packageId,
+			Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers)
+			throws KlabException {
 
 		List<Pair<Annotation, Class<?>>> ret = new ArrayList<>();
 
@@ -398,7 +428,7 @@ public enum Configuration {
 					Class<?> cls = Class.forName(bd.getBeanClassName());
 					Annotation annotation = cls.getAnnotation(ah);
 					if (annotation != null) {
-						annotationHandlers.get(ah).accept(annotation, ah);
+						annotationHandlers.get(ah).accept(annotation, cls);
 						ret.add(new Pair<>(annotation, cls));
 					}
 				} catch (ClassNotFoundException e) {
@@ -668,9 +698,9 @@ public enum Configuration {
 		return getProperty(Configuration.KLAB_PRODUCTS_BRANCH, Configuration.DEFAULT_PRODUCTS_BRANCH);
 	}
 
-	public URL getLocalComponentRepositoryURL() {
+	public URL getLocalComponentRepositoryURL(String servicePath) {
 		try {
-			return getDataPath("components").toURI().toURL();
+			return getDataPath(servicePath == null ? "components" : (servicePath + "/" + "components")).toURI().toURL();
 		} catch (MalformedURLException e) {
 			throw new KInternalErrorException(e);
 		}

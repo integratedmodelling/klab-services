@@ -28,7 +28,7 @@ public interface KimStatement extends Statement, KimScope {
 
 		void visitNamespace(KimNamespace kimNamespace);
 
-		void visitModel(KimModelStatement kimNamespace);
+		void visitModel(KimModel kimNamespace);
 
 		void visitObserver(KimInstance kimNamespace);
 

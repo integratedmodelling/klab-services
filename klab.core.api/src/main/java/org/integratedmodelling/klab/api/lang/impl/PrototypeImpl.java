@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -22,25 +23,25 @@ public class PrototypeImpl implements Prototype {
 
 	private static final long serialVersionUID = -9168391783660976848L;
 
-    public static class ArgumentImpl implements Prototype.Argument {
+	public static class ArgumentImpl implements Prototype.Argument {
 
-		public String name;
-		public String shortName;
-		public String description = "";
-		public boolean option;
-		public boolean optional;
-		public boolean isFinal;
-		public Type type;
-		public boolean artifact;
+		private static final long serialVersionUID = -6573430853944135837L;
+		private String name;
+		private String shortName;
+		private String description = "";
+		private boolean option;
+		private boolean optional;
+		private boolean isFinal;
+		private Type type;
+		private boolean artifact;
 		private boolean expression;
 		private boolean parameter;
-		// storing as string for serialization, use artifact type to return as POD
-		public String defaultValue = null;
-		public Set<String> enumValues = new HashSet<>();
-		public String label = null;
-		public String unit = null;
-		public boolean isConst;
-		
+		private Literal defaultValue = null;
+		private Set<String> enumValues = new HashSet<>();
+		private String label = null;
+		private String unit = null;
+		private boolean isConst;
+
 		public ArgumentImpl() {
 		}
 
@@ -83,7 +84,7 @@ public class PrototypeImpl implements Prototype {
 		}
 
 		@Override
-		public String getDefaultValue() {
+		public Literal getDefaultValue() {
 			return defaultValue;
 		}
 
@@ -124,7 +125,7 @@ public class PrototypeImpl implements Prototype {
 			this.type = type;
 		}
 
-		public void setDefaultValue(String defaultValue) {
+		public void setDefaultValue(Literal defaultValue) {
 			this.defaultValue = defaultValue;
 		}
 
@@ -182,24 +183,30 @@ public class PrototypeImpl implements Prototype {
 			return this.unit;
 		}
 
+		public void setUnit(String unit) {
+			this.unit = unit;
+		}
+
 	}
 
-	protected String name;
+	private String name;
 	// stable ordering reflecting that of the KDL arguments
-	protected Map<String, ArgumentImpl> arguments = new LinkedHashMap<>();
-	protected String description;
-	protected Class<?> implementation;
-	protected Type type;
-	protected Geometry geometry;
-	protected boolean distributed;
-	protected boolean contextualizer;
-	protected boolean filter;
-	protected String label = null;
-	protected List<ArgumentImpl> exports = new ArrayList<>();
-	protected List<ArgumentImpl> imports = new ArrayList<>();
-	protected List<ArgumentImpl> inputAnnotations = new ArrayList<>();
-	protected List<ArgumentImpl> outputAnnotations = new ArrayList<>();
-	protected boolean isConst;
+	private Map<String, ArgumentImpl> arguments = new LinkedHashMap<>();
+	private String description;
+	private Class<?> implementation;
+	private Type type;
+	private Geometry geometry;
+	private boolean distributed;
+	private boolean contextualizer;
+	private boolean filter;
+	private String label = null;
+	private List<ArgumentImpl> exports = new ArrayList<>();
+	private List<ArgumentImpl> imports = new ArrayList<>();
+	private List<ArgumentImpl> inputAnnotations = new ArrayList<>();
+	private List<ArgumentImpl> outputAnnotations = new ArrayList<>();
+	private boolean isConst;
+	private boolean reentrant;
+	private String executorMethod;
 
 	public String getLabel() {
 		return label;
@@ -369,7 +376,7 @@ public class PrototypeImpl implements Prototype {
 			}
 
 			String ret = Utils.Strings.justifyLeft(
-			        Utils.Strings.pack(
+					Utils.Strings.pack(
 							description == null || description.isEmpty() ? "No description provided." : description),
 					80) + (tags ? "<p>" : "\n\n");
 			if (tags) {
@@ -577,10 +584,62 @@ public class PrototypeImpl implements Prototype {
 	public Collection<Argument> listExportAnnotations() {
 		return new Utils.Casts<ArgumentImpl, Argument>().cast(outputAnnotations);
 	}
-	
+
 	@Override
 	public boolean isFinal() {
 		return isConst;
+	}
+
+	public Class<?> getImplementation() {
+		return implementation;
+	}
+
+	public void setImplementation(Class<?> implementation) {
+		this.implementation = implementation;
+	}
+
+	public List<ArgumentImpl> getInputAnnotations() {
+		return inputAnnotations;
+	}
+
+	public void setInputAnnotations(List<ArgumentImpl> inputAnnotations) {
+		this.inputAnnotations = inputAnnotations;
+	}
+
+	public List<ArgumentImpl> getOutputAnnotations() {
+		return outputAnnotations;
+	}
+
+	public void setOutputAnnotations(List<ArgumentImpl> outputAnnotations) {
+		this.outputAnnotations = outputAnnotations;
+	}
+
+	public boolean isConst() {
+		return isConst;
+	}
+
+	public void setConst(boolean isConst) {
+		this.isConst = isConst;
+	}
+
+	public boolean isReentrant() {
+		return reentrant;
+	}
+
+	public void setReentrant(boolean reentrant) {
+		this.reentrant = reentrant;
+	}
+
+	public void setFilter(boolean filter) {
+		this.filter = filter;
+	}
+
+	public String getExecutorMethod() {
+		return executorMethod;
+	}
+
+	public void setExecutorMethod(String executorMethod) {
+		this.executorMethod = executorMethod;
 	}
 
 }

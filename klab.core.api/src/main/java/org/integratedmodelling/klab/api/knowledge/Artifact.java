@@ -27,13 +27,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.Process;
 import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 
 /**
  * An Artifact can be any of the first-class products of a k.LAB task: a non-semantic
  * {@link DataArtifact} or {@link ObjectArtifact}, an observed (semantic) {@link Observation} (as
- * produced by most activities in k.LAB) or a {@link KimModelStatement k.IM model description} when
+ * produced by most activities in k.LAB) or a {@link KimModel k.IM model description} when
  * the model has been produced by an observation activity, such as a learning model.
  * <p>
  * By implementing {@link java.lang.Iterable}, we also allow Artifacts to represent groups of

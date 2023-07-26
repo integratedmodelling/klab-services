@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 
-public interface KimModelStatement extends KimActiveStatement {
+public interface KimModel extends KimActiveStatement {
 
     KimConcept getReinterpretingRole();
 

@@ -57,7 +57,7 @@ import org.integratedmodelling.klab.api.lang.impl.kim.KimClassificationImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptStatementImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimLookupTableImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimModelStatementImpl;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimModelImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimObservableImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
@@ -279,9 +279,9 @@ public class KimAdapter {
         return ret;
     }
 
-    public static KimModelStatementImpl adaptModelStatement(IKimModel statement, KimNamespaceImpl namespace) {
+    public static KimModelImpl adaptModelStatement(IKimModel statement, KimNamespaceImpl namespace) {
 
-        KimModelStatementImpl ret = new KimModelStatementImpl();
+        KimModelImpl ret = new KimModelImpl();
         Utils.Lang.copyStatementData(statement, ret);
 
         for (IContextualizable contextualizable : statement.getContextualization()) {

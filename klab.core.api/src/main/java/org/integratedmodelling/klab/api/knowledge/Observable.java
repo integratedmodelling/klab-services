@@ -17,8 +17,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * Observables are concepts with additional information that specifies how they may be observed.
@@ -213,16 +213,16 @@ public interface Observable extends Semantics {
          * 
          * @return any errors accumulated
          */
-        Collection<KValidationException> getErrors();
+        Collection<Notification> getNotifications();
 
-        /**
-         * Use this to pass a declaration being parsed and set up a monitor so that logically
-         * inconsistent declarations can be reported.
-         * 
-         * @param declaration (may be null)
-         * @return the same builder this was called on, for chaining calls
-         */
-        Builder withDeclaration(KimConcept declaration);
+//        /**
+//         * Use this to pass a declaration being parsed and set up a monitor so that logically
+//         * inconsistent declarations can be reported.
+//         * 
+//         * @param declaration (may be null)
+//         * @return the same builder this was called on, for chaining calls
+//         */
+//        Builder withDeclaration(KimConcept declaration);
 
         /**
          * 
@@ -366,14 +366,14 @@ public interface Observable extends Semantics {
          */
         Builder withDereifiedAttribute(String dereifiedAttribute);
 
-        /**
-         * Call after {@link #buildConcept()} or {@link #buildObservable()} to check if any change
-         * to the ontologies were made. Returns false if the concept expression requested was
-         * already available.
-         * 
-         * @return
-         */
-        boolean axiomsAdded();
+//        /**
+//         * Call after {@link #buildConcept()} or {@link #buildObservable()} to check if any change
+//         * to the ontologies were made. Returns false if the concept expression requested was
+//         * already available.
+//         * 
+//         * @return
+//         */
+//        boolean axiomsAdded();
 
         // /**
         // * Set the dereified status to true, so that the observable can be recognized as

@@ -43,7 +43,7 @@ import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
@@ -160,14 +160,14 @@ public class Indexer {
 				}
 			}
 
-		} else if (object instanceof KimModelStatement && ((KimModelStatement) object).getType() == Type.CONCEPT) {
+		} else if (object instanceof KimModel && ((KimModel) object).getType() == Type.CONCEPT) {
 
 			ret = new SemanticMatch(SemanticMatch.Type.MODEL,
-					((KimModelStatement) object).getObservables().get(0).getMain().getType());
-			ret.setDescription(((KimModelStatement) object).getDocstring());
-			ret.setName(((KimModelStatement) object).getName());
-			ret.setId(((KimModelStatement) object).getName());
-			semanticType = (((KimModelStatement) object).getObservables().get(0).getMain().getType());
+					((KimModel) object).getObservables().get(0).getMain().getType());
+			ret.setDescription(((KimModel) object).getDocstring());
+			ret.setName(((KimModel) object).getName());
+			ret.setId(((KimModel) object).getName());
+			semanticType = (((KimModel) object).getObservables().get(0).getMain().getType());
 
 		} else if (object instanceof KimInstance) {
 

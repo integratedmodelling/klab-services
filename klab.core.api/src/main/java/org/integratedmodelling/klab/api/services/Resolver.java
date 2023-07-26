@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -119,7 +119,7 @@ public interface Resolver extends KlabService {
 		 * @param statement
 		 * @return
 		 */
-		Concept addModel(KimModelStatement statement);
+		Concept addModel(KimModel statement);
 	}
 
 }

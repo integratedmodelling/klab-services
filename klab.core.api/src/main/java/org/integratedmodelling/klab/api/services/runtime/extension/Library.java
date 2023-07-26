@@ -22,10 +22,18 @@ import java.lang.annotation.Target;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
 /**
- * Tags a class that can be imported with an "import" instruction from a
- * language. Some libraries are pre-loaded in test cases and scripts. Libraries
- * are used to provide k.Actors actions and k.IM contextualizers through static
- * inner classes, which should bear the annotation {@link Verb} or
+ * Tags a class that contains extensions for one of the k.LAB components.
+ * Extensions can be contextualizers, actor functions or other elements; the tag
+ * they are annotated with determines the use that can be made of them and their
+ * registration in a service. Libraries have a name that is prepended to the
+ * name of any object it declares; only the core k.LAB implementation is allowed
+ * to use the CORE_LIBRARY identifier, which makes them available with a single
+ * identifier.
+ * <p>
+ * Some libraries can be imported with an "import" instruction from a language.
+ * Others are pre-loaded in test cases and scripts. Libraries are used to
+ * provide k.Actors actions and k.IM contextualizers through static inner
+ * classes or methods, which should bear the annotation {@link Verb} or
  * {@link KlabContextualizer}.
  * <p>
  * Contextualizers implementations from the core libraries can be overridden
@@ -39,6 +47,8 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Library {
+	
+	public static final String CORE_LIBRARY = "__CORE_LIBRARY__";
 
 	/**
 	 * ID of the component. Must be unique, please use unambiguous paths like

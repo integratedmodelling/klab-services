@@ -70,26 +70,6 @@ public enum EngineService {
             }
 
             /*
-             * Components
-             */
-            Set<String> extensionPackages = new LinkedHashSet<>();
-            extensionPackages.add("org.integratedmodelling.klab");
-            /*
-             * Check for updates, load and scan all new plug-ins, returning the main packages to
-             * scan
-             */
-            extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents());
-
-            /*
-             * Scan all packages registered under the parent package of all k.LAB services. TODO all
-             * assets from there should be given default permissions (or those encoded with their
-             * annotations) that are exposed to the admin API.
-             */
-            for (String pack : extensionPackages) {
-                Configuration.INSTANCE.scanPackage(pack);
-            }
-
-            /*
              * Create the service scope for all embedded services. The order of initialization is
              * resources, reasoner, resolver and runtime. The community service should always be
              * remote except in test situations. The worldview must be loaded in the reasoner before

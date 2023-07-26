@@ -5,6 +5,9 @@ import java.util.StringTokenizer;
 
 /**
  * Serializable version compatible with semantic versioning conventions.
+ * <p>
+ * TODO the version syntax must accept compatibility modifiers so that it can
+ * express a version range or constraint as well as a simple version.
  * 
  * @author Ferd
  *
@@ -116,11 +119,10 @@ public class Version implements Comparable<Version>, Serializable {
 			}
 		}
 	}
-	
+
 	public boolean empty() {
 		return this.major == 0 && this.minor == 0 && this.build == 0 && this.modifier.isEmpty();
 	}
-	
 
 	/**
 	 * Creates version identifier object from given parts. No validation performed
@@ -220,7 +222,9 @@ public class Version implements Comparable<Version>, Serializable {
 	 * equal, than the build component of the version identifier must be greater
 	 * than or equal to the build component of the argument identifier.
 	 * </p>
-	 *
+	 * TODO extend the version syntax to allow compatibility modifiers for accepted
+	 * versions.
+	 * 
 	 * @param other the other version identifier
 	 * @return <code>true</code> if this version identifier is compatible with the
 	 *         given version identifier, and <code>false</code> otherwise

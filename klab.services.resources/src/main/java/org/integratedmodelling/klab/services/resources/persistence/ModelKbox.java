@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement;
@@ -639,11 +639,11 @@ public class ModelKbox extends ObservableKbox {
 
         ArrayList<Object> toStore = new ArrayList<>();
 
-        if (o instanceof KimModelStatement) {
+        if (o instanceof KimModel) {
 
-            resourceService.scope().debug("storing model " + ((KimModelStatement) o).getName());
+            resourceService.scope().debug("storing model " + ((KimModel) o).getName());
 
-            for (ModelReference data : inferModels((KimModelStatement) o, monitor)) {
+            for (ModelReference data : inferModels((KimModel) o, monitor)) {
                 toStore.add(data);
             }
 
@@ -671,7 +671,7 @@ public class ModelKbox extends ObservableKbox {
      * @param monitor
      * @return the models implied by the statement
      */
-    public Collection<ModelReference> inferModels(KimModelStatement model, Scope monitor) {
+    public Collection<ModelReference> inferModels(KimModel model, Scope monitor) {
 
         List<ModelReference> ret = new ArrayList<>();
 
@@ -728,7 +728,7 @@ public class ModelKbox extends ObservableKbox {
         return ret;
     }
 
-    private Collection<ModelReference> getModelDescriptors(KimModelStatement model, Scope monitor) {
+    private Collection<ModelReference> getModelDescriptors(KimModel model, Scope monitor) {
 
         List<ModelReference> ret = new ArrayList<>();
         Coverage scale = resourceService.modelGeometry(model.getName());

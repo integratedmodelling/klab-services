@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -49,7 +49,7 @@ public class ResolverService implements Resolver, Resolver.Admin {
     }
 
     @Override
-    public Concept addModel(KimModelStatement statement) {
+    public Concept addModel(KimModel statement) {
         // TODO Auto-generated method stub
         return null;
     }

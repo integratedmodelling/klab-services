@@ -5,8 +5,8 @@ import org.pf4j.update.DefaultUpdateRepository;
 
 public class LocalComponentRepository extends DefaultUpdateRepository {
 
-	public LocalComponentRepository()  {
-		super("local", Configuration.INSTANCE.getLocalComponentRepositoryURL());
+	public LocalComponentRepository(String servicePath)  {
+		super("local", Configuration.INSTANCE.getLocalComponentRepositoryURL(servicePath));
 	}
 
 }

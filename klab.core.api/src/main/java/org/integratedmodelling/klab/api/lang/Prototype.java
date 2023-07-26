@@ -6,18 +6,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.services.runtime.extension.KlabContextualizer;
 
 /**
- * A IPrototype defines a service API. In k.LAB prototypes apply to commands and
- * language functions so far, both of which can return one of these. Prototypes
- * are automatically created by the @Prototype annotation, which applies to
- * different types of objects and will create services, functions or commands
- * according to the object it applies to, and can be extracted from KDL dataflow
- * declarations (currently the preferred way to define APIs).
+ * A Prototype defines a function API and potentially holds the class/method
+ * that implements it. In k.LAB prototypes apply to commands and language
+ * functions so far, both of which can return one of these. Prototypes are
+ * automatically created by the {@link KlabContextualizer} annotation, which
+ * applies to different types of objects and will create services, functions or
+ * commands according to the object it applies to. They can also be extracted
+ * from KDL dataflow declarations in the classpath.
  * 
  * @author Ferd
  *
@@ -30,7 +33,7 @@ public interface Prototype extends Serializable {
 	 * @author ferdinando.villa
 	 *
 	 */
-	interface Argument {
+	interface Argument extends Serializable {
 
 		/**
 		 * 
@@ -85,9 +88,9 @@ public interface Prototype extends Serializable {
 		/**
 		 * The default value for a parameter that is not passed.
 		 * 
-		 * @return default value (POD, list or {@link Range}) or null.
+		 * @return default value (POD, list, {@link Range}) or null.
 		 */
-		Object getDefaultValue();
+		public Literal getDefaultValue();
 
 		/**
 		 * 
@@ -127,7 +130,8 @@ public interface Prototype extends Serializable {
 		boolean isArtifact();
 
 		/**
-		 * If a unit was specified, return the textual value here. Can also be a currency.
+		 * If a unit was specified, return the textual value here. Can also be a
+		 * currency.
 		 * 
 		 * @return
 		 */
@@ -254,6 +258,14 @@ public interface Prototype extends Serializable {
 	public Class<?> getExecutorClass();
 
 	/**
+	 * If this is not null, the arguments are for the method and not for class
+	 * construction.
+	 * 
+	 * @return
+	 */
+	public String getExecutorMethod();
+
+	/**
 	 * If distributed, the service identified can be broadcast to multiple endpoints
 	 * and the results can be merged.
 	 * 
@@ -294,5 +306,12 @@ public interface Prototype extends Serializable {
 	 * @return
 	 */
 	boolean isFinal();
+
+	/**
+	 * If true, a single implementation can be created and reused at each call.
+	 * 
+	 * @return
+	 */
+	boolean isReentrant();
 
 }

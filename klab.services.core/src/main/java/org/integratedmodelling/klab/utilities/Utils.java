@@ -940,6 +940,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 			}
 		}
 
+		public static void writeStringToFile(String string, File file) {
+			try {
+				FileUtils.write(file, string, UTF_8_Y);
+			} catch (IOException e) {
+				throw new KIOException(e);
+			}
+		}
+
 	}
 
 	public static class Markdown {

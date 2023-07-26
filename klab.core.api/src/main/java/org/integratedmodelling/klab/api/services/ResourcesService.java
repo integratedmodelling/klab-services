@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -31,7 +31,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 /**
  * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts
  * with {@link Resource}, which is a specific type of KlabAsset). Assets handled include projects
- * with all their contents (namespaces with {@link KimConceptStatement}, {@link KimModelStatement}
+ * with all their contents (namespaces with {@link KimConceptStatement}, {@link KimModel}
  * and other definitions, {@link KActorsBehavior} behaviors, and local {@link Resource}s), plus any
  * published, independently managed {@link Resource}s, and any component plug-ins, managed directly
  * as jar/zips. All assets are versioned and history is maintained. Permissions and review-driven
@@ -57,7 +57,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
  * <dt>resolve..()</dt>
  * <dd>endpoints retrieve {@link ResourceSet}s that contain all the information needed to
  * operationalize the asset requested at the requesting end, including any dependent assets and
- * their sources. For example, retrieval of a {@link KimModelStatement} is used in the
+ * their sources. For example, retrieval of a {@link KimModel} is used in the
  * {@link Resolver} to build a {@link Model} with all its dependencies satisfied.</dd>
  * <dt>{list|add|remove|update}..()</dt>
  * <dd>endpoints manage inquiry and CRUD operations, part of the {@link ResourcesServices.Admin}
@@ -67,7 +67,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
  * In addition, the resource manager exposes querying methods, either based on semantics and context
  * ({@link #queryModels(Observable, ContextScope)}) or on textual search
  * ({@link #queryResources(String, KnowledgeClass...)}). The semantic query model uses the connected
- * reasoner and will only return a ResourceSet listing {@link KimModelStatement}s and their
+ * reasoner and will only return a ResourceSet listing {@link KimModel}s and their
  * requirements, leaving ranking and prioritization to the caller.
  * 
  * @author Ferd

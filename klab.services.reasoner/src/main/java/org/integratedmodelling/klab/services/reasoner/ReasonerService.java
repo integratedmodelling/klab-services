@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategyPattern;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
@@ -40,7 +41,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
-import org.integratedmodelling.klab.api.lang.kim.KimModelStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimScope;
@@ -1973,7 +1974,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 			return null;
 		}
 
-		Observable.Builder builder = new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
+		ObservableBuilder builder = new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
 
 		if (concept.getDistributedInherent() != null) {
 			builder.withDistributedInherency(true);
@@ -2443,7 +2444,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 		}
 
 		@Override
-		public void visitModel(KimModelStatement kimNamespace) {
+		public void visitModel(KimModel kimNamespace) {
 		}
 
 		@Override
@@ -2459,6 +2460,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 				KimConcept validParent, boolean mandatory) {
 		}
 
+	}
+
+	@Override
+	public Concept buildConcept(ObservableBuildStrategy builder) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Observable buildObservable(ObservableBuildStrategy builder) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
