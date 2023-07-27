@@ -14,10 +14,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
+import org.locationtech.jts.geom.GeometryFactory;
 
 public class SpaceImpl extends ExtentImpl<Space> implements Space {
 
 	private static final long serialVersionUID = 1L;
+	
+	static GeometryFactory gFactory = new GeometryFactory();
 
 	Envelope envelope;
 

@@ -68,7 +68,7 @@ public class SQL {
     public static String wrapPOD(Object o) {
 
         if (o instanceof SpaceImpl) {
-            o = ((ShapeImpl) ((SpaceImpl) o).getGeometricShape()).standardizedGeometry();
+            o = ((ShapeImpl) ((SpaceImpl) o).getGeometricShape()).getStandardizedGeometry();
         }
 
         if (o instanceof Geometry) {

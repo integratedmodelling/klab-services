@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.scope;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
@@ -227,6 +229,12 @@ public abstract class EngineScope implements UserScope {
     }
 
     @Override
+	public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+		// TODO if a service resolver is available, that should be used.
+		return Collections.singleton(getService(serviceClass));
+	}
+
+	@Override
     public void send(Object... message) {
         post(null, message);
     }

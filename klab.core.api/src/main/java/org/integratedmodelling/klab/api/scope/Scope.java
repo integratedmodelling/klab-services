@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.scope;
 
+import java.util.Collection;
+
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
@@ -74,7 +76,9 @@ public abstract interface Scope extends Channel {
 	/**
 	 * Retrieve the service corresponding to the passed class. A
 	 * {@link KServiceAccessException} should be the response when services are
-	 * unavailable.
+	 * unavailable. If there are multiple services available for the class, a
+	 * default one should be chosen based on load factor, vicinity or any other
+	 * sensible logic.
 	 * 
 	 * @param <T>
 	 * @param serviceClass
@@ -82,6 +86,17 @@ public abstract interface Scope extends Channel {
 	 * @throws KServiceAccessException if the requested service is not available
 	 */
 	<T extends KlabService> T getService(Class<T> serviceClass);
+
+	/**
+	 * Retrieve all the currently available services corresponding to the passed
+	 * class, including the default one returned by {@link #getService(Class)} if
+	 * applicable.
+	 * 
+	 * @param <T>
+	 * @param serviceClass
+	 * @return
+	 */
+	<T extends KlabService> Collection<T> getServices(Class<T> serviceClass);
 
 	/**
 	 * Return the status of the scope at the time of the call.

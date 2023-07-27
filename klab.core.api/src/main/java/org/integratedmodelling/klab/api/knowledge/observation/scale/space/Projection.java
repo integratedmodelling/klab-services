@@ -26,6 +26,10 @@ import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
  */
 public interface Projection {
 
+	public static final String DEFAULT_METERS_PROJECTION = "EPSG:3005";
+	public static final String DEFAULT_PROJECTION_CODE = "EPSG:4326";
+	public static final String LATLON_PROJECTION_CODE = "EPSG:4326";
+
 	/**
 	 * Unique identifier of projection, enough to rebuild it at another endpoint.
 	 *
@@ -50,17 +54,19 @@ public interface Projection {
 	boolean flipsCoordinates();
 
 	/**
-	 * Return a simple string in the format "EPSG:nnnn". Used to interface to dumber
-	 * projection APIs. Do not expect this to work for non-EPSG CRSs though.
-	 * @return
-	 */
-	String getSimpleSRS();
-
-	/**
 	 * Units 
 	 * @return
 	 */
 	String getUnits();
+	
+	public static Projection of(String string) {
+		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+		if (configuration == null) {
+			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+		}
+		return configuration.getSpatialProjection(string);
+	}
+	
 	
 	public static Projection getLatLon() {
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();

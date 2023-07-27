@@ -273,4 +273,9 @@ public class IUPACAuthority implements Authority {
         return this;
     }
 
+	@Override
+	public String getServiceName() {
+		return ID;
+	}
+
 }

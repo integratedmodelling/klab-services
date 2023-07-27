@@ -64,7 +64,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.rest.ResourceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
@@ -440,7 +439,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         } else if (!this.scope.isExclusive()) {
 
-            for (ResourcesService service : Services.INSTANCE.getFederatedResources(scope)) {
+            for (ResourcesService service :scope.getServices(ResourcesService.class)) {
                 KimNamespace candidate = service.resolveNamespace(urn, scope);
                 if (candidate != null) {
                     // FIXME this causes more traffic than we should cause - maybe limit full scan
@@ -470,7 +469,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             return ret;
         } else if (!this.scope.isExclusive()) {
 
-            for (ResourcesService service : Services.INSTANCE.getFederatedResources(scope)) {
+            for (ResourcesService service : scope.getServices(ResourcesService.class)) {
                 KActorsBehavior candidate = service.resolveBehavior(urn, scope);
                 if (candidate != null) {
                     // FIXME this causes more traffic than we should cause - maybe limit full scan

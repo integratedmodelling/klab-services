@@ -15,8 +15,6 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import org.integratedmodelling.klab.api.data.Metadata;
-
 /**
  * Anything that has coordinates is referenced. We also expose metadata so that
  * additional info can be provided along with the referencing.
@@ -25,6 +23,12 @@ import org.integratedmodelling.klab.api.data.Metadata;
  * @version $Id: $Id
  */
 public abstract interface Referenced {
+
+	/**
+	 * Default minimum resolution in meters when a ROI is created from a user
+	 * interacting with a map.
+	 */
+	public static final int DEFAULT_MIN_RESOLUTION = 5;
 
 	/**
 	 * <p>
@@ -37,9 +41,4 @@ public abstract interface Referenced {
 	 */
 	Projection getProjection();
 
-	/**
-	 * 
-	 * @return
-	 */
-	Metadata getMetadata();
 }

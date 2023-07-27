@@ -44,6 +44,8 @@ public enum Klab {
 
 		Shape createShapeFromTextSpecification(String shapeText, Projection projection);
 
+		Projection getSpatialProjection(String string);
+
 	}
 
 	private Configuration configuration;

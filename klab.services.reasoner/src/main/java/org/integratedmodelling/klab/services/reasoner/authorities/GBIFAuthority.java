@@ -264,4 +264,10 @@ public class GBIFAuthority implements Authority {
         // TODO Auto-generated method stub
         return this;
     }
+
+	@Override
+	public String getServiceName() {
+		// TODO Auto-generated method stub
+		return ID;
+	}
 }

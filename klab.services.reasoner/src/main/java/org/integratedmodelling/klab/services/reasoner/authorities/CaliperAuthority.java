@@ -322,4 +322,9 @@ public class CaliperAuthority implements Authority {
         return this;
     }
 
+	@Override
+	public String getServiceName() {
+		return ID;
+	}
+
 }

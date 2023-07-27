@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.configuration.Services;
 
 /**
@@ -149,14 +150,14 @@ public class SemanticScope {
                 if (concept.is(SemanticType.MONETARY_VALUE)) {
                     ret.lexicalRealm.add(SemanticRole.CURRENCY);
                 } else if (concept.is(SemanticType.EXTENSIVE_PROPERTY) || concept.is(SemanticType.INTENSIVE_PROPERTY)) {
-                    Unit baseUnit = Services.INSTANCE.getUnitService().getDefaultUnitFor(concept);
+                    Unit baseUnit = Services.INSTANCE.getService(UnitService.class).getDefaultUnitFor(concept);
                     if (baseUnit != null) {
                         ret.lexicalRealm.add(SemanticRole.UNIT);
                         ret.logicalRealm.add(Constraint.compatibleUnit(baseUnit));
                     }
                 } else if (concept.is(SemanticType.NUMEROSITY)) {
                     ret.lexicalRealm.add(SemanticRole.UNIT);
-                    ret.logicalRealm.add(Constraint.compatibleUnit(Services.INSTANCE.getUnitService().getUnit("1")));
+                    ret.logicalRealm.add(Constraint.compatibleUnit(Services.INSTANCE.getService(UnitService.class).getUnit("1")));
                 }
             }
             

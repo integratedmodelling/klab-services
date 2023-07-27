@@ -148,6 +148,12 @@ public enum Configuration {
 				// TODO Auto-generated method stub
 				throw new KException("IMPLEMENTAMI OSTIA");
 			}
+
+			@Override
+			public Projection getSpatialProjection(String string) {
+				// TODO Auto-generated method stub
+				throw new KException("IMPLEMENTAMI OSTIA");
+			}
 		});
 
 	}

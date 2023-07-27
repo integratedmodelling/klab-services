@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
  * @author Ferd
  *
  */
-public interface Language extends KlabService {
+public interface Language extends Service {
 
 	public final static String DEFAULT_EXPRESSION_LANGUAGE = "K.LAB.GROOVY";
 

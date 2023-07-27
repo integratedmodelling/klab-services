@@ -1,7 +1,10 @@
 package org.integratedmodelling.klab.runtime.scale;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -14,6 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
 import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
@@ -122,25 +126,40 @@ public class ScaleImpl implements Scale {
 				throw new KlabUnimplementedException("numerosity extent");
 			}
 		}
-		
+		define(extents);
 	}
 
-	public ScaleImpl(Iterable<Extent<?>> extents) {
+	public ScaleImpl(List<Extent<?>> extents) {
+		define(extents);
+	}
 
+	protected void define(List<Extent<?>> extents) {
+		Collections.sort(extents, new Comparator<Extent<?>>() {
+			// use the natural order in the dimension type enum
+			@Override
+			public int compare(Extent<?> o1, Extent<?> o2) {
+				return o1.getType().compareTo(o2.getType());
+			}
+
+		});
+		this.extents = extents.toArray(new Extent[extents.size()]);
+		this.size = 1;
+		for (Extent<?> extent : extents) {
+			size *= extent.size();
+		}
 	}
 
 	protected void adoptExtents(Collection<Extent<?>> extents) {
 		// TODO was setExtents()
 	}
 
-	protected void sort() {
-		// TODO
-	}
-
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends Locator> T as(Class<T> cls) {
 		if (Geometry.class.equals(cls)) {
 
+		} else if (Coverage.class.equals(cls)) {
+			return (T) new CoverageImpl(this, 1.0);
 		}
 		return null;
 	}
@@ -152,49 +171,42 @@ public class ScaleImpl implements Scale {
 
 	@Override
 	public String encode(Encoding... options) {
-		// TODO Auto-generated method stub
-		return null;
+		return as(Geometry.class).encode(options);
 	}
 
 	@Override
 	public List<Dimension> getDimensions() {
-		// TODO Auto-generated method stub
-		return null;
+		return Arrays.asList(extents);
 	}
 
 	@Override
 	public Dimension dimension(Type type) {
-		// TODO Auto-generated method stub
+		for (Extent<?> extent : extents) {
+			if (extent.getType() == type) {
+				return extent;
+			}
+		}
 		return null;
 	}
 
 	@Override
 	public Granularity getGranularity() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean isGeneric() {
-		// TODO Auto-generated method stub
-		return false;
+		Dimension gr = dimension(Type.NUMEROSITY);
+		return (gr == null || gr.size() == 1) ? Granularity.SINGLE : Granularity.MULTIPLE;
 	}
 
 	@Override
 	public boolean isScalar() {
-		// TODO Auto-generated method stub
-		return false;
+		return this.size == 1;
 	}
 
 	@Override
 	public long size() {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.size;
 	}
 
 	@Override
 	public boolean infiniteTime() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -242,14 +254,12 @@ public class ScaleImpl implements Scale {
 
 	@Override
 	public int getExtentCount() {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.extents.length;
 	}
 
 	@Override
 	public List<Extent<?>> getExtents() {
-		// TODO Auto-generated method stub
-		return null;
+		return Arrays.asList(this.extents);
 	}
 
 	@Override
@@ -310,6 +320,13 @@ public class ScaleImpl implements Scale {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public boolean isGeneric() {
+		// a scale only exists if it's NOT generic
+		return false;
+	}
+
 
 	/*
 	 * Default base for locators, delegating anything not explicitly overridden to
@@ -340,11 +357,6 @@ public class ScaleImpl implements Scale {
 		@Override
 		public Granularity getGranularity() {
 			return ScaleImpl.this.getGranularity();
-		}
-
-		@Override
-		public boolean isGeneric() {
-			return ScaleImpl.this.isGeneric();
 		}
 
 		@Override
@@ -465,6 +477,12 @@ public class ScaleImpl implements Scale {
 		@Override
 		public Extent<?> extent(Type extentType) {
 			return ScaleImpl.this.extent(extentType);
+		}
+
+		@Override
+		public boolean isGeneric() {
+			// a generic scale cannot be iterated
+			return false;
 		}
 
 	}

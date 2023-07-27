@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
  * @author Ferd
  *
  */
-public interface KlabService extends Serializable {
+public interface KlabService extends Service {
 
     /**
      * At the very minimum, each service advertises its type and local name.
@@ -54,13 +54,6 @@ public interface KlabService extends Serializable {
      */
     String getLocalName();
 
-    /**
-     * The identifier of the service type in the k.LAB ecosystem. This is the same for all services
-     * of the same type and the derived interfaces provide a default implementation.
-     * 
-     * @return
-     */
-    String getServiceName();
 
     /**
      * Each service operates under a root scope that is used to report issues, talk to clients and

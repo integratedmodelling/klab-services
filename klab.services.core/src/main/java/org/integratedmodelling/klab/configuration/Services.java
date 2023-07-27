@@ -1,47 +1,50 @@
 package org.integratedmodelling.klab.configuration;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.CurrencyService;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.Service;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
+import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
 
 /**
- * Makes secondary k.LAB services available through service discovery,
- * self-notification or injection. This class should NOT be used to provide
- * access to the main k.LAB services: instead, it can be used to register and
- * access services needed at runtime (such as units, currencies, authorities).
- * Service implementations explicitly register themselves and can be looked up
- * by class (if singletons) or by name when registered with one.
+ * This singleton manages a catalog of k.LAB {@link Service}s. This class should
+ * NOT be used to provide access to the {@link KlabService}s: instead, it can be
+ * used to register and access services needed at runtime (such as units,
+ * currencies, authorities). Service implementations explicitly register
+ * themselves and can be looked up by class (if singletons) or by name when
+ * registered with one. The core package automatically registers default
+ * services to handle units, language expressions and currencies.
+ * <p>
+ * If multiple services are registered for the same class, they should be set
+ * with parameters that allow the system to differentiate or filter them in
+ * queries. Multiple parameters are matched using containsAll on a key set; it
+ * is expected that keys used are PODs or comparables.
  * <p>
  * The class also holds utility methods to access multiple services concurrently
  * and merge query results intelligently. These should be used with federated
  * services sourced from the current scope.
  * <p>
- * Using this class is <em>not</em> the recommended way to access a service when
- * one is needed from within a k.LAB {@link Scope}. The scope has a
- * {@link Scope#getService(Class)} method that will return the service assigned
- * to the scope. This class should be used only to access federated resources
- * from functions that require them, or by other services that need to perform
- * selected operations outside of any scope (e.g. the reasoner will need a
- * resource service at initialization to access the worldview).
+ * Using this class is <em>not</em> the way to access a {@link KlabService},
+ * only accessed through the k.LAB {@link Scope}. The scope has
+ * {@link Scope#getService(Class)} and {@link Scope#getServices(Class)} methods
+ * that will return the service(s) assigned to the scope.
  * <p>
- * Authorities are also potentially independent and redundant services, and they
- * are discovered and made available through this class. The authority service
+ * Authorities are also independent and redundant services, and they are
+ * discovered and made available through this class. The authority service
  * returned should be the one with the lightest load and shouldn't be saved.
  * 
  * @author Ferd
@@ -50,70 +53,96 @@ public enum Services {
 
 	INSTANCE;
 
-	private UnitService unitService;
-	private CurrencyService currencyService;
-
+	private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
 	private Map<String, Authority> authorities = new HashMap<>();
-	private List<Reasoner> federatedRuntimes = new ArrayList<>();
-	private List<ResourcesService> federatedResources = new ArrayList<>();
-	private Language languageService;
+
+	private Services() {
+		// TODO register unit service, currency service, language services...
+		registerService(new UnitServiceImpl(), UnitService.class);
+		registerService(new CurrencyServiceImpl(), CurrencyService.class);
+	}
 
 	/**
-	 * Return the resource providers available to the passed scope, best matches
-	 * first (also considering social features).
+	 * Obtain the best service available for the class and parameters. If multiple
+	 * are available, choose the one with the lightest load or access cost,
+	 * according to implementation. If not found, throw a
+	 * {@link KServiceAccessException}.
 	 * 
-	 * @param scope
+	 * @param <T>
+	 * @param serviceClass
+	 * @param parameters   any POD or Comparable.
+	 * @throws KServiceAccessException if the requested service is not available
 	 * @return
 	 */
-	public List<ResourcesService> resourceProviders(Scope scope) {
-		return null;
+	public <T extends Service> T getService(Class<T> serviceClass, Object... parameters)
+			throws KServiceAccessException {
+		Collection<T> results = getServices(serviceClass, parameters);
+		if (results.size() > 0) {
+			return results.iterator().next();
+		}
+		throw new KServiceAccessException("no service of class " + serviceClass.getCanonicalName() + " was registered");
 	}
 
-	@Deprecated
-	public List<Reasoner> getFederatedRuntimes(Scope scope) {
-		return federatedRuntimes;
+	/**
+	 * Return all registered and available services of the passed class, potentially
+	 * filtering through the passed parameters. If none available, return an empty
+	 * collection. If multiple services are available, they should be sorted with
+	 * the "best" service on top.
+	 * 
+	 * @param <T>
+	 * @param serviceClass
+	 * @param parameters   any POD or Comparable
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public <T extends Service> Collection<T> getServices(Class<T> serviceClass, Object... parameters) {
+
+		Set<T> ret = new HashSet<>();
+		Set<Object> key = new HashSet<>();
+		if (parameters != null) {
+			for (Object p : parameters) {
+				key.add(p);
+			}
+		}
+
+		Map<Set<Object>, Service> rets = services.get(serviceClass);
+
+		if (rets != null) {
+			for (Set<Object> k : rets.keySet()) {
+				if (k.containsAll(key)) {
+					ret.add((T) rets.get(k));
+				}
+			}
+		}
+
+		// TODO sort services in case their load, availability or remoteness can be
+		// measured
+
+		return ret;
 	}
 
-	@Deprecated
-	public List<ResourcesService> getFederatedResources(Scope scope) {
-		return federatedResources;
+	public void registerService(Service service, Class<? extends Service> keyClass, Object... parameters) {
+
+		Set<Object> key = new HashSet<>();
+		if (parameters != null) {
+			for (Object p : parameters) {
+				key.add(p);
+			}
+		}
+		Map<Set<Object>, Service> rets = services.get(keyClass);
+		if (rets == null) {
+			rets = new HashMap<>();
+			services.put(keyClass, rets);
+		}
+
+		rets.put(key, service);
+
 	}
 
 	public Map<String, Authority> getAuthorities() {
 		return authorities;
 	}
 
-	@Deprecated
-	public UnitService getUnitService() {
-		return unitService;
-	}
-
-	@Deprecated
-	public void setUnitService(UnitService unitService) {
-		this.unitService = unitService;
-	}
-
-	@Deprecated
-	public CurrencyService getCurrencyService() {
-		return currencyService;
-	}
-
-	@Deprecated
-	public Language getLanguageService() {
-		return languageService;
-	}
-
-	@Deprecated
-	public void setLanguageService(Language unitService) {
-		this.languageService = unitService;
-	}
-
-	@Deprecated
-	public void setCurrencyService(CurrencyService currencyService) {
-		this.currencyService = currencyService;
-	}
-
-	@Deprecated
 	public void registerAuthority(Authority authority) {
 		if (authority.getCapabilities().getSubAuthorities().isEmpty()) {
 			this.authorities.put(authority.getName(), authority);
@@ -141,19 +170,6 @@ public enum Services {
 	public <S extends KlabService, T> Collection<T> broadcastRequest(Function<S, T> request, Scope scope,
 			Class<S> serviceClass) {
 
-		Collection<KlabService> services = availableServices(scope, serviceClass);
-
-		return null;
-	}
-
-	/**
-	 * Retrieve every available and online service of the passed class.
-	 * 
-	 * @param serviceClass
-	 * @return
-	 */
-	public Collection<KlabService> availableServices(Scope scope, Class<? extends KlabService> serviceClass) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

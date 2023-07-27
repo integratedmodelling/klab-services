@@ -40,11 +40,67 @@ import java.io.Serializable;
  *
  */
 public interface Grid extends Serializable {
-	
+
+	/**
+	 * Cell size in projection units along the X axis (always horizontal).
+	 * 
+	 * @return
+	 */
+	double getXCellSize();
+
+	/**
+	 * Cell size in projection units along the Y axis (always vertical).
+	 * 
+	 * @return
+	 */
+	double getYCellSize();
+
+	/**
+	 * A grid that only specified a cell size with no envelope has size() == 0.
+	 * 
+	 * @return
+	 */
+	long size();
+
+	/**
+	 * This will be 0 if there is no envelope.
+	 * 
+	 * @return
+	 */
 	int getXCells();
-	
+
+	/**
+	 * This will be 0 if there is no envelope.
+	 * 
+	 * @return
+	 */
 	int getYCells();
-	
+
+	/**
+	 * The envelope is null if the grid is only specified in terms of cell size.
+	 * 
+	 * @return
+	 */
 	Envelope getEnvelope();
+
+	/**
+	 * The projection is never null, so there is a separate method as the envelope
+	 * may be. In a grid specification used as constraint, the projection specified
+	 * in the grid overrides any other specification.
+	 * 
+	 * @return
+	 */
+	Projection getProjection();
+
+	/**
+	 * Return a new grid that is as close as possible as this once aligned with the
+	 * passed one. This may cause the projection and envelope of the result to be
+	 * different from the original. If the passed grid has an envelope, the result
+	 * will be intersected to be included in the incoming envelope.
+	 * 
+	 * @param other
+	 * @return
+	 */
+	Grid align(Grid other);
 
 }

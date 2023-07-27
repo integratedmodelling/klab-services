@@ -1,13 +1,12 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.io.Serializable;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
-public interface Authority extends Serializable {
+public interface Authority extends Service {
 
     interface Identity {
 

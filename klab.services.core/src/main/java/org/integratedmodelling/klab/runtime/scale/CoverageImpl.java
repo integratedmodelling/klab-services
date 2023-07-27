@@ -74,8 +74,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 	}
 
 	protected void setTo(CoverageImpl other) {
-		extents = Arrays.copyOf(other.extents, other.extents.length);
-		sort();
+		define(Arrays.asList(other.extents));
 		coverages.clear();
 		for (Pair<Extent<?>, Double> pair : other.coverages) {
 			coverages.add(Pair.of(pair.getFirst(), pair.getSecond()));
