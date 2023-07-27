@@ -13,6 +13,7 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.geometry.jts.WKBReader;
 import org.geotools.referencing.CRS;
+import org.integratedmodelling.klab.Services;
 import org.integratedmodelling.klab.api.data.IQuantity;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
@@ -25,7 +26,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.UnitService;
-import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
@@ -247,7 +248,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public double getArea(Unit unit) {
-        return unit.convert(getMeteredShape().getArea(), Services.INSTANCE.getService(UnitService.class).squareMeters())
+        return unit.convert(getMeteredShape().getArea(), Configuration.INSTANCE.getService(UnitService.class).squareMeters())
                 .doubleValue();
     }
 

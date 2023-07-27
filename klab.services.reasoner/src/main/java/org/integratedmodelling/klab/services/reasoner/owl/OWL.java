@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.integratedmodelling.klab.Configuration;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
@@ -59,7 +58,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
-import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
@@ -395,7 +394,7 @@ public class OWL {
 
 			if (Character.isUpperCase(st.getNamespace().charAt(0))) {
 
-				Authority authority = Services.INSTANCE.getAuthorities().get(st.getNamespace());
+				Authority authority = Configuration.INSTANCE.getAuthorities().get(st.getNamespace());
 				if (authority != null) {
 					Identity identity = authority.resolveIdentity(removeTicks(st.getName()));
 					if (identity != null) {

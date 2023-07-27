@@ -1,16 +1,24 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.util.List;
+
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
- * The language service provides validation and compilation for expressions used
- * in k.IM an k.Actors, supporting one or more external languages, with the
- * Groovy variant used in k.LAB as a default. The capabilities should describe
- * the languages available and how the returned code is executed (if a runtime
- * is required, the service should also provide engine plug-in extensions that
- * implement it).
+ * The language service provides validation and compilation for expressions and
+ * service calls used in k.IM an k.Actors, supporting one or more external
+ * expression languages, with the Groovy variant used in k.LAB as a default. The
+ * capabilities should describe the languages available and how the returned
+ * code is executed (if a runtime is required, the service should also provide
+ * engine plug-in extensions that implement it).
+ * <p>
+ * The service gets notified of all new prototypes and annotations gathered
+ * through annotations and k.DL declarations, and can validate and execute them.
  * 
  * @author Ferd
  *
@@ -44,5 +52,35 @@ public interface Language extends Service {
 	 * @return
 	 */
 	Expression compile(String expression, String language, CompilerOption... options);
+
+	/**
+	 * Validate a service call against its prototype. Unknown service calls should
+	 * produce an error.
+	 * 
+	 * @param call
+	 * @return
+	 */
+	List<Notification> validate(ServiceCall call);
+
+	/**
+	 * Validate an annotation versus its known prototype. Unknown annotations should
+	 * produce a single warning to that extent.
+	 * 
+	 * @param annotation
+	 * @return
+	 */
+	List<Notification> validate(Annotation annotation);
+
+	/**
+	 * Execute a service call and return its result. A mismatch in the result class
+	 * should produce an exception. No validation should be done at this stage.
+	 * 
+	 * @param <T>
+	 * @param call
+	 * @param scope
+	 * @param resultClass
+	 * @return
+	 */
+	<T> T execute(ServiceCall call, Scope scope, T resultClass);
 
 }

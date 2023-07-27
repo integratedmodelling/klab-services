@@ -65,7 +65,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.api.services.runtime.kactors.WidgetActionExecutor;
 import org.integratedmodelling.klab.common.Urns;
-import org.integratedmodelling.klab.configuration.Services;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIllegalStateException;
@@ -1667,7 +1667,7 @@ public class KActorsVM implements VM {
 		Expression.Descriptor selectDescriptor;
 		Expression selectExpression = null;
 		Map<String, State> states = new HashMap<>();
-		Language languageService = Services.INSTANCE.getService(Language.class);
+		Language languageService = Configuration.INSTANCE.getService(Language.class);
 
 		if (comparison != null) {
 			if (comparison.getType() == ValueType.EXPRESSION) {

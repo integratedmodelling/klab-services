@@ -22,7 +22,6 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch.TokenClass;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.configuration.Services;
 
 import com.google.common.collect.Sets;
 

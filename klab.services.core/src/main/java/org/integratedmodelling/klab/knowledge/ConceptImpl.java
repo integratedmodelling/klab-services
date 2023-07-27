@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.knowledge;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -14,7 +13,6 @@ import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.configuration.Services;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.util.StringUtils;
