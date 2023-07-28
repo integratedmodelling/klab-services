@@ -42,31 +42,42 @@ import org.integratedmodelling.klab.api.exceptions.KException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Prototype;
+import org.integratedmodelling.klab.api.lang.impl.PrototypeImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.CurrencyService;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Service;
 import org.integratedmodelling.klab.api.services.UnitService;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabContextualizer;
+import org.integratedmodelling.klab.api.services.runtime.extension.KlabPrototype;
+import org.integratedmodelling.klab.api.services.runtime.extension.KlabPrototype.Argument;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
 import org.integratedmodelling.klab.exceptions.KlabException;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.klab.runtime.language.LanguageService;
+import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
+import org.integratedmodelling.klab.runtime.scale.space.ProjectionImpl;
+import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.utils.MiscUtilities;
 import org.integratedmodelling.klab.utils.NameGenerator;
 import org.integratedmodelling.klab.utils.OS;
@@ -116,6 +127,9 @@ public enum Configuration {
 		 */
 		Klab.INSTANCE.setConfiguration(new Klab.Configuration() {
 
+			Projection defaultProjection = new ProjectionImpl(ProjectionImpl.DEFAULT_PROJECTION_CODE);
+			Projection latlonProjection = new ProjectionImpl(ProjectionImpl.DEFAULT_PROJECTION_CODE);
+			
 			@Override
 			public Scale promoteGeometryToScale(Geometry geometry) {
 				return new ScaleImpl(geometry);
@@ -129,44 +143,42 @@ public enum Configuration {
 
 			@Override
 			public Builder getObservableBuilder(Concept observable, Scope scope) {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return new ObservableBuildStrategy(observable, scope);
 			}
 
 			@Override
 			public Projection getLatLonSpatialProjection() {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return latlonProjection;
 			}
 
 			@Override
 			public Projection getDefaultSpatialProjection() {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return defaultProjection;
 			}
 
 			@Override
 			public Shape createShapeFromTextSpecification(String shapeText, Projection projection) {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return ShapeImpl.create(projection.getCode() + " " + shapeText);
 			}
 
 			@Override
 			public Scale createScaleFromExtents(Collection<Extent<?>> extents) {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return new ScaleImpl(Utils.Collections.asList(extents));
 			}
 
 			@Override
 			public Builder getObservableBuilder(Observable observable, Scope scope) {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return new ObservableBuildStrategy(observable, scope);
 			}
 
 			@Override
 			public Projection getSpatialProjection(String string) {
-				// TODO Auto-generated method stub
-				throw new KException("IMPLEMENTAMI OSTIA");
+				return new ProjectionImpl(string);
+			}
+
+			@Override
+			public Coverage promoteScaleToCoverage(Scale geometry, double coverage) {
+				return new CoverageImpl(geometry, coverage);
 			}
 		});
 
@@ -326,7 +338,8 @@ public enum Configuration {
 
 		registerService(new UnitServiceImpl(), UnitService.class);
 		registerService(new CurrencyServiceImpl(), CurrencyService.class);
-
+		registerService(new LanguageService(), Language.class);
+		
 	}
 
 	public List<Prototype> loadLibrary(Library annotation, Class<?> cls) {
@@ -335,8 +348,8 @@ public enum Configuration {
 		String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" : (annotation.name() + ".");
 
 		for (Class<?> clss : cls.getClasses()) {
-			if (cls.isAnnotationPresent(KlabContextualizer.class)) {
-				ret.add(createContextualizerPrototype(namespacePrefix, cls.getAnnotation(KlabContextualizer.class),
+			if (cls.isAnnotationPresent(KlabPrototype.class)) {
+				ret.add(createContextualizerPrototype(namespacePrefix, cls.getAnnotation(KlabPrototype.class),
 						clss, null));
 			} else if (cls.isAnnotationPresent(Verb.class)) {
 				ret.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), clss));
@@ -345,21 +358,63 @@ public enum Configuration {
 
 		// annotated methods
 		for (Method method : cls.getDeclaredMethods()) {
-			if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(KlabContextualizer.class)) {
-				ret.add(createContextualizerPrototype(namespacePrefix, cls.getAnnotation(KlabContextualizer.class), cls,
-						method));
+			if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(KlabPrototype.class)) {
+				ret.add(createContextualizerPrototype(namespacePrefix, method.getAnnotation(KlabPrototype.class),
+						cls, method));
 			}
 		}
 		return ret;
 	}
 
 	public Prototype createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss) {
+		// TODO
 		return null;
 	}
 
-	public Prototype createContextualizerPrototype(String namespacePrefix, KlabContextualizer annotation, Class<?> clss,
+	public Prototype createContextualizerPrototype(String namespacePrefix, KlabPrototype annotation, Class<?> clss,
 			Method method) {
-		return null;
+
+		var ret = new PrototypeImpl();
+
+		ret.setName(namespacePrefix + annotation.name());
+		ret.setDescription(annotation.description());
+		ret.setFilter(annotation.filter());
+		ret.setImplementation(clss);
+		ret.setExecutorMethod(method == null ? null : method.getName());
+		ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
+		ret.setLabel(annotation.dataflowLabel());
+		ret.setReentrant(annotation.reentrant());
+		for (Artifact.Type a : annotation.type()) {
+			ret.getType().add(a);
+		}
+
+		for (Argument argument : annotation.parameters()) {
+			var arg = createArgument(argument);
+			ret.getArguments().put(arg.getName(), arg);
+		}
+		for (Argument argument : annotation.exports()) {
+			var arg = createArgument(argument);
+			ret.getImports().add(arg);
+		}
+		for (Argument argument : annotation.imports()) {
+			var arg = createArgument(argument);
+			ret.getExports().add(arg);
+		}
+
+		return ret;
+	}
+
+	private PrototypeImpl.ArgumentImpl createArgument(Argument argument) {
+		var arg = new PrototypeImpl.ArgumentImpl();
+		arg.setName(argument.name());
+		arg.setDescription(argument.description());
+		arg.setOptional(argument.optional());
+		arg.setConst(argument.constant());
+		arg.setArtifact(argument.artifact());
+		for (Artifact.Type a : argument.type()) {
+			arg.getType().add(a);
+		}
+		return arg;
 	}
 
 	/**

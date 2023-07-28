@@ -14,10 +14,15 @@ public class GridImpl implements Grid {
     private EnvelopeImpl envelope;
     private double xSize, ySize;
 
+	public static Grid create(double resolutionInM) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
     public GridImpl() {
 
     }
-
+    
     public GridImpl(Parameters<String> definition) {
 
     }
@@ -69,5 +74,6 @@ public class GridImpl implements Grid {
         // TODO Auto-generated method stub
         return null;
     }
+
 
 }

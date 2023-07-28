@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projec
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabIOException;
@@ -206,7 +207,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         this.type = shape.type;
     }
 
-    @Override
+	@Override
     public Projection getProjection() {
         return projection;
     }
@@ -711,12 +712,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         return Double.NaN;
     }
 
-    public void simplify(double simplifyFactor) {
-        this.geometry = TopologyPreservingSimplifier.simplify(this.geometry, simplifyFactor);
-        this.envelope = EnvelopeImpl.create(this.geometry.getEnvelopeInternal(), this.projection);
+    public Shape simplify(double simplifyFactor) {
+    	return getSimplified(simplifyFactor);
     }
 
-    public Shape getSimplified(IQuantity resolution) {
+    public Shape getSimplified(Quantity resolution) {
         if (this.simplified) {
             return this;
         }

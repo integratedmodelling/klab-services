@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.runtime.scale.space;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Tile;
 import org.locationtech.jts.geom.Geometry;
 
@@ -21,6 +23,11 @@ public class TileImpl extends ShapeImpl implements Tile {
 		this.grid = grid;
 	}
 
+	public TileImpl(Shape shape, Grid grid) {
+		super(ShapeImpl.promote(shape));
+		this.grid = grid;
+	}
+
 	@Override
 	public TileImpl at(Object... locators) {
 		// TODO Auto-generated method stub
@@ -35,6 +42,10 @@ public class TileImpl extends ShapeImpl implements Tile {
 	@Override
 	public long size() {
 		return grid.size();
+	}
+
+	public static Space create(Shape shape, Grid grid) {
+		return new TileImpl(shape, grid);
 	}
 
 }

@@ -102,7 +102,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 		return new ScaleImpl(Arrays.asList(extents));
 	}
 
-	protected CoverageImpl(Scale original, double initialCoverage) {
+	public CoverageImpl(Scale original, double initialCoverage) {
 		super(original.getExtents().stream().map(e -> e.collapsed()).collect(Collectors.toList()));
 		this.coverage = initialCoverage;
 		for (Extent<?> extent : extents) {

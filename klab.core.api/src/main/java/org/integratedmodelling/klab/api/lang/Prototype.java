@@ -11,13 +11,13 @@ import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabContextualizer;
+import org.integratedmodelling.klab.api.services.runtime.extension.KlabPrototype;
 
 /**
  * A Prototype defines a function API and potentially holds the class/method
  * that implements it. In k.LAB prototypes apply to commands and language
  * functions so far, both of which can return one of these. Prototypes are
- * automatically created by the {@link KlabContextualizer} annotation, which
+ * automatically created by the {@link KlabPrototype} annotation, which
  * applies to different types of objects and will create services, functions or
  * commands according to the object it applies to. They can also be extracted
  * from KDL dataflow declarations in the classpath.
@@ -96,7 +96,7 @@ public interface Prototype extends Serializable {
 		 * 
 		 * @return the type
 		 */
-		Artifact.Type getType();
+		List<Artifact.Type> getType();
 
 		/**
 		 * Final arguments are set only once and mandatorily.
@@ -164,7 +164,7 @@ public interface Prototype extends Serializable {
 	 * 
 	 * @return return type
 	 */
-	Artifact.Type getType();
+	List<Artifact.Type> getType();
 
 	/**
 	 * Descriptor for the passed argument name.

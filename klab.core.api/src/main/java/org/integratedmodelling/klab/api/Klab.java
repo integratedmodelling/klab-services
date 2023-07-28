@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.resolver.Coverage;
 
 /**
  * Holds global configurations and functions that allow generic interfaces to
@@ -45,6 +46,8 @@ public enum Klab {
 		Shape createShapeFromTextSpecification(String shapeText, Projection projection);
 
 		Projection getSpatialProjection(String string);
+
+		Coverage promoteScaleToCoverage(Scale geometry, double coverage);
 
 	}
 

@@ -20,6 +20,7 @@ import java.time.ZonedDateTime;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimeInstantImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimDate;
 
 /**
  * 
@@ -79,8 +80,8 @@ public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
 
 	/**
 	 * True if this time starts at a point correspondent with the beginning of the
-	 * passed resolution - e.g. if the resolution is Months, return true if the 
-	 * time is the beginning of a month.
+	 * passed resolution - e.g. if the resolution is Months, return true if the time
+	 * is the beginning of a month.
 	 * 
 	 * @param res
 	 * @return
@@ -92,11 +93,12 @@ public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
 	int getMonth();
 
 	int getHour();
-	
+
 	int getMinute();
-	
+
 	/**
-	 * Minimum between two instants, returning null without error if any of the operands is null.
+	 * Minimum between two instants, returning null without error if any of the
+	 * operands is null.
 	 * 
 	 * @param a
 	 * @param b
@@ -113,7 +115,8 @@ public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
 	}
 
 	/**
-	 * Maximum between two instants, returning null without error if any of the operands is null.
+	 * Maximum between two instants, returning null without error if any of the
+	 * operands is null.
 	 * 
 	 * @param a
 	 * @param b
@@ -139,30 +142,41 @@ public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
 
 	/**
 	 * Adjust to beginning of next nearest period
+	 * 
 	 * @param temporalAggregation
 	 * @return
 	 */
 	TimeInstant endOf(Resolution.Type temporalAggregation);
 
-    String toRFC3339String();
-    
-    public static TimeInstant create(int year, int month, int day) {
-        return new TimeInstantImpl(year, month, day);
-    }
+	String toRFC3339String();
 
-    public static TimeInstant create(int year) {
-        return new TimeInstantImpl(year);
-    }
+	public static TimeInstant create(int year, int month, int day) {
+		return new TimeInstantImpl(year, month, day);
+	}
 
-    public static TimeInstant create(ZonedDateTime time) {
-        return new TimeInstantImpl(time);
-    }
+	public static TimeInstant create(int year, int month, int day, int hour, int minutes, int seconds,
+			int milliseconds) {
+		return new TimeInstantImpl(year, month, day, hour, minutes, seconds, milliseconds);
+	}
 
-    public static TimeInstant create(long milliseconds) {
-        return new TimeInstantImpl(milliseconds);
-    }
+	public static TimeInstant create(int year) {
+		return new TimeInstantImpl(year);
+	}
 
-    public static TimeInstant create() {
-        return new TimeInstantImpl();
-    }
+	public static TimeInstant create(ZonedDateTime time) {
+		return new TimeInstantImpl(time);
+	}
+
+	public static TimeInstant create(long milliseconds) {
+		return new TimeInstantImpl(milliseconds);
+	}
+
+	public static TimeInstant create() {
+		return new TimeInstantImpl();
+	}
+
+	static TimeInstant create(KimDate kimDate) {
+		return create(kimDate.getYear(), kimDate.getMonth(), kimDate.getDay(), kimDate.getHour(), kimDate.getMin(),
+				kimDate.getSec(), kimDate.getMs());
+	}
 }

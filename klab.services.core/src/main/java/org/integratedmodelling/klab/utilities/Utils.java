@@ -9,6 +9,8 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -942,7 +944,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
 		public static void writeStringToFile(String string, File file) {
 			try {
-				FileUtils.write(file, string, UTF_8_Y);
+				FileUtils.write(file, string, StandardCharsets.UTF_8);
 			} catch (IOException e) {
 				throw new KIOException(e);
 			}

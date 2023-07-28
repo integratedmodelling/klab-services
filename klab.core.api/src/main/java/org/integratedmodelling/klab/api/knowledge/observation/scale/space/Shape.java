@@ -74,6 +74,14 @@ public interface Shape extends Referenced, Space {
 	Shape transform(Projection projection);
 
 	/**
+	 * Simplify the shape by the proportion passed.
+	 * 
+	 * @param simplificationFactor
+	 * @return
+	 */
+	Shape simplify(double simplificationFactor);
+
+	/**
 	 * The shape's bounding box
 	 *
 	 * @return the referenced envelope

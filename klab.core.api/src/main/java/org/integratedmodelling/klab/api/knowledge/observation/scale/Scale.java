@@ -204,6 +204,15 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 */
 	Scale collapse(Dimension.Type... dimensions);
 
+	/**
+	 * Produce another scale with the passed extent, merging it with any existing
+	 * one if it's present.
+	 * 
+	 * @param extent
+	 * @return
+	 */
+	Scale mergeExtent(Extent<?> extent);
+
 	public static Scale create(String geometrySpecifications) {
 		return create(Geometry.create(geometrySpecifications));
 	}
@@ -222,7 +231,7 @@ public interface Scale extends Geometry, Topology<Scale> {
 
 	public static Scale create(Geometry geometry) {
 		if (geometry instanceof Scale) {
-			return (Scale)geometry;
+			return (Scale) geometry;
 		}
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
 		if (configuration == null) {
@@ -234,4 +243,5 @@ public interface Scale extends Geometry, Topology<Scale> {
 	public static Scale empty() {
 		return create(Geometry.EMPTY);
 	}
+
 }

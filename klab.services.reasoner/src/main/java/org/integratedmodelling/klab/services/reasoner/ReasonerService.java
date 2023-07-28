@@ -2132,7 +2132,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 		if (concept.getNonSemanticType() != null) {
 			Concept nsmain = this.owl.getNonsemanticPeer(concept.getModelReference(), concept.getNonSemanticType());
 			ObservableImpl observable = ObservableImpl.promote(nsmain);
-			observable.setModelReference(concept.getModelReference());
+//			observable.setModelReference(concept.getModelReference());
 			observable.setName(concept.getFormalName());
 			observable.setStatedName(concept.getFormalName());
 			observable.setReferenceName(concept.getFormalName());

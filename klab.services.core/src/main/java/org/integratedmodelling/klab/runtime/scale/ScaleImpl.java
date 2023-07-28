@@ -485,6 +485,17 @@ public class ScaleImpl implements Scale {
 			return false;
 		}
 
+		@Override
+		public Scale mergeExtent(Extent<?> extent) {
+			return ScaleImpl.this.mergeExtent(extent);
+		}
+
+	}
+
+	@Override
+	public Scale mergeExtent(Extent<?> extent) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

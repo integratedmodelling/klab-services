@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services.resolver;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -11,11 +10,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -25,8 +24,11 @@ import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimAction;
+import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -36,6 +38,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Authentication;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -120,7 +123,7 @@ public class ResolverService extends BaseService implements Resolver {
 					"cannot observe dependent knowledge without a direct observation in the scope"));
 		} else {
 
-			Resolution resolution = resolve(resolutionGraph.newResolution(resolvable, scope.getGeometry()));
+			Resolution resolution = resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
 			if (resolution.isComplete()) {
 				return dataflowService.compile(resolution);
 			}
@@ -129,6 +132,13 @@ public class ResolverService extends BaseService implements Resolver {
 		return Dataflow.empty(
 				resolvable instanceof Observable ? (Observable) resolvable : ((Instance) resolvable).getObservable(),
 				resolutionGraph.getCoverage());
+	}
+
+	private Scale resolutionScale(Knowledge resolvable, ContextScope scope) {
+		if (resolvable instanceof Instance) {
+			return ((Instance)resolvable).getScale();
+		}
+		return scope.getGeometry();
 	}
 
 	private boolean isDependent(Knowledge resolvable) {
@@ -427,7 +437,7 @@ public class ResolverService extends BaseService implements Resolver {
 				break;
 			default:
 				break;
-			
+
 			}
 		}
 		return ret;
@@ -457,30 +467,65 @@ public class ResolverService extends BaseService implements Resolver {
 	private Instance loadInstance(KimInstance statement, Scope scope) {
 
 		var reasoner = scope.getService(Reasoner.class);
-		
+
 		InstanceImpl instance = new InstanceImpl();
 		instance.getAnnotations().addAll(statement.getAnnotations());
 		instance.setObservable(reasoner.declareObservable(statement.getObservable()));
 		instance.setUrn(statement.getNamespace() + "." + statement.getName());
 		instance.setMetadata(statement.getMetadata());
+		instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
+
 		for (KimObservable state : statement.getStates()) {
 			instance.getStates().add(reasoner.declareObservable(state));
 		}
 		for (KimScope child : statement.getChildren()) {
-			instance.getChildren().add(loadInstance((KimInstance)child, scope));
+			instance.getChildren().add(loadInstance((KimInstance) child, scope));
 		}
-		// scale
-		if (statement.getBehavior() != null) {
-			for (KimAction contextualizer : statement.getBehavior().getActions()) {
-				
+
+		return instance;
+	}
+
+	private Scale createScaleFromBehavior(KimBehavior behavior, Scope scope) {
+
+		Scale scale = null;
+		List<Extent<?>> extents = new ArrayList<>();
+		var languageService = Configuration.INSTANCE.getService(Language.class);
+
+		if (behavior != null) {
+			for (KimAction contextualizer : behavior.getActions()) {
+				for (var computable : contextualizer.getComputation()) {
+					if (computable.getServiceCall() != null) {
+						var ext = languageService.execute(computable.getServiceCall(), scope, Object.class);
+						if (ext instanceof Scale) {
+							scale = (Scale) ext;
+						} else if (ext instanceof Geometry) {
+							scale = Scale.create((Geometry) ext);
+						} else if (ext instanceof Extent) {
+							extents.add((Extent<?>) ext);
+						} else {
+							throw new KIllegalStateException("the call to " + computable.getServiceCall().getName()
+									+ " did not produce a scale or an extent");
+						}
+					} /* todo what else? */
+				}
 			}
 		}
-		return instance;
+		if (scale != null) {
+			for (Extent<?> extent : extents) {
+				scale = scale.mergeExtent(extent);
+			}
+		} else if (!extents.isEmpty()) {
+			scale = Scale.create(extents);
+		} else {
+			scale = Scale.empty();
+		}
+
+		return scale;
 	}
 
 	private Model loadModel(KimModel statement, Scope scope) {
 		ModelImpl model = new ModelImpl();
-		
+
 		return model;
 	}
 
@@ -517,24 +562,24 @@ public class ResolverService extends BaseService implements Resolver {
 	public void initializeService() {
 
 		/*
-         * Components
-         */
-        Set<String> extensionPackages = new LinkedHashSet<>();
-        extensionPackages.add("org.integratedmodelling.klab.runtime");
-        /*
-         * Check for updates, load and scan all new plug-ins, returning the main packages to
-         * scan
-         */
-        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
+		 * Components
+		 */
+		Set<String> extensionPackages = new LinkedHashSet<>();
+		extensionPackages.add("org.integratedmodelling.klab.runtime");
+		/*
+		 * Check for updates, load and scan all new plug-ins, returning the main
+		 * packages to scan
+		 */
+		extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
-        /*
-         * Scan all packages registered under the parent package of all k.LAB services. TODO all
-         * assets from there should be given default permissions (or those encoded with their
-         * annotations) that are exposed to the admin API.
-         */
-        for (String pack : extensionPackages) {
-            Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
-        }
+		/*
+		 * Scan all packages registered under the parent package of all k.LAB services.
+		 * TODO all assets from there should be given default permissions (or those
+		 * encoded with their annotations) that are exposed to the admin API.
+		 */
+		for (String pack : extensionPackages) {
+			Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
+		}
 	}
 
 }

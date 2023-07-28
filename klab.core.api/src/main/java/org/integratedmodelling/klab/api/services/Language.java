@@ -81,6 +81,6 @@ public interface Language extends Service {
 	 * @param resultClass
 	 * @return
 	 */
-	<T> T execute(ServiceCall call, Scope scope, T resultClass);
+	<T> T execute(ServiceCall call, Scope scope, Class<T> resultClass);
 
 }

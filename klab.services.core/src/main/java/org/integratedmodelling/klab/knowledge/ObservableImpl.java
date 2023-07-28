@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -19,6 +18,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -46,14 +46,9 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 	private Unit unit;
 	private Currency currency;
 	private NumericRange range;
-//    private String url;
-//    private boolean specialized;
-//    private boolean dereified;
 	private Map<Concept, Concept> resolvedPredicates;
-//    private Collection<Concept> abstractPredicates;
 	private Collection<Concept> contextualRoles;
 	private Resolution resolution;
-//    private boolean global;
 	private boolean optional;
 	private boolean generic;
 	private Collection<ResolutionException> resolutionExceptions;
@@ -65,16 +60,44 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 	private String referenceName;
 	private String name;
 	private String namespace;
-//    private boolean mustContextualizeAtResolution;
-//    private Concept targetPredicate;
 	private boolean distributedInherency;
-//    private Concept temporalInherent;
 	private String dereifiedAttribute;
-//    private Observable incarnatedAbstractObservable;
-//    private Observable deferredTarget;
-	private String modelReference;
 	private Metadata metadata = Metadata.create();
 
+	transient Knowledge resolving;
+	
+	public ObservableImpl() {}
+	
+	private ObservableImpl(ObservableImpl other) {
+		this.semantics = other.semantics;
+		this.version = other.version;
+		this.observer = other.observer;
+		this.descriptionType = other.descriptionType;
+		this.artifactType = other.artifactType;
+		this.isAbstract = other.isAbstract;
+		this.urn = other.urn;
+		this.unit = other.unit;
+		this.currency = other.currency;
+		this.range = other.range;
+		this.resolvedPredicates = other.resolvedPredicates;
+		this.contextualRoles = other.contextualRoles;
+		this.resolution = other.resolution;
+		this.optional = other.optional;
+		this.generic = other.generic;
+		this.resolutionExceptions = other.resolutionExceptions;
+		this.defaultValue = other.defaultValue;
+		this.value = other.value;
+		this.statedName = other.statedName;
+		this.annotations.addAll(other.annotations);
+		this.valueOperators = other.valueOperators;
+		this.referenceName = other.referenceName;
+		this.name = other.name;
+		this.namespace = other.namespace;
+		this.distributedInherency = other.distributedInherency;
+		this.dereifiedAttribute = other.dereifiedAttribute;
+		this.metadata.putAll(other.metadata);
+	}
+	
 	@Override
 	public String getUrn() {
 		return urn;
@@ -530,18 +553,18 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 		this.metadata = metadata;
 	}
 
-	@Override
-	public String getModelReference() {
-		return modelReference;
-	}
-
-	public void setModelReference(String modelReference) {
-		this.modelReference = modelReference;
-	}
-
+//	@Override
+//	public String getModelReference() {
+//		return modelReference;
+//	}
+//
+//	public void setModelReference(String modelReference) {
+//		this.modelReference = modelReference;
+//	}
+	
 	@Override
 	public int hashCode() {
-		return Objects.hash(descriptionType, urn);
+		return Objects.hash(descriptionType, observer, urn);
 	}
 
 	@Override
@@ -553,7 +576,25 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 		if (getClass() != obj.getClass())
 			return false;
 		ObservableImpl other = (ObservableImpl) obj;
-		return descriptionType == other.descriptionType && Objects.equals(urn, other.urn);
+		return descriptionType == other.descriptionType && Objects.equals(observer, other.observer)
+				&& Objects.equals(urn, other.urn);
+	}
+
+	@Override
+	public String toString() {
+		return urn;
+	}
+
+	@Override
+	public Observable resolvedWith(Knowledge resolvable) {
+		ObservableImpl ret = new ObservableImpl(this);
+		ret.resolving = resolvable;
+		return ret;
+	}
+
+	@Override
+	public Knowledge resolving() {
+		return this.resolving;
 	}
 
 }

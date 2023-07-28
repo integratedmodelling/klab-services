@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -32,7 +33,7 @@ public class PrototypeImpl implements Prototype {
 		private boolean option;
 		private boolean optional;
 		private boolean isFinal;
-		private Type type;
+		private List<Type> type = new ArrayList<>();
 		private boolean artifact;
 		private boolean expression;
 		private boolean parameter;
@@ -74,7 +75,7 @@ public class PrototypeImpl implements Prototype {
 		}
 
 		@Override
-		public Type getType() {
+		public List<Type> getType() {
 			return type;
 		}
 
@@ -121,7 +122,7 @@ public class PrototypeImpl implements Prototype {
 			this.optional = optional;
 		}
 
-		public void setType(Type type) {
+		public void setType(List<Type> type) {
 			this.type = type;
 		}
 
@@ -194,7 +195,7 @@ public class PrototypeImpl implements Prototype {
 	private Map<String, ArgumentImpl> arguments = new LinkedHashMap<>();
 	private String description;
 	private Class<?> implementation;
-	private Type type;
+	private List<Type> type = new ArrayList<>();
 	private Geometry geometry;
 	private boolean distributed;
 	private boolean contextualizer;
@@ -224,7 +225,7 @@ public class PrototypeImpl implements Prototype {
 		this.arguments = arguments;
 	}
 
-	public void setType(Type type) {
+	public void setType(List<Type> type) {
 		this.type = type;
 	}
 
@@ -246,7 +247,7 @@ public class PrototypeImpl implements Prototype {
 	}
 
 	@Override
-	public Type getType() {
+	public List<Type> getType() {
 		return type;
 	}
 
@@ -274,20 +275,20 @@ public class PrototypeImpl implements Prototype {
 				ret.add(new PairImpl<>(name + ": argument " + arg + " is not recognized", Level.SEVERE));
 			} else {
 				Object val = function.getParameters().get(arg);
-				if ((val = classify(val, argument)) == null) {
-					ret.add(new PairImpl<>(name + ": argument " + arg + " is of incompatible type: "
-							+ (argument.getType() == Type.ENUM
-									? ("one of " + Arrays.toString(
-											argument.enumValues.toArray(new String[argument.enumValues.size()])))
-									: argument.getType().name().toLowerCase())
-							+ " expected", Level.SEVERE));
-				}
+//				if ((val = classify(val, argument)) == null) {
+//					ret.add(Pair.of(name + ": argument " + arg + " is of incompatible type: "
+//							+ (argument.getType() == Type.ENUM
+//									? ("one of " + Arrays.toString(
+//											argument.enumValues.toArray(new String[argument.enumValues.size()])))
+//									: argument.getType().name().toLowerCase())
+//							+ " expected", Level.SEVERE));
+//				}
 			}
 		}
 		// ensure that all mandatory args are there
 		for (ArgumentImpl arg : arguments.values()) {
 			if (!arg.isOptional() && !function.getParameters().containsKey(arg.name)) {
-				ret.add(new PairImpl<>(name + ": mandatory argument " + arg.name + " was not passed", Level.SEVERE));
+//				ret.add(Pair.of(name + ": mandatory argument " + arg.name + " was not passed", Level.SEVERE));
 			}
 		}
 		// TODO does not check that invalid parameters are NOT passed. At the moment it
@@ -300,11 +301,11 @@ public class PrototypeImpl implements Prototype {
 	 * Validate the passed object as the type requested and return it (or its
 	 * transformation if allowed) if valid; return null otherwise.
 	 */
-	private Object classify(Object val, ArgumentImpl argument) {
+	private Object classify(Object val, ArgumentImpl argument, int typeIndex) {
 		if (val == null) {
 			return true;
 		}
-		switch (argument.getType()) {
+		switch (argument.getType().get(typeIndex)) {
 		case ANNOTATION:
 			break;
 		case BOOLEAN:
@@ -505,7 +506,7 @@ public class PrototypeImpl implements Prototype {
 
 	private String printEnumValues(ArgumentImpl arg) {
 		String ret = "";
-		if (arg.type == Type.ENUM) {
+		if (arg.type.get(0) == Type.ENUM) {
 			ret += "(";
 			for (String s : arg.enumValues) {
 				ret += (ret.length() == 1 ? "" : ",") + s;

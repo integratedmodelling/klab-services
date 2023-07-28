@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -134,6 +136,13 @@ public class ResolutionGraph {
 		public Resolution(Observable observable, LogicalConnector mergeStrategy) {
 			this.observable = observable;
 			this.mergeStrategy = mergeStrategy;
+			this.accepted.putAll(nodes);
+		}
+
+		public Resolution(Knowledge resolvable, Scale scale) {
+			this.observable = promoteResolvable(resolvable);
+			this.mergeStrategy = LogicalConnector.UNION;
+			this.coverage = Coverage.create(scale, resolvable instanceof Instance ? 1.0 : 0.0);
 			this.accepted.putAll(nodes);
 		}
 
@@ -283,7 +292,7 @@ public class ResolutionGraph {
 	 * @return
 	 */
 	public Resolution newResolution(Knowledge resolvable, Scale scale) {
-		Resolution ret = new Resolution(promoteResolvable(resolvable), LogicalConnector.UNION);
+		Resolution ret = new Resolution(resolvable, scale);
 		roots.add(ret);
 		return ret;
 	}
@@ -302,16 +311,16 @@ public class ResolutionGraph {
 			ret = (Observable) resolvable;
 			break;
 		case CONCEPT:
-			// promote to observable
+			ret = Observable.promote((Concept) resolvable);
 			break;
 		case MODEL:
-			// same
+			ret = ((Model) resolvable).getObservables().get(0).resolvedWith(resolvable);
 			break;
 		case RESOURCE:
-			// same
+			// same, maybe not
 			break;
 		case INSTANCE:
-			// also
+			ret = ((Instance) resolvable).getObservable().resolvedWith(resolvable);
 			break;
 		default:
 			break;
@@ -359,7 +368,7 @@ public class ResolutionGraph {
 			this.deferredObservable = observable;
 			return this;
 		}
-		
+
 	}
 
 	public ResolutionGraph(ContextScope scope) {
