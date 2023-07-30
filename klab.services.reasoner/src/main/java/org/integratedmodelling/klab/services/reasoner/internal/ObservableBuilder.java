@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.IKnowledge;
@@ -1400,7 +1401,7 @@ public class ObservableBuilder implements Observable.Builder {
 
 		if (unitStatement != null) {
 			/* TODO CHECK */
-			Unit unit = Unit.create(this.unitStatement);
+			Unit unit = new UnitImpl(this.unitStatement);
 			ret.setUnit(unit);
 		}
 		if (currencyStatement != null) {

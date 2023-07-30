@@ -129,15 +129,15 @@ public interface TimeDuration extends Serializable, Comparable<TimeDuration> {
 
     public static TimeDuration of(Quantity spec) {
         Resolution res = Resolution.of(spec.getValue().doubleValue(), Resolution.Type.parse(spec.getUnit().toString()));
-        return TimeDuration.of((long) (res.getMultiplier() * res.getType().getMilliseconds()), res.getType());
+        return of((long) (res.getMultiplier() * res.getType().getMilliseconds()), res.getType());
     }
 
     public static TimeDuration parse(String string) {
-        return TimeDuration.of(Quantity.parse(string));
+        return of(Quantity.parse(string));
     }
 
     public static TimeDuration of(Number number, Resolution.Type type) {
-        return TimeDuration.of(number.longValue(), type);
+        return TimeDurationImpl.create(number.longValue(), type);
     }
 
     public static TimeDuration create(TimeInstant start, TimeInstant end, boolean anchor) {

@@ -104,8 +104,8 @@ public interface Unit extends ValueMediator {
      */
     boolean isUnitless();
 
-    static Unit create(String unitStatement) {
-        return new UnitImpl(unitStatement);
-    }
+//    static Unit create(String unitStatement) {
+//        return new UnitImpl(unitStatement);
+//    }
 
 }

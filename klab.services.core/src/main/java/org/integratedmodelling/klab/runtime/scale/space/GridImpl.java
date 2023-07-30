@@ -10,13 +10,14 @@ public class GridImpl implements Grid {
     private static final long serialVersionUID = -4637331840972669199L;
 
     private ProjectionImpl projection;
-    private long X, Y;
+    private long X = 1, Y = 1;
     private EnvelopeImpl envelope;
     private double xSize, ySize;
+    private long size = 1;
 
 	public static Grid create(double resolutionInM) {
-		// TODO Auto-generated method stub
-		return null;
+	    GridImpl ret = new GridImpl();
+		return ret;
 	}
 
     public GridImpl() {
@@ -48,7 +49,7 @@ public class GridImpl implements Grid {
     @Override
     public long size() {
         // TODO Auto-generated method stub
-        return 0;
+        return size;
     }
 
     @Override

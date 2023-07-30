@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.runtime.scale.space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Tile;
 import org.locationtech.jts.geom.Geometry;
 
@@ -44,7 +43,7 @@ public class TileImpl extends ShapeImpl implements Tile {
 		return grid.size();
 	}
 
-	public static Space create(Shape shape, Grid grid) {
+	public static TileImpl create(Shape shape, Grid grid) {
 		return new TileImpl(shape, grid);
 	}
 

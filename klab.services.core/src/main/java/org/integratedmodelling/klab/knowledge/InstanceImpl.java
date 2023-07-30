@@ -95,4 +95,9 @@ public class InstanceImpl implements Instance {
         this.scale = scale;
     }
 
+    @Override
+    public String toString() {
+        return urn;
+    }
+
 }

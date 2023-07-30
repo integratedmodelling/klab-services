@@ -6,25 +6,31 @@ import java.util.stream.Collectors;
 
 import org.integratedmodelling.kim.api.IContextualizable;
 import org.integratedmodelling.kim.api.IKimAcknowledgement;
+import org.integratedmodelling.kim.api.IKimAction;
+import org.integratedmodelling.kim.api.IKimBehavior;
 import org.integratedmodelling.kim.api.IKimClassification;
 import org.integratedmodelling.kim.api.IKimConcept;
 import org.integratedmodelling.kim.api.IKimConceptStatement;
 import org.integratedmodelling.kim.api.IKimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.kim.api.IKimConceptStatement.DescriptionType;
 import org.integratedmodelling.kim.api.IKimConceptStatement.ParentConcept;
+import org.integratedmodelling.kim.api.IKimDate;
 import org.integratedmodelling.kim.api.IKimExpression;
 import org.integratedmodelling.kim.api.IKimLookupTable;
 import org.integratedmodelling.kim.api.IKimModel;
 import org.integratedmodelling.kim.api.IKimNamespace;
 import org.integratedmodelling.kim.api.IKimObservable;
+import org.integratedmodelling.kim.api.IKimQuantity;
 import org.integratedmodelling.kim.api.IKimRestriction;
 import org.integratedmodelling.kim.api.IKimScope;
 import org.integratedmodelling.kim.api.IKimSymbolDefinition;
+import org.integratedmodelling.kim.api.IParameters;
 import org.integratedmodelling.kim.api.IServiceCall;
 import org.integratedmodelling.kim.api.IValueMediator;
 import org.integratedmodelling.kim.model.Kim;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
@@ -47,21 +53,27 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.ContextualizableImpl;
+import org.integratedmodelling.klab.api.lang.impl.QuantityImpl;
 import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimInstanceImpl;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimActionImpl;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimBehaviorImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimClassificationImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptStatementImpl;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimInstanceImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimLookupTableImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimModelImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimObservableImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimSymbolDefinitionImpl;
+import org.integratedmodelling.klab.api.lang.kim.KimAction;
+import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept.Expression;
@@ -154,7 +166,7 @@ public class KimAdapter {
             ret.getStates().add(adaptKimObservable(state));
         }
         ret.setUrn(statement.getUrn());
-
+        ret.setBehavior(adaptKimBehavior(statement.getBehavior()));
         ret.setUri(statement.getURI());
 
         return ret;
@@ -206,9 +218,22 @@ public class KimAdapter {
                 object = adaptKimConcept((IKimConcept) object);
             } else if (object instanceof IKimObservable) {
                 object = adaptKimObservable((IKimObservable) object);
-            } // TODO continue for all possible literals
+            } else if (object instanceof IKimQuantity) {
+                object = adaptKimQuantity((IKimQuantity)object);
+            } else if (object instanceof IKimDate) {
+                 // TODO
+            }
+            // TODO continue for all possible literals
         }
         return object;
+    }
+
+    private static Quantity adaptKimQuantity(IKimQuantity object) {
+        QuantityImpl ret = new QuantityImpl();
+        ret.setCurrency(object.getCurrency());
+        ret.setUnit(object.getUnit());
+        ret.setValue(object.getValue());
+        return ret;
     }
 
     public static KimConceptImpl adaptKimConcept(IKimConcept original) {
@@ -306,7 +331,7 @@ public class KimAdapter {
         if (statement.getResourceUrns() != null) {
             ret.getResourceUrns().addAll(statement.getResourceUrns());
         }
-
+        ret.setBehavior(adaptKimBehavior(statement.getBehavior()));
         ret.setScope(adaptScope(statement.getScope(), namespace));
 
         ret.setType(
@@ -314,6 +339,26 @@ public class KimAdapter {
 
         ret.setUri(statement.getURI());
 
+        return ret;
+    }
+
+    private static KimBehavior adaptKimBehavior(IKimBehavior behavior) {
+        KimBehaviorImpl ret = new KimBehaviorImpl();
+        Utils.Lang.copyStatementData(behavior, ret);
+        ret.setEmpty(behavior.isEmpty());
+        ret.setDynamic(behavior.isDynamic());
+        for (IKimAction action : behavior.getActions()) {
+            ret.getActions().add(adaptAction(action));
+        }
+        for (IServiceCall call : behavior.getExtentFunctions()) {
+            ret.getExtentFunctions().add(adaptServiceCall(call));
+        }
+        return ret;
+    }
+
+    private static KimAction adaptAction(IKimAction action) {
+        KimActionImpl ret = new KimActionImpl();
+        // TODO
         return ret;
     }
 
@@ -390,7 +435,22 @@ public class KimAdapter {
     private static ServiceCall adaptServiceCall(IServiceCall serviceCall) {
         ServiceCallImpl ret = new ServiceCallImpl();
         Utils.Lang.copyStatementData(serviceCall, ret);
+        ret.setName(serviceCall.getName());
+        ret.getParameters().putAll(adaptParameters(serviceCall.getParameters()));
+        return ret;
+    }
 
+    private static Parameters<String> adaptParameters(IParameters<String> parameters) {
+        Parameters<String> ret = Parameters.create();
+        for (String key : parameters.keySet()) {
+            ret.put(key, adapt(parameters.get(key)));
+        }
+        for (Object k : parameters.getUnnamedArguments()) {
+            ret.getUnnamedArguments().add(adapt(k));
+        }
+        for (String k : parameters.getUnnamedKeys()) {
+            ret.getUnnamedKeys().add(k);
+        }
         return ret;
     }
 

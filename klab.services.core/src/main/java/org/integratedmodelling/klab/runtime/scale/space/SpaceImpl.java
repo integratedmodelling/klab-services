@@ -22,6 +22,10 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
 	
 	static GeometryFactory gFactory = new GeometryFactory();
 
+	public SpaceImpl() {
+	    super(Dimension.Type.SPACE);
+	}
+	
 //	Envelope envelope;
 
 //	@Override

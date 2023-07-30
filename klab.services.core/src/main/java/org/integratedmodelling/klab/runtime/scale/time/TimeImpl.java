@@ -36,9 +36,11 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     int timeSlice = -1;
 
     public TimeImpl() {
+        super(Dimension.Type.TIME);
     }
 
     private TimeImpl(TimeImpl time) {
+        super(Dimension.Type.TIME);
         this.end = time.getEnd();
         this.extentType = time.getTimeType();
         this.size = time.size();
@@ -106,8 +108,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
     @Override
     public Time collapsed() {
-        // TODO Auto-generated method stub
-        return null;
+        return create(start.getMilliseconds(), end.getMilliseconds());
     }
 
     @Override

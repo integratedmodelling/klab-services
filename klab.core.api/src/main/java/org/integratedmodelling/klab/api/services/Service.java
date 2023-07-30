@@ -1,5 +1,12 @@
 package org.integratedmodelling.klab.api.services;
 
+/**
+ * Basic service type. Those that are not {@link KlabService}s are created explicitly or injected
+ * and accessed through configuration. Only needed for the API.
+ * 
+ * @author Ferd
+ *
+ */
 public interface Service {
 
     /**

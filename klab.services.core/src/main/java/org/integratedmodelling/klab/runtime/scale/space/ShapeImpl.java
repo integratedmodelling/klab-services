@@ -13,10 +13,7 @@ import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.geometry.jts.WKBReader;
 import org.geotools.referencing.CRS;
-import org.integratedmodelling.klab.Services;
-import org.integratedmodelling.klab.api.data.IQuantity;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Geometry.Encoding;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -59,7 +56,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     private static WKBWriter wkbWriter = new WKBWriter();
 
     private EnvelopeImpl envelope;
-    private Shape.Type type = null;
+    private Shape.Type geometryType = null;
     private ProjectionImpl projection;
 
     // to avoid multiple rounds of simplification
@@ -143,7 +140,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         ret.geometry = makeCell(x1, y1, x2, y2);
         ret.projection = ProjectionImpl.promote(projection);
         ret.envelope = EnvelopeImpl.create(ret.geometry.getEnvelopeInternal(), ret.projection);
-        ret.type = Shape.Type.POLYGON;
+        ret.geometryType = Shape.Type.POLYGON;
         return ret;
     }
 
@@ -152,7 +149,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         ret.geometry = makePoint(x1, y1);
         ret.projection = ProjectionImpl.promote(projection);
         ret.envelope = EnvelopeImpl.create(ret.geometry.getEnvelopeInternal(), ret.projection);
-        ret.type = Shape.Type.POINT;
+        ret.geometryType = Shape.Type.POINT;
         return ret;
     }
 
@@ -204,10 +201,10 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         this.geometry = shape.geometry;
         this.projection = shape.projection;
         this.envelope = shape.envelope;
-        this.type = shape.type;
+        this.geometryType = shape.geometryType;
     }
 
-	@Override
+    @Override
     public Projection getProjection() {
         return projection;
     }
@@ -225,22 +222,22 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public Shape.Type getGeometryType() {
-        if (type == null) {
+        if (geometryType == null) {
             if (geometry instanceof Polygon) {
-                type = Shape.Type.POLYGON;
+                geometryType = Shape.Type.POLYGON;
             } else if (geometry instanceof MultiPolygon) {
-                type = Shape.Type.MULTIPOLYGON;
+                geometryType = Shape.Type.MULTIPOLYGON;
             } else if (geometry instanceof Point) {
-                type = Shape.Type.POINT;
+                geometryType = Shape.Type.POINT;
             } else if (geometry instanceof MultiLineString) {
-                type = Shape.Type.MULTILINESTRING;
+                geometryType = Shape.Type.MULTILINESTRING;
             } else if (geometry instanceof LineString) {
-                type = Shape.Type.LINESTRING;
+                geometryType = Shape.Type.LINESTRING;
             } else if (geometry instanceof MultiPoint) {
-                type = Shape.Type.MULTIPOINT;
+                geometryType = Shape.Type.MULTIPOINT;
             }
         }
-        return type;
+        return geometryType;
     }
 
     public double getNativeArea() {
@@ -459,11 +456,6 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         List<Space> coll = new ArrayList<>();
         coll.add(this);
         return coll.iterator();
-    }
-
-    @Override
-    public Dimension.Type getType() {
-        return Dimension.Type.SPACE;
     }
 
     @Override
@@ -713,20 +705,22 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     public Shape simplify(double simplifyFactor) {
-    	return getSimplified(simplifyFactor);
+        return getSimplified(simplifyFactor);
     }
 
     public Shape getSimplified(Quantity resolution) {
+
+        UnitService units = Configuration.INSTANCE.getService(UnitService.class);
+
         if (this.simplified) {
             return this;
         }
-        Unit unit = Unit.create(resolution.getUnit());
-        if (unit == null || !Services.INSTANCE.getService(UnitService.class).meters().isCompatible(unit)) {
+        Unit unit = units.getUnit(resolution.getUnit());
+        if (unit == null || !units.meters().isCompatible(unit)) {
             throw new KlabIllegalArgumentException("Can't use a non-length unit to simplify a shape");
         }
         // in m
-        double simplifyFactor = Services.INSTANCE.getService(UnitService.class).meters().convert(resolution.getValue(), unit)
-                .doubleValue();
+        double simplifyFactor = units.meters().convert(resolution.getValue(), unit).doubleValue();
 
         // convert to projection units. FIXME there's certainly a proper method that
         // doesn't require reprojection (ask Andrea)
@@ -1036,7 +1030,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public Unit getDimensionUnit() {
-        return Services.INSTANCE.getService(UnitService.class).squareMeters();
+        return Configuration.INSTANCE.getService(UnitService.class).squareMeters();
     }
 
     @Override

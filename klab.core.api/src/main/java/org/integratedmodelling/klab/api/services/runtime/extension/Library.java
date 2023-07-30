@@ -34,7 +34,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
  * Others are pre-loaded in test cases and scripts. Libraries are used to
  * provide k.Actors actions and k.IM contextualizers through static inner
  * classes or methods, which should bear the annotation {@link Verb} or
- * {@link KlabPrototype}.
+ * {@link KlabFunction}.
  * <p>
  * Contextualizers implementations from the core libraries can be overridden
  * from configuration using classes from loaded plug-ins, so that the runtime

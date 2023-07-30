@@ -26,7 +26,7 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD })
-public @interface KlabPrototype {
+public @interface KlabFunction {
 
 	/**
 	 * Arguments are used in the declaration to describe inputs, outputs and
