@@ -161,14 +161,16 @@ public class ResolutionGraph {
             ResolutionEdge ret = new ResolutionEdge(resolutionType, child.observable);
             coverage = coverage == null ? child.coverage : coverage.merge(child.coverage, mergeStrategy);
 
-            if (model != null && !coverage.isEmpty()) {
+            if ((model != null || observable.getDescriptionType() == DescriptionType.ACKNOWLEDGEMENT) && !coverage.isEmpty()) {
                 resolutionGraph.addVertex(this);
                 resolutionGraph.addVertex(child);
                 resolutionGraph.addEdge(child, this, ret);
                 accepted.putAll(child.accepted);
                 // all observables of the accepted model are now available for resolution
-                for (int i = 1; i < model.getObservables().size(); i++) {
-                    accepted.put(model.getObservables().get(i), this);
+                if (model != null) {
+                    for (int i = 1; i < model.getObservables().size(); i++) {
+                        accepted.put(model.getObservables().get(i), this);
+                    }
                 }
                 if (roots.contains(this) && coverage.isComplete()) {
                     accept();

@@ -69,7 +69,7 @@ public class ContextAgent extends KAgent {
                 result = scope.getService(RuntimeService.class).run(dataflow, message.getScope()).get();
 
                 /*
-                 * Adjust overall geometry and catalog
+                 * TODO adjust overall geometry and catalog
                  */
                 if (!result.isEmpty()) {
                     status = Status.FINISHED;

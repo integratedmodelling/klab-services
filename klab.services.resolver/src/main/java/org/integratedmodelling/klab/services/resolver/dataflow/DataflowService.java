@@ -20,6 +20,8 @@ public class DataflowService {
 	 * @return
 	 */
 	public Dataflow<?> compile(ResolutionGraph.Resolution resolution) {
-		return null;
+	    DataflowImpl ret = new DataflowImpl();
+	    // TODO 
+	    return ret;
 	}
 }

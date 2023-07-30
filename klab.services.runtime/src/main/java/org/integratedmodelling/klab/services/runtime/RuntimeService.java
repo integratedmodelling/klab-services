@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService,
 		org.integratedmodelling.klab.api.services.RuntimeService.Admin {
@@ -51,8 +52,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
 	@Override
 	public Future<Observation> run(Dataflow<?> dataflow, ContextScope scope) {
-		// TODO Auto-generated method stub
-		return null;
+		return new ObservationTask(dataflow, scope);
 	}
 
 	/**
