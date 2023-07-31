@@ -18,6 +18,7 @@ import java.util.Collection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent.Constraint;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -53,7 +54,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @version $Id: $Id
  */
 public interface Coverage extends Scale {
-
+    
 	/**
 	 * Return the proportion of total coverage as a double 0-1. It is the product of
 	 * the coverages for all the extents.
@@ -165,5 +166,10 @@ public interface Coverage extends Scale {
 		return configuration.promoteScaleToCoverage(geometry, coverage);
 
 	}
+
+    public static Coverage empty() {
+        return create(Scale.create(Geometry.EMPTY), 0);
+    }
+    
 
 }

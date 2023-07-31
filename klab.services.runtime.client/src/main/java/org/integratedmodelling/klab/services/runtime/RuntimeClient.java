@@ -3,15 +3,12 @@ package org.integratedmodelling.klab.services.runtime;
 import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public class RuntimeClient implements RuntimeService {
-
-    private static final long serialVersionUID = 1L;
 
     public RuntimeClient(String url) {
         // TODO Auto-generated constructor stub
@@ -52,11 +49,5 @@ public class RuntimeClient implements RuntimeService {
         // TODO Auto-generated method stub
         return null;
     }
-
-	@Override
-	public <T> T getLibraryMethod(ServiceCall call, Class<T> resultClass) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 }

@@ -177,7 +177,7 @@ public interface ContextScope extends SessionScope {
 	 * 
 	 * @return
 	 */
-	Dataflow<?> getDataflow();
+	Dataflow<Observation> getDataflow();
 
 	/**
 	 * Return the parent observation of the passed observation. The runtime context

@@ -17,34 +17,25 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph.Resolution;
-import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph.ResolutionEdge;
+import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionGraph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
 /**
- * The resolution is associated with a context scope and contains a graph of {@link Resolution}
- * objects linked by connections that specify the strategy and the specific observables resolved
- * (including their local names)
- * <p>
- * The graph can contain multiple resolutions for the same context, each started by calling
+ * * The graph can contain multiple resolutions for the same context, each started by calling
  * {@link #newResolution(Knowledge)} with some {@link Knowledge} to be resolved in the
  * {@link ContextScope}. All explicitly triggered, successful resolutions have their roots in
  * {@link #getRoots()}. If successful, the overall {@link #getCoverage()} will have a sufficient
  * coverage percentage according to configuration. The dataflow must generate them in the order
  * given to preserve referential integrity.
  * <p>
- * The resolution graph contains models paired with their accumulated coverage. There may be zero or
- * more "root" nodes, with an overall coverage equal to the union of the coverage of the root nodes.
- * Each root node will generate a portion of the dataflow in the context scope.
- * <p>
  * 
- * 
- * @author Ferd
+ * @author mario
  *
  */
-public class ResolutionGraph {
+public class ResolutionGraphImpl implements ResolutionGraph {
 
     /**
      * Note that the implementation depends on edge ordering in the graph: the resolver adds nodes
@@ -52,9 +43,9 @@ public class ResolutionGraph {
      * best resources overwrite any overlapping states. The JGraphT default directed graph
      * guarantees it but the interface does not require it.
      */
-    private Map<Observable, Resolution> nodes = new HashMap<>();
+    private Map<Observable, ResolutionImpl> nodes = new HashMap<>();
     private ContextScope scope;
-    private Graph<Resolution, ResolutionEdge> resolutionGraph = new DefaultDirectedGraph<>(ResolutionEdge.class);
+    private Graph<ResolutionImpl, ResolutionEdge> resolutionGraph = new DefaultDirectedGraph<>(ResolutionEdge.class);
     private List<Resolution> roots = new ArrayList<>();
     private Coverage coverage;
     private Map<Model, Metadata> resolutionMetadata = new HashMap<>();
@@ -63,64 +54,13 @@ public class ResolutionGraph {
         return resolutionMetadata;
     }
 
-    /**
-     * Each vertex in the resolution graph contains the resolved observable, a model that represents
-     * the chosen resolution of the resolvable in the context scope and the coverage this resolution
-     * has determined in it. The way nodes resolve one another is stored in the edges of the graph;
-     * deferring resolution to after the initial contextualization will require further queries
-     * after executing the dataflow.
-     * <p>
-     * Each element has its coverage, expressing its "natural" one intersected with the coverage of
-     * any incoming nodes, and the merging strategy (UNION or INTERSECTION, maybe eventually
-     * EXCLUSION) used to merge the coverage of its children.
-     * <p>
-     * The resolved nodes are connected by links that specify the resolution strategy through the
-     * {@link Resolution.Type} enum. These should be treated separately when building the dataflow:
-     * all DIRECT should be done first by creating new actuators, then any FILTERs added, and last
-     * the DEFERRED strategies should cause the runtime to invoke the <em>same</em> resolver again.
-     * The "resolving" nodes for each strategy can be accessed from a node using the
-     * {@link #getResolving(Resolution.Type)} method.
-     * 
-     * @author Ferd
-     *
-     */
-    public class Resolution {
-
-        /**
-         * The resolution type is how a model contextualizes an observable.
-         * 
-         * @author Ferd
-         *
-         */
-        public enum Type {
-            /**
-             * the strategy implies the direct observation of the observable and will result in an
-             * actuator being defined in the dataflow.
-             */
-            DIRECT,
-
-            /**
-             * The strategy implies the observation of other direct observables, then the
-             * application of the child strateg(ies) to each, then the computations. An actuator
-             * will be created and the resolver will be called again on each instance produced by
-             * it.
-             */
-            DEFERRAL,
-
-            /**
-             * The target model is applied to the outputs of the receiving one to modify its value.
-             * Filters are inserted into the actuator created for the resolved node: no specific
-             * actuator for a filtering node is created.
-             */
-            FILTERING
-
-        }
+    public class ResolutionImpl implements Resolution {
 
         public Observable observable;
         public Model model;
         public Coverage coverage;
         public LogicalConnector mergeStrategy;
-        Map<Observable, Resolution> accepted = new HashMap<>();
+        Map<Observable, ResolutionImpl> accepted = new HashMap<>();
 
         /**
          * Any new node is initialized with the accepted overall nodes in the graph. The coverage is
@@ -129,14 +69,14 @@ public class ResolutionGraph {
          * @param observable
          * @param mergeStrategy
          */
-        public Resolution(Observable observable, Coverage coverage, LogicalConnector mergeStrategy) {
+        public ResolutionImpl(Observable observable, Coverage coverage, LogicalConnector mergeStrategy) {
             this.observable = observable;
             this.coverage = coverage;
             this.mergeStrategy = mergeStrategy;
             this.accepted.putAll(nodes);
         }
 
-        public Resolution(Knowledge resolvable, Scale scale) {
+        public ResolutionImpl(Knowledge resolvable, Scale scale) {
             this.observable = promoteResolvable(resolvable);
             this.mergeStrategy = LogicalConnector.UNION;
             this.coverage = Coverage.create(scale, resolvable instanceof Instance ? 1.0 : 0.0);
@@ -156,7 +96,7 @@ public class ResolutionGraph {
          * If a root node is accepting a resolution and as a result its coverage is complete, it
          * will also update the global catalog with itself and all the accepted nodes so far.
          */
-        public ResolutionEdge resolve(Resolution child, Resolution.Type resolutionType) {
+        public ResolutionEdge resolve(ResolutionImpl child, Resolution.Type resolutionType) {
 
             ResolutionEdge ret = new ResolutionEdge(resolutionType, child.observable);
             coverage = coverage == null ? child.coverage : coverage.merge(child.coverage, mergeStrategy);
@@ -192,8 +132,8 @@ public class ResolutionGraph {
          * Called only on a complete root resolution to accept it and merge the results into the
          * overall graph. Any other use will be rewarded with an illegal state exception. It only
          * needs to be called explicitly if for any reason the resolver ends up not calling
-         * {@link #resolve(Resolution, ResolutionGraph.Type)} on a node that should be accepted in
-         * the graph, which shouldn't really happen.
+         * {@link #resolve(ResolutionImpl, ResolutionGraphImpl.Type)} on a node that should be
+         * accepted in the graph, which shouldn't really happen.
          */
         public void accept() {
 
@@ -206,10 +146,10 @@ public class ResolutionGraph {
             nodes.put(observable, this);
 
             // update the overall coverage
-            if (ResolutionGraph.this.coverage == null) {
-                ResolutionGraph.this.coverage = this.coverage;
+            if (ResolutionGraphImpl.this.coverage == null) {
+                ResolutionGraphImpl.this.coverage = this.coverage;
             } else {
-                ResolutionGraph.this.coverage.merge(this.coverage, this.mergeStrategy);
+                ResolutionGraphImpl.this.coverage.merge(this.coverage, this.mergeStrategy);
             }
         }
 
@@ -228,12 +168,12 @@ public class ResolutionGraph {
                     || coverage.isEmpty();
         }
 
-        public ResolutionGraph resolutionGraph() {
-            return ResolutionGraph.this;
+        public ResolutionGraphImpl resolutionGraph() {
+            return ResolutionGraphImpl.this;
         }
 
         public ContextScope scope() {
-            return ResolutionGraph.this.scope;
+            return ResolutionGraphImpl.this.scope;
         }
 
         /**
@@ -243,7 +183,7 @@ public class ResolutionGraph {
          * @param observable
          * @return
          */
-        public Resolution getResolution(Observable observable) {
+        public ResolutionImpl getResolution(Observable observable) {
             return accepted.get(observable);
         }
 
@@ -255,12 +195,18 @@ public class ResolutionGraph {
          * @param contribution
          * @return
          */
-        public Resolution newResolution(Observable toResolve, LogicalConnector mergeStrategy) {
-            return new Resolution(toResolve, coverage, mergeStrategy);
+        public ResolutionImpl newResolution(Observable toResolve, LogicalConnector mergeStrategy) {
+            return new ResolutionImpl(toResolve, coverage, mergeStrategy);
         }
 
+        @Override
         public Coverage getCoverage() {
             return coverage;
+        }
+        
+        @Override
+        public LogicalConnector getMergeStrategy() {
+            return mergeStrategy;
         }
 
         /**
@@ -269,6 +215,7 @@ public class ResolutionGraph {
          * @param strategy
          * @return
          */
+        @Override
         public List<Resolution> getResolving(Resolution.Type strategy) {
             List<Resolution> ret = new ArrayList<>();
             for (ResolutionEdge edge : resolutionGraph.incomingEdgesOf(this)) {
@@ -279,8 +226,14 @@ public class ResolutionGraph {
             return ret;
         }
 
+        @Override
         public Observable getObservable() {
             return this.observable;
+        }
+        
+        @Override
+        public Model getModel() {
+            return model;
         }
     }
 
@@ -290,8 +243,8 @@ public class ResolutionGraph {
      * @param resolvable
      * @return
      */
-    public Resolution newResolution(Knowledge resolvable, Scale scale) {
-        Resolution ret = new Resolution(resolvable, scale);
+    public ResolutionImpl newResolution(Knowledge resolvable, Scale scale) {
+        ResolutionImpl ret = new ResolutionImpl(resolvable, scale);
         roots.add(ret);
         return ret;
     }
@@ -370,7 +323,7 @@ public class ResolutionGraph {
 
     }
 
-    public ResolutionGraph(ContextScope scope) {
+    public ResolutionGraphImpl(ContextScope scope) {
         this.scope = scope;
         this.coverage = Coverage.create(scope.getGeometry(), 0.0);
     }
@@ -381,10 +334,12 @@ public class ResolutionGraph {
      * 
      * @return
      */
+    @Override
     public Coverage getCoverage() {
         return coverage;
     }
 
+    @Override
     public ContextScope getScope() {
         return scope;
     }
@@ -393,6 +348,7 @@ public class ResolutionGraph {
         this.scope = scope;
     }
 
+    @Override
     public List<Resolution> getRoots() {
         return roots;
     }

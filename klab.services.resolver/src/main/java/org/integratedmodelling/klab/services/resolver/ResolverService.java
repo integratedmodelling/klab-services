@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -42,6 +43,8 @@ import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionGraph;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -51,17 +54,14 @@ import org.integratedmodelling.klab.knowledge.InstanceImpl;
 import org.integratedmodelling.klab.knowledge.ModelImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowService;
-import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph;
-import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph.Resolution;
-import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraph.Resolution.Type;
+import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraphImpl;
+import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraphImpl.ResolutionImpl;
 import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.collect.Sets;
 
 public class ResolverService extends BaseService implements Resolver {
-
-    private static final long serialVersionUID = 5606716353692671802L;
 
     private static final String RESOLUTION_KEY = "#_KLAB_RESOLUTION";
 
@@ -112,28 +112,49 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     @Override
-    public Dataflow<?> resolve(Knowledge resolvable, ContextScope scope) {
+    public ResolutionGraph computeResolutionGraph(Knowledge resolvable, ContextScope scope) {
 
-        ResolutionGraph resolutionGraph = getResolution(scope);
+        ResolutionGraphImpl resolutionGraph = getResolution(scope);
+
+        if (isDependent(resolvable) && scope.getResolutionObservation() == null) {
+            scope.error(
+                    new KIllegalStateException("cannot observe dependent knowledge without a direct observation in the scope"));
+        } else {
+            resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
+        }
+        return resolutionGraph;
+    }
+
+    @Override
+    public Dataflow<Observation> computeDataflow(ResolutionGraph resolutionGraph) {
+        if (resolutionGraph.getCoverage().isComplete()) {
+            return dataflowService.compile(resolutionGraph);
+        }
+        return Dataflow.empty(Observation.class);
+    }
+
+    @Override
+    public Dataflow<Observation> resolve(Knowledge resolvable, ContextScope scope) {
+
+        ResolutionGraphImpl resolutionGraph = getResolution(scope);
+        Dataflow<Observation> dataflow = scope.getDataflow();
 
         if (isDependent(resolvable) && scope.getResolutionObservation() == null) {
             scope.error(
                     new KIllegalStateException("cannot observe dependent knowledge without a direct observation in the scope"));
         } else {
 
-            Resolution resolution = resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
+            ResolutionImpl resolution = resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
             if (resolution.isComplete()) {
                 scope.info(
                         "resolution of " + resolvable + " completed with coverage = " + resolution.getCoverage().getCoverage());
-                return dataflowService.compile(resolution);
+                return dataflowService.compile(resolution, dataflow);
             } else {
                 scope.info("resolution of " + resolvable + " failed: coverage = " + resolution.getCoverage().getCoverage());
             }
         }
 
-        return Dataflow.empty(
-                resolvable instanceof Observable ? (Observable) resolvable : ((Instance) resolvable).getObservable(),
-                resolutionGraph.getCoverage());
+        return Dataflow.empty(Observation.class);
     }
 
     private Scale resolutionScale(Knowledge resolvable, ContextScope scope) {
@@ -150,11 +171,11 @@ public class ResolverService extends BaseService implements Resolver {
         return false;
     }
 
-    private ResolutionGraph getResolution(ContextScope scope) {
+    private ResolutionGraphImpl getResolution(ContextScope scope) {
         if (!scope.getData().containsKey(RESOLUTION_KEY)) {
-            scope.setData(RESOLUTION_KEY, new ResolutionGraph(scope));
+            scope.setData(RESOLUTION_KEY, new ResolutionGraphImpl(scope));
         }
-        return scope.getData().get(RESOLUTION_KEY, ResolutionGraph.class);
+        return scope.getData().get(RESOLUTION_KEY, ResolutionGraphImpl.class);
     }
 
     /**
@@ -164,7 +185,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @param node
      * @return
      */
-    private Resolution resolve(Resolution node) {
+    private ResolutionImpl resolve(ResolutionImpl node) {
 
         for (Observable observable : resolveAbstractPredicates(node.getObservable(), node.resolutionGraph())) {
             node.resolve(resolveConcrete(node.newResolution(observable, LogicalConnector.INTERSECTION)), Resolution.Type.DIRECT);
@@ -176,10 +197,10 @@ public class ResolverService extends BaseService implements Resolver {
         return node;
     }
 
-    private Resolution resolveConcrete(Resolution node) {
+    private ResolutionImpl resolveConcrete(ResolutionImpl node) {
 
         // check for pre-resolved in this branch
-        Resolution previous = node.getResolution(node.observable);
+        ResolutionImpl previous = node.getResolution(node.observable);
         if (previous != null) {
             return previous;
         }
@@ -193,10 +214,10 @@ public class ResolverService extends BaseService implements Resolver {
                 break;
             case DIRECT:
                 for (Model model : queryModels(node.getObservable(), node.scope())) {
-                    Resolution modelResolution = resolveModel(model,
+                    ResolutionImpl modelResolution = resolveModel(model,
                             node.newResolution(node.getObservable(), LogicalConnector.UNION));
                     if (modelResolution.isRelevant()) {
-                        node.resolve(modelResolution, Type.DIRECT);
+                        node.resolve(modelResolution, Resolution.Type.DIRECT);
                     }
                     if (node.getCoverage().isComplete()) {
                         break;
@@ -211,11 +232,11 @@ public class ResolverService extends BaseService implements Resolver {
         return node;
     }
 
-    private Resolution resolveModel(Model model, Resolution node) {
+    private ResolutionImpl resolveModel(Model model, ResolutionImpl node) {
         for (Observable observable : model.getDependencies()) {
-            Resolution dependencyResolution = resolve(node.newResolution(observable, LogicalConnector.INTERSECTION));
+            ResolutionImpl dependencyResolution = resolve(node.newResolution(observable, LogicalConnector.INTERSECTION));
             if (dependencyResolution.isRelevant()) {
-                node.resolve(dependencyResolution, Type.DIRECT);
+                node.resolve(dependencyResolution, Resolution.Type.DIRECT);
             } else if (!observable.isOptional()) {
                 return node;
             }
@@ -228,7 +249,7 @@ public class ResolverService extends BaseService implements Resolver {
         return node;
     }
 
-    private Collection<Observable> resolveAbstractPredicates(Observable observable, ResolutionGraph resolution) {
+    private Collection<Observable> resolveAbstractPredicates(Observable observable, ResolutionGraphImpl resolution) {
 
         Set<Observable> ret = new LinkedHashSet<>();
 

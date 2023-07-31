@@ -26,205 +26,214 @@ import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 public class EngineContextScope extends EngineSessionScope implements ContextScope {
 
-	private Identity observer;
-	private DirectObservation context;
-	private Set<String> resolutionScenarios = new LinkedHashSet<>();
-	private Scale geometry = Scale.empty();
-	private String resolutionNamespace;
-	private String resolutionProject;
-	private Map<Observable, Observation> catalog = new HashMap<>();
-	private URL url;
+    private Identity observer;
+    private DirectObservation context;
+    private Set<String> resolutionScenarios = new LinkedHashSet<>();
+    private Scale geometry = Scale.empty();
+    private String resolutionNamespace;
+    private String resolutionProject;
+    private Map<Observable, Observation> catalog = new HashMap<>();
+    private URL url;
 
-	protected EngineContextScope parent;
+    protected EngineContextScope parent;
+    private Dataflow<Observation> dataflow;
 
-	EngineContextScope(EngineSessionScope parent) {
-		super(parent);
-		this.observer = parent.getUser();
-		/*
-		 * TODO choose the services if this context or user requires specific ones
-		 */
-	}
+    EngineContextScope(EngineSessionScope parent) {
+        super(parent);
+        this.observer = parent.getUser();
+        /*
+         * TODO choose the services if this context or user requires specific ones
+         */
+    }
 
-	private EngineContextScope(EngineContextScope parent) {
-		super(parent);
-		this.parent = parent;
-		this.observer = parent.observer;
-		this.context = parent.context;
-	}
+    private EngineContextScope(EngineContextScope parent) {
+        super(parent);
+        this.parent = parent;
+        this.observer = parent.observer;
+        this.context = parent.context;
+    }
 
-	@Override
-	public Identity getObserver() {
-		return this.observer;
-	}
+    @Override
+    public Identity getObserver() {
+        return this.observer;
+    }
 
-	@Override
-	public Scale getGeometry() {
-		return geometry;
-	}
+    @Override
+    public Scale getGeometry() {
+        return geometry;
+    }
 
-	@Override
-	public EngineContextScope withScenarios(String... scenarios) {
-		EngineContextScope ret = new EngineContextScope(this);
-		if (scenarios == null) {
-			ret.resolutionScenarios = null;
-		}
-		this.resolutionScenarios = new HashSet<>();
-		for (String scenario : scenarios) {
-			ret.resolutionScenarios.add(scenario);
-		}
-		return ret;
-	}
+    @Override
+    public EngineContextScope withScenarios(String... scenarios) {
+        EngineContextScope ret = new EngineContextScope(this);
+        if (scenarios == null) {
+            ret.resolutionScenarios = null;
+        }
+        this.resolutionScenarios = new HashSet<>();
+        for (String scenario : scenarios) {
+            ret.resolutionScenarios.add(scenario);
+        }
+        return ret;
+    }
 
-	@Override
-	public EngineContextScope withObserver(Identity observer) {
-		EngineContextScope ret = new EngineContextScope(this);
-		ret.observer = observer;
-		return ret;
-	}
+    @Override
+    public EngineContextScope withObserver(Identity observer) {
+        EngineContextScope ret = new EngineContextScope(this);
+        ret.observer = observer;
+        return ret;
+    }
 
-	@Override
-	public Future<Observation> observe(Object... observables) {
+    @Override
+    public Future<Observation> observe(Object... observables) {
 
-		Observe message = registerMessage(Observe.class, (m, r) -> {
-			// set scope according to result
-		});
+        Observe message = registerMessage(Observe.class, (m, r) -> {
 
-		for (Object o : observables) {
-			if (o instanceof String || o instanceof Urn || o instanceof URL) {
-				message.setUrn(o.toString());
-			} else if (o instanceof Knowledge) {
-				message.setUrn(((Knowledge) o).getUrn());
-			} else if (o instanceof Geometry) {
-				message.setGeometry((Geometry) o);
-			}
-		}
+            System.out.println("DIOCAN REGISTER THIS MESSAGE: " + m);
 
-		message.setScope(this);
+            /**
+             * 1. If the response contains a dataflow and we don't have it, set our dataflow; else
+             * merge it with the existing based on the observation contextualized.
+             */
+            /**
+             * 2. Adjust the geometry as needed
+             */
+        });
 
-		this.getAgent().tell(message);
+        for (Object o : observables) {
+            if (o instanceof String || o instanceof Urn || o instanceof URL) {
+                message.setUrn(o.toString());
+            } else if (o instanceof Knowledge) {
+                message.setUrn(((Knowledge) o).getUrn());
+            } else if (o instanceof Geometry) {
+                message.setGeometry((Geometry) o);
+            }
+        }
 
-		// TODO return a completable future that watches the response
-		return responseFuture(message, Observation.class);
-	}
+        message.setScope(this);
 
-	@Override
-	public Provenance getProvenance() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        this.getAgent().tell(message);
 
-	@Override
-	public Report getReport() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        // TODO return a completable future that watches the response
+        return responseFuture(message, Observation.class);
+    }
 
-	@Override
-	public Dataflow<?> getDataflow() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Provenance getProvenance() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public DirectObservation getParentOf(Observation observation) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Report getReport() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Collection<Observation> getChildrenOf(Observation observation) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Dataflow<Observation> getDataflow() {
+        return this.dataflow;
+    }
 
-	@Override
-	public Collection<Relationship> getOutgoingRelationships(DirectObservation observation) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public DirectObservation getParentOf(Observation observation) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Collection<Relationship> getIncomingRelationships(DirectObservation observation) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Collection<Observation> getChildrenOf(Observation observation) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Map<Observable, Observation> getCatalog() {
-		return catalog;
-	}
+    @Override
+    public Collection<Relationship> getOutgoingRelationships(DirectObservation observation) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public String getResolutionNamespace() {
-		return resolutionNamespace;
-	}
+    @Override
+    public Collection<Relationship> getIncomingRelationships(DirectObservation observation) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	public String getResolutionProject() {
-		return resolutionProject;
-	}
+    @Override
+    public Map<Observable, Observation> getCatalog() {
+        return catalog;
+    }
 
-	public void setResolutionProject(String resolutionProject) {
-		this.resolutionProject = resolutionProject;
-	}
+    @Override
+    public String getResolutionNamespace() {
+        return resolutionNamespace;
+    }
 
-	@Override
-	public Set<String> getResolutionScenarios() {
-		return resolutionScenarios;
-	}
+    public String getResolutionProject() {
+        return resolutionProject;
+    }
 
-	@Override
-	public DirectObservation getResolutionObservation() {
-		return context;
-	}
+    public void setResolutionProject(String resolutionProject) {
+        this.resolutionProject = resolutionProject;
+    }
 
-	@Override
-	public <T extends Observation> T getObservation(String localName, Class<T> cls) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Set<String> getResolutionScenarios() {
+        return resolutionScenarios;
+    }
 
-	@Override
-	public ContextScope withGeometry(Geometry geometry) {
+    @Override
+    public DirectObservation getResolutionObservation() {
+        return context;
+    }
 
-		// CHECK this may be unexpected behavior, but it should never be right to pass
-		// null, except when a geometry is unset in the parent but may be set in the
-		// child.
-		if (geometry == null) {
-			return this;
-		}
+    @Override
+    public <T extends Observation> T getObservation(String localName, Class<T> cls) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-		EngineContextScope ret = new EngineContextScope(this);
-		ret.geometry = Scale.create(geometry);
-		return ret;
-	}
+    @Override
+    public ContextScope withGeometry(Geometry geometry) {
 
-	@Override
-	public void runTransitions() {
-		// TODO Auto-generated method stub
+        // CHECK this may be unexpected behavior, but it should never be right to pass
+        // null, except when a geometry is unset in the parent but may be set in the
+        // child.
+        if (geometry == null) {
+            return this;
+        }
 
-	}
+        EngineContextScope ret = new EngineContextScope(this);
+        ret.geometry = Scale.create(geometry);
+        return ret;
+    }
 
-	@Override
-	public Collection<Observation> affects(Observation observation) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void runTransitions() {
+        // TODO Auto-generated method stub
 
-	@Override
-	public Collection<Observation> affected(Observation observation) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    }
 
-	@Override
-	public URL getUrl() {
-		return url;
-	}
+    @Override
+    public Collection<Observation> affects(Observation observation) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public ContextScope connect(URL remoteContext) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Collection<Observation> affected(Observation observation) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public URL getUrl() {
+        return url;
+    }
+
+    @Override
+    public ContextScope connect(URL remoteContext) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

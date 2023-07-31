@@ -16,6 +16,7 @@ package org.integratedmodelling.klab.api.knowledge.observation;
 import java.util.Collection;
 
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.ObjectArtifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 
@@ -28,7 +29,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public abstract interface DirectObservation extends Observation, ObjectArtifact {
+public abstract interface DirectObservation extends Observation, Identity, ObjectArtifact {
 
 	/**
 	 * <p>

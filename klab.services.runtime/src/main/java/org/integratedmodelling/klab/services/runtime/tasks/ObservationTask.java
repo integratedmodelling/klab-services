@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public class ObservationTask implements Future<Observation> {
 
-    public ObservationTask(Dataflow<?> dataflow, ContextScope scope) {
+    public ObservationTask(Dataflow<?> dataflow, ContextScope scope, boolean start) {
     }
 
     @Override

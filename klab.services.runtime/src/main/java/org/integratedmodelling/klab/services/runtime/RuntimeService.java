@@ -1,11 +1,12 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -14,8 +15,6 @@ import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService,
 		org.integratedmodelling.klab.api.services.RuntimeService.Admin {
-
-	private static final long serialVersionUID = -3119521647259754846L;
 
 	public RuntimeService(Authentication testAuthentication, ServiceScope scope) {
 		// TODO Auto-generated constructor stub
@@ -52,28 +51,13 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
 	@Override
 	public Future<Observation> run(Dataflow<?> dataflow, ContextScope scope) {
-		return new ObservationTask(dataflow, scope);
-	}
-
-	/**
-	 * Create and return a Contextualizer or Verb from a library, validating the
-	 * arguments at the same time. The service may override any method through
-	 * configuration and plug-ins.
-	 * 
-	 * @param <T>
-	 * @param call
-	 * @param resultClass
-	 * @return
-	 */
-	@Override
-	public <T> T getLibraryMethod(ServiceCall call, Class<T> resultClass) {
-		return null;
+		return new ObservationTask(dataflow, scope, true);
 	}
 
 	@Override
-	public Map<String, String> getExceptionTestcases(boolean deleteExisting) {
-		// TODO Auto-generated method stub
-		return null;
+	public Map<String, String> getExceptionTestcases(Scope scope, boolean deleteExisting) {
+		Map<String, String> ret = new HashMap<>();
+		return ret;
 	}
 
 
