@@ -56,6 +56,14 @@ public interface Grid extends Serializable {
 	double getYCellSize();
 
 	/**
+	 * Actual resolution in projection coordinates, computed as the square root of
+	 * the cell area.
+	 * 
+	 * @return
+	 */
+	double resolution();
+
+	/**
 	 * A grid that only specified a cell size with no envelope has size() == 0.
 	 * 
 	 * @return
@@ -67,14 +75,14 @@ public interface Grid extends Serializable {
 	 * 
 	 * @return
 	 */
-	int getXCells();
+	long getXCells();
 
 	/**
 	 * This will be 0 if there is no envelope.
 	 * 
 	 * @return
 	 */
-	int getYCells();
+	long getYCells();
 
 	/**
 	 * The envelope is null if the grid is only specified in terms of cell size.
@@ -93,10 +101,15 @@ public interface Grid extends Serializable {
 	Projection getProjection();
 
 	/**
-	 * Return a new grid that is as close as possible as this once aligned with the
-	 * passed one. This may cause the projection and envelope of the result to be
-	 * different from the original. If the passed grid has an envelope, the result
-	 * will be intersected to be included in the incoming envelope.
+	 * Return a new grid that is as close as possible as this one after aligning it
+	 * with the passed one. Alignment means that the cells of the resulting grid
+	 * align with those of the incoming, possibly with a multiplicity of cells in
+	 * one corresponding to one cell of the other. This may cause the projection and
+	 * envelope of the result to be different from the original, as well as the
+	 * "square cells" constraint.
+	 * <p>
+	 * If the passed grid has an envelope, the result will be intersected to be
+	 * included in the incoming envelope.
 	 * 
 	 * @param other
 	 * @return

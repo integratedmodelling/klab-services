@@ -67,16 +67,16 @@ public class Resolver {
             } else {
 
                 var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
-                ResolutionGraph resolution = resolver.computeResolutionGraph(
-                        resolver.resolveKnowledge(Utils.Strings.join(observables, " "), Knowledge.class, ctx), ctx);
-
-                this.push(resolution);
-
-                if (show) {
-                    Graphs.show(resolution);
-                } else {
-                    out.println(Utils.Json.printAsJson(resolution));
-                }
+//                ResolutionGraph resolution = resolver.computeResolutionGraph(
+//                        resolver.resolveKnowledge(Utils.Strings.join(observables, " "), Knowledge.class, ctx), ctx);
+//
+//                this.push(resolution);
+//
+//                if (show) {
+//                    Graphs.show(resolution);
+//                } else {
+//                    out.println(Utils.Json.printAsJson(resolution));
+//                }
 
             }
 

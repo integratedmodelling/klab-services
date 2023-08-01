@@ -77,23 +77,23 @@ public interface Resolver extends KlabService {
      */
     Dataflow<Observation> resolve(Knowledge resolvable, ContextScope scope);
 
-    /**
-     * Compute the resolution graph for the passed resolvable in the passed scope.
-     * 
-     * @param resolvable
-     * @param scope
-     * @return
-     */
-    ResolutionGraph computeResolutionGraph(Knowledge resolvable, ContextScope scope);
-
-    /**
-     * Compute the dataflow corresponding to the passed resolution graph. If the resolution graph
-     * does not have sufficient coverage, return an empty dataflow.
-     * 
-     * @param resolutionGraph
-     * @return
-     */
-    Dataflow<Observation> computeDataflow(ResolutionGraph resolutionGraph);
+//    /**
+//     * Compute the resolution graph for the passed resolvable in the passed scope.
+//     * 
+//     * @param resolvable
+//     * @param scope
+//     * @return
+//     */
+//    ResolutionGraph computeResolutionGraph(Knowledge resolvable, ContextScope scope);
+//
+//    /**
+//     * Compute the dataflow corresponding to the passed resolution graph. If the resolution graph
+//     * does not have sufficient coverage, return an empty dataflow.
+//     * 
+//     * @param resolutionGraph
+//     * @return
+//     */
+//    Dataflow<Observation> computeDataflow(ResolutionGraph resolutionGraph);
 
     /**
      * Query all the resource servers available to find models that can observe the passed

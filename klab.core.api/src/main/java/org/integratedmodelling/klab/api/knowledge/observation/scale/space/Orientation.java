@@ -35,6 +35,31 @@ public enum Orientation {
 		heading = h;
 	}
 
+    /**
+     * Directions accessible from each corner
+     */
+    public static Orientation[] swCorner = new Orientation[]{Orientation.N, Orientation.NE, Orientation.E};
+    public static Orientation[] seCorner = new Orientation[]{Orientation.W, Orientation.NW, Orientation.N};
+    public static Orientation[] nwCorner = new Orientation[]{Orientation.S, Orientation.SE, Orientation.E};
+    public static Orientation[] neCorner = new Orientation[]{Orientation.W, Orientation.SW, Orientation.S};
+
+    /**
+     * Directions accessible from each edge
+     */
+    public static Orientation[] sEdge = new Orientation[]{Orientation.W, Orientation.NW, Orientation.N, Orientation.NE, Orientation.E};
+    public static Orientation[] eEdge = new Orientation[]{Orientation.S, Orientation.SW, Orientation.W, Orientation.NW, Orientation.N};
+    public static Orientation[] nEdge = new Orientation[]{Orientation.W, Orientation.SW, Orientation.S, Orientation.SE, Orientation.E};
+    public static Orientation[] wEdge = new Orientation[]{Orientation.S, Orientation.SE, Orientation.E, Orientation.NE, Orientation.N};
+
+    public static Orientation[] mooreNeighborhood = new Orientation[]{Orientation.W, Orientation.NW, Orientation.N, Orientation.NE,
+            Orientation.E, Orientation.SE, Orientation.S, Orientation.SW};
+
+    public static int connectionCount(long n, long m) {
+        return (int) (((n - 2) * (m - 2) * 8) + // connections in internal cells
+                (2 * (n - 2) + 2 * (m - 2)) * 5 + // connections in edge cells
+                (4 * 3)); // connections in corner cells
+    }
+	
 	/**
 	 * Get the geographic heading corresponding to this orientation.
 	 * 

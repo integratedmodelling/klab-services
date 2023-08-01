@@ -192,8 +192,9 @@ public class EnvelopeImpl implements Envelope {
 		return ret;
 	}
 
-	public static EnvelopeImpl create(double minX, double maxX, double minY, double maxY, ProjectionImpl projection) {
-		return create(new ReferencedEnvelope(minX, maxX, minY, maxY, projection.getCoordinateReferenceSystem()));
+	public static EnvelopeImpl create(double minX, double maxX, double minY, double maxY, Projection projection) {
+		return create(new ReferencedEnvelope(minX, maxX, minY, maxY,
+				ProjectionImpl.promote(projection).getCoordinateReferenceSystem()));
 	}
 
 	public EnvelopeImpl copy() {

@@ -1,11 +1,8 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,19 +12,16 @@ import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
@@ -43,8 +37,6 @@ import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resolver.Resolution;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionGraph;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -54,12 +46,8 @@ import org.integratedmodelling.klab.knowledge.InstanceImpl;
 import org.integratedmodelling.klab.knowledge.ModelImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowService;
-import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraphImpl;
-import org.integratedmodelling.klab.services.resolver.resolution.ResolutionGraphImpl.ResolutionImpl;
 import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import com.google.common.collect.Sets;
 
 public class ResolverService extends BaseService implements Resolver {
 
@@ -111,48 +99,48 @@ public class ResolverService extends BaseService implements Resolver {
         return null;
     }
 
-    @Override
-    public ResolutionGraph computeResolutionGraph(Knowledge resolvable, ContextScope scope) {
-
-        ResolutionGraphImpl resolutionGraph = getResolution(scope);
-
-        if (isDependent(resolvable) && scope.getResolutionObservation() == null) {
-            scope.error(
-                    new KIllegalStateException("cannot observe dependent knowledge without a direct observation in the scope"));
-        } else {
-            resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
-        }
-        return resolutionGraph;
-    }
-
-    @Override
-    public Dataflow<Observation> computeDataflow(ResolutionGraph resolutionGraph) {
-        if (resolutionGraph.getCoverage().isComplete()) {
-            return dataflowService.compile(resolutionGraph);
-        }
-        return Dataflow.empty(Observation.class);
-    }
+//    @Override
+//    public ResolutionGraph computeResolutionGraph(Knowledge resolvable, ContextScope scope) {
+//
+//        ResolutionGraphImpl resolutionGraph = getResolution(scope);
+//
+//        if (isDependent(resolvable) && scope.getResolutionObservation() == null) {
+//            scope.error(
+//                    new KIllegalStateException("cannot observe dependent knowledge without a direct observation in the scope"));
+//        } else {
+//            resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
+//        }
+//        return resolutionGraph;
+//    }
+//
+//    @Override
+//    public Dataflow<Observation> computeDataflow(ResolutionGraph resolutionGraph) {
+//        if (resolutionGraph.getCoverage().isComplete()) {
+//            return dataflowService.compile(resolutionGraph);
+//        }
+//        return Dataflow.empty(Observation.class);
+//    }
 
     @Override
     public Dataflow<Observation> resolve(Knowledge resolvable, ContextScope scope) {
 
-        ResolutionGraphImpl resolutionGraph = getResolution(scope);
-        Dataflow<Observation> dataflow = scope.getDataflow();
-
-        if (isDependent(resolvable) && scope.getResolutionObservation() == null) {
-            scope.error(
-                    new KIllegalStateException("cannot observe dependent knowledge without a direct observation in the scope"));
-        } else {
-
-            ResolutionImpl resolution = resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
-            if (resolution.isComplete()) {
-                scope.info(
-                        "resolution of " + resolvable + " completed with coverage = " + resolution.getCoverage().getCoverage());
-                return dataflowService.compile(resolution, dataflow);
-            } else {
-                scope.info("resolution of " + resolvable + " failed: coverage = " + resolution.getCoverage().getCoverage());
-            }
-        }
+//        ResolutionGraphImpl resolutionGraph = getResolution(scope);
+//        Dataflow<Observation> dataflow = scope.getDataflow();
+//
+//        if (isDependent(resolvable) && scope.getResolutionObservation() == null) {
+//            scope.error(
+//                    new KIllegalStateException("cannot observe dependent knowledge without a direct observation in the scope"));
+//        } else {
+//
+//            ResolutionImpl resolution = resolve(resolutionGraph.newResolution(resolvable, resolutionScale(resolvable, scope)));
+//            if (resolution.isComplete()) {
+//                scope.info(
+//                        "resolution of " + resolvable + " completed with coverage = " + resolution.getCoverage().getCoverage());
+//                return dataflowService.compile(resolution, dataflow);
+//            } else {
+//                scope.info("resolution of " + resolvable + " failed: coverage = " + resolution.getCoverage().getCoverage());
+//            }
+//        }
 
         return Dataflow.empty(Observation.class);
     }
@@ -171,203 +159,203 @@ public class ResolverService extends BaseService implements Resolver {
         return false;
     }
 
-    private ResolutionGraphImpl getResolution(ContextScope scope) {
-        if (!scope.getData().containsKey(RESOLUTION_KEY)) {
-            scope.setData(RESOLUTION_KEY, new ResolutionGraphImpl(scope));
-        }
-        return scope.getData().get(RESOLUTION_KEY, ResolutionGraphImpl.class);
-    }
+//    private ResolutionGraphImpl getResolution(ContextScope scope) {
+//        if (!scope.getData().containsKey(RESOLUTION_KEY)) {
+//            scope.setData(RESOLUTION_KEY, new ResolutionGraphImpl(scope));
+//        }
+//        return scope.getData().get(RESOLUTION_KEY, ResolutionGraphImpl.class);
+//    }
 
-    /**
-     * Top-level: resolve the observable that's already in the node and put a model and a coverage
-     * in it. Return the same node with updated data.
-     * 
-     * @param node
-     * @return
-     */
-    private ResolutionImpl resolve(ResolutionImpl node) {
-
-        for (Observable observable : resolveAbstractPredicates(node.getObservable(), node.resolutionGraph())) {
-            node.resolve(resolveConcrete(node.newResolution(observable, LogicalConnector.INTERSECTION)), Resolution.Type.DIRECT);
-            if (!node.getCoverage().isRelevant()) {
-                break;
-            }
-        }
-
-        return node;
-    }
-
-    private ResolutionImpl resolveConcrete(ResolutionImpl node) {
-
-        // check for pre-resolved in this branch
-        ResolutionImpl previous = node.getResolution(node.observable);
-        if (previous != null) {
-            return previous;
-        }
-
-        for (ObservationStrategy strategy : node.scope().getService(Reasoner.class).inferStrategies(node.getObservable(),
-                node.scope())) {
-            switch(strategy.getType()) {
-            case DEREIFYING:
-                // resolve the deferral, then call deferring(deferredquality) on the result of
-                // node.resolve()
-                break;
-            case DIRECT:
-                for (Model model : queryModels(node.getObservable(), node.scope())) {
-                    ResolutionImpl modelResolution = resolveModel(model,
-                            node.newResolution(node.getObservable(), LogicalConnector.UNION));
-                    if (modelResolution.isRelevant()) {
-                        node.resolve(modelResolution, Resolution.Type.DIRECT);
-                    }
-                    if (node.getCoverage().isComplete()) {
-                        break;
-                    }
-                }
-                break;
-            case RESOLVED:
-                break;
-            }
-        }
-
-        return node;
-    }
-
-    private ResolutionImpl resolveModel(Model model, ResolutionImpl node) {
-        for (Observable observable : model.getDependencies()) {
-            ResolutionImpl dependencyResolution = resolve(node.newResolution(observable, LogicalConnector.INTERSECTION));
-            if (dependencyResolution.isRelevant()) {
-                node.resolve(dependencyResolution, Resolution.Type.DIRECT);
-            } else if (!observable.isOptional()) {
-                return node;
-            }
-        }
-
-        if (node.isRelevant()) {
-            node.accept(model);
-        }
-
-        return node;
-    }
-
-    private Collection<Observable> resolveAbstractPredicates(Observable observable, ResolutionGraphImpl resolution) {
-
-        Set<Observable> ret = new LinkedHashSet<>();
-
-        var reasoner = resolution.getScope().getService(Reasoner.class);
-        var abstractTraits = reasoner.collectComponents(observable.getSemantics(),
-                EnumSet.of(SemanticType.ABSTRACT, SemanticType.TRAIT));
-
-        if (abstractTraits.isEmpty()) {
-            ret.add(observable);
-        } else {
-            // TODO
-
-            Map<Concept, Set<Concept>> incarnated = new LinkedHashMap<>();
-            for (Concept role : abstractTraits) {
-
-                if (role.is(SemanticType.ROLE)) {
-                    // Collection<Concept> known = scope.getRoles().get(role);
-                    // if (known == null || known.isEmpty()) {
-                    // continue;
-                    // }
-                    // incarnated.put(role, new HashSet<>(known));
-                }
-            }
-
-            boolean done = false;
-            for (Concept predicate : abstractTraits) {
-                if (!incarnated.containsKey(predicate)) {
-                    /*
-                     * resolve in current scope: keep the inherency from the original concept
-                     */
-                    var builder = Observable.promote(predicate).builder(resolution.getScope());
-                    if (reasoner.inherent(observable) != null) {
-                        builder = builder.of(reasoner.inherent(observable));
-                    }
-                    Concept context = reasoner.context(observable);
-                    if (context != null) {
-                        builder = builder.within(context);
-                    }
-                    Observable pobs = (Observable) builder.buildObservable();
-
-                    // /*
-                    // * Create a new scope to avoid leaving a trace in the main resolution trunk
-                    // (the
-                    // * main scope is still unresolved) but set it to the current context and model
-                    // * so that scale, context and resolution namespace are there.
-                    // */
-                    // ResolutionScope rscope = ResolutionScope
-                    // .create((Subject) scope.getContext(), scope.getMonitor(),
-                    // scope.getScenarios())
-                    // .withModel(scope.getModel());
-                    //
-                    // // this accepts empty resolutions, so check that we have values in the
-                    // resulting
-                    // // scope.
-                    // ResolutionScope oscope = resolveConcrete(pobs, rscope,
-                    // pobs.getResolvedPredicates(),
-                    // pobs.getResolvedPredicatesContext(), Mode.RESOLUTION);
-                    //
-                    // if (oscope.getCoverage().isComplete()) {
-                    //
-                    // done = true;
-                    //
-                    // // TODO set in the contextualization strategy as "orphan" for the root
-                    // // resolution dataflow if that's not yet defined.
-                    // Dataflow dataflow = Dataflows.INSTANCE.compile(NameGenerator.shortUUID(),
-                    // oscope, null);
-                    // dataflow.setDescription("Resolution of abstract predicate " +
-                    // predicate.getDefinition());
-                    //
-                    // scope.addPredicateResolutionDataflow(dataflow);
-                    //
-                    // dataflow.run(oscope.getCoverage().copy(),
-                    // scope.getRootContextualizationScope());
-                    //
-                    // /*
-                    // * Get the traits from the scope, add to set. Scope is only created if
-                    // * resolution succeeds, so check.
-                    // */
-                    // Collection<IConcept> predicates = scope.getRootContextualizationScope() ==
-                    // null ? null
-                    // : scope.getRootContextualizationScope().getConcreteIdentities(predicate);
-                    //
-                    // if (predicates != null && !predicates.isEmpty()) {
-                    // // use a stable order so that the reporting system can know when the
-                    // // last one is contextualized
-                    // incarnated.put(predicate, new LinkedHashSet<>(predicates));
-                    // } else if (predicate.is(Type.IDENTITY)) {
-                    // /*
-                    // * not being able to incarnate a required identity stops resolution; not being
-                    // * able to incarnate a role does not.
-                    // */
-                    // return null;
-                    // }
-                    // }
-                }
-            }
-
-            if (done) {
-                scope.info("Abstract observable " + observable + " was resolved to:");
-            }
-
-            List<Set<Concept>> concepts = new ArrayList<>(incarnated.values());
-            for (List<Concept> incarnation : Sets.cartesianProduct(concepts)) {
-
-                Map<Concept, Concept> resolved = new HashMap<>();
-                int i = 0;
-                for (Concept orole : incarnated.keySet()) {
-                    resolved.put(orole, incarnation.get(i++));
-                }
-                // Observable result = Observable.concretize(observable, resolved, incarnated);
-                // scope.info(" " + result);
-                // ret.add(result);
-            }
-        }
-
-        return ret;
-    }
-
+//    /**
+//     * Top-level: resolve the observable that's already in the node and put a model and a coverage
+//     * in it. Return the same node with updated data.
+//     * 
+//     * @param node
+//     * @return
+//     */
+//    private ResolutionImpl resolve(ResolutionImpl node) {
+//
+//        for (Observable observable : resolveAbstractPredicates(node.getObservable(), node.resolutionGraph())) {
+//            node.resolve(resolveConcrete(node.newResolution(observable, LogicalConnector.INTERSECTION)), Resolution.Type.DIRECT);
+//            if (!node.getCoverage().isRelevant()) {
+//                break;
+//            }
+//        }
+//
+//        return node;
+//    }
+//
+//    private ResolutionImpl resolveConcrete(ResolutionImpl node) {
+//
+//        // check for pre-resolved in this branch
+//        ResolutionImpl previous = node.getResolution(node.observable);
+//        if (previous != null) {
+//            return previous;
+//        }
+//
+//        for (ObservationStrategy strategy : node.scope().getService(Reasoner.class).inferStrategies(node.getObservable(),
+//                node.scope())) {
+//            switch(strategy.getType()) {
+//            case DEREIFYING:
+//                // resolve the deferral, then call deferring(deferredquality) on the result of
+//                // node.resolve()
+//                break;
+//            case DIRECT:
+//                for (Model model : queryModels(node.getObservable(), node.scope())) {
+//                    ResolutionImpl modelResolution = resolveModel(model,
+//                            node.newResolution(node.getObservable(), LogicalConnector.UNION));
+//                    if (modelResolution.isRelevant()) {
+//                        node.resolve(modelResolution, Resolution.Type.DIRECT);
+//                    }
+//                    if (node.getCoverage().isComplete()) {
+//                        break;
+//                    }
+//                }
+//                break;
+//            case RESOLVED:
+//                break;
+//            }
+//        }
+//
+//        return node;
+//    }
+//
+//    private ResolutionImpl resolveModel(Model model, ResolutionImpl node) {
+//        for (Observable observable : model.getDependencies()) {
+//            ResolutionImpl dependencyResolution = resolve(node.newResolution(observable, LogicalConnector.INTERSECTION));
+//            if (dependencyResolution.isRelevant()) {
+//                node.resolve(dependencyResolution, Resolution.Type.DIRECT);
+//            } else if (!observable.isOptional()) {
+//                return node;
+//            }
+//        }
+//
+//        if (node.isRelevant()) {
+//            node.accept(model);
+//        }
+//
+//        return node;
+//    }
+//
+//    private Collection<Observable> resolveAbstractPredicates(Observable observable, ResolutionGraphImpl resolution) {
+//
+//        Set<Observable> ret = new LinkedHashSet<>();
+//
+//        var reasoner = resolution.getScope().getService(Reasoner.class);
+//        var abstractTraits = reasoner.collectComponents(observable.getSemantics(),
+//                EnumSet.of(SemanticType.ABSTRACT, SemanticType.TRAIT));
+//
+//        if (abstractTraits.isEmpty()) {
+//            ret.add(observable);
+//        } else {
+//            // TODO
+//
+//            Map<Concept, Set<Concept>> incarnated = new LinkedHashMap<>();
+//            for (Concept role : abstractTraits) {
+//
+//                if (role.is(SemanticType.ROLE)) {
+//                    // Collection<Concept> known = scope.getRoles().get(role);
+//                    // if (known == null || known.isEmpty()) {
+//                    // continue;
+//                    // }
+//                    // incarnated.put(role, new HashSet<>(known));
+//                }
+//            }
+//
+//            boolean done = false;
+//            for (Concept predicate : abstractTraits) {
+//                if (!incarnated.containsKey(predicate)) {
+//                    /*
+//                     * resolve in current scope: keep the inherency from the original concept
+//                     */
+//                    var builder = Observable.promote(predicate).builder(resolution.getScope());
+//                    if (reasoner.inherent(observable) != null) {
+//                        builder = builder.of(reasoner.inherent(observable));
+//                    }
+//                    Concept context = reasoner.context(observable);
+//                    if (context != null) {
+//                        builder = builder.within(context);
+//                    }
+//                    Observable pobs = (Observable) builder.buildObservable();
+//
+//                    // /*
+//                    // * Create a new scope to avoid leaving a trace in the main resolution trunk
+//                    // (the
+//                    // * main scope is still unresolved) but set it to the current context and model
+//                    // * so that scale, context and resolution namespace are there.
+//                    // */
+//                    // ResolutionScope rscope = ResolutionScope
+//                    // .create((Subject) scope.getContext(), scope.getMonitor(),
+//                    // scope.getScenarios())
+//                    // .withModel(scope.getModel());
+//                    //
+//                    // // this accepts empty resolutions, so check that we have values in the
+//                    // resulting
+//                    // // scope.
+//                    // ResolutionScope oscope = resolveConcrete(pobs, rscope,
+//                    // pobs.getResolvedPredicates(),
+//                    // pobs.getResolvedPredicatesContext(), Mode.RESOLUTION);
+//                    //
+//                    // if (oscope.getCoverage().isComplete()) {
+//                    //
+//                    // done = true;
+//                    //
+//                    // // TODO set in the contextualization strategy as "orphan" for the root
+//                    // // resolution dataflow if that's not yet defined.
+//                    // Dataflow dataflow = Dataflows.INSTANCE.compile(NameGenerator.shortUUID(),
+//                    // oscope, null);
+//                    // dataflow.setDescription("Resolution of abstract predicate " +
+//                    // predicate.getDefinition());
+//                    //
+//                    // scope.addPredicateResolutionDataflow(dataflow);
+//                    //
+//                    // dataflow.run(oscope.getCoverage().copy(),
+//                    // scope.getRootContextualizationScope());
+//                    //
+//                    // /*
+//                    // * Get the traits from the scope, add to set. Scope is only created if
+//                    // * resolution succeeds, so check.
+//                    // */
+//                    // Collection<IConcept> predicates = scope.getRootContextualizationScope() ==
+//                    // null ? null
+//                    // : scope.getRootContextualizationScope().getConcreteIdentities(predicate);
+//                    //
+//                    // if (predicates != null && !predicates.isEmpty()) {
+//                    // // use a stable order so that the reporting system can know when the
+//                    // // last one is contextualized
+//                    // incarnated.put(predicate, new LinkedHashSet<>(predicates));
+//                    // } else if (predicate.is(Type.IDENTITY)) {
+//                    // /*
+//                    // * not being able to incarnate a required identity stops resolution; not being
+//                    // * able to incarnate a role does not.
+//                    // */
+//                    // return null;
+//                    // }
+//                    // }
+//                }
+//            }
+//
+//            if (done) {
+//                scope.info("Abstract observable " + observable + " was resolved to:");
+//            }
+//
+//            List<Set<Concept>> concepts = new ArrayList<>(incarnated.values());
+//            for (List<Concept> incarnation : Sets.cartesianProduct(concepts)) {
+//
+//                Map<Concept, Concept> resolved = new HashMap<>();
+//                int i = 0;
+//                for (Concept orole : incarnated.keySet()) {
+//                    resolved.put(orole, incarnation.get(i++));
+//                }
+//                // Observable result = Observable.concretize(observable, resolved, incarnated);
+//                // scope.info(" " + result);
+//                // ret.add(result);
+//            }
+//        }
+//
+//        return ret;
+//    }
+//
     @Override
     public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
 
