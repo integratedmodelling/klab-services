@@ -29,9 +29,11 @@ public class ActualResolver {
 	 * returning the coverage. Merging the resulting graph into a main one will
 	 * create the final coverage.
 	 * 
-	 * TODO make this return a new ResolutionGraph. Successive resolutions will
-	 * choose the top-level graph to be resolved into using their context
-	 * observation as key. 
+	 * FIXME this should not take mergeInto but create it and return it, handling
+	 * the various cases (models etc.) as additional resolutions merged into it. So
+	 * if Instance, make it then resolve its observable and merge; if model, make it
+	 * for the observable and merge the resolution of the model. The first condition
+	 * should be in each observeXxxx method.
 	 * 
 	 * @param knowledge
 	 * @param scale
