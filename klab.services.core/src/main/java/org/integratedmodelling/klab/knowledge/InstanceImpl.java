@@ -12,92 +12,92 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 
 public class InstanceImpl implements Instance {
 
-    private static final long serialVersionUID = 3290903165179045061L;
+	private static final long serialVersionUID = 3290903165179045061L;
 
-    private String urn;
-    private Version version;
-    private Metadata metadata = Metadata.create();
-    private List<Annotation> annotations = new ArrayList<>();
-    private Observable observable;
-    private List<Instance> children = new ArrayList<>();
-    private List<Observable> states = new ArrayList<>();
-    private Scale scale;
+	private String urn;
+	private Version version;
+	private Metadata metadata = Metadata.create();
+	private List<Annotation> annotations = new ArrayList<>();
+	private Observable observable;
+	private List<Instance> children = new ArrayList<>();
+	private List<Observable> states = new ArrayList<>();
+	private Scale scale;
 
-    @Override
-    public String getUrn() {
-        return this.urn;
-    }
+	@Override
+	public String getUrn() {
+		return this.urn;
+	}
 
-    @Override
-    public Version getVersion() {
-        return this.version;
-    }
+	@Override
+	public Version getVersion() {
+		return this.version;
+	}
 
-    @Override
-    public Metadata getMetadata() {
-        return this.metadata;
-    }
+	@Override
+	public Metadata getMetadata() {
+		return this.metadata;
+	}
 
-    @Override
-    public List<Annotation> getAnnotations() {
-        return this.annotations;
-    }
+	@Override
+	public List<Annotation> getAnnotations() {
+		return this.annotations;
+	}
 
-    @Override
-    public Observable getObservable() {
-        return this.observable;
-    }
+	@Override
+	public Observable getObservable() {
+		return this.observable;
+	}
 
-    @Override
-    public List<Instance> getChildren() {
-        return this.children;
-    }
+	@Override
+	public List<Instance> getChildren() {
+		return this.children;
+	}
 
-    @Override
-    public List<Observable> getStates() {
-        return this.states;
-    }
+	@Override
+	public List<Observable> getStates() {
+		return this.states;
+	}
 
-    @Override
-    public Scale getScale() {
-        return this.scale;
-    }
+	@Override
+	public Scale getScale() {
+		return this.scale;
+	}
 
-    public void setUrn(String urn) {
-        this.urn = urn;
-    }
+	public void setUrn(String urn) {
+		this.urn = urn;
+	}
 
-    public void setVersion(Version version) {
-        this.version = version;
-    }
+	public void setVersion(Version version) {
+		this.version = version;
+	}
 
-    public void setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-    }
+	public void setMetadata(Metadata metadata) {
+		this.metadata = metadata;
+	}
 
-    public void setAnnotations(List<Annotation> annotations) {
-        this.annotations = annotations;
-    }
+	public void setAnnotations(List<Annotation> annotations) {
+		this.annotations = annotations;
+	}
 
-    public void setObservable(Observable observable) {
-        this.observable = observable;
-    }
+	public void setObservable(Observable observable) {
+		this.observable = observable;
+	}
 
-    public void setChildren(List<Instance> children) {
-        this.children = children;
-    }
+	public void setChildren(List<Instance> children) {
+		this.children = children;
+	}
 
-    public void setStates(List<Observable> states) {
-        this.states = states;
-    }
+	public void setStates(List<Observable> states) {
+		this.states = states;
+	}
 
-    public void setScale(Scale scale) {
-        this.scale = scale;
-    }
+	public void setScale(Scale scale) {
+		this.scale = scale;
+	}
 
-    @Override
-    public String toString() {
-        return urn;
-    }
+	@Override
+	public String toString() {
+		return "(I) " + urn;
+	}
 
 }

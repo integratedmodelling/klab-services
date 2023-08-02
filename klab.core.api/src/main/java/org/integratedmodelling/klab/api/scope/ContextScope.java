@@ -50,6 +50,13 @@ public interface ContextScope extends SessionScope {
 	Identity getObserver();
 
 	/**
+	 * If this scope is focused on a specific subject, return it.
+	 * 
+	 * @return the context observation or null
+	 */
+	DirectObservation getContextObservation();
+
+	/**
 	 * Return a child scope with the passed observer instead of ours.
 	 * 
 	 * @param scenarios
@@ -76,6 +83,14 @@ public interface ContextScope extends SessionScope {
 	 * @return
 	 */
 	ContextScope withGeometry(Geometry geometry);
+
+	/**
+	 * Return a scope focused on a specific context observation.
+	 * 
+	 * @param contextObservation
+	 * @return
+	 */
+	ContextScope withContextObservation(DirectObservation contextObservation);
 
 	/**
 	 * Add another context to this one to build a higher-level one. Authentication

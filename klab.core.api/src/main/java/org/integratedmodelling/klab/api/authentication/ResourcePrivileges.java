@@ -94,7 +94,7 @@ public class ResourcePrivileges {
 
 		// TODO!
 		
-		return false;
+		return true;
 	}
 
 	public boolean checkAuthorization(String username, Collection<String> groups) {

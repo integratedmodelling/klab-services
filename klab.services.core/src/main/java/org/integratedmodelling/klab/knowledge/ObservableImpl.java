@@ -582,7 +582,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
 	@Override
 	public String toString() {
-		return urn;
+		return "(O) " + urn;
 	}
 
 	@Override

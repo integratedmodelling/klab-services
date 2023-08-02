@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.Action;
 
 public interface Model extends Knowledge {
 
@@ -64,5 +65,7 @@ public interface Model extends Knowledge {
 	 * @return
 	 */
 	List<Contextualizable> getComputation();
+	
+	List<Action> getActions();
 
 }

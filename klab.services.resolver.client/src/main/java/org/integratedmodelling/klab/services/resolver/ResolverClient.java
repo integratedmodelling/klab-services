@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionGraph;
+import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 public class ResolverClient implements Resolver {
@@ -50,7 +50,7 @@ public class ResolverClient implements Resolver {
     }
 
     @Override
-    public Dataflow<Observation> resolve(Knowledge resolvable, ContextScope scope) {
+    public Resolution resolve(Knowledge resolvable, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -63,6 +63,12 @@ public class ResolverClient implements Resolver {
 
 	@Override
 	public List<Model> queryModels(Observable observable, ContextScope scope) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Dataflow<Observation> compile(Resolution resolution, ContextScope scope) {
 		// TODO Auto-generated method stub
 		return null;
 	}

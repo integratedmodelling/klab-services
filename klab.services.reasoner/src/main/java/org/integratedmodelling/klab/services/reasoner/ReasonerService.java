@@ -498,7 +498,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
 	@Override
 	public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-		return semanticDistance(target.asConcept(), other.asConcept(), context == null ? null : context.asConcept(), true, null);
+		return semanticDistance(target.asConcept(), other.asConcept(), context == null ? null : context.asConcept(),
+				true, null);
 	}
 
 	/**
@@ -2187,8 +2188,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 			builder = builder.withRange(concept.getRange());
 		}
 
-        builder = builder.optional(concept.isOptional()).generic(concept
-                .isGeneric())/* .global(concept.isGlobal()) */
+		builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept.isGlobal()) */
 				.named(concept.getFormalName());
 
 		if (concept.isExclusive()) {
@@ -2340,8 +2340,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 		List<ObservationStrategy> ret = new ArrayList<>();
 
 		/*
+		 * If observable is abstract due to abstract traits, strategy is to find a model
+		 * for each of the traits, then defer the resolution of a concretized observable
+		 * into an OR-joined meta-observable,which will use a merger model with all the
+		 * independent observables as dependencies.
+		 */
+
+		/*
 		 * first course of action is always direct TODO unless observable is abstract or
-		 * unsatisfiable?
+		 * unsatisfiable
 		 */
 		ret.add(ObservationStrategy.direct(observable));
 

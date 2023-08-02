@@ -296,7 +296,7 @@ public class ModelKbox extends ObservableKbox {
 			if (model != null) {
 				if (model.getPermissions().checkAuthorization(context)) {
 					Coverage coverage = resourceService.modelGeometry(model.getName());
-					if (!coverage.checkConstraints(context.getGeometry())) {
+					if (coverage != null && !coverage.checkConstraints(context.getGeometry())) {
 						resourceService.scope().debug("model " + model.getName() + " of " + observable
 								+ " discarded because of coverage constraints mismatch");
 						continue;
@@ -828,6 +828,7 @@ public class ModelKbox extends ObservableKbox {
 
 				m.setName(model.getName());
 				m.setNamespaceId(model.getNamespace());
+				m.setUrn(model.getNamespace() + "." + model.getName());
 				// if (model.getNamespace().getProject() != null) {
 				m.setProjectId(model.getProjectName());
 				// if (model.getNamespace().getProject().isRemote()) {

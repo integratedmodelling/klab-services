@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
 /**
@@ -19,7 +20,7 @@ public interface KimBehavior extends KimStatement {
      * 
      * @return
      */
-    List<KimAction> getActions();
+    List<Action> getActions();
     
     /**
      * Quick check for no-op behaviors.

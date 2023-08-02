@@ -78,6 +78,7 @@ public class ModelReference {
 
 //    private String id;
 	private String name;
+	private String urn;
 	private String serverId;
 	private String projectUrn;
 	private String projectId;
@@ -114,7 +115,7 @@ public class ModelReference {
 	private boolean specializedObservable = false;
 	private ResourcePrivileges permissions = new ResourcePrivileges();
 	private Version version;
-	
+
 	transient private Concept observableConcept;
 	transient private Shape shape;
 
@@ -787,11 +788,13 @@ public class ModelReference {
 	 * @return the urn
 	 */
 	public String getUrn() {
-		// FIXME make this the URN
-		return name;
-		// return urn;
+		return urn;
 	}
 
+	public void setUrn(String urn) {
+		this.urn = urn;
+	}
+	
 	@Override
 	public String toString() {
 		return "[REF " + name + "]";
@@ -845,12 +848,12 @@ public class ModelReference {
 		this.permissions = permissions;
 	}
 
-    public Version getVersion() {
-        return version;
-    }
+	public Version getVersion() {
+		return version;
+	}
 
-    public void setVersion(Version version) {
-        this.version = version;
-    }
+	public void setVersion(Version version) {
+		this.version = version;
+	}
 
 }

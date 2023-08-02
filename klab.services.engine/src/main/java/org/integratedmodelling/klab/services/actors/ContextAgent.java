@@ -2,16 +2,11 @@ package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
@@ -59,10 +54,12 @@ public class ContextAgent extends KAgent {
             /*
              * Build the dataflow in the scope
              */
-            Dataflow<?> dataflow = scope.getService(Resolver.class).resolve(resolvable, message.getScope());
+            var resolution = resolver.resolve(resolvable, message.getScope());
 
-            if (!dataflow.isEmpty()) {
+            if (resolution.getCoverage().isRelevant()) {
 
+            	Dataflow<Observation> dataflow = resolver.compile(resolution, message.getScope());
+            	
                 /*
                  * Run the dataflow
                  */

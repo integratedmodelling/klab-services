@@ -18,6 +18,7 @@ package org.integratedmodelling.klab.api.knowledge.observation;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -35,7 +36,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Observation extends Artifact {
+public interface Observation extends Artifact, Knowledge {
 
 	/**
 	 * Return the observable.

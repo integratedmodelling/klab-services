@@ -27,7 +27,7 @@ import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 public class EngineContextScope extends EngineSessionScope implements ContextScope {
 
     private Identity observer;
-    private DirectObservation context;
+    private DirectObservation contextObservation;
     private Set<String> resolutionScenarios = new LinkedHashSet<>();
     private Scale geometry = Scale.empty();
     private String resolutionNamespace;
@@ -50,7 +50,8 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
         super(parent);
         this.parent = parent;
         this.observer = parent.observer;
-        this.context = parent.context;
+        this.contextObservation = parent.contextObservation;
+        this.catalog.putAll(parent.catalog);
     }
 
     @Override
@@ -183,7 +184,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     @Override
     public DirectObservation getResolutionObservation() {
-        return context;
+        return contextObservation;
     }
 
     @Override
@@ -235,5 +236,17 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public DirectObservation getContextObservation() {
+		return this.contextObservation;
+	}
+
+	@Override
+	public ContextScope withContextObservation(DirectObservation contextObservation) {
+        EngineContextScope ret = new EngineContextScope(this);
+        ret.contextObservation = contextObservation;
+        return ret;
+	}
 
 }

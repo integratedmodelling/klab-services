@@ -247,4 +247,8 @@ public class ResourceImpl implements Resource {
 	public String getLocalProjectName() {
 		return localProjectName;
 	}
+
+	public String toString() {
+		return "(R) " + urn;
+	}
 }
