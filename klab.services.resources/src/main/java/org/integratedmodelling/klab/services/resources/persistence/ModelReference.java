@@ -78,7 +78,6 @@ public class ModelReference {
 
 //    private String id;
 	private String name;
-	private String urn;
 	private String serverId;
 	private String projectUrn;
 	private String projectId;
@@ -782,19 +781,6 @@ public class ModelReference {
 		this.shape = shape;
 	}
 
-	/**
-	 * Gets the urn.
-	 *
-	 * @return the urn
-	 */
-	public String getUrn() {
-		return urn;
-	}
-
-	public void setUrn(String urn) {
-		this.urn = urn;
-	}
-	
 	@Override
 	public String toString() {
 		return "[REF " + name + "]";

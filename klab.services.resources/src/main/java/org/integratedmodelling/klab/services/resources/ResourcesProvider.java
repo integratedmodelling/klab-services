@@ -856,8 +856,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 		ResourceSet results = new ResourceSet();
 		// TODO use resource set properly, merging results
 		for (ModelReference model : this.kbox.query(observable, scope)) {
-			results.getResults()
-					.add(new ResourceSet.Resource(this.url, model.getUrn(), model.getVersion(), KnowledgeClass.MODEL));
+			results.getResults().add(new ResourceSet.Resource(this.url, model.getNamespaceId() + "." + model.getName(),
+					model.getVersion(), KnowledgeClass.MODEL));
 		}
 		return results;
 	}
