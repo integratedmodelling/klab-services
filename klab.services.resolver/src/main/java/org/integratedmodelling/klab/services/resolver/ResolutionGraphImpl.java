@@ -17,183 +17,191 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
 public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, ResolutionGraphImpl.ResolutionEdge>
-		implements Resolution {
+        implements
+            Resolution {
 
-	private static final long serialVersionUID = 4088657660423175126L;
+    private static final long serialVersionUID = 4088657660423175126L;
 
-	private Knowledge resolvedKnowledge;
-	private Coverage coverage;
-	private Set<Knowledge> resolving = new HashSet<>();
+    private Knowledge resolvedKnowledge;
+    private Coverage coverage;
+    private Set<Knowledge> resolving = new HashSet<>();
 
-	class ResolutionEdge extends DefaultEdge {
+    class ResolutionEdge extends DefaultEdge {
 
-		private static final long serialVersionUID = 5876676141844919004L;
+        private static final long serialVersionUID = 5876676141844919004L;
 
-		private Observable observable;
-		private ResolutionType type;
+        private Observable observable;
+        private ResolutionType type;
 
-		public Coverage getCoverage() {
-			return coverage;
-		}
+        public Coverage getCoverage() {
+            return coverage;
+        }
 
-		public Observable getObservable() {
-			return observable;
-		}
+        public Observable getObservable() {
+            return observable;
+        }
 
-		public void setObservable(Observable observable) {
-			this.observable = observable;
-		}
+        public void setObservable(Observable observable) {
+            this.observable = observable;
+        }
 
-		public ResolutionType getType() {
-			return type;
-		}
+        public ResolutionType getType() {
+            return type;
+        }
 
-		public void setType(ResolutionType type) {
-			this.type = type;
-		}
+        public void setType(ResolutionType type) {
+            this.type = type;
+        }
 
-	}
+    }
 
-	/**
-	 * Create a resolution graph for the passed knowledge, pre-loading whatever has
-	 * been already resolved in the passed scope.
-	 * 
-	 * @param root
-	 * @param scope
-	 */
-	public ResolutionGraphImpl(Knowledge root, ContextScope scope) {
-		super(ResolutionGraphImpl.ResolutionEdge.class);
-		this.resolvedKnowledge = root;
-		this.coverage = computeInitialCoverage(root, scope);
-		for (Observable observable : scope.getCatalog().keySet()) {
-			addVertex(observable);
-			addVertex(scope.getCatalog().get(observable));
-		}
-	}
+    /**
+     * Create a resolution graph for the passed knowledge, pre-loading whatever has been already
+     * resolved in the passed scope.
+     * 
+     * @param root
+     * @param scope
+     */
+    public ResolutionGraphImpl(Knowledge root, ContextScope scope) {
+        super(ResolutionGraphImpl.ResolutionEdge.class);
+        this.resolvedKnowledge = root;
+        this.coverage = computeInitialCoverage(root, scope);
+        for (Observable observable : scope.getCatalog().keySet()) {
+            addVertex(observable);
+            addVertex(scope.getCatalog().get(observable));
+        }
+    }
 
-	private Coverage computeInitialCoverage(Knowledge root, ContextScope scope) {
-		if (root instanceof Instance) {
-			return Coverage.create(((Instance)root).getScale(), 1.0);
-		} else if (scope.getGeometry() != null) {
-			return Coverage.create(scope.getGeometry(), 0.0);
-		}
-		return Coverage.empty();
-	}
+    private Coverage computeInitialCoverage(Knowledge root, ContextScope scope) {
+        if (root instanceof Instance) {
+            return Coverage.create(((Instance) root).getScale(), 1.0);
+        } else if (scope.getGeometry() != null) {
+            return Coverage.create(scope.getGeometry(), 0.0);
+        }
+        return Coverage.empty();
+    }
 
-	public ResolutionGraphImpl(Knowledge root, ContextScope scope, ResolutionGraphImpl parent) {
-		this(root, scope);
-		if (this.coverage == null) {
-			this.coverage = parent.coverage;
-		}
-		this.resolvedKnowledge = root;
-		this.resolving.addAll(parent.resolving);
-		this.resolving.add(root);
-	}
+    public ResolutionGraphImpl(Knowledge root, ContextScope scope, ResolutionGraphImpl parent) {
+        this(root, scope);
+        if (this.coverage == null) {
+            this.coverage = parent.coverage;
+        }
+        // NO call a coverage setting (can be same as root) that does the merge if there.
+        this.coverage = this.coverage.merge(getCoverage(root), LogicalConnector.INTERSECTION);
+        this.resolvedKnowledge = root;
+        this.resolving.addAll(parent.resolving);
+        this.resolving.add(root);
+    }
 
-	/**
-	 * Add a link (K) <--direct(observable)-- (O)
-	 * 
-	 * @param child
-	 * @param mergingStrategy
-	 * @return
-	 */
-	public Coverage merge(ResolutionGraphImpl child, Observable observable, LogicalConnector mergingStrategy) {
+    private Scale getCoverage(Knowledge root) {
+        
+        return this.coverage;
+    }
 
-		if (this.coverage == null) {
-			this.coverage = child.getCoverage();
-		} else {
-			this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
-		}
+    /**
+     * Add a link (K) <--direct(observable)-- (O)
+     * 
+     * @param child
+     * @param mergingStrategy
+     * @return
+     */
+    public Coverage merge(ResolutionGraphImpl child, Observable observable, LogicalConnector mergingStrategy) {
 
-		this.vertexSet().addAll(child.vertexSet());
-		this.edgeSet().addAll(child.edgeSet());
+        if (this.coverage == null) {
+            this.coverage = child.getCoverage();
+        } else {
+            this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
+        }
 
-		// TODO link our knowledge to the root in the incoming using Type.DIRECT
+        this.vertexSet().addAll(child.vertexSet());
+        this.edgeSet().addAll(child.edgeSet());
 
-		return this.coverage;
-	}
+        // TODO link our knowledge to the root in the incoming using Type.DIRECT
 
-	/**
-	 * Add a link (K) <--filter-- (model F applying to K)
-	 * 
-	 * @param child
-	 * @param mergingStrategy
-	 * @return
-	 */
-	public Coverage mergeFilter(ResolutionGraphImpl child, Observable observable, LogicalConnector mergingStrategy) {
+        return this.coverage;
+    }
 
-		if (this.coverage == null) {
-			this.coverage = child.getCoverage();
-		} else {
-			this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
-		}
+    /**
+     * Add a link (K) <--filter-- (model F applying to K)
+     * 
+     * @param child
+     * @param mergingStrategy
+     * @return
+     */
+    public Coverage mergeFilter(ResolutionGraphImpl child, Observable observable, LogicalConnector mergingStrategy) {
 
-		this.vertexSet().addAll(child.vertexSet());
-		this.edgeSet().addAll(child.edgeSet());
+        if (this.coverage == null) {
+            this.coverage = child.getCoverage();
+        } else {
+            this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
+        }
 
-		// TODO link our knowledge to the root in the incoming using Type.FILTER
+        this.vertexSet().addAll(child.vertexSet());
+        this.edgeSet().addAll(child.edgeSet());
 
-		return this.coverage;
+        // TODO link our knowledge to the root in the incoming using Type.FILTER
 
-	}
+        return this.coverage;
 
-	/**
-	 * Add a link (K) <--direct(deferring)-- (Z instantiator) <--deferred--(deferred
-	 * = unresolved observable K within Z)
-	 * 
-	 * @param child
-	 * @param mergingStrategy
-	 * @param deferred
-	 * @return
-	 */
-	public Coverage mergeDeferred(ResolutionGraphImpl child, LogicalConnector mergingStrategy, Observable deferring,
-			Observable deferred) {
+    }
 
-		if (this.coverage == null) {
-			this.coverage = child.getCoverage();
-		} else {
-			this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
-		}
+    /**
+     * Add a link (K) <--direct(deferring)-- (Z instantiator) <--deferred--(deferred = unresolved
+     * observable K within Z)
+     * 
+     * @param child
+     * @param mergingStrategy
+     * @param deferred
+     * @return
+     */
+    public Coverage mergeDeferred(ResolutionGraphImpl child, LogicalConnector mergingStrategy, Observable deferring,
+            Observable deferred) {
 
-		this.vertexSet().addAll(child.vertexSet());
-		this.edgeSet().addAll(child.edgeSet());
+        if (this.coverage == null) {
+            this.coverage = child.getCoverage();
+        } else {
+            this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
+        }
 
-		// TODO link our knowledge to the root in the incoming using Type.DEFERRED
+        this.vertexSet().addAll(child.vertexSet());
+        this.edgeSet().addAll(child.edgeSet());
 
-		return this.coverage;
-	}
+        // TODO link our knowledge to the root in the incoming using Type.DEFERRED
 
-	public Coverage getCoverage() {
-		return coverage;
-	}
+        return this.coverage;
+    }
 
-	public void setCoverage(Coverage coverage) {
-		this.coverage = coverage;
-	}
+    public Coverage getCoverage() {
+        return coverage;
+    }
 
-	public ResolutionGraphImpl setEmpty() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setCoverage(Coverage coverage) {
+        this.coverage = coverage;
+    }
 
-	public boolean isResolving(Knowledge observable) {
-		return resolving.contains(observable);
-	}
+    public ResolutionGraphImpl setEmpty() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Knowledge getResolvedKnowledge() {
-		return this.resolvedKnowledge;
-	}
+    public boolean isResolving(Knowledge observable) {
+        return resolving.contains(observable);
+    }
 
-	@Override
-	public List<Knowledge> getResolving(Knowledge target, ResolutionType strategy) {
-		List<Knowledge> ret = new ArrayList<>();
-		for (ResolutionEdge edge : incomingEdgesOf(target)) {
-			if (edge.type == strategy) {
-				ret.add(getEdgeSource(edge));
-			}
-		}
-		return ret;
-	}
+    @Override
+    public Knowledge getResolvedKnowledge() {
+        return this.resolvedKnowledge;
+    }
+
+    @Override
+    public List<Knowledge> getResolving(Knowledge target, ResolutionType strategy) {
+        List<Knowledge> ret = new ArrayList<>();
+        for (ResolutionEdge edge : incomingEdgesOf(target)) {
+            if (edge.type == strategy) {
+                ret.add(getEdgeSource(edge));
+            }
+        }
+        return ret;
+    }
 
 }
