@@ -8,6 +8,7 @@ import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kim.model.KimModel;
 import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -24,7 +25,7 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
 		"Commands to find, list, access and manipulate resources.", "" }, subcommands = { Resources.List.class,
-				Resources.Services.class, Resources.Workspace.class, Resources.Project.class,
+				Resources.Query.class, Resources.Services.class, Resources.Workspace.class, Resources.Project.class,
 				Resources.Components.class, Resources.Resolve.class })
 public class Resources {
 
@@ -36,6 +37,54 @@ public class Resources {
 		public void run() {
 			// TODO Auto-generated method stub
 			System.out.println("list services");
+		}
+	}
+
+	@Command(name = "query", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+			"Query models that resolve a passed observable", "" }, subcommands = {})
+	public static class Query implements Runnable {
+
+		@Option(names = { "-s", "--service" }, defaultValue = "local" /* TODO initialize at null */, description = {
+				"Resource service to connect to" }, required = false)
+		private String service;
+
+		@Option(names = { "-c", "--source-code" }, defaultValue = "false", description = {
+				"Print the original source code, if applicable, instead of the JSON specification" }, required = false)
+		private boolean source;
+
+		@Option(names = { "-o", "--output" }, description = {
+				"File to output the results to" }, required = false, defaultValue = Parameters.NULL_VALUE)
+		private File output;
+
+		@Parameters
+		String[] urns;
+
+		// TODO
+		PrintStream out = System.out;
+
+		@Override
+		public void run() {
+
+			Observable observable = Engine.INSTANCE.getCurrentUser()
+					.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
+					.resolveObservable(Utils.Strings.join(urns, ' '));
+
+			var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
+			ResourceSet result = service.queryModels(observable, Engine.INSTANCE.getCurrentContext(true));
+			out.println("Resource set: (TODO)");
+			Application.printResourceSet(result, out, 3);
+			
+			if (result.getResults().size() > 0) {
+				out.println(Ansi.AUTO.string("Displaying @|green " + result.getResults().size() + "|@ models:"));
+				for (ResourceSet.Resource model : result.getResults()) {
+					out.println(Ansi.AUTO.string("   @|green " + model.getResourceUrn() + "|@"));
+//					service.resolveNamespace(model.getResourceUrn(), Engine.INSTANCE.getCurrentContext(false));
+//					out.println(Utils.Strings.indent(service.resolveModel(model.getResourceUrn(), Engine.INSTANCE.getCurrentContext(false)).get;
+				}
+			} else {
+				out.println("No models found");
+			}
+
 		}
 	}
 
@@ -448,7 +497,7 @@ public class Resources {
 				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
 			}
 		}
-		
+
 		return null;
 	}
 

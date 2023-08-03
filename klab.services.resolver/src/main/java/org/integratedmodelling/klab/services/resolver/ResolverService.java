@@ -22,8 +22,6 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
@@ -616,6 +614,9 @@ public class ResolverService extends BaseService implements Resolver {
 		for (ResourceSet.Resource urn : models.getResults()) {
 			ret.add(this.models.get(urn.getResourceUrn()));
 		}
+		
+		// TODO prioritize, dioporco
+		
 		return ret;
 	}
 

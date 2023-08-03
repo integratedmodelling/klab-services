@@ -20,10 +20,10 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.eclipse.xtext.testing.IInjectorProvider;
-import org.integratedmodelling.contrib.jgrapht.Graph;
-import org.integratedmodelling.contrib.jgrapht.graph.DefaultDirectedGraph;
-import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
-import org.integratedmodelling.contrib.jgrapht.traverse.TopologicalOrderIterator;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.integratedmodelling.kactors.model.KActors;
 import org.integratedmodelling.kdl.model.Kdl;
 import org.integratedmodelling.kim.api.IKimObservable;
@@ -853,13 +853,78 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
 	@Override
 	public ResourceSet queryModels(Observable observable, ContextScope scope) {
+		
 		ResourceSet results = new ResourceSet();
-		// TODO use resource set properly, merging results
 		for (ModelReference model : this.kbox.query(observable, scope)) {
 			results.getResults().add(new ResourceSet.Resource(this.url, model.getNamespaceId() + "." + model.getName(),
 					model.getVersion(), KnowledgeClass.MODEL));
 		}
+
+		addDependencies(results, scope);
+		
 		return results;
+	}
+
+	/**
+	 * Add a collection of namespaces to a result set, including their dependencies
+	 * and listing the correspondent resources in dependency order. If any namespace
+	 * isn't available, return false;
+	 * 
+	 * TODO/FIXME involve other services from the scope if a namespace is not
+	 * available locally.
+	 *
+	 * @param namespaces
+	 * @param results
+	 */
+	private boolean addNamespacesToResultSet(Set<String> namespaces, ResourceSet results, Scope scope) {
+
+		DefaultDirectedGraph<String, DefaultEdge> nss = new DefaultDirectedGraph<>(DefaultEdge.class);
+		Map<String, ResourceSet.Resource> storage = new HashMap<>();
+		for (String ns : namespaces) {
+			if (!addNamespaceToResultSet(ns, nss, storage, scope)) {
+				return false;
+			}
+		}
+
+		TopologicalOrderIterator<String, DefaultEdge> order = new TopologicalOrderIterator<>(nss);
+		while (order.hasNext()) {
+			results.getNamespaces().add(storage.get(order.next()));
+		}
+
+		return true;
+	}
+
+	private boolean addNamespaceToResultSet(String ns, DefaultDirectedGraph<String, DefaultEdge> nss,
+			Map<String, ResourceSet.Resource> storage, Scope scope) {
+
+		if (nss.containsVertex(ns)) {
+			return true;
+		}
+
+		KimNamespace namespace = this.localNamespaces.get(ns);
+		if (namespace == null) {
+			// TODO use services in scope
+			return false;
+		}
+
+		nss.addVertex(ns);
+
+		var dependency = namespace.getImports();
+		for (String dependent : dependency.keySet()) {
+			if (!nss.containsVertex(dependent)) {
+				addNamespaceToResultSet(dependent, nss, storage, scope);
+			}
+			nss.addEdge(dependent, ns);
+		}
+
+		var resource = new ResourceSet.Resource();
+		resource.setKnowledgeClass(KnowledgeClass.NAMESPACE);
+		resource.setResourceUrn(ns);
+		resource.setResourceVersion(namespace.getVersion());
+		resource.setServiceId(getUrl());
+		storage.put(ns, resource);
+
+		return true;
 	}
 
 	@Override
@@ -1020,6 +1085,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 	 */
 	private ResourceSet addDependencies(ResourceSet resourceSet, Scope scope) {
 
+		Set<String> namespaces = new HashSet<>();
+		for (ResourceSet.Resource result : resourceSet.getResults()) {
+			if (Urn.classify(result.getResourceUrn()) == Urn.Type.KIM_OBJECT) {
+				if (result.getKnowledgeClass() == KnowledgeClass.NAMESPACE) {
+					namespaces.add(result.getResourceUrn());
+				} else if (result.getKnowledgeClass() == KnowledgeClass.MODEL
+						|| result.getKnowledgeClass() == KnowledgeClass.INSTANCE
+						|| result.getKnowledgeClass() == KnowledgeClass.DEFINITION) {
+					namespaces.add(Utils.Paths.getLeading(result.getResourceUrn(), '.'));
+				}
+			}
+		}
+
+		addNamespacesToResultSet(namespaces, resourceSet, scope);
+		
 		/*
 		 * add components and action libraries to behaviors
 		 * 

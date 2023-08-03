@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.jline.builtins.ConfigurationPath;
@@ -212,7 +213,7 @@ public class Application {
 		try {
 			Supplier<Path> workDir = () -> Paths
 					.get(System.getProperty("user.dir") + File.pathSeparator + ".klab" + File.pathSeparator + "kcli");
-			
+
 			// jline built-in commands
 			workDir.get().toFile().mkdirs();
 			ConfigurationPath configPath = new ConfigurationPath(workDir.get(), workDir.get());
@@ -261,13 +262,13 @@ public class Application {
 				String line;
 				while (true) {
 					try {
-						
+
 						systemRegistry.cleanUp();
 						line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
 						completer.resetSemanticSearch();
 						systemRegistry.execute(line);
 						history.write(historyFile.toPath(), false);
-						
+
 					} catch (UserInterruptException e) {
 						// Ignore
 					} catch (EndOfFileException e) {
@@ -289,8 +290,14 @@ public class Application {
 		if (resourceSet == null) {
 			out.println(Utils.Strings.spaces(indent) + "Null resource set");
 		} else if (resourceSet.isEmpty()) {
-			out.println(Utils.Strings.spaces(indent) +"Empty resource set");
+			out.println(Utils.Strings.spaces(indent) + "Empty resource set");
 		} else {
+
+			out.println("Namespaces:");
+			for (ResourceSet.Resource namespace : resourceSet.getNamespaces()) {
+				out.println("   " + namespace);
+			}
+
 		}
 	}
 

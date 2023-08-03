@@ -92,4 +92,12 @@ public interface Resolution {
 	 */
 	List<Knowledge> getResolving(Knowledge target, ResolutionType type);
 
+	/**
+	 * Empty means that resolution has failed. A non-empty graph may contain zero
+	 * nodes, meaning that no contextualization is necessary.
+	 * 
+	 * @return
+	 */
+	boolean isEmpty();
+
 }

@@ -13,7 +13,8 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
  * Simple helper to decompose a URN into its constituents and access them with
  * proper semantics.
  * 
- * URN is formatted as <node name>:<originator>:<namespace>:<resource id>
+ * URN is formatted as <node name>:<originator>:<namespace>:<resource
+ * id>[#params][@version]
  * 
  * @author Ferd
  *
