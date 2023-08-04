@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
-import org.integratedmodelling.klab.services.resolver.ResolutionGraphImpl;
+import org.integratedmodelling.klab.services.resolver.ResolutionImpl;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
@@ -119,8 +119,8 @@ public class Graphs {
 	}
 
 	public static void show(Resolution resolution) {
-		if (resolution instanceof ResolutionGraphImpl) {
-			show((ResolutionGraphImpl) resolution, "Resolution graph");
+		if (resolution instanceof ResolutionImpl) {
+			show((ResolutionImpl) resolution, "Resolution graph");
 		}
 	}
 

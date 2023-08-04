@@ -15,6 +15,7 @@ public class InstanceImpl implements Instance {
 	private static final long serialVersionUID = 3290903165179045061L;
 
 	private String urn;
+	private String namespace;
 	private Version version;
 	private Metadata metadata = Metadata.create();
 	private List<Annotation> annotations = new ArrayList<>();
@@ -99,5 +100,14 @@ public class InstanceImpl implements Instance {
 	public String toString() {
 		return "(I) " + urn;
 	}
+
+	@Override
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
 
 }
