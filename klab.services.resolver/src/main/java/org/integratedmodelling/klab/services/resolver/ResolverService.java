@@ -673,17 +673,44 @@ public class ResolverService extends BaseService implements Resolver {
 //	}
 
 	/**
+	 * We always resolve an observable first. If resolving a model, create observable graph and resolve the model directly without further
+	 * check.
 	 * 
 	 * @param observable
 	 * @param parent
 	 * @return
 	 */
-	boolean resolveObservable(Observable observable, Scale scale, ContextScope scope, Resolution parent) {
+	boolean resolveObservable(Observable observable, Scale scale, ContextScope scope, Resolution parent, Model parentModel) {
+		
+		/**
+		 * Parent must be not null
+		 * 		being resolved? return false;
+		 * 		has been resolved? return true;
+		 * 
+		 * Make graph merging parent
+		 * Set coverage to scale, 0;
+		 * Strategies/models:
+		 * 	foreach model:
+		 * 		resolve to new graph for same observable and add coverage; merge(union) if gain is significant
+		 *      break when models are finished or coverage is complete
+		 * if graph.coverage is sufficient, merge into parent at parent model (root if null)
+		 * return coverage is sufficient
+		 */
+		
 		return false;
 	}
 
-	boolean resolveModel(Model model, Scale scale, ContextScope scope, Resolution parent) {
-		return false;
+	/**
+	 * Parent is for the observable, model gets added if it contributes, then its dependencies 
+	 * 
+	 * @param model
+	 * @param scale
+	 * @param scope
+	 * @param parent
+	 * @return
+	 */
+	Resolution resolveModel(Model model, Scale scale, ContextScope scope, Resolution parent) {
+		return null;
 	}
 
 }
