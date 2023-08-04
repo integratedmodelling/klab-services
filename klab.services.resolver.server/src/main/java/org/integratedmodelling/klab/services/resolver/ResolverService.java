@@ -71,7 +71,7 @@ public class ResolverService implements Resolver, Resolver.Admin {
 	}
 
 	@Override
-	public Dataflow<Observation> compile(Resolution resolution, ContextScope scope) {
+	public Dataflow<Observation> compile(Knowledge resolved, Resolution resolution, ContextScope scope) {
 		// TODO Auto-generated method stub
 		return null;
 	}

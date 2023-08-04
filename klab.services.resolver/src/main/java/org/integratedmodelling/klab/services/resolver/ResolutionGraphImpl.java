@@ -73,7 +73,9 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 	 * @param scope
 	 */
 	public ResolutionGraphImpl(Knowledge root, ContextScope scope) {
+
 		super(ResolutionGraphImpl.ResolutionEdge.class);
+
 		this.resolvedKnowledge = root;
 		this.resolving.add(root);
 		if (root instanceof Instance) {
@@ -81,6 +83,7 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 		} else if (scope.getGeometry() != null) {
 			this.coverage = Coverage.create(scope.getGeometry(), 0.0);
 		}
+
 		// pre-resolve
 		for (Observable observable : scope.getCatalog().keySet()) {
 			addVertex(observable);
@@ -94,19 +97,14 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 
 		super(ResolutionGraphImpl.ResolutionEdge.class);
 		this.resolvedKnowledge = root;
-		this.coverage = parent.getCoverage();
-		Coverage kcov = null;
 		if (root instanceof Instance) {
-			kcov = Coverage.create(((Instance) root).getScale(), 1.0);
+			this.coverage = Coverage.create(((Instance) root).getScale(), 1.0);
 		} else if (root instanceof Model) {
-			kcov = Coverage.create(((Model) root).getCoverage(), 1.0);
-		}
-
-		if (kcov != null) {
-			this.coverage = this.coverage.merge(kcov, LogicalConnector.INTERSECTION);
+			this.coverage = Coverage.create(((Model) root).getCoverage(), 1.0);
 		}
 
 		Graphs.addGraph(this, parent);
+
 		this.resolving.add(root);
 		this.resolving.addAll(parent.resolving);
 		this.resolving.add(root);
@@ -124,11 +122,10 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 		if (this.coverage == null) {
 			this.coverage = child.getCoverage();
 		} else {
-			this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
+			this.coverage = this.getCoverage().merge(child.getCoverage(), mergingStrategy);
 		}
-
+		
 		mergeGraph(child, observable, ResolutionType.DIRECT);
-
 		return this.coverage;
 	}
 
@@ -144,11 +141,10 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 		if (this.coverage == null) {
 			this.coverage = child.getCoverage();
 		} else {
-			this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
+			this.coverage = this.getCoverage().merge(child.getCoverage(), mergingStrategy);
 		}
 
 		mergeGraph(child, observable, ResolutionType.FILTERING);
-
 		return this.coverage;
 
 	}
@@ -172,12 +168,11 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 		}
 
 		mergeGraph(child, deferring, ResolutionType.DEFERRAL);
-
 		return this.coverage;
 	}
 
 	private void mergeGraph(ResolutionGraphImpl child, Observable observable, ResolutionType resolution) {
-
+		
 		for (Knowledge knowledge : child.vertexSet()) {
 			this.addVertex(knowledge);
 		}
@@ -190,7 +185,7 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 	}
 
 	public Coverage getCoverage() {
-		return coverage;
+		return coverage == null ? Coverage.empty() : coverage;
 	}
 
 	public void setCoverage(Coverage coverage) {

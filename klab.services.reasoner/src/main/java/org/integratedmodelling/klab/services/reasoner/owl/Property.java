@@ -28,6 +28,7 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
@@ -334,4 +335,20 @@ public class Property /* extends Knowledge implements IProperty */ {
         return getNamespace() + ":" + _id;
     }
 
+	@Override
+	public int hashCode() {
+		return Objects.hash(toString());
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		return Objects.equals(toString(), obj.toString());
+	}
+    
 }

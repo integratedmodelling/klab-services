@@ -32,6 +32,10 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * subtract (if merged with {@link LogicalConnector#INTERSECTION} mode) or add (
  * {@link LogicalConnector#UNION}) to the covered proportion of extent.
  * <p>
+ * A coverage with no extents and coverage proportion == 1.0 is a "universal"
+ * coverage that can be merged into another with no effect. Anything covering
+ * everything should have that coverage.
+ * 
  * In addition to the percent covered, a coverage may also include scale
  * constraints that restrict the type of scales an asset can be used in. This
  * includes specific extents, resolutions, or ranges thereof for each of the
@@ -54,7 +58,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
  * @version $Id: $Id
  */
 public interface Coverage extends Scale {
-    
+
 	/**
 	 * Return the proportion of total coverage as a double 0-1. It is the product of
 	 * the coverages for all the extents.
@@ -126,6 +130,15 @@ public interface Coverage extends Scale {
 	boolean isEmpty();
 
 	/**
+	 * True if the coverage has no extents and covers them all. This can be merged
+	 * into anything to not change it, and anything merged into it returns the
+	 * merged coverage.
+	 * 
+	 * @return
+	 */
+	boolean isUniversal();
+
+	/**
 	 * True if the coverage is at least as much as the minimum required coverage of
 	 * a context (95% by default). Note that setting this to 1.0 may trigger lots of
 	 * resolutions to resolve minute portions of the context.
@@ -167,9 +180,12 @@ public interface Coverage extends Scale {
 
 	}
 
-    public static Coverage empty() {
-        return create(Scale.create(Geometry.EMPTY), 0);
-    }
-    
+	public static Coverage universal() {
+		return create(Scale.create(Geometry.EMPTY), 1);
+	}
+	
+	public static Coverage empty() {
+		return create(Scale.create(Geometry.EMPTY), 0);
+	}
 
 }

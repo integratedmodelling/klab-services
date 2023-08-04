@@ -24,6 +24,7 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -128,7 +129,7 @@ public class OWL {
 	private BiMap<Long, ConceptImpl> conceptsById = HashBiMap.create();
 	private AtomicLong classId = new AtomicLong(1l);
 	private Scope scope;
-	
+
 	private boolean reasonerActive;
 	private boolean reasonerSynchronizing = false;
 	private Ontology mergedReasonerOntology;
@@ -149,7 +150,7 @@ public class OWL {
 	public OWL(Scope scope) {
 		this.scope = scope;
 	}
-	
+
 	/**
 	 * Source of truth for identifier-friendly reference names
 	 * 
@@ -1093,10 +1094,10 @@ public class OWL {
 		return scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 	}
 
-	public ResourcesService resources() { 
+	public ResourcesService resources() {
 		return scope.getService(ResourcesService.class);
 	}
-	
+
 	public Property getRestrictingProperty(Concept type, Concept concept) {
 		ConceptRestrictionVisitor visitor = new ConceptRestrictionVisitor(type, concept, this);
 		if (visitor.getRestriction() != null) {
@@ -1291,7 +1292,8 @@ public class OWL {
 		 */
 		Map<Concept, List<Concept>> pairs = new HashMap<>();
 		for (Concept t : fillers) {
-			Concept base = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class).baseParentTrait(t);
+			Concept base = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
+					.baseParentTrait(t);
 			if (base == null) {
 				System.err.println("HOSTIA no  base trait for " + t);
 				continue;
@@ -1515,8 +1517,7 @@ public class OWL {
 
 			Concept ret = ontology.getConcept(conceptId);
 
-			restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept,
-					ontology);
+			restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
 			restrictSome(ret, getProperty(CoreOntology.NS.CHANGES_PROPERTY), concept, ontology);
 
 			/*
@@ -1585,8 +1586,7 @@ public class OWL {
 
 			Concept ret = ontology.getConcept(conceptId);
 
-			restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept,
-					ontology);
+			restrictSome(ret, getProperty(CoreOntology.NS.DESCRIBES_OBSERVABLE_PROPERTY), concept, ontology);
 
 			/*
 			 * context of the change is the same context as the quality it describes - FIXME
@@ -2412,7 +2412,7 @@ public class OWL {
 	 * @return true
 	 */
 	public boolean is(Semantics c1, Semantics c2) {
-		
+
 		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
 		if (c1 instanceof Concept && c2 instanceof Concept) {
@@ -2420,8 +2420,7 @@ public class OWL {
 			if (reasoner == null) {
 				return reas.subsumes(c1, c2);
 			}
-			return getSubClasses(getOWLClass(c2.asConcept()), false)
-					.containsEntity(getOWLClass(c1.asConcept()));
+			return getSubClasses(getOWLClass(c2.asConcept()), false).containsEntity(getOWLClass(c1.asConcept()));
 
 		} else if (c1 instanceof Property && c2 instanceof Property) {
 
@@ -2460,7 +2459,7 @@ public class OWL {
 	 * @return the parent closure of the concept
 	 */
 	public Set<Concept> getParentClosure(Concept main) {
-		
+
 		var reas = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
 		Set<Concept> ret = new HashSet<>();
@@ -2854,5 +2853,14 @@ public class OWL {
 			}
 		}
 		return ret;
+	}
+
+	public boolean exportOntology(String namespace, File directory) {
+		Ontology ret = getOntology(namespace);
+		if (ret != null) {
+			directory.mkdirs();
+			return ret.write(new File(directory + File.separator + namespace + ".owl"), true);
+		}
+		return false;
 	}
 }

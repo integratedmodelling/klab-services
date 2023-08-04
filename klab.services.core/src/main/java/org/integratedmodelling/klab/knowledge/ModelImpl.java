@@ -131,7 +131,7 @@ public class ModelImpl implements Model {
 
 	@Override
 	public String toString() {
-		return "(O) " + urn;
+		return "(M) " + urn;
 	}
 
 	@Override

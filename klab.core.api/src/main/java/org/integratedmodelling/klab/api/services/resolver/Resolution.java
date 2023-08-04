@@ -3,16 +3,17 @@ package org.integratedmodelling.klab.api.services.resolver;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 
 /**
  * A resolution is the output of
- * {@link Resolver#resolve(Knowledge, ContextScope)} and consists of a graph
- * that details how a particular knowledge object has been resolved through
- * other knowledge in a given scope. When the resolution is deferred, further
- * resolution is needed after the execution of the corresponding dataflow to
- * complete the observation.
+ * {@link Resolver#resolve(Knowledge, ContextScope)} and consists of a graph of
+ * {@link Model} objects that details how a particular knowledge object has been
+ * resolved through other knowledge in a given scope. When the resolution is
+ * deferred, further resolution is needed after the execution of the
+ * corresponding dataflow to complete the observation.
  * <p>
  * A resolution is compiled into a dataflow to contextualize the strategy.
  * Resolution has been successful if the coverage of the resolution is
@@ -85,6 +86,10 @@ public interface Resolution {
 	 * Return the collection of whatever resolves the passed knowledge using the
 	 * passed strategy. The order is that of resolution, which matters as the first
 	 * objects should override the ones after them when overlaps exist.
+	 * 
+	 * FIXME this must become a list of <Model, Coverage> as the individual
+	 * resolving nodes can only be models and have their coverage in the graph
+	 * edges.
 	 * 
 	 * @param target
 	 * @param type

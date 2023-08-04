@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.utils.Utils.Numbers;
 
 public class CoverageImpl extends ScaleImpl implements Coverage {
 
@@ -61,7 +62,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 	 * constraints specified for this coverage, if any.
 	 */
 	private List<Constraint> constraints = new ArrayList<>();
-	
+
 	/**
 	 * Create a coverage with full coverage, which can be reduced by successive AND
 	 * merges.
@@ -154,7 +155,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 
 	@Override
 	public boolean isEmpty() {
-		return coverage == 0;
+		return Numbers.equal(coverage, 0);
 	}
 
 	@Override
@@ -175,12 +176,25 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 	@Override
 	public Coverage merge(Scale other, LogicalConnector how) {
 
-		// no need for suffering if either is 0 and we're intersecting
-		if (how == LogicalConnector.INTERSECTION
-				&& ((other instanceof Coverage && Utils.Numbers.equal(((Coverage) other).getCoverage(), 0))
-						|| Utils.Numbers.equal(this.getCoverage(), 0))) {
-			return empty(this.asScale());
+		/*
+		 * trivial cases first
+		 */
+		if (isUniversal()) {
+			return other instanceof Coverage ? (Coverage) other : new CoverageImpl(other, 1.0);
+		} else if (other instanceof Coverage && ((Coverage) other).isUniversal()) {
+			return this;
+		} else if (other instanceof Coverage && ((Coverage) other).isEmpty()) {
+			return how == LogicalConnector.INTERSECTION ? empty(this.asScale()) : this; 
+		} else if (isEmpty() && other instanceof Coverage) {
+			return how == LogicalConnector.INTERSECTION ? empty(other) : (Coverage)other;
 		}
+
+//		// no need for suffering if either is 0 and we're intersecting
+//		if (how == LogicalConnector.INTERSECTION
+//				&& ((other instanceof Coverage && Utils.Numbers.equal(((Coverage) other).getCoverage(), 0))
+//						|| Utils.Numbers.equal(this.getCoverage(), 0))) {
+//			return empty(this.asScale());
+//		}
 
 		Scale coverage = (Scale) other;
 		List<Pair<Extent<?>, Double>> newcoverages = new ArrayList<>();
@@ -431,6 +445,11 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
 	public Collection<Constraint> getConstraints() {
 		// TODO Auto-generated method stub
 		return this.constraints;
+	}
+
+	@Override
+	public boolean isUniversal() {
+		return this.coverage == 1 && extents.length == 0;
 	}
 
 }

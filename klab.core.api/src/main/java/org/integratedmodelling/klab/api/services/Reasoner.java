@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.io.File;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -824,6 +826,14 @@ public interface Reasoner extends KlabService {
 		 * @return
 		 */
 		Concept defineConcept(KimConceptStatement statement, Scope scope);
+
+		/**
+		 * Export a namespace as an OWL ontology with all dependencies.
+		 * 
+		 * @param namespace
+		 * @return
+		 */
+		boolean exportNamespace(String namespace, File directory);
 
 	}
 

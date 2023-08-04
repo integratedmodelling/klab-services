@@ -58,7 +58,7 @@ public class ContextAgent extends KAgent {
 
             if (resolution.getCoverage().isRelevant()) {
 
-            	Dataflow<Observation> dataflow = resolver.compile(resolution, message.getScope());
+            	Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, message.getScope());
             	
                 /*
                  * Run the dataflow

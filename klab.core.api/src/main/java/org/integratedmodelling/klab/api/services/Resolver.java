@@ -87,7 +87,7 @@ public interface Resolver extends KlabService {
 	 * @param scope
 	 * @return
 	 */
-	Dataflow<Observation> compile(Resolution resolution, ContextScope scope);
+	Dataflow<Observation> compile(Knowledge knowledge, Resolution resolution, ContextScope scope);
 
 	/**
 	 * Query all the resource servers available to find models that can observe the

@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -52,6 +53,11 @@ import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ResolverService extends BaseService implements Resolver {
+
+	/**
+	 * TODO this should be modifiable at the scope level
+	 */
+	private static double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
 
 	/*
 	 * The knowledge repository. Models and instances are built and kept in the
@@ -140,7 +146,7 @@ public class ResolverService extends BaseService implements Resolver {
 			throw new KIllegalStateException("knowledge " + knowledge + " is not resolvable");
 		}
 
-		if (resolution.getCoverage().isRelevant() && resolution != ret) {
+		if (resolution.getCoverage().isRelevant()) {
 			ret.merge(resolution, observable, LogicalConnector.UNION);
 		}
 
@@ -157,17 +163,15 @@ public class ResolverService extends BaseService implements Resolver {
 	 */
 	private ResolutionGraphImpl resolveModel(Model model, ContextScope scope, ResolutionGraphImpl parent) {
 
+		ResolutionGraphImpl ret = new ResolutionGraphImpl(model, scope, parent);
 		if (parent.isResolving(model)) {
-			return parent;
+			return ret.setEmpty();
 		}
 
-		ResolutionGraphImpl ret = new ResolutionGraphImpl(model, scope, parent);
 		for (Observable dependency : model.getDependencies()) {
 			ResolutionGraphImpl resolution = resolveObservable(dependency, scope, parent);
-			if (resolution.getCoverage().isRelevant()) {
+			if (resolution.getCoverage().isRelevant() || !dependency.isOptional()) {
 				ret.merge(resolution, dependency, LogicalConnector.INTERSECTION);
-			} else if (dependency.isOptional()) {
-				return ret.setEmpty();
 			}
 		}
 		return ret;
@@ -185,11 +189,11 @@ public class ResolverService extends BaseService implements Resolver {
 	private ResolutionGraphImpl resolveObservable(Observable observable, ContextScope scope,
 			ResolutionGraphImpl parent) {
 
-		if (parent.isResolving(observable)) {
-			return parent;
-		}
-
 		ResolutionGraphImpl ret = new ResolutionGraphImpl(observable, scope, parent);
+
+		if (parent.isResolving(observable)) {
+			return ret.setEmpty();
+		}
 
 		for (ObservationStrategy strategy : scope.getService(Reasoner.class).inferStrategies(observable, scope)) {
 			switch (strategy.getType()) {
@@ -199,10 +203,12 @@ public class ResolverService extends BaseService implements Resolver {
 			case DIRECT:
 				for (Model model : queryModels(observable, scope)) {
 					ResolutionGraphImpl modelResolution = resolveModel(model, scope, ret);
-					if (modelResolution.getCoverage().isRelevant()) {
-						ret.merge(modelResolution, observable, LogicalConnector.UNION);
-					}
-					if (ret.getCoverage().isComplete()) {
+//					Coverage contribution = ret.getCoverage().merge(modelResolution.getCoverage(),
+//							LogicalConnector.UNION);
+//					if (contribution.getGain() >= MINIMUM_WORTHWHILE_CONTRIBUTION) {
+					parent.merge(modelResolution, observable, LogicalConnector.UNION);
+//					}
+					if (parent.getCoverage().isComplete()) {
 						break;
 					}
 				}
@@ -217,7 +223,7 @@ public class ResolverService extends BaseService implements Resolver {
 	}
 
 	@Override
-	public Dataflow<Observation> compile(Resolution resolution, ContextScope scope) {
+	public Dataflow<Observation> compile(Knowledge knowledge, Resolution resolution, ContextScope scope) {
 		DataflowImpl ret = new DataflowImpl();
 		// TODO
 		return ret;
@@ -614,9 +620,9 @@ public class ResolverService extends BaseService implements Resolver {
 		for (ResourceSet.Resource urn : models.getResults()) {
 			ret.add(this.models.get(urn.getResourceUrn()));
 		}
-		
+
 		// TODO prioritize, dioporco
-		
+
 		return ret;
 	}
 
@@ -643,5 +649,60 @@ public class ResolverService extends BaseService implements Resolver {
 			Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
 		}
 	}
+//
+//	/**
+//	 * Top-level 0: resolve an instance. The scale is in there. NO should not exist:
+//	 * instance means create the observation, add whatever states, then resolve it.
+//	 * If the resolution is a graph of models, the dataflow wraps the models within
+//	 * a "void earth:Region ()" which, run in scale, creates it.
+//	 * 
+//	 * @param instance
+//	 * @return
+//	 */
+//	Resolution resolve(Instance instance) {
+//
+//		/*
+//		 * see if we need any resolution
+//		 */
+//		Resolution resolution = resolve(instance.getObservable(), instance.getScale());
+//
+//		return null;
+//	}
+//
+//	/**
+//	 * Top-level 1: resolve a direct observation.
+//	 * 
+//	 * @param observation
+//	 * @return
+//	 */
+//	Resolution resolve(DirectObservation observation) {
+//		Resolution resolution = resolve(observation.getObservable(), observation.getScale());
+//		return null;
+//	}
+//
+//	/**
+//	 * Top-level 2: resolve an observable (must be instantiation) in scale.
+//	 * 
+//	 * @param observable
+//	 * @param scale
+//	 * @return
+//	 */
+//	Resolution resolve(Observable observable, Scale scale) {
+//		return null;
+//	}
+//
+//	/**
+//	 * 
+//	 * @param observable
+//	 * @param parent
+//	 * @return
+//	 */
+//	boolean resolveObservable(Observable observable, Resolution parent) {
+//		return false;
+//	}
+//
+//	boolean resolveModel(Model model, Resolution parent) {
+//		return false;
+//	}
 
 }

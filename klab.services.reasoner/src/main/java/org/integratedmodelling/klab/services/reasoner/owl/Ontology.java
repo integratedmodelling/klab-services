@@ -240,14 +240,13 @@ public class Ontology /* implements IOntology */ {
                 String iri = o.getOntologyID().getOntologyIRI().toString();
                 if (iri.startsWith(myns) && !o.equals(this.ontology)) {
                     String fr = o.getOntologyID().getOntologyIRI().getFragment();
-                    KimNamespace other = owl.getNamespace(fr);
+                    Ontology other = owl.getOntology(fr);
                     if (other != null) {
                         if (!fr.endsWith(".owl")) {
                             fr += ".owl";
                         }
                         File efile = new File((path.toString().equals(".") ? "" : (path + File.separator)) + fr);
-                        // FIXME get it from OWL
-                        // other.getOntology().write(efile, false);
+                        other.write(efile, false);
                         // authorities.addAll(((Ontology)
                         // other.getOntology()).getDelegateOntologies());
                     }
