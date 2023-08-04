@@ -1,14 +1,17 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.knowledge.Instance;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -17,14 +20,22 @@ import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 
-public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, ResolutionGraphImpl.ResolutionEdge>
+/**
+ * Each graph resolves one observable through models.
+ * 
+ * @author Ferd
+ *
+ */
+public class ResolutionGraphImpl extends DefaultDirectedGraph<Model, ResolutionGraphImpl.ResolutionEdge>
 		implements Resolution {
 
 	private static final long serialVersionUID = 4088657660423175126L;
 
-	private Knowledge resolvedKnowledge;
+	private Observable resolvable;
 	private Coverage coverage;
-	private Set<Knowledge> resolving = new HashSet<>();
+	private Set<Observable> resolving = new HashSet<>();
+	private Map<Observable, Knowledge> resolved = new HashMap<>();
+	private List<Pair<Model, Coverage>> resolution = new ArrayList<>();
 
 	private boolean empty;
 
@@ -72,36 +83,21 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 	 * @param root
 	 * @param scope
 	 */
-	public ResolutionGraphImpl(Knowledge root, ContextScope scope) {
+	public ResolutionGraphImpl(Observable root, Scale scale, ContextScope scope) {
 
 		super(ResolutionGraphImpl.ResolutionEdge.class);
 
-		this.resolvedKnowledge = root;
+		this.resolvable = root;
 		this.resolving.add(root);
-		if (root instanceof Instance) {
-			this.coverage = Coverage.create(((Instance) root).getScale(), 1.0);
-		} else if (scope.getGeometry() != null) {
-			this.coverage = Coverage.create(scope.getGeometry(), 0.0);
-		}
 
-		// pre-resolve
-		for (Observable observable : scope.getCatalog().keySet()) {
-			addVertex(observable);
-			addVertex(scope.getCatalog().get(observable));
-			addEdge(scope.getCatalog().get(observable), observable,
-					new ResolutionEdge(observable, ResolutionType.RESOLVED));
-		}
+		// pre-resolved observations
+		resolved.putAll(scope.getCatalog());
 	}
 
-	public ResolutionGraphImpl(Knowledge root, ContextScope scope, ResolutionGraphImpl parent) {
+	public ResolutionGraphImpl(Observable root, ContextScope scope, ResolutionGraphImpl parent) {
 
 		super(ResolutionGraphImpl.ResolutionEdge.class);
-		this.resolvedKnowledge = root;
-		if (root instanceof Instance) {
-			this.coverage = Coverage.create(((Instance) root).getScale(), 1.0);
-		} else if (root instanceof Model) {
-			this.coverage = Coverage.create(((Model) root).getCoverage(), 1.0);
-		}
+		this.resolved.putAll(parent.resolved);
 
 		Graphs.addGraph(this, parent);
 
@@ -124,7 +120,7 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 		} else {
 			this.coverage = this.getCoverage().merge(child.getCoverage(), mergingStrategy);
 		}
-		
+
 		mergeGraph(child, observable, ResolutionType.DIRECT);
 		return this.coverage;
 	}
@@ -172,16 +168,16 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 	}
 
 	private void mergeGraph(ResolutionGraphImpl child, Observable observable, ResolutionType resolution) {
-		
-		for (Knowledge knowledge : child.vertexSet()) {
-			this.addVertex(knowledge);
-		}
-		for (ResolutionEdge edge : child.edgeSet()) {
-			this.addEdge(child.getEdgeSource(edge), child.getEdgeTarget(edge), edge);
-		}
-		this.addVertex(this.resolvedKnowledge);
-		this.addVertex(child.resolvedKnowledge);
-		this.addEdge(child.getResolvedKnowledge(), this.resolvedKnowledge, new ResolutionEdge(observable, resolution));
+
+//		for (Knowledge knowledge : child.vertexSet()) {
+//			this.addVertex(knowledge);
+//		}
+//		for (ResolutionEdge edge : child.edgeSet()) {
+//			this.addEdge(child.getEdgeSource(edge), child.getEdgeTarget(edge), edge);
+//		}
+//		this.addVertex(this.resolvedKnowledge);
+//		this.addVertex(child.resolvedKnowledge);
+//		this.addEdge(child.getResolvedKnowledge(), this.resolvedKnowledge, new ResolutionEdge(observable, resolution));
 	}
 
 	public Coverage getCoverage() {
@@ -207,19 +203,29 @@ public class ResolutionGraphImpl extends DefaultDirectedGraph<Knowledge, Resolut
 	}
 
 	@Override
-	public Knowledge getResolvedKnowledge() {
-		return this.resolvedKnowledge;
-	}
-
-	@Override
-	public List<Knowledge> getResolving(Knowledge target, ResolutionType strategy) {
-		List<Knowledge> ret = new ArrayList<>();
+	public List<Pair<Model, Coverage>> getResolving(Model target, ResolutionType strategy) {
+		List<Pair<Model, Coverage>> ret = new ArrayList<>();
 		for (ResolutionEdge edge : incomingEdgesOf(target)) {
 			if (edge.type == strategy) {
-				ret.add(getEdgeSource(edge));
+				ret.add(Pair.of(getEdgeSource(edge), edge.getCoverage()));
 			}
 		}
 		return ret;
+	}
+
+	@Override
+	public Knowledge getResolved(Observable observable) {
+		return resolved.get(observable);
+	}
+
+	@Override
+	public Observable getResolvable() {
+		return this.resolvable;
+	}
+
+	@Override
+	public List<Pair<Model, Coverage>> getResolution() {
+		return resolution;
 	}
 
 }

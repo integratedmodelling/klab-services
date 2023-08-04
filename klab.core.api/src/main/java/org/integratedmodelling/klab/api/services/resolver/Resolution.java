@@ -2,8 +2,10 @@ package org.integratedmodelling.klab.api.services.resolver;
 
 import java.util.List;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 
@@ -69,33 +71,47 @@ public interface Resolution {
 
 	/**
 	 * Return the total coverage of the resolution w.r.t. the context scope, i.e.
-	 * the coverage of the root node.
+	 * the coverage of the root node(s).
 	 * 
 	 * @return
 	 */
 	Coverage getCoverage();
 
 	/**
-	 * The knowledge that was resolved into this resolution.
+	 * The knowledge that this resolution has been built for.
 	 * 
 	 * @return
 	 */
-	Knowledge getResolvedKnowledge();
+	Observable getResolvable();
+
+	/**
+	 * The root-level models resolving the resolvable, each with their coverage of
+	 * the resolved knowledge. Use {@link #getResolving(Model, ResolutionType)} to
+	 * walk the resolution graph.
+	 * 
+	 * @return
+	 */
+	List<Pair<Model, Coverage>> getResolution();
+
+	/**
+	 * The resolution keeps tabs on anything that has been resolved already, either
+	 * through models or pre-existing observations.
+	 * 
+	 * @param observable
+	 * @return
+	 */
+	Knowledge getResolved(Observable observable);
 
 	/**
 	 * Return the collection of whatever resolves the passed knowledge using the
 	 * passed strategy. The order is that of resolution, which matters as the first
 	 * objects should override the ones after them when overlaps exist.
 	 * 
-	 * FIXME this must become a list of <Model, Coverage> as the individual
-	 * resolving nodes can only be models and have their coverage in the graph
-	 * edges.
-	 * 
 	 * @param target
 	 * @param type
 	 * @return
 	 */
-	List<Knowledge> getResolving(Knowledge target, ResolutionType type);
+	List<Pair<Model, Coverage>> getResolving(Model target, ResolutionType type);
 
 	/**
 	 * Empty means that resolution has failed. A non-empty graph may contain zero

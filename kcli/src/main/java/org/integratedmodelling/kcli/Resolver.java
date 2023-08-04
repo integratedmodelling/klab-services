@@ -93,7 +93,7 @@ public class Resolver {
 				Resolution resolution = resolver.resolve(knowledge, ctx);
 				this.push(resolution);
 
-				out.println("Resolution of " + resolution.getResolvedKnowledge() + " terminated with "
+				out.println("Resolution of " + resolution.getResolvable() + " terminated with "
 						+ resolution.getCoverage().getCoverage() + " coverage");
 
 				if (show) {

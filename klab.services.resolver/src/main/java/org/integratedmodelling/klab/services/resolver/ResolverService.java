@@ -649,26 +649,7 @@ public class ResolverService extends BaseService implements Resolver {
 			Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
 		}
 	}
-//
-//	/**
-//	 * Top-level 0: resolve an instance. The scale is in there. NO should not exist:
-//	 * instance means create the observation, add whatever states, then resolve it.
-//	 * If the resolution is a graph of models, the dataflow wraps the models within
-//	 * a "void earth:Region ()" which, run in scale, creates it.
-//	 * 
-//	 * @param instance
-//	 * @return
-//	 */
-//	Resolution resolve(Instance instance) {
-//
-//		/*
-//		 * see if we need any resolution
-//		 */
-//		Resolution resolution = resolve(instance.getObservable(), instance.getScale());
-//
-//		return null;
-//	}
-//
+
 //	/**
 //	 * Top-level 1: resolve a direct observation.
 //	 * 
@@ -690,19 +671,19 @@ public class ResolverService extends BaseService implements Resolver {
 //	Resolution resolve(Observable observable, Scale scale) {
 //		return null;
 //	}
-//
-//	/**
-//	 * 
-//	 * @param observable
-//	 * @param parent
-//	 * @return
-//	 */
-//	boolean resolveObservable(Observable observable, Resolution parent) {
-//		return false;
-//	}
-//
-//	boolean resolveModel(Model model, Resolution parent) {
-//		return false;
-//	}
+
+	/**
+	 * 
+	 * @param observable
+	 * @param parent
+	 * @return
+	 */
+	boolean resolveObservable(Observable observable, Scale scale, ContextScope scope, Resolution parent) {
+		return false;
+	}
+
+	boolean resolveModel(Model model, Scale scale, ContextScope scope, Resolution parent) {
+		return false;
+	}
 
 }
