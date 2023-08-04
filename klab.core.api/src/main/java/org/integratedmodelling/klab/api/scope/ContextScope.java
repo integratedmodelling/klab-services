@@ -74,6 +74,15 @@ public interface ContextScope extends SessionScope {
 	ContextScope withScenarios(String... scenarios);
 
 	/**
+	 * Return a new context scope with the passed namespace of resolution. Used by
+	 * the resolver or to fine-tune resolution.
+	 * 
+	 * @param namespace
+	 * @return
+	 */
+	ContextScope withResolutionNamespace(String namespace);
+
+	/**
 	 * Create a context with the passed geometry to replace the one currently
 	 * active. Any observations made in it must be consistent with the overall
 	 * geometry and context observations; if observations of direct observables are

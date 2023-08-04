@@ -119,6 +119,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     public Coverage merge(Model model, ResolutionImpl child, Observable observable, LogicalConnector mergingStrategy,
             ResolutionType resolutionType) {
 
+    	addVertex(model);
+    	
         if (this.coverage == null) {
             this.coverage = child.getCoverage();
         } else {
