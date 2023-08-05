@@ -27,7 +27,7 @@ import org.jgrapht.graph.DefaultEdge;
 import com.google.common.collect.Sets;
 
 /**
- * Each graph resolves one observable through models.
+ * Each graph resolves one observable through a graph of models connected by the resolver.
  * 
  * @author Ferd
  *
@@ -142,13 +142,6 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
 
         // merge the child graph
         Graphs.addGraph(this, child);
-        
-//        for (Model model : child.vertexSet()) {
-//            addVertex(model);
-//        }
-//        for (ResolutionEdge edge : child.edgeSet()) {
-//            addEdge(child.getEdgeSource(edge), child.getEdgeTarget(edge), edge);
-//        }
 
         // merge the child's resolved knowledge
         for (Observable res : child.resolved.keySet()) {
@@ -264,7 +257,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     }
 
     /**
-     * Merge in an accepted model.
+     * Merge in an accepted model at root level.
      * 
      * @param model the model accepted
      * @param parentModel another model whose dependency is being resolved by the new model, or null
@@ -276,12 +269,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     public void merge(Model model, Coverage coverage, Observable observable, ResolutionType resolution) {
 
         addVertex(model);
-        // if (parentModel != null) {
-        // addVertex(parentModel);
-        // addEdge(model, parentModel, new ResolutionEdge(observable, coverage, resolution));
-        // } else {
         this.resolution.add(Pair.of(model, coverage));
-        // }
 
         for (Observable o : model.getObservables()) {
             if (resolved.containsKey(o)) {
