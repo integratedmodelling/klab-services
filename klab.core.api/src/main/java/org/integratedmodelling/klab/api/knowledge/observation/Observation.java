@@ -36,7 +36,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Observation extends Artifact, Knowledge {
+public interface Observation extends Knowledge, Artifact {
 
 	/**
 	 * Return the observable.

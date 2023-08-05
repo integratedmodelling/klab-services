@@ -56,7 +56,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class ResolverService extends BaseService implements Resolver {
 
     /**
-     * TODO this should be modifiable at the scope level
+     * FIXME this should be modifiable at the scope level
      */
     private static double MINIMUM_WORTHWHILE_CONTRIBUTION = 0.15;
 
@@ -154,7 +154,8 @@ public class ResolverService extends BaseService implements Resolver {
 
         ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
         if (knowledge instanceof Model) {
-            resolveModel((Model) knowledge, scale, scope.withResolutionNamespace(((Model) knowledge).getNamespace()), ret);
+            resolveModel((Model) knowledge, observable, scale, scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
+                    ret);
         } else {
             resolveObservable(observable, scale, scope, ret, null);
         }
@@ -164,14 +165,16 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     /**
-     * We always resolve an observable first. If resolving a model, create observable graph and
-     * resolve the model directly without further check.
+     * We always resolve an observable first. This only reports coverage as it does not directly
+     * create a resolution graph; this is done when resolving a model, which creates a graph and
+     * merges it with the parent graph if successful.
      * 
      * @param observable
      * @param parent
      * @return
      */
-    Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope, ResolutionImpl parent, Model parentModel) {
+    private Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope, ResolutionImpl parent,
+            Model parentModel) {
 
         /**
          * Make graph merging parent Set coverage to scale, 0; Strategies/models: foreach model:
@@ -200,15 +203,20 @@ public class ResolverService extends BaseService implements Resolver {
                 break;
             case DIRECT:
                 for (Model model : queryModels(observable, scope)) {
-                    ResolutionImpl resolution = resolveModel(model, scale, scope.withResolutionNamespace(model.getNamespace()),
-                            parent);
+                    ResolutionImpl resolution = resolveModel(model, observable, scale,
+                            scope.withResolutionNamespace(model.getNamespace()), parent);
                     ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
                     if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
                         continue;
                     }
-                    parent.merge(model, parentModel, ret, observable, ResolutionType.DIRECT);
-                    if (parent.getCoverage().isComplete()) {
-                        break;
+                    // merge the model at root level within the local resolution
+                    resolution.merge(model, ret, observable, ResolutionType.DIRECT);
+                    if (ret.isRelevant()) {
+                        // merge the resolution with the parent resolution
+                        parent.merge(parentModel, resolution, ResolutionType.DIRECT);
+                        if (parent.getCoverage().isComplete()) {
+                            break;
+                        }
                     }
                 }
             case RESOLVED:
@@ -228,9 +236,10 @@ public class ResolverService extends BaseService implements Resolver {
      * @param parent
      * @return
      */
-    ResolutionImpl resolveModel(Model model, Scale scale, ContextScope scope, ResolutionImpl parent) {
+    private ResolutionImpl resolveModel(Model model, Observable observable, Scale scale, ContextScope scope,
+            ResolutionImpl parent) {
 
-        ResolutionImpl ret = new ResolutionImpl(scope, parent);
+        ResolutionImpl ret = new ResolutionImpl(observable, scale, scope, parent);
         Coverage coverage = Coverage.create(scale, 1.0);
         if (!model.getCoverage().isEmpty()) {
             coverage = coverage.merge(model.getCoverage(), LogicalConnector.INTERSECTION);
@@ -308,14 +317,6 @@ public class ResolverService extends BaseService implements Resolver {
         }
         for (Resource result : set.getResults()) {
             switch(result.getKnowledgeClass()) {
-            case APPLICATION:
-                break;
-            case BEHAVIOR:
-                break;
-            case COMPONENT:
-                break;
-            case CONCEPT:
-                break;
             case INSTANCE:
                 Instance instance = instances.get(result.getResourceUrn());
                 if (instance != null) {
@@ -328,21 +329,8 @@ public class ResolverService extends BaseService implements Resolver {
                     ret.add(model);
                 }
                 break;
-            case NAMESPACE:
-                break;
-            case OBSERVABLE:
-                break;
-            case PROJECT:
-                break;
-            case RESOURCE:
-                break;
-            case SCRIPT:
-                break;
-            case TESTCASE:
-                break;
             default:
                 break;
-
             }
         }
         return ret;
@@ -498,6 +486,5 @@ public class ResolverService extends BaseService implements Resolver {
             Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
         }
     }
-
 
 }
