@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -44,9 +46,11 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
 
         private Observable observable;
         private ResolutionType type;
+        private Coverage coverage;
 
-        public ResolutionEdge(Observable observable, ResolutionType type) {
+        public ResolutionEdge(Observable observable, Coverage coverage, ResolutionType type) {
             this.observable = observable;
+            this.coverage = coverage;
             this.type = type;
         }
 
@@ -73,6 +77,11 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
             this.type = type;
         }
 
+        public String toString() {
+            return observable + "\n" + Utils.Strings.capitalize(this.type.name().toLowerCase()) + " ("
+                    + NumberFormat.getPercentInstance().format(coverage.getCoverage()) + ")";
+        }
+
     }
 
     /**
@@ -85,10 +94,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     public ResolutionImpl(Observable root, Scale scale, ContextScope scope) {
 
         super(ResolutionImpl.ResolutionEdge.class);
-
         this.resolvable = root;
-        this.resolving.add(root);
-
         // pre-resolved observations
         resolved.putAll(scope.getCatalog());
     }
@@ -119,8 +125,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     public Coverage merge(Model model, ResolutionImpl child, Observable observable, LogicalConnector mergingStrategy,
             ResolutionType resolutionType) {
 
-    	addVertex(model);
-    	
+        addVertex(model);
+
         if (this.coverage == null) {
             this.coverage = child.getCoverage();
         } else {
@@ -130,48 +136,6 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
         mergeGraph(child, observable, resolutionType);
         return this.coverage;
     }
-
-//    /**
-//     * Add a link (K) <--filter-- (model F applying to K)
-//     * 
-//     * @param child
-//     * @param mergingStrategy
-//     * @return
-//     */
-//    public Coverage mergeFilter(ResolutionImpl child, Observable observable, LogicalConnector mergingStrategy) {
-//
-//        if (this.coverage == null) {
-//            this.coverage = child.getCoverage();
-//        } else {
-//            this.coverage = this.getCoverage().merge(child.getCoverage(), mergingStrategy);
-//        }
-//
-//        mergeGraph(child, observable, ResolutionType.FILTERING);
-//        return this.coverage;
-//
-//    }
-//
-//    /**
-//     * Add a link (K) <--direct(deferring)-- (Z instantiator) <--deferred--(deferred = unresolved
-//     * observable K within Z)
-//     * 
-//     * @param child
-//     * @param mergingStrategy
-//     * @param deferred
-//     * @return
-//     */
-//    public Coverage mergeDeferred(ResolutionImpl child, LogicalConnector mergingStrategy, Observable deferring,
-//            Observable deferred) {
-//
-//        if (this.coverage == null) {
-//            this.coverage = child.getCoverage();
-//        } else {
-//            this.coverage = this.coverage.merge(child.getCoverage(), mergingStrategy);
-//        }
-//
-//        mergeGraph(child, deferring, ResolutionType.DEFERRAL);
-//        return this.coverage;
-//    }
 
     private void mergeGraph(ResolutionImpl child, Observable observable, ResolutionType resolution) {
 
@@ -191,8 +155,9 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
         return coverage == null ? Coverage.empty() : coverage;
     }
 
-    public void setCoverage(Coverage coverage) {
+    public ResolutionImpl withCoverage(Coverage coverage) {
         this.coverage = coverage;
+        return this;
     }
 
     public ResolutionImpl setEmpty() {
@@ -200,8 +165,20 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
         return this;
     }
 
-    public boolean isResolving(Knowledge observable) {
-        return resolving.contains(observable);
+    /**
+     * Call when starting to resolve an observable. If it's already being resolved, true will return
+     * and resolution should not take place. Otherwise it will be added to the resolving set for
+     * downstream resolutions.
+     * 
+     * @param observable
+     * @return
+     */
+    public boolean checkResolving(Observable observable) {
+        if (resolving.contains(observable)) {
+            return true;
+        }
+        resolving.add(observable);
+        return false;
     }
 
     @Override
@@ -233,6 +210,33 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     @Override
     public List<Pair<Model, Coverage>> getResolution() {
         return resolution;
+    }
+
+    /**
+     * Merge in an accepted model.
+     * 
+     * @param model the model accepted
+     * @param parentModel another model whose dependency is being resolved by the new model, or null
+     *        if resolving the top-level knowledge
+     * @param coverage coverage of this resolution
+     * @param observable the observable being resolved
+     * @param resolution the type of resolution that this models enables
+     */
+    public void merge(Model model, Model parentModel, Coverage coverage, Observable observable, ResolutionType resolution) {
+
+        addVertex(model);
+        if (parentModel != null) {
+            addVertex(parentModel);
+            addEdge(model, parentModel, new ResolutionEdge(observable, coverage, resolution));
+        } else {
+            this.resolution.add(Pair.of(model, coverage));
+        }
+
+        for (Observable o : model.getObservables()) {
+            // TODO attach the observable.getObserver() to the models' observer
+            resolved.put(o, model);
+        }
+
     }
 
 }

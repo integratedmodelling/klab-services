@@ -272,7 +272,7 @@ public class Application {
 					} catch (UserInterruptException e) {
 						// Ignore
 					} catch (EndOfFileException e) {
-						return;
+						System.exit(0);
 					} catch (Exception e) {
 						systemRegistry.trace(e);
 					}
