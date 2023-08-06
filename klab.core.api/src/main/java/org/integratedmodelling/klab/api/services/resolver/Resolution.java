@@ -8,14 +8,22 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 
 /**
  * A resolution is the output of {@link Resolver#resolve(Knowledge, ContextScope)} and consists of a
- * graph of {@link Model} objects that details how a particular knowledge object has been resolved
- * through other knowledge in a given scope. When the resolution is deferred, further resolution is
- * needed after the execution of the corresponding dataflow to complete the observation.
+ * graph of {@link Knowledge} objects that details how a particular knowledge object has been
+ * resolved through other knowledge in a given scope. The links in the graph connect the resolving
+ * knowledge to what is resolved by it, ending at a set of "root" objects that resolve the original
+ * query. Each link has a coverage that details how much of the context was covered during
+ * resolution, and in order to complete the coverage more than one resolving object may be linked.
+ * <p>
+ * While most of the nodes in the graph are {@link Model}s, some resolutions may originate from
+ * {@link Observation}s (those that were already there when resolution was computed) or
+ * {@link Observable}s when the resolution is deferred, and further resolution is needed after the
+ * execution of the corresponding dataflow to complete the observation.
  * <p>
  * A resolution is compiled into a dataflow to contextualize the strategy. Resolution has been
  * successful if the coverage of the resolution is acceptable (which depends on configuration, but
@@ -93,12 +101,13 @@ public interface Resolution {
     Observable getResolvable();
 
     /**
-     * The root-level models resolving the resolvable, each with their coverage of the resolved
-     * knowledge. Use {@link #getResolving(Model, ResolutionType)} to walk the resolution graph.
+     * The root-level models (or possibly observations) resolving the resolvable, each with their
+     * coverage of the resolved knowledge. Use {@link #getResolving(Model, ResolutionType)} to walk
+     * the resolution graph.
      * 
      * @return
      */
-    List<Pair<Model, Coverage>> getResolution();
+    List<Pair<Knowledge, Coverage>> getResolution();
 
     /**
      * The resolution keeps tabs on anything that has been resolved already, either through models
@@ -119,7 +128,7 @@ public interface Resolution {
      * @param type
      * @return
      */
-    List<Triple<Model, Observable, Coverage>> getResolving(Model target, ResolutionType type);
+    List<Triple<Knowledge, Observable, Coverage>> getResolving(Knowledge target, ResolutionType type);
 
     /**
      * Empty means that resolution has failed. A non-empty graph may contain zero nodes, meaning

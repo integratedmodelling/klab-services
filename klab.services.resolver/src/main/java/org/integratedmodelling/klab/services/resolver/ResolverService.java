@@ -270,14 +270,16 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         Map<String, Actuator> compiled = new HashMap<>();
-        for (Pair<Model, Coverage> root : resolution.getResolution()) {
-            var actuator = compileActuator(root.getFirst(), resolution, resolution.getResolvable(), rootActuator, compiled,
-                    scope);
-            if (rootActuator == null) {
-                ret.getComputation().add(actuator);
-            } else {
-                rootActuator.getChildren().add(actuator);
-            }
+        for (Pair<Knowledge, Coverage> root : resolution.getResolution()) {
+            if (root.getFirst() instanceof Model) {
+                var actuator = compileActuator((Model) root.getFirst(), resolution, resolution.getResolvable(), rootActuator,
+                        compiled, scope);
+                if (rootActuator == null) {
+                    ret.getComputation().add(actuator);
+                } else {
+                    rootActuator.getChildren().add(actuator);
+                }
+            } // TODO
         }
 
         return ret;
@@ -293,26 +295,30 @@ public class ResolverService extends BaseService implements Resolver {
         } else {
 
             ret = new ActuatorImpl();
-            
+
             // dependencies first
-            for (ResolutionType type : Arrays.asList(ResolutionType.DIRECT, ResolutionType.DEFER_INHERENCY)) {
-                for (Triple<Model, Observable, Coverage> resolved : resolution.getResolving(model, type)) {
+            for (ResolutionType type : Arrays.asList(ResolutionType.DIRECT, ResolutionType.DEFER_INHERENCY,
+                    ResolutionType.DEFER_SEMANTICS)) {
+                for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model, type)) {
                     // alias is the dependency getName()
-                    var dependency = compileActuator(resolved.getFirst(), resolution, resolved.getSecond(), ret, compiled, scope);
-                    ret.getChildren().add(dependency);
+                    if (resolved.getFirst() instanceof Model) {
+                        var dependency = compileActuator((Model) resolved.getFirst(), resolution, resolved.getSecond(), ret,
+                                compiled, scope);
+                        ret.getChildren().add(dependency);
+                    } // TODO
                 }
             }
 
             // self
             ret.getComputation().addAll(model.getComputation());
-            
+
             // add to hash
             compiled.put(observable.getReferenceName(), ret);
 
         }
-        
+
         // filters apply to references as well
-        for (Triple<Model, Observable, Coverage> resolved : resolution.getResolving(model, ResolutionType.FILTER)) {
+        for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model, ResolutionType.FILTER)) {
         }
 
         ret.setObservable(observable);

@@ -20,7 +20,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
-import org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -40,7 +39,7 @@ import com.google.common.collect.Sets;
  * @author Ferd
  *
  */
-public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.ResolutionEdge> implements Resolution {
+public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionImpl.ResolutionEdge> implements Resolution {
 
     private static final long serialVersionUID = 4088657660423175126L;
 
@@ -48,7 +47,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     private Coverage coverage;
     private Set<Observable> resolving = new HashSet<>();
     private Map<Observable, Collection<Knowledge>> resolved = new HashMap<>();
-    private List<Pair<Model, Coverage>> resolution = new ArrayList<>();
+    private List<Pair<Knowledge, Coverage>> resolution = new ArrayList<>();
 
     private boolean empty;
 
@@ -142,7 +141,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
      * @param direct
      * @return
      */
-    public Coverage merge(Model parentModel, ResolutionImpl child, ResolutionType resolutionType) {
+    public Coverage merge(Knowledge parentModel, ResolutionImpl child, ResolutionType resolutionType) {
 
         if (parentModel != null) {
             addVertex(parentModel);
@@ -161,7 +160,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
         }
 
         // link the child resolution's root nodes
-        for (Pair<Model, Coverage> resolved : child.resolution) {
+        for (Pair<Knowledge, Coverage> resolved : child.resolution) {
             addVertex(resolved.getFirst());
             if (parentModel != null) {
                 addEdge(resolved.getFirst(), parentModel, new ResolutionEdge(child.resolvable, child.coverage, resolutionType));
@@ -195,7 +194,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     @Override
     public String toString() {
         StringBuffer ret = new StringBuffer(512);
-        for (Pair<Model, Coverage> resolved : resolution) {
+        for (Pair<Knowledge, Coverage> resolved : resolution) {
             ret.append(resolved.getFirst() + " [" + NumberFormat.getPercentInstance().format(resolved.getSecond().getCoverage())
                     + "]\n");
             ret.append(printResolution(resolved.getFirst(), 3));
@@ -203,10 +202,10 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
         return ret.toString();
     }
 
-    private String printResolution(Model first, int i) {
+    private String printResolution(Knowledge first, int i) {
         StringBuffer ret = new StringBuffer(512);
         for (ResolutionType type : ResolutionType.values()) {
-            for (Triple<Model, Observable, Coverage> resolved : getResolving(first, type)) {
+            for (Triple<Knowledge, Observable, Coverage> resolved : getResolving(first, type)) {
                 ret.append(Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": "
                         + Utils.Strings.capitalize(type.name().toLowerCase()) + ", "
                         + NumberFormat.getPercentInstance().format(resolved.getThird().getCoverage()) + "]\n");
@@ -241,8 +240,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     }
 
     @Override
-    public List<Triple<Model, Observable, Coverage>> getResolving(Model target, ResolutionType strategy) {
-        List<Triple<Model, Observable, Coverage>> ret = new ArrayList<>();
+    public List<Triple<Knowledge, Observable, Coverage>> getResolving(Knowledge target, ResolutionType strategy) {
+        List<Triple<Knowledge, Observable, Coverage>> ret = new ArrayList<>();
         for (ResolutionEdge edge : incomingEdgesOf(target)) {
             if (edge.type == strategy) {
                 ret.add(Triple.of(getEdgeSource(edge), edge.getObservable(), edge.getCoverage()));
@@ -262,7 +261,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
     }
 
     @Override
-    public List<Pair<Model, Coverage>> getResolution() {
+    public List<Pair<Knowledge, Coverage>> getResolution() {
         return resolution;
     }
 
