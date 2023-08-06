@@ -295,7 +295,7 @@ public class ResolverService extends BaseService implements Resolver {
             ret = new ActuatorImpl();
             
             // dependencies first
-            for (ResolutionType type : Arrays.asList(ResolutionType.DIRECT, ResolutionType.DEFERRAL)) {
+            for (ResolutionType type : Arrays.asList(ResolutionType.DIRECT, ResolutionType.DEFER_INHERENCY)) {
                 for (Triple<Model, Observable, Coverage> resolved : resolution.getResolving(model, type)) {
                     // alias is the dependency getName()
                     var dependency = compileActuator(resolved.getFirst(), resolution, resolved.getSecond(), ret, compiled, scope);
@@ -312,7 +312,7 @@ public class ResolverService extends BaseService implements Resolver {
         }
         
         // filters apply to references as well
-        for (Triple<Model, Observable, Coverage> resolved : resolution.getResolving(model, ResolutionType.FILTERING)) {
+        for (Triple<Model, Observable, Coverage> resolved : resolution.getResolving(model, ResolutionType.FILTER)) {
         }
 
         ret.setObservable(observable);
