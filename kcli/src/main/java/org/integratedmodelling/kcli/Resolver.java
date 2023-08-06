@@ -7,8 +7,10 @@ import org.integratedmodelling.kcli.functional.FunctionalCommand;
 import org.integratedmodelling.kcli.visualization.Graphs;
 import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import picocli.CommandLine.Command;
@@ -68,6 +70,9 @@ public class Resolver {
                 "Show the resolution graph after computing it."}, required = false)
         boolean show;
 
+        Resolution resolution;
+        Knowledge knowledge;
+
         @Override
         public void run() {
 
@@ -87,14 +92,14 @@ public class Resolver {
 
                 var urn = Utils.Strings.join(observables, " ");
                 var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
-                var knowledge = resolver.resolveKnowledge(urn, Knowledge.class, ctx);
+                this.knowledge = resolver.resolveKnowledge(urn, Knowledge.class, ctx);
 
                 if (knowledge == null) {
                     err.println("URN " + urn + " does not resolve to any type of knowledge");
                     return;
                 }
 
-                Resolution resolution = resolver.resolve(knowledge, ctx);
+                this.resolution = resolver.resolve(knowledge, ctx);
                 this.push(resolution);
 
                 out.println("Resolution of " + resolution.getResolvable() + " terminated with "
@@ -116,6 +121,10 @@ public class Resolver {
             "Resolve any URN in the current context."}, subcommands = {})
     public static class Compile extends Resolve {
 
+        @Option(names = {"-j", "--json"}, defaultValue = "false", description = {
+                "Print or output the graph as JSON instead of k.DL"}, required = false)
+        boolean json;
+
         @Override
         public void run() {
 
@@ -125,12 +134,17 @@ public class Resolver {
                 ContextScope ctx = context == null
                         ? Engine.INSTANCE.getCurrentContext(false)
                         : Engine.INSTANCE.getContext(context);
-                var resolution = (Resolution) lastPushed;
+
                 var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
                 PrintWriter out = commandSpec.commandLine().getOut();
                 PrintWriter err = commandSpec.commandLine().getErr();
 
-                // Dataflow<Observation> dataflow = resolver.compile(null, null, ctx);
+                Dataflow<Observation> dataflow = resolver.compile(this.knowledge, this.resolution, ctx);
+
+//                if (json) {
+                   out.println(Utils.Json.printAsJson(dataflow));
+//                }
+
             }
         }
     }

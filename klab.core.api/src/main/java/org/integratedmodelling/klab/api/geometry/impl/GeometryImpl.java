@@ -600,9 +600,9 @@ public class GeometryImpl implements Geometry {
         this.scalar = scalar;
     }
 
-    public void setCoverage(Double coverage) {
-        this.coverage = coverage;
-    }
+//    public void setCoverage(Double coverage) {
+//        this.coverage = coverage;
+//    }
 
     public static class DimensionImpl implements Dimension {
 
@@ -795,7 +795,7 @@ public class GeometryImpl implements Geometry {
     private Granularity granularity = Granularity.SINGLE;
     private GeometryImpl child;
     private boolean scalar;
-    private Double coverage = null;
+//    private double coverage = null;
 
     private boolean empty;
 
@@ -803,9 +803,9 @@ public class GeometryImpl implements Geometry {
 
     // private MultidimensionalCursor cursor;
 
-    public double getCoverage() {
-        return this.coverage;
-    }
+//    public double getCoverage() {
+//        return this.coverage;
+//    }
 
 //    @Override
     public Geometry getChild() {
@@ -1027,10 +1027,10 @@ public class GeometryImpl implements Geometry {
                 break;
             }
         }
-        this.coverage = 1.0;
-        for (Dimension dim : getDimensions()) {
-            this.coverage *= ((DimensionImpl) dim).coverage;
-        }
+//        this.coverage = 1.0;
+//        for (Dimension dim : getDimensions()) {
+//            this.coverage *= ((DimensionImpl) dim).coverage;
+//        }
     }
 
     /*

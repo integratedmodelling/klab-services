@@ -17,8 +17,10 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -27,7 +29,13 @@ import org.jgrapht.graph.DefaultEdge;
 import com.google.common.collect.Sets;
 
 /**
- * Each graph resolves one observable through a graph of models connected by the resolver.
+ * The resolution is the result of {@link Resolver#resolve(Knowledge, ContextScope)}. It contains
+ * the resolution strategy for the top-level observable, resolved by zero or more models that are
+ * connected to all their dependencies in a graph. In the graph, each link reports the portion of
+ * the context covered by the incoming model (possibly partial), the dependency observable resolved,
+ * and the type of resolution (direct or deferred to further observation with later merging).
+ * Deferred resolutions will need further resolution after the dataflow has created the deferring
+ * observations.
  * 
  * @author Ferd
  *
@@ -195,18 +203,20 @@ public class ResolutionImpl extends DefaultDirectedGraph<Model, ResolutionImpl.R
         return ret.toString();
     }
 
-    private Object printResolution(Model first, int i) {
+    private String printResolution(Model first, int i) {
         StringBuffer ret = new StringBuffer(512);
-        for (ResolutionType type : new ResolutionType[]{ResolutionType.DIRECT, ResolutionType.DEFERRAL,
-                ResolutionType.RESOLVED}) {
+        for (ResolutionType type : ResolutionType.values()) {
             for (Triple<Model, Observable, Coverage> resolved : getResolving(first, type)) {
                 ret.append(Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": "
                         + Utils.Strings.capitalize(type.name().toLowerCase()) + ", "
                         + NumberFormat.getPercentInstance().format(resolved.getThird().getCoverage()) + "]\n");
-                ret.append(printResolution(resolved.getFirst(), i + 3));
+                String child = printResolution(resolved.getFirst(), i + 3);
+                if (!child.isBlank()) {
+                    ret.append(child);
+                }
             }
         }
-        return ret;
+        return ret.toString();
     }
 
     /**

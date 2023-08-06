@@ -191,7 +191,9 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
         } else if (other instanceof Coverage && ((Coverage) other).isUniversal()) {
             return this.withGain(1.0);
         } else if (other instanceof Coverage && ((Coverage) other).isEmpty()) {
-            return how == LogicalConnector.INTERSECTION ? empty(this.asScale()) : withGain(1.0);
+            return how == LogicalConnector.INTERSECTION
+                    ? ((CoverageImpl) empty(this.asScale())).withGain(isEmpty() ? 0 : -1)
+                    : withGain(1.0);
         } else if (isEmpty() && other instanceof CoverageImpl) {
             return how == LogicalConnector.INTERSECTION ? empty(other) : ((CoverageImpl) other).withGain(1.0);
         }

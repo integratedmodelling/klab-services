@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resolver.dataflow;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -14,6 +15,7 @@ public class DataflowImpl implements Dataflow<Observation> {
 
     private boolean empty;
     private Coverage coverage;
+    private Parameters<String> resources = Parameters.create();
     private List<Actuator> computation = new ArrayList<>();
 
     @Override
@@ -41,6 +43,15 @@ public class DataflowImpl implements Dataflow<Observation> {
 
     public void setComputation(List<Actuator> computation) {
         this.computation = computation;
+    }
+
+    @Override
+    public Parameters<String> getResources() {
+        return resources;
+    }
+
+    public void setResources(Parameters<String> resources) {
+        this.resources = resources;
     }
 
 }

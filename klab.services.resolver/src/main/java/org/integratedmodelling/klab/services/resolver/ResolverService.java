@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -9,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.groovy.util.Maps;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -43,12 +46,14 @@ import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.InstanceImpl;
 import org.integratedmodelling.klab.knowledge.ModelImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
 import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -256,10 +261,79 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public Dataflow<Observation> compile(Knowledge knowledge, Resolution resolution, ContextScope scope) {
+
         DataflowImpl ret = new DataflowImpl();
-        // TODO
+        Actuator rootActuator = null;
+        if (knowledge instanceof Instance) {
+            // create void actuator to wrap the instance
+            // add to dataflow
+        }
+
+        Map<String, Actuator> compiled = new HashMap<>();
+        for (Pair<Model, Coverage> root : resolution.getResolution()) {
+            var actuator = compileActuator(root.getFirst(), resolution, resolution.getResolvable(), rootActuator, compiled,
+                    scope);
+            if (rootActuator == null) {
+                ret.getComputation().add(actuator);
+            } else {
+                rootActuator.getChildren().add(actuator);
+            }
+        }
+
         return ret;
     }
+
+    private ActuatorImpl compileActuator(Model model, Resolution resolution, Observable observable, Actuator rootActuator,
+            Map<String, Actuator> compiled, ContextScope scope) {
+
+        ActuatorImpl ret = null;
+
+        if (compiled.containsKey(observable.getReferenceName())) {
+            ret = compileReference(compiled.get(observable.getReferenceName()));
+        } else {
+
+            ret = new ActuatorImpl();
+            
+            // dependencies first
+            for (ResolutionType type : Arrays.asList(ResolutionType.DIRECT, ResolutionType.DEFERRAL)) {
+                for (Triple<Model, Observable, Coverage> resolved : resolution.getResolving(model, type)) {
+                    // alias is the dependency getName()
+                    var dependency = compileActuator(resolved.getFirst(), resolution, resolved.getSecond(), ret, compiled, scope);
+                    ret.getChildren().add(dependency);
+                }
+            }
+
+            // self
+            ret.getComputation().addAll(model.getComputation());
+            
+            // add to hash
+            compiled.put(observable.getReferenceName(), ret);
+
+        }
+        
+        // filters apply to references as well
+        for (Triple<Model, Observable, Coverage> resolved : resolution.getResolving(model, ResolutionType.FILTERING)) {
+        }
+
+        ret.setObservable(observable);
+        ret.setAlias(observable.getName());
+
+        return ret;
+    }
+
+    /**
+     * Create a reference to the passed actuator
+     * 
+     * @param actuator
+     * @return
+     */
+    private ActuatorImpl compileReference(Actuator actuator) {
+        ActuatorImpl ret = new ActuatorImpl();
+        ret.setReference(true);
+        return ret;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
 
@@ -279,8 +353,8 @@ public class ResolverService extends BaseService implements Resolver {
             ret = reasoner.resolveObservable(urn);
             break;
         case RESOURCE:
-            var resource = resources.resolveResource(urn, scope);
-            // TODO make a KimModelStatement that observes this.
+            // var resource = resources.resolveResource(urn, scope);
+            // TODO make a ModelImpl that observes this.
             break;
         case REMOTE_URL:
         case UNKNOWN:

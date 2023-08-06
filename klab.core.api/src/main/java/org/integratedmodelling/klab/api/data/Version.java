@@ -1,7 +1,11 @@
 package org.integratedmodelling.klab.api.data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
+
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 
 /**
  * Serializable version compatible with semantic versioning conventions.
@@ -28,6 +32,35 @@ public class Version implements Comparable<Version>, Serializable {
     public static final String CURRENT = "0.12.0";
     public static final Version CURRENT_VERSION = new Version(CURRENT);
 
+    public static class Constraint implements Serializable {
+
+        private static final long serialVersionUID = 2506690240870035169L;
+
+        private int target; // 0 = major, 1 = minor, 2 = build, 3 = modifier;
+        private String modifierPattern;
+        private NumericRange range;
+
+        public int getTarget() {
+            return target;
+        }
+        public void setTarget(int target) {
+            this.target = target;
+        }
+        public String getModifierPattern() {
+            return modifierPattern;
+        }
+        public void setModifierPattern(String modifierPattern) {
+            this.modifierPattern = modifierPattern;
+        }
+        public NumericRange getRange() {
+            return range;
+        }
+        public void setRange(NumericRange range) {
+            this.range = range;
+        }
+
+    }
+
     /**
      * Parses given string as version identifier. All missing parts will be initialized to 0 or
      * empty string. Parsing starts from left side of the string.
@@ -45,6 +78,7 @@ public class Version implements Comparable<Version>, Serializable {
     private int minor;
     private int build;
     private String modifier;
+    private List<Constraint> constraints = new ArrayList<>();
 
     /**
      * The default version parses the current version string, so it can be used for comparison with
@@ -365,6 +399,14 @@ public class Version implements Comparable<Version>, Serializable {
 
     public void setModifier(String name) {
         this.modifier = name;
+    }
+
+    public List<Constraint> getConstraints() {
+        return constraints;
+    }
+
+    public void setConstraints(List<Constraint> constraints) {
+        this.constraints = constraints;
     }
 
 }
