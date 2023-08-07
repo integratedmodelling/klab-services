@@ -1,10 +1,12 @@
 package org.integratedmodelling.klab.api.data.mediation.classification;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.Authority;
 import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.lang.Encodeable;
 
 /**
  * Tag interface for an object that supplements the semantics of a state's
@@ -14,7 +16,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
  * @author Ferd
  *
  */
-public interface DataKey {
+public interface DataKey extends Encodeable, Serializable {
 
 	/**
 	 * The total amount of categories, rows or other mappings used in this key.

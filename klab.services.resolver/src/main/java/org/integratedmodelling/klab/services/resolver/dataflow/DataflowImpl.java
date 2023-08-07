@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -53,5 +56,35 @@ public class DataflowImpl implements Dataflow<Observation> {
     public void setResources(Parameters<String> resources) {
         this.resources = resources;
     }
+
+	@Override
+	public void add(Dataflow<Observation> dataflow, ContextScope scope) {
+		
+		/*
+		 * Find the "hook point" using the observation ID
+		 */
+		if (scope.getContextObservation() == null) {
+			computation.addAll(dataflow.getComputation());
+		} else {
+			Actuator actuator = findActuator(scope.getContextObservation().getId());
+			if (actuator == null) {
+				throw new KIllegalArgumentException("cannot add dataflow: observation ID does not correspond to an actuator");
+			}
+			actuator.getChildren().addAll(dataflow.getComputation());
+		}
+		
+		computeCoverage();
+		
+	}
+
+	private Actuator findActuator(String id) {
+		// TODO find the actuator with this ID that is not a reference
+		return null;
+	}
+
+	public void computeCoverage() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

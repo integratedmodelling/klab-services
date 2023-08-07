@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 public class ActuatorImpl implements Actuator {
@@ -21,11 +21,11 @@ public class ActuatorImpl implements Actuator {
     private Type type;
     private Observable observable;
     private List<Actuator> children = new ArrayList<>();
-    private List<Contextualizable> computation = new ArrayList<>();
+    private List<ServiceCall> computation = new ArrayList<>();
     private boolean input;
     private boolean output;
-    private boolean computed;
     private boolean reference;
+    private String observer;
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
 
@@ -78,7 +78,7 @@ public class ActuatorImpl implements Actuator {
     }
 
     @Override
-    public List<Contextualizable> getComputation() {
+    public List<ServiceCall> getComputation() {
         // TODO Auto-generated method stub
         return this.computation;
     }
@@ -93,12 +93,6 @@ public class ActuatorImpl implements Actuator {
     public boolean isOutput() {
         // TODO Auto-generated method stub
         return this.output;
-    }
-
-    @Override
-    public boolean isComputed() {
-        // TODO Auto-generated method stub
-        return this.computed;
     }
 
     @Override
@@ -151,7 +145,7 @@ public class ActuatorImpl implements Actuator {
         this.children = children;
     }
 
-    public void setComputation(List<Contextualizable> computation) {
+    public void setComputation(List<ServiceCall> computation) {
         this.computation = computation;
     }
 
@@ -161,10 +155,6 @@ public class ActuatorImpl implements Actuator {
 
     public void setOutput(boolean output) {
         this.output = output;
-    }
-
-    public void setComputed(boolean computed) {
-        this.computed = computed;
     }
 
     public void setReference(boolean reference) {
@@ -178,5 +168,14 @@ public class ActuatorImpl implements Actuator {
     public void setData(Parameters<String> data) {
         this.data = data;
     }
+
+    @Override
+	public String getObserver() {
+		return observer;
+	}
+
+	public void setObserver(String observer) {
+		this.observer = observer;
+	}
 
 }

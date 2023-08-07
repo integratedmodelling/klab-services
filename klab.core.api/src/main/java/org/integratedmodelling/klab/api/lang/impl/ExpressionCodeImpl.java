@@ -3,55 +3,61 @@ package org.integratedmodelling.klab.api.lang.impl;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 
 /**
- * Just a wrapper for some code and an optional language identifier. Used explicitly only where code
- * must be distinguished from other string values, such as in classifiers.
+ * Just a wrapper for some code and an optional language identifier. Used
+ * explicitly only where code must be distinguished from other string values,
+ * such as in classifiers.
  * 
  * @author Ferd
  *
  */
 public class ExpressionCodeImpl implements ExpressionCode {
 
-    private static final long serialVersionUID = -8760044805799296995L;
+	private static final long serialVersionUID = -8760044805799296995L;
 
-    private String code;
-    private String language;
-    private boolean forcedScalar;
-    private String sourceCode;
+	private String code;
+	private String language;
+	private boolean forcedScalar;
+	private String sourceCode;
 
-    @Override
-    public String getCode() {
-        return this.code;
-    }
+	@Override
+	public String getCode() {
+		return this.code;
+	}
 
-    @Override
-    public String getLanguage() {
-        return this.language;
-    }
+	@Override
+	public String getLanguage() {
+		return this.language;
+	}
 
-    @Override
-    public boolean isForcedScalar() {
-        return this.forcedScalar;
-    }
+	@Override
+	public boolean isForcedScalar() {
+		return this.forcedScalar;
+	}
 
-    @Override
-    public String getSourceCode() {
-        return this.sourceCode;
-    }
+	@Override
+	public String getSourceCode() {
+		return this.sourceCode;
+	}
 
-    public void setCode(String code) {
-        this.code = code;
-    }
+	public void setCode(String code) {
+		this.code = code;
+	}
 
-    public void setLanguage(String language) {
-        this.language = language;
-    }
+	public void setLanguage(String language) {
+		this.language = language;
+	}
 
-    public void setForcedScalar(boolean forcedScalar) {
-        this.forcedScalar = forcedScalar;
-    }
+	public void setForcedScalar(boolean forcedScalar) {
+		this.forcedScalar = forcedScalar;
+	}
 
-    public void setSourceCode(String sourceCode) {
-        this.sourceCode = sourceCode;
-    }
+	public void setSourceCode(String sourceCode) {
+		this.sourceCode = sourceCode;
+	}
+
+	@Override
+	public String encode() {
+		return (forcedScalar ? "#" : "") + "[" + code + "]";
+	}
 
 }

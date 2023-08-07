@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
+import org.integratedmodelling.klab.api.lang.Encodeable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
@@ -25,7 +26,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Classifier {
+public interface Classifier extends Encodeable {
 
 	/**
 	 * True if passed object matches the conditions of the classifier.

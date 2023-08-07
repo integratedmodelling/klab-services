@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
  * @author Ferd
  *
  */
-public interface ServiceCall {
+public interface ServiceCall extends Encodeable {
 
 	/**
 	 * If the function does not have named parameters, any parameters passed are

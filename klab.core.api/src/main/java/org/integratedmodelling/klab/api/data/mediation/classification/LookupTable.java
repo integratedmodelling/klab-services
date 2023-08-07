@@ -33,14 +33,6 @@ public interface LookupTable extends DataKey {
 		Concept getConcept();
 	}
 
-//	/**
-//	 * The table we use for lookup. Classifiers are the most general content type
-//	 * for it.
-//	 * 
-//	 * @return a table. Never null.
-//	 */
-//	IStructuredTable<IClassifier> getTable();
-
 	/**
 	 * The variables we look up. Their number corresponds to the columns in the
 	 * table; the special values "?" and "*" denote the search column and any
@@ -57,9 +49,10 @@ public interface LookupTable extends DataKey {
 	 * with the correspondent values in the passed parameters.
 	 * 
 	 * @param parameters
-	 * @param context contains the observations with the table's identifiers
-	 * @param locator to capture states when the parameter is a state
+	 * @param context    contains the observations with the table's identifiers
+	 * @param locator    to capture states when the parameter is a state
 	 * @return the first matching object from the result column, or null
+	 * @deprecated this should be data only, contextualizers should do the lookup
 	 */
 	Object lookup(Parameters<String> parameters, ContextScope context, Locator locator);
 

@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.data.mediation.impl.Range;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.Encodeable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -27,157 +28,154 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 
-    private static final long serialVersionUID = 8447771460330621498L;
+	private static final long serialVersionUID = 8447771460330621498L;
 
-    protected String name;
-    protected ParametersImpl<String> parameters = new ParametersImpl<>();
-    protected Set<String> interactiveParameterIds = new HashSet<>();
+	protected String name;
+	protected ParametersImpl<String> parameters = new ParametersImpl<>();
+	protected Set<String> interactiveParameterIds = new HashSet<>();
 
-    public List<Notification> validateUsage(Set<Artifact.Type> expectedType) {
-        return null;// Kim.INSTANCE.validateFunctionCall(this, expectedType);
-    }
-    
-    public ServiceCallImpl() {}
+	public List<Notification> validateUsage(Set<Artifact.Type> expectedType) {
+		return null;// Kim.INSTANCE.validateFunctionCall(this, expectedType);
+	}
 
-    @SuppressWarnings("unchecked")
-    public ServiceCallImpl(String name, Object[] parameters) {
-        this.name = name;
-        if (parameters != null && parameters.length == 1 && parameters[0] instanceof Parameters) {
-            this.parameters.putAll((Parameters<String>) (parameters[0]));
-        } else if (parameters != null) {
-            for (int i = 0; i < parameters.length; i++) {
-                String key = parameters[i].toString();
-                Object val = parameters[++i];
-                this.parameters.put(key, val);
-            }
-        }
-    }
+	public ServiceCallImpl() {
+	}
 
-    public ServiceCallImpl(String name, Map<String, Object> parameters) {
-        this.name = name;
-        this.parameters.putAll(parameters);
-    }
+	@SuppressWarnings("unchecked")
+	public ServiceCallImpl(String name, Object[] parameters) {
+		this.name = name;
+		if (parameters != null && parameters.length == 1 && parameters[0] instanceof Parameters) {
+			this.parameters.putAll((Parameters<String>) (parameters[0]));
+		} else if (parameters != null) {
+			for (int i = 0; i < parameters.length; i++) {
+				String key = parameters[i].toString();
+				Object val = parameters[++i];
+				this.parameters.put(key, val);
+			}
+		}
+	}
 
-    @Override
-    public String getSourceCode() {
+	public ServiceCallImpl(String name, Map<String, Object> parameters) {
+		this.name = name;
+		this.parameters.putAll(parameters);
+	}
 
-        if (super.getSourceCode() == null || super.getSourceCode().trim().isEmpty()) {
-            String ret = name + "(";
-            int i = 0;
-            for (String key : parameters.keySet()) {
+	@Override
+	public String encode() {
 
-                // internal parameters
-                if (key.startsWith("__")) {
-                    continue;
-                }
-                ret += (i == 0 ? "" : ", ") + key + " = ";
-                Object val = parameters.get(key);
-                ret += val instanceof String
-                        ? ("\"" + Utils.Escape.forDoubleQuotedString((String) val, false) + "\"")
-                        : (val == null ? "unknown" : getStringValue(val));
-                i++;
-            }
-            ret += ")";
-            return ret;
-        }
+		if (super.getSourceCode() == null || super.getSourceCode().trim().isEmpty()) {
+			String ret = name + "(";
+			int i = 0;
+			for (String key : parameters.keySet()) {
 
-        return super.getSourceCode();
-    }
+				// internal parameters
+				if (key.startsWith("__")) {
+					continue;
+				}
+				ret += (i == 0 ? "" : ", ") + key + " = ";
+				Object val = parameters.get(key);
+				ret += val instanceof String ? ("\"" + Utils.Escape.forDoubleQuotedString((String) val, false) + "\"")
+						: (val == null ? "unknown" : stringValue(val));
+				i++;
+			}
+			ret += ")";
+			return ret;
+		}
 
-    @Override
-    public void visit(Visitor visitor) {
-        // TODO must visit concept declarations in maps
-    }
+		return getSourceCode();
+	}
 
-    @Override
-    public String toString() {
-        return getSourceCode();
-    }
+	@Override
+	public void visit(Visitor visitor) {
+		// TODO must visit concept declarations in maps
+	}
 
-    private String getStringValue(Object val) {
+	@Override
+	public String toString() {
+		return encode();
+	}
 
-        if (val instanceof List) {
-            String ret = "(";
-            for (Object o : ((List<?>) val)) {
-                ret += (ret.length() == 1 ? "" : " ") + getStringValue(o);
-            }
-            return ret + ")";
-        } else if (val instanceof Map) {
-            String ret = "{";
-            for (Object o : ((Map<?, ?>) val).keySet()) {
-                ret += (ret.length() == 1 ? "" : " ") + o + " " + getStringValue(((Map<?, ?>) val).get(o));
-            }
-            return ret + "}";
-        } else if (val instanceof Range) {
-            return ((Range) val).getLowerBound() + " to " + ((Range) val).getUpperBound();
-        } else if (val instanceof Classification) {
-            String ret = "";
-            for (Pair<Concept, Classifier> o : ((Classification) val)) {
-                ret += (ret.isEmpty() ? "" : ", ") + o.getSecond().getSourceCode() + " : '" + o.getFirst()
-                        + "'";
-            }
-            return "{" + ret + "}";
-        } else if (val instanceof LookupTable) {
-            String ret = "";
-            // TODO table literal
-            // TODO must also pass argument list to the same function...
-            return "{{" + ret + "}}";
-        } else if (val instanceof ExpressionCode) {
-            return "[" + ((ExpressionCode) val).getCode() + "]";
-        } else if (val instanceof ServiceCallImpl) {
-            return ((ServiceCallImpl) val).getSourceCode();
-        } else if (val instanceof Contextualizable) {
-            return ((Contextualizable) val).getSourceCode();
-        } else if (val instanceof Unit || val instanceof Currency) {
-            return "\"" + val + "\"";
-        }
-        return val.toString();
-    }
+	private String stringValue(Object val) {
 
-    @Override
-    public String getName() {
-        return name;
-    }
+		if (val instanceof Encodeable) {
+			return ((Encodeable) val).encode();
+		} else if (val instanceof List) {
+			String ret = "(";
+			for (Object o : ((List<?>) val)) {
+				ret += (ret.length() == 1 ? "" : " ") + stringValue(o);
+			}
+			return ret + ")";
+		} else if (val instanceof Map) {
+			String ret = "{";
+			for (Object o : ((Map<?, ?>) val).keySet()) {
+				ret += (ret.length() == 1 ? "" : " ") + o + " " + stringValue(((Map<?, ?>) val).get(o));
+			}
+			return ret + "}";
+		} else if (val instanceof Range) {
+			return ((Range) val).getLowerBound() + " to " + ((Range) val).getUpperBound();
+		} else if (val instanceof Classification) {
+			String ret = "";
+			for (Pair<Concept, Classifier> o : ((Classification) val)) {
+				ret += (ret.isEmpty() ? "" : ", ") + o.getSecond().getSourceCode() + " : '" + o.getFirst() + "'";
+			}
+			return "{" + ret + "}";
+		} else if (val instanceof LookupTable) {
+			String ret = "";
+			// TODO table literal
+			// TODO must also pass argument list to the same function...
+			return "{{" + ret + "}}";
+		} else if (val instanceof Contextualizable) {
+			return ((Contextualizable) val).getSourceCode();
+		} else if (val instanceof Unit || val instanceof Currency) {
+			return "\"" + val + "\"";
+		}
+		return val.toString();
+	}
 
-    @Override
-    public ParametersImpl<String> getParameters() {
-        return parameters;
-    }
+	@Override
+	public String getName() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	@Override
+	public ParametersImpl<String> getParameters() {
+		return parameters;
+	}
 
-    public void setParameters(ParametersImpl<String> parameters) {
-        this.parameters = parameters;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    @Override
-    public Collection<String> getInteractiveParameters() {
-        return interactiveParameterIds;
-    }
+	public void setParameters(ParametersImpl<String> parameters) {
+		this.parameters = parameters;
+	}
 
-    public ServiceCall copy() {
-        return ServiceCall.create(this.name, this.parameters);
-    }
+	@Override
+	public Collection<String> getInteractiveParameters() {
+		return interactiveParameterIds;
+	}
 
-    @Override
-    public int getParameterCount() {
-        int n = 0;
-        if (parameters.size() > 0) {
-            for (String s : parameters.keySet()) {
-                if (!s.startsWith("_")) {
-                    n++;
-                }
-            }
-        }
-        return n;
-    }
+	public ServiceCall copy() {
+		return ServiceCall.create(this.name, this.parameters);
+	}
 
-    @Override
-    public Prototype getPrototype() {
+	@Override
+	public int getParameterCount() {
+		int n = 0;
+		if (parameters.size() > 0) {
+			for (String s : parameters.keySet()) {
+				if (!s.startsWith("_")) {
+					n++;
+				}
+			}
+		}
+		return n;
+	}
+
+	@Override
+	public Prototype getPrototype() {
 //        IExtensionService exts = Services.INSTANCE.getService(IExtensionService.class);
-        return null; // exts == null ? null : exts.getPrototype(name);
-    }
+		return null; // exts == null ? null : exts.getPrototype(name);
+	}
 
 }

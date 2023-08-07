@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @author Ferd
  *
  */
-public interface ExpressionCode extends Serializable {
+public interface ExpressionCode extends Serializable, Encodeable {
 
 	String getCode();
 	
