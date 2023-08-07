@@ -41,7 +41,7 @@ public class Reasoner {
 			var urn = Utils.Strings.join(observables, " ");
 			var reasoner = Engine.INSTANCE.getCurrentUser()
 					.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-			var concept = reasoner.resolveConcept(urn);
+			Concept concept = reasoner.resolveConcept(urn);
 			if (concept == null) {
 				err.println("Concept " + urn + " not found");
 			} else {

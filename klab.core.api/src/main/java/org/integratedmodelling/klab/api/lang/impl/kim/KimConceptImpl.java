@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.data.Version;
@@ -770,6 +771,23 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 		if (observable != null) {
 			observable.visit(visitor);
 		}
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(urn);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		KimConceptImpl other = (KimConceptImpl) obj;
+		return Objects.equals(urn, other.urn);
 	}
 
 }

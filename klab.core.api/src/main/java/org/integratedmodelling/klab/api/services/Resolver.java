@@ -90,6 +90,14 @@ public interface Resolver extends KlabService {
 	Dataflow<Observation> compile(Knowledge knowledge, Resolution resolution, ContextScope scope);
 
 	/**
+	 * Encode a dataflow to its k.DL specification.
+	 * 
+	 * @param dataflow
+	 * @return
+	 */
+	String encodeDataflow(Dataflow<Observation> dataflow);
+
+	/**
 	 * Query all the resource servers available to find models that can observe the
 	 * passed observable in the scope. The result should be merged to keep the
 	 * latest available versions and ranked in decreasing order of fit to the

@@ -829,14 +829,14 @@ public class ObservableBuilder implements Observable.Builder {
 		 * retrieve the ID for the declaration; if present, just return the
 		 * corresponding concept
 		 */
-		String conceptId = this.ontology.getIdForDefinition(declaration.getUri());
+		String conceptId = this.ontology.getIdForDefinition(declaration.getUrn());
 		if (conceptId != null && this.ontology.getConcept(conceptId) != null) {
 			return this.ontology.getConcept(conceptId);
 		}
 
 		// System.out.println("building " + declaration + " in " + ontology);
 
-		conceptId = this.ontology.createIdForDefinition(declaration.getUri());
+		conceptId = this.ontology.createIdForDefinition(declaration.getUrn());
 
 		Set<Concept> identities = new HashSet<>();
 		Set<Concept> attributes = new HashSet<>();

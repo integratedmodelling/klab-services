@@ -18,7 +18,6 @@ import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.jline.builtins.ConfigurationPath;
@@ -104,7 +103,7 @@ public class Application {
 	@Command(name = "run", mixinStandardHelpOptions = true, description = { "Run scripts, test cases and applications.",
 			"Uses autocompletion for behavior and test case names.",
 			"" }, subcommands = { Run.List.class, Run.Purge.class })
-	static class Run extends Monitor implements Runnable {
+	static class Run /* extends Monitor */ implements Runnable {
 
 		Set<SessionScope> running = new LinkedHashSet<>();
 

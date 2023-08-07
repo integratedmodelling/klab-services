@@ -55,6 +55,7 @@ import org.integratedmodelling.klab.knowledge.ModelImpl;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -567,4 +568,74 @@ public class ResolverService extends BaseService implements Resolver {
         }
     }
 
+	@Override
+	public String encodeDataflow(Dataflow<Observation> dataflow) {
+
+		StringBuffer ret = new StringBuffer(1024);
+
+//        if (offset == 0 && parentActuator == null) {
+//            ret += "@klab " + Version.CURRENT + "\n";
+//            ret += "@author 'k.LAB resolver " + creationTime + "'" + "\n";
+//            // TODO should encode coverage after the resolver.
+//            // if (coverage != null && coverage.getExtentCount() > 0) {
+//            // List<IServiceCall> scaleSpecs = ((Scale) coverage).getKimSpecification();
+//            // if (!scaleSpecs.isEmpty()) {
+//            // ret += "@coverage load_me_from_some_sidecar_file()";
+//            // ret += "\n";
+//            // }
+//            // }
+//            ret += "\n";
+//        }
+//
+//        Pair<IActuator, List<IActuator>> structure = getResolutionStructure();
+//
+//        if (structure == null) {
+//            for (IActuator actuator : actuators) {
+//                ret += ((Actuator) actuator).encode(offset, null) + "\n";
+//            }
+//            return ret;
+//        }
+//
+//        return ret + ((Actuator) structure.getFirst()).encode(0,
+//                structure.getSecond().isEmpty() ? (List<IActuator>) null : structure.getSecond());
+		return ret.toString();
+	}
+
+    protected String encode(Actuator actuator, int offset) {
+        String ofs = Utils.Strings.spaces(offset);
+		StringBuffer ret = new StringBuffer(1024);
+//        if (!isPartition() && getObservable() != null) {
+//            ret = ofs + "@semantics(type='" + getObservable().getDeclaration() + "'" + encodePredicates(observable) + ")\n";
+//        }
+//        if (getModel() != null) {
+//            ret += ofs + "@model(" + getModel().getName() + ")\n";
+//        }
+//        return ret + ofs + (input ? "import " : "") + (exported ? "export " : "")
+//                + (isPartition() ? "partition" : getKdlActorType()) + " " + getKdlName() + encodeBody(offset, ofs, children);
+        
+		return ret.toString();
+    }
+
+//    private String getKdlName() {
+//        String ret = getName();
+//        if (ret.contains(" ") || StringUtils.containsWhitespace(ret) || StringUtil.containsUppercase(ret)) {
+//            ret = "'" + ret + "'";
+//        }
+//        return ret;
+//    }
+//
+//    private String getKdlActorType() {
+//        return getType().name().toLowerCase();
+//    }
+
+//    protected String encodePredicates(Observable observable) {
+//        String ret = "";
+//        if (!observable.getResolvedPredicates().isEmpty()) {
+//            for (IConcept key : observable.getResolvedPredicates().keySet()) {
+//                ret += (ret.isEmpty() ? "" : ", ") + "'" + key.getDefinition() + "': '"
+//                        + observable.getResolvedPredicates().get(key).getDefinition() + "'";
+//            }
+//        }
+//        return ret.isEmpty() ? ret : (", with={" + ret + "}");
+//    }
 }

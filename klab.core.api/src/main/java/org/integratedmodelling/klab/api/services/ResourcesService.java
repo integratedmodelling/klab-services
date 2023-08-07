@@ -211,7 +211,8 @@ public interface ResourcesService extends KlabService {
      * @return
      */
     KdlDataflow resolveDataflow(String urn, Scope scope);
-
+    
+    
     /**
      * Return all the namespaces that depend on the passed namespace.
      * 

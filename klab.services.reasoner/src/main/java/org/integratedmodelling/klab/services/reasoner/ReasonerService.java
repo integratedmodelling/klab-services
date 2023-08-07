@@ -322,8 +322,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
 	@Override
 	public Concept defineConcept(KimConceptStatement statement, Scope scope) {
-		return build(statement,
-				this.owl.requireOntology(statement.getNamespace(), OWL.DEFAULT_ONTOLOGY_PREFIX), null, scope);
+		return build(statement, this.owl.requireOntology(statement.getNamespace(), OWL.DEFAULT_ONTOLOGY_PREFIX), null,
+				scope);
 	}
 
 	@Override

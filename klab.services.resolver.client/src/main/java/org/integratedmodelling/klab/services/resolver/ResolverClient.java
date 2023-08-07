@@ -73,6 +73,12 @@ public class ResolverClient implements Resolver {
 		return null;
 	}
 
+	@Override
+	public String encodeDataflow(Dataflow<Observation> dataflow) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 //    @Override
 //    public ResolutionGraph computeResolutionGraph(Knowledge resolvable, ContextScope scope) {
 //        // TODO Auto-generated method stub
