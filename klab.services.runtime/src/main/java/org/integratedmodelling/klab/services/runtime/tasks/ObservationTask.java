@@ -86,6 +86,11 @@ public class ObservationTask implements Future<Observation> {
      * TODO while doing this we should ensure we have all we need to run the contextualizer calls,
      * using the scope to load components as needed.
      * 
+     * We should also collect all the observables being used, so we have a blueprint to produce what
+     * we need only, and build the influence graph which could simply use strings given that the
+     * actuator and observation IDs are identical. Actuators and observations should be quickly
+     * available through the ID.
+     * 
      * @param dataflow
      * @return
      */

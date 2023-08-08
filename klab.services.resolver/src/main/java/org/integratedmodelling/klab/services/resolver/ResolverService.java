@@ -321,6 +321,14 @@ public class ResolverService extends BaseService implements Resolver {
 
             // self
             for (Contextualizable computation : model.getComputation()) {
+
+                /*
+                 * TODO establish which components are needed to satisfy the call, and make the
+                 * dataflow empty if the resource services in the scope do not locate a component.
+                 * (shouldn't happen as the models shouldn't be resolved in that case). Versions
+                 * should also be collected.
+                 */
+
                 ret.getComputation().add(getServiceCall(computation));
             }
 
