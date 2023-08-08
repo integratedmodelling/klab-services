@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import static java.util.Map.entry;
 
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
@@ -95,21 +97,13 @@ public interface Prioritizer<T> extends Comparator<T> {
             entry("im:scale-coherency", 11), entry("im:network-remoteness", 0), entry("im:reliability", 100));
 
     /**
-     * Rank all data and return a map of the criteria computed.
+     * Rank all data and return a map of the criteria computed. The context of comparison should be
+     * set in the constructor according to the resolver's needs.
      *
      * @param model
-     * @param context object
      * @return the criteria values for model in context
      */
-    Map<String, Double> computeCriteria(T model, ContextScope context);
-
-    /**
-     * Get the computed ranks for the passed object, or null if they were not computed.
-     *
-     * @param md a T object.
-     * @return ranks from object, if any
-     */
-    Map<String, Double> getRanks(T md);
+    Metadata computeCriteria(T model);
 
     /**
      * List the keys of each criterion in the chosen ranking strategy, in order of importance.
@@ -117,5 +111,13 @@ public interface Prioritizer<T> extends Comparator<T> {
      * @return criteria
      */
     List<String> listCriteria();
+
+    /**
+     * Retrieve the computed ranking for the passed object, or null.
+     * 
+     * @param ranked
+     * @return
+     */
+    Metadata getRanking(T ranked);
 
 }

@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -57,34 +56,52 @@ public class DataflowImpl implements Dataflow<Observation> {
         this.resources = resources;
     }
 
-	@Override
-	public void add(Dataflow<Observation> dataflow, ContextScope scope) {
-		
-		/*
-		 * Find the "hook point" using the observation ID
-		 */
-		if (scope.getContextObservation() == null) {
-			computation.addAll(dataflow.getComputation());
-		} else {
-			Actuator actuator = findActuator(scope.getContextObservation().getId());
-			if (actuator == null) {
-				throw new KIllegalArgumentException("cannot add dataflow: observation ID does not correspond to an actuator");
-			}
-			actuator.getChildren().addAll(dataflow.getComputation());
-		}
-		
-		computeCoverage();
-		
-	}
+    @Override
+    public void add(Dataflow<Observation> dataflow, ContextScope scope) {
 
-	private Actuator findActuator(String id) {
-		// TODO find the actuator with this ID that is not a reference
-		return null;
-	}
+        /*
+         * Find the "hook point" using the observation ID
+         */
+        if (scope.getContextObservation() == null) {
+            computation.addAll(dataflow.getComputation());
+        } else {
+            Actuator actuator = findActuator(scope.getContextObservation().getId());
+            if (actuator == null) {
+                throw new KIllegalArgumentException("cannot add dataflow: observation ID does not correspond to an actuator");
+            }
+            actuator.getChildren().addAll(dataflow.getComputation());
+        }
 
-	public void computeCoverage() {
-		// TODO Auto-generated method stub
-		
-	}
+        computeCoverage();
+
+    }
+
+    private Actuator findActuator(String id) {
+        for (Actuator actuator : getComputation()) {
+            Actuator found = findActuator(actuator, id);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private Actuator findActuator(Actuator actuator, String id) {
+        if (id.equals(actuator.getId())) {
+            return actuator;
+        }
+        for (Actuator child : actuator.getChildren()) {
+            Actuator found = findActuator(child, id);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    public void computeCoverage() {
+        // TODO Auto-generated method stub
+
+    }
 
 }
