@@ -72,7 +72,7 @@ public class Resources {
 			var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
 			ResourceSet result = service.queryModels(observable, Engine.INSTANCE.getCurrentContext(true));
 			out.println("Resource set: (TODO)");
-			Application.printResourceSet(result, out, 3);
+			KlabCLI.printResourceSet(result, out, 3);
 			
 			if (result.getResults().size() > 0) {
 				out.println(Ansi.AUTO.string("Displaying @|green " + result.getResults().size() + "|@ models:"));
@@ -116,7 +116,7 @@ public class Resources {
 			if (service != null) {
 				ResourceSet asset = service.resolve(urn, Engine.INSTANCE.getCurrentUser());
 				out.println("Resource set: (TODO)");
-				Application.printResourceSet(asset, out, 3);
+				KlabCLI.printResourceSet(asset, out, 3);
 				out.println("Results:");
 				for (Resource result : asset.getResults()) {
 

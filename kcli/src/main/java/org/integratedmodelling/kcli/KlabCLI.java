@@ -75,7 +75,7 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
  * org.integratedmodelling.kcli.Application"
  * 
  */
-public class Application {
+public class KlabCLI {
 
 	/**
 	 * Top-level command that just prints help.
@@ -249,6 +249,20 @@ public class Application {
 				widgets.enable();
 				KeyMap<Binding> keyMap = reader.getKeyMaps().get("main");
 				keyMap.bind(new Reference("tailtip-toggle"), KeyMap.alt("s"));
+
+				/**
+				 * If we have a command, run it and exit
+				 */
+				if (args != null && args.length > 0) {
+					String line = Utils.Strings.join(args, ' ');
+					try {
+						systemRegistry.execute(line);
+					} catch (Throwable t) {
+						t.printStackTrace();
+						System.exit(0xff);
+					}
+					System.exit(0);
+				}
 
 				String prompt = "k.LAB> ";
 				String rightPrompt = null;

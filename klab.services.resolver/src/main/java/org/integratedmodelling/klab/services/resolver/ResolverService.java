@@ -690,7 +690,7 @@ public class ResolverService extends BaseService implements Resolver {
             if (!done) {
                 ret.append(ofs + ofs + "compute\n");
             }
-            ret.append(encodeContextualizable(contextualizable, offset + 6, resources) + "\n");
+            ret.append(encodeServiceCall(contextualizable, offset + 6, resources) + "\n");
             done = true;
         }
 
@@ -707,8 +707,8 @@ public class ResolverService extends BaseService implements Resolver {
         return ret;
     }
 
-    private String encodeContextualizable(ServiceCall contextualizable, int offset, Map<String, String> resources) {
-        // TODO
+    private String encodeServiceCall(ServiceCall contextualizable, int offset, Map<String, String> resources) {
+        // TODO extract resource parameters and substitute with variables
         return Utils.Strings.spaces(offset) + contextualizable.encode();
     }
 
