@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -22,7 +23,6 @@ import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
  * The interface IObservation, which is the semantic equivalent of an IArtifact
@@ -31,7 +31,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  * that will provide behaviors for their instances (or a subset thereof). Once
  * made reactive, they can interact with each other and the system.
  * <p>
- * An observation
+ * FIXME the API needs to lose a lot of weight
  *
  * @author ferdinando.villa
  * @version $Id: $Id
@@ -46,15 +46,9 @@ public interface Observation extends Knowledge, Artifact {
 	Observable getObservable();
 
 	/**
-	 * All observations are made in a context scope, which is the handle for the
-	 * "digital twin" this is part of.
-	 * 
-	 * @return
-	 */
-	ContextScope getScope();
-
-	/**
-	 * The observer that/who made the observation. Never null.
+	 * The observer that/who made the observation. May be a simple identity (like
+	 * the user in the main scope) or a DirectObservation from (this or another)
+	 * scope, which also implements Identity. Never null.
 	 * 
 	 * @return
 	 */
@@ -154,16 +148,7 @@ public interface Observation extends Knowledge, Artifact {
 
 	long getExitTime();
 
-	// TODO find something more elegant (change events?) but light - maybe just ObjectArtifacts with metadata that can be turned
-	// into events as needed
-//	/**
-//	 * All times when the observation was modified, corresponding to the end of any
-//	 * temporal transitions that changed it.This will always contain at least a 0
-//	 * for initialization, except for events, event groups and qualities that have
-//	 * no initial value because they describe a process.
-//	 * 
-//	 * @return
-//	 */
-//	long[] getUpdateTimestamps();
-
+	public static Observation empty() {
+		throw new KIllegalStateException("UNIMPLEMENTED empty observation!");
+	}
 }

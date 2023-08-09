@@ -45,7 +45,7 @@ public class RuntimeClient implements RuntimeService {
     }
 
     @Override
-    public Future<Observation> run(Dataflow<?> dataflow, ContextScope scope) {
+    public Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }

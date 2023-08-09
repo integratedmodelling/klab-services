@@ -50,7 +50,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 	}
 
 	@Override
-	public Future<Observation> run(Dataflow<?> dataflow, ContextScope scope) {
+	public Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope) {
 		return new ObservationTask(dataflow, scope, true);
 	}
 

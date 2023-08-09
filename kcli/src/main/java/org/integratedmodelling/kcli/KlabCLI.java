@@ -65,14 +65,14 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
  * ==============================================================================================
  * 
  * Run in terminal from the project dir after "mvn install" as <code>
- * java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*" org.integratedmodelling.kcli.Application
+ * java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*" org.integratedmodelling.kcli.KlabCLI
  * </code>.
  * 
- * A useful alias is
+ * A useful alias for bash is
  * 
  * <code> alias klab="java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*"
  * -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
- * org.integratedmodelling.kcli.Application"
+ * org.integratedmodelling.kcli.KlabCLI"
  * 
  */
 public class KlabCLI {
@@ -283,7 +283,7 @@ public class KlabCLI {
 						history.write(historyFile.toPath(), false);
 
 					} catch (UserInterruptException e) {
-						// Ignore
+						// TODO send interrupt signal to running tasks
 					} catch (EndOfFileException e) {
 						System.exit(0);
 					} catch (Exception e) {

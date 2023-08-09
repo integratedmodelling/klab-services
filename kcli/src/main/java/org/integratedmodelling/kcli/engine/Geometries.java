@@ -6,8 +6,6 @@ import java.util.Map;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
-import org.joda.time.DateTime;
 
 /**
  * Produce geometries from CLI parameters, including some preset ones.

@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.scope;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
@@ -23,6 +24,8 @@ public class EngineSessionScope extends EngineScope implements SessionScope {
 
 	EngineSessionScope(EngineScope parent) {
 		super(parent);
+		this.data = Parameters.create();
+		this.data.putAll(parent.data);
 	}
 
 	@Override

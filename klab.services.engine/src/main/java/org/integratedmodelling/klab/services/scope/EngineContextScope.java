@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -41,6 +42,9 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     EngineContextScope(EngineSessionScope parent) {
         super(parent);
         this.observer = parent.getUser();
+		this.data = Parameters.create();
+		this.data.putAll(parent.data);
+
         /*
          * TODO choose the services if this context or user requires specific ones
          */

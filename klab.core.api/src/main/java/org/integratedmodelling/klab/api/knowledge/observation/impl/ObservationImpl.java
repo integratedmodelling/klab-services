@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.runtime.observations;
+package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -24,9 +24,14 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 public class ObservationImpl implements Observation {
 
 	private static final long serialVersionUID = 8993700853991252827L;
+	
 
-	transient ContextScope scope;
-
+	protected ObservationImpl() {}
+	
+	protected ObservationImpl(Observable observable, String id, ContextScope scope) {
+		
+	}
+	
 	@Override
 	public Geometry getGeometry() {
 		// TODO Auto-generated method stub
@@ -153,11 +158,11 @@ public class ObservationImpl implements Observation {
 		return null;
 	}
 
-	@Override
-	public ContextScope getScope() {
-		// TODO Auto-generated method stub
-		return this.scope;
-	}
+//	@Override
+//	public ContextScope getScope() {
+//		// TODO Auto-generated method stub
+//		return this.scope;
+//	}
 
 	@Override
 	public Identity getObserver() {

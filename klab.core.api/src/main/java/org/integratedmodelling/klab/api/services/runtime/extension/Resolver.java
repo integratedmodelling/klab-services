@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime.extension;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 public interface Resolver<T extends Observation> extends Contextualizer {
@@ -11,5 +12,5 @@ public interface Resolver<T extends Observation> extends Contextualizer {
 	 * @param scope
 	 * @return
 	 */
-	T resolve(T observation, ContextScope scope);
+	T resolve(T observation, ServiceCall call, ContextScope scope);
 }

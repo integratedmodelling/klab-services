@@ -40,23 +40,23 @@ public abstract interface DirectObservation extends Observation, Identity, Objec
 	 */
 	String getName();
 
-	/**
-	 * Direct observations may have children. This is a convenience method to find a
-	 * particular child artifact.
-	 * 
-	 * @param observable
-	 * @return
-	 */
-	Observation getChildObservation(Observable observable);
+//	/**
+//	 * Direct observations may have children. This is a convenience method to find a
+//	 * particular child artifact.
+//	 * 
+//	 * @param observable
+//	 * @return
+//	 */
+//	Observation getChildObservation(Observable observable);
 
-	/**
-	 * <p>
-	 * Direct observations may have states of their own.
-	 * </p>
-	 *
-	 * @return a {@link java.util.Collection} object.
-	 */
-	Collection<State> getStates();
+//	/**
+//	 * <p>
+//	 * Direct observations may have states of their own.
+//	 * </p>
+//	 *
+//	 * @return a {@link java.util.Collection} object.
+//	 */
+//	Collection<State> getStates();
 
 	@Override
 	DirectObservation at(Locator locator);
