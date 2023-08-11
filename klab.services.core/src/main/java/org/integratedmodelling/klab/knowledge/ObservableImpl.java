@@ -585,17 +585,17 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     public String toString() {
         return urn + " [" + getDescriptionType().name().toLowerCase() + "]";
     }
-
-    @Override
-    public Observable resolvedWith(Knowledge resolvable) {
-        ObservableImpl ret = new ObservableImpl(this);
-        ret.resolving = resolvable;
-        return ret;
-    }
-
-    @Override
-    public Knowledge resolving() {
-        return this.resolving;
-    }
+//
+//    @Override
+//    public Observable resolvedWith(Knowledge resolvable) {
+//        ObservableImpl ret = new ObservableImpl(this);
+//        ret.resolving = resolvable;
+//        return ret;
+//    }
+//
+//    @Override
+//    public Knowledge resolving() {
+//        return this.resolving;
+//    }
 
 }

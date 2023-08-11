@@ -10,90 +10,107 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 
 /**
- * This annotation can be used along with a class to declare the result class or
- * with a method to declare the equivalent call for a function available in the
- * k.IM language. Annotations are automatically extracted from the classpath
- * when the class bearing them is in a recognized package (in this
- * implementation <code>org.integratedmodelling.klab.runtime</code> and any
- * package declared in a plug-in manifest). Other packages can be scanned
- * explicitly according to implementation. To create namespaces, declare methods
- * or classes within another class annotated with {@link Library}. The
- * equivalent annotation for k.Actors actions is {@link Verb}.
+ * This annotation can be used along with a class to declare the result class or with a method to
+ * declare the equivalent call for a function available in the k.IM language. Annotations are
+ * automatically extracted from the classpath when the class bearing them is in a recognized package
+ * (in this implementation <code>org.integratedmodelling.klab.runtime</code> and any package
+ * declared in a plug-in manifest). Other packages can be scanned explicitly according to
+ * implementation. To create namespaces, declare methods or classes within another class annotated
+ * with {@link Library}. The equivalent annotation for k.Actors actions is {@link Verb}.
  * 
  * @author Ferd
  *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE, ElementType.METHOD })
+@Target({ElementType.TYPE, ElementType.METHOD})
 public @interface KlabFunction {
 
-	/**
-	 * Arguments are used in the declaration to describe inputs, outputs and
-	 * parameters.
-	 * 
-	 * @author Ferd
-	 *
-	 */
-	public @interface Argument {
+    /**
+     * Arguments are used in the declaration to describe inputs, outputs and parameters.
+     * 
+     * @author Ferd
+     *
+     */
+    public @interface Argument {
 
-		String name();
+        String name();
 
-		Artifact.Type[] type();
+        Artifact.Type[] type();
 
-		String description();
+        String description();
 
-		String dataflowLabel() default "";
+        String dataflowLabel() default "";
 
-		boolean optional() default false;
+        boolean optional() default false;
 
-		boolean isFinal() default false;
+        boolean isFinal() default false;
 
-		boolean constant() default false;
+        boolean constant() default false;
 
-		boolean artifact() default false;
-	}
+        boolean artifact() default false;
+    }
 
-	/**
-	 * Single, lowercase name. Will be compoundend with the enclosing library's
-	 * namespace to build a path that must be unique.
-	 * 
-	 * @return
-	 */
-	String name();
+    /**
+     * Single, lowercase name. Will be compoundend with the enclosing library's namespace to build a
+     * path that must be unique.
+     * 
+     * @return
+     */
+    String name();
 
-	/**
-	 * Version is mandatory and should be coded to reflect the version of any
-	 * components that the contextualizer is part of. Must be a semantic version
-	 * parseable by {@link Version}.
-	 * 
-	 * @return
-	 */
-	String version();
+    /**
+     * Version is mandatory and should be coded to reflect the version of any components that the
+     * contextualizer is part of. Must be a semantic version parseable by {@link Version}.
+     * 
+     * @return
+     */
+    String version();
 
-	String description();
+    /**
+     * Descriptions are also mandatory. Documentation is created from the annotation. Simple
+     * Markdown is supported here.
+     * 
+     * @return
+     */
+    String description();
 
-	String geometry() default "";
+    /**
+     * The geometry can be used to specify extent constraints rather than specific, resolved
+     * geometries. This said, it can also specify a specific coverage. Only the string-encoded form
+     * can be used here.
+     * 
+     * @return
+     */
+    String geometry() default "";
 
-	/**
-	 * If this is true, one instance of the associated contextualizer class or
-	 * method is created and reused. Otherwise a new one is obtained at each
-	 * reference in the dataflow.
-	 * 
-	 * @return
-	 */
-	boolean reentrant() default false;
+    /**
+     * If this is true, one instance of the associated contextualizer class or method is created and
+     * reused. Otherwise a new one is obtained at each reference in the dataflow.
+     * 
+     * @return
+     */
+    boolean reentrant() default false;
 
-	boolean filter() default false;
+    boolean filter() default false;
 
-	String dataflowLabel() default "";
+    /**
+     * This is a hint to the runtime that applies to value contextualizers, which are functional
+     * objects that may or may not be executable in parallel. It implies {@link #reentrant()} ==
+     * true.
+     * 
+     * @return
+     */
+    boolean parallel() default false;
 
-	Argument[] imports() default {};
+    String dataflowLabel() default "";
 
-	Argument[] exports() default {};
+    Argument[] imports() default {};
 
-	Argument[] parameters() default {};
+    Argument[] exports() default {};
 
-	Artifact.Type[] type();
+    Argument[] parameters() default {};
+
+    Artifact.Type[] type();
 
 }

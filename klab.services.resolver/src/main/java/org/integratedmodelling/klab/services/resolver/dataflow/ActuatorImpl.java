@@ -25,6 +25,7 @@ public class ActuatorImpl implements Actuator {
     private boolean input;
     private boolean output;
     private boolean reference;
+    private boolean deferred;
     private String observer;
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
@@ -177,5 +178,14 @@ public class ActuatorImpl implements Actuator {
 	public void setObserver(String observer) {
 		this.observer = observer;
 	}
+
+	@Override
+    public boolean isDeferred() {
+        return deferred;
+    }
+
+    public void setDeferred(boolean deferred) {
+        this.deferred = deferred;
+    }
 
 }

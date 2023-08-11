@@ -808,23 +808,23 @@ public interface Observable extends Semantics {
 	// */
 	// Concept getTargetPredicate();
 
-	/**
-	 * This should create a copy of the observable with a transient field containing
-	 * the knowledge object passed (a {@link Model} or an {@link Instance}), which
-	 * resolves the observable.
-	 * 
-	 * @param resolvable
-	 * @return
-	 */
-	public Observable resolvedWith(Knowledge resolvable);
-
-	/**
-	 * Return any object set into this observable using
-	 * {@link #resolvedWith(Knowledge)}.
-	 * 
-	 * @return
-	 */
-	public Knowledge resolving();
+//	/**
+//	 * This should create a copy of the observable with a transient field containing
+//	 * the knowledge object passed (a {@link Model} or an {@link Instance}), which
+//	 * resolves the observable.
+//	 * 
+//	 * @param resolvable
+//	 * @return
+//	 */
+//	public Observable resolvedWith(Knowledge resolvable);
+//
+//	/**
+//	 * Return any object set into this observable using
+//	 * {@link #resolvedWith(Knowledge)}.
+//	 * 
+//	 * @return
+//	 */
+//	public Knowledge resolving();
 
 	public static Observable promote(Concept concept) {
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
