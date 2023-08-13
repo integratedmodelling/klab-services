@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.services.runtime.DataflowInfo;
 import org.integratedmodelling.klab.services.runtime.DigitalTwin;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -76,12 +77,9 @@ public class ObservationTask implements Future<Observation> {
 	public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope scope) {
 
 		var dt = getContextData(scope);
-		var notifications = new ArrayList<Notification>();
-		var executionOrder = sortComputation(dataflow, notifications);
-		for (Notification notification : notifications) {
-			scope.send(notification);
-		}
-		if (Utils.Notifications.hasErrors(notifications)) {
+		var info = new DataflowInfo();
+		var executionOrder = sortComputation(dataflow, info);
+		if (!info.validate(scope)) {
 			return Observation.empty();
 		}
 
@@ -121,10 +119,10 @@ public class ObservationTask implements Future<Observation> {
 	 * @param dataflow
 	 * @return
 	 */
-	private List<Actuator> sortComputation(Dataflow<Observation> dataflow, List<Notification> notifications) {
+	private List<Actuator> sortComputation(Dataflow<Observation> dataflow, DataflowInfo info) {
 		List<Actuator> ret = new ArrayList<>();
-		// keep track of those executed in previous root calls
-		Set<String> computed = new HashSet<>();
+//		// keep track of those executed in previous root calls
+//		Set<String> computed = new HashSet<>();
 		for (Actuator root : dataflow.getComputation()) {
 			Map<String, Actuator> branch = new HashMap<>();
 			collectActuators(Collections.singletonList(root), branch);
@@ -132,9 +130,9 @@ public class ObservationTask implements Future<Observation> {
 					createDependencyGraph(branch));
 			while (order.hasNext()) {
 				Actuator next = order.next();
-				if (!computed.contains(next.getId())) {
+				if (!info.containsActuator(next.getId())) {
 					ret.add(next);
-					computed.add(next.getId());
+					info.notifyActuator(next);
 				}
 			}
 		}
@@ -146,7 +144,7 @@ public class ObservationTask implements Future<Observation> {
 			if (!actuator.isReference()) {
 				/*
 				 * TODO compile a list of all services + versions, validate the actuator, create
-				 * any needed notifications
+				 * any needed notifications and a table of translations for local names
 				 */
 				ret.put(actuator.getId(), actuator);
 			}

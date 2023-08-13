@@ -64,5 +64,5 @@ public @interface ResourceAdapter {
 	 * 
 	 * @return
 	 */
-	Artifact.Type type() default Artifact.Type.VOID;
+	Artifact.Type[] type() default Artifact.Type.VOID;
 }

@@ -18,7 +18,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target(ElementType.METHOD)
 public @interface Validator {
 
 	enum LifecyclePhase {
@@ -64,7 +64,7 @@ public @interface Validator {
 	 * 
 	 * @return
 	 */
-	LifecyclePhase phase();
+	LifecyclePhase[] phase();
 
 	/**
 	 * Metadata conventions to validate against, if any.

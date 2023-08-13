@@ -21,7 +21,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target(ElementType.METHOD)
 public @interface Encoder {
 
 }

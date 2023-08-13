@@ -28,49 +28,51 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
 /**
- * The actual observation content kept in each local context (inside the context agent or the scope
- * itself if local). Contains the influence diagram between observations with the log of any
- * modification event timestamp, the scheduler, the event bus, any inspectors and probes, and the
- * catalog of ID->{observation, actuator, storage, runtime data...}. Also maintains the logical and
- * physical "family trees" of observation. The logical one skips the instance container built for
- * the instantiators, which is kept in the physical structure.
+ * The actual observation content kept in each local context (inside the context agent or the scope itself if local).
+ * Contains the influence diagram between observations with the log of any modification event timestamp, the scheduler,
+ * the event bus, any inspectors and probes, and the catalog of ID->{observation, actuator, storage, runtime data...}.
+ * Also maintains the logical and physical "family trees" of observation. The logical one skips the instance container
+ * built for the instantiators, which is kept in the physical structure.
  * <p>
- * Essentially the implementation of the "digital twin" accessed through the {@link ContextScope}.
- * Eventually it can have its own API although the {@link ContextScope} should have all it needs to
- * interact with it.
- * 
- * @author Ferd
+ * Essentially the implementation of the "digital twin" accessed through the {@link ContextScope}. Eventually it can
+ * have its own API although the {@link ContextScope} should have all it needs to interact with it.</p>
  *
+ * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage, so that successive
+ * resolutions of instances can reuse a previous dataflow when it is applicable instead of asking the resolver again.
+ * This can be configured to be applied only above a certain threshold in the number of instances, or turned off
+ * completely, in case speed is no issue but maximum dataflow "fit" to the resolved object and its scale must be
+ * ensured.</p>
+ *
+ * @author Ferd
  */
 public class DigitalTwin {
 
     /**
-     * Key to locate this in the context scope data. The first contextualization creates it and it
-     * remains the same object throughout the context lifetime.
+     * Key to locate this in the context scope data. The first contextualization creates it and it remains the same
+     * object throughout the context lifetime.
      */
     public static final String KEY = "klab.context.data";
 
     /**
      * Types of the events that can be subscribed to and get communicated.
-     * 
-     * @author Ferd
      *
+     * @author Ferd
      */
     enum Event {
 
     }
 
     /**
-     * Each contextualizer is stored here along with the call that generated it and a classification
-     * for speed.
-     * 
-     * @author Ferd
+     * Each contextualizer is stored here along with the call that generated it and a classification for speed.
      *
+     * @author Ferd
      */
-    class ContextualizerData {
+    static class ContextualizerData {
 
         enum Type {
-            DOUBLE_VALUE_RESOLVER, INT_VALUE_RESOLVER, CONCEPT_VALUE_RESOLVER, BOXING_VALUE_RESOLVER, OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR
+            DOUBLE_VALUE_RESOLVER, INT_VALUE_RESOLVER, CONCEPT_VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
+            OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR, OBSERVATION_CHARACTERIZER, OBSERVABLE_CLASSIFIER,
+            OBJECT_CLASSIFIER
         }
 
         Type type;
@@ -107,8 +109,8 @@ public class DigitalTwin {
     }
 
     /**
-     * Events that must reach the client side are communicated through this. It's probably the
-     * entire scope but we don't store the scope, we pass it to individual methods.
+     * Events that must reach the client side are communicated through this. It's probably the entire scope but we don't
+     * store the scope, we pass it to individual methods.
      */
     Channel bus;
 
@@ -118,10 +120,9 @@ public class DigitalTwin {
     List<Observation> rootObservations = new ArrayList<>();
 
     /**
-     * The influence diagram tells us which observation is influenced by changes in which others
-     * (info mutuated by actuators at first, then potentially modified through behaviors or
-     * messages). Holds for actuators and observations because the IDs are the same. The edges
-     * should keep the list of modification timesteps.
+     * The influence diagram tells us which observation is influenced by changes in which others (info mutuated by
+     * actuators at first, then potentially modified through behaviors or messages). Holds for actuators and
+     * observations because the IDs are the same. The edges should keep the list of modification timesteps.
      */
     Graph<String, DefaultEdge> influenceDiagram = new DefaultDirectedGraph<>(DefaultEdge.class);
 
@@ -141,10 +142,9 @@ public class DigitalTwin {
      */
 
     /**
-     * Run the passed actuator, building the necessary observations and updating all records. Sound
-     * dependency order must be guaranteed by the caller. Notify whatever info we have subscribed
-     * to.
-     * 
+     * Run the passed actuator, building the necessary observations and updating all records. Sound dependency order
+     * must be guaranteed by the caller. Notify whatever info we have subscribed to.
+     *
      * @param actuator
      * @param scope
      * @return
@@ -173,31 +173,31 @@ public class DigitalTwin {
         DirectObservation context = scope.getContextObservation();
         ObservationImpl ret = null;
 
-        switch(actuator.getObservable().getDescriptionType()) {
-        case ACKNOWLEDGEMENT:
-            ret = new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
-            break;
-        case CHARACTERIZATION:
-            break;
-        case CLASSIFICATION:
-            break;
-        case COMPILATION:
-            break;
-        case DETECTION:
-            break;
-        case INSTANTIATION:
-        case CONNECTION:
-            ret = new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
-            break;
-        case CATEGORIZATION:
-        case VERIFICATION:
-        case QUANTIFICATION:
-            ret = new StateImpl(actuator.getObservable(), actuator.getId(), scope);
-            break;
-        case SIMULATION:
-            break;
-        default:
-            break;
+        switch (actuator.getObservable().getDescriptionType()) {
+            case ACKNOWLEDGEMENT:
+                ret = new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
+                break;
+            case CHARACTERIZATION:
+                break;
+            case CLASSIFICATION:
+                break;
+            case COMPILATION:
+                break;
+            case DETECTION:
+                break;
+            case INSTANTIATION:
+            case CONNECTION:
+                ret = new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
+                break;
+            case CATEGORIZATION:
+            case VERIFICATION:
+            case QUANTIFICATION:
+                ret = new StateImpl(actuator.getObservable(), actuator.getId(), scope);
+                break;
+            case SIMULATION:
+                break;
+            default:
+                break;
         }
 
         add(ret);
@@ -216,9 +216,8 @@ public class DigitalTwin {
     }
 
     /**
-     * Call at scope disposal and service shutdown (scope disposal should be scheduled after
-     * configured inactivity).
-     * 
+     * Call at scope disposal and service shutdown (scope disposal should be scheduled after configured inactivity).
+     *
      * @return
      */
     public boolean dispose() {
@@ -272,11 +271,11 @@ public class DigitalTwin {
     }
 
     /**
-     * Link observations, using artifact logics, as specified during contextualization. The artifact
-     * structure will contains the graph as specified, attributing process states to the parent
-     * subject. The logical structure will skip folders and processes, always attributing
-     * observations to their parent observations and linking process qualities to subjects.
-     * 
+     * Link observations, using artifact logics, as specified during contextualization. The artifact structure will
+     * contains the graph as specified, attributing process states to the parent subject. The logical structure will
+     * skip folders and processes, always attributing observations to their parent observations and linking process
+     * qualities to subjects.
+     *
      * @param childArtifact
      * @param parentArtifact
      */
