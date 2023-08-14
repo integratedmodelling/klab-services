@@ -179,7 +179,7 @@ public class JacksonConfiguration {
 
         @SuppressWarnings("unchecked")
         @Override
-        public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode node = p.getCodec().readTree(p);
             return (T) readParameters(node, p, node.get("@type").asText());
         }

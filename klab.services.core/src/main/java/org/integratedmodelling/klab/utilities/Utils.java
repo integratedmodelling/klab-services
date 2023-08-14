@@ -269,7 +269,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 		 * ensuring that downstream annotations of the same name override those
 		 * upstream. Any string parameter filters the annotations collected.
 		 * 
-		 * @param object
+		 * @param objects
 		 * @return all annotations from upstream
 		 */
 		public static Collection<Annotation> collectAnnotations(Object... objects) {
@@ -718,7 +718,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
 			@Override
 			public void serialize(Object nullKey, JsonGenerator jsonGenerator, SerializerProvider unused)
-					throws IOException, JsonProcessingException {
+					throws IOException {
 				jsonGenerator.writeFieldName("");
 			}
 		}
@@ -1426,7 +1426,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 		 * @param endPoint   of type int indicating the end index of the String
 		 * @return true if matches.
 		 */
-		private final boolean doesMatch(String text, int startPoint, int endPoint) {
+		private boolean doesMatch(String text, int startPoint, int endPoint) {
 			int textLength = text.length();
 
 			if (startPoint > endPoint) {
@@ -1500,7 +1500,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 		 * @param posString  of type indicating the position after wild card
 		 * @return the position of the String
 		 */
-		private final int getTextPosition(String textString, int start, int end, String posString) {
+		private int getTextPosition(String textString, int start, int end, String posString) {
 			/*
 			 * String after *
 			 */

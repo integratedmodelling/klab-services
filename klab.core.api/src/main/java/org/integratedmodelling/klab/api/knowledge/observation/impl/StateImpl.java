@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
-public class StateImpl extends ObservationImpl implements State {
+public abstract class StateImpl extends ObservationImpl implements State {
 
 	public StateImpl() {}
 

@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import org.eclipse.collections.api.block.function.primitive.LongToFloatFunction;
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
  * Base storage providing the general methods. Children enable either boxed I/O
@@ -9,7 +12,7 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  * @author Ferd
  *
  */
-public class FloatStorage extends Storage {
+public class FloatStorage implements Storage {
 
 
 	@Override
@@ -20,5 +23,15 @@ public class FloatStorage extends Storage {
 	public void set(float value, Locator locator) {
 		
 	}
-	
+
+	/**
+	 * Map the passed operator within as many threads as specified by the level of parallelism defined in the
+	 * constructor. The operator returns the value for the passed long offset, which translates the
+	 * {@link Locator} produced by iterating a {@link Scale}.
+	 *
+	 * @param operator a non-boxing long -> float operator producing the value at the passed offset
+	 */
+	public void map(LongToFloatFunction operator) {
+
+	}
 }

@@ -1,14 +1,10 @@
 package org.integratedmodelling.klab.services.runtime;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
+import org.integratedmodelling.klab.api.data.RuntimeAsset;
+import org.integratedmodelling.klab.api.data.Storage;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
@@ -21,21 +17,24 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.extension.Contextualizer;
-import org.integratedmodelling.klab.services.runtime.storage.DoubleStorage;
-import org.integratedmodelling.klab.services.runtime.storage.IntStorage;
-import org.integratedmodelling.klab.services.runtime.storage.KeyStorage;
+import org.integratedmodelling.klab.runtime.storage.StorageManager;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import org.ojalgo.concurrent.Parallelism;
+
+import java.util.*;
 
 /**
  * The actual observation content kept in each local context (inside the context agent or the scope itself if local).
  * Contains the influence diagram between observations with the log of any modification event timestamp, the scheduler,
  * the event bus, any inspectors and probes, and the catalog of ID->{observation, actuator, storage, runtime data...}.
- * Also maintains the logical and physical "family trees" of observation. The logical one skips the instance container
- * built for the instantiators, which is kept in the physical structure.
+ * Also maintains the logical and physical "family trees" of observation and manages the bookkeeping of any runtime
+ * assets so that they are known and disposed of properly when the context scope ends. The logical one skips the
+ * instance container built for the instantiators, which is kept in the physical structure.
  * <p>
  * Essentially the implementation of the "digital twin" accessed through the {@link ContextScope}. Eventually it can
- * have its own API although the {@link ContextScope} should have all it needs to interact with it.</p>
+ * have its own API although the interaction is managed through {@link ContextScope}, which should have all it needs to
+ * interact with it.</p>
  *
  * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage, so that successive
  * resolutions of instances can reuse a previous dataflow when it is applicable instead of asking the resolver again.
@@ -48,10 +47,15 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 public class DigitalTwin {
 
     /**
-     * Key to locate this in the context scope data. The first contextualization creates it and it remains the same
+     * Key to locate this in the context scope data. The first contextualization creates it, and it remains the same
      * object throughout the context lifetime.
      */
     public static final String KEY = "klab.context.data";
+
+    /**
+     * The asset catalog. Most importantly for disposal at end.
+     */
+    private Set<RuntimeAsset> runtimeAssets = new HashSet<>();
 
     /**
      * Types of the events that can be subscribed to and get communicated.
@@ -87,11 +91,6 @@ public class DigitalTwin {
         Actuator actuator;
         // the last timestamp in the influence graph starting at this
         long lastUpdate;
-
-        // these are in there to enable quick access if we know the type in advance
-        DoubleStorage dStorage;
-        IntStorage iStorage;
-        KeyStorage kStorage;
 
         // in order of application
         List<ContextualizerData> contextualizers = new ArrayList<>();
@@ -156,49 +155,49 @@ public class DigitalTwin {
             data = new ObservationData();
             data.actuator = actuator;
             data.observation = createObservation(actuator, scope);
-            createStorage(data.observation, scope);
             observationData.put(actuator.getId(), data);
         }
 
         return false;
     }
 
-    private void createStorage(Observation observation, ContextScope scope) {
-        // TODO create the appropriate storage for the type and the scope
-
+    private Storage createStorage(Observable observable, ContextScope scope) {
+        // TODO use options from the scope for parallelization and choice float/double
+        var storage = switch (observable.getDescriptionType()) {
+            case QUANTIFICATION -> StorageManager.INSTANCE.getDoubleStorage(scope, Parallelism.CORES);
+            case CATEGORIZATION -> StorageManager.INSTANCE.getKeyedStorage(scope, Parallelism.CORES);
+            case VERIFICATION -> StorageManager.INSTANCE.getBooleanStorage(scope, Parallelism.CORES);
+            default -> throw new KIllegalStateException("Unexpected value: " + observable.getDescriptionType());
+        };
+        this.runtimeAssets.add(storage);
+        return storage;
     }
 
     private ObservationImpl createObservation(Actuator actuator, ContextScope scope) {
 
         DirectObservation context = scope.getContextObservation();
-        ObservationImpl ret = null;
+        ObservationImpl ret = switch (actuator.getObservable().getDescriptionType()) {
+            case ACKNOWLEDGEMENT -> new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
+            case INSTANTIATION, CONNECTION ->
+                    new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
+            case CATEGORIZATION, VERIFICATION, QUANTIFICATION ->
+                    new StateImpl(actuator.getObservable(), actuator.getId(), scope) {
 
-        switch (actuator.getObservable().getDescriptionType()) {
-            case ACKNOWLEDGEMENT:
-                ret = new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
-                break;
-            case CHARACTERIZATION:
-                break;
-            case CLASSIFICATION:
-                break;
-            case COMPILATION:
-                break;
-            case DETECTION:
-                break;
-            case INSTANTIATION:
-            case CONNECTION:
-                ret = new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
-                break;
-            case CATEGORIZATION:
-            case VERIFICATION:
-            case QUANTIFICATION:
-                ret = new StateImpl(actuator.getObservable(), actuator.getId(), scope);
-                break;
-            case SIMULATION:
-                break;
-            default:
-                break;
-        }
+                        private Storage storage = createStorage(actuator.getObservable(), scope);
+
+                        @Override
+                        public <T extends Storage> T getStorage(Class<T> storageClass) {
+                            // Just let this throw a cast exception instead of adding painful checks
+                            return (T) storage;
+                        }
+                    };
+            case SIMULATION, // TODO finish up
+                    CHARACTERIZATION,
+                    CLASSIFICATION,
+                    COMPILATION,
+                    DETECTION -> null;
+            default -> null;
+        };
 
         add(ret);
         if (context != null) {

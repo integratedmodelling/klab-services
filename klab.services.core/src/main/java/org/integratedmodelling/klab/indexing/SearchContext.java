@@ -255,7 +255,7 @@ public class SearchContext {
             ret += query ? " QUERY" : "";
             ret += matcher
                     ? " MATCH"
-                    : "" + (type == SemanticMatch.Type.MODIFIER ? (modifiers == null ? "[ALL]" : modifiers.toString()) : "");
+                    : (type == SemanticMatch.Type.MODIFIER ? (modifiers == null ? "[ALL]" : modifiers.toString()) : "");
             ret += semantics == null || semantics.isEmpty() ? "" : (" " + semantics);
             ret += " " + conditions;
             return ret;

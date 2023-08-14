@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
 
 /**
@@ -9,7 +10,7 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  * @author Ferd
  *
  */
-public class BoxingStorage extends Storage {
+public class BoxingStorage implements Storage {
 	
 	@Override
 	public Type getType() {
