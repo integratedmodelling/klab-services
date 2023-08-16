@@ -355,7 +355,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
         ret.end = ret.start.plus(1, ret.resolution);
         return ret;
     }
-
+    
     public static Time create(int startYear, int endYear) {
         TimeImpl ret = new TimeImpl();
         ret.extentType = Time.Type.PHYSICAL;

@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.geometry.Offset;
 
 /**
  * Base storage providing the general methods. Children enable either boxed I/O
@@ -17,7 +17,7 @@ public class KeyedStorage extends IntStorage {
 		return Type.KEYED;
 	}
 
-	public void set(Object value, Locator locator) {
+	public void set(Object value, Offset locator) {
 		
 	}
 

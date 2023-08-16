@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.storage;
 import org.eclipse.collections.api.block.function.primitive.LongToBooleanFunction;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
@@ -19,7 +20,7 @@ public class BooleanStorage implements Storage {
 		return Type.INTEGER;
 	}
 
-	public void set(boolean value, Locator locator) {
+	public void set(boolean value, Offset locator) {
 		
 	}
 

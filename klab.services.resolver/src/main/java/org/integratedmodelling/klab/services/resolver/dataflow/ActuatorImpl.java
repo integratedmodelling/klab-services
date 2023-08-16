@@ -188,4 +188,8 @@ public class ActuatorImpl implements Actuator {
         this.deferred = deferred;
     }
 
+    @Override
+    public String toString() {
+        return "ActuatorImpl{ " + this.id + "}";
+    }
 }

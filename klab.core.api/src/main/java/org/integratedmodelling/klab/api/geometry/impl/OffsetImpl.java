@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
@@ -34,7 +35,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
  * @author Ferd
  *
  */
-public class Offset implements Locator {
+public class OffsetImpl implements Locator, Offset {
 
     /**
      * Position as offsets with the dimensionality of the target. If a scale, one linear offset per
@@ -66,13 +67,13 @@ public class Offset implements Locator {
     public int length;
 
     /**
-     * The located geometry, possibly a IScale, never null.
+     * The located geometry, possibly a Scale, never null.
      */
     private Geometry geometry = null;
 
     private NDCursor cursor;
 
-    Offset() {
+    OffsetImpl() {
     }
 
     /**
@@ -80,7 +81,7 @@ public class Offset implements Locator {
      * 
      * @param geometry
      */
-    public Offset(Geometry geometry) {
+    public OffsetImpl(Geometry geometry) {
         this.geometry = geometry;
         this.pos = new long[geometry.getDimensions().size()];
         int i = 0;
@@ -92,7 +93,7 @@ public class Offset implements Locator {
         this.scalar = geometry.size() == 1;
     }
 
-    public Offset(Geometry geometry, long[] pos, double coverage) {
+    public OffsetImpl(Geometry geometry, long[] pos, double coverage) {
         this(geometry, pos);
         this.coverage = coverage;
     }
@@ -118,7 +119,7 @@ public class Offset implements Locator {
      * 
      * @param geometry
      */
-    public Offset(Geometry geometry, long[] pos) {
+    public OffsetImpl(Geometry geometry, long[] pos) {
 
         this.geometry = geometry;
         if (pos.length == 1 && geometry.getDimensions().size() > 1) {
@@ -156,7 +157,7 @@ public class Offset implements Locator {
      * @return
      */
     public static Offset create(String spec, Geometry geometry) {
-        Offset ret = new Offset();
+        OffsetImpl ret = new OffsetImpl();
         int at = spec.indexOf('@');
         if (at > 0) {
             spec = spec.substring(at + 1);
@@ -225,7 +226,7 @@ public class Offset implements Locator {
      * @return
      */
     public static Offset create(String spec) {
-        Offset ret = new Offset();
+        OffsetImpl ret = new OffsetImpl();
         int at = spec.indexOf('@');
         if (at > 0) {
             ret.geometry = GeometryImpl.create(spec.substring(0, at));
@@ -240,7 +241,7 @@ public class Offset implements Locator {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Locator> T as(Class<T> cls) {
-        if (Offset.class.isAssignableFrom(cls)) {
+        if (OffsetImpl.class.isAssignableFrom(cls)) {
             return (T) this;
         } else if (Geometry.class.isAssignableFrom(cls)) {
             return (T) geometry;
@@ -324,7 +325,7 @@ public class Offset implements Locator {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Offset other = (Offset) obj;
+        OffsetImpl other = (OffsetImpl) obj;
         if (geometry == null) {
             if (other.geometry != null)
                 return false;
@@ -343,7 +344,7 @@ public class Offset implements Locator {
     }
 
     public static Offset empty() {
-        return new Offset();
+        return new OffsetImpl();
     }
 
 //    @Override
@@ -383,7 +384,7 @@ public class Offset implements Locator {
      * @return
      */
     public Offset reduceTo(Geometry geometry) {
-        Offset ret = new Offset();
+        OffsetImpl ret = new OffsetImpl();
         ret.geometry = geometry;
         List<Long> positions = new ArrayList<>();
         int i = 0;
@@ -406,4 +407,13 @@ public class Offset implements Locator {
         return ret;
     }
 
+    @Override
+    public long position() {
+        return linear;
+    }
+
+    @Override
+    public long[] offsets() {
+        return pos;
+    }
 }

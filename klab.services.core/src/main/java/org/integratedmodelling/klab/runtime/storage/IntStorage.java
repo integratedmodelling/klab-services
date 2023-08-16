@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 import java.util.function.LongToIntFunction;
@@ -20,7 +21,7 @@ public class IntStorage implements Storage {
 		return Type.INTEGER;
 	}
 
-	public void set(int value, Locator locator) {
+	public void set(int value, Offset locator) {
 		
 	}
 

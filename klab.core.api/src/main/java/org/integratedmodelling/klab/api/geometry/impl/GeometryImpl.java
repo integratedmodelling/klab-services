@@ -1277,12 +1277,12 @@ public class GeometryImpl implements Geometry {
          * if (KScale.class.isAssignableFrom(cls)) { return (T) originalScale; } else
          */if (Geometry.class.isAssignableFrom(cls)) {
             return (T) this;
-        } else if (Offset.class.isAssignableFrom(cls)) {
+        } else if (OffsetImpl.class.isAssignableFrom(cls)) {
             if (!hasShape(this)) {
                 throw new KIllegalStateException(
                         "cannot see a geometry as an offset locator unless shape is specified for all extents");
             }
-            return (T) new Offset(this);
+            return (T) new OffsetImpl(this);
         }
         throw new KIllegalArgumentException("cannot translate a simple geometry into a " + cls.getCanonicalName());
     }
@@ -1314,7 +1314,7 @@ public class GeometryImpl implements Geometry {
         }
 
         if (overall != null) {
-            return new Offset(this, overall.offsets);
+            return new OffsetImpl(this, overall.offsets);
         }
 
         if (!targets.isEmpty()) {
@@ -1348,7 +1348,7 @@ public class GeometryImpl implements Geometry {
                 i++;
             }
 
-            return new Offset(this, pos);
+            return new OffsetImpl(this, pos);
         }
 
         // no arguments: locate this with this

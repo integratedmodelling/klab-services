@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 /**
- * Compile information about the dataflow into one of these, so that we can validate everything in one place and
+ * Gather information about a dataflow into one of these, so that we can validate everything in one place and
  * coherently. Should also become the basis to make cost estimates and select a more appropriate runtime if the scope
  * allows.
  */

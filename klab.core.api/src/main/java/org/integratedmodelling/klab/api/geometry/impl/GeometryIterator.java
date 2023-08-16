@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 
 /**
- * Simplest iterator for a geometry, producing {@link Offset} objects.
+ * Simplest iterator for a geometry, producing {@link OffsetImpl} objects.
  * 
  * @author ferdinando.villa
  *
@@ -18,7 +18,7 @@ public class GeometryIterator implements Iterator<Locator> {
 	long[] locked;
 	long offset = 0;
 
-	public GeometryIterator(Geometry geometry, Offset offset) {
+	public GeometryIterator(Geometry geometry, OffsetImpl offset) {
 		this.locked = offset.pos;
 		this.cursor = new NDCursor(geometry, locked);
 		this.geometry = geometry;
@@ -47,7 +47,7 @@ public class GeometryIterator implements Iterator<Locator> {
 				}
 			}
 		}
-		Offset ret = new Offset();
+		OffsetImpl ret = new OffsetImpl();
 		ret.pos = pos;
 		ret.length = pos.length;
 		ret.linear = scalar ? ret.computeOffset(pos, geometry) : -1;

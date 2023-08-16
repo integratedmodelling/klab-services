@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
+import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 import java.util.function.LongToDoubleFunction;
@@ -14,7 +15,7 @@ import java.util.function.LongToDoubleFunction;
  */
 public class DoubleStorage implements Storage {
 
-    public void set(double value, Locator locator) {
+    public void set(double value, Offset locator) {
 
     }
 

@@ -4,19 +4,18 @@ import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.DirectObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationGroupImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.StateImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.*;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.extension.Contextualizer;
+import org.integratedmodelling.klab.runtime.storage.StorageCore;
 import org.integratedmodelling.klab.runtime.storage.StorageManager;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -52,6 +51,8 @@ public class DigitalTwin {
      */
     public static final String KEY = "klab.context.data";
 
+    StorageCore storageCore;
+
     /**
      * The asset catalog. Most importantly for disposal at end.
      */
@@ -79,6 +80,7 @@ public class DigitalTwin {
             OBJECT_CLASSIFIER
         }
 
+        Artifact.Type returnType;
         Type type;
         Contextualizer contextualizer;
         ServiceCall serviceCall;
@@ -90,9 +92,9 @@ public class DigitalTwin {
         Observation observation;
         Actuator actuator;
         // the last timestamp in the influence graph starting at this
-        long lastUpdate;
+        long lastUpdate = -1;
 
-        // in order of application
+        // list in order of application
         List<ContextualizerData> contextualizers = new ArrayList<>();
     }
 
@@ -140,6 +142,11 @@ public class DigitalTwin {
      * instead of checking at every step).
      */
 
+    public DigitalTwin(ContextScope scope) {
+        this.storageCore = new StorageCore(scope);
+    }
+
+
     /**
      * Run the passed actuator, building the necessary observations and updating all records. Sound dependency order
      * must be guaranteed by the caller. Notify whatever info we have subscribed to.
@@ -150,7 +157,7 @@ public class DigitalTwin {
      */
     public boolean runActuator(Actuator actuator, ContextScope scope) {
 
-        ObservationData data = observationData.get(actuator.getId());
+        var data = observationData.get(actuator.getId());
         if (data == null && /* shouldn't happen */ !actuator.isReference()) {
             data = new ObservationData();
             data.actuator = actuator;
@@ -175,8 +182,7 @@ public class DigitalTwin {
 
     private ObservationImpl createObservation(Actuator actuator, ContextScope scope) {
 
-        DirectObservation context = scope.getContextObservation();
-        ObservationImpl ret = switch (actuator.getObservable().getDescriptionType()) {
+        var ret = switch (actuator.getObservable().getDescriptionType()) {
             case ACKNOWLEDGEMENT -> new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
             case INSTANTIATION, CONNECTION ->
                     new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
@@ -191,17 +197,17 @@ public class DigitalTwin {
                             return (T) storage;
                         }
                     };
-            case SIMULATION, // TODO finish up
-                    CHARACTERIZATION,
+            case SIMULATION -> new ProcessImpl(actuator.getObservable(), actuator.getId(), scope);
+            case CHARACTERIZATION,
                     CLASSIFICATION,
-                    COMPILATION,
-                    DETECTION -> null;
+                    COMPILATION -> null;
+            case DETECTION -> new ConfigurationImpl(actuator.getObservable(), actuator.getId(), scope);
             default -> null;
         };
 
         add(ret);
-        if (context != null) {
-            link(ret, context);
+        if (scope.getContextObservation() != null) {
+            link(ret, scope.getContextObservation());
         }
 
         return ret;

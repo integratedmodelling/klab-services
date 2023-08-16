@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.ojalgo.concurrent.Parallelism;
+import org.springframework.security.core.parameters.P;
 
 /**
  * Storage service. In k.LAB 12+ this is invisible at the API level; storage underlies the states but it's retrieved
@@ -16,6 +17,15 @@ import org.ojalgo.concurrent.Parallelism;
 public enum StorageManager {
 
     INSTANCE;
+
+    private StorageCore getStorageImplementation(ContextScope scope) {
+        var ret = scope.getData().get(StorageCore.KEY, StorageCore.class);
+        if (ret == null) {
+            ret = new StorageCore(scope);
+            scope.getData().put(StorageCore.KEY, ret);
+        }
+        return ret;
+    }
 
     /**
      * Return a boxing storage for the requested geometry, semantics, expected parallelism, and JVM environment. Use

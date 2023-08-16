@@ -97,7 +97,7 @@ public class ObservationTask implements Future<Observation> {
 	public DigitalTwin getContextData(ContextScope scope) {
 		var dt = scope.getData().get(DigitalTwin.KEY, DigitalTwin.class);
 		if (dt == null) {
-			dt = new DigitalTwin();
+			dt = new DigitalTwin(scope);
 			scope.getData().put(DigitalTwin.KEY, dt);
 		}
 		return dt;

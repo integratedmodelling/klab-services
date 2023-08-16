@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.geometry;
 
-import org.integratedmodelling.klab.api.geometry.impl.Offset;
+import org.integratedmodelling.klab.api.geometry.impl.OffsetImpl;
 
 /**
  * Locators are topological pointers that can be used to locate and subset observations. A
@@ -17,9 +17,9 @@ import org.integratedmodelling.klab.api.geometry.impl.Offset;
  * Numeric offsets are only exposed to communicate with external raw data APIs; within k.LAB code,
  * translation should happen within the implementing classes, and the "conformant" cases where the
  * locator correspond to a simple offset without mediations should be detected and translated as
- * fast as possible. When offsets are needed, the {@link Offset} locator can be used as the class in
+ * fast as possible. When offsets are needed, the {@link OffsetImpl} locator can be used as the class in
  * a {@link #as(Class)} request. All locators should implement at least a translation to
- * {@link Offset}.
+ * {@link OffsetImpl}.
  * <p>
  * Locators can be parsed from a simple string parameters using the syntax below:
  * 
