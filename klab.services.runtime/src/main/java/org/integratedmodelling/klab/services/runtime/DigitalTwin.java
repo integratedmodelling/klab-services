@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.extension.Contextualizer;
-import org.integratedmodelling.klab.runtime.storage.StorageCore;
+import org.integratedmodelling.klab.runtime.storage.StorageScope;
 import org.integratedmodelling.klab.runtime.storage.StorageManager;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -41,6 +41,12 @@ import java.util.*;
  * completely, in case speed is no issue but maximum dataflow "fit" to the resolved object and its scale must be
  * ensured.</p>
  *
+ * <p>Ideas for the DT API and interface:</p>
+ * <ul>
+ *     <li>Use GraphQL on the main DT GET endpoint for inquiry. That could be just the URL of the runtime + the ID of
+ *     the DT.</li>
+ * </ul>
+ *
  * @author Ferd
  */
 public class DigitalTwin {
@@ -51,7 +57,7 @@ public class DigitalTwin {
      */
     public static final String KEY = "klab.context.data";
 
-    StorageCore storageCore;
+    StorageScope storageScope;
 
     /**
      * The asset catalog. Most importantly for disposal at end.
@@ -143,7 +149,7 @@ public class DigitalTwin {
      */
 
     public DigitalTwin(ContextScope scope) {
-        this.storageCore = new StorageCore(scope);
+        this.storageScope = new StorageScope(scope);
     }
 
 
