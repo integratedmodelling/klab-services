@@ -10,5 +10,13 @@ package org.integratedmodelling.klab.api.geometry;
  * strategies.</p>
  */
 public interface Scanner2D extends Geometry, Iterable<Offset> {
+    /**
+     * A 2D offset can be converted into the needed offset for the geometry. The returned object
+     * should be a threadlocal object that gets allocated only once per thread.
+     *
+     * @param x
+     * @param y
+     * @return
+     */
     Offset locate(long x, long y);
 }
