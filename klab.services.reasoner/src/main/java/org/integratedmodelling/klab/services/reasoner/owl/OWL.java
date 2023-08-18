@@ -24,7 +24,6 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -38,15 +37,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IKnowledge;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
-import org.integratedmodelling.klab.api.knowledge.ISemantic;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -60,15 +58,9 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.exceptions.KlabException;
-import org.integratedmodelling.klab.exceptions.KlabIOException;
-import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
-import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
-import org.integratedmodelling.klab.utils.Pair;
-import org.integratedmodelling.klab.utils.Path;
 import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.AxiomType;
@@ -641,7 +633,7 @@ public class OWL {
 			return null;
 		}
 
-		String oid = "auth_" + Path.getFirst(identity.getAuthorityName(), ".").toLowerCase();
+		String oid = "auth_" + Utils.Paths.getFirst(identity.getAuthorityName(), ".").toLowerCase();
 		boolean isNew = getOntology(oid) == null;
 		Ontology ontology = requireOntology(oid, OWL.INTERNAL_ONTOLOGY_PREFIX);
 
@@ -664,7 +656,7 @@ public class OWL {
 				baseIdentity = StringUtils.capitalize(oid.toLowerCase()) + "Identity";
 			} else {
 				// TODO recursively resolve the base identity
-				throw new KlabUnimplementedException(
+				throw new KUnimplementedException(
 						"explicit base identities for authority concepts are still unimplemented");
 			}
 
@@ -691,12 +683,12 @@ public class OWL {
 			axioms.add(Axiom.SubClass(baseIdentity, identity.getConceptName()));
 			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.REFERENCE_NAME_PROPERTY, "auth_"
 					+ identity.getAuthorityName().toLowerCase() + "_" + identity.getConceptName().toLowerCase()));
-			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), IMetadata.DC_LABEL, identity.getLabel()));
+			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), Metadata.DC_LABEL, identity.getLabel()));
 			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.DISPLAY_LABEL_PROPERTY,
 					identity.getLabel()));
 			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.AUTHORITY_ID_PROPERTY,
 					identity.getAuthorityName()));
-			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), IMetadata.DC_COMMENT,
+			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), Metadata.DC_COMMENT,
 					identity.getDescription()));
 			axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.CONCEPT_DEFINITION_PROPERTY,
 					identity.getLocator()));
@@ -1370,7 +1362,7 @@ public class OWL {
 		// Services.INSTANCE.getReasoner().context(observable),
 		// Services.INSTANCE.getReasoner().inherent(observable));
 
-		return new Pair<>(root, tret);
+		return Pair.of(root, tret);
 	}
 
 	public void addTrait(Concept main, Concept trait, Ontology ontology) {

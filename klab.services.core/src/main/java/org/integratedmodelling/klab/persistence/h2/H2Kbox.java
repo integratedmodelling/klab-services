@@ -28,10 +28,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.exceptions.KStorageException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.exceptions.KlabException;
-import org.integratedmodelling.klab.exceptions.KlabStorageException;
 
 /**
  * Poor-man hybernate with Thinklab-specialized query language, aware of
@@ -54,11 +53,11 @@ public abstract class H2Kbox {
 		database = H2Database.create(name);
 	}
 
-	public <T> List<T> query(String query, Class<T> cls, Channel monitor) throws KlabException {
+	public <T> List<T> query(String query, Class<T> cls, Channel monitor) {
 		return querySql(query, cls, monitor);
 	}
 
-	public <T> List<T> querySql(String query, Class<T> cls, Channel monitor) throws KlabException {
+	public <T> List<T> querySql(String query, Class<T> cls, Channel monitor) {
 
 		Deserializer deserializer = getDeserializer(cls);
 
@@ -74,7 +73,7 @@ public abstract class H2Kbox {
 					try {
 						((DeferredDeserializer<T>) deserializer).addId(rs.getLong(FIELD_PKEY));
 					} catch (SQLException e) {
-						throw new KlabStorageException(e);
+						throw new KStorageException(e);
 					}
 				} else {
 					ret.add(((DirectDeserializer<T>) deserializer).deserialize(rs));
@@ -97,12 +96,12 @@ public abstract class H2Kbox {
 			}
 		}
 		if (ret == null) {
-			throw new KlabStorageException("kbox: no deserializer for class " + cls.getCanonicalName());
+			throw new KStorageException("kbox: no deserializer for class " + cls.getCanonicalName());
 		}
 		return ret;
 	}
 
-	public long store(Object o, Scope monitor) throws KlabException {
+	public long store(Object o, Scope monitor) {
 		return database.storeObject(o, 0l, getSerializer(o.getClass()), monitor);
 	}
 
@@ -115,27 +114,27 @@ public abstract class H2Kbox {
 			}
 		}
 		if (ret == null) {
-			throw new KlabStorageException("kbox: no serializer for class " + cls.getCanonicalName());
+			throw new KStorageException("kbox: no serializer for class " + cls.getCanonicalName());
 		}
 		return ret;
 	}
 
-	public <T> T retrieve(long id, Class<T> cls) throws KlabException {
+	public <T> T retrieve(long id, Class<T> cls)  {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public void remove(long id) throws KlabException {
+	public void remove(long id)  {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void remove(String query) throws KlabException {
+	public void remove(String query) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void clear() throws KlabException {
+	public void clear() {
 		// TODO Auto-generated method stub
 
 	}
@@ -238,7 +237,7 @@ public abstract class H2Kbox {
 
 	}
 
-	protected int deleteAllObjectsWithNamespace(String namespaceId, Channel monitor) throws KlabException {
+	protected int deleteAllObjectsWithNamespace(String namespaceId, Channel monitor) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

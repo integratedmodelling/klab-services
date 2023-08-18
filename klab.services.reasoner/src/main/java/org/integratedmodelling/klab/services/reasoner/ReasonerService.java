@@ -20,11 +20,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IConcept;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
@@ -59,6 +57,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
+import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
@@ -76,7 +75,6 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -491,6 +489,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 	public Collection<Concept> closure(Semantics target) {
 		return this.owl.getSemanticClosure(target.asConcept());
 	}
+	
+    @Override
+    public boolean resolves(Semantics toResolve, Semantics other, Semantics context) {
+        return semanticDistance(toResolve, other, context) >= 0;
+    }
+
 
 	@Override
 	public int semanticDistance(Semantics target, Semantics other) {
@@ -1033,7 +1037,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 		String ret = t.getMetadata().get(NS.DISPLAY_LABEL_PROPERTY, String.class);
 
 		if (ret == null) {
-			ret = t.getMetadata().get(IMetadata.DC_LABEL, String.class);
+			ret = t.getMetadata().get(Metadata.DC_LABEL, String.class);
 		}
 		if (ret == null) {
 			ret = t.getName();
@@ -1054,7 +1058,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
 			if (operator.getSecond() instanceof Concept) {
 				ret += conceptDisplayName((Concept) operator.getSecond());
-			} else if (operator.getSecond() instanceof IObservable) {
+			} else if (operator.getSecond() instanceof Observable) {
 				ret += observableDisplayName((Observable) operator.getSecond());
 			} else {
 				ret += "_" + operator.getSecond().toString().replace(' ', '_');

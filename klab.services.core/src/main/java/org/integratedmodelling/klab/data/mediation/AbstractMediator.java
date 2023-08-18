@@ -5,13 +5,11 @@ import java.util.List;
 import javax.measure.UnitConverter;
 
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
+import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.observations.scale.IScale;
-import org.integratedmodelling.klab.api.observations.scale.space.ISpace;
-import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 
 /**
  * Host the scale-driven recontextualization mechanism for other mediators.
@@ -112,12 +110,12 @@ public abstract class AbstractMediator {
         Space ret = null;
         if (locator instanceof Scale) {
             ret = ((Scale) locator).getSpace();
-        } else if (locator instanceof ISpace) {
+        } else if (locator instanceof Space) {
             ret = (Space) locator;
         }
 
         if (ret == null) {
-            throw new KlabInternalErrorException("cannot find space locator when mediating over space");
+            throw new KInternalErrorException("cannot find space locator when mediating over space");
         }
 
         return ret;
@@ -126,14 +124,14 @@ public abstract class AbstractMediator {
     private Time getTime(Locator locator) {
 
         Time ret = null;
-        if (locator instanceof IScale) {
+        if (locator instanceof Scale) {
             ret = ((Scale) locator).getTime();
         } else if (locator instanceof Time) {
             ret = (Time) locator;
         }
 
         if (ret == null) {
-            throw new KlabInternalErrorException("cannot find time locator when mediating over space");
+            throw new KInternalErrorException("cannot find time locator when mediating over space");
         }
 
         return ret;

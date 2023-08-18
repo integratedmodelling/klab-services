@@ -26,12 +26,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.data.DataType;
+import org.integratedmodelling.klab.api.data.PODDataType;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
-import org.integratedmodelling.klab.utils.Escape;
 import org.locationtech.jts.geom.Geometry;
 
 /**
@@ -42,13 +41,13 @@ import org.locationtech.jts.geom.Geometry;
  */
 public class SQL {
 
-    public static Map<DataType, String> sqlTypes = Collections.synchronizedMap(new HashMap<>());
+    public static Map<PODDataType, String> sqlTypes = Collections.synchronizedMap(new HashMap<>());
     static {
-        sqlTypes.put(DataType.FLOAT, "FLOAT");
-        sqlTypes.put(DataType.DOUBLE, "DOUBLE");
-        sqlTypes.put(DataType.LONG, "LONG");
-        sqlTypes.put(DataType.SHAPE, "GEOMETRY");
-        sqlTypes.put(DataType.TEXT, "VARCHAR");
+        sqlTypes.put(PODDataType.FLOAT, "FLOAT");
+        sqlTypes.put(PODDataType.DOUBLE, "DOUBLE");
+        sqlTypes.put(PODDataType.LONG, "LONG");
+        sqlTypes.put(PODDataType.SHAPE, "GEOMETRY");
+        sqlTypes.put(PODDataType.TEXT, "VARCHAR");
     }
 
     public static String getType(Artifact.Type type) {
@@ -136,7 +135,7 @@ public class SQL {
         default:
             break;
         }
-        return "'" + Escape.forSQL(value.toString()) + "'";
+        return "'" + Utils.Escape.forSQL(value.toString()) + "'";
     }
 
 }

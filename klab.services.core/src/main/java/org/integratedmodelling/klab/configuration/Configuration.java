@@ -39,6 +39,7 @@ import java.util.logging.Level;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KException;
+import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -70,20 +71,16 @@ import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.utils.Utils.OS;
 import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
-import org.integratedmodelling.klab.exceptions.KlabException;
-import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ProjectionImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
-import org.integratedmodelling.klab.utils.MiscUtilities;
-import org.integratedmodelling.klab.utils.NameGenerator;
-import org.integratedmodelling.klab.utils.OS;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 import org.pf4j.update.PluginInfo;
@@ -327,13 +324,13 @@ public enum Configuration {
             try {
                 pFile.createNewFile();
             } catch (IOException e) {
-                throw new KlabIOException("cannot write to configuration directory");
+                throw new KIOException("cannot write to configuration directory");
             }
         }
         try (InputStream input = new FileInputStream(pFile)) {
             this.properties.load(input);
         } catch (Exception e) {
-            throw new KlabIOException("cannot read configuration properties");
+            throw new KIOException("cannot read configuration properties");
         }
 
         registerService(new UnitServiceImpl(), UnitService.class);
@@ -516,7 +513,7 @@ public enum Configuration {
      * @throws KlabException
      */
     public List<Pair<Annotation, Class<?>>> scanPackage(String packageId,
-            Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) throws KlabException {
+            Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
 
         List<Pair<Annotation, Class<?>>> ret = new ArrayList<>();
 
@@ -577,7 +574,7 @@ public enum Configuration {
         try {
             p.store(new FileOutputStream(td), null);
         } catch (Exception e) {
-            throw new KlabIOException(e);
+            throw new KIOException(e);
         }
 
     }
@@ -738,7 +735,7 @@ public enum Configuration {
     }
 
     public File getExportFile(String export) {
-        if (MiscUtilities.isRelativePath(export)) {
+        if (Utils.Files.isRelativePath(export)) {
             return new File(getDefaultExportDirectory() + File.separator + export);
         }
         return new File(export);
@@ -759,7 +756,7 @@ public enum Configuration {
      * @return
      */
     public File getScratchDataDirectory(String directoryPrefix) {
-        File ret = new File(getTemporaryDataDirectory() + File.separator + directoryPrefix + NameGenerator.shortUUID());
+        File ret = new File(getTemporaryDataDirectory() + File.separator + directoryPrefix + Utils.Names.shortUUID());
         ret.mkdirs();
         return ret;
     }

@@ -16,15 +16,15 @@ import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
-import org.integratedmodelling.klab.Configuration;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Codelist;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityReference;
-import org.integratedmodelling.klab.exceptions.KlabIOException;
-import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
@@ -224,7 +224,7 @@ public class CaliperAuthority implements Authority {
                 }
 
             } catch (Exception e) {
-                throw new KlabIOException(e);
+                throw new KIOException(e);
             }
 
             cache.put(identityId, Utils.Json.asString(source));
@@ -285,7 +285,7 @@ public class CaliperAuthority implements Authority {
                 }
             } catch (Throwable t) {
                 // TODO monitor the error, return nothing
-                throw new KlabInternalErrorException(t);
+                throw new KInternalErrorException(t);
             }
         }
 
@@ -300,7 +300,7 @@ public class CaliperAuthority implements Authority {
                 System.out.println("CIAPA EL STATEMENT: " + statement);
             }
         } catch (Exception e) {
-            throw new KlabIOException(e);
+            throw new KIOException(e);
         }
 
     }

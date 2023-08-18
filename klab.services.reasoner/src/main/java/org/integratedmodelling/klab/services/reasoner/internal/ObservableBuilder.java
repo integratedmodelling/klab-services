@@ -10,14 +10,13 @@ import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IKnowledge;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -32,7 +31,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
-import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
@@ -345,7 +343,7 @@ public class ObservableBuilder implements Observable.Builder {
 	}
 
 	@Override
-	public Observable.Builder as(UnarySemanticOperator type, Concept... participants) throws KlabValidationException {
+	public Observable.Builder as(UnarySemanticOperator type, Concept... participants) throws KValidationException {
 
 		Concept argument = null;
 		if (resolveMain()) {
@@ -362,7 +360,7 @@ public class ObservableBuilder implements Observable.Builder {
 				((KimConceptImpl) this.declaration).setComparisonConcept(getDeclaration((participants[0])));
 			}
 			if (participants.length > 1) {
-				throw new KlabValidationException(
+				throw new KValidationException(
 						"cannot handle more than one participant concept in semantic operator");
 			}
 		}
@@ -799,7 +797,7 @@ public class ObservableBuilder implements Observable.Builder {
 	}
 
 	@Override
-	public Concept buildConcept() throws KlabValidationException {
+	public Concept buildConcept() throws KValidationException {
 
 		if (notifications.size() > 0) {
 
@@ -1269,7 +1267,7 @@ public class ObservableBuilder implements Observable.Builder {
 	}
 
 	public static String getCleanId(Concept main) {
-		String id = main.getMetadata().get(IMetadata.DC_LABEL, String.class);
+		String id = main.getMetadata().get(Metadata.DC_LABEL, String.class);
 		if (id == null) {
 			id = main.getName();
 		}
@@ -1290,7 +1288,7 @@ public class ObservableBuilder implements Observable.Builder {
 	}
 
 	@Override
-	public Observable buildObservable() throws KlabValidationException {
+	public Observable buildObservable() throws KValidationException {
 
 		Concept obs = buildConcept();
 
@@ -1425,7 +1423,7 @@ public class ObservableBuilder implements Observable.Builder {
 	private String getCodeForm(Object o, boolean reference) {
 		if (o == null) {
 			return "empty";
-		} else if (o instanceof IKnowledge) {
+		} else if (o instanceof Concept) {
 			return reference ? ((Concept) o).getReferenceName() : ((Concept) o).codeName();
 		} else if (o instanceof Integer || o instanceof Long) {
 			return ("i" + o).replaceAll("-", "_");

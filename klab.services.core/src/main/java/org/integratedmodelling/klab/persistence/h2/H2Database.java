@@ -48,17 +48,15 @@ import org.h2.engine.Constants;
 import org.h2.jdbcx.JdbcDataSource;
 import org.h2gis.functions.factory.H2GISFunctions;
 import org.h2gis.utilities.JDBCUtilities;
-import org.integratedmodelling.klab.Configuration;
-import org.integratedmodelling.klab.api.data.general.IStructuredTable;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KStorageException;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.exceptions.KlabException;
-import org.integratedmodelling.klab.exceptions.KlabIOException;
-import org.integratedmodelling.klab.exceptions.KlabStorageException;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox.Schema;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox.Serializer;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.Pair;
 
 /**
  * A wrapper to simplify the use of a H2 database. Can be used with formally
@@ -100,7 +98,7 @@ public class H2Database {
 	private Map<Class<?>, Schema> schemata = new HashMap<>();
 	private Set<Class<?>> initializedSchemata = new HashSet<>();
 
-	public List<Map<String, String>> dump(String table) throws KlabStorageException {
+	public List<Map<String, String>> dump(String table) {
 
 		List<Map<String, String>> ret = new ArrayList<>();
 
@@ -120,14 +118,14 @@ public class H2Database {
 			}
 
 		} catch (SQLException e) {
-			throw new KlabStorageException(e);
+			throw new KStorageException(e);
 		} finally {
 			try {
 				if (connection != null) {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KlabStorageException(e);
+				throw new KStorageException(e);
 			}
 		}
 
@@ -182,7 +180,7 @@ public class H2Database {
 		try {
 			pooledConnection = this.ds.getPooledConnection();
 		} catch (SQLException e) {
-			throw new KlabStorageException(e);
+			throw new KStorageException(e);
 		}
 
 		if (isNew) {
@@ -192,7 +190,7 @@ public class H2Database {
 				execute("INSERT INTO hids VALUES (1)");
 				execute("CREATE TABLE knowledge_structure (knowledge VARCHAR(256) PRIMARY KEY, structure VARCHAR(4096))");
 			} catch (Exception e) {
-				throw new KlabStorageException(e);
+				throw new KStorageException(e);
 			}
 		} else {
 			try {
@@ -200,8 +198,8 @@ public class H2Database {
 				/*
 				 * TODO fill derivedConcept cache
 				 */
-			} catch (KlabException e) {
-				throw new KlabStorageException(e);
+			} catch (Exception e) {
+				throw new KStorageException(e);
 			}
 		}
 		datastores.put(kboxName, this);
@@ -251,8 +249,8 @@ public class H2Database {
 		long ret = oid.getAndIncrement();
 		try {
 			execute("UPDATE hids SET id = " + (ret + 1));
-		} catch (KlabException e) {
-			throw new KlabStorageException(e);
+		} catch (Exception e) {
+			throw new KStorageException(e);
 		}
 		return ret;
 	}
@@ -270,7 +268,7 @@ public class H2Database {
 		return ret;
 	}
 
-	public boolean hasTable(String tableName) throws KlabException {
+	public boolean hasTable(String tableName) {
 
 		try {
 			execute("SELECT COUNT(*) FROM " + tableName + ";");
@@ -319,7 +317,7 @@ public class H2Database {
 	 * @return connection
 	 * @throws KlabStorageException
 	 */
-	public Connection getConnection() throws KlabStorageException {
+	public Connection getConnection() {
 
 		if (connection != null) {
 			return connection;
@@ -329,11 +327,11 @@ public class H2Database {
 			// FIXME must close the pooledconnection, not the wrapped connection
 			return JDBCUtilities.wrapConnection(pooledConnection.getConnection());
 		} catch (SQLException e) {
-			throw new KlabStorageException(e);
+			throw new KStorageException(e);
 		}
 	}
 
-	public void execute(String sql) throws KlabException {
+	public void execute(String sql) {
 
 		if (sql == null) {
 			// FIXME check if an exception should be thrown or if this shouldn't be
@@ -350,19 +348,19 @@ public class H2Database {
 			connection.commit();
 			// connection.close();
 		} catch (Throwable e) {
-			throw new KlabStorageException(e);
+			throw new KStorageException(e);
 		} finally {
 			try {
 				if (connection != null) {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KlabStorageException(e);
+				throw new KStorageException(e);
 			}
 		}
 	}
 
-	public void execute(String sql, Connection connection) throws KlabException {
+	public void execute(String sql, Connection connection) {
 
 		if (sql == null) {
 			// FIXME check if an exception should be thrown or if this shouldn't be
@@ -375,11 +373,11 @@ public class H2Database {
 		try {
 			connection.createStatement().execute(sql);
 		} catch (SQLException e) {
-			throw new KlabStorageException(e);
+			throw new KStorageException(e);
 		}
 	}
 
-	public void query(String sql, SQL.ResultHandler handler) throws KlabException {
+	public void query(String sql, SQL.ResultHandler handler) {
 
 		Connection connection = null;
 		Statement stmt = null;
@@ -395,7 +393,7 @@ public class H2Database {
 			}
 			handler.nResults(res);
 		} catch (SQLException e) {
-			throw new KlabStorageException(e);
+			throw new KStorageException(e);
 		} finally {
 			// jesus christ
 			try {
@@ -409,7 +407,7 @@ public class H2Database {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KlabStorageException(e);
+				throw new KStorageException(e);
 			}
 		}
 	}
@@ -423,7 +421,7 @@ public class H2Database {
 			stmt = connection.createStatement();
 			return new DBIterator(stmt.executeQuery(sql), stmt, connection);
 		} catch (SQLException e) {
-			throw new KlabStorageException(e);
+			throw new KStorageException(e);
 		}
 	}
 
@@ -460,7 +458,7 @@ public class H2Database {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KlabStorageException(e);
+				throw new KStorageException(e);
 			}
 		}
 
@@ -510,7 +508,7 @@ public class H2Database {
 					properties.load(input);
 					knownVersion = properties.getProperty(kboxName + ".h2.version");
 				} catch (IOException e) {
-					throw new KlabIOException(e);
+					throw new KIOException(e);
 				}
 			}
 			refresh = knownVersion == null;
@@ -523,7 +521,7 @@ public class H2Database {
 				try (OutputStream output = new FileOutputStream(propfile)) {
 					properties.store(output, null);
 				} catch (IOException e) {
-					throw new KlabIOException(e);
+					throw new KIOException(e);
 				}
 			}
 		}
@@ -542,7 +540,7 @@ public class H2Database {
 
 	}
 
-	public <T> long storeObject(T o, long foreignKey, Serializer<T> serializer, Channel monitor) throws KlabException {
+	public <T> long storeObject(T o, long foreignKey, Serializer<T> serializer, Channel monitor) {
 
 		Pair<Class<?>, Schema> schema = getSchema(o.getClass());
 		if (schema != null && !initializedSchemata.contains(schema.getFirst())) {
@@ -565,7 +563,7 @@ public class H2Database {
 	private Pair<Class<?>, Schema> getSchema(Class<? extends Object> cls) {
 		for (Class<?> cl : schemata.keySet()) {
 			if (cl.isAssignableFrom(cls)) {
-				return new Pair<>(cl, schemata.get(cl));
+				return Pair.of(cl, schemata.get(cl));
 			}
 		}
 		return null;
@@ -590,7 +588,7 @@ public class H2Database {
 	 * @return the list of IDs resulting, or empty
 	 * @throws KlabException
 	 */
-	public List<Long> queryIds(String query) throws KlabException {
+	public List<Long> queryIds(String query) {
 
 		final List<Long> ret = new ArrayList<>();
 		query(query, new SQL.SimpleResultHandler() {

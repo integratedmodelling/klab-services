@@ -27,9 +27,9 @@ import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
-import org.integratedmodelling.klab.exceptions.KlabIOException;
-import org.integratedmodelling.klab.exceptions.KlabValidationException;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.logging.Logging;
 
 /**
@@ -73,7 +73,7 @@ public abstract class GenericRAMIndexer<T> {
 			nrtReopenThread.start();
 
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -86,7 +86,7 @@ public abstract class GenericRAMIndexer<T> {
 			document.add(new TextField("name", getResourceLabel(resource), Store.YES));
 			document.add(new TextField("description", getResourceDescription(resource), Store.YES));
 
-			IMetadata metadata = getResourceMetadata(resource);
+			Metadata metadata = getResourceMetadata(resource);
 			if (metadata != null) {
 				for (String key : metadata.keySet()) {
 					document.add(new TextField(key, metadata.get(key).toString(), Store.YES));
@@ -97,7 +97,7 @@ public abstract class GenericRAMIndexer<T> {
 			this.data.put(id, resource);
 
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -107,7 +107,7 @@ public abstract class GenericRAMIndexer<T> {
 	 * @param resource
 	 * @return
 	 */
-	protected abstract IMetadata getResourceMetadata(T resource);
+	protected abstract Metadata getResourceMetadata(T resource);
 
 	/**
 	 * Don't return null, ever.
@@ -137,7 +137,7 @@ public abstract class GenericRAMIndexer<T> {
 		try {
 			this.writer.commit();
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -165,7 +165,7 @@ public abstract class GenericRAMIndexer<T> {
 			// hai voglia
 			return parser.parse(currentTerm + "*");
 		} catch (ParseException e) {
-			throw new KlabValidationException(e);
+			throw new KValidationException(e);
 		}
 	}
 
@@ -180,7 +180,7 @@ public abstract class GenericRAMIndexer<T> {
 			searcher = searcherManager.acquire();
 		} catch (IOException e) {
 			// adorable exception management
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 
 		try {
@@ -194,14 +194,14 @@ public abstract class GenericRAMIndexer<T> {
 				}
 			}
 		} catch (Exception e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		} finally {
 			try {
 				searcherManager.release(searcher);
 			} catch (IOException e) {
 				// unbelievable, they want it in finally and make it throw a checked
 				// exception
-				throw new KlabIOException(e);
+				throw new KIOException(e);
 			}
 		}
 

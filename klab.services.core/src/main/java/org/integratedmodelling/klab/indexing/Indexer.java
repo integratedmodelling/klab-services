@@ -31,13 +31,16 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
-import org.integratedmodelling.klab.Urn;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
@@ -51,9 +54,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.exceptions.KlabIOException;
-import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.logging.Logging;
 import org.springframework.stereotype.Service;
 
@@ -92,7 +92,7 @@ public class Indexer {
 			nrtReopenThread.start();
 
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -118,7 +118,7 @@ public class Indexer {
 
 			this.writer.addDocument(document);
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -204,7 +204,7 @@ public class Indexer {
 				this.writer.addDocument(document);
 
 			} catch (Throwable e) {
-				throw new KlabInternalErrorException(e);
+				throw new KInternalErrorException(e);
 			}
 		}
 
@@ -226,7 +226,7 @@ public class Indexer {
 		try {
 			this.writer.commit();
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -246,7 +246,7 @@ public class Indexer {
 					}
 					writer.commit();
 				} catch (Exception e) {
-					throw new KlabIOException(e);
+					throw new KIOException(e);
 				}
 			}
 		};
@@ -277,7 +277,7 @@ public class Indexer {
 			// hai voglia
 			return parser.parse("name:" + currentTerm + "*");
 		} catch (ParseException e) {
-			throw new KlabValidationException(e);
+			throw new KValidationException(e);
 		}
 	}
 
@@ -367,7 +367,7 @@ public class Indexer {
 				searcher = searcherManager.acquire();
 			} catch (IOException e) {
 				// adorable exception management
-				throw new KlabIOException(e);
+				throw new KIOException(e);
 			}
 
 			Set<String> ids = new HashSet<>();
@@ -409,14 +409,14 @@ public class Indexer {
 				}
 
 			} catch (Exception e) {
-				throw new KlabIOException(e);
+				throw new KIOException(e);
 			} finally {
 				try {
 					searcherManager.release(searcher);
 				} catch (IOException e) {
 					// fucking unbelievable, they want it in finally and make it throw a checked
 					// exception
-					throw new KlabIOException(e);
+					throw new KIOException(e);
 				}
 			}
 		}
@@ -478,7 +478,7 @@ public class Indexer {
 					searcher = searcherManager.acquire();
 				} catch (IOException e) {
 					// adorable exception management
-					throw new KlabIOException(e);
+					throw new KIOException(e);
 				}
 
 				try {
@@ -509,14 +509,14 @@ public class Indexer {
 					}
 
 				} catch (Exception e) {
-					throw new KlabIOException(e);
+					throw new KIOException(e);
 				} finally {
 					try {
 						searcherManager.release(searcher);
 					} catch (IOException e) {
 						// fucking unbelievable, they want it in finally and make it throw a checked
 						// exception
-						throw new KlabIOException(e);
+						throw new KIOException(e);
 					}
 				}
 			}

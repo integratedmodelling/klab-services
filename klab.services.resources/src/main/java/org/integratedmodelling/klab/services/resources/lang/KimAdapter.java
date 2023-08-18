@@ -95,7 +95,7 @@ public class KimAdapter {
 
         IKimNamespace original = ns.getNamespace();
         KimNamespaceImpl ret = new KimNamespaceImpl();
-        Utils.Lang.copyStatementData(original, ret);
+        LangUtils.copyStatementData(original, ret);
 
         /*
          * TODO version - if namespace doesn't have its own, use that of the k.IM project,
@@ -107,7 +107,7 @@ public class KimAdapter {
             // TODO
         }
 
-        ret.setMetadata(Utils.Lang.makeMetadata(ns.getNamespace().getMetadata()));
+        ret.setMetadata(LangUtils.makeMetadata(ns.getNamespace().getMetadata()));
         ret.setProjectName(ns.getProjectName());
 
         for (String imported : ns.getNamespace().getImportedNamespaceIds(false)) {
@@ -167,7 +167,7 @@ public class KimAdapter {
     private static KimStatementImpl adaptAcknowledgementStatement(IKimAcknowledgement statement) {
 
         KimInstanceImpl ret = new KimInstanceImpl();
-        Utils.Lang.copyStatementData(statement, ret);
+        LangUtils.copyStatementData(statement, ret);
 
         ret.setDocstring(statement.getDocstring());
         ret.setName(statement.getName());
@@ -185,7 +185,7 @@ public class KimAdapter {
     public static KimObservableImpl adaptKimObservable(IKimObservable parsed) {
 
         KimObservableImpl ret = new KimObservableImpl();
-        Utils.Lang.copyStatementData(parsed, ret);
+        LangUtils.copyStatementData(parsed, ret);
 
         ret.setAttributeIdentifier(parsed.hasAttributeIdentifier() ? parsed.getValue().toString() : null);
         ret.setValue(parsed.hasAttributeIdentifier()
@@ -249,7 +249,7 @@ public class KimAdapter {
     public static KimConceptImpl adaptKimConcept(IKimConcept original) {
 
         KimConceptImpl ret = new KimConceptImpl();
-        Utils.Lang.copyStatementData(original, ret);
+        LangUtils.copyStatementData(original, ret);
 
         ret.setObservable(original.getObservable() == null ? null : adaptKimConcept(original.getObservable()));
 
@@ -305,7 +305,7 @@ public class KimAdapter {
     public static KimSymbolDefinitionImpl adaptSymbolDefinition(IKimSymbolDefinition statement) {
 
         KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
-        Utils.Lang.copyStatementData(statement, ret);
+        LangUtils.copyStatementData(statement, ret);
 
         ret.setDefineClass(statement.getDefineClass());
         ret.setName(statement.getName());
@@ -317,7 +317,7 @@ public class KimAdapter {
     public static KimModelImpl adaptModelStatement(IKimModel statement, KimNamespaceImpl namespace) {
 
         KimModelImpl ret = new KimModelImpl();
-        Utils.Lang.copyStatementData(statement, ret);
+        LangUtils.copyStatementData(statement, ret);
 
         for (IKimObservable dep : statement.getObservables()) {
             ret.getObservables().add(adaptKimObservable(dep));
@@ -355,7 +355,7 @@ public class KimAdapter {
 
     private static KimBehavior adaptKimBehavior(IKimBehavior behavior) {
         KimBehaviorImpl ret = new KimBehaviorImpl();
-        Utils.Lang.copyStatementData(behavior, ret);
+        LangUtils.copyStatementData(behavior, ret);
         ret.setEmpty(behavior.isEmpty());
         ret.setDynamic(behavior.isDynamic());
         for (IKimAction action : behavior.getActions()) {
@@ -369,7 +369,7 @@ public class KimAdapter {
 
     private static Action adaptAction(IKimAction action) {
         ActionImpl ret = new ActionImpl();
-        Utils.Lang.copyStatementData(action, ret);
+        LangUtils.copyStatementData(action, ret);
         if (action.getComputation() != null) {
             for (IContextualizable computable : action.getComputation()) {
                 ret.getComputation().add(adaptContextualization(computable));
@@ -398,7 +398,7 @@ public class KimAdapter {
     private static Contextualizable adaptContextualization(IContextualizable contextualizable) {
 
         ContextualizableImpl ret = new ContextualizableImpl();
-        Utils.Lang.copyStatementData(contextualizable, ret);
+        LangUtils.copyStatementData(contextualizable, ret);
 
         ret.setAccordingTo(contextualizable.getAccordingTo());
         ret.setClassification(
@@ -453,7 +453,7 @@ public class KimAdapter {
 
     private static ServiceCall adaptServiceCall(IServiceCall serviceCall) {
         ServiceCallImpl ret = new ServiceCallImpl();
-        Utils.Lang.copyStatementData(serviceCall, ret);
+        LangUtils.copyStatementData(serviceCall, ret);
         ret.setName(serviceCall.getName());
         ret.getParameters().putAll(adaptParameters(serviceCall.getParameters()));
         return ret;
@@ -522,7 +522,7 @@ public class KimAdapter {
 
     private static KimLookupTable adaptLookupTable(IKimLookupTable lookupTable) {
         KimLookupTableImpl ret = new KimLookupTableImpl();
-        Utils.Lang.copyStatementData(lookupTable, ret);
+        LangUtils.copyStatementData(lookupTable, ret);
         // TODO
         return ret;
     }
@@ -533,7 +533,7 @@ public class KimAdapter {
 
     private static KimClassification adaptClassification(IKimClassification classification) {
         KimClassificationImpl ret = new KimClassificationImpl();
-        Utils.Lang.copyStatementData(classification, ret);
+        LangUtils.copyStatementData(classification, ret);
         // ret
         return ret;
     }
@@ -541,7 +541,7 @@ public class KimAdapter {
     private static KimConceptStatementImpl adaptConceptStatement(IKimConceptStatement statement, String namespace) {
 
         KimConceptStatementImpl ret = new KimConceptStatementImpl();
-        Utils.Lang.copyStatementData(statement, ret);
+        LangUtils.copyStatementData(statement, ret);
 
         ret.setAbstract(statement.isAbstract());
         ret.setAlias(statement.isAlias());

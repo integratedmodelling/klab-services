@@ -576,5 +576,11 @@ public class ReasonerClient implements Reasoner {
 		return null;
 	}
 
+    @Override
+    public boolean resolves(Semantics toResolve, Semantics candidate, Semantics context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 
 }

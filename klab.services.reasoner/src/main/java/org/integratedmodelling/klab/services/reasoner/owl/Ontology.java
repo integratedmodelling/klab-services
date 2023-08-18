@@ -37,7 +37,6 @@ import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IAxiom;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -297,7 +296,7 @@ public class Ontology /* implements IOntology */ {
     }
     
     /**
-     * Incorporate all the axioms introduced with {@link #add(IAxiom)}.
+     * Incorporate all the axioms introduced with {@link #add(Axiom)}.
      * 
      * @return
      */
@@ -324,14 +323,14 @@ public class Ontology /* implements IOntology */ {
 
             try {
 
-                if (axiom.is(IAxiom.CLASS_ASSERTION)) {
+                if (axiom.is(Axiom.CLASS_ASSERTION)) {
 
                     OWLClass newcl = factory.getOWLClass(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
                     this.ontology.getOWLOntologyManager().addAxiom(this.ontology, factory.getOWLDeclarationAxiom(newcl));
                     this.conceptIDs.put(axiom.getArgument(0).toString(),
                             owl.makeConcept(newcl, axiom.getArgument(0).toString(), id, ((Axiom) axiom).conceptType));
 
-                } else if (axiom.is(IAxiom.SUBCLASS_OF)) {
+                } else if (axiom.is(Axiom.SUBCLASS_OF)) {
 
                     OWLClass subclass = findClass(axiom.getArgument(1).toString(), errors);
                     OWLClass superclass = findClass(axiom.getArgument(0).toString(), errors);
@@ -340,7 +339,7 @@ public class Ontology /* implements IOntology */ {
                         owl.manager.addAxiom(this.ontology, factory.getOWLSubClassOfAxiom(subclass, superclass));
                     }
 
-                } else if (axiom.is(IAxiom.ANNOTATION_PROPERTY_ASSERTION)) {
+                } else if (axiom.is(Axiom.ANNOTATION_PROPERTY_ASSERTION)) {
 
                     OWLAnnotationProperty p = factory
                             .getOWLAnnotationProperty(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
@@ -350,14 +349,14 @@ public class Ontology /* implements IOntology */ {
                     this.apropertyIDs.add(axiom.getArgument(0).toString());
                     OWLMetadata.metadataVocabulary.put(p.getIRI().toString(), getName() + ":" + axiom.getArgument(0));
 
-                } else if (axiom.is(IAxiom.DATA_PROPERTY_ASSERTION)) {
+                } else if (axiom.is(Axiom.DATA_PROPERTY_ASSERTION)) {
 
                     OWLDataProperty p = factory.getOWLDataProperty(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
                     this.ontology.getOWLOntologyManager().addAxiom(this.ontology, factory.getOWLDeclarationAxiom(p));
                     this.propertyIDs.add(axiom.getArgument(0).toString());
                     this.dpropertyIDs.add(axiom.getArgument(0).toString());
 
-                } else if (axiom.is(IAxiom.DATA_PROPERTY_DOMAIN)) {
+                } else if (axiom.is(Axiom.DATA_PROPERTY_DOMAIN)) {
 
                     OWLEntity property = findProperty(axiom.getArgument(0).toString(), true, errors);
                     OWLClass classExp = findClass(axiom.getArgument(1).toString(), errors);
@@ -367,7 +366,7 @@ public class Ontology /* implements IOntology */ {
                                 factory.getOWLDataPropertyDomainAxiom(property.asOWLDataProperty(), classExp));
                     }
 
-                } else if (axiom.is(IAxiom.DATA_PROPERTY_RANGE)) {
+                } else if (axiom.is(Axiom.DATA_PROPERTY_RANGE)) {
 
                     OWLEntity property = findProperty(axiom.getArgument(0).toString(), true, errors);
                     /*
@@ -379,14 +378,14 @@ public class Ontology /* implements IOntology */ {
                     // factory.getOWLDataPropertyRangeAxiom(property.asOWLDataProperty(),
                     // classExp));
 
-                } else if (axiom.is(IAxiom.OBJECT_PROPERTY_ASSERTION)) {
+                } else if (axiom.is(Axiom.OBJECT_PROPERTY_ASSERTION)) {
 
                     OWLObjectProperty p = factory.getOWLObjectProperty(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
                     this.ontology.getOWLOntologyManager().addAxiom(this.ontology, factory.getOWLDeclarationAxiom(p));
                     this.propertyIDs.add(axiom.getArgument(0).toString());
                     this.opropertyIDs.add(axiom.getArgument(0).toString());
 
-                } else if (axiom.is(IAxiom.OBJECT_PROPERTY_DOMAIN)) {
+                } else if (axiom.is(Axiom.OBJECT_PROPERTY_DOMAIN)) {
 
                     OWLEntity property = findProperty(axiom.getArgument(0).toString(), false, errors);
                     OWLClass classExp = findClass(axiom.getArgument(1).toString(), errors);
@@ -396,7 +395,7 @@ public class Ontology /* implements IOntology */ {
                                 factory.getOWLObjectPropertyDomainAxiom(property.asOWLObjectProperty(), classExp));
                     }
 
-                } else if (axiom.is(IAxiom.OBJECT_PROPERTY_RANGE)) {
+                } else if (axiom.is(Axiom.OBJECT_PROPERTY_RANGE)) {
 
                     OWLEntity property = findProperty(axiom.getArgument(0).toString(), false, errors);
                     OWLClass classExp = findClass(axiom.getArgument(1).toString(), errors);
@@ -406,7 +405,7 @@ public class Ontology /* implements IOntology */ {
                                 factory.getOWLObjectPropertyRangeAxiom(property.asOWLObjectProperty(), classExp));
                     }
 
-                } else if (axiom.is(IAxiom.ALL_VALUES_FROM_RESTRICTION)) {
+                } else if (axiom.is(Axiom.ALL_VALUES_FROM_RESTRICTION)) {
 
                     OWLEntity property = findProperty(axiom.getArgument(1).toString(), false, errors);
                     OWLClass target = findClass(axiom.getArgument(0).toString(), errors);
@@ -417,7 +416,7 @@ public class Ontology /* implements IOntology */ {
                         owl.manager.addAxiom(this.ontology, factory.getOWLSubClassOfAxiom(target, restr));
                     }
 
-                } else if (axiom.is(IAxiom.AT_LEAST_N_VALUES_FROM_RESTRICTION)) {
+                } else if (axiom.is(Axiom.AT_LEAST_N_VALUES_FROM_RESTRICTION)) {
 
                     int n = ((Number) axiom.getArgument(3)).intValue();
 
@@ -431,7 +430,7 @@ public class Ontology /* implements IOntology */ {
                         owl.manager.addAxiom(this.ontology, factory.getOWLSubClassOfAxiom(target, restr));
                     }
 
-                } else if (axiom.is(IAxiom.AT_MOST_N_VALUES_FROM_RESTRICTION)) {
+                } else if (axiom.is(Axiom.AT_MOST_N_VALUES_FROM_RESTRICTION)) {
 
                     int n = ((Number) axiom.getArgument(3)).intValue();
 
@@ -445,7 +444,7 @@ public class Ontology /* implements IOntology */ {
                         owl.manager.addAxiom(this.ontology, factory.getOWLSubClassOfAxiom(target, restr));
                     }
 
-                } else if (axiom.is(IAxiom.EXACTLY_N_VALUES_FROM_RESTRICTION)) {
+                } else if (axiom.is(Axiom.EXACTLY_N_VALUES_FROM_RESTRICTION)) {
 
                     int n = ((Number) axiom.getArgument(3)).intValue();
 
@@ -459,7 +458,7 @@ public class Ontology /* implements IOntology */ {
                         owl.manager.addAxiom(this.ontology, factory.getOWLSubClassOfAxiom(target, restr));
                     }
 
-                } else if (axiom.is(IAxiom.SOME_VALUES_FROM_RESTRICTION)) {
+                } else if (axiom.is(Axiom.SOME_VALUES_FROM_RESTRICTION)) {
 
                     OWLEntity property = findProperty(axiom.getArgument(1).toString(), false, errors);
                     OWLClass target = findClass(axiom.getArgument(0).toString(), errors);
@@ -471,9 +470,9 @@ public class Ontology /* implements IOntology */ {
                         owl.manager.addAxiom(this.ontology, factory.getOWLSubClassOfAxiom(target, restr));
                     }
 
-                } else if (axiom.is(IAxiom.DATATYPE_DEFINITION)) {
+                } else if (axiom.is(Axiom.DATATYPE_DEFINITION)) {
 
-                } else if (axiom.is(IAxiom.DISJOINT_CLASSES)) {
+                } else if (axiom.is(Axiom.DISJOINT_CLASSES)) {
 
                     Set<OWLClassExpression> classExpressions = new HashSet<>();
                     for (Object arg : axiom) {
@@ -482,17 +481,17 @@ public class Ontology /* implements IOntology */ {
                     }
                     owl.manager.addAxiom(this.ontology, factory.getOWLDisjointClassesAxiom(classExpressions));
 
-                } else if (axiom.is(IAxiom.ASYMMETRIC_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.ASYMMETRIC_OBJECT_PROPERTY)) {
 
-                } else if (axiom.is(IAxiom.DIFFERENT_INDIVIDUALS)) {
+                } else if (axiom.is(Axiom.DIFFERENT_INDIVIDUALS)) {
 
-                } else if (axiom.is(IAxiom.DISJOINT_OBJECT_PROPERTIES)) {
+                } else if (axiom.is(Axiom.DISJOINT_OBJECT_PROPERTIES)) {
 
-                } else if (axiom.is(IAxiom.DISJOINT_DATA_PROPERTIES)) {
+                } else if (axiom.is(Axiom.DISJOINT_DATA_PROPERTIES)) {
 
-                } else if (axiom.is(IAxiom.DISJOINT_UNION)) {
+                } else if (axiom.is(Axiom.DISJOINT_UNION)) {
 
-                } else if (axiom.is(IAxiom.EQUIVALENT_CLASSES)) {
+                } else if (axiom.is(Axiom.EQUIVALENT_CLASSES)) {
 
                     Set<OWLClassExpression> classExpressions = new HashSet<>();
                     for (Object arg : axiom) {
@@ -501,35 +500,35 @@ public class Ontology /* implements IOntology */ {
                     }
                     owl.manager.addAxiom(this.ontology, factory.getOWLEquivalentClassesAxiom(classExpressions));
 
-                } else if (axiom.is(IAxiom.EQUIVALENT_DATA_PROPERTIES)) {
+                } else if (axiom.is(Axiom.EQUIVALENT_DATA_PROPERTIES)) {
 
-                } else if (axiom.is(IAxiom.EQUIVALENT_OBJECT_PROPERTIES)) {
+                } else if (axiom.is(Axiom.EQUIVALENT_OBJECT_PROPERTIES)) {
 
-                } else if (axiom.is(IAxiom.FUNCTIONAL_DATA_PROPERTY)) {
+                } else if (axiom.is(Axiom.FUNCTIONAL_DATA_PROPERTY)) {
 
                     OWLDataProperty prop = factory.getOWLDataProperty(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
                     owl.manager.addAxiom(this.ontology, factory.getOWLFunctionalDataPropertyAxiom(prop));
 
-                } else if (axiom.is(IAxiom.FUNCTIONAL_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.FUNCTIONAL_OBJECT_PROPERTY)) {
 
                     OWLObjectProperty prop = factory.getOWLObjectProperty(IRI.create(this.prefix + "#" + axiom.getArgument(0)));
                     owl.manager.addAxiom(this.ontology, factory.getOWLFunctionalObjectPropertyAxiom(prop));
 
-                } else if (axiom.is(IAxiom.INVERSE_FUNCTIONAL_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.INVERSE_FUNCTIONAL_OBJECT_PROPERTY)) {
 
-                } else if (axiom.is(IAxiom.INVERSE_OBJECT_PROPERTIES)) {
+                } else if (axiom.is(Axiom.INVERSE_OBJECT_PROPERTIES)) {
 
-                } else if (axiom.is(IAxiom.IRREFLEXIVE_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.IRREFLEXIVE_OBJECT_PROPERTY)) {
 
-                } else if (axiom.is(IAxiom.NEGATIVE_DATA_PROPERTY_ASSERTION)) {
+                } else if (axiom.is(Axiom.NEGATIVE_DATA_PROPERTY_ASSERTION)) {
 
-                } else if (axiom.is(IAxiom.NEGATIVE_OBJECT_PROPERTY_ASSERTION)) {
+                } else if (axiom.is(Axiom.NEGATIVE_OBJECT_PROPERTY_ASSERTION)) {
 
-                } else if (axiom.is(IAxiom.REFLEXIVE_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.REFLEXIVE_OBJECT_PROPERTY)) {
 
-                } else if (axiom.is(IAxiom.SUB_ANNOTATION_PROPERTY_OF)) {
+                } else if (axiom.is(Axiom.SUB_ANNOTATION_PROPERTY_OF)) {
 
-                } else if (axiom.is(IAxiom.SUB_DATA_PROPERTY)) {
+                } else if (axiom.is(Axiom.SUB_DATA_PROPERTY)) {
 
                     OWLDataProperty subdprop = (OWLDataProperty) findProperty(axiom.getArgument(1).toString(), true, errors);
                     OWLDataProperty superdprop = (OWLDataProperty) findProperty(axiom.getArgument(0).toString(), true, errors);
@@ -538,7 +537,7 @@ public class Ontology /* implements IOntology */ {
                         owl.manager.addAxiom(this.ontology, factory.getOWLSubDataPropertyOfAxiom(subdprop, superdprop));
                     }
 
-                } else if (axiom.is(IAxiom.SUB_ANNOTATION_PROPERTY)) {
+                } else if (axiom.is(Axiom.SUB_ANNOTATION_PROPERTY)) {
 
                     OWLAnnotationProperty suboprop = (OWLAnnotationProperty) findProperty(axiom.getArgument(1).toString(), false,
                             errors);
@@ -550,7 +549,7 @@ public class Ontology /* implements IOntology */ {
                                 factory.getOWLSubAnnotationPropertyOfAxiom(suboprop, superoprop));
                     }
 
-                } else if (axiom.is(IAxiom.SUB_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.SUB_OBJECT_PROPERTY)) {
 
                     OWLObjectProperty suboprop = (OWLObjectProperty) findProperty(axiom.getArgument(1).toString(), false, errors);
                     OWLObjectProperty superoprop = (OWLObjectProperty) findProperty(axiom.getArgument(0).toString(), false,
@@ -561,17 +560,17 @@ public class Ontology /* implements IOntology */ {
                                 factory.getOWLSubObjectPropertyOfAxiom(suboprop, superoprop));
                     }
 
-                } else if (axiom.is(IAxiom.SUB_PROPERTY_CHAIN_OF)) {
+                } else if (axiom.is(Axiom.SUB_PROPERTY_CHAIN_OF)) {
 
-                } else if (axiom.is(IAxiom.SYMMETRIC_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.SYMMETRIC_OBJECT_PROPERTY)) {
 
-                } else if (axiom.is(IAxiom.TRANSITIVE_OBJECT_PROPERTY)) {
+                } else if (axiom.is(Axiom.TRANSITIVE_OBJECT_PROPERTY)) {
 
-                } else if (axiom.is(IAxiom.SWRL_RULE)) {
+                } else if (axiom.is(Axiom.SWRL_RULE)) {
 
-                } else if (axiom.is(IAxiom.HAS_KEY)) {
+                } else if (axiom.is(Axiom.HAS_KEY)) {
 
-                } else if (axiom.is(IAxiom.ANNOTATION_ASSERTION)) {
+                } else if (axiom.is(Axiom.ANNOTATION_ASSERTION)) {
 
                     OWLAnnotationProperty property = findAnnotationProperty(axiom.getArgument(1).toString(), errors);
                     Object value = axiom.getArgument(2);
@@ -604,9 +603,9 @@ public class Ontology /* implements IOntology */ {
                         }
                     }
 
-                } else if (axiom.is(IAxiom.ANNOTATION_PROPERTY_DOMAIN)) {
+                } else if (axiom.is(Axiom.ANNOTATION_PROPERTY_DOMAIN)) {
 
-                } else if (axiom.is(IAxiom.ANNOTATION_PROPERTY_RANGE)) {
+                } else if (axiom.is(Axiom.ANNOTATION_PROPERTY_RANGE)) {
 
                 }
 

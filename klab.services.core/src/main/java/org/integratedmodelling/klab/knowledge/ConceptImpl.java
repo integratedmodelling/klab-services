@@ -9,12 +9,10 @@ import java.util.Set;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.IMetadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.CamelCase;
 import org.springframework.util.StringUtils;
 
 import groovy.lang.GroovyObjectSupport;
@@ -176,7 +174,7 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
         // String ret = getMetadata().get(IMetadata.DISPLAY_LABEL_PROPERTY, String.class);
         //
         // if (ret == null) {
-        String ret = getMetadata().get(IMetadata.DC_LABEL, String.class);
+        String ret = getMetadata().get(Metadata.DC_LABEL, String.class);
         // }
         if (ret == null) {
             ret = getName();
@@ -192,7 +190,7 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
     public String displayLabel() {
         String ret = displayName();
         if (!ret.contains(" ")) {
-            ret = StringUtils.capitalize(CamelCase.toLowerCase(ret, ' '));
+            ret = StringUtils.capitalize(Utils.CamelCase.toLowerCase(ret, ' '));
         }
         return ret;
     }

@@ -5,8 +5,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -20,17 +20,13 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.AssertionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Option;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Section;
 import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Table;
-import org.integratedmodelling.klab.documentation.AsciiDocBuilder.Table.Span;
-import org.integratedmodelling.klab.monitoring.Message;
+import org.integratedmodelling.klab.testing.LogFile;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.LogFile;
-import org.integratedmodelling.klab.utils.NameGenerator;
-import org.integratedmodelling.klab.utils.Path;
-import org.integratedmodelling.klab.utils.TemplateUtil;
 
 /**
  * Additional scope for actions in test scripts.
@@ -100,11 +96,11 @@ public class TestScope {
 		this.monitor = monitor;
 		this.statistics = new ArrayList<>();
 		this.docBuilder = new AsciiDocBuilder("Test report",
-				"Run by " + identity + " on " + TimeInstant.create() + " [k.LAB " + Version.getCurrent() + "]",
+				"Run by " + identity + " on " + TimeInstant.create() + " [k.LAB " + Version.CURRENT + "]",
 				Option.NUMBER_SECTIONS);
 		this.docSection = this.docBuilder.getRootSection();
 		this.docSection.action(() -> getAsciidocDescription());
-		this.testScopeId = NameGenerator.newName("testscope");
+		this.testScopeId = Utils.Names.newName("testscope");
 	}
 
 	public void onException(Throwable t) {
@@ -221,7 +217,7 @@ public class TestScope {
 
 		ActionStatistics ret = new ActionStatistics();
 		ret.setPath(action.getName());
-		ret.setName(Path.getLast(ret.getPath(), '.'));
+		ret.setName(Utils.Paths.getLast(ret.getPath(), '.'));
 		ret.setLabel(ret.getName());
 		ret.setTestCaseName(test.getName());
 		Annotation tann = Utils.Annotations.getAnnotation(action.getAnnotations(), "test");
@@ -354,11 +350,11 @@ public class TestScope {
 		}
 
 		Table table = new Table(3).spans(1, 7, 1);
-		table.addRow(new Span(2, 1), "**Overall test results**", (totalOk + "/" + (totalOk + totalFail)));
+		table.addRow(new Table.Span(2, 1), "**Overall test results**", (totalOk + "/" + (totalOk + totalFail)));
 
 		for (TestStatistics child : this.statistics) {
 
-			table.addRow(new Span(2, 1), "<<" + child.getName() + ", Test case **" + child.getName() + "**>>",
+			table.addRow(new Table.Span(2, 1), "<<" + child.getName() + ", Test case **" + child.getName() + "**>>",
 					((child.successCount() + "/" + (child.successCount() + child.failureCount()))));
 
 			int i = 1;
@@ -391,7 +387,7 @@ public class TestScope {
 		}
 		if (ok) {
 			if (assertion.getMetadata().containsKey("success")) {
-				desc.setDescriptor(TemplateUtil.substitute(assertion.getMetadata().get("success", String.class),
+				desc.setDescriptor(Utils.Templates.substitute(assertion.getMetadata().get("success", String.class),
 						"value", result, "expected", expected));
 			} else {
 				if (expected != null) {
@@ -400,7 +396,7 @@ public class TestScope {
 			}
 		} else {
 			if (assertion.getMetadata().containsKey("fail")) {
-				desc.setDescriptor(TemplateUtil.substitute(assertion.getMetadata().get("fail", String.class), "value",
+				desc.setDescriptor(Utils.Templates.substitute(assertion.getMetadata().get("fail", String.class), "value",
 						result, "expected", expected));
 			} else {
 				if (expected != null) {

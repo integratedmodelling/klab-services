@@ -24,12 +24,12 @@ import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
-import org.integratedmodelling.klab.Urn;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
-import org.integratedmodelling.klab.exceptions.KlabIOException;
-import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.logging.Logging;
 
 public class ResourceIndexer {
@@ -61,7 +61,7 @@ public class ResourceIndexer {
 			nrtReopenThread.start();
 
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -87,7 +87,7 @@ public class ResourceIndexer {
 
 			this.writer.addDocument(document);
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -95,7 +95,7 @@ public class ResourceIndexer {
 		try {
 			this.writer.commit();
 		} catch (IOException e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 	}
 
@@ -123,7 +123,7 @@ public class ResourceIndexer {
 			// hai voglia
 			return parser.parse(currentTerm + "*");
 		} catch (ParseException e) {
-			throw new KlabValidationException(e);
+			throw new KValidationException(e);
 		}
 	}
 
@@ -138,7 +138,7 @@ public class ResourceIndexer {
 			searcher = searcherManager.acquire();
 		} catch (IOException e) {
 			// adorable exception management
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		}
 
 		try {
@@ -164,14 +164,14 @@ public class ResourceIndexer {
 			}
 
 		} catch (Exception e) {
-			throw new KlabIOException(e);
+			throw new KIOException(e);
 		} finally {
 			try {
 				searcherManager.release(searcher);
 			} catch (IOException e) {
 				// unbelievable, they want it in finally and make it throw a checked
 				// exception
-				throw new KlabIOException(e);
+				throw new KIOException(e);
 			}
 		}
 

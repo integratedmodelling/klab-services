@@ -7,8 +7,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -21,7 +21,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
 import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
 
@@ -123,7 +122,7 @@ public class ScaleImpl implements Scale {
                 extents.add(TimeImpl.create(dimension));
             } else if (dimension.getType() == Type.NUMEROSITY) {
                 // TODO
-                throw new KlabUnimplementedException("numerosity extent");
+                throw new KUnimplementedException("numerosity extent");
             }
         }
         define(extents);

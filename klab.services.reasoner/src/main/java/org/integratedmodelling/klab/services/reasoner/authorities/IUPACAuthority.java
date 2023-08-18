@@ -17,7 +17,6 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.UrlEscape;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
@@ -156,7 +155,7 @@ public class IUPACAuthority implements Authority {
     }
     public List<String> getNames(String identity) {
         List<String> ret = new ArrayList<>();
-        HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + UrlEscape.escapeurl(identity) + "/" + "names")
+        HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + Utils.Escape.escapeurl(identity) + "/" + "names")
                 .asString();
         if (response.isSuccess()) {
             for (String ss : response.getBody().split("\\r?\\n")) {
@@ -167,7 +166,7 @@ public class IUPACAuthority implements Authority {
     }
 
     public String getFormula(String identity) {
-        HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + UrlEscape.escapeurl(identity) + "/" + "formula")
+        HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + Utils.Escape.escapeurl(identity) + "/" + "formula")
                 .asString();
         if (response.isSuccess()) {
             return response.getBody();
@@ -176,7 +175,7 @@ public class IUPACAuthority implements Authority {
     }
 
     public String getInChl(String identity) {
-        HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + UrlEscape.escapeurl(identity) + "/" + "stdinchi")
+        HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + Utils.Escape.escapeurl(identity) + "/" + "stdinchi")
                 .asString();
         if (response.isSuccess()) {
             String ret = response.getBody();
@@ -191,7 +190,7 @@ public class IUPACAuthority implements Authority {
 
     public String getIUPACName(String identity) {
         try {
-            HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + UrlEscape.escapeurl(identity) + "/" + "iupac_name")
+            HttpResponse<String> response = Unirest.get(RESOLVER_URL + "/" + Utils.Escape.escapeurl(identity) + "/" + "iupac_name")
                     .asString();
             if (response.isSuccess()) {
                 return response.getBody();
@@ -205,7 +204,7 @@ public class IUPACAuthority implements Authority {
     public String getIdentity(String query) {
 
         String ret = null;
-        String url = RESOLVER_URL + "/" + UrlEscape.escapeurl(query) + "/" + "stdinchikey";
+        String url = RESOLVER_URL + "/" + Utils.Escape.escapeurl(query) + "/" + "stdinchikey";
         try {
             HttpResponse<String> response = Unirest.get(url).asString();
             if (response.isSuccess()) {

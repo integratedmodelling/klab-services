@@ -58,7 +58,6 @@ import org.integratedmodelling.klab.exceptions.KlabIOException;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utilities.Utils.Lang;
 import org.integratedmodelling.klab.utils.Pair;
 import org.integratedmodelling.klab.utils.Triple;
 
@@ -106,7 +105,7 @@ public enum KActorsAdapter {
 		ret.setDeprecation(behavior.getDeprecation());
 		ret.getImports().addAll(behavior.getImports());
 		ret.getLocales().addAll(behavior.getLocales());
-		ret.setMetadata(Utils.Lang.makeMetadata(behavior.getMetadata()));
+		ret.setMetadata(LangUtils.makeMetadata(behavior.getMetadata()));
 		ret.setTag(behavior.getTag());
 		ret.setType(KActorsBehavior.Type.valueOf(behavior.getType().name()));
 
@@ -115,7 +114,7 @@ public enum KActorsAdapter {
 		}
 
 		for (IKimAnnotation annotation : behavior.getAnnotations()) {
-			ret.getAnnotations().add(Utils.Lang.makeAnnotation(annotation));
+			ret.getAnnotations().add(LangUtils.makeAnnotation(annotation));
 		}
 
 		return ret;
@@ -125,7 +124,7 @@ public enum KActorsAdapter {
 
 		KActorsActionImpl ret = new KActorsActionImpl();
 
-		Lang.copyStatementData(action, ret);
+		LangUtils.copyStatementData(action, ret);
 
 		ret.setName(action.getName());
 		ret.getArgumentNames().addAll(action.getArgumentNames());
@@ -253,7 +252,7 @@ public enum KActorsAdapter {
 			throw new KlabInternalErrorException("k.Actors adapter: can't handle statement type " + code.getType());
 		}
 
-		Lang.copyStatementData(code, ret);
+		LangUtils.copyStatementData(code, ret);
 
 		return ret;
 	}

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KActorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
@@ -19,7 +20,6 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
-import org.integratedmodelling.klab.exceptions.KlabActorException;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
 
 /**
@@ -487,7 +487,7 @@ public class KActorsScope implements VM.BehaviorScope {
 		if (this.sender != null) {
 			this.sender.tell(message);
 		}
-		throw new KlabActorException("no sender for message: " + message);
+		throw new KActorException("no sender for message: " + message);
 	}
 
 //    @Override

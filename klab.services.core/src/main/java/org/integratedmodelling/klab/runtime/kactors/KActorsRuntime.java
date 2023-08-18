@@ -4,9 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;
-import org.integratedmodelling.klab.utils.Pair;
 
 /**
  * The runtime singleton providing configuration and access to the global

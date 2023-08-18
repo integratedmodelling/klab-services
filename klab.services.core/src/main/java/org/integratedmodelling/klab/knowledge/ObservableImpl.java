@@ -27,7 +27,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.utils.CamelCase;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.util.StringUtils;
 
 import groovy.lang.GroovyObjectSupport;
@@ -357,7 +357,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     public String displayLabel() {
         String ret = displayName();
         if (!ret.contains(" ")) {
-            ret = StringUtils.capitalize(CamelCase.toLowerCase(ret, ' '));
+            ret = StringUtils.capitalize(Utils.CamelCase.toLowerCase(ret, ' '));
         }
         return ret;
     }

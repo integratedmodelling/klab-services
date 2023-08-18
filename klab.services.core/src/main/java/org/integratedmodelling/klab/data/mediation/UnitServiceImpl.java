@@ -7,6 +7,7 @@ import java.util.Map;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
+import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -14,8 +15,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.exceptions.KlabValidationException;
-import org.integratedmodelling.klab.utils.MiscUtilities;
 
 import si.uom.NonSI;
 import tech.units.indriya.format.SimpleUnitFormat;
@@ -73,7 +72,7 @@ public class UnitServiceImpl implements UnitService {
             } catch (Throwable e) {
                 // KLAB-156: Error getting the default unit
                 // caught in org.integratedmodelling.klab.model.Model.java:488
-                throw new KlabValidationException("Invalid unit: " + string);
+                throw new KValidationException("Invalid unit: " + string);
             }
         }
 

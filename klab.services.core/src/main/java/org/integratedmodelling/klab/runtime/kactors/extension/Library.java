@@ -7,9 +7,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.extensions.actors.Action;
-import org.integratedmodelling.klab.api.extensions.actors.Call;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 
 public class Library {
 
@@ -25,13 +25,13 @@ public class Library {
             this.descriptor = cid;
         }
 
-        public CallDescriptor(Action action) {
+        public CallDescriptor(KActorsAction action) {
             this.action = action;
         }
 
         private Method method;
         private Call descriptor;
-        private Action action;
+        private KActorsAction action;
         public Method getMethod() {
             return method;
         }
@@ -48,11 +48,11 @@ public class Library {
             this.descriptor = descriptor;
         }
 
-        public Action getAction() {
+        public KActorsAction getAction() {
             return action;
         }
 
-        public void setAction(Action action) {
+        public void setAction(KActorsAction action) {
             this.action = action;
         }
 

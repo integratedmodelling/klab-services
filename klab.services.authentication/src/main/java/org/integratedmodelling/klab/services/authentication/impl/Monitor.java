@@ -4,7 +4,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import org.integratedmodelling.klab.api.auth.IRuntimeIdentity;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.runtime.Channel;

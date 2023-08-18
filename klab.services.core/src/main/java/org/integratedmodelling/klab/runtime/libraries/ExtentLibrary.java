@@ -27,7 +27,6 @@ import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Argument;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.common.Urns;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.runtime.scale.space.GridImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
@@ -285,7 +284,7 @@ public class ExtentLibrary {
 
 		String value = call.getParameters().get("value", String.class);
 		Scale ret = null;
-		if (Urns.INSTANCE.isUrn(value)) {
+		if (Utils.Urns.isUrn(value)) {
 			Resource resource = scope.getService(ResourcesService.class).resolveResource(value, scope);
 			if (resource != null) {
 				ret = Scale.create(resource.getGeometry());
