@@ -16,10 +16,7 @@ import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.SemanticRole;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
@@ -1283,7 +1280,7 @@ public class ObservableBuilder implements Observable.Builder {
 	}
 
 	@Override
-	public Collection<Concept> getRemoved() {
+	public Collection<Concept> removed(Semantics result) {
 		return removed;
 	}
 

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.runtime;
+package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
@@ -24,27 +24,28 @@ import org.ojalgo.concurrent.Parallelism;
 import java.util.*;
 
 /**
- * The actual observation content kept in each local context (inside the context agent or the scope itself if local).
- * Contains the influence diagram between observations with the log of any modification event timestamp, the scheduler,
- * the event bus, any inspectors and probes, and the catalog of ID->{observation, actuator, storage, runtime data...}.
- * Also maintains the logical and physical "family trees" of observation and manages the bookkeeping of any runtime
- * assets so that they are known and disposed of properly when the context scope ends. The logical one skips the
- * instance container built for the instantiators, which is kept in the physical structure.
+ * A DigitalTwin is the server-side observation content kept for a context (inside the context agent or the scope itself
+ * if local). It contains all observations, their storage, the influence diagram between observations with the log of
+ * any modification event timestamp, the scheduler, the event manager and the catalog of ID->{observation, actuator,
+ * storage, runtime data...}. Also maintains the logical and physical "family tree" of observation and manages the
+ * bookkeeping of any runtime assets so that they are known and disposed of properly when the context scope ends. The
+ * logical tree skips the instance container built for the instantiators, which is kept in the physical structure.
  * <p>
- * Essentially the implementation of the "digital twin" accessed through the {@link ContextScope}. Eventually it can
- * have its own API although the interaction is managed through {@link ContextScope}, which should have all it needs to
- * interact with it.</p>
+ * The DigitalTwin is accessed through the {@link ContextScope}. Eventually it may have its own API contract, although
+ * all interaction is currently managed through {@link ContextScope}.</p>
  *
  * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage, so that successive
  * resolutions of instances can reuse a previous dataflow when it is applicable instead of asking the resolver again.
  * This can be configured to be applied only above a certain threshold in the number of instances, or turned off
- * completely, in case speed is no issue but maximum dataflow "fit" to the resolved object and its scale must be
- * ensured.</p>
+ * completely, in case speed and space occupation are no issue but maximum dataflow "fit" to the resolved object and its
+ * scale must be ensured.</p>
  *
  * <p>Ideas for the DT API and interface:</p>
  * <ul>
- *     <li>Use GraphQL on the main DT GET endpoint for inquiry. That could be just the URL of the runtime + the ID of
- *     the DT.</li>
+ *     <li>Use GraphQL on the main DT GET endpoint for inquiries along the observation structure and possibly the
+ *     dataflow. That could be just the URL of the runtime + /{observation|dataflow}/+ the ID of the DT/context,
+ *     possibly starting at a non-root observation or actuator (their IDs are the same). This can be the basis for
+ *     the remote digital twin API.</li>
  * </ul>
  *
  * @author Ferd
@@ -57,21 +58,33 @@ public class DigitalTwin {
      */
     public static final String KEY = "klab.context.data";
 
-    StorageScope storageScope;
-
     /**
-     * The asset catalog. Most importantly for disposal at end.
-     */
-    private Set<RuntimeAsset> runtimeAssets = new HashSet<>();
-
-    /**
-     * Types of the events that can be subscribed to and get communicated.
+     * Types of the events that can be subscribed to and get communicated. This should evolve into a comprehensive
+     * taxonomy of DT events for remote client scopes, debuggers and loggers.
      *
      * @author Ferd
      */
-    enum Event {
+    public enum Event {
 
     }
+
+    /**
+     * Fastest possible way to check if an event must be sent. This does not specify what the listeners are and is just
+     * used to wrap the event sending code.
+     */
+    private Set<Event> listenedEvents = EnumSet.noneOf(Event.class);
+
+    /*
+     * TODO another fast map of event and subscriptions.
+     */
+
+    StorageScope storageScope;
+
+    /**
+     * The local asset catalog. Most importantly for disposal at end.
+     */
+    private Set<RuntimeAsset> runtimeAssets = new HashSet<>();
+
 
     /**
      * Each contextualizer is stored here along with the call that generated it and a classification for speed.
@@ -139,10 +152,6 @@ public class DigitalTwin {
     Map<String, ObservationData> observationData = new HashMap<>();
 
     /*
-     * TODO another fast map of event and subscriptions.
-     */
-
-    /*
      * TODO a separate Inspector for debugging and testing (ideally, use a different top
      * contextualizer that talks to the inspector after checking if the inspector is not null,
      * instead of checking at every step).
@@ -206,7 +215,7 @@ public class DigitalTwin {
             case SIMULATION -> new ProcessImpl(actuator.getObservable(), actuator.getId(), scope);
             case CHARACTERIZATION,
                     CLASSIFICATION,
-                    COMPILATION -> null;
+                    COMPILATION -> null; // TODO
             case DETECTION -> new ConfigurationImpl(actuator.getObservable(), actuator.getId(), scope);
             default -> null;
         };

@@ -296,7 +296,7 @@ public interface Observable extends Semantics {
 		 * 
 		 * @return
 		 */
-		Collection<Concept> getRemoved();
+		Collection<Concept> removed(Semantics result);
 
 		/**
 		 * 

@@ -55,7 +55,7 @@ public enum SemanticRole {
             break;
         case COMPRESENT:
             break;
-        case CONTEXT:
+        case CONTEXT, INHERENT:
             return type != SemanticType.SUBJECT && type != SemanticType.AGENT;
         case COOCCURRENT:
             break;
@@ -65,9 +65,7 @@ public enum SemanticRole {
             break;
         case GROUP_OPEN:
             break;
-        case INHERENT:
-            return type != SemanticType.SUBJECT && type != SemanticType.AGENT;
-        case INLINE_VALUE:
+            case INLINE_VALUE:
             break;
         case LOGICAL_OPERATOR:
             break;
@@ -83,9 +81,9 @@ public enum SemanticRole {
         case UNARY_OPERATOR:
             break;
         case UNIT:
-            break;
+            return type.admitsUnits();
         case VALUE_OPERATOR:
-            break;
+            return type.isQuality();
         default:
             break;
 

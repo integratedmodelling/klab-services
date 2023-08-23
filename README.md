@@ -3,11 +3,16 @@
 <img src="https://docs.integratedmodelling.org/klab/_images/KLAB_LOGO.png" align="left"
      alt="k.LAB logo" width="258" height="108">
      
-This project contains version 0.11.x of k.LAB. The k.LAB software stack implements 
+The k.LAB software stack implements 
 a semantic web platform for integrated, distributed semantic modeling. See http://www.integratedmodelling.org 
 for details on k.LAB and the mission behind it.
 
 A technical overview of the k.LAB software stack is available at https://docs.integratedmodelling.org/technote/index.html. 
+The version of k.LAB currently in production is in the `klab` GitHub project. This project (`klab-services`) is a 
+complete rewrite slated to become version 1.0 of k.LAB and the reference implementation
+of the software stack. It is not currently functional and is not expected to be used in production before mid-2024.
+
+## Description of k.LAB (previous version)
 
 k.LAB aims to address the activity of _integrated modeling_, which reconciles strong 
 semantics with modeling practice, helping achieve advantages such as modularity, 
