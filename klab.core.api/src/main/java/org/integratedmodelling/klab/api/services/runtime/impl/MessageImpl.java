@@ -39,7 +39,7 @@ public class MessageImpl implements Message, Serializable {
 
 	private static final long serialVersionUID = 4889814573447834819L;
 
-	private static AtomicLong nextId = new AtomicLong(0l);
+	private static AtomicLong nextId = new AtomicLong(0L);
 	
 	private Type type;
 	private MessageClass messageClass;

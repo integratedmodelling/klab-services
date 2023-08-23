@@ -137,7 +137,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 	/**
 	 * Default interval to check for changes in Git (15 minutes in milliseconds)
 	 */
-	private long DEFAULT_GIT_SYNC_INTERVAL = 15l * 60l * 60l * 1000l;
+	private long DEFAULT_GIT_SYNC_INTERVAL = 15L * 60L * 60L * 1000L;
 
 	/**
 	 * If this is used, {@link #loadWorkspaces()} must be called explicitly after

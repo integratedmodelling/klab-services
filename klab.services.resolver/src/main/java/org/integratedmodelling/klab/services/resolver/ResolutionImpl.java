@@ -28,16 +28,14 @@ import org.jgrapht.graph.DefaultEdge;
 import com.google.common.collect.Sets;
 
 /**
- * The resolution is the result of {@link Resolver#resolve(Knowledge, ContextScope)}. It contains
- * the resolution strategy for the top-level observable, resolved by zero or more models that are
- * connected to all their dependencies in a graph. In the graph, each link reports the portion of
- * the context covered by the incoming model (possibly partial), the dependency observable resolved,
- * and the type of resolution (direct or deferred to further observation with later merging).
- * Deferred resolutions will need further resolution after the dataflow has created the deferring
+ * The resolution is the result of {@link Resolver#resolve(Knowledge, ContextScope)}. It contains the resolution
+ * strategy for the top-level observable, resolved by zero or more models that are connected to all their dependencies
+ * in a graph. In the graph, each link reports the portion of the context covered by the incoming model (possibly
+ * partial), the dependency observable resolved, and the type of resolution (direct or deferred to further observation
+ * with later merging). Deferred resolutions will need further resolution after the dataflow has created the deferring
  * observations.
- * 
- * @author Ferd
  *
+ * @author Ferd
  */
 public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionImpl.ResolutionEdge> implements Resolution {
 
@@ -96,9 +94,9 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     }
 
     /**
-     * Create a root resolution graph for the passed knowledge, pre-loading whatever has been
-     * already resolved in the passed scope.
-     * 
+     * Create a root resolution graph for the passed knowledge, pre-loading whatever has been already resolved in the
+     * passed scope.
+     *
      * @param root
      * @param scope
      */
@@ -116,7 +114,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
 
     /**
      * For child resolutions, add the hash of resolved and resolving knowledge.
-     * 
+     *
      * @param root
      * @param scale
      * @param scope
@@ -131,11 +129,10 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     }
 
     /**
-     * Merge in a successful model resolution with its original observable and coverage. Its root
-     * models become connected to the parent model passed, which is not part of the passed graph.
-     * 
+     * Merge in a successful model resolution with its original observable and coverage. Its root models become
+     * connected to the parent model passed, which is not part of the passed graph.
+     *
      * @param model
-     * 
      * @param child
      * @param mergingStrategy
      * @param direct
@@ -163,7 +160,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
         for (Pair<Knowledge, Coverage> resolved : child.resolution) {
             addVertex(resolved.getFirst());
             if (parentModel != null) {
-                addEdge(resolved.getFirst(), parentModel, new ResolutionEdge(child.resolvable, child.coverage, resolutionType));
+                addEdge(resolved.getFirst(), parentModel, new ResolutionEdge(child.resolvable, child.coverage,
+                        resolutionType));
             } else {
                 this.resolution.add(Pair.of(resolved.getFirst(), resolved.getSecond()));
             }
@@ -219,10 +217,9 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     }
 
     /**
-     * Call when starting to resolve an observable. If it's already being resolved, true will return
-     * and resolution should not take place. Otherwise it will be added to the resolving set for
-     * downstream resolutions.
-     * 
+     * Call when starting to resolve an observable. If it's already being resolved, true will return and resolution
+     * should not take place. Otherwise it will be added to the resolving set for downstream resolutions.
+     *
      * @param observable
      * @return
      */
@@ -267,13 +264,13 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
 
     /**
      * Merge in an accepted model at root level.
-     * 
-     * @param model the model accepted
-     * @param parentModel another model whose dependency is being resolved by the new model, or null
-     *        if resolving the top-level knowledge
-     * @param coverage coverage of this resolution
-     * @param observable the observable being resolved
-     * @param resolution the type of resolution that this models enables
+     *
+     * @param model       the model accepted
+     * @param parentModel another model whose dependency is being resolved by the new model, or null if resolving the
+     *                    top-level knowledge
+     * @param coverage    coverage of this resolution
+     * @param observable  the observable being resolved
+     * @param resolution  the type of resolution that this models enables
      */
     public void merge(Model model, Coverage coverage, Observable observable, ResolutionType resolution) {
 

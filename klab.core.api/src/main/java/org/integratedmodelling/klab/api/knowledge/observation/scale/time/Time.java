@@ -96,23 +96,23 @@ public interface Time extends Extent<Time> {
                 case SECOND:
                     return 1000;
                 case MINUTE:
-                    return 1000l * 60l;
+                    return 1000L * 60L;
                 case HOUR:
-                    return 1000l * 60l * 60l;
+                    return 1000L * 60L * 60L;
                 case DAY:
-                    return 1000l * 60l * 60l * 24l;
+                    return 1000L * 60L * 60L * 24L;
                 case WEEK:
-                    return 1000l * 60l * 60l * 24l * 7l;
+                    return 1000L * 60L * 60L * 24L * 7L;
                 case MONTH:
-                    return 1000l * 60l * 60l * 24l * 30;
+                    return 1000L * 60L * 60L * 24L * 30;
                 case YEAR:
-                    return 1000l * 60l * 60l * 24l * 365l;
+                    return 1000L * 60L * 60L * 24L * 365L;
                 case DECADE:
-                    return 1000l * 60l * 60l * 24l * 365l * 10l;
+                    return 1000L * 60L * 60L * 24L * 365L * 10L;
                 case CENTURY:
-                    return 1000l * 60l * 60l * 24l * 365l * 100l;
+                    return 1000L * 60L * 60L * 24L * 365L * 100L;
                 case MILLENNIUM:
-                    return 1000l * 60l * 60l * 24l * 365l * 1000l;
+                    return 1000L * 60L * 60L * 24L * 365L * 1000L;
                 default:
                     break;
 
@@ -261,25 +261,25 @@ public interface Time extends Extent<Time> {
             // order of magnitude
             Range order = Range.create(1, 9.999, false);
 
-            if (order.contains(ms / Resolution.Type.MILLENNIUM.getMilliseconds())) {
+            if (order.contains((double) ms / Resolution.Type.MILLENNIUM.getMilliseconds())) {
                 type = Resolution.Type.MILLENNIUM;
-            } else if (order.contains(ms / Resolution.Type.CENTURY.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.CENTURY.getMilliseconds())) {
                 type = Resolution.Type.CENTURY;
-            } else if (order.contains(ms / Resolution.Type.DECADE.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.DECADE.getMilliseconds())) {
                 type = Resolution.Type.DECADE;
-            } else if (order.contains(ms / Resolution.Type.YEAR.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.YEAR.getMilliseconds())) {
                 type = Resolution.Type.YEAR;
-            } else if (order.contains(ms / Resolution.Type.MONTH.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.MONTH.getMilliseconds())) {
                 type = Resolution.Type.MONTH;
-            } else if (order.contains(ms / Resolution.Type.WEEK.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.WEEK.getMilliseconds())) {
                 type = Resolution.Type.WEEK;
-            } else if (order.contains(ms / Resolution.Type.DAY.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.DAY.getMilliseconds())) {
                 type = Resolution.Type.DAY;
-            } else if (order.contains(ms / Resolution.Type.HOUR.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.HOUR.getMilliseconds())) {
                 type = Resolution.Type.HOUR;
-            } else if (order.contains(ms / Resolution.Type.MINUTE.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.MINUTE.getMilliseconds())) {
                 type = Resolution.Type.MINUTE;
-            } else if (order.contains(ms / Resolution.Type.SECOND.getMilliseconds())) {
+            } else if (order.contains((double) ms / Resolution.Type.SECOND.getMilliseconds())) {
                 type = Resolution.Type.SECOND;
             }
 

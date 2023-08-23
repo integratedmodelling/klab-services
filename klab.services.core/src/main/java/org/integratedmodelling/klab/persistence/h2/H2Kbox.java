@@ -102,7 +102,7 @@ public abstract class H2Kbox {
 	}
 
 	public long store(Object o, Scope monitor) {
-		return database.storeObject(o, 0l, getSerializer(o.getClass()), monitor);
+		return database.storeObject(o, 0L, getSerializer(o.getClass()), monitor);
 	}
 
 	@SuppressWarnings("unchecked")

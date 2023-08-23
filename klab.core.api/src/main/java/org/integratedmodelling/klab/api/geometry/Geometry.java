@@ -109,7 +109,7 @@ public interface Geometry extends Serializable, Locator {
     /**
      * Constant for undefined dimension size.
      */
-    public static final long UNDEFINED = -1l;
+    public static final long UNDEFINED = -1L;
 
     /**
      * Infinite size, only admitted for the time dimension.

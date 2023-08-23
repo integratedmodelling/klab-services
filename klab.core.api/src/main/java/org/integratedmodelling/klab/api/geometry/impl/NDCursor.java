@@ -199,7 +199,7 @@ public class NDCursor {
         multiplicity = 1;
         strides = new long[dimensions];
         for (int n = 0; n != dimensions; ++n)
-            strides[n] = 0l;
+            strides[n] = 0L;
         ordering = new int[dimensions];
         storageOrder.set(dimensions, storageOrderType);
         for (int n = 0; n != dimensions; ++n) {

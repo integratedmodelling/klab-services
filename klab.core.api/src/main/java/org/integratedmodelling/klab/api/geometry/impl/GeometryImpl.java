@@ -877,7 +877,7 @@ public class GeometryImpl implements Geometry {
         Dimension space = dimension(Dimension.Type.SPACE);
         if (gridResolution == null && space != null) {
             space.getParameters().remove(PARAMETER_SPACE_GRIDRESOLUTION);
-            ((DimensionImpl) space).shape = space.getDimensionality() == 2 ? List.of(1l, 1l) : List.of(1l);
+            ((DimensionImpl) space).shape = space.getDimensionality() == 2 ? List.of(1L, 1L) : List.of(1L);
         } else if (space != null) {
             space.getParameters().put(PARAMETER_SPACE_GRIDRESOLUTION, gridResolution);
         }
@@ -953,7 +953,7 @@ public class GeometryImpl implements Geometry {
         Dimension time = dimension(Dimension.Type.TIME);
         if (timeResolution == null && time != null) {
             time.getParameters().remove(PARAMETER_TIME_GRIDRESOLUTION);
-            ((DimensionImpl) time).shape = List.of(1l);
+            ((DimensionImpl) time).shape = List.of(1L);
         } else if (time != null) {
             time.getParameters().put(PARAMETER_TIME_GRIDRESOLUTION, timeResolution);
         }

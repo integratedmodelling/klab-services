@@ -174,7 +174,7 @@ public abstract class ObservableKbox extends H2Kbox {
             return 0;
         }
         List<Long> ret = database.queryIds("SELECT COUNT(*) from " + getMainTableId() + ";");
-        return ret.size() > 0 ? ret.get(0) : 0l;
+        return ret.size() > 0 ? ret.get(0) : 0L;
     }
 
     class ObservableSchema implements Schema {
@@ -238,7 +238,7 @@ public abstract class ObservableKbox extends H2Kbox {
      */
     public long getConceptId(Concept c) {
         Long ret = definitionHash.get(c.getUrn());
-        return ret == null ? -1l : ret;
+        return ret == null ? -1L : ret;
     }
 
     public List<String> getKnownDefinitions() {
@@ -611,11 +611,11 @@ public abstract class ObservableKbox extends H2Kbox {
     public long getNamespaceTimestamp(KimNamespace namespace) throws KlabException {
 
         if (!database.hasTable("namespaces")) {
-            return 0l;
+            return 0L;
         }
         List<Long> ret = database
                 .queryIds("SELECT timestamp FROM namespaces WHERE id = '" + Utils.Escape.forSQL(namespace.getUrn()) + "';");
-        return ret.size() > 0 ? ret.get(0) : 0l;
+        return ret.size() > 0 ? ret.get(0) : 0L;
     }
 
     protected static String nullify(String string) {

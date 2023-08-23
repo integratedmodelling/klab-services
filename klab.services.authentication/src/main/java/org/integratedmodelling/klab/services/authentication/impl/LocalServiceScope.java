@@ -89,7 +89,7 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
 
 		@Override
 		public Parameters<String> getData() {
-			return LocalService.this.getData();
+			return LocalServiceScope.this.data;
 		}
 
 	}

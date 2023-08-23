@@ -3314,7 +3314,7 @@ public class Utils {
     public static class Data {
 
         public static boolean isData(Object c) {
-            return c != null && !(c instanceof Number && ((Number) c).doubleValue() == Double.NaN);
+            return c != null && !(c instanceof Number && Double.isNaN(((Number) c).doubleValue()));
         }
 
         public static boolean isNodata(Object c) {

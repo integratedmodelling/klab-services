@@ -205,7 +205,7 @@ public class OffsetImpl implements Locator, Offset {
                 ii = 0;
 
             } else if (!token.equals(",")) {
-                Long l = token.equals("*") ? -1l : (token.equals("\u221E") ? Long.MAX_VALUE : Long.parseUnsignedLong(token));
+                Long l = token.equals("*") ? -1L : (token.equals("\u221E") ? Long.MAX_VALUE : Long.parseUnsignedLong(token));
                 if (internal != null) {
                     internal[ii++] = l;
                 } else if (i < sret.length) {

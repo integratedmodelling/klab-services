@@ -122,7 +122,7 @@ public class ResolverService extends BaseService implements Resolver {
      * the model. The first condition should be in each observeXxxx method.
      * 
      * @param knowledge
-     * @param scale
+     * @param scope
      * @return
      */
     public Resolution resolve(Knowledge knowledge, ContextScope scope) {
@@ -206,6 +206,7 @@ public class ResolverService extends BaseService implements Resolver {
             return Coverage.universal();
         }
 
+        // FIXME create a resolveStrategy() as the strategy is a first-class object
         // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy : scope.getService(Reasoner.class).inferStrategies(observable, scope)) {
             switch(strategy.getType()) {
@@ -230,8 +231,8 @@ public class ResolverService extends BaseService implements Resolver {
                         }
                     }
                 }
-            case RESOLVED:
-                break;
+//            case RESOLVED:
+//                break;
             }
         }
 

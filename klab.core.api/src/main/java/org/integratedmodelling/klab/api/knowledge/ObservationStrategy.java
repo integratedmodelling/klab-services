@@ -12,6 +12,10 @@ import java.util.List;
  * the observable is a non-resolvable abstract, the first strategy will always be the direct observation of the
  * observable with no further computations.</p>
  *
+ * <p>The observation strategy, by listing all the observables that must be resolved prior to contextualization of the
+ * target observable, also ensures that the dataflow contains all the needed references to properly maintain the
+ * influence graph in the digital twin, which picks up links as new observations are made.</p>
+ *
  * <h3>Direct observation</h3>
  *
  * <p>These considerations apply to the direct observation of an observable, not handled through alternative
@@ -28,11 +32,21 @@ import java.util.List;
  * Subject</code>), which is legal due to the operator, if one is present and nothing more specific is available. This
  * enables resolution with operators without requiring any specific handling.</p>
  *
+ * <p>An exception to the above is that models with more specific inherency than the context can be compatible, as long
+ * as the inherency observation can be made. These should only be looked up after the direct observable has not
+ * resolved, unless the observable has a direct <code>of</code> inherency specified.</p>
+ *
  * <p>The direct observation of a direct observable with concrete traits should always check if instances of
  * the base type have been observed already (i.e. the scope contains an observation of the base type) and see if the
  * base trait(s) has been resolved previously <em>within</em> the instances. If so, the result is present and the query
  * is resolved through a RESOLVED strategy, which simply produces the observation group ("folder") containing the
  * classified instances.</p>
+ *
+ * <p>After each new observation, the emergence detector must check for new matching patterns and resolve whatever
+ * configuration, relationship, subject or event has emerged, also installing the correspondent <code>change in
+ * Configuration</code> with the configuration triggers as dependencies. Configurations such as networks will be
+ * influenced by the relevant observation groups, which change when instances are added, removed or modified (e.g.
+ * through classification and characterization).</p>
  *
  * <h3>Alternative strategies</h3>
  *
@@ -69,19 +83,31 @@ import java.util.List;
  *     <code>T of Q</code></dd>
  *
  *     <dt>Instantiation of Relationship R</dt><dd>Instantiate source and, if different, target of R, most specific
- *     first, then instantiate R</dd>
+ *     first, then instantiate R.</dd>
  *
- *     <dt>Dio</dt><dd>pollo</dd>
+ *     <dt>Quality Q during event E</dt><dd>Resolve Q with temporal extension (including its change) in the context
+ *     of the context of E, instantiate E and add an aggregator that only measures the quality within the E temporal
+ *     span. This enables the correct actions for individually classified concrete events, such as March.</dd>
  *
- *     <dt>Dio</dt><dd>pollo</dd>
+ *     <dt>Any process, including <code>change in quality Q</code></dt><dd>Must ensure that the initial conditions
+ *     for all Qs that are <code>affected</code> by the process but not <code>created</code> by it are observed, i.e.
+ *     the models must also resolve and depend on the qualities themselves, unless they are qualities
+ *     <code>created</code> by the process. Note that <code>change in Q</code> affects but does not create Q. These
+ *     resolutions precede the actual resolution of P. Another strategy, if P is not resolved directly and Q is
+ *     quantifiable, is to use instead of resolution of P (after any added  dependencies) the resolution of
+ *     <code>change rate of Q</code> and add an integrator to produce the change.</dd>
  *
- *     <dt>Dio</dt><dd>pollo</dd>
+ *     <dt>Quality observables with value operators</dt><dd>Must resolve the main quality without operators,  any
+ *     observables used as arguments for the value operators, plus the contextualizers that perform the filtering</dd>
  *
- *     <dt>Dio</dt><dd>pollo</dd>
+ *     <dt><code>changed Quality</code></dt><dd>Resolve Quality with temporal extension, then insert event detector
+ *     (not sure if this can be looked up using generics)</dd>
  *
- *     <dt>Dio</dt><dd>pollo</dd>
- *
- *     <dt>Dio</dt><dd>pollo</dd>
+ *     <dt>Observables with more specialized stated inherency than the context</dt><dd>These observables specify
+ *     <code>of</code> to explicitly specialize the context, Resolve the inherency and defer the
+ *     observable, without the explicit inherency if any, to within each instance. This should also be triggered if
+ *     only models <code>within</code> a speciaiized inherent are found. This situation can also happen if a model
+ *     that only explicitly resolves <code>within</code> a specialized context is chosen.</dd>
  *
  * </dl>
  *
@@ -127,7 +153,7 @@ public interface ObservationStrategy {
      */
     List<Contextualizable> getComputations();
 
-    public static ObservationStrategy direct(Observable observable) {
+    static ObservationStrategy direct(Observable observable) {
         return new ObservationStrategy() {
 
             @Override

@@ -119,7 +119,7 @@ public class OWL {
 	private HashMap<String, ConceptImpl> xsdMappings = new HashMap<>();
 	private BiMap<Long, OWLClass> owlClasses = HashBiMap.create();
 	private BiMap<Long, ConceptImpl> conceptsById = HashBiMap.create();
-	private AtomicLong classId = new AtomicLong(1l);
+	private AtomicLong classId = new AtomicLong(1L);
 	private Scope scope;
 
 	private boolean reasonerActive;
