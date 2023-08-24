@@ -65,7 +65,6 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private Metadata metadata = Metadata.create();
 
     transient Knowledge resolving;
-
     public ObservableImpl() {
     }
 
@@ -251,6 +250,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     public DirectObservation getObserver() {
         return observer;
     }
+
     //
     // @Override
     // public boolean isGlobal() {
@@ -585,7 +585,8 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     public String toString() {
         return urn + " [" + getDescriptionType().name().toLowerCase() + "]";
     }
-//
+
+    //
 //    @Override
 //    public Observable resolvedWith(Knowledge resolvable) {
 //        ObservableImpl ret = new ObservableImpl(this);
