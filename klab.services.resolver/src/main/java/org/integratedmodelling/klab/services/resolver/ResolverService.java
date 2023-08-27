@@ -71,10 +71,10 @@ public class ResolverService extends BaseService implements Resolver {
     /*
      * The knowledge repository. Models and instances are built and kept in the resolver upon input
      * from the resource services. For now we keep everything in memory.
-     * 
+     *
      * FIXME the URNs should include the version number after @ to ensure version matching instead
      * of only storing the latest version
-     * 
+     *
      * Version of the latest loaded object is kept for everything, including namespaces
      */
     Map<String, Version> urnToVersion = Collections.synchronizedMap(new HashMap<>());
@@ -112,15 +112,10 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     /**
-     * Top-level resolution, resolve and return an independent resolution graph. This creates a new
-     * resolution graph which will contain any observations that were already resolved within the
-     * context observation in the scope, if any.
-     * 
-     * FIXME this should not take mergeInto but create it and return it, handling the various cases
-     * (models etc.) as additional resolutions merged into it. So if Instance, make it then resolve
-     * its observable and merge; if model, make it for the observable and merge the resolution of
-     * the model. The first condition should be in each observeXxxx method.
-     * 
+     * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution graph
+     * which will contain any observations that were already resolved within the context observation in the scope, if
+     * any. <p>
+     *
      * @param knowledge
      * @param scope
      * @return
@@ -130,27 +125,27 @@ public class ResolverService extends BaseService implements Resolver {
         Observable observable = null;
         Scale scale = scope.getGeometry();
 
-        switch(Knowledge.classify(knowledge)) {
-        case CONCEPT:
-            observable = Observable.promote((Concept) knowledge);
-            break;
-        case INSTANCE:
-            observable = ((Instance) knowledge).getObservable();
-            scale = ((Instance) knowledge).getScale();
-            scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
-            break;
-        case MODEL:
-            observable = ((Model) knowledge).getObservables().get(0);
-            break;
-        case OBSERVABLE:
-            observable = (Observable) knowledge;
-            break;
-        case RESOURCE:
-            // break; for now just refuse it
-        default:
-            // throw new KIllegalStateException("knowledge " + knowledge + " is not
-            // resolvable");
-            break;
+        switch (Knowledge.classify(knowledge)) {
+            case CONCEPT:
+                observable = Observable.promote((Concept) knowledge);
+                break;
+            case INSTANCE:
+                observable = ((Instance) knowledge).getObservable();
+                scale = ((Instance) knowledge).getScale();
+                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
+                break;
+            case MODEL:
+                observable = ((Model) knowledge).getObservables().get(0);
+                break;
+            case OBSERVABLE:
+                observable = (Observable) knowledge;
+                break;
+            case RESOURCE:
+                // break; for now just refuse it
+            default:
+                // throw new KIllegalStateException("knowledge " + knowledge + " is not
+                // resolvable");
+                break;
         }
 
         if (scale == null || scale.isEmpty()) {
@@ -165,7 +160,8 @@ public class ResolverService extends BaseService implements Resolver {
 
         ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
         if (knowledge instanceof Model) {
-            resolveModel((Model) knowledge, observable, scale, scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
+            resolveModel((Model) knowledge, observable, scale,
+                    scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
                     ret);
         } else {
             resolveObservable(observable, scale, scope, ret, null);
@@ -176,16 +172,16 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     /**
-     * We always resolve an observable first. This only reports coverage as it does not directly
-     * create a resolution graph; this is done when resolving a model, which creates a graph and
-     * merges it with the parent graph if successful.
-     * 
+     * We always resolve an observable first. This only reports coverage as it does not directly create a resolution
+     * graph; this is done when resolving a model, which creates a graph and merges it with the parent graph if
+     * successful.
+     *
      * @param observable
      * @param parent
      * @return
      */
     private Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope, ResolutionImpl parent,
-            Model parentModel) {
+                                       Model parentModel) {
 
         /**
          * Make graph merging parent Set coverage to scale, 0; Strategies/models: foreach model:
@@ -206,33 +202,64 @@ public class ResolverService extends BaseService implements Resolver {
             return Coverage.universal();
         }
 
-        // FIXME create a resolveStrategy() as the strategy is a first-class object
         // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy : scope.getService(Reasoner.class).inferStrategies(observable, scope)) {
-            switch(strategy.getType()) {
-            case DEREIFYING:
-                // resolve the deferral, then merge with deferral
-                break;
-            case DIRECT:
-                for (Model model : queryModels(observable, scope, scale)) {
-                    ResolutionImpl resolution = resolveModel(model, observable, scale,
-                            scope.withResolutionNamespace(model.getNamespace()), parent);
-                    ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
-                    if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
-                        continue;
-                    }
-                    // merge the model at root level within the local resolution
-                    resolution.merge(model, ret, observable, ResolutionType.DIRECT);
-                    if (ret.isRelevant()) {
-                        // merge the resolution with the parent resolution
-                        parent.merge(parentModel, resolution, ResolutionType.DIRECT);
-                        if (parent.getCoverage().isComplete()) {
-                            break;
+            // this merges any useful strategy and returns the coverage
+            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
+            ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
+            if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+                continue;
+            }
+            if (ret.isRelevant()) {
+                // merge the resolution with the parent resolution
+                parent.merge(parentModel, resolution, ResolutionType.DIRECT);
+                if (parent.getCoverage().isComplete()) {
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Resolve a single observation strategy; if the resolution succeeds, merge the resolution with the parent.
+     *
+     * @param strategy
+     * @param scale
+     * @param scope
+     * @param parent
+     * @param parentModel
+     * @return
+     */
+    private ResolutionImpl resolveStrategy(ObservationStrategy strategy, Scale scale, ContextScope scope,
+                                     ResolutionImpl parent,
+                                     Model parentModel) {
+
+        Coverage coverage = Coverage.create(scale, 0.0);
+        ResolutionImpl ret = new ResolutionImpl(strategy.getObservable(), scale, scope, parent);
+
+        for (Pair<ObservationStrategy.Operation, ObservationStrategy.Arguments> operation : strategy) {
+            switch (operation.getFirst()) {
+                case RESOLVE -> {
+                    for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
+                        ResolutionImpl resolution = resolveModel(model, strategy.getObservable(), scale,
+                                scope.withResolutionNamespace(model.getNamespace()), parent);
+                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
+                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+                            continue;
+                        }
+                        // merge the model at root level within the local resolution
+                        resolution.merge(model, coverage, strategy.getObservable(), ResolutionType.DIRECT);
+                        if (coverage.isRelevant()) {
+                            // merge the resolution with the parent resolution
+                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
+                            if (parent.getCoverage().isComplete()) {
+                                break;
+                            }
                         }
                     }
                 }
-//            case RESOLVED:
-//                break;
             }
         }
 
@@ -241,7 +268,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     /**
      * Parent is for the observable, model gets added if it contributes, then its dependencies
-     * 
+     *
      * @param model
      * @param scale
      * @param scope
@@ -249,7 +276,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @return
      */
     private ResolutionImpl resolveModel(Model model, Observable observable, Scale scale, ContextScope scope,
-            ResolutionImpl parent) {
+                                        ResolutionImpl parent) {
 
         ResolutionImpl ret = new ResolutionImpl(observable, scale, scope, parent);
         Coverage coverage = Coverage.create(scale, 1.0);
@@ -280,7 +307,8 @@ public class ResolverService extends BaseService implements Resolver {
         for (Pair<Knowledge, Coverage> root : resolution.getResolution()) {
 
             if (root.getFirst() instanceof Model) {
-                var actuator = compileActuator((Model) root.getFirst(), resolution, resolution.getResolvable(), rootActuator,
+                var actuator = compileActuator((Model) root.getFirst(), resolution, resolution.getResolvable(),
+                        rootActuator,
                         compiled, scope);
                 if (rootActuator == null) {
                     ret.getComputation().add(actuator);
@@ -295,8 +323,9 @@ public class ResolverService extends BaseService implements Resolver {
         return ret;
     }
 
-    private ActuatorImpl compileActuator(Model model, Resolution resolution, Observable observable, Actuator rootActuator,
-            Map<String, Actuator> compiled, ContextScope scope) {
+    private ActuatorImpl compileActuator(Model model, Resolution resolution, Observable observable,
+                                         Actuator rootActuator,
+                                         Map<String, Actuator> compiled, ContextScope scope) {
 
         ActuatorImpl ret = null;
 
@@ -312,7 +341,8 @@ public class ResolverService extends BaseService implements Resolver {
                 for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model, type)) {
                     // alias is the dependency getName()
                     if (resolved.getFirst() instanceof Model) {
-                        var dependency = compileActuator((Model) resolved.getFirst(), resolution, resolved.getSecond(), ret,
+                        var dependency = compileActuator((Model) resolved.getFirst(), resolution,
+                                resolved.getSecond(), ret,
                                 compiled, scope);
                         ret.getChildren().add(dependency);
                         ret.setCoverage(((Model) resolved.getFirst()).getCoverage().as(Geometry.class));
@@ -364,7 +394,7 @@ public class ResolverService extends BaseService implements Resolver {
      * number to the instance container's ID). A simple UUID would also work here, but this actually
      * describes it accurately and is useful for debugging. It does come out veeeery long though, so
      * we may reconsider later.
-     * 
+     *
      * IDs are not saved with the k.DL-serialized dataflow, so the implementation should never rely
      * on the ID no matter what generated it.
      */
@@ -376,7 +406,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     /**
      * Create a reference to the passed actuator
-     * 
+     *
      * @param actuator
      * @return
      */
@@ -396,31 +426,31 @@ public class ResolverService extends BaseService implements Resolver {
         var resources = scope.getService(ResourcesService.class);
         var reasoner = scope.getService(Reasoner.class);
 
-        switch(Urn.classify(urn)) {
-        case KIM_OBJECT:
-            ResourceSet set = resources.resolve(urn, scope);
-            if (set.getResults().size() == 1) {
-                ret = loadKnowledge(set, scope);
-            }
-            break;
-        case OBSERVABLE:
-            ret = reasoner.resolveObservable(urn);
-            break;
-        case RESOURCE:
-            // var resource = resources.resolveResource(urn, scope);
-            // TODO make a ModelImpl that observes this.
-            break;
-        case REMOTE_URL:
-        case UNKNOWN:
-            scope.error("cannot resolve URN '" + urn + "' to observable knowledge");
-            break;
+        switch (Urn.classify(urn)) {
+            case KIM_OBJECT:
+                ResourceSet set = resources.resolve(urn, scope);
+                if (set.getResults().size() == 1) {
+                    ret = loadKnowledge(set, scope);
+                }
+                break;
+            case OBSERVABLE:
+                ret = reasoner.resolveObservable(urn);
+                break;
+            case RESOURCE:
+                // var resource = resources.resolveResource(urn, scope);
+                // TODO make a ModelImpl that observes this.
+                break;
+            case REMOTE_URL:
+            case UNKNOWN:
+                scope.error("cannot resolve URN '" + urn + "' to observable knowledge");
+                break;
         }
         return (T) ret;
     }
 
     /**
      * Return the first resource in results, or null.
-     * 
+     *
      * @param set
      * @param scope
      * @return
@@ -431,9 +461,8 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     /**
-     * Load all the knowledge in the set from the respective services in scope, including resolving
-     * components if any.
-     * 
+     * Load all the knowledge in the set from the respective services in scope, including resolving components if any.
+     *
      * @param set
      * @param scope
      * @return
@@ -444,21 +473,21 @@ public class ResolverService extends BaseService implements Resolver {
             loadNamespace(namespace, scope);
         }
         for (Resource result : set.getResults()) {
-            switch(result.getKnowledgeClass()) {
-            case INSTANCE:
-                Instance instance = instances.get(result.getResourceUrn());
-                if (instance != null) {
-                    ret.add(instance);
-                }
-                break;
-            case MODEL:
-                Model model = models.get(result.getResourceUrn());
-                if (model != null) {
-                    ret.add(model);
-                }
-                break;
-            default:
-                break;
+            switch (result.getKnowledgeClass()) {
+                case INSTANCE:
+                    Instance instance = instances.get(result.getResourceUrn());
+                    if (instance != null) {
+                        ret.add(instance);
+                    }
+                    break;
+                case MODEL:
+                    Model model = models.get(result.getResourceUrn());
+                    if (model != null) {
+                        ret.add(model);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
         return ret;
@@ -523,7 +552,8 @@ public class ResolverService extends BaseService implements Resolver {
                 } else if (ext instanceof Extent) {
                     extents.add((Extent<?>) ext);
                 } else {
-                    throw new KIllegalStateException("the call to " + call.getName() + " did not produce a scale or an extent");
+                    throw new KIllegalStateException("the call to " + call.getName() + " did not produce a scale or " +
+                            "an extent");
                 }
             }
         }
@@ -566,10 +596,10 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     /**
-     * Query all the resource servers available in the scope to find the models that can observe the
-     * passed observable. The result should be ranked in decreasing order of fit to the context and
-     * the RESOLUTION_SCORE ranking should be in their metadata.
-     * 
+     * Query all the resource servers available in the scope to find the models that can observe the passed observable.
+     * The result should be ranked in decreasing order of fit to the context and the RESOLUTION_SCORE ranking should be
+     * in their metadata.
+     *
      * @param observable
      * @param scope
      * @return
@@ -701,8 +731,8 @@ public class ResolverService extends BaseService implements Resolver {
 
         ret.append(ofs + ")" + (actuator.getAlias() == null ? "" : (" named " + actuator.getAlias()))
                 + (actuator.getObservable().getObserver() == null
-                        ? ""
-                        : (" as " + actuator.getObservable().getObserver().getName()))
+                ? ""
+                : (" as " + actuator.getObservable().getObserver().getName()))
                 + "\n");
 
         return ret;

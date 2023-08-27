@@ -132,10 +132,9 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
      * Merge in a successful model resolution with its original observable and coverage. Its root models become
      * connected to the parent model passed, which is not part of the passed graph.
      *
-     * @param model
+     * @param parentModel
      * @param child
-     * @param mergingStrategy
-     * @param direct
+     * @param resolutionType
      * @return
      */
     public Coverage merge(Knowledge parentModel, ResolutionImpl child, ResolutionType resolutionType) {
@@ -265,12 +264,10 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     /**
      * Merge in an accepted model at root level.
      *
-     * @param model       the model accepted
-     * @param parentModel another model whose dependency is being resolved by the new model, or null if resolving the
-     *                    top-level knowledge
-     * @param coverage    coverage of this resolution
-     * @param observable  the observable being resolved
-     * @param resolution  the type of resolution that this models enables
+     * @param model      the model accepted
+     * @param coverage   coverage of this resolution
+     * @param observable the observable being resolved
+     * @param resolution the type of resolution that this models enables
      */
     public void merge(Model model, Coverage coverage, Observable observable, ResolutionType resolution) {
 

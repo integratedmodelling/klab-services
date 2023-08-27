@@ -5,7 +5,9 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 /**
  * Objects of this class tagged with @ObservationStrategy will be collected,
  * matched and sorted to address observation strategy queries.
- * 
+ *
+ * TODO experimental, unused
+ *
  * @author Ferd
  *
  */

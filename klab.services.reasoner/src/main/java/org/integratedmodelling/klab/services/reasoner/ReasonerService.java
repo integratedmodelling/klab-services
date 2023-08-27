@@ -90,7 +90,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private static final long serialVersionUID = 380622027752591182L;
 
     /**
-     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * Flag for {@link #compatible(Concept, Concept, int)}.
      * <p>
      * If passed to {@link #isCompatible(IConcept, IConcept, int)}, different realms will not determine
      * incompatibility.
@@ -2360,10 +2360,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          */
 
         /*
-         * first course of action is always direct TODO unless observable is abstract or
-         * unsatisfiable
+         * first course of action is always direct
+         * TODO unless observable is abstract or unsatisfiable
+         * TODO the other alternatives should be added only if there are no matching patterns
          */
-        ret.add(ObservationStrategy.direct(observable));
+        ret.add(ObservationStrategy.builder(observable).build());
 
         /*
          * these should be obtained from the classpath. Plug-ins may extend them.

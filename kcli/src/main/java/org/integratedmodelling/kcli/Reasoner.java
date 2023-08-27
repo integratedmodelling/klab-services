@@ -18,78 +18,82 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-		"Commands to find, access and manipulate semantic knowledge.",
-		"" }, subcommands = { Reasoner.Traits.class, Reasoner.Export.class })
+        "Commands to find, access and manipulate semantic knowledge.",
+        ""}, subcommands = {Reasoner.Traits.class, Reasoner.Export.class})
 public class Reasoner {
 
-	@Command(name = "traits", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-			"List all the traits in a concept." }, subcommands = {})
-	public static class Traits extends FunctionalCommand {
+    @Command(name = "traits", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "List all the traits in a concept."}, subcommands = {})
+    public static class Traits extends FunctionalCommand {
 
-		@Spec
-		CommandSpec commandSpec;
+        @Spec
+        CommandSpec commandSpec;
 
-		@Parameters
-		java.util.List<String> observables;
+        @Option(names = {"-i", "--inherited"}, defaultValue = "false", description = {
+                "Include inherited traits"}, required = false)
+        boolean inherited = false;
 
-		@Override
-		public void run() {
+        @Parameters
+        java.util.List<String> observables;
 
-			PrintWriter out = commandSpec.commandLine().getOut();
-			PrintWriter err = commandSpec.commandLine().getErr();
+        @Override
+        public void run() {
 
-			var urn = Utils.Strings.join(observables, " ");
-			var reasoner = Engine.INSTANCE.getCurrentUser()
-					.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
-			Concept concept = reasoner.resolveConcept(urn);
-			if (concept == null) {
-				err.println("Concept " + urn + " not found");
-			} else {
-				for (Concept c : reasoner.traits(concept)) {
-					out.println(Ansi.AUTO.string("   @|yellow " + c + "|@ " + c.getType()));
-				}
-			}
-		}
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
 
-	}
+            var urn = Utils.Strings.join(observables, " ");
+            var reasoner = Engine.INSTANCE.getCurrentUser()
+                    .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            Concept concept = reasoner.resolveConcept(urn);
+            if (concept == null) {
+                err.println("Concept " + urn + " not found");
+            } else {
+                for (Concept c : inherited ? reasoner.directTraits(concept) : reasoner.traits(concept)) {
+                    out.println(Ansi.AUTO.string("   @|yellow " + c + "|@ " + c.getType()));
+                }
+            }
+        }
 
-	@Command(name = "export", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-			"export a namespace to an OWL ontology." }, subcommands = {})
-	public static class Export extends FunctionalCommand {
+    }
 
-		@Spec
-		CommandSpec commandSpec;
+    @Command(name = "export", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "export a namespace to an OWL ontology."}, subcommands = {})
+    public static class Export extends FunctionalCommand {
 
-		@Option(names = { "-o", "--output" }, description = {
-				"Directory to output the results to" }, required = false, defaultValue = Parameters.NULL_VALUE)
-		private File output;
+        @Spec
+        CommandSpec commandSpec;
 
-		@Parameters
-		String namespace;
+        @Option(names = {"-o", "--output"}, description = {
+                "Directory to output the results to"}, required = false, defaultValue = Parameters.NULL_VALUE)
+        private File output;
 
-		@Override
-		public void run() {
+        @Parameters
+        String namespace;
 
-			PrintWriter out = commandSpec.commandLine().getOut();
-			PrintWriter err = commandSpec.commandLine().getErr();
-			var reasoner = Engine.INSTANCE.getCurrentUser()
-					.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+        @Override
+        public void run() {
 
-			if (reasoner instanceof org.integratedmodelling.klab.api.services.Reasoner.Admin) {
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+            var reasoner = Engine.INSTANCE.getCurrentUser()
+                    .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
-				if (((org.integratedmodelling.klab.api.services.Reasoner.Admin) reasoner).exportNamespace(namespace,
-						output == null ? Configuration.INSTANCE.getDefaultExportDirectory() : output)) {
-					out.println("Namespace " + namespace + " written to OWL ontologies in "
-							+ (output == null ? Configuration.INSTANCE.getDefaultExportDirectory() : output));
-				} else {
-					err.println("Export of namespace " + namespace + " failed");
-				}
-			} else {
-				err.println("Reasoner does not offer administration services in this scope");
-			}
+            if (reasoner instanceof org.integratedmodelling.klab.api.services.Reasoner.Admin) {
 
-		}
+                if (((org.integratedmodelling.klab.api.services.Reasoner.Admin) reasoner).exportNamespace(namespace,
+                        output == null ? Configuration.INSTANCE.getDefaultExportDirectory() : output)) {
+                    out.println("Namespace " + namespace + " written to OWL ontologies in "
+                            + (output == null ? Configuration.INSTANCE.getDefaultExportDirectory() : output));
+                } else {
+                    err.println("Export of namespace " + namespace + " failed");
+                }
+            } else {
+                err.println("Reasoner does not offer administration services in this scope");
+            }
 
-	}
+        }
+
+    }
 
 }
