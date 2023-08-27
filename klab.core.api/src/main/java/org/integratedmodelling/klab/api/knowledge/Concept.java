@@ -18,25 +18,11 @@ public interface Concept extends Semantics {
      */
     Metadata getMetadata();
 
-//    /**
-//     * If our semantic type is UNION or INTERSECTION, return the operands of the logical connector.
-//     * Otherwise return the singleton of this object.
-//     * 
-//     * @return
-//     */
-//    Collection<Concept> operands();
-//    
-//    Collection<Concept> children();
-//
-//    Concept parent();
-//
-//    Collection<Concept> parents();
-//    
-//    Collection<Concept> allChildren();
-//    
-//    Collection<Concept> allParents();
-//    
-//    Collection<Concept> closure();
-
-    
+    /*
+    TODO put the "Resolution"  enum of Observable here and add a method to retrieve it. The Observable should
+    have a quick way of checking if it's a pattern (i.e. there is at least one component concept with a Resolution
+    different from null) and the reasoner should have quick ways to match a pattern to another observable (probably
+    just using the semantic distance but checking only the explicit clauses) and "incarnate" a pattern into other
+    observables contextually.
+     */
 }

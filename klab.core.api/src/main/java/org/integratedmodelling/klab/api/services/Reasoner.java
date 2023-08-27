@@ -689,14 +689,14 @@ public interface Reasoner extends KlabService {
     /**
      * <p>Return all the possible strategies to observe the passed observable in this context, in order of increasing
      * cost/complexity. These will be resolved by the resolver in the order returned, stopping when coverage is enough.
-     * Except in case of abstract observables, the first should always be the direct observation of the observable
-     * without any additional computation.</p>
+     * Except in case of abstract observables or patterns, the first should always be the direct observation of the
+     * observable without any additional computation.</p>
      *
      * <p>A resolution strategy is the result of analyzing an observable to assess the different ways it can be
      * contextualized. Given an observable and a context, the reasoner produces strategies in increasing order of cost
      * and/or complexity. The resolver will resolve them in sequence, stopping when the context coverage is complete.
-     * Unless the observable is a non-resolvable abstract, the first strategy will always be the direct observation of
-     * the observable with no further computations.</p>
+     * Unless the observable is a non-resolvable abstract/pattern, the first strategy will always be the direct
+     * observation of the observable with no further computations.</p>
      *
      * <p>The observation strategy, by listing all the observables that must be resolved prior to contextualization of
      * the target observable, also ensures that the dataflow contains all the needed references to properly maintain the
@@ -706,8 +706,8 @@ public interface Reasoner extends KlabService {
      * way beyond the scope of DL reasoning. For the time being, this function is expected to hard-code the majority of
      * the resolution rules, including ¶as a minimum those summarized below. Stubs exist for an experimental extension
      * strategy based on {@link org.integratedmodelling.klab.api.knowledge.ObservationStrategyPattern} but for the time
-     * being it's not specified or used. As we're talking about reproducible science, I do NOT think that this is a place
-     * for machine-learned correlative inference.</p>
+     * being it's not specified or used. As we're talking about reproducible science, I do NOT think that this is a
+     * place for machine-learned correlative inference.</p>
      *
      * <h3>Direct observation</h3>
      *
@@ -724,10 +724,6 @@ public interface Reasoner extends KlabService {
      * <code>distance to Mountain</code> should catch <code>distance to Subject</code> (or, better, <code>distance to
      * Geolocated Subject</code>), which is legal due to the operator, if one is present and nothing more specific is
      * available. This enables resolution with operators without requiring any specific handling.</p>
-     *
-     * <p>An exception to the above is that models with more specific inherency than the context can be compatible, as
-     * long as the inherency observation can be made. These should only be looked up after the direct observable has not
-     * resolved, unless the observable has a direct <code>of</code> inherency specified.</p>
      *
      * <p>The direct observation of a direct observable with concrete traits should always check if instances of
      * the base type have been observed already (i.e. the scope contains an observation of the base type) and see if the
@@ -748,8 +744,12 @@ public interface Reasoner extends KlabService {
      *
      * <dl>
      *
+     *     <dt>Concrete Quality or resolution of direct observable</dt>
+     *     <dd>Last strategy should be the resolvable within its generalized natural context (concept pattern, e.g.
+     *     <code>geography:Elevation within any earth:Location</code>) plus aggregator</dd>
      *     <dt>Direct observable O without traits</dt>
-     *     <dd>Instantiate O without traits, then defer resolution of all instances</dd>
+     *     <dd>Instantiate O, then defer resolution of all instances by adding resolution observable after
+     *     instantiator</dd>
      *     <dt>Direct observable O with concrete traits (see above for direct strategy)</dt>
      *     <dd>Instantiate O without traits, then classify Os according to base traits of all traits (cartesian
      *     product),
