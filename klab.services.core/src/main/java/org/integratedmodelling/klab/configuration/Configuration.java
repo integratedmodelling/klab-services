@@ -37,18 +37,16 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KException;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
@@ -75,6 +73,7 @@ import org.integratedmodelling.klab.api.utils.Utils.OS;
 import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
+import org.integratedmodelling.klab.knowledge.ModelBuilderImpl;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
@@ -178,6 +177,31 @@ public enum Configuration {
             @Override
             public Coverage promoteScaleToCoverage(Scale geometry, double coverage) {
                 return new CoverageImpl(geometry, coverage);
+            }
+
+            @Override
+            public Model.Builder getModelBuilder(Observable observable) {
+                return new ModelBuilderImpl(observable);
+            }
+
+            @Override
+            public Model.Builder getModelBuilder(Artifact.Type nonSemanticType) {
+                return new ModelBuilderImpl(nonSemanticType);
+            }
+
+            @Override
+            public Model.Builder getModelBuilder(Resource resource) {
+                return new ModelBuilderImpl(resource);
+            }
+
+            @Override
+            public Model.Builder getModelBuilder(Literal value) {
+                return new ModelBuilderImpl(value);
+            }
+
+            @Override
+            public Model.Builder getModelLearner(String outputResourceUrn) {
+                return new ModelBuilderImpl(outputResourceUrn);
             }
         });
 
@@ -510,7 +534,6 @@ public enum Configuration {
      * 
      * @param packageId
      * @return all annotations found with the corresponding class
-     * @throws KlabException
      */
     public List<Pair<Annotation, Class<?>>> scanPackage(String packageId,
             Map<Class<? extends Annotation>, BiConsumer<Annotation, Class<?>>> annotationHandlers) {
@@ -752,7 +775,7 @@ public enum Configuration {
     /**
      * Return a new directory in the temporary area
      * 
-     * @param directoryName
+     * @param directoryPrefix
      * @return
      */
     public File getScratchDataDirectory(String directoryPrefix) {

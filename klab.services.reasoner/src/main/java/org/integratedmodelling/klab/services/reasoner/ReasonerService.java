@@ -19,8 +19,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -90,41 +92,41 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private static final long serialVersionUID = 380622027752591182L;
 
     /**
-     * Flag for {@link #compatible(Concept, Concept, int)}.
+     * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, different realms will not determine
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, different realms will not determine
      * incompatibility.
      */
     static public final int ACCEPT_REALM_DIFFERENCES = 0x01;
 
     /**
-     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, only types that have the exact same core type will
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, only types that have the exact same core type will
      * be accepted.
      */
     static public final int REQUIRE_SAME_CORE_TYPE = 0x02;
 
     /**
-     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, types with roles that are more general of the roles
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with roles that are more general of the roles
      * in the first concept will be accepted.
      */
     static public final int USE_ROLE_PARENT_CLOSURE = 0x04;
 
     /**
-     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #isCompatible(IConcept, IConcept, int)}, types with traits that are more general of the
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with traits that are more general of the
      * traits in the first concept will be accepted.
      */
     static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
 
     /**
-     * Flag for {@link #isCompatible(IConcept, IConcept, int)}.
+     * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #isCompatible(IConcept, IConcept, int)} causes acceptance of subjective traits for
+     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits for
      * observables.
      */
     static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
@@ -1060,21 +1062,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     private String observableDisplayName(Observable o) {
 
-        String ret = conceptDisplayName(o.asConcept());
+        StringBuilder ret = new StringBuilder(conceptDisplayName(o.asConcept()));
 
-        for (Pair<ValueOperator, Object> operator : o.getValueOperators()) {
+        for (Pair<ValueOperator, Literal> operator : o.getValueOperators()) {
 
-            ret += StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_'));
+            ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
 
-            if (operator.getSecond() instanceof Concept) {
-                ret += conceptDisplayName((Concept) operator.getSecond());
-            } else if (operator.getSecond() instanceof Observable) {
-                ret += observableDisplayName((Observable) operator.getSecond());
+            if (operator.getSecond().getValueType() == ValueType.CONCEPT) {
+                ret.append(conceptDisplayName(operator.getSecond().get(Concept.class)));
+            } else if (operator.getSecond().getValueType() == ValueType.OBSERVABLE) {
+                ret.append(observableDisplayName(operator.getSecond().get(Observable.class)));
             } else {
-                ret += "_" + operator.getSecond().toString().replace(' ', '_');
+                ret.append("_").append(operator.getSecond().get(Object.class).toString().replace(' ', '_'));
             }
         }
-        return ret;
+        return ret.toString();
     }
 
     @Override
@@ -2204,13 +2206,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept.isGlobal()) */
                 .named(concept.getFormalName());
 
-        if (concept.isExclusive()) {
-            builder = builder.withResolution(Observable.Resolution.Only);
-        } else if (concept.isGlobal()) {
-            builder = builder.withResolution(Observable.Resolution.All);
-        } else if (concept.isGeneric()) {
-            builder = builder.withResolution(Observable.Resolution.Any);
-        }
+                // TODO gather generic concepts and abstract ones
+//        if (concept.isExclusive()) {
+//            builder = builder.withResolution(Observable.Resolution.Only);
+//        } else if (concept.isGlobal()) {
+//            builder = builder.withResolution(Observable.Resolution.All);
+//        } else if (concept.isGeneric()) {
+//            builder = builder.withResolution(Observable.Resolution.Any);
+//        }
 
         for (var operator : concept.getValueOperators()) {
             builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());

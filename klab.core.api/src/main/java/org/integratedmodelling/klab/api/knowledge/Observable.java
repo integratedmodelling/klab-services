@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -34,22 +35,6 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * @author Ferd
  */
 public interface Observable extends Semantics {
-
-    enum Resolution {
-        /**
-         * Makes the observable specify "any" child or itself, normally excluding the abstract ones or those with
-         * children.
-         */
-        Any,
-        /**
-         * Makes the observable specify all children and itself, normally excluding the abstract ones.
-         */
-        All,
-        /**
-         * Ensures the observable specifies only itself in contexts where it would normally specify subclasses too.
-         */
-        Only
-    }
 
     /**
      * Conditions stated in the observable that trigger the use of the default value. Only meaningful if a default value
@@ -205,15 +190,6 @@ public interface Observable extends Semantics {
          */
         Collection<Notification> getNotifications();
 
-//        /**
-//         * Use this to pass a declaration being parsed and set up a monitor so that logically
-//         * inconsistent declarations can be reported.
-//         * 
-//         * @param declaration (may be null)
-//         * @return the same builder this was called on, for chaining calls
-//         */
-//        Builder withDeclaration(KimConcept declaration);
-
         /**
          * @param cooccurrent
          * @return
@@ -348,24 +324,6 @@ public interface Observable extends Semantics {
          */
         Builder withDereifiedAttribute(String dereifiedAttribute);
 
-//        /**
-//         * Call after {@link #buildConcept()} or {@link #buildObservable()} to check if any change
-//         * to the ontologies were made. Returns false if the concept expression requested was
-//         * already available.
-//         * 
-//         * @return
-//         */
-//        boolean axiomsAdded();
-
-        // /**
-        // * Set the dereified status to true, so that the observable can be recognized
-        // as
-        // * being "virtual" and not linked to a model.
-        // *
-        // * @return
-        // */
-        // Builder setDereified();
-
         /**
          * Set both the name and the reference name, to preserve a previous setting
          *
@@ -428,38 +386,12 @@ public interface Observable extends Semantics {
         Builder generic(boolean generic);
 
         /**
-         * Define the resolution type for the observable.
-         *
-         * @param only
-         * @return
-         */
-        Builder withResolution(Resolution only);
-
-        /**
          * Add an annotation to the result observable.
          *
          * @param annotation
          * @return
          */
         Builder withAnnotation(Annotation annotation);
-
-        // /**
-        // * TODO check if still used
-        // *
-        // * @param global
-        // * @return
-        // */
-        // Builder global(boolean global);
-        //
-        // /**
-        // * Set the URL for the observable when it comes from a k.IM specification.
-        // Only
-        // * use with full awareness.
-        // *
-        // * @param uri
-        // * @return
-        // */
-        // Builder withUrl(String uri);
 
     }
 
@@ -493,13 +425,7 @@ public interface Observable extends Semantics {
     /**
      * @return
      */
-    Collection<Pair<ValueOperator, Object>> getValueOperators();
-
-    // /**
-    // *
-    // * @return
-    // */
-    // Collection<Concept> abstractPredicates();
+    Collection<Pair<ValueOperator, Literal>> getValueOperators();
 
     /**
      * Each observable must be able to quickly assess the type of the description (observation activity) that will
@@ -541,33 +467,6 @@ public interface Observable extends Semantics {
      */
     Literal getValue();
 
-    // /**
-    // * The context type, direct or indirect, and revised according to the stated
-    // * inherency (will be reverted to null if the indirect context is X and the
-    // * concept is <this> of X). The revision only applies to observables and does
-    // * not affect the underlying semantics.
-    // *
-    // * @return the context type
-    // */
-    // Concept context();
-    //
-    // /**
-    // * The inherent type, direct or indirect.
-    // *
-    // * @return the inherent type
-    // */
-    // Concept inherent();
-    //
-    // /**
-    // * An occurrent observable may be temporally inherent to an event, i.e. it
-    // will
-    // * happen during each instance of it. Specified by 'during each' in observable
-    // * syntax.
-    // *
-    // * @return
-    // */
-    // Concept temporalInherent();
-
     /**
      * If a default value was defined for a quality observable, it is returned here. It will be applied according to the
      * stated resolution exceptions and the optional status.
@@ -584,12 +483,11 @@ public interface Observable extends Semantics {
     Collection<ResolutionException> getResolutionExceptions();
 
     /**
-     * A generic observable expects to be resolved extensively - i.e., all the subtypes, leaving the base type last if
-     * the subtypes don't provide full coverage. This subsumes the abstract nature of the observable concept, but may
-     * also be true in dependency observables, which may explicitly ask to be generic even if not abstract ('any'
-     * modifier), or result from an abstract clause (e.g. 'during <abstract event type>').
+     * A generic observable expects to be resolved extensively - i.e., through its subtypes corresponding to the
+     * resolution of generic components (concepts declared with <code>any</code>, <code>all</code> or <code>no</code>,
+     * i.e. with getQualifier() != null). A generic observable is also abstract by definition.
      *
-     * @return true if generic
+     * @return true if the observable has generic components.
      */
     boolean isGeneric();
 
@@ -618,161 +516,34 @@ public interface Observable extends Semantics {
      */
     boolean isAbstract();
 
-    // /**
-    // * Globalized observables have "all" prepended and are used in classifiers and
-    // * other situations (but never in models) to indicate that all levels of the
-    // * subsumed asserted hierarchy should be considered, including abstract ones.
-    // *
-    // * @return
-    // */
-    // boolean isGlobal();
-
     /**
-     * If a resolution was specified, return it. If not, return null - the default resolution will depend on the context
-     * of use, and will be ignored in most models.
+     * Return all concepts that are generic or abstract within the statement of this observable. Generic means that
+     * their getQualifier() returns a non-null qualifier, therefore they must be resolved before the observable is
+     * usable. Abstract concepts in semantic roles that make the observable abstract (i.e., not where they're legitimate
+     * such as in <code>type of X</code>) are also returned here.
      *
      * @return
      */
-    Resolution getResolution();
+    Collection<Concept> getGenericComponents();
 
     /**
-     * Return any role picked up during resolution for this observable. This happens when the observable has been
-     * resolved from a generic dependency on the role, which may have been defined by the session or implied during the
-     * resolution of an upstream process or direct observable.
-     * <p>
-     * The roles returned here are not part of the observable's semantics and only apply to it in the specific
-     * resolution and contextualization scope.
+     * If the observable results from specializing a generic/abstract observable, return the pairs of matched generic ->
+     * specialized concepts substituted in this instance. The specialized concepts may have been generic or abstract.
      *
      * @return
      */
-    Collection<Concept> getContextualRoles();
-
-    // /**
-    // * Complements the equivalent {@link IConcept#resolves(IConcept, IConcept)}
-    // with
-    // * a check on value operators and other possible differences.
-    // *
-    // * @param other
-    // * @param context
-    // * @return
-    // */
-    // boolean resolves(Observable other, Concept context);
-
-    // /**
-    // * Return any abstract identity or role that are set in this observable, and
-    // * will need to be resolved to concrete ones before the observable can be
-    // * resolved. This will return an empty set if the observable is generic, as
-    // that
-    // * is handled differently.
-    // * <p>
-    // * For now abstract roles are always returned, and abstract identities are
-    // * returned only if they are required by the observable ('requires identity
-    // * ....'). This prevents unwanted resolutions of abstract predicates that may
-    // be
-    // * used as tags only: the "need" for identification must be explicitly stated.
-    // *
-    // * @return
-    // */
-    // Collection<Concept> getAbstractPredicates();
-
-    /**
-     * If the observable results from resolving another with abstract predicates, return the mapping of abstract ->
-     * concrete made by the resolver. This enables reconstructing the original abstract observable by replacing the
-     * concept after translating it using the reverse mapping of the result.
-     *
-     * @return
-     */
-    Map<Concept, Concept> getResolvedPredicates();
-
-    // /**
-    // * If true, the observable is for a dereifying observation, which just merges
-    // * the results of observations of inherent sub-contexts (e.g. runoff of
-    // * watershed, within region). Actuators for those observations aren't
-    // scheduled
-    // * and may be treated differently.
-    // *
-    // * @return true if dereified
-    // */
-    // boolean isDereified();
-
-    /**
-     * // * If true, this observable is explicitly declaring a context that is a
-     * subclass // * of the "natural" context of the primary observable. For
-     * example, "X within // * RiverBasin" when the natural context (declared for X)
-     * is "Region". This is // * used to speed search for alternative explanations
-     * that require distributing // * calculations across different objects, only
-     * done if the natural observation // * is not possible. These should only be
-     * used as the observables of models, with // * full knowledge of the drawbacks
-     * (i.e., X must be observable in the context // * and the observation within X
-     * must fully cover the observation in the natural // * context) and the flag
-     * won't be set if the same specification is given in a // * semantic
-     * declaration. // * // * @return //
-     */
-    // boolean isSpecialized();
-    //
-    // /**
-    // *
-    // * @return
-    // */
-    // Observable getDeferredTarget();
-    //
-    // /**
-    // *
-    // * @return
-    // */
-    // Observable getIncarnatedAbstractObservable();
-    //
-    // /**
-    // *
-    // * @return
-    // */
-    // boolean isMustContextualizeAtResolution();
-    //
-    // /**
-    // *
-    // * @return
-    // */
-    // String getUrl();
+    Collection<Pair<Concept, Concept>> getSpecializedComponents();
 
     /**
      * @return
      */
     String getDereifiedAttribute();
 
-    // /**
-    // *
-    // * @return
-    // */
-    // Concept getTemporalInherent();
-
     /**
      * @return
      */
     boolean isDistributedInherency();
 
-    // /**
-    // *
-    // * @return
-    // */
-    // Concept getTargetPredicate();
-
-//	/**
-//	 * This should create a copy of the observable with a transient field containing
-//	 * the knowledge object passed (a {@link Model} or an {@link Instance}), which
-//	 * resolves the observable.
-//	 * 
-//	 * @param resolvable
-//	 * @return
-//	 */
-//	public Observable resolvedWith(Knowledge resolvable);
-//
-//	/**
-//	 * Return any object set into this observable using
-//	 * {@link #resolvedWith(Knowledge)}.
-//	 * 
-//	 * @return
-//	 */
-//	public Knowledge resolving();
 
     public static Observable promote(Concept concept) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();

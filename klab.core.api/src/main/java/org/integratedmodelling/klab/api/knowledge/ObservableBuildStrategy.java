@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.Observable.Resolution;
 import org.integratedmodelling.klab.api.knowledge.Observable.ResolutionException;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
@@ -448,12 +447,6 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder generic(boolean generic) {
-        // TODO Auto-generated method stub
-        return this;
-    }
-
-    @Override
-    public Builder withResolution(Resolution only) {
         // TODO Auto-generated method stub
         return this;
     }

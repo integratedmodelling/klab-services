@@ -6,6 +6,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -29,6 +30,7 @@ public class ModelImpl implements Model {
 	private List<Contextualizable> computation = new ArrayList<>();
 	private List<Action> actions = new ArrayList<>();
 	private DescriptionType descriptionType;
+	private Concept observerType;
 
 	@Override
 	public String getUrn() {
@@ -142,5 +144,13 @@ public class ModelImpl implements Model {
 	public void setActions(List<Action> actions) {
 		this.actions = actions;
 	}
-	
+
+	@Override
+	public Concept getObserverType() {
+		return observerType;
+	}
+
+	public void setObserverType(Concept observerType) {
+		this.observerType = observerType;
+	}
 }

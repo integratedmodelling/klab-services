@@ -31,10 +31,11 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
 /**
- * A semantic expression represented as a graph built one token at a time.
- * 
- * @author Ferd
+ * A semantic expression represented as a graph, built one token at a time, corresponding to the incremental building of
+ * an observable by an interactive user. The reasoner exposes methods to initialize a semantic expression and provide
+ * contextual suggestions for tokens that can be added without causing inconsistent observables.
  *
+ * @author Ferd
  */
 public class SemanticExpression {
 
@@ -75,7 +76,7 @@ public class SemanticExpression {
 
         /**
          * True if the content match the object.
-         * 
+         *
          * @param o
          * @return
          */
@@ -103,9 +104,9 @@ public class SemanticExpression {
         }
 
         /**
-         * True if the context matches the role, i.e. we are linked to another node through it. The
-         * link is checked upstream if the closest link is a group.
-         * 
+         * True if the context matches the role, i.e. we are linked to another node through it. The link is checked
+         * upstream if the closest link is a group.
+         *
          * @param role
          * @return
          */
@@ -239,7 +240,7 @@ public class SemanticExpression {
 
     /**
      * Undo the last accepted token.
-     * 
+     *
      * @return
      */
     public boolean undo() {
@@ -378,9 +379,9 @@ public class SemanticExpression {
     }
 
     /**
-     * Return all the components already defined within the boundaries of the observable being
-     * defined in the current lexical context.
-     * 
+     * Return all the components already defined within the boundaries of the observable being defined in the current
+     * lexical context.
+     *
      * @return
      */
     public Set<SemanticRole> getRoles() {
@@ -390,9 +391,9 @@ public class SemanticExpression {
     }
 
     /**
-     * Return all the components already defined within the boundaries of the observable being
-     * defined in the current lexical context.
-     * 
+     * Return all the components already defined within the boundaries of the observable being defined in the current
+     * lexical context.
+     *
      * @return
      */
     public Set<Object> collect(SemanticRole role) {
@@ -403,9 +404,9 @@ public class SemanticExpression {
     }
 
     /**
-     * Return the base traits already specified within the boundaries of the observable being
-     * defined in the current lexical context.
-     * 
+     * Return the base traits already specified within the boundaries of the observable being defined in the current
+     * lexical context.
+     *
      * @return
      */
     public Set<Concept> getBaseTraits() {
@@ -414,9 +415,9 @@ public class SemanticExpression {
     }
 
     /**
-     * Return the root token for the current lexical context - either root or the innermost group
-     * reachable from current.
-     * 
+     * Return the root token for the current lexical context - either root or the innermost group reachable from
+     * current.
+     *
      * @return
      */
     public SemanticToken getCurrentLexicalContext() {
@@ -544,7 +545,7 @@ public class SemanticExpression {
 
     /**
      * User data for interactive tracking of contexts, match proposals etc.
-     * 
+     *
      * @return
      */
     public <T> T getData(String key, Class<T> cls) {

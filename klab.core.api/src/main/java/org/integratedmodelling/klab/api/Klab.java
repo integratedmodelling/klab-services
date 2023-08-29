@@ -2,10 +2,9 @@ package org.integratedmodelling.klab.api;
 
 import java.util.Collection;
 
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
@@ -116,6 +115,15 @@ public enum Klab {
 
 		Coverage promoteScaleToCoverage(Scale geometry, double coverage);
 
+        Model.Builder getModelBuilder(Observable observable);
+
+		Model.Builder getModelBuilder(Artifact.Type nonSemanticType);
+
+		Model.Builder getModelBuilder(Resource resource);
+
+		Model.Builder getModelBuilder(Literal value);
+
+		Model.Builder getModelLearner(String outputResourceUrn);
 	}
 
 	private Configuration configuration;

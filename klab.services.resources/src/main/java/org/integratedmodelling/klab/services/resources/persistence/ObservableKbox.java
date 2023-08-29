@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.groovy.util.Maps;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -327,7 +328,7 @@ public abstract class ObservableKbox extends H2Kbox {
          * unrepresented concepts later.
          */
         for (Concept candidate : getCandidates(main, observable.getDescriptionType().isInstantiation(),
-                observable.getResolvedPredicates())) {
+                observable.getSpecializedComponents())) {
 
             /*
              * let an abstract model resolve a concrete observable if the abstract traits are in the
@@ -359,7 +360,7 @@ public abstract class ObservableKbox extends H2Kbox {
     /*
      * FIXME use the description type directly
      */
-    private Set<Concept> getCandidates(Concept concept, boolean instantiation, Map<Concept, Concept> resolvedPredicates) {
+    private Set<Concept> getCandidates(Concept concept, boolean instantiation, Collection<Pair<Concept, Concept>> resolvedPredicates) {
 
         Set<Concept> ret = new HashSet<>();
         for (Concept main : getAcceptableParents(concept, resolvedPredicates)) {
@@ -392,7 +393,7 @@ public abstract class ObservableKbox extends H2Kbox {
      * @param resolvedPredicates
      * @return
      */
-    private List<Concept> getAcceptableParents(Concept concept, Map<Concept, Concept> resolvedPredicates) {
+    private List<Concept> getAcceptableParents(Concept concept, Collection<Pair<Concept, Concept>> resolvedPredicates) {
 
         List<Concept> ret = new ArrayList<>();
         ret.add(concept);
@@ -413,7 +414,7 @@ public abstract class ObservableKbox extends H2Kbox {
         if (resolvedPredicates != null && !resolvedPredicates.isEmpty()) {
             List<Concept> rabs = new ArrayList<>();
             for (Concept r : ret) {
-                rabs.add(replaceComponent(r, Maps.inverse(resolvedPredicates)));
+                rabs.add(replaceComponent(r, resolvedPredicates));
             }
             ret.addAll(rabs);
         }
@@ -632,19 +633,19 @@ public abstract class ObservableKbox extends H2Kbox {
      * @param replacements
      * @return
      */
-    protected Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
+    protected Concept replaceComponent(Concept original, Collection<Pair<Concept, Concept>> replacements) {
 
         if (replacements.isEmpty()) {
             return original;
         }
 
         String declaration = original.getUrn();
-        for (Concept key : replacements.keySet()) {
-            String rep = replacements.get(key).getUrn();
+        for (Pair<Concept, Concept> key : replacements) {
+            String rep = key.getSecond().getUrn();
             if (rep.contains(" ")) {
                 rep = "(" + rep + ")";
             }
-            declaration = declaration.replace(key.getUrn(), rep);
+            declaration = declaration.replace(key.getFirst().getUrn(), rep);
         }
 
         return reasoner.declareConcept(resourceService.resolveConcept(declaration));
