@@ -61,7 +61,8 @@ public interface Observation extends Knowledge, Artifact {
 	 *
 	 * @return the observation's scale
 	 */
-	Scale getScale();
+	@Override
+	Scale getGeometry();
 
 	/**
 	 * Return a view of this observation restricted to the passed locator, which is
@@ -77,42 +78,42 @@ public interface Observation extends Knowledge, Artifact {
 	 */
 	Observation at(Locator locator);
 
-	/**
-	 * Observation may have been made in the context of another direct observation.
-	 * This will always return non-null in indirect observations, and may return
-	 * null in direct ones when they represent the "root" context.
-	 *
-	 * @return the context for the observation, if any.
-	 */
-	DirectObservation getContext();
+//	/**
+//	 * Observation may have been made in the context of another direct observation.
+//	 * This will always return non-null in indirect observations, and may return
+//	 * null in direct ones when they represent the "root" context.
+//	 *
+//	 * @return the context for the observation, if any.
+//	 */
+//	DirectObservation getContext();
 
-	/**
-	 * True if our scale has an observation of space with more than one state value.
-	 *
-	 * @return true if distributed in space
-	 */
-	boolean isSpatiallyDistributed();
-
-	/**
-	 * True if our scale has an observation of time with more than one state value.
-	 *
-	 * @return true if distributed in time.
-	 */
-	boolean isTemporallyDistributed();
-
-	/**
-	 * True if our scale has any implementation of time.
-	 *
-	 * @return if time is known
-	 */
-	boolean isTemporal();
-
-	/**
-	 * True if our scale has any implementation of space.
-	 *
-	 * @return if space is known
-	 */
-	boolean isSpatial();
+//	/**
+//	 * True if our scale has an observation of space with more than one state value.
+//	 *
+//	 * @return true if distributed in space
+//	 */
+//	boolean isSpatiallyDistributed();
+//
+//	/**
+//	 * True if our scale has an observation of time with more than one state value.
+//	 *
+//	 * @return true if distributed in time.
+//	 */
+//	boolean isTemporallyDistributed();
+//
+//	/**
+//	 * True if our scale has any implementation of time.
+//	 *
+//	 * @return if time is known
+//	 */
+//	boolean isTemporal();
+//
+//	/**
+//	 * True if our scale has any implementation of space.
+//	 *
+//	 * @return if space is known
+//	 */
+//	boolean isSpatial();
 
 	/**
 	 * Return the spatial extent, or null.
@@ -121,32 +122,32 @@ public interface Observation extends Knowledge, Artifact {
 	 */
 	Space getSpace();
 
-	/**
-	 * Return true if this observation has changes that happened after
-	 * initialization. Note that it is not guaranteed that a dynamic observation
-	 * knows it's dynamic before changes are reported, so observations may start
-	 * static and become dynamic later.
-	 * 
-	 * @return
-	 */
-	boolean isDynamic();
+//	/**
+//	 * Return true if this observation has changes that happened after
+//	 * initialization. Note that it is not guaranteed that a dynamic observation
+//	 * knows it's dynamic before changes are reported, so observations may start
+//	 * static and become dynamic later.
+//	 *
+//	 * @return
+//	 */
+//	boolean isDynamic();
 
-	/**
-	 * Time of creation according to context time, not to be confused with the
-	 * system creation time returned by {@link #getTimestamp()}.
-	 * 
-	 * @return the time of creation
-	 */
-	long getCreationTime();
+//	/**
+//	 * Time of creation according to context time, not to be confused with the
+//	 * system creation time returned by {@link #getTimestamp()}.
+//	 *
+//	 * @return the time of creation
+//	 */
+//	long getCreationTime();
 
-	/**
-	 * Time of "exit", i.e. end of life of the observation according to context
-	 * time. If the context has no time or the object is current, this is -1L.
-	 * 
-	 * @return the time of exit
-	 */
-
-	long getExitTime();
+//	/**
+//	 * Time of "exit", i.e. end of life of the observation according to context
+//	 * time. If the context has no time or the object is current, this is -1L.
+//	 *
+//	 * @return the time of exit
+//	 */
+//
+//	long getExitTime();
 
 	public static Observation empty() {
 		throw new KIllegalStateException("UNIMPLEMENTED empty observation!");

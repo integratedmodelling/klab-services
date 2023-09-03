@@ -21,231 +21,234 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
+/**
+ * A "naked" observation only has an observable + metadata and provenance info. This is not abstract because
+ * descriptions like contextualizing a generic concept produce pure semantics, which is expressed as a simple
+ * Observation with an observable that is the OR of all the contextualized components corresponding to the generic ones
+ * in the observed one.
+ */
 public class ObservationImpl implements Observation {
 
-	private static final long serialVersionUID = 8993700853991252827L;
-	
+    private static final long serialVersionUID = 8993700853991252827L;
 
-	protected ObservationImpl() {}
-	
-	protected ObservationImpl(Observable observable, String id, ContextScope scope) {
-		
-	}
-	
-	@Override
-	public Geometry getGeometry() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    private Observable observable;
+    private Scale scale;
+    private Metadata metadata = Metadata.create();
+    private String id;
+    private String urn;
 
-	@Override
-	public Metadata getMetadata() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    protected ObservationImpl() {
+    }
 
-	@Override
-	public String getUrn() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    protected ObservationImpl(Observable observable, String id, ContextScope scope) {
 
-	@Override
-	public Collection<Artifact> collect(Concept concept) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    }
 
-	@Override
-	public Artifact trace(Concept role, DirectObservation roleContext) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Scale getGeometry() {
+        return this.scale;
+    }
 
-	@Override
-	public Collection<Artifact> getChildArtifacts() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Metadata getMetadata() {
+        return this.metadata;
+    }
 
-	@Override
-	public Collection<Artifact> collect(Concept role, DirectObservation roleContext) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getUrn() {
+        return this.urn;
+    }
 
-	@Override
-	public int groupSize() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public Collection<Artifact> collect(Concept concept) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Provenance getProvenance() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Artifact trace(Concept role, DirectObservation roleContext) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Type getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Collection<Artifact> getChildArtifacts() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public void release() {
-		// TODO Auto-generated method stub
+    @Override
+    public Collection<Artifact> collect(Concept role, DirectObservation roleContext) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	}
+    @Override
+    public int groupSize() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public boolean is(Class<?> cls) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public Provenance getProvenance() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public <T> T as(Class<?> cls) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Type getType() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean isArchetype() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public void release() {
+        // TODO Auto-generated method stub
 
-	@Override
-	public long getLastUpdate() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public boolean hasChangedDuring(Time time) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean is(Class<?> cls) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public String getId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public <T> T as(Class<?> cls) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public long getTimestamp() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public boolean isArchetype() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public long getLastUpdate() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public Iterator<Artifact> iterator() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public boolean hasChangedDuring(Time time) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public Observable getObservable() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getId() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-//	@Override
-//	public ContextScope getScope() {
-//		// TODO Auto-generated method stub
-//		return this.scope;
-//	}
+    @Override
+    public long getTimestamp() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public Identity getObserver() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public boolean isEmpty() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
-	@Override
-	public Scale getScale() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Iterator<Artifact> iterator() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Observation at(Locator locator) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Observable getObservable() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public DirectObservation getContext() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Identity getObserver() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean isSpatiallyDistributed() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+//    @Override
+//    public Scale getScale() {
+//        // TODO Auto-generated method stub
+//        return this.scale;
+//    }
 
-	@Override
-	public boolean isTemporallyDistributed() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public Observation at(Locator locator) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean isTemporal() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+//    @Override
+//    public DirectObservation getContext() {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
+//
+//    @Override
+//    public boolean isSpatiallyDistributed() {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean isTemporallyDistributed() {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean isTemporal() {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean isSpatial() {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
 
-	@Override
-	public boolean isSpatial() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public Space getSpace() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+//
+//    @Override
+//    public boolean isDynamic() {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
+//
+//    @Override
+//    public long getCreationTime() {
+//        // TODO Auto-generated method stub
+//        return 0;
+//    }
+//
+//    @Override
+//    public long getExitTime() {
+//        // TODO Auto-generated method stub
+//        return 0;
+//    }
 
-	@Override
-	public Space getSpace() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Version getVersion() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public boolean isDynamic() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public long getCreationTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public long getExitTime() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public Version getVersion() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<Annotation> getAnnotations() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<Annotation> getAnnotations() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

@@ -47,7 +47,7 @@ public class ModelKbox extends ObservableKbox {
 
     /**
      * Create a kbox with the passed name. If the kbox exists, open it and return it.
-     * 
+     *
      * @param name
      * @return a new kbox
      */
@@ -66,7 +66,7 @@ public class ModelKbox extends ObservableKbox {
 
             initialized = true;
 
-            setSchema(ModelReference.class, new Schema(){
+            setSchema(ModelReference.class, new Schema() {
 
                 @Override
                 public String getTableName() {
@@ -76,25 +76,28 @@ public class ModelKbox extends ObservableKbox {
                 @Override
                 public String getCreateSQL() {
                     String ret = "CREATE TABLE model (" + "oid LONG, " + "serverid VARCHAR(64), " + "id VARCHAR(256), "
-                            + "name VARCHAR(256), " + "namespaceid VARCHAR(128), " + "projectid VARCHAR(128), " + "typeid LONG, "
-                            + "otypeid LONG, " + "scope VARCHAR(16), " + "isresolved BOOLEAN, " + "isreification BOOLEAN, "
+                            + "name VARCHAR(256), " + "namespaceid VARCHAR(128), " + "projectid VARCHAR(128), " +
+                            "typeid LONG, "
+                            + "otypeid LONG, " + "scope VARCHAR(16), " + "isresolved BOOLEAN, " + "isreification " +
+                            "BOOLEAN, "
                             + "inscenario BOOLEAN, " + "hasdirectobjects BOOLEAN, " + "hasdirectdata BOOLEAN, "
                             + "timestart LONG, " + "timeend LONG, " + "isspatial BOOLEAN, " + "istemporal BOOLEAN, "
                             + "timemultiplicity LONG, " + "spacemultiplicity LONG, " + "scalemultiplicity LONG, "
-                            + "dereifyingattribute VARCHAR(256), " + "minspatialscale INTEGER, " + "maxspatialscale INTEGER, "
+                            + "dereifyingattribute VARCHAR(256), " + "minspatialscale INTEGER, " + "maxspatialscale " +
+                            "INTEGER, "
                             + "mintimescale INTEGER, " + "maxtimescale INTEGER, " + "space GEOMETRY, "
                             + "observationtype VARCHAR(256), " + "enumeratedspacedomain VARCHAR(256), "
                             + "enumeratedspacelocation VARCHAR(1024), " + "specializedObservable BOOLEAN " + "); "
                             + "CREATE INDEX model_oid_index ON model(oid); "
-                    // + "CREATE SPATIAL INDEX model_space ON model(space);"
-                    ;
+                            // + "CREATE SPATIAL INDEX model_space ON model(space);"
+                            ;
 
                     return ret;
 
                 }
             });
 
-            setSerializer(ModelReference.class, new Serializer<ModelReference>(){
+            setSerializer(ModelReference.class, new Serializer<ModelReference>() {
 
                 private String cn(Object o) {
                     return o == null ? "" : o.toString();
@@ -105,12 +108,15 @@ public class ModelKbox extends ObservableKbox {
 
                     long tid = requireConceptId(model.getObservableConcept(), monitor);
 
-                    String ret = "INSERT INTO model VALUES (" + primaryKey + ", " + "'" + cn(model.getServerId()) + "', " + "'"
+                    String ret = "INSERT INTO model VALUES (" + primaryKey + ", " + "'" + cn(model.getServerId()) +
+                            "', " + "'"
                             + cn(model.getName()) + "', " + "'" + cn(model.getName()) + "', " + "'" + cn(model.getNamespaceId())
                             + "', " + "'" + cn(model.getProjectId()) + "', " + tid + ", "
                             + /* observation concept is obsolete oid */ 0 + ", '" + (model.getScope().name()) + "', "
-                            + (model.isResolved() ? "TRUE" : "FALSE") + ", " + (model.isReification() ? "TRUE" : "FALSE") + ", "
-                            + (model.isInScenario() ? "TRUE" : "FALSE") + ", " + (model.isHasDirectObjects() ? "TRUE" : "FALSE")
+                            + (model.isResolved() ? "TRUE" : "FALSE") + ", " + (model.isReification() ? "TRUE" :
+                            "FALSE") + ", "
+                            + (model.isInScenario() ? "TRUE" : "FALSE") + ", " + (model.isHasDirectObjects() ?
+                            "TRUE" : "FALSE")
                             + ", " + (model.isHasDirectData() ? "TRUE" : "FALSE") + ", " + model.getTimeStart() + ", "
                             + model.getTimeEnd() + ", " + (model.isSpatial() ? "TRUE" : "FALSE") + ", "
                             + (model.isTemporal() ? "TRUE" : "FALSE") + ", " + model.getTimeMultiplicity() + ", "
@@ -119,9 +125,10 @@ public class ModelKbox extends ObservableKbox {
                             + model.getMaxSpatialScaleFactor() + ", " + model.getMinTimeScaleFactor() + ", "
                             + model.getMaxTimeScaleFactor() + ", " + "'"
                             + (model.getShape() == null
-                                    ? "GEOMETRYCOLLECTION EMPTY"
-                                    : ShapeImpl.promote(model.getShape()).getStandardizedGeometry().toString())
-                            + "', '" + model.getObservationType() + "', '" + cn(model.getEnumeratedSpaceDomain()) + "', '"
+                            ? "GEOMETRYCOLLECTION EMPTY"
+                            : ShapeImpl.promote(model.getShape()).getStandardizedGeometry().toString())
+                            + "', '" + model.getObservationType() + "', '" + cn(model.getEnumeratedSpaceDomain()) +
+                            "', '"
                             + cn(model.getEnumeratedSpaceLocation()) + "', "
                             + (model.isSpecializedObservable() ? "TRUE" : "FALSE") + ");";
 
@@ -137,16 +144,14 @@ public class ModelKbox extends ObservableKbox {
     }
 
     /**
-     * Pass the output of queryModelData to a contextual prioritizer and return the ranked list of
-     * IModels. If we're a personal engine, also broadcast the query to the network and merge
-     * results before returning.
-     * 
+     * Pass the output of queryModelData to a contextual prioritizer and return the ranked list of IModels. If we're a
+     * personal engine, also broadcast the query to the network and merge results before returning.
+     *
      * @param observable
-     * @param resolutionScope
+     * @param scope
      * @return models resulting from query, best first.
-     * @throws KlabException
      */
-    public Collection<ModelReference> query(Observable observable, ContextScope scope) throws KlabException {
+    public Collection<ModelReference> query(Observable observable, ContextScope scope) {
 
         initialize(scope);
 
@@ -179,11 +184,11 @@ public class ModelKbox extends ObservableKbox {
 
         /*
          * use previously resolved
-         * 
+         *
          * TODO check use of contains(): overlaps() would be more correct but then we would need to
          * continue resolving, which misses the whole point of caching, and limit the resolution to
          * "other" models.
-         * 
+         *
          * FIXME: MODELS FROM SCENARIOS MUST STILL TAKE OVER THESE!
          */
         // if (preResolved != null &&
@@ -245,11 +250,10 @@ public class ModelKbox extends ObservableKbox {
 
     /**
      * Find and deserialize all modeldata matching the parameters. Do not rank or anything.
-     * 
+     *
      * @param observable
      * @param context
      * @return all unranked model descriptors matching the query
-     * @throws KlabException
      */
     public List<ModelReference> queryModels(Observable observable, ContextScope context) {
 
@@ -343,9 +347,9 @@ public class ModelKbox extends ObservableKbox {
         if (ids == null || ids.size() == 0) {
             return null;
         }
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (long id : ids) {
-            ret += (ret.isEmpty() ? "" : ", ") + id;
+            ret.append((ret.length() == 0) ? "" : ", ").append(id);
         }
         return "typeid IN (" + ret + ")";
     }
@@ -359,7 +363,8 @@ public class ModelKbox extends ObservableKbox {
 
         String ret = "";
         String projectId = null;
-        String namespaceId = context.getResolutionNamespace() == null ? DUMMY_NAMESPACE_ID : context.getResolutionNamespace();
+        String namespaceId = context.getResolutionNamespace() == null ? DUMMY_NAMESPACE_ID :
+                context.getResolutionNamespace();
         if (!namespaceId.equals(DUMMY_NAMESPACE_ID)) {
             ret += "(model.namespaceid = '" + namespaceId + "')";
             projectId = context.getResolutionProject();
@@ -423,7 +428,7 @@ public class ModelKbox extends ObservableKbox {
      * either closer to the context or to today if time is null. For dynamic models we should either
      * not have a context or cover the context. Guess this is the job of the prioritizer, and we
      * should simply let anything through except when we look for T1(n>1) models.
-     * 
+     *
      * TODO must match geometry when forced - if it has @intensive(space, time) it shouldn't match
      * no space/time OR non-distributed space/time. ALSO the dimensionality!
      */
@@ -473,7 +478,7 @@ public class ModelKbox extends ObservableKbox {
 
         final ModelReference ret = new ModelReference();
 
-        database.query(query, new SQL.SimpleResultHandler(){
+        database.query(query, new SQL.SimpleResultHandler() {
             @Override
             public void onRow(ResultSet rs) {
 
@@ -670,9 +675,9 @@ public class ModelKbox extends ObservableKbox {
     public static final String DUMMY_NAMESPACE_ID = "DUMMY_SEARCH_NS";
 
     /**
-     * Return a collection of model beans that contains all the models implied by a model statement
-     * (and the model itself, when appropriate).
-     * 
+     * Return a collection of model beans that contains all the models implied by a model statement (and the model
+     * itself, when appropriate).
+     *
      * @param model
      * @param monitor
      * @return the models implied by the statement
@@ -711,7 +716,8 @@ public class ModelKbox extends ObservableKbox {
                 Concept type = observable.getSemantics();
                 if (model.isInstantiator()) {
                     Concept context = reasoner.context(type);
-                    if (context == null || !scope.getService(Reasoner.class).subsumes(context, mainObservable.getSemantics())) {
+                    if (context == null || !scope.getService(Reasoner.class).subsumes(context,
+                            mainObservable.getSemantics())) {
                         type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
                     }
                 }
@@ -853,8 +859,10 @@ public class ModelKbox extends ObservableKbox {
                 m.setHasDirectObjects(
                         m.isResolved() && model.getObservables().get(0).getMain().is(SemanticType.DIRECT_OBSERVABLE));
 
-                m.setMinSpatialScaleFactor(model.getMetadata().get(Metadata.IM_MIN_SPATIAL_SCALE, Space.MIN_SCALE_RANK));
-                m.setMaxSpatialScaleFactor(model.getMetadata().get(Metadata.IM_MAX_SPATIAL_SCALE, Space.MAX_SCALE_RANK));
+                m.setMinSpatialScaleFactor(model.getMetadata().get(Metadata.IM_MIN_SPATIAL_SCALE,
+                        Space.MIN_SCALE_RANK));
+                m.setMaxSpatialScaleFactor(model.getMetadata().get(Metadata.IM_MAX_SPATIAL_SCALE,
+                        Space.MAX_SCALE_RANK));
                 m.setMinTimeScaleFactor(model.getMetadata().get(Metadata.IM_MIN_TEMPORAL_SCALE, Time.MIN_SCALE_RANK));
                 m.setMaxTimeScaleFactor(model.getMetadata().get(Metadata.IM_MAX_TEMPORAL_SCALE, Time.MAX_SCALE_RANK));
 
@@ -875,10 +883,10 @@ public class ModelKbox extends ObservableKbox {
             /*
              * For now just disable additional observables in instantiators and use their attribute
              * observers upstream. We may do different things here:
-             * 
+             *
              * 0. keep ignoring them 1. keep them all, contextualized to the instantiated
              * observable; 2. keep only the non-statically contextualized ones (w/o the value)
-             * 
+             *
              */
             if (model.isInstantiator()) {
                 break;

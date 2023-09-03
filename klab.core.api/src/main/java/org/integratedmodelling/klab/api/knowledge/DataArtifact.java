@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.geometry.Locator;
  * typed, owns storage and admits {@link org.integratedmodelling.klab.api.data.Locator}s as indices
  * for getting and setting POD values in it. The storage must be conformant with the
  * {@link org.integratedmodelling.klab.api.data.Geometry#size() size} and dimensions of the
- * {@link #getGeometry() linked} {@link Geometry geometry}.
+ * {@link #getScale() linked} {@link Geometry geometry}.
  * <p>
  * According to the context of computation, the size of a data artifact may differ from
  * {@link org.integratedmodelling.klab.api.data.Geometry#size()}. For example, a non-dynamic state
