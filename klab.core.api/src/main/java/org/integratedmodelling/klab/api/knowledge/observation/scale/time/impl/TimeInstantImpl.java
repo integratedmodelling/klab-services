@@ -284,11 +284,10 @@ public class TimeInstantImpl implements TimeInstant {
         case MILLENNIUM:
             return new TimeInstantImpl(time.getYear() - getYear() % 1000, 1, 1, 0, 0, 0, 0);
         case MILLISECOND:
-            return new TimeInstantImpl(time.getYear(), time.getMonth().getValue(), time.getDayOfMonth(), time.getHour(),
-                    time.getMinute(), time.getSecond(), 0);
+            return new TimeInstantImpl(time.toInstant().toEpochMilli());
         case MINUTE:
             return new TimeInstantImpl(time.getYear(), time.getMonth().getValue(), time.getDayOfMonth(), time.getHour(),
-                    0, 0, 0);
+                    time.getMinute(), 0, 0);
         case MONTH:
             return new TimeInstantImpl(time.getYear(), time.getMonth().getValue(), 1, 0, 0, 0, 0);
         case SECOND:

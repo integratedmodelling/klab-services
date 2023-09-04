@@ -1,15 +1,15 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify
  * it under the terms of the Affero GNU General Public License as published
  * by the Free Software Foundation, either version 3 of the License,
  * or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root
- * directory of the k.LAB distribution (LICENSE.txt). If this cannot be found 
+ * directory of the k.LAB distribution (LICENSE.txt). If this cannot be found
  * see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned
  * in author tags. All rights reserved.
  */
@@ -50,16 +50,14 @@ public interface Envelope extends Referenced {
      * @return a double.
      */
     double getMaxY();
-    
-    
+
+
     /**
-     * 
      * @return the width
      */
     double getWidth();
-    
+
     /**
-     * 
      * @return the height
      */
     double getHeight();
@@ -67,26 +65,26 @@ public interface Envelope extends Referenced {
     /**
      * <p>asShape.</p>
      *
-     * @return a {@link org.integratedmodelling.klab.api.Shape.scale.space.IShape} object.
+     * @return a {@link Shape} object with the same shape as the envelope.
      */
     Shape asShape();
-    
+
     /**
      * <p>transform.</p>
      *
-     * @param projection a {@link org.integratedmodelling.klab.api.Projection.scale.space.IProjection} object.
-     * @param b use lenient transformation if necessary (see JTS docs).
-     * @return a {@link org.integratedmodelling.klab.api.Envelope.scale.space.IEnvelope} object.
+     * @param projection a {@link Projection} object.
+     * @param lenient    use lenient transformation if necessary (see JTS docs).
+     * @return a {@link Envelope} object.
      */
     Envelope transform(Projection projection, boolean lenient);
 
     /**
      * Return the envelope in a predictable, standard projection.
-     * 
+     *
      * @return
      */
     Envelope standard();
-    
+
     /**
      * <p>getCenterCoordinates.</p>
      *
@@ -95,27 +93,26 @@ public interface Envelope extends Referenced {
     double[] getCenterCoordinates();
 
     /**
-     * Return the distance in the original units that corresponds to the passed distance in
-     * meters evaluated in this envelope.
-     * 
+     * Return the distance in the original units that corresponds to the passed distance in meters evaluated in this
+     * envelope.
+     *
      * @param metersDistance
      * @return the meters distance converted into native envelope units
      */
-	double metersToDistance(double metersDistance);
-	
-    /**
-     * Return the distance in meters that corresponds to the passed distance in
-     * original units for in this envelope.
-     * 
-     * @param metersDistance
-     * @return the meters distance converted into native envelope units
-     */
-	double distanceToMeters(double originalDistance);
+    double metersToDistance(double metersDistance);
 
-	   /**
+    /**
+     * Return the distance in meters that corresponds to the passed distance in original units for in this envelope.
+     *
+     * @param originalDistance
+     * @return the meters distance converted into native envelope units
+     */
+    double distanceToMeters(double originalDistance);
+
+    /**
      * Compute the zoom level a'la Google/OSM.
      * <p>
-     * 
+     *
      * <pre>
      * Level  Degrees  Area            m/pixel     ~Scale          # Tiles
      * 0      360      whole world     156,412     1:500 million   1
@@ -139,23 +136,22 @@ public interface Envelope extends Referenced {
      * 18     0.001                    0.596       1:2,000         68,719,476,736
      * 19     0.0005                   0.298       1:1,000         274,877,906,944
      * </pre>
-     * 
+     *
      * @return the scale rank (zoom level) for the envelope
-     * 
      */
     int getScaleRank();
-    
+
     /**
      * Basic 2D operations
-     * 
+     *
      * @param other
      * @return
      */
     boolean overlaps(Envelope other);
-    
+
     /**
      * Return a larger envelope containing the previous.
-     * 
+     *
      * @param factor
      * @return
      */

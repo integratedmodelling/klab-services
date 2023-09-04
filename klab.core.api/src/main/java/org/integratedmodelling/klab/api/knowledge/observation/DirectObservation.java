@@ -13,12 +13,9 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
-import java.util.Collection;
-
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.ObjectArtifact;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 
 /**
  * An observation that can be acknowledged on its own without referencing
@@ -39,24 +36,6 @@ public abstract interface DirectObservation extends Observation, Identity, Objec
 	 * @return a {@link java.lang.String} object.
 	 */
 	String getName();
-
-//	/**
-//	 * Direct observations may have children. This is a convenience method to find a
-//	 * particular child artifact.
-//	 * 
-//	 * @param observable
-//	 * @return
-//	 */
-//	Observation getChildObservation(Observable observable);
-
-//	/**
-//	 * <p>
-//	 * Direct observations may have states of their own.
-//	 * </p>
-//	 *
-//	 * @return a {@link java.util.Collection} object.
-//	 */
-//	Collection<State> getStates();
 
 	@Override
 	DirectObservation at(Locator locator);

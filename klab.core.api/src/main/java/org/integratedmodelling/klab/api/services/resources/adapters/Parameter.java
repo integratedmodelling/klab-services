@@ -14,9 +14,9 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 public @interface Parameter {
 
 	/**
-	 * The parameter name. Must be a simple lowercase name. Dot-separated paths will
-	 * be shown hierarchially in the resource editor and won't be admitted as URN
-	 * parameters.
+	 * The parameter name. Must be a simple lowercase name. Dot-separated paths are
+	 * accepted and will be shown hierarchically in the resource editor; they won't
+	 * be admissible as URN parameters.
 	 * 
 	 * @return
 	 */

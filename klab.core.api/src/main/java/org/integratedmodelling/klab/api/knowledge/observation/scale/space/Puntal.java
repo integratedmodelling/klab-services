@@ -30,7 +30,7 @@ public interface Puntal extends Dimensional {
      *
      * @return a int.
      */
-    static int getDimensionCount() {
+    default int getDimensionCount() {
         return 0;
     }
 }

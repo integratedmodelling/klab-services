@@ -30,7 +30,7 @@ public interface Volumetric extends Dimensional {
      *
      * @return a int.
      */
-    static int getDimensionCount() {
+    default int getDimensionCount() {
         return 3;
     }
 }

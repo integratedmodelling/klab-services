@@ -32,7 +32,5 @@ public abstract interface Dimensional {
      *
      * @return a int.
      */
-    static int getDimensionCount() {
-        return 0;
-    }
+    int getDimensionCount();
 }
