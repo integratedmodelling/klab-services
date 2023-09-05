@@ -1,13 +1,13 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
@@ -16,6 +16,7 @@ package org.integratedmodelling.klab.api.services.resolver;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
 import static java.util.Map.entry;
 
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -23,29 +24,31 @@ import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
- * The object that creates a ranking of whatever object is being used to represent a model according
- * to the implementation. Extracts the criteria for ranking from the object and aggregates them into
- * an overall ranking used for comparison.
+ * The object that creates a ranking of whatever object is being used to represent a model according to the
+ * implementation. Extracts the criteria for ranking from the object and aggregates them into an overall ranking used
+ * for comparison.
  * <p>
- * This class isn't directly used in any API methods so far, but it's in the public API for
- * completeness and to provide a vocabulary for the criteria that allow the ranking of alternative
- * observation strategies (i.e. models).
+ * This class isn't directly used in any API methods so far, but it's in the public API for completeness and to provide
+ * a vocabulary for the criteria that allow the ranking of alternative observation strategies (i.e. models).
  * <p>
- * Data structure returned from query with ranks computed at server side based on context; sorting
- * happens at request side after merge.
+ * Data structure returned from query with ranks computed at server side based on context; sorting happens at request
+ * side after merge.
  * <dl>
  * <dt>lexical scope</dt>
  * <dd>locality wrt context 100 = in observation scenario 50 = in same namespace as context 0 =
  * non-private in other namespace</dd>
- * <dt>trait concordance</dt>
- * <dd>in context n = # of traits shared vs. n. of traits possible, normalized to 100</dd>
- * <dt>scale coverage</dt>
- * <dd>of scale in context (minimum of all extents? or one per extent?) 0 = not scale-specific
+ * <dt>semantic distance</dt>
+ * <dd>as defined by reasoner for the focal observable. Includes generic and abstract components as well as # of traits
+ * shared and their distance. Capped and thresholded to "normalize" to 100</dd>
+ * <dt>community</dt>
+ * <dd>(unimplemented) depends on which communities are followed and are linked to the compared object</dd>
+ * <dt>scale coherency</dt>
+ * <dd>coherency of scale in context (minimum of all extents? or one per extent?) 0 = not scale-specific
  * (outside scale will not be returned) (1, 100] = (scale ^ object context)/scale</dd>
  * <dt>scale specificity</dt>
  * <dd>total coverage of object wrt context (minimum of all extents?) = scale / (object coverage) *
  * 100</dd>
- * <dt>inherency</dt>
+ * <dt>inherency (deprecated, should be part of semantic distance)</dt>
  * <dd>level wrt observable:
  * <dl>
  * <dt>100</dt>
@@ -81,9 +84,9 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  * <code>ob type</code> of <code>type</code></li>
  * </ul>
  *
+ * @param <T> the type of model bean that is compared
  * @author ferdinando.villa
  * @version $Id: $Id
- * @param <T> the type of model bean that is compared
  */
 public interface Prioritizer<T> extends Comparator<T> {
 
@@ -91,14 +94,14 @@ public interface Prioritizer<T> extends Comparator<T> {
      * Default prioritization strategy
      */
     public static final Map<String, Integer> defaultRankingStrategy = Map.ofEntries(entry("im:lexical-scope", 1),
-            entry("im:evidence", 4), entry("im:semantic-concordance", 2), entry("im:trait-concordance", 3),
+            entry("im:evidence", 4), entry("im:semantic-distance", 2), entry("im:community", 0),
             entry("im:time-specificity", 5), entry("im:time-coverage", 6), entry("im:space-specificity", 7),
             entry("im:space-coverage", 8), entry("im:subjective-concordance", 9), entry("im:inherency", 10),
             entry("im:scale-coherency", 11), entry("im:network-remoteness", 0), entry("im:reliability", 100));
 
     /**
-     * Rank all data and return a map of the criteria computed. The context of comparison should be
-     * set in the constructor according to the resolver's needs.
+     * Rank all data and return a map of the criteria computed. The context of comparison should be set in the
+     * constructor according to the resolver's needs.
      *
      * @param model
      * @return the criteria values for model in context
@@ -114,7 +117,7 @@ public interface Prioritizer<T> extends Comparator<T> {
 
     /**
      * Retrieve the computed ranking for the passed object, or null.
-     * 
+     *
      * @param ranked
      * @return
      */

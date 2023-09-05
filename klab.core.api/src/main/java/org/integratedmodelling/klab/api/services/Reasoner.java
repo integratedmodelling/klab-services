@@ -810,7 +810,7 @@ public interface Reasoner extends KlabService {
      *
      * @param observable
      * @param scope
-     * @return
+     * @return all the observation strategies for this observable in this context, best first
      */
     List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope);
 
