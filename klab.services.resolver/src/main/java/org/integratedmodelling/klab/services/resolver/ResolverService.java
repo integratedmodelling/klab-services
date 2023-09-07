@@ -241,7 +241,7 @@ public class ResolverService extends BaseService implements Resolver {
 
         for (Pair<ObservationStrategy.Operation, ObservationStrategy.Arguments> operation : strategy) {
             switch (operation.getFirst()) {
-                case RESOLVE -> {
+                case OBSERVE -> {
                     for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
                         ResolutionImpl resolution = resolveModel(model, strategy.getObservable(), scale,
                                 scope.withResolutionNamespace(model.getNamespace()), parent);
@@ -259,6 +259,9 @@ public class ResolverService extends BaseService implements Resolver {
                             }
                         }
                     }
+                }
+                case RESOLVE -> {
+
                 }
             }
         }

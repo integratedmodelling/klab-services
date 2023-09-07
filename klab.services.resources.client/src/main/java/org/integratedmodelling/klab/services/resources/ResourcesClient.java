@@ -98,6 +98,12 @@ public class ResourcesClient implements ResourcesService {
     }
 
     @Override
+    public ResourceSet resolveServiceCall(String name, Scope scope) {
+        // TODO
+        return null;
+    }
+
+    @Override
     public KimObservable resolveObservable(String definition) {
         // TODO Auto-generated method stub
         return null;

@@ -51,9 +51,9 @@ public class ObservationStrategyImpl implements ObservationStrategy {
 
             // TODO
 
-            // no operations == directly resolve the original observable
-            if (ret.body.isEmpty()) {
-                ret.body.add(Pair.of(Operation.RESOLVE, new Arguments(observable, null)));
+            // no operations == directly observe the original observable
+            if (ret.body.isEmpty() && !observable.isAbstract()) {
+                ret.body.add(Pair.of(Operation.OBSERVE, new Arguments(observable, null)));
             }
 
             return ret;

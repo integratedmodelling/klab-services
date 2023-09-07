@@ -477,6 +477,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 	}
 
 	@Override
+	public ResourceSet resolveServiceCall(String name, Scope scope) {
+		// TODO
+		var ret = new ResourceSet();
+		ret.setEmpty(true);
+		return ret;
+	}
+
+	@Override
 	public Resource contextualizeResource(Resource originalResource, ContextScope scope) {
 		// TODO Auto-generated method stub
 		return null;

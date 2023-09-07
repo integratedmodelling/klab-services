@@ -216,6 +216,20 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     }
 
     @Override
+    public Observable as(DescriptionType descriptionType) {
+        var ret = new ObservableImpl(this);
+        // TODO check for compatibility!
+        ret.setDescriptionType(descriptionType);
+        return ret;
+    }
+
+    @Override
+    public boolean is(DescriptionType descriptionType) {
+        // TODO this can be smarter and check for instantiation or resolution in its different forms
+        return this.descriptionType == descriptionType;
+    }
+
+    @Override
     public Type getArtifactType() {
         return this.artifactType;
     }

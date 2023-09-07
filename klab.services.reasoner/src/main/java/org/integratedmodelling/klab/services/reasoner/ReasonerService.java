@@ -1734,7 +1734,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
 
             if (concepts.size() == 1) {
-                ontology.add(Axiom.SubClass(concepts.get(0).getUrn(), mainId));
+                ontology.add(Axiom.SubClass(concepts.get(0).getNamespace() + ":" + concepts.get(0).getName(), mainId));
             } else {
                 Concept expr = null;
                 switch (parent.getConnector()) {
@@ -1754,7 +1754,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 if (concept.isAlias()) {
                     ontology.addDelegateConcept(mainId, ontology.getName(), expr);
                 } else {
-                    ontology.add(Axiom.SubClass(expr.getUrn(), mainId));
+                    ontology.add(Axiom.SubClass(expr.getNamespace() + ":" + expr.getName(), mainId));
                 }
             }
             ontology.define();
@@ -2206,7 +2206,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept.isGlobal()) */
                 .named(concept.getFormalName());
 
-                // TODO gather generic concepts and abstract ones
+        // TODO gather generic concepts and abstract ones
 //        if (concept.isExclusive()) {
 //            builder = builder.withResolution(Observable.Resolution.Only);
 //        } else if (concept.isGlobal()) {
@@ -2379,8 +2379,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
         }
 
-        if (strategies.size() > 0) {
-            Collections.sort(strategies, new Comparator<>() {
+        if (!strategies.isEmpty()) {
+            strategies.sort(new Comparator<>() {
 
                 @Override
                 public int compare(ObservationStrategyPattern o1, ObservationStrategyPattern o2) {

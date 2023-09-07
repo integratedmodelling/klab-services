@@ -18,6 +18,8 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class LanguageService implements Language {
@@ -77,6 +79,16 @@ public class LanguageService implements Language {
     @Override
     public <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass) {
         FunctionDescriptor descriptor = this.functions.get(call.getName());
+        if (descriptor == null) {
+            /*
+            check the resource service in the scope to see if we can find a component that supports this call
+             */
+            ResourceSet resourceSet = scope.getService(ResourcesService.class).resolveServiceCall(call.getName(), scope);
+            if (!resourceSet.isEmpty()) {
+                loadComponent(resourceSet, scope);
+                descriptor = this.functions.get(call.getName());
+            }
+        }
         if (descriptor != null && !descriptor.error) {
             if (descriptor.method != null) {
                 // can't be null
@@ -89,9 +101,14 @@ public class LanguageService implements Language {
                 }
             }
         } else if (descriptor.constructor != null) {
-            
+            // TODO
         }
         return null;
+    }
+
+    @Override
+    public void loadComponent(ResourceSet resourceSet, Scope scope) {
+        // TODO implement
     }
 
     private Object[] getParameters(FunctionDescriptor descriptor, ServiceCall call, Scope scope, boolean isConstructor) {

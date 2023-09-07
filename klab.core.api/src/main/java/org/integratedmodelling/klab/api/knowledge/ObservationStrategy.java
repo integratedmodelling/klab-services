@@ -32,9 +32,15 @@ public interface ObservationStrategy extends Iterable<Pair<ObservationStrategy.O
     enum Operation {
 
         /**
-         * the strategy implies the direct resolution of an observable
+         * the strategy implies further resolution of the associated observable
          */
         RESOLVE,
+
+        /**
+         * The strategy requires the observation of the associated observable. i.e. looking up a model or a previous
+         * observation, without further resolving it.
+         */
+        OBSERVE,
 
         /**
          * The strategy implies the instantiation of other direct observables, then the application of the child

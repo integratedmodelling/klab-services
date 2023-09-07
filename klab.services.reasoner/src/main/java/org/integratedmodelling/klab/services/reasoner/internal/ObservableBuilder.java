@@ -1142,7 +1142,7 @@ public class ObservableBuilder implements Observable.Builder {
         axioms.add(Axiom.ClassAssertion(conceptId, type));
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY, cDs));
         axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cId));
-        axioms.add(Axiom.SubClass(main.getUrn(), conceptId));
+        axioms.add(Axiom.SubClass(main.getNamespace() + ":" + main.getName(), conceptId));
         if (distributedInherency) {
             axioms.add(Axiom.AnnotationAssertion(conceptId, NS.INHERENCY_IS_DISTRIBUTED, "true"));
         }

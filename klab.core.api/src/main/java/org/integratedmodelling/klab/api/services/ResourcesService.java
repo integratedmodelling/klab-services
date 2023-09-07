@@ -29,25 +29,21 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 
 /**
- * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts
- * with {@link Resource}, which is a specific type of KlabAsset). Assets handled include projects
- * with all their contents (namespaces with {@link KimConceptStatement}, {@link KimModel}
- * and other definitions, {@link KActorsBehavior} behaviors, and local {@link Resource}s), plus any
- * published, independently managed {@link Resource}s, and any component plug-ins, managed directly
- * as jar/zips. All assets are versioned and history is maintained. Permissions and review-driven
- * ranking are enabled for all primary assets, i.e. projects, components and published resources.
- * Assets that come as content of projects get their permissions and ranks from the project they are
- * part of.
+ * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts with {@link Resource},
+ * which is a specific type of KlabAsset). Assets handled include projects with all their contents (namespaces with
+ * {@link KimConceptStatement}, {@link KimModel} and other definitions, {@link KActorsBehavior} behaviors, and local
+ * {@link Resource}s), plus any published, independently managed {@link Resource}s, and any component plug-ins, managed
+ * directly as jar/zips. All assets are versioned and history is maintained. Permissions and review-driven ranking are
+ * enabled for all primary assets, i.e. projects, components and published resources. Assets that come as content of
+ * projects get their permissions and ranks from the project they are part of.
  * <p>
- * The resource manager holds all language parsers and can also turn a behavior specification in
- * k.Actors located at a given URL into its correspondent serialized, executable
- * {@link KActorsBehavior}. This should normally only happen for scripts, applications and user
- * behaviors, which can exist independent of projects.
+ * The resource manager holds all language parsers and can also turn a behavior specification in k.Actors located at a
+ * given URL into its correspondent serialized, executable {@link KActorsBehavior}. This should normally only happen for
+ * scripts, applications and user behaviors, which can exist independent of projects.
  * <p>
- * If a community service is available in the service scope, the resource manager initiates, and
- * reacts to, events that create the review history of an asset. Primary assets (projects,
- * components and published resources) are subject to review and the resulting rank and history is
- * held by the resources service.
+ * If a community service is available in the service scope, the resource manager initiates, and reacts to, events that
+ * create the review history of an asset. Primary assets (projects, components and published resources) are subject to
+ * review and the resulting rank and history is held by the resources service.
  * <p>
  * Endpoints are part of three main families:
  * <dl>
@@ -60,28 +56,27 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
  * their sources. For example, retrieval of a {@link KimModel} is used in the
  * {@link Resolver} to build a {@link Model} with all its dependencies satisfied.</dd>
  * <dt>{list|add|remove|update}..()</dt>
- * <dd>endpoints manage inquiry and CRUD operations, part of the {@link ResourcesServices.Admin}
+ * <dd>endpoints manage inquiry and CRUD operations, part of the {@link ResourcesService.Admin}
  * API</dd>
  * </dl>
- * 
+ * <p>
  * In addition, the resource manager exposes querying methods, either based on semantics and context
  * ({@link #queryModels(Observable, ContextScope)}) or on textual search
  * ({@link #queryResources(String, KnowledgeClass...)}). The semantic query model uses the connected
  * reasoner and will only return a ResourceSet listing {@link KimModel}s and their
  * requirements, leaving ranking and prioritization to the caller.
- * 
- * @author Ferd
  *
+ * @author Ferd
  */
 public interface ResourcesService extends KlabService {
 
     public static final int DEFAULT_PORT = 8092;
 
+
     /**
      * All services publish capabilities and have a call to obtain them.
-     * 
-     * @author Ferd
      *
+     * @author Ferd
      */
     interface Capabilities extends ServiceCapabilities {
 
@@ -98,19 +93,18 @@ public interface ResourcesService extends KlabService {
     Capabilities capabilities();
 
     /**
-     * Get the contents of a set of projects. Assumes that the capabilities have been consulted and
-     * have suggested that this is a sensible request.
-     * 
-     * @param scope could be null (defaulting to the service scope) for the entire worldview, but a
-     *        user scope should include the optional parts due to the user's group selection.
-     * @return an entire worldview managed by this service, or an empty resource set if not
-     *         available.
+     * Get the contents of a set of projects. Assumes that the capabilities have been consulted and have suggested that
+     * this is a sensible request.
+     *
+     * @param scope could be null (defaulting to the service scope) for the entire worldview, but a user scope should
+     *              include the optional parts due to the user's group selection.
+     * @return an entire worldview managed by this service, or an empty resource set if not available.
      */
     ResourceSet projects(Collection<String> projects, Scope scope);
 
     /**
      * Request all the contents of a given project.
-     * 
+     *
      * @param projectName
      * @param scope
      * @return
@@ -118,10 +112,10 @@ public interface ResourcesService extends KlabService {
     ResourceSet project(String projectName, Scope scope);
 
     /**
-     * Request the namespaces containing a given model along with anything else required to run it
-     * properly. This would normally include all the project namespaces and resources unless scoping
-     * has been analyzed and determined it's not necessary.
-     * 
+     * Request the namespaces containing a given model along with anything else required to run it properly. This would
+     * normally include all the project namespaces and resources unless scoping has been analyzed and determined it's
+     * not necessary.
+     *
      * @param modelName
      * @param scope
      * @return
@@ -130,15 +124,15 @@ public interface ResourcesService extends KlabService {
 
     /**
      * Resolve a specific URN to the object that is represented by it, which must be returned in
-     * {@link ResourceSet#setResults(java.util.Set)}. The result must be self-consistent and
-     * complete. Return an empty resultset if not found.
+     * {@link ResourceSet#setResults(java.util.Set)}. The result must be self-consistent and complete. Return an empty
+     * resultset if not found.
      */
     ResourceSet resolve(String urn, Scope scope);
 
     /**
-     * Return the parsed contents of a namespace. This should only be called after a request that
-     * returned a ResourceSet to ensure correct dependency handling.
-     * 
+     * Return the parsed contents of a namespace. This should only be called after a request that returned a ResourceSet
+     * to ensure correct dependency handling.
+     *
      * @param urn
      * @param scope
      * @return
@@ -146,9 +140,9 @@ public interface ResourcesService extends KlabService {
     KimNamespace resolveNamespace(String urn, Scope scope);
 
     /**
-     * Return the parsed contents of a behavior. This only be called after a request that returned a
-     * ResourceSet to ensure correct dependency handling.
-     * 
+     * Return the parsed contents of a behavior. This only be called after a request that returned a ResourceSet to
+     * ensure correct dependency handling.
+     *
      * @param urn
      * @param scope
      * @return
@@ -157,7 +151,7 @@ public interface ResourcesService extends KlabService {
 
     /**
      * Return the parsed contents of a resource.
-     * 
+     *
      * @param urn
      * @param scope
      * @return
@@ -165,9 +159,17 @@ public interface ResourcesService extends KlabService {
     Resource resolveResource(String urn, Scope scope);
 
     /**
-     * Inquire about resource availability for the passed urn and scope. Should work for all types
-     * of assets.
-     * 
+     * Resolve a component (and possibly its dependencies) that provides the passed service call.
+     *
+     * @param name
+     * @param scope
+     * @return
+     */
+    ResourceSet resolveServiceCall(String name, Scope scope);
+
+    /**
+     * Inquire about resource availability for the passed urn and scope. Should work for all types of assets.
+     *
      * @param urn
      * @param scope
      * @return
@@ -175,21 +177,18 @@ public interface ResourcesService extends KlabService {
     ResourceStatus resourceStatus(String urn, Scope scope);
 
     /**
-     * 
      * @param definition
      * @return
      */
     KimObservable resolveObservable(String definition);
 
     /**
-     * 
      * @param definition
      * @return
      */
     KimConcept resolveConcept(String definition);
 
     /**
-     * 
      * @param originalResource
      * @param scope
      * @return
@@ -197,7 +196,6 @@ public interface ResourcesService extends KlabService {
     Resource contextualizeResource(Resource originalResource, ContextScope scope);
 
     /**
-     * 
      * @param contextualizedResource
      * @param scope
      * @return
@@ -205,38 +203,36 @@ public interface ResourcesService extends KlabService {
     KlabData contextualize(Resource contextualizedResource, Scope scope);
 
     /**
-     * 
      * @param urn
      * @param scope
      * @return
      */
     KdlDataflow resolveDataflow(String urn, Scope scope);
-    
-    
+
+
     /**
      * Return all the namespaces that depend on the passed namespace.
-     * 
+     *
      * @param namespaceId
      * @return
      */
     List<KimNamespace> dependents(String namespaceId);
 
     /**
-     * Return all the namespaces that the passed namespace depends on. These must be available to
-     * the resolver prior to loading any namespace. The closure of the namespace must be complete,
-     * no matter if they come from this service or others: a service cannot serve a namespace unless
-     * it's prepared to serve its entire closure under the same scope.
-     * 
+     * Return all the namespaces that the passed namespace depends on. These must be available to the resolver prior to
+     * loading any namespace. The closure of the namespace must be complete, no matter if they come from this service or
+     * others: a service cannot serve a namespace unless it's prepared to serve its entire closure under the same
+     * scope.
+     *
      * @param namespaceId
      * @return
      */
     List<KimNamespace> precursors(String namespaceId);
 
     /**
-     * Return the URNs of any locally hosted resources whose URN matches the passed pattern. If any
-     * resource types are passed, only return URNs for those. The pattern should allow simple
-     * wildcards like * and .
-     * 
+     * Return the URNs of any locally hosted resources whose URN matches the passed pattern. If any resource types are
+     * passed, only return URNs for those. The pattern should allow simple wildcards like * and .
+     *
      * @param urnPattern
      * @param resourceTypes
      * @return
@@ -244,9 +240,9 @@ public interface ResourcesService extends KlabService {
     List<String> queryResources(String urnPattern, KlabAsset.KnowledgeClass... resourceTypes);
 
     /**
-     * Return the actual (local) project with its contents. Used mostly internally with a likely
-     * heavy result payload, should not resolve the project beyond the local workspaces.
-     * 
+     * Return the actual (local) project with its contents. Used mostly internally with a likely heavy result payload,
+     * should not resolve the project beyond the local workspaces.
+     *
      * @param projectName
      * @param scope
      * @return
@@ -254,11 +250,11 @@ public interface ResourcesService extends KlabService {
     Project resolveProject(String projectName, Scope scope);
 
     /**
-     * Return the candidate models for the passed observables in the passed scope (which will
-     * provide the reasoner service). The result should contain an unordered list of candidate model
-     * URNs (in {@link ResourceSet#getUrns()}) along with the needed resources, namespaces and
-     * behaviors needed to run them. Prioritization happens in the resolver.
-     * 
+     * Return the candidate models for the passed observables in the passed scope (which will provide the reasoner
+     * service). The result should contain an unordered list of candidate model URNs (in {@link ResourceSet#getUrns()})
+     * along with the needed resources, namespaces and behaviors needed to run them. Prioritization happens in the
+     * resolver.
+     *
      * @param observable
      * @param scope
      * @return
@@ -266,21 +262,18 @@ public interface ResourcesService extends KlabService {
     ResourceSet queryModels(Observable observable, ContextScope scope);
 
     /**
-     * Compute and return the geometry for the model identified by this URN. The geometry comes from
-     * the namespace coverage merged with the model's own, which in turn is the intersected coverage
-     * of its resources plus any model scale constraints, if any are specified. Models may also
-     * restrict their geometry to specific representations of space/time using annotations or
-     * generic specifications (for example request a grid or a temporal range without specifying a
-     * resolution, or specifying only a range of them, or a resolution without extent). This
-     * information is needed at resolution, so computations should be cached to avoid wasting CPU in
-     * complex operations on repeated calls.
+     * Compute and return the geometry for the model identified by this URN. The geometry comes from the namespace
+     * coverage merged with the model's own, which in turn is the intersected coverage of its resources plus any model
+     * scale constraints, if any are specified. Models may also restrict their geometry to specific representations of
+     * space/time using annotations or generic specifications (for example request a grid or a temporal range without
+     * specifying a resolution, or specifying only a range of them, or a resolution without extent). This information is
+     * needed at resolution, so computations should be cached to avoid wasting CPU in complex operations on repeated
+     * calls.
      * <p>
-     * The coverage should honor any constraints expressed in the coverage specifications or
-     * annotations, and report a coverage percentage == 0 when {@link Coverage#getCoverage()} is
-     * called whenever any of those aren't met.
-     * 
-     * @param model a known model URN. If the URN is unknown a {@link KIllegalArgumentException}
-     *        should be thrown.
+     * The coverage should honor any constraints expressed in the coverage specifications or annotations, and report a
+     * coverage percentage == 0 when {@link Coverage#getCoverage()} is called whenever any of those aren't met.
+     *
+     * @param model a known model URN. If the URN is unknown a {@link KIllegalArgumentException} should be thrown.
      * @return the coverage of the model, reporting coverage == 1 unless constraints are not met.
      * @throws KIllegalArgumentException if the URN isn't recognized or does not specify a model.
      */
@@ -288,51 +281,49 @@ public interface ResourcesService extends KlabService {
 
     /**
      * Read a behavior from the passed URL and return the parsed behavior.
-     * 
+     *
      * @param url
      */
     KActorsBehavior readBehavior(URL url);
 
     /**
      * Admin interface to submit/remove projects and configure the service.
-     * 
-     * @author Ferd
      *
+     * @author Ferd
      */
     interface Admin {
 
         /**
-         * Separate and explicit loading of the worldviews and any other workspaces is necessary if
-         * local resources must be coordinated with a local reasoner.
-         * 
+         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local resources must
+         * be coordinated with a local reasoner.
+         *
          * @return
          */
         ResourceSet loadWorldview();
 
         /**
-         * Separate and explicit loading of the worldviews and any other workspaces is necessary if
-         * local resources must be coordinated with a local reasoner.
-         * 
+         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local resources must
+         * be coordinated with a local reasoner.
+         *
          * @return
          */
         ResourceSet loadWorkspaces();
 
         /**
          * Add or update a project from an external source to the local repository.
-         * 
+         *
          * @param workspaceName
-         * @param projectUrl can be a file (zip or existing folder), a git URL (with a potential
-         *        branch name after a # sign) or a http URL from another resource manager.
+         * @param projectUrl          can be a file (zip or existing folder), a git URL (with a potential branch name
+         *                            after a # sign) or a http URL from another resource manager.
          * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
-         * @return true if operation succeeded and anything was done (false if project existed and
-         *         wasn't overwritten)
+         * @return true if operation succeeded and anything was done (false if project existed and wasn't overwritten)
          */
         boolean addProject(String workspaceName, String projectUrl, boolean overwriteIfExisting);
 
         /**
-         * Publish a project with the passed privileges. The project must has been added before this
-         * is called. If the project is already published, update the permissions.
-         * 
+         * Publish a project with the passed privileges. The project must has been added before this is called. If the
+         * project is already published, update the permissions.
+         *
          * @param projectUrl
          * @param permissions
          * @return
@@ -341,35 +332,32 @@ public interface ResourcesService extends KlabService {
 
         /**
          * Unpublish a previously published project.
-         * 
+         *
          * @param projectUrl
          * @return
          */
         boolean unpublishProject(String projectUrl);
 
         /**
-         * Add a resource fully specified by a resource object to those managed by this service.
-         * Resource is invisible from the outside until published. The resource adapter must be
-         * available to the service.
-         * 
+         * Add a resource fully specified by a resource object to those managed by this service. Resource is invisible
+         * from the outside until published. The resource adapter must be available to the service.
+         *
          * @param resource
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
         String addResource(Resource resource);
 
         /**
-         * Add a resource with file content to those managed by this service. Resource is invisible
-         * from the outside until published. The resource adapter must be available to the service.
-         * 
-         * @param resourcePath the directory or zip file that contains the resource files. A
-         *        resource.json file must be present, along with anything else required by the
-         *        adapter.
+         * Add a resource with file content to those managed by this service. Resource is invisible from the outside
+         * until published. The resource adapter must be available to the service.
+         *
+         * @param resourcePath the directory or zip file that contains the resource files. A resource.json file must be
+         *                     present, along with anything else required by the adapter.
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
         String addResource(File resourcePath);
 
         /**
-         * 
          * @param resource
          * @param permissions
          * @return
@@ -377,14 +365,12 @@ public interface ResourcesService extends KlabService {
         boolean publishResource(String resourceUrn, ResourcePrivileges permissions);
 
         /**
-         * 
          * @param resourceUrn
          * @return
          */
         boolean unpublishResource(String resourceUrn);
 
         /**
-         * 
          * @param workspaceName
          * @param projectName
          * @return true if operation was carried out
@@ -393,30 +379,28 @@ public interface ResourcesService extends KlabService {
 
         /**
          * Remove an entire workspace and all the projects and resources in it.
-         * 
+         *
          * @param workspaceName
          */
         void removeWorkspace(String workspaceName);
 
         /**
-         * Return a list of all the workspaces available with their contents. Bound to produce a
-         * large payload.
-         * 
+         * Return a list of all the workspaces available with their contents. Bound to produce a large payload.
+         *
          * @return
          */
         Collection<Workspace> listWorkspaces();
 
         /**
-         * Return a list of all the projects available with their contents. Bound to produce a large
-         * payload.
-         * 
+         * Return a list of all the projects available with their contents. Bound to produce a large payload.
+         *
          * @return
          */
         Collection<Project> listProjects();
 
         /**
          * Return the URNs of all the resources available locally.
-         * 
+         *
          * @return
          */
         Collection<String> listResourceUrns();

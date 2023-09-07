@@ -2,6 +2,8 @@ package org.integratedmodelling.kcli;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Collection;
+import java.util.function.Function;
 
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
@@ -19,8 +21,77 @@ import picocli.CommandLine.Spec;
 
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate semantic knowledge.",
-        ""}, subcommands = {Reasoner.Traits.class, Reasoner.Export.class})
+        ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class,
+        Reasoner.Export.class})
 public class Reasoner {
+
+
+    @Command(name = "parents", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "List the asserted parent hierarchy of a concept."}, subcommands = {})
+    public static class Parents extends FunctionalCommand {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> observables;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            var urn = Utils.Strings.join(observables, " ");
+            var reasoner = Engine.INSTANCE.getCurrentUser()
+                    .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            Concept concept = reasoner.resolveConcept(urn);
+            if (concept == null) {
+                err.println("Concept " + urn + " not found");
+            } else {
+                out.println(concept.getUrn());
+                printRelated(out, concept, reasoner::parents, 3);
+            }
+        }
+    }
+
+    public static void printRelated(PrintWriter out, Concept concept, Function<Concept, Collection<Concept>> producer
+            , int offset) {
+        String spaces = Utils.Strings.spaces(offset);
+        for (var child : producer.apply(concept)) {
+            out.println(spaces + child.getUrn());
+            printRelated(out, child, producer, offset + 3);
+        }
+    }
+
+    @Command(name = "children", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "List the asserted child hierarchy of a concept."}, subcommands = {})
+    public static class Children extends FunctionalCommand {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> observables;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            var urn = Utils.Strings.join(observables, " ");
+            var reasoner = Engine.INSTANCE.getCurrentUser()
+                    .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            Concept concept = reasoner.resolveConcept(urn);
+            if (concept == null) {
+                err.println("Concept " + urn + " not found");
+            } else {
+                out.println(concept.getUrn());
+                printRelated(out, concept, reasoner::children, 3);
+            }
+        }
+    }
 
     @Command(name = "traits", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "List all the traits in a concept."}, subcommands = {})
