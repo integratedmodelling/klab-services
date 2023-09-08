@@ -4,6 +4,8 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.impl.ObservationStrategyImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
+import java.io.Serializable;
+
 /**
  * Each observation strategy iterates to directives for the resolver, each consisting of a type and an argument. The
  * resolver resolves the whole strategy returning the final coverage of the resolution.
@@ -26,37 +28,49 @@ public interface ObservationStrategy extends Iterable<Pair<ObservationStrategy.O
         ObservationStrategy build();
     }
 
-    public record Arguments(Observable observable, ServiceCall serviceCall) {
+    public record Arguments(Observable observable, ServiceCall serviceCall) implements Serializable {
     }
 
     enum Operation {
 
         /**
-         * the strategy implies further resolution of the associated observable
+         * the operation implies further resolution of the associated observable
          */
         RESOLVE,
 
         /**
-         * The strategy requires the observation of the associated observable. i.e. looking up a model or a previous
+         * The operation requires the observation of the associated observable. i.e. looking up a model or a previous
          * observation, without further resolving it.
          */
         OBSERVE,
 
         /**
-         * The strategy implies the instantiation of other direct observables, then the application of the child
-         * strateg(ies) to each of the results.
+         * The operation implies the instantiation of other direct observables, then the application of the following
+         * operation(s) to each of the results.
          */
         REIFY,
 
         APPLY,
 
         /**
-         * Extract all traits from
+         * The operation requires the observation of the concrete concepts incarnating the generic/abstract observable
+         * associated, then collecting all the different types from the resulting categorization (which will be a state
+         * observing <code>type of Observable</code>) and resolving them independently in the different sub-contexts
+         * implied by the resulting category values. For qualities, it will be a 'where' value operator; for objects, it
+         * will be independent resolutions.
          */
         CHARACTERIZE,
 
+        // FIXME may be unnecessary given that the previous one should cover the application needs. How to limit
+        //  resolution of objects to the sub-coverage of a filtered categorical state remains to be understood
+        //  (creating geometries would be prohibitive).
         CLASSIFY,
 
+        /**
+         * The operation consists of the application of a filter contextualizer to the result of the previous operation.
+         * Scalar filters will be joined into a filter chain by the runtime and executed in parallel so that
+         * intermediate states won't need to be kept.
+         */
         FILTER
 
     }
