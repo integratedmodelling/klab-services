@@ -46,15 +46,6 @@ public interface Semantics extends Knowledge {
 	String getNamespace();
 
 	/**
-	 * Return the raw semantics for this object, normally a Concept. If this is a
-	 * Concept, return self.
-	 * 
-	 * @deprecated makes no sense
-	 * @return
-	 */
-	Semantics semantics();
-
-	/**
 	 * Logical, fast check for basic semantic type, no reasoning is performed.
 	 * 
 	 * @param type

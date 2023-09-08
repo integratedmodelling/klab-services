@@ -24,21 +24,21 @@ import org.ojalgo.concurrent.Parallelism;
 import java.util.*;
 
 /**
- * A DigitalTwin is the server-side observation content kept with a context scope, which acts as a "handle" to it.
- * It contains all observations, their storage, the influence diagram between observations with the log of
- * any modification event timestamp, the scheduler, the event manager and the catalog of ID->{observation, actuator,
- * storage, runtime data...}. Also maintains the logical and physical "family tree" of observation and manages the
- * bookkeeping of any runtime assets so that they are known and disposed of properly when the context scope ends. The
- * logical tree skips the instance container built for the instantiators, which is kept in the physical structure.
+ * A DigitalTwin is the server-side observation content kept with a context scope, which acts as a "handle" to it. It
+ * contains all observations, their storage, the influence diagram between observations with the log of any modification
+ * event timestamp, the scheduler, the event manager and the catalog of ID->{observation, actuator, storage, runtime
+ * data...}. Also maintains the logical and physical "family tree" of observation and manages the bookkeeping of any
+ * runtime assets so that they are known and disposed of properly when the context scope ends. The logical tree skips
+ * the instance container built for the instantiators, which is kept in the physical structure.
  * <p>
  * The DigitalTwin is accessed through the {@link ContextScope}. Eventually it may have its own API contract, although
  * all interaction is currently managed through {@link ContextScope}.</p>
  *
- * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage  and context, so that successive
- * resolutions of instances can reuse a previous dataflow when it is applicable instead of asking the resolver again.
- * This can be configured to be applied only above a certain threshold in the number of instances, or turned off
- * completely, in case speed and space occupation are no issue but maximum dataflow "fit" to the resolved object and its
- * scale must be ensured.</p>
+ * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage  and context, so that
+ * successive resolutions of instances can reuse a previous dataflow when it is applicable instead of asking the
+ * resolver again. This can be configured to be applied only above a certain threshold in the number of instances, or
+ * turned off completely, in case speed and space occupation are no issue but maximum dataflow "fit" to the resolved
+ * object and its scale must be ensured.</p>
  *
  * <p>Ideas for the DT API and interface:</p>
  * <ul>
@@ -71,6 +71,9 @@ public class DigitalTwin {
     /**
      * Fastest possible way to check if an event must be sent. This does not specify what the listeners are and is just
      * used to wrap the event sending code.
+     * <p>
+     * TODO this should be a map pointing to a list of scopes for each event. New events should be pushed and
+     * processed in a FIFO queue handled by a monitor thread
      */
     private Set<Event> listenedEvents = EnumSet.noneOf(Event.class);
 
@@ -84,7 +87,6 @@ public class DigitalTwin {
      * The local asset catalog. Most importantly for disposal at end.
      */
     private Set<RuntimeAsset> runtimeAssets = new HashSet<>();
-
 
     /**
      * Each contextualizer is stored here along with the call that generated it and a classification for speed.
@@ -181,14 +183,14 @@ public class DigitalTwin {
         }
 
         /**
-        If not done already: initialize by
-            1. Separate chains of scalar functions and merge into chained contextualizers
-            2. Add individual non-scalar contextualizers
-            3. Define run strategy and naming
+         If not done already: initialize by
+         1. Separate chains of scalar functions and merge into chained contextualizers
+         2. Add individual non-scalar contextualizers
+         3. Define run strategy and naming
          */
 
         /**
-        Run computational chain
+         Run computational chain
          */
 
         return false;

@@ -26,15 +26,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -146,7 +138,8 @@ public class OWL {
     /**
      * Source of truth for identifier-friendly reference names
      *
-     * @param main
+     * @param namespace
+     * @param name
      * @return
      */
     public static String getCleanFullId(String namespace, String name) {
@@ -276,10 +269,6 @@ public class OWL {
 
     /**
      * Create a manager and load every OWL file under the load path.
-     *
-     * @param loadPath
-     * @param monitor
-     * @throws KlabException
      */
     public void initialize() {
 
@@ -524,8 +513,6 @@ public class OWL {
      * create the namespace. It's only meant for core knowledge not seen by users.
      *
      * @param kdir
-     * @throws KlabException
-     * @throws KlabIOException
      */
     public void load(File kdir) {
 
@@ -548,7 +535,6 @@ public class OWL {
      * @param path
      * @param forcePath disregard directory structure and use passed path as prefix for ontology
      * @param monitor
-     * @throws KlabException
      */
     private void loadInternal(File f, String path, boolean forcePath, Channel monitor) {
 
@@ -562,7 +548,7 @@ public class OWL {
 
         if (f.isDirectory()) {
             if (!Utils.Files.getFileBaseName(f.toString()).startsWith(".")) {
-                for (File fl : f.listFiles()) {
+                for (File fl : Objects.requireNonNull(f.listFiles())) {
                     loadInternal(fl, pth, false, monitor);
                 }
             }
@@ -1125,19 +1111,19 @@ public class OWL {
         }
 
         Collections.sort(ids);
-        String id = "";
+        StringBuilder id = new StringBuilder();
         for (String iid : ids) {
-            id += (id.isEmpty() ? "" : "__and__") + iid;
+            id.append((id.isEmpty()) ? "" : "__and__").append(iid);
         }
 
-        Concept ret = ((Ontology) destination).getConcept(id);
+        Concept ret = ((Ontology) destination).getConcept(id.toString());
         if (ret != null) {
             return ret;
         }
 
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = factory.getOWLObjectIntersectionOf(classes);
-        ret = (ConceptImpl) ((Ontology) destination).createConcept(id, type);
+        ret = (ConceptImpl) ((Ontology) destination).createConcept(id.toString(), type);
         manager.addAxiom(((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
         return ret;
@@ -1156,19 +1142,19 @@ public class OWL {
         }
 
         Collections.sort(ids);
-        String id = "";
+        StringBuilder id = new StringBuilder();
         for (String iid : ids) {
-            id += (id.isEmpty() ? "" : "__or__") + iid;
+            id.append((id.isEmpty()) ? "" : "__or__").append(iid);
         }
 
-        Concept ret = ((Ontology) destination).getConcept(id);
+        Concept ret = ((Ontology) destination).getConcept(id.toString());
         if (ret != null) {
             return ret;
         }
 
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = factory.getOWLObjectUnionOf(classes);
-        ret = (ConceptImpl) ((Ontology) destination).createConcept(id, type);
+        ret = (ConceptImpl) ((Ontology) destination).createConcept(id.toString(), type);
         manager.addAxiom(((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
 
         return ret;
@@ -1205,29 +1191,16 @@ public class OWL {
     public Concept getNonsemanticPeer(String name, Artifact.Type type) {
 
         String conceptId = Utils.Strings.capitalize(type.name().toLowerCase()) + CamelCase.toUpperCamelCase(name, '.');
-        SemanticType qualityType = null;
-        switch (type) {
-            case TEXT:
-                qualityType = SemanticType.CATEGORY;
-                break;
-            case NUMBER:
-                qualityType = SemanticType.QUANTITY;
-                break;
-            case CONCEPT:
-                qualityType = SemanticType.CLASS;
-                break;
-            case BOOLEAN:
-                qualityType = SemanticType.PRESENCE;
-                break;
-            case OBJECT:
-                qualityType = SemanticType.SUBJECT;
-                break;
-            case EVENT:
-                qualityType = SemanticType.EVENT;
-                break;
-            default:
-                throw new IllegalArgumentException("wrong type passed for non-semantic peer generation: " + type);
-        }
+        SemanticType qualityType = switch (type) {
+            case TEXT -> SemanticType.CATEGORY;
+            case NUMBER -> SemanticType.QUANTITY;
+            case CONCEPT -> SemanticType.CLASS;
+            case BOOLEAN -> SemanticType.PRESENCE;
+            case OBJECT -> SemanticType.SUBJECT;
+            case EVENT -> SemanticType.EVENT;
+            default ->
+                    throw new IllegalArgumentException("wrong type passed for non-semantic peer generation: " + type);
+        };
         EnumSet<SemanticType> identity = type.isCountable()
                 ? EnumSet.of(SemanticType.SUBJECT, SemanticType.OBSERVABLE, SemanticType.DIRECT_OBSERVABLE,
                 SemanticType.COUNTABLE)
@@ -1254,7 +1227,7 @@ public class OWL {
      * @return
      */
     public boolean isSemantic(Semantics observable) {
-        return !observable.semantics().getNamespace().equals(nonSemanticConcepts.getName());
+        return !observable.getNamespace().equals(nonSemanticConcepts.getName());
     }
 
     public Ontology readOntology(String string) {
@@ -2369,8 +2342,7 @@ public class OWL {
     }
 
     /**
-     * {@link IKnowledge#is(ISemantic)} will only check for direct subsumption. This one defaults to that when the
-     * reasoner is not active.
+     * Only check for direct subsumption. Default inference when the reasoner is not active.
      * <p>
      * Annotation properties only use asserted methods.
      * <p>
@@ -2417,7 +2389,7 @@ public class OWL {
      * @return true if concept is consistent.
      */
     public boolean isSatisfiable(Semantics c) {
-        return reasoner == null ? true : isSatisfiable(getOWLClass(c.asConcept()));
+        return reasoner == null || isSatisfiable(getOWLClass(c.asConcept()));
     }
 
     /**

@@ -87,11 +87,6 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
     }
 
     @Override
-    public Semantics semantics() {
-        return this;
-    }
-
-    @Override
     public boolean isAbstract() {
         return isAbstract;
     }

@@ -120,11 +120,6 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         return urn;
     }
 
-    @Override
-    public Semantics semantics() {
-        return semantics;
-    }
-
     // @Override
     // public Semantics domain() {
     // return semantics == null ? null : semantics.domain();

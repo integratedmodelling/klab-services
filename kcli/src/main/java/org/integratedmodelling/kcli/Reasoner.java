@@ -21,7 +21,7 @@ import picocli.CommandLine.Spec;
 
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate semantic knowledge.",
-        ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class,
+        ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class, Reasoner.Type.class,
         Reasoner.Export.class})
 public class Reasoner {
 
@@ -93,6 +93,35 @@ public class Reasoner {
         }
     }
 
+
+    @Command(name = "type", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "List the syntactic types of a concept."}, subcommands = {})
+    public static class Type extends FunctionalCommand {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> observables;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            var urn = Utils.Strings.join(observables, " ");
+            var reasoner = Engine.INSTANCE.getCurrentUser()
+                    .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            Concept concept = reasoner.resolveConcept(urn);
+            if (concept == null) {
+                err.println("Concept " + urn + " not found");
+            } else {
+                out.println("   " + concept.getType());
+            }
+        }
+    }
+
     @Command(name = "traits", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "List all the traits in a concept."}, subcommands = {})
     public static class Traits extends FunctionalCommand {
@@ -120,7 +149,7 @@ public class Reasoner {
             if (concept == null) {
                 err.println("Concept " + urn + " not found");
             } else {
-                for (Concept c : inherited ? reasoner.directTraits(concept) : reasoner.traits(concept)) {
+                for (Concept c : inherited ? reasoner.traits(concept) : reasoner.directTraits(concept)) {
                     out.println(Ansi.AUTO.string("   @|yellow " + c + "|@ " + c.getType()));
                 }
             }
