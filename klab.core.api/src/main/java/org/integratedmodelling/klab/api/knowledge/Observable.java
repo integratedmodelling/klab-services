@@ -528,8 +528,11 @@ public interface Observable extends Semantics {
     DirectObservation getObserver();
 
     /**
-     * Abstract status of an observable may be more involved than just the abstract status of the main type, although in
-     * most cases that will be the result.
+     * Abstract status of an observable depends on having an abstract component in a defining place (e.g. not after
+     * <code>type of</code>) and/or having non-abstract generic components (introduced by <code>any</code> or another
+     * quantifier). {@link #isGeneric()} implies {@link #isAbstract()} but not the other way around. In both cases the
+     * abstract/generic components must be resolved in context to concrete components, whose cartesian product is used
+     * to incarnate concrete observables for deferred resolution.
      *
      * @return
      */

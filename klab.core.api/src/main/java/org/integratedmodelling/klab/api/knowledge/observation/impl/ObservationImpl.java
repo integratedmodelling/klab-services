@@ -185,59 +185,11 @@ public class ObservationImpl implements Observation {
         return null;
     }
 
-//    @Override
-//    public DirectObservation getContext() {
-//        // TODO Auto-generated method stub
-//        return null;
-//    }
-//
-//    @Override
-//    public boolean isSpatiallyDistributed() {
-//        // TODO Auto-generated method stub
-//        return false;
-//    }
-//
-//    @Override
-//    public boolean isTemporallyDistributed() {
-//        // TODO Auto-generated method stub
-//        return false;
-//    }
-//
-//    @Override
-//    public boolean isTemporal() {
-//        // TODO Auto-generated method stub
-//        return false;
-//    }
-//
-//    @Override
-//    public boolean isSpatial() {
-//        // TODO Auto-generated method stub
-//        return false;
-//    }
-
     @Override
     public Space getSpace() {
         // TODO Auto-generated method stub
         return null;
     }
-//
-//    @Override
-//    public boolean isDynamic() {
-//        // TODO Auto-generated method stub
-//        return false;
-//    }
-//
-//    @Override
-//    public long getCreationTime() {
-//        // TODO Auto-generated method stub
-//        return 0;
-//    }
-//
-//    @Override
-//    public long getExitTime() {
-//        // TODO Auto-generated method stub
-//        return 0;
-//    }
 
     @Override
     public Version getVersion() {

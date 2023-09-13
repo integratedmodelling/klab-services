@@ -241,8 +241,8 @@ public class Urn {
 	/**
 	 * Create a new local URN with the passed project instead of the original.
 	 * 
-	 * @param originalUrn
-	 * @param name
+	 * @param urn
+	 * @param projectName
 	 * @return
 	 */
 	public static String changeLocalProject(String urn, String projectName) {

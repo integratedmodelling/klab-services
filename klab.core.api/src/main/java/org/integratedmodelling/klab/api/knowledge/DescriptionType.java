@@ -69,8 +69,8 @@ public enum DescriptionType {
      */
     CONNECTION(true, "object");
 
-    boolean instantiation;
-    String kdlType;
+    private final boolean instantiation;
+    private final String kdlType;
     Artifact.Type observationType;
 
     /**
@@ -116,7 +116,7 @@ public enum DescriptionType {
         } else if (type.contains(SemanticType.PRESENCE)) {
             return VERIFICATION;
         } else if (type.contains(SemanticType.RELATIONSHIP)) {
-            return CONNECTION;
+            return distributed ? CONNECTION : ACKNOWLEDGEMENT;
         } else if (type.contains(SemanticType.QUANTIFIABLE)) {
             return QUANTIFICATION;
         } else if (type.contains(SemanticType.CONFIGURATION)) {
@@ -125,8 +125,6 @@ public enum DescriptionType {
             return SIMULATION;
         } else if (type.contains(SemanticType.TRAIT)) {
             return distributed ? CHARACTERIZATION : CLASSIFICATION;
-        } else if (type.contains(SemanticType.RELATIONSHIP)) {
-            return CONNECTION;
         } else if (type.contains(SemanticType.DIRECT_OBSERVABLE)) {
             return distributed ? INSTANTIATION : ACKNOWLEDGEMENT;
         }

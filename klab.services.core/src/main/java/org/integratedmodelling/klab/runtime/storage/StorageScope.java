@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class StorageScope {
 
-    public static final String KEY = StorageScope.class.getCanonicalName();
+//    public static final String KEY = StorageScope.class.getCanonicalName();
 
     public StorageScope(ContextScope scope) {
         // choose the mm files, parallelism level and the floating point representation
