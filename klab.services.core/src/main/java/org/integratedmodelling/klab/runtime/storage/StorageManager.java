@@ -17,14 +17,14 @@ public enum StorageManager {
 
     INSTANCE;
 
-    private StorageScope getStorageImplementation(ContextScope scope) {
-        var ret = scope.getData().get(StorageScope.KEY, StorageScope.class);
-        if (ret == null) {
-            ret = new StorageScope(scope);
-            scope.getData().put(StorageScope.KEY, ret);
-        }
-        return ret;
-    }
+//    private StorageScope getStorageImplementation(ContextScope scope) {
+//        var ret = scope.getData().get(StorageScope.KEY, StorageScope.class);
+//        if (ret == null) {
+//            ret = new StorageScope(scope);
+//            scope.getData().put(StorageScope.KEY, ret);
+//        }
+//        return ret;
+//    }
 
     /**
      * Return a boxing storage for the requested geometry, semantics, expected parallelism, and JVM environment. Use

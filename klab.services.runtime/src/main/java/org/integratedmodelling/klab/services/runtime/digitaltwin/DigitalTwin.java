@@ -21,6 +21,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.ojalgo.concurrent.Parallelism;
 
+import java.io.Serial;
 import java.util.*;
 
 /**
@@ -119,8 +120,9 @@ public class DigitalTwin {
         List<ContextualizerData> contextualizers = new ArrayList<>();
     }
 
-    class InfluenceEdge extends DefaultEdge {
+    static class InfluenceEdge extends DefaultEdge {
 
+        @Serial
         private static final long serialVersionUID = 5250535576252863277L;
 
         /*
