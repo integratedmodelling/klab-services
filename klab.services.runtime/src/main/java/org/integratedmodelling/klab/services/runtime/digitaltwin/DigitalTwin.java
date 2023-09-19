@@ -91,6 +91,10 @@ public class DigitalTwin {
 
     /**
      * Each contextualizer is stored here along with the call that generated it and a classification for speed.
+     * <p>
+     * TODO this could be an executor object with a consistent API, to be stored in the ObservationData instead; each
+     * scalar operation chain should be merged into a single executor so that intermediate data don't need to be
+     * kept, with an option to do so for debugging
      *
      * @author Ferd
      */

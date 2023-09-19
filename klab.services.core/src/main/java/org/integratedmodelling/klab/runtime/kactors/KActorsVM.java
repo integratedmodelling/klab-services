@@ -101,7 +101,7 @@ public class KActorsVM implements VM {
      * 
      * @author Ferd
      */
-    class MatchActions {
+    protected class MatchActions {
 
         Ref caller;
         List<Pair<Match, KActorsStatement>> matches = new ArrayList<>();
@@ -127,11 +127,12 @@ public class KActorsVM implements VM {
             for (Pair<Match, KActorsStatement> match : matches) {
 
                 if (match.getFirst().matches(value, scope)) {
-                    KActorsScope s = ((KActorsScope) scope).withMatch(match.getFirst(), value, matchingScope);
+                    KActorsScope s = scope.withMatch(match.getFirst(), value, matchingScope);
                     execute(match.getSecond(), behavior, s);
                     break;
                 }
             }
+
         }
 
         public MatchActions(KActorsBehavior behavior, KActorsScope scope) {
@@ -1098,7 +1099,6 @@ public class KActorsVM implements VM {
      * 
      * @param constructor
      * @param scope
-     * @param identity
      * @return
      */
     public static Object createJavaObject(KActorsValue.Constructor constructor, KActorsScope scope) {
@@ -1539,7 +1539,7 @@ public class KActorsVM implements VM {
          * nothing. TODO In case of errors causing no fire, though, it will wait forever, so there
          * should be a way to break the wait.
          */
-        ((KActorsScope) scope).waitForGreen(code.getFirstLine());
+        scope.waitForGreen(code.getFirstLine());
 
     }
 
@@ -1606,9 +1606,11 @@ public class KActorsVM implements VM {
     /**
      * Used within KlabActor to compare a returned value with an expected one in a test scope. If
      * we're not in test scope, send an exception to the monitor on lack of match.
-     * 
+     *
+     * @param target
+     * @param assertion
      * @param scope
-     * @param comparison
+     * @param arguments
      */
     public void evaluateAssertion(Object target, Assertion assertion, KActorsScope scope, Parameters<String> arguments) {
 
@@ -1801,7 +1803,7 @@ public class KActorsVM implements VM {
         case NODATA:
             return value == null || value instanceof Number && Double.isNaN(((Number) value).doubleValue());
         case NUMBER:
-            return value instanceof Number && value.equals(kvalue.getStatedValue());
+            return value instanceof Number && value.equals(kvalue.getStatedValue().get(Number.class));
         case NUMBERED_PATTERN:
             break;
         case OBSERVABLE:
@@ -1822,7 +1824,7 @@ public class KActorsVM implements VM {
         case REGEXP:
             break;
         case STRING:
-            return value instanceof String && value.equals(kvalue.getStatedValue());
+            return value instanceof String && value.equals(kvalue.getStatedValue().get(String.class));
         case TABLE:
             break;
         case TYPE:
@@ -1842,7 +1844,7 @@ public class KActorsVM implements VM {
         case CONSTANT:
             return (value instanceof Enum
                     && ((Enum<?>) value).name().toUpperCase().equals(kvalue.getStatedValue().get(String.class)))
-                    || (value instanceof String && ((String) value).equals(kvalue.getStatedValue().get(String.class)));
+                    || (value instanceof String && value.equals(kvalue.getStatedValue().get(String.class)));
         case EMPTY:
             return value == null || (value instanceof Collection && ((Collection<?>) value).isEmpty())
                     || (value instanceof String && ((String) value).isEmpty())

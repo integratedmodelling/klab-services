@@ -86,7 +86,7 @@ public class KlabCLI {
 			"Hit @|magenta ALT-S|@ to toggle tailtips.", "" }, footer = { "", "Press Ctrl-D to exit." }, subcommands = {
 					Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class, Resources.class,
 					Services.class, Run.class, PicocliCommands.ClearScreen.class, CommandLine.HelpCommand.class,
-					Session.class, Context.class, Components.class, Stack.class })
+					Session.class, Context.class, Components.class, Stack.class, Test.class })
 	static class CliCommands implements Runnable {
 
 		PrintWriter out;

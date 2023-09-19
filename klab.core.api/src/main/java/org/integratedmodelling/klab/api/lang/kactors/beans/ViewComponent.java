@@ -10,22 +10,22 @@ import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
 /**
- * The message used by the view actor to request view components. Any number of these may be sent.
- * 
- * @author Ferd
+ * Holds the state of a view component. Not polymorphic except for {@link Layout}, {@link ViewPanel} and some highly
+ * specialized view types. It's part of the message used by a view-enabled actor to request creation of the view
+ * component and is kept at both the view and model side so that state is synchronized.
  *
+ * @author Ferd
  */
 public class ViewComponent {
 
     /**
-     * If type == Container, this will be filled later as the component it's supposed to host can
-     * only be computed at runtime. It may be a group container (if the components are created in a
-     * loop) or another; the containedType specifies what.
-     * 
-     * @author Ferd
+     * If type == Container, this will be filled later as the component it's supposed to host can only be computed at
+     * runtime. It may be a group container (if the components are created in a loop) or another; the containedType
+     * specifies what.
      *
+     * @author Ferd
      */
-    public static enum Type {
+    public enum Type {
         Panel, Alert, PushButton, CheckButton, RadioButton, TextInput, Combo, Group, Map, Tree, TreeItem,
         Confirm, View, Container, MultiContainer, Label, Text, Table, Notification, InputGroup, Separator,
         ModalWindow, Window, Browser, Image
@@ -33,12 +33,10 @@ public class ViewComponent {
     }
 
     /**
-     * A tree is a list of nodes (each a String->String map) and a list of child->parent links,
-     * expressed using the index of the values in the list. For convenience, the index of the root
-     * node is also provided.
-     * 
-     * @author Ferd
+     * A tree is a list of nodes (each a String->String map) and a list of child->parent links, expressed using the
+     * index of the values in the list. For convenience, the index of the root node is also provided.
      *
+     * @author Ferd
      */
     public static class Tree {
 
@@ -173,7 +171,8 @@ public class ViewComponent {
 
     @Override
     public String toString() {
-        return "ViewComponent [parentId=" + parentId + ", type=" + type + ", name=" + name + ", title=" + title + ", content="
+        return "ViewComponent [parentId=" + parentId + ", type=" + type + ", name=" + name + ", title=" + title + ", " +
+                "content="
                 + content + ", attributes=" + attributes + "]";
     }
 
@@ -226,10 +225,9 @@ public class ViewComponent {
     }
 
     /**
-     * Actor path is null if the component is top-level, otherwise it will contain the path to the
-     * actor that all view messages should be forwarded to, so that the top-level actor can send
-     * them.
-     * 
+     * Actor path is null if the component is top-level, otherwise it will contain the path to the actor that all view
+     * messages should be forwarded to, so that the top-level actor can send them.
+     *
      * @return
      */
     public String getActorPath() {
