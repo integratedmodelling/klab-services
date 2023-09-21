@@ -23,6 +23,7 @@ import org.ojalgo.concurrent.Parallelism;
 
 import java.io.Serial;
 import java.util.*;
+import java.util.function.BiFunction;
 
 /**
  * A DigitalTwin is the server-side observation content kept with a context scope, which acts as a "handle" to it. It
@@ -90,28 +91,69 @@ public class DigitalTwin {
     private Set<RuntimeAsset> runtimeAssets = new HashSet<>();
 
     /**
-     * Each contextualizer is stored here along with the call that generated it and a classification for speed.
-     * <p>
-     * TODO this could be an executor object with a consistent API, to be stored in the ObservationData instead; each
-     * scalar operation chain should be merged into a single executor so that intermediate data don't need to be
-     * kept, with an option to do so for debugging
+     * <p>Holder of atomic "executors" that implement one or more contextualizers (sequential scalar ones are merged into
+     * chains to avoid storage of intermediate products unless requested).</p>
      *
-     * @author Ferd
+     * <p>Has two separate and equivalent call sets, one with debugging and one without, to avoid constant checking in
+     * time-critical contextualizers.</p>
+     *
+     * <p>It implements a bifuction that takes the localized observations (with the name that each is known as in the
+     * actuator) and returns an observation, normally the same that corresponds to "self" in the observation map, but
+     * possibly a different one for observation resolvers</p>
      */
-    static class ContextualizerData {
+    class Executor implements BiFunction<Map<String, Observation>, ContextScope, Observation> {
 
-        enum Type {
-            DOUBLE_VALUE_RESOLVER, INT_VALUE_RESOLVER, CONCEPT_VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
-            OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR, OBSERVATION_CHARACTERIZER, OBSERVABLE_CLASSIFIER,
-            OBJECT_CLASSIFIER
+        @Override
+        public Observation apply(Map<String, Observation> observations, ContextScope scope) {
+
+
+            /**
+             * Decide the parallelization strategy based on the scope data
+             */
+
+            return null;
         }
-
-        Artifact.Type returnType;
-        Type type;
-        Contextualizer contextualizer;
-        ServiceCall serviceCall;
-        boolean parallel; // for value resolvers, if true execution can be parallel
     }
+
+
+    /**
+     * Create an executor for the computation and return it, or merge the computation into the previous executor and
+     * return it.
+     *
+     * @param actuator
+     * @param computation
+     * @param previousExecutor
+     * @return
+     */
+
+    private Executor createExecutor(Actuator actuator, ServiceCall computation, Executor previousExecutor) {
+        // TODO
+        return null;
+    }
+
+//    /**
+//     * Each contextualizer is stored here along with the call that generated it and a classification for speed.
+//     * <p>
+//     * TODO this could be an executor object with a consistent API, to be stored in the ObservationData instead; each
+//     * scalar operation chain should be merged into a single executor so that intermediate data don't need to be
+//     * kept, with an option to do so for debugging
+//     *
+//     * @author Ferd
+//     */
+//    static class ContextualizerData {
+//
+//        enum Type {
+//            DOUBLE_VALUE_RESOLVER, INT_VALUE_RESOLVER, CONCEPT_VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
+//            OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR, OBSERVATION_CHARACTERIZER, OBSERVABLE_CLASSIFIER,
+//            OBJECT_CLASSIFIER
+//        }
+//
+//        Artifact.Type returnType;
+//        Type type;
+//        Contextualizer contextualizer;
+//        ServiceCall serviceCall;
+//        boolean parallel; // for value resolvers, if true execution can be parallel
+//    }
 
     class ObservationData {
 
@@ -120,8 +162,8 @@ public class DigitalTwin {
         // the last timestamp in the influence graph starting at this
         long lastUpdate = -1;
 
-        // list in order of application
-        List<ContextualizerData> contextualizers = new ArrayList<>();
+        // executors in order of application. Implemented by the Executor class.
+        List<BiFunction<Map<String, Observation>, ContextScope, Observation>> contextualizers = new ArrayList<>();
     }
 
     static class InfluenceEdge extends DefaultEdge {
@@ -185,6 +227,16 @@ public class DigitalTwin {
             data = new ObservationData();
             data.actuator = actuator;
             data.observation = createObservation(actuator, scope);
+
+            Executor executor = null;
+            for (var computation : data.actuator.getComputation()) {
+                Executor step = createExecutor(actuator, computation, executor);
+                if (executor != step) {
+                    data.contextualizers.add(step);
+                }
+                executor = step;
+            }
+
             observationData.put(actuator.getId(), data);
         }
 
