@@ -3,6 +3,7 @@ package org.integratedmodelling.kcli;
 import org.integratedmodelling.klab.Version;
 import picocli.CommandLine;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @CommandLine.Command(name = "test", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -33,7 +34,7 @@ public class Test {
         @Override
         public void run() {
 
-            List<String> namespaces;
+            List<String> namespaces = new ArrayList<>();
 
             if (testcases == null || testcases.isEmpty()) {
 
