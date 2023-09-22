@@ -103,6 +103,15 @@ public class DigitalTwin {
      */
     class Executor implements BiFunction<Map<String, Observation>, ContextScope, Observation> {
 
+        enum Type {
+            DOUBLE_VALUE_RESOLVER, INT_VALUE_RESOLVER, CONCEPT_VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
+            OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR, OBSERVATION_CHARACTERIZER, OBSERVABLE_CLASSIFIER,
+            OBJECT_CLASSIFIER
+        }
+
+        Type type;
+        Parallelism parallelism = Parallelism.ONE;
+
         @Override
         public Observation apply(Map<String, Observation> observations, ContextScope scope) {
 
@@ -130,30 +139,6 @@ public class DigitalTwin {
         // TODO
         return null;
     }
-
-//    /**
-//     * Each contextualizer is stored here along with the call that generated it and a classification for speed.
-//     * <p>
-//     * TODO this could be an executor object with a consistent API, to be stored in the ObservationData instead; each
-//     * scalar operation chain should be merged into a single executor so that intermediate data don't need to be
-//     * kept, with an option to do so for debugging
-//     *
-//     * @author Ferd
-//     */
-//    static class ContextualizerData {
-//
-//        enum Type {
-//            DOUBLE_VALUE_RESOLVER, INT_VALUE_RESOLVER, CONCEPT_VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
-//            OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR, OBSERVATION_CHARACTERIZER, OBSERVABLE_CLASSIFIER,
-//            OBJECT_CLASSIFIER
-//        }
-//
-//        Artifact.Type returnType;
-//        Type type;
-//        Contextualizer contextualizer;
-//        ServiceCall serviceCall;
-//        boolean parallel; // for value resolvers, if true execution can be parallel
-//    }
 
     class ObservationData {
 
