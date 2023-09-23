@@ -16,8 +16,10 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 public interface DoubleValueResolver extends Contextualizer {
 
     /**
-     * 
-     * @param observation
+     *
+     * @param data
+     * @param locator
+     * @param call
      * @param scope
      * @return
      */

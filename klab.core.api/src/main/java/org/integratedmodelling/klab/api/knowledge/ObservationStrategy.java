@@ -34,7 +34,10 @@ public interface ObservationStrategy extends Iterable<Pair<ObservationStrategy.O
     enum Operation {
 
         /**
-         * the operation implies further resolution of the associated observable
+         * the operation implies further resolution of the associated observable, in the context set by the previous
+         * operation (or top-level). If the previous operation has resolved a type of Trait, resolve is for each
+         * predicate as incarnated by the concrete classes, in the correspondent context (if an OR, expanding all
+         * observables)
          */
         RESOLVE,
 
@@ -47,6 +50,8 @@ public interface ObservationStrategy extends Iterable<Pair<ObservationStrategy.O
         /**
          * The operation implies the instantiation of other direct observables, then the application of the following
          * operation(s) to each of the results.
+         *
+         * @deprecated probably OBSERVE(instance) + RESOLVE(resolve) is enough
          */
         REIFY,
 
