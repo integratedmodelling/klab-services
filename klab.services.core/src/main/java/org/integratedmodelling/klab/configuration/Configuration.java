@@ -369,12 +369,12 @@ public enum Configuration {
         String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" : (annotation.name() + ".");
 
         for (Class<?> clss : cls.getClasses()) {
-            if (cls.isAnnotationPresent(KlabFunction.class)) {
-                ret.add(createContextualizerPrototype(namespacePrefix, cls.getAnnotation(KlabFunction.class), clss, null));
-            } else if (cls.isAnnotationPresent(Verb.class)) {
-                ret.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), clss, null));
-            } else if (cls.isAnnotationPresent(KlabAnnotation.class)) {
-                ret.add(createAnnotationPrototype(namespacePrefix, cls.getAnnotation(KlabAnnotation.class), clss, null));
+            if (clss.isAnnotationPresent(KlabFunction.class)) {
+                ret.add(createContextualizerPrototype(namespacePrefix, clss.getAnnotation(KlabFunction.class), clss, null));
+            } else if (clss.isAnnotationPresent(Verb.class)) {
+                ret.add(createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class), clss, null));
+            } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
+                ret.add(createAnnotationPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class), clss, null));
             }
         }
 
@@ -531,6 +531,8 @@ public enum Configuration {
     /**
      * Single scanning loop for all registered annotations in a package. Done on the main codebase
      * and in each component based on the declared packages.
+     *
+     * TODO use plug-in manifest to declare packages to scan. For now this is NOT recursive.
      * 
      * @param packageId
      * @return all annotations found with the corresponding class
@@ -938,7 +940,7 @@ public enum Configuration {
      * and merge the results into a given collection.
      * 
      * @param <T> type of result in the resulting collections
-     * @param serviceType type of the service (use the interfaces!)
+     * @param serviceClass type of the service (use the interfaces!)
      * @param retriever a function that retrieves results from each individual service
      * @param merger a function that takes the results of all services and returns the final
      *        organization of them as a single collection

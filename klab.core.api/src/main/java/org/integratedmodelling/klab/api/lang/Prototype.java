@@ -254,14 +254,14 @@ public interface Prototype extends Serializable {
      * 
      * @return longer description
      */
-    public String getSynopsis(Integer... flags);
+    public String synopsis(Integer... flags);
 
     /**
      * One-line short synopsis intended to document usage without descriptions.
      * 
      * @return short synopsis
      */
-    public String getShortSynopsis();
+    public String shortSynopsis();
 
     /**
      * Get the class of the object whose API the prototype specifies.

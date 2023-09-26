@@ -1,12 +1,9 @@
 package org.integratedmodelling.klab.services.runtime;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 
+import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -15,6 +12,8 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
 
@@ -30,6 +29,26 @@ public class RuntimeService extends BaseService
 
     @Override
     public void initializeService() {
+        /*
+         * Components
+         */
+        Set<String> extensionPackages = new LinkedHashSet<>();
+        extensionPackages.add("org.integratedmodelling.klab.runtime");
+        extensionPackages.add("org.integratedmodelling.klab.runtime.temporary");
+        /*
+         * Check for updates, load and scan all new plug-ins, returning the main packages to scan
+         */
+        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
+
+        /*
+         * Scan all packages registered under the parent package of all k.LAB services. TODO all
+         * assets from there should be given default permissions (or those encoded with their
+         * annotations) that are exposed to the admin API.
+         */
+        for (String pack : extensionPackages) {
+            Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
+        }
+
     }
 
     @Override

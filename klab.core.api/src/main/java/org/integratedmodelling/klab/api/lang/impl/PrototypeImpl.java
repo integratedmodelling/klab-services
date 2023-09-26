@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -12,7 +11,6 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.collections.Literal;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -371,7 +369,12 @@ public class PrototypeImpl implements Prototype {
     }
 
     @Override
-    public String getSynopsis(Integer... flags) {
+    public String toString() {
+        return shortSynopsis();
+    }
+
+    @Override
+    public String synopsis(Integer... flags) {
 
         if (flags != null) {
             boolean tags = false;
@@ -494,11 +497,11 @@ public class PrototypeImpl implements Prototype {
             return ret;
 
         }
-        return getShortSynopsis();
+        return shortSynopsis();
     }
 
     @Override
-    public String getShortSynopsis() {
+    public String shortSynopsis() {
 
         String ret = getName();
 

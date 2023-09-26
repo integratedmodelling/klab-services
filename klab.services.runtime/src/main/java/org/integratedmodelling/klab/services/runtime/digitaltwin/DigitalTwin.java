@@ -12,9 +12,12 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.*;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.extension.Contextualizer;
+import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.runtime.storage.StorageScope;
 import org.integratedmodelling.klab.runtime.storage.StorageManager;
 import org.jgrapht.Graph;
@@ -135,9 +138,25 @@ public class DigitalTwin {
      * @return
      */
 
-    private Executor createExecutor(Actuator actuator, ServiceCall computation, Executor previousExecutor) {
+    private Executor createExecutor(Actuator actuator, ServiceCall computation, ContextScope scope, Executor previousExecutor) {
+
+        var languageService = Configuration.INSTANCE.getService(Language.class);
+        var functor = languageService.execute(computation, scope, Object.class);
+
+        if (functor == null) {
+            throw new KlabInternalErrorException("function call " + computation.getName() + " produced a null result");
+        }
+
+        Executor ret = new Executor();
+
+        // TODO can use pattern matching now
+//        ret.functor = switch(functor) {
+//            case Contextualizer contextualizer -> null;
+//            default -> throw new IllegalStateException("Unexpected value: " + functor);
+//        };
         // TODO
-        return null;
+
+        return ret;
     }
 
     class ObservationData {
@@ -215,7 +234,7 @@ public class DigitalTwin {
 
             Executor executor = null;
             for (var computation : data.actuator.getComputation()) {
-                Executor step = createExecutor(actuator, computation, executor);
+                Executor step = createExecutor(actuator, computation, scope, executor);
                 if (executor != step) {
                     data.contextualizers.add(step);
                 }
