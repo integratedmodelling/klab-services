@@ -119,8 +119,7 @@ public class KlabCLI {
 
         public static void loadAliases() {
             File aliasFile =
-                    new File(System.getProperty("user.dir") + File.pathSeparator + ".klab" + File.pathSeparator +
-                            "kcli" + File.separator + "aliases.txt");
+                    new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator + "kcli" + File.separator + "aliases.txt");
             if (!aliasFile.exists()) {
                 Utils.Files.touch(aliasFile);
             }
@@ -137,8 +136,7 @@ public class KlabCLI {
 
         public static void storeAliases() {
             File aliasFile =
-                    new File(System.getProperty("user.dir") + File.pathSeparator + ".klab" + File.pathSeparator +
-                            "kcli" + File.separator + "aliases.txt");
+                    new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator + "kcli" + File.separator + "aliases.txt");
             try (OutputStream output = new FileOutputStream(aliasFile)) {
                 Properties properties = new Properties();
                 for (String key : Run.aliases.keySet()) {
@@ -198,7 +196,8 @@ public class KlabCLI {
 
         }
 
-        @Command(name = "alias", mixinStandardHelpOptions = true, description = {"Define an alias for a command."},
+        @Command(name = "alias", mixinStandardHelpOptions = true, description = {"Define an alias for a command.",
+                "Use @x to store option -x"},
                  subcommands = {Alias.List.class})
         static class Alias implements Runnable {
 
@@ -225,6 +224,11 @@ public class KlabCLI {
                     throw new KIllegalStateException("Must name an alias and its value");
                 }
                 String alias = arguments.get(0);
+                for (int i = 1; i < arguments.size(); i++) {
+                    if (arguments.get(i).startsWith("@")) {
+                        arguments.set(i, "-" + arguments.get(i).substring(1));
+                    }
+                }
                 String value = Utils.Strings.join(arguments.subList(1, arguments.size()), " ");
                 Run.aliases.put(alias, value);
                 Run.storeAliases();
@@ -285,7 +289,7 @@ public class KlabCLI {
         AnsiConsole.systemInstall();
         try {
             Supplier<Path> workDir = () -> Paths
-                    .get(System.getProperty("user.dir") + File.pathSeparator + ".klab" + File.pathSeparator + "kcli");
+                    .get(System.getProperty("user.home") + File.separator + ".klab" + File.separator + "kcli");
 
             // jline built-in commands
             workDir.get().toFile().mkdirs();
