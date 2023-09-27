@@ -267,11 +267,4 @@ public interface ContextScope extends SessionScope {
      */
     DirectObservation getResolutionObservation();
 
-    /**
-     * During contextualization, this cannot be null. Otherwise it must be null.
-     *
-     * @return
-     */
-    Model getModel();
-
 }

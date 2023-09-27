@@ -39,7 +39,6 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     protected EngineContextScope parent;
     private Dataflow<Observation> dataflow = Dataflow.empty(Observation.class);
-    private Model model;
 
     EngineContextScope(EngineSessionScope parent) {
         super(parent);
@@ -191,11 +190,6 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     @Override
     public DirectObservation getResolutionObservation() {
         return contextObservation;
-    }
-
-    @Override
-    public Model getModel() {
-        return this.model;
     }
 
     @Override
