@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -38,6 +39,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     protected EngineContextScope parent;
     private Dataflow<Observation> dataflow = Dataflow.empty(Observation.class);
+    private Model model;
 
     EngineContextScope(EngineSessionScope parent) {
         super(parent);
@@ -189,6 +191,11 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     @Override
     public DirectObservation getResolutionObservation() {
         return contextObservation;
+    }
+
+    @Override
+    public Model getModel() {
+        return this.model;
     }
 
     @Override

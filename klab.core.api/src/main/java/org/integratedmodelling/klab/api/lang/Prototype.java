@@ -268,7 +268,7 @@ public interface Prototype extends Serializable {
      * 
      * @return Java class of object returned
      */
-    public Class<?> getExecutorClass();
+    public Class<?> executorClass();
 
     /**
      * If this is not null, the arguments are for the method and not for class construction.

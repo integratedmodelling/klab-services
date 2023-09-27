@@ -8,15 +8,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
 import org.integratedmodelling.klab.api.knowledge.Expression.Descriptor;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -83,7 +90,8 @@ public class LanguageService implements Language {
             /*
             check the resource service in the scope to see if we can find a component that supports this call
              */
-            ResourceSet resourceSet = scope.getService(ResourcesService.class).resolveServiceCall(call.getName(), scope);
+            ResourceSet resourceSet = scope.getService(ResourcesService.class).resolveServiceCall(call.getName(),
+                    scope);
             if (!resourceSet.isEmpty()) {
                 loadComponent(resourceSet, scope);
                 descriptor = this.functions.get(call.getName());
@@ -99,10 +107,14 @@ public class LanguageService implements Language {
                     scope.error("runtime error when invoking function " + call.getName());
                     return null;
                 }
+            } else if (descriptor.constructor != null) {
+                Object[] args = getParameters(descriptor, call, scope, true);
+                try {
+                    return (T) descriptor.constructor.newInstance(args);
+                } catch (Throwable e) {
+                    throw new KIllegalStateException(e);
+                }
             }
-        } else if (descriptor.constructor != null) {
-            // TODO
-            System.out.println("ZORBA IL GRECO");
         }
         return null;
     }
@@ -112,41 +124,66 @@ public class LanguageService implements Language {
         // TODO implement
     }
 
-    private Object[] getParameters(FunctionDescriptor descriptor, ServiceCall call, Scope scope, boolean isConstructor) {
-        switch(descriptor.prototype.getFunctionType()) {
-        case ANNOTATION:
-            break;
-        case FUNCTION:
-            if (isConstructor) {
-                // TODO
-            } else {
-                if (descriptor.methodCall == 1) {
-                    return new Object[]{call, scope, descriptor.prototype};
-                } else if (descriptor.methodCall == 2) {
-                    return new Object[]{call, scope};
+    private Object[] getParameters(FunctionDescriptor descriptor, ServiceCall call, Scope scope,
+                                   boolean isConstructor) {
+        switch (descriptor.prototype.getFunctionType()) {
+            case ANNOTATION:
+                break;
+            case FUNCTION:
+                if (isConstructor) {
+                    return matchParameters(descriptor.constructor.getParameterTypes(), call, scope);
                 } else {
-                    // TODO match parameters with the method's class signature
+                    if (descriptor.methodCall == 1) {
+                        return new Object[]{call, scope, descriptor.prototype};
+                    } else if (descriptor.methodCall == 2) {
+                        return new Object[]{call, scope};
+                    } else {
+                        return matchParameters(descriptor.method.getParameterTypes(), call, scope);
+                    }
                 }
-            }
-            break;
-        case VERB:
-            break;
+            case VERB:
+                break;
         }
         return null;
     }
 
+    private Object[] matchParameters(Class<?>[] parameterTypes, ServiceCall call, Scope scope) {
+        Object[] ret = new Object[parameterTypes.length];
+        int i = 0;
+        for (Class<?> cls : parameterTypes) {
+            if (Scope.class.isAssignableFrom(cls)) {
+                ret[i] = scope;
+            } else if (ServiceCall.class.isAssignableFrom(cls)) {
+                ret[i] = call;
+            } else if (Geometry.class.isAssignableFrom(cls)) {
+                ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getGeometry() : null;
+            } else if (Scale.class.isAssignableFrom(cls)) {
+                ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getGeometry() : null;
+            } else if (Parameters.class.isAssignableFrom(cls)) {
+                ret[i] = call.getParameters();
+            } else if (DirectObservation.class.isAssignableFrom(cls)) {
+                ret[i] = scope instanceof ContextScope ? ((ContextScope) scope).getContextObservation() :
+                        null;
+            } /* TODO more type inference: definitely Model */ else {
+                ret[i] = null;
+            }
+            i++;
+        }
+        return ret;
+    }
+
     public void declare(Prototype prototype) {
         FunctionDescriptor descriptor = createFunctionDescriptor(prototype);
-        switch(prototype.getFunctionType()) {
-        case ANNOTATION:
-            this.annotations.put(prototype.getName(), descriptor);
-            break;
-        case FUNCTION:
-            this.functions.put(prototype.getName(), descriptor);
-            break;
-        case VERB:
-            this.verbs.put(prototype.getName(), descriptor);
-            break;
+        switch (prototype.getFunctionType()) {
+            case ANNOTATION:
+                this.annotations.put(prototype.getName(), descriptor);
+                break;
+            case FUNCTION:
+                this.functions.put(prototype.getName(), descriptor);
+                break;
+            case VERB:
+                this.verbs.put(prototype.getName(), descriptor);
+                break;
         }
     }
 
@@ -155,7 +192,7 @@ public class LanguageService implements Language {
         FunctionDescriptor ret = new FunctionDescriptor();
 
         ret.prototype = prototype;
-        ret.implementation = prototype.getExecutorClass();
+        ret.implementation = prototype.executorClass();
 
         if (prototype.getExecutorMethod() != null) {
             try {
@@ -208,13 +245,15 @@ public class LanguageService implements Language {
                 }
             } else {
                 try {
-                    ret.constructor = ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 1, true));
+                    ret.constructor = ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 1,
+                            true));
                     ret.methodCall = 1;
                 } catch (NoSuchMethodException | SecurityException e) {
                 }
                 if (ret.constructor == null) {
                     try {
-                        ret.constructor = ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 2, true));
+                        ret.constructor = ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 2,
+                                true));
                         ret.methodCall = 2;
                     } catch (NoSuchMethodException | SecurityException e) {
                     }
@@ -230,32 +269,47 @@ public class LanguageService implements Language {
     }
 
     /**
-     * Return the default parameterization for functions and constructors according to function type
-     * and allowed "style".
-     * 
+     * Return the default parameterization for functions and constructors according to function type and allowed
+     * "style".
+     *
      * @param prototype
      * @param callMethod
      * @param isConstructor
      * @return
      */
     private Class<?>[] getParameterClasses(Prototype prototype, int callMethod, boolean isConstructor) {
-        switch(prototype.getFunctionType()) {
-        case ANNOTATION:
-            break;
-        case FUNCTION:
-            if (isConstructor) {
-                // TODO
-            } else {
-                if (callMethod == 1) {
-                    return new Class[]{ServiceCall.class, Scope.class, Prototype.class};
-                } else if (callMethod == 2) {
-                    return new Class[]{ServiceCall.class, Scope.class};
-                }
-            }
+        switch (prototype.getFunctionType()) {
+            case ANNOTATION:
+                break;
+            case FUNCTION:
+                if (isConstructor) {
+                    // TODO check: using the last constructor with parameters, or the empty constructor if found.
+                    Class<?> cls = prototype.executorClass();
+                    if (cls == null) {
+                        throw new KIllegalStateException("no declared executor class for service " + prototype.getName() + ": constructor can't be extracted");
+                    }
+                    Class[] ret = null;
+                    for (Constructor<?> constructor : cls.getConstructors()) {
+                        if (ret == null || ret.length == 0) {
+                            ret = constructor.getParameterTypes();
+                        }
+                    }
+                    if (ret == null) {
+                        throw new KIllegalStateException("no usable constructor for service " + prototype.getName() + " served by class " + cls.getCanonicalName());
+                    }
+                    return ret;
 
-            break;
-        case VERB:
-            break;
+                } else {
+                    if (callMethod == 1) {
+                        return new Class[]{ServiceCall.class, Scope.class, Prototype.class};
+                    } else if (callMethod == 2) {
+                        return new Class[]{ServiceCall.class, Scope.class};
+                    }
+                }
+
+                break;
+            case VERB:
+                break;
         }
         throw new KIllegalArgumentException("can't assess parameter types for " + prototype.getName());
     }
@@ -269,7 +323,7 @@ public class LanguageService implements Language {
             }
             return instance;
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-                | NoSuchMethodException | SecurityException e) {
+                 | NoSuchMethodException | SecurityException e) {
             ret.error = true;
         }
         return null;

@@ -814,6 +814,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
         }
 
+        public static void touch(File file) {
+            try {
+                FileUtils.touch(file);
+            } catch (IOException e) {
+                throw new KIOException(e);
+            }
+        }
+
         public static boolean deleteQuietly(File pdir) {
             return FileUtils.deleteQuietly(pdir);
         }

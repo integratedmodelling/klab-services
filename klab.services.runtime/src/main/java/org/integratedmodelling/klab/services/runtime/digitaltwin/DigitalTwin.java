@@ -4,7 +4,7 @@ import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.extension.Contextualizer;
+import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.runtime.storage.StorageScope;
@@ -94,43 +94,72 @@ public class DigitalTwin {
     private Set<RuntimeAsset> runtimeAssets = new HashSet<>();
 
     /**
-     * <p>Holder of atomic "executors" that implement one or more contextualizers (sequential scalar ones are merged into
-     * chains to avoid storage of intermediate products unless requested).</p>
+     * <p>Holder of atomic "executors" that implement one or more contextualizers (sequential scalar ones are merged
+     * into chains to avoid storage of intermediate products unless requested).</p>
      *
      * <p>Has two separate and equivalent call sets, one with debugging and one without, to avoid constant checking in
      * time-critical contextualizers.</p>
      *
-     * <p>It implements a bifuction that takes the localized observations (with the name that each is known as in the
+     * <p>It implements a bifunction that takes the localized observations (with the name that each is known as in the
      * actuator) and returns an observation, normally the same that corresponds to "self" in the observation map, but
      * possibly a different one for observation resolvers</p>
      */
-    class Executor implements BiFunction<Map<String, Observation>, ContextScope, Observation> {
+    abstract class Executor implements BiFunction<Map<String, Observation>, ContextScope, Observation> {
+
 
         enum Type {
-            DOUBLE_VALUE_RESOLVER, INT_VALUE_RESOLVER, CONCEPT_VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
+            VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
             OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR, OBSERVATION_CHARACTERIZER, OBSERVABLE_CLASSIFIER,
             OBJECT_CLASSIFIER
         }
 
         Type type;
-        Parallelism parallelism = Parallelism.ONE;
+        Parallelism parallelism;
 
-        @Override
-        public Observation apply(Map<String, Observation> observations, ContextScope scope) {
+        public Executor(Type type, Parallelism parallelism) {
+            this.type = type;
+            this.parallelism = parallelism;
+        }
 
+        public Executor(Type type, Parallelism parallelism, IntValueResolver iresolver) {
+            this(type, parallelism);
+            // TODO
+        }
+        public Executor(Type type, Parallelism parallelism, DoubleValueResolver iresolver) {
+            this(type, parallelism);
+            // TODO
+        }
+        public Executor(Type type, Parallelism parallelism, ConceptValueResolver iresolver) {
+            this(type, parallelism);
+            // TODO
+        }
+        public Executor(Type type, Parallelism parallelism, BoxingValueResolver iresolver) {
+            this(type, parallelism);
+            // TODO
+        }
 
-            /**
-             * Decide the parallelization strategy based on the scope data
-             */
-
-            return null;
+        public Executor chain(IntValueResolver iresolver) {
+            // TODO
+            return this;
+        }
+        public Executor chain(DoubleValueResolver iresolver) {
+            // TODO
+            return this;
+        }
+        public Executor chain(ConceptValueResolver iresolver) {
+            // TODO
+            return this;
+        }
+        public Executor chain(BoxingValueResolver iresolver) {
+            // TODO
+            return this;
         }
     }
 
 
     /**
-     * Create an executor for the computation and return it, or merge the computation into the previous executor and
-     * return it.
+     * Create an executor for the computation and return it, or - if appropriate - merge the computation into the
+     * previous executor and return it.
      *
      * @param actuator
      * @param computation
@@ -138,25 +167,69 @@ public class DigitalTwin {
      * @return
      */
 
-    private Executor createExecutor(Actuator actuator, ServiceCall computation, ContextScope scope, Executor previousExecutor) {
+    private Executor createExecutor(Actuator actuator, Observation observation, ServiceCall computation, ContextScope scope,
+                                    Executor previousExecutor) {
 
         var languageService = Configuration.INSTANCE.getService(Language.class);
         var functor = languageService.execute(computation, scope, Object.class);
 
-        if (functor == null) {
-            throw new KlabInternalErrorException("function call " + computation.getName() + " produced a null result");
-        }
+        Parallelism parallelism = getParallelism(scope);
+        return switch (functor) {
+            case null ->
+                    throw new KlabInternalErrorException("function call " + computation.getName() + " produced a null" +
+                            " result");
+            case Instantiator instantiator -> new Executor(Executor.Type.OBSERVATION_INSTANTIATOR, parallelism) {
+                @Override
+                public Observation apply(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                    return null;
+                }
+            };
+            case DoubleValueResolver dresolver ->
+                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, dresolver) {
+                        @Override
+                        public Observation apply(Map<String, Observation> stringObservationMap,
+                                                 ContextScope contextScope) {
+                            return null;
+                        }
+                    } : previousExecutor.chain(dresolver);
+            case IntValueResolver iresolver ->
+                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, iresolver) {
+                        @Override
+                        public Observation apply(Map<String, Observation> stringObservationMap,
+                                                 ContextScope contextScope) {
+                            return null;
+                        }
+                    } : previousExecutor.chain(iresolver);
+            case ConceptValueResolver cresolver ->
+                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, cresolver) {
+                        @Override
+                        public Observation apply(Map<String, Observation> stringObservationMap,
+                                                 ContextScope contextScope) {
+                            return null;
+                        }
+                    } : previousExecutor.chain(cresolver);
+            case BoxingValueResolver bresolver ->
+                    previousExecutor == null ? new Executor(Executor.Type.BOXING_VALUE_RESOLVER, parallelism, bresolver) {
+                        @Override
+                        public Observation apply(Map<String, Observation> stringObservationMap,
+                                                 ContextScope contextScope) {
+                            return null;
+                        }
+                    } : previousExecutor.chain(bresolver);
+            case Resolver resolver -> new Executor(Executor.Type.OBSERVATION_RESOLVER, parallelism) {
+                @Override
+                public Observation apply(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                    return resolver.resolve(observation, computation, contextScope);
+                }
+            };
+            default ->
+                    throw new IllegalStateException("Unhandled functor of type: " + functor.getClass().getCanonicalName());
+        };
+    }
 
-        Executor ret = new Executor();
-
-        // TODO can use pattern matching now
-//        ret.functor = switch(functor) {
-//            case Contextualizer contextualizer -> null;
-//            default -> throw new IllegalStateException("Unexpected value: " + functor);
-//        };
+    private Parallelism getParallelism(ContextScope scope) {
         // TODO
-
-        return ret;
+        return Parallelism.ONE;
     }
 
     class ObservationData {
@@ -167,7 +240,7 @@ public class DigitalTwin {
         long lastUpdate = -1;
 
         // executors in order of application. Implemented by the Executor class.
-        List<BiFunction<Map<String, Observation>, ContextScope, Observation>> contextualizers = new ArrayList<>();
+        List<BiFunction<Map<String, Observation>, ContextScope, Observation>> executors = new ArrayList<>();
     }
 
     static class InfluenceEdge extends DefaultEdge {
@@ -234,9 +307,9 @@ public class DigitalTwin {
 
             Executor executor = null;
             for (var computation : data.actuator.getComputation()) {
-                Executor step = createExecutor(actuator, computation, scope, executor);
+                Executor step = createExecutor(actuator, data.observation, computation, scope, executor);
                 if (executor != step) {
-                    data.contextualizers.add(step);
+                    data.executors.add(step);
                 }
                 executor = step;
             }

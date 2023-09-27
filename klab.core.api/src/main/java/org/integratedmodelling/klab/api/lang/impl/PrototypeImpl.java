@@ -529,7 +529,7 @@ public class PrototypeImpl implements Prototype {
     }
 
     @Override
-    public Class<?> getExecutorClass() {
+    public Class<?> executorClass() {
         return implementation;
     }
 

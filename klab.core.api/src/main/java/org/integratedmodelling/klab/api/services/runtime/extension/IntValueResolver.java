@@ -17,7 +17,9 @@ public interface IntValueResolver extends Contextualizer {
 
     /**
      * 
-     * @param observation
+     * @param data
+     * @param locator
+     * @param scope
      * @param scope
      * @return
      */

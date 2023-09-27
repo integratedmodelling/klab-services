@@ -5,7 +5,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
- * The operational peer of KimKnowledge (former IAcknowledgement), i.e. an instance specified
+ * The operational peer of KimKnowledge (formerly IAcknowledgement), i.e. an instance specified
  * through a k.IM <code>observe</code> statement, i.e. an {@link DescriptionType#ACKNOWLEDGEMENT}.
  * Not an OWL/RDF instance, for which the <code>define</code> mechanism is involved instead.
  * 
