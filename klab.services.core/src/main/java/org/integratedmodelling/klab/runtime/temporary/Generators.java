@@ -38,7 +38,7 @@ public class Generators {
     public static class FractalTerrain implements Resolver<State> {
 
         @Override
-        public State resolve(State observation, ServiceCall call, ContextScope scope) {
+        public void resolve(State observation, ServiceCall call, ContextScope scope) {
 
             Range range = call.getParameters().get("range", new Range(0., 4000., false, false));
             List<Long> xy = scope.getGeometry().dimension(Dimension.Type.SPACE).getShape();
@@ -60,7 +60,6 @@ public class Generators {
                     storage.set(terrain.getAltitude(dx * offset.offsets()[0], dy * offset.offsets()[1]), offset);
                 }
             }
-            return observation;
         }
 
     }

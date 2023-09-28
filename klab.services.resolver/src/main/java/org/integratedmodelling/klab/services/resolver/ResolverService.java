@@ -367,6 +367,8 @@ public class ResolverService extends BaseService implements Resolver {
             }
 
             ret.setId(createId(observable, scope));
+            ret.setName(observable.getName());
+            ret.setAlias(observable.getStatedName());
 
             // add to hash
             compiled.put(observable.getReferenceName(), ret);
@@ -375,6 +377,7 @@ public class ResolverService extends BaseService implements Resolver {
 
         // filters apply to references as well
         for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model, ResolutionType.FILTER)) {
+            // TODO
         }
 
         ret.setObservable(observable);

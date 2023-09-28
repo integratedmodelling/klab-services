@@ -26,6 +26,7 @@ import org.ojalgo.concurrent.Parallelism;
 
 import java.io.Serial;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 /**
@@ -104,7 +105,7 @@ public class DigitalTwin {
      * actuator) and returns an observation, normally the same that corresponds to "self" in the observation map, but
      * possibly a different one for observation resolvers</p>
      */
-    abstract class Executor implements BiFunction<Map<String, Observation>, ContextScope, Observation> {
+    abstract class Executor implements BiConsumer<Map<String, Observation>, ContextScope> {
 
 
         enum Type {
@@ -125,31 +126,49 @@ public class DigitalTwin {
             this(type, parallelism);
             // TODO
         }
+
         public Executor(Type type, Parallelism parallelism, DoubleValueResolver iresolver) {
             this(type, parallelism);
             // TODO
         }
+
         public Executor(Type type, Parallelism parallelism, ConceptValueResolver iresolver) {
             this(type, parallelism);
             // TODO
         }
+
         public Executor(Type type, Parallelism parallelism, BoxingValueResolver iresolver) {
             this(type, parallelism);
             // TODO
+        }
+
+
+        /**
+         * Execute a distributed contextualization chain using non-boxing optimizations if all the functors are
+         * non-boxing, or without if one or more are boxing contextualizers.
+         *
+         * @param stringObservationMap
+         * @param scope
+         */
+        protected void executeChain(Map<String, Observation> stringObservationMap, ContextScope scope) {
+            // TODO find the strategy based on types of value resolvers and parallelism, then run it
         }
 
         public Executor chain(IntValueResolver iresolver) {
             // TODO
             return this;
         }
+
         public Executor chain(DoubleValueResolver iresolver) {
             // TODO
             return this;
         }
+
         public Executor chain(ConceptValueResolver iresolver) {
             // TODO
             return this;
         }
+
         public Executor chain(BoxingValueResolver iresolver) {
             // TODO
             return this;
@@ -167,7 +186,8 @@ public class DigitalTwin {
      * @return
      */
 
-    private Executor createExecutor(Actuator actuator, Observation observation, ServiceCall computation, ContextScope scope,
+    private Executor createExecutor(Actuator actuator, Observation observation, ServiceCall computation,
+                                    ContextScope scope,
                                     Executor previousExecutor) {
 
         var languageService = Configuration.INSTANCE.getService(Language.class);
@@ -180,55 +200,53 @@ public class DigitalTwin {
                             " result");
             case Instantiator instantiator -> new Executor(Executor.Type.OBSERVATION_INSTANTIATOR, parallelism) {
                 @Override
-                public Observation apply(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
-                    return null;
+                public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+
                 }
             };
             case DoubleValueResolver dresolver ->
                     previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, dresolver) {
                         @Override
-                        public Observation apply(Map<String, Observation> stringObservationMap,
-                                                 ContextScope contextScope) {
-                            return null;
+                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                            executeChain(stringObservationMap, contextScope);
                         }
                     } : previousExecutor.chain(dresolver);
             case IntValueResolver iresolver ->
                     previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, iresolver) {
                         @Override
-                        public Observation apply(Map<String, Observation> stringObservationMap,
-                                                 ContextScope contextScope) {
-                            return null;
+                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                            executeChain(stringObservationMap, contextScope);
                         }
                     } : previousExecutor.chain(iresolver);
             case ConceptValueResolver cresolver ->
                     previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, cresolver) {
                         @Override
-                        public Observation apply(Map<String, Observation> stringObservationMap,
-                                                 ContextScope contextScope) {
-                            return null;
+                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                            executeChain(stringObservationMap, contextScope);
                         }
                     } : previousExecutor.chain(cresolver);
             case BoxingValueResolver bresolver ->
-                    previousExecutor == null ? new Executor(Executor.Type.BOXING_VALUE_RESOLVER, parallelism, bresolver) {
+                    previousExecutor == null ? new Executor(Executor.Type.BOXING_VALUE_RESOLVER, parallelism,
+                            bresolver) {
                         @Override
-                        public Observation apply(Map<String, Observation> stringObservationMap,
-                                                 ContextScope contextScope) {
-                            return null;
+                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                            executeChain(stringObservationMap, contextScope);
                         }
                     } : previousExecutor.chain(bresolver);
             case Resolver resolver -> new Executor(Executor.Type.OBSERVATION_RESOLVER, parallelism) {
                 @Override
-                public Observation apply(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
-                    return resolver.resolve(observation, computation, contextScope);
+                public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                    resolver.resolve(observation, computation, contextScope);
                 }
             };
+            // TODO add characterizers etc.; also support debugging executors
             default ->
                     throw new IllegalStateException("Unhandled functor of type: " + functor.getClass().getCanonicalName());
         };
     }
 
-    private Parallelism getParallelism(ContextScope scope) {
-        // TODO
+    public Parallelism getParallelism(ContextScope scope) {
+        // TODO choose parallelism based on context configuration, scale and identity
         return Parallelism.ONE;
     }
 
@@ -239,8 +257,11 @@ public class DigitalTwin {
         // the last timestamp in the influence graph starting at this
         long lastUpdate = -1;
 
+        // translation table for localized observation names
+        Map<String, String> localNames = new HashMap<>();
+
         // executors in order of application. Implemented by the Executor class.
-        List<BiFunction<Map<String, Observation>, ContextScope, Observation>> executors = new ArrayList<>();
+        List<BiConsumer<Map<String, Observation>, ContextScope>> executors = new ArrayList<>();
     }
 
     static class InfluenceEdge extends DefaultEdge {
@@ -249,8 +270,8 @@ public class DigitalTwin {
         private static final long serialVersionUID = 5250535576252863277L;
 
         /*
-         * Scheduler timestamps corresponding to this link having caused modifications in the target
-         * observation.
+         * Scheduler timestamps corresponding to this link having caused a change in the target
+         * observation. The latest update timestamp is also stored in the ObservationData.
          */
         List<Long> actionTimestamps = new ArrayList<>();
     }
@@ -305,6 +326,12 @@ public class DigitalTwin {
             data.actuator = actuator;
             data.observation = createObservation(actuator, scope);
 
+            for (Actuator child : actuator.getChildren()) {
+                if (child.isInput() && !child.getName().equals(child.getAlias())) {
+                    data.localNames.put(child.getName(), child.getAlias());
+                }
+            }
+
             Executor executor = null;
             for (var computation : data.actuator.getComputation()) {
                 Executor step = createExecutor(actuator, data.observation, computation, scope, executor);
@@ -321,14 +348,14 @@ public class DigitalTwin {
          If not done already: initialize by
          1. Separate chains of scalar functions and merge into chained contextualizers
          2. Add individual non-scalar contextualizers
-         3. Define run strategy and naming
+         3. Define run strategy and naming in new context
          */
 
         /**
-         Run computational chain
+         Run computational chain. Report any errors through the scope and return false on error or exception.
          */
 
-        return false;
+        return true;
     }
 
     private Storage createStorage(Observable observable, ContextScope scope) {

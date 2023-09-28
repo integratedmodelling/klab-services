@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime.library.core;
 
 import java.util.List;
 
+import io.micrometer.common.annotation.ValueResolver;
 import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -30,7 +31,7 @@ public class CoreLibrary {
          */
 
         @Override
-        public State resolve(State observation, ServiceCall call, ContextScope scope) {
+        public void resolve(State observation, ServiceCall call, ContextScope scope) {
             // TODO Auto-generated method stub
 
             /**
@@ -41,22 +42,18 @@ public class CoreLibrary {
              * retrieve tiles concurrently instead of downloading the entire monster. The storage
              * can be tiled or not. This can be triggered after considering the size of the context.
              */
-
-            return null;
         }
 
     }
 
     @KlabFunction(version = Version.CURRENT, name = Klab.StandardLibrary.KlabCore.LUT_RESOLVER, dataflowLabel = "Lookup table", description = "Compute outputs by looking up dependency values in a table", parameters = {
             @Argument(name = "urn", description = "The URN of table to use", type = Artifact.Type.TEXT)}, type = Artifact.Type.VALUE)
-    public static class LookupTableResolver implements Resolver<State> {
+    public static class LookupTableResolver implements ValueResolver {
 
         @Override
-        public State resolve(State observation, ServiceCall call, ContextScope scope) {
-            // TODO Auto-generated method stub
+        public String resolve(Object o) {
             return null;
         }
-
     }
 
     @KlabFunction(version = Version.CURRENT, name = Klab.StandardLibrary.KlabCore.URN_INSTANTIATOR, dataflowLabel = "Resource", description = "Contextualize a Type.OBJECT resource to obtain objects", parameters = {

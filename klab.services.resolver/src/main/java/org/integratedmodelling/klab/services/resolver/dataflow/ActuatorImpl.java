@@ -32,85 +32,71 @@ public class ActuatorImpl implements Actuator {
 
     @Override
     public String getId() {
-        // TODO Auto-generated method stub
         return this.id;
     }
 
     @Override
     public long getTimestamp() {
-        // TODO Auto-generated method stub
         return this.timestamp;
     }
 
     @Override
     public boolean isEmpty() {
-        // TODO Auto-generated method stub
         return this.empty;
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
         return this.name;
     }
 
     @Override
     public String getAlias() {
-        // TODO Auto-generated method stub
         return this.alias;
     }
 
     @Override
     public Type getType() {
-        // TODO Auto-generated method stub
         return this.type;
     }
 
     @Override
     public Observable getObservable() {
-        // TODO Auto-generated method stub
         return this.observable;
     }
 
     @Override
     public List<Actuator> getChildren() {
-        // TODO Auto-generated method stub
         return this.children;
     }
 
     @Override
     public List<ServiceCall> getComputation() {
-        // TODO Auto-generated method stub
         return this.computation;
     }
 
     @Override
     public boolean isInput() {
-        // TODO Auto-generated method stub
         return this.input;
     }
 
     @Override
     public boolean isOutput() {
-        // TODO Auto-generated method stub
         return this.output;
     }
 
     @Override
     public boolean isReference() {
-        // TODO Auto-generated method stub
         return this.reference;
     }
 
     @Override
     public Geometry getCoverage() {
-        // TODO Auto-generated method stub
         return this.coverage;
     }
 
     @Override
     public Parameters<String> getData() {
-        // TODO Auto-generated method stub
         return this.data;
     }
 

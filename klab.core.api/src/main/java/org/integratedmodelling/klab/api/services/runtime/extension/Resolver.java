@@ -12,5 +12,5 @@ public interface Resolver<T extends Observation> extends Contextualizer {
 	 * @param scope
 	 * @return
 	 */
-	T resolve(T observation, ServiceCall call, ContextScope scope);
+	void resolve(T observation, ServiceCall call, ContextScope scope);
 }
