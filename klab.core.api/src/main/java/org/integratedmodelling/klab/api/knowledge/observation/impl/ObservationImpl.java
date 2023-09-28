@@ -37,7 +37,7 @@ public class ObservationImpl implements Observation {
     private String id;
     private String urn;
 
-    protected ObservationImpl() {
+    public ObservationImpl() {
     }
 
     protected ObservationImpl(Observable observable, String id, ContextScope scope) {
