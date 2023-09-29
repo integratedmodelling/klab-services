@@ -14,12 +14,11 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.Encodeable;
-import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
@@ -111,8 +110,8 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 				ret += (ret.length() == 1 ? "" : " ") + o + " " + stringValue(((Map<?, ?>) val).get(o));
 			}
 			return ret + "}";
-		} else if (val instanceof Range) {
-			return ((Range) val).getLowerBound() + " to " + ((Range) val).getUpperBound();
+		} else if (val instanceof RangeImpl) {
+			return ((RangeImpl) val).getLowerBound() + " to " + ((RangeImpl) val).getUpperBound();
 		} else if (val instanceof Classification) {
 			String ret = "";
 			for (Pair<Concept, Classifier> o : ((Classification) val)) {

@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Proxy;
 import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KActorException;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
@@ -1820,7 +1820,7 @@ public class KActorsVM implements VM {
         case QUANTITY:
             break;
         case RANGE:
-            return value instanceof Number && ((Range) (kvalue.getStatedValue())).contains(((Number) value).doubleValue());
+            return value instanceof Number && ((RangeImpl) (kvalue.getStatedValue())).contains(((Number) value).doubleValue());
         case REGEXP:
             break;
         case STRING:

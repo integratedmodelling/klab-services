@@ -1,8 +1,5 @@
 package org.integratedmodelling.klab.api.data.mediation.impl;
 
-import java.util.Date;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
@@ -12,7 +9,10 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 
-public class Range implements NumericRange {
+import java.util.Date;
+import java.util.List;
+
+public class RangeImpl implements NumericRange {
 
     private static final long serialVersionUID = 874216692405815586L;
 
@@ -26,7 +26,7 @@ public class Range implements NumericRange {
     /**
      * Create a [-Inf, +Inf] range.
      */
-    public Range() {
+    public RangeImpl() {
     }
 
     /**
@@ -34,7 +34,7 @@ public class Range implements NumericRange {
      * 
      * @param intvs
      */
-    public Range(String intvs) {
+    public RangeImpl(String intvs) {
         parse(intvs);
     }
 
@@ -56,7 +56,7 @@ public class Range implements NumericRange {
      * @param leftExclusive
      * @param rightExclusive
      */
-    public Range(Double left, Double right, boolean leftExclusive, boolean rightExclusive) {
+    public RangeImpl(Double left, Double right, boolean leftExclusive, boolean rightExclusive) {
 
         if (!(lowerInfinite = (left == null)))
             lowerBound = left;
@@ -74,7 +74,7 @@ public class Range implements NumericRange {
         upperExclusive = rightExclusive;
     }
 
-    public Range(Range range) {
+    public RangeImpl(RangeImpl range) {
         this.lowerBound = range.lowerBound;
         this.upperBound = range.upperBound;
         this.lowerExclusive = range.lowerExclusive;
@@ -299,7 +299,7 @@ public class Range implements NumericRange {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Range other = (Range) obj;
+        RangeImpl other = (RangeImpl) obj;
         if (lowerInfinite != other.lowerInfinite)
             return false;
         if (Double.doubleToLongBits(lowerBound) != Double.doubleToLongBits(other.lowerBound))
@@ -361,7 +361,7 @@ public class Range implements NumericRange {
 
     @Override
     public boolean isCompatible(ValueMediator other) {
-        return other instanceof Range && isBounded() && ((Range) other).isBounded();
+        return other instanceof RangeImpl && isBounded() && ((RangeImpl) other).isBounded();
     }
 
     @Override
@@ -371,16 +371,16 @@ public class Range implements NumericRange {
             throw new IllegalArgumentException(
                     "range " + this + " cannot convert value " + d + " to " + other + " because it is unbound");
         }
-        if (!(other instanceof Range || ((Range) other).isBounded())) {
+        if (!(other instanceof RangeImpl || ((RangeImpl) other).isBounded())) {
             throw new IllegalArgumentException("range " + this + " cannot convert value " + d + " to " + other
                     + " because the target is not a range or is unbound");
         }
-        if (!((Range) other).contains(d.doubleValue())) {
+        if (!((RangeImpl) other).contains(d.doubleValue())) {
             throw new IllegalArgumentException(
                     "range " + other + " cannot convert value " + d + " to range " + this + " because it does not contain it");
         }
 
-        return this.lowerBound + (this.getWidth() * ((Range) other).normalize(d.doubleValue()));
+        return this.lowerBound + (this.getWidth() * ((RangeImpl) other).normalize(d.doubleValue()));
     }
 
     /**
@@ -389,20 +389,20 @@ public class Range implements NumericRange {
      * @param range
      * @return
      */
-    public static Range create(List<Double> range) {
-        return new Range(range.get(0), range.get(1), false, false);
+    public static RangeImpl create(List<Double> range) {
+        return new RangeImpl(range.get(0), range.get(1), false, false);
     }
 
-    public static Range create(double start, double end, boolean rightOpen) {
-        return new Range(start, end, false, rightOpen);
+    public static RangeImpl create(double start, double end, boolean rightOpen) {
+        return new RangeImpl(start, end, false, rightOpen);
     }
 
-    public static Range create(double start, double end) {
-        return new Range(start, end, false, false);
+    public static RangeImpl create(double start, double end) {
+        return new RangeImpl(start, end, false, false);
     }
 
-    public static Range create(String string) {
-        return new Range(string);
+    public static RangeImpl create(String string) {
+        return new RangeImpl(string);
     }
 
     /**
@@ -413,7 +413,7 @@ public class Range implements NumericRange {
      * @param to
      * @return
      */
-    public static Range create(Object from, Object to) {
+    public static RangeImpl create(Object from, Object to) {
 
         boolean leftInfinite = from == null;
         boolean rightInfinite = to == null;
@@ -443,7 +443,7 @@ public class Range implements NumericRange {
             }
         }
 
-        return new Range(leftInfinite ? null : a, rightInfinite ? null : b, false, true);
+        return new RangeImpl(leftInfinite ? null : a, rightInfinite ? null : b, false, true);
     }
 
     @Override
@@ -476,7 +476,7 @@ public class Range implements NumericRange {
      * that are not contained in either input range.
      *
      * <p>
-     * Like {@link #intersection(Range) intersection}, this operation is commutative, associative
+     * Like {@link #intersection(RangeImpl) intersection}, this operation is commutative, associative
      * and idempotent. Unlike it, it is always well-defined for any two input ranges.
      */
     @Override
@@ -504,7 +504,7 @@ public class Range implements NumericRange {
      * @param other
      * @return
      */
-    public Range match(Range other) {
+    public RangeImpl match(RangeImpl other) {
         return null;
     }
 
@@ -528,7 +528,7 @@ public class Range implements NumericRange {
 
         double left = midpoint - getLowerBound();
         double right = getUpperBound() - midpoint;
-        Range ret = new Range(this);
+        RangeImpl ret = new RangeImpl(this);
         if (Math.abs(left) > Math.abs(right)) {
             ret.upperBound = midpoint + Math.abs(left);
         } else if (Math.abs(right) > Math.abs(left)) {
@@ -637,7 +637,7 @@ public class Range implements NumericRange {
 
     public static void main(String[] args) {
 
-        Range cock = create(-10, 0);
+        RangeImpl cock = create(-10, 0);
         Pair<NumericRange, Pair<Double, Double>> snapped = cock.snap(create(-8.7, -3.9), 10);
 
         System.out.println("FIXED RANGE: " + snapped.getFirst());

@@ -1,32 +1,9 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.integratedmodelling.kim.api.IContextualizable;
-import org.integratedmodelling.kim.api.IKimAcknowledgement;
-import org.integratedmodelling.kim.api.IKimAction;
-import org.integratedmodelling.kim.api.IKimBehavior;
-import org.integratedmodelling.kim.api.IKimClassification;
-import org.integratedmodelling.kim.api.IKimConcept;
-import org.integratedmodelling.kim.api.IKimConceptStatement;
+import org.integratedmodelling.kim.api.*;
 import org.integratedmodelling.kim.api.IKimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.kim.api.IKimConceptStatement.DescriptionType;
 import org.integratedmodelling.kim.api.IKimConceptStatement.ParentConcept;
-import org.integratedmodelling.kim.api.IKimDate;
-import org.integratedmodelling.kim.api.IKimExpression;
-import org.integratedmodelling.kim.api.IKimLookupTable;
-import org.integratedmodelling.kim.api.IKimModel;
-import org.integratedmodelling.kim.api.IKimNamespace;
-import org.integratedmodelling.kim.api.IKimObservable;
-import org.integratedmodelling.kim.api.IKimQuantity;
-import org.integratedmodelling.kim.api.IKimRestriction;
-import org.integratedmodelling.kim.api.IKimScope;
-import org.integratedmodelling.kim.api.IKimSymbolDefinition;
-import org.integratedmodelling.kim.api.IParameters;
-import org.integratedmodelling.kim.api.IServiceCall;
-import org.integratedmodelling.kim.api.IValueMediator;
 import org.integratedmodelling.kim.model.Kim;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 import org.integratedmodelling.klab.api.collections.Literal;
@@ -37,57 +14,36 @@ import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.data.IGeometry;
 import org.integratedmodelling.klab.api.data.IResource;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.errormanagement.ICompileNotification;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.IObservable;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Resource.Attribute;
-import org.integratedmodelling.klab.api.knowledge.SemanticRole;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
-import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.ExpressionCode;
-import org.integratedmodelling.klab.api.lang.Action;
-import org.integratedmodelling.klab.api.lang.Quantity;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.api.lang.*;
 import org.integratedmodelling.klab.api.lang.impl.ContextualizableImpl;
 import org.integratedmodelling.klab.api.lang.impl.QuantityImpl;
 import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.ActionImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimBehaviorImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimClassificationImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptStatementImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimInstanceImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimLookupTableImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimModelImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimObservableImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimSymbolDefinitionImpl;
-import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KimClassification;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.impl.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept.Expression;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimRestriction;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement.Scope;
 import org.integratedmodelling.klab.api.runtime.rest.INotification;
 import org.integratedmodelling.klab.api.services.resources.impl.AttributeImpl;
 import org.integratedmodelling.klab.api.services.resources.impl.ResourceImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ResourceReference;
-import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.utils.Range;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class KimAdapter {
 
@@ -117,16 +73,16 @@ public class KimAdapter {
             ret.getImports().put(imported, new ArrayList<>());
         }
 
-        switch(ns.getNamespace().getScope()) {
-        case NAMESPACE:
-            ret.setScope(Scope.PRIVATE);
-            break;
-        case PROJECT:
-            ret.setScope(Scope.PROJECT_PRIVATE);
-            break;
-        default:
-            ret.setScope(Scope.PUBLIC);
-            break;
+        switch (ns.getNamespace().getScope()) {
+            case NAMESPACE:
+                ret.setScope(Scope.PRIVATE);
+                break;
+            case PROJECT:
+                ret.setScope(Scope.PROJECT_PRIVATE);
+                break;
+            default:
+                ret.setScope(Scope.PUBLIC);
+                break;
         }
 
         for (IKimScope statement : original.getChildren()) {
@@ -153,7 +109,7 @@ public class KimAdapter {
         /*
          * TODO statements inherit the version from the namespace
          */
-        
+
         if (ret != null) {
             for (IKimScope child : statement.getChildren()) {
                 ret.getChildren().add(makeStatement(child, namespace));
@@ -206,8 +162,8 @@ public class KimAdapter {
         ret.setOptional(parsed.isOptional());
         ret.setRange(parsed.getRange() == null
                 ? null
-                : new Range(parsed.getRange().getLowerBound(), parsed.getRange().getUpperBound(),
-                        parsed.getRange().isLeftBounded(), parsed.getRange().isRightBounded()));
+                : new RangeImpl(parsed.getRange().getLowerBound(), parsed.getRange().getUpperBound(),
+                parsed.getRange().isLeftBounded(), parsed.getRange().isRightBounded()));
         ret.getResolutionExceptions().addAll(parsed.getResolutionExceptions().stream()
                 .map((t) -> Observable.ResolutionException.valueOf(t.name())).collect(Collectors.toSet()));
         ret.setUnit(parsed.getUnit());
@@ -223,6 +179,7 @@ public class KimAdapter {
     }
 
     private static Object adapt(Object object) {
+
         if (object instanceof IKimScope) {
             if (object instanceof IKimConcept) {
                 object = adaptKimConcept((IKimConcept) object);
@@ -233,8 +190,11 @@ public class KimAdapter {
             } else if (object instanceof IKimDate) {
                 // TODO
             }
-            // TODO continue for all possible literals
+        } else if (object instanceof Range r) {
+            object = NumericRange.create(r.getLowerBound(), r.getUpperBound(), r.isLowerExclusive(),
+                    r.isUpperOpen());
         }
+        // TODO continue for all possible literals
         return object;
     }
 
@@ -256,7 +216,8 @@ public class KimAdapter {
         ret.setParent(original.getValidParent() == null ? null : adaptKimConcept(original.getValidParent()));
 
         ret.setFundamentalType(
-                original.getFundamentalType() == null ? null : SemanticType.valueOf(original.getFundamentalType().name()));
+                original.getFundamentalType() == null ? null :
+                        SemanticType.valueOf(original.getFundamentalType().name()));
         ret.getType().addAll(original.getType().stream().map((t) -> SemanticType.valueOf(t.name())).collect(Collectors.toSet()));
         ret.setAuthority(original.getAuthority());
         ret.setAuthorityTerm(original.getAuthorityTerm());
@@ -295,7 +256,8 @@ public class KimAdapter {
                 original.getRelationshipSource() == null ? null : adaptKimConcept(original.getRelationshipSource()));
         ret.setRelationshipTarget(
                 original.getRelationshipTarget() == null ? null : adaptKimConcept(original.getRelationshipTarget()));
-        ret.setTemporalInherent(original.getTemporalInherent() == null ? null : adaptKimConcept(original.getTemporalInherent()));
+        ret.setTemporalInherent(original.getTemporalInherent() == null ? null :
+                adaptKimConcept(original.getTemporalInherent()));
 
         ret.setUri(ret.getUri());
 
@@ -333,7 +295,8 @@ public class KimAdapter {
         ret.setLearningModel(statement.isLearningModel());
         ret.setName(statement.getName());
         ret.setReinterpretingRole(
-                statement.getReinterpretingRole().isEmpty() ? null : adaptKimConcept(statement.getReinterpretingRole().get()));
+                statement.getReinterpretingRole().isEmpty() ? null :
+                        adaptKimConcept(statement.getReinterpretingRole().get()));
 
         if (statement.getResourceUrns() != null) {
             ret.getResourceUrns().addAll(statement.getResourceUrns());
@@ -346,7 +309,8 @@ public class KimAdapter {
         ret.setBehavior(adaptKimBehavior(statement.getBehavior()));
         ret.setScope(adaptScope(statement.getScope(), namespace));
         ret.setType(
-                statement.isInactive() ? Artifact.Type.VOID : Artifact.Type.valueOf(statement.getType().artifactType().name()));
+                statement.isInactive() ? Artifact.Type.VOID :
+                        Artifact.Type.valueOf(statement.getType().artifactType().name()));
 
         ret.setUri(statement.getURI());
 
@@ -381,15 +345,16 @@ public class KimAdapter {
         return ret;
     }
 
-    private static Scope adaptScope(org.integratedmodelling.kim.api.IKimStatement.Scope scope, KimNamespaceImpl namespace) {
+    private static Scope adaptScope(org.integratedmodelling.kim.api.IKimStatement.Scope scope,
+                                    KimNamespaceImpl namespace) {
         if (scope != null) {
-            switch(scope) {
-            case NAMESPACE:
-                return Scope.PRIVATE;
-            case PROJECT:
-                return Scope.PROJECT_PRIVATE;
-            case PUBLIC:
-                return Scope.PUBLIC;
+            switch (scope) {
+                case NAMESPACE:
+                    return Scope.PRIVATE;
+                case PROJECT:
+                    return Scope.PROJECT_PRIVATE;
+                case PUBLIC:
+                    return Scope.PUBLIC;
             }
         }
         return namespace.getScope();
@@ -402,15 +367,18 @@ public class KimAdapter {
 
         ret.setAccordingTo(contextualizable.getAccordingTo());
         ret.setClassification(
-                contextualizable.getClassification() == null ? null : adaptClassification(contextualizable.getClassification()));
+                contextualizable.getClassification() == null ? null :
+                        adaptClassification(contextualizable.getClassification()));
         ret.setCondition(
-                contextualizable.getCondition() == null ? null : adaptContextualization(contextualizable.getCondition()));
+                contextualizable.getCondition() == null ? null :
+                        adaptContextualization(contextualizable.getCondition()));
         ret.setConversion(contextualizable.getConversion() == null
                 ? null
                 : new PairImpl<ValueMediator, ValueMediator>(adaptMediator(contextualizable.getConversion().getFirst()),
-                        adaptMediator(contextualizable.getConversion().getSecond())));
+                adaptMediator(contextualizable.getConversion().getSecond())));
         ret.setEmpty(contextualizable.isEmpty());
-        ret.setExpression(contextualizable.getExpression() == null ? null : adaptKimExpression(contextualizable.getExpression()));
+        ret.setExpression(contextualizable.getExpression() == null ? null :
+                adaptKimExpression(contextualizable.getExpression()));
         // ret.setFinal(contextualizable.isFinal());
         ret.setGeometry(contextualizable.getGeometry() == null ? null : adaptGeometry(contextualizable.getGeometry()));
         ret.setInputs(contextualizable.getInputs().stream()
@@ -425,7 +393,8 @@ public class KimAdapter {
         ret.setMediationTargetId(contextualizable.getMediationTargetId());
         ret.setNegated(contextualizable.isNegated());
         ret.setParameters(
-                contextualizable.getParameters() == null ? null : new ParametersImpl<String>(contextualizable.getParameters()));
+                contextualizable.getParameters() == null ? null :
+                        new ParametersImpl<String>(contextualizable.getParameters()));
         ret.setServiceCall(
                 contextualizable.getServiceCall() == null ? null : adaptServiceCall(contextualizable.getServiceCall()));
         ret.setTarget(contextualizable.getTarget() == null ? null : adaptObservable(contextualizable.getTarget()));
@@ -565,7 +534,7 @@ public class KimAdapter {
                 ops.add(adaptKimConcept(parent));
             }
 
-            ret.getParents().add(new org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept(){
+            ret.getParents().add(new org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept() {
 
                 @Override
                 public BinarySemanticOperator getConnector() {
@@ -582,11 +551,12 @@ public class KimAdapter {
 
         for (ApplicableConcept ac : statement.getAppliesTo()) {
 
-            final KimConcept origin = ac.getOriginalObservable() == null ? null : adaptKimConcept(ac.getOriginalObservable());
+            final KimConcept origin = ac.getOriginalObservable() == null ? null :
+                    adaptKimConcept(ac.getOriginalObservable());
             final KimConcept source = ac.getSource() == null ? null : adaptKimConcept(ac.getSource());
             final KimConcept target = ac.getTarget() == null ? null : adaptKimConcept(ac.getTarget());
 
-            ret.getAppliesTo().add(new org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept(){
+            ret.getAppliesTo().add(new org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept() {
 
                 @Override
                 public KimConcept getTarget() {
@@ -607,11 +577,12 @@ public class KimAdapter {
 
         for (ApplicableConcept ac : statement.getSubjectsLinked()) {
 
-            final KimConcept origin = ac.getOriginalObservable() == null ? null : adaptKimConcept(ac.getOriginalObservable());
+            final KimConcept origin = ac.getOriginalObservable() == null ? null :
+                    adaptKimConcept(ac.getOriginalObservable());
             final KimConcept source = ac.getSource() == null ? null : adaptKimConcept(ac.getSource());
             final KimConcept target = ac.getTarget() == null ? null : adaptKimConcept(ac.getTarget());
 
-            ret.getSubjectsLinked().add(new org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept(){
+            ret.getSubjectsLinked().add(new org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept() {
 
                 @Override
                 public KimConcept getTarget() {
@@ -638,7 +609,8 @@ public class KimAdapter {
             ret.getObservablesCreated().add(adaptKimConcept(c));
         }
 
-        for (org.integratedmodelling.klab.utils.Pair<IKimConcept, DescriptionType> c : statement.getObservablesDescribed()) {
+        for (org.integratedmodelling.klab.utils.Pair<IKimConcept, DescriptionType> c :
+                statement.getObservablesDescribed()) {
             ret.getObservablesDescribed().add(new PairImpl<>(adaptKimConcept(c.getFirst()),
                     KimConceptStatement.DescriptionType.valueOf(c.getSecond().name())));
         }

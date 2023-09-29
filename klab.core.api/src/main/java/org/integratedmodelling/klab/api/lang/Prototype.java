@@ -8,7 +8,7 @@ import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -98,7 +98,7 @@ public interface Prototype extends Serializable {
         /**
          * The default value for a parameter that is not passed.
          * 
-         * @return default value (POD, list, {@link Range}) or null.
+         * @return default value (POD, list, {@link RangeImpl}) or null.
          */
         public Literal getDefaultValue();
 

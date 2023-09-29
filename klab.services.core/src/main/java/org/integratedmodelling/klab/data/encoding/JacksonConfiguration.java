@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -126,7 +126,7 @@ public class JacksonConfiguration {
             case QUANTITY:
                 break;
             case RANGE:
-                ret.setValue(p.getCodec().treeToValue(node.get("valueType"), Range.class));
+                ret.setValue(p.getCodec().treeToValue(node.get("valueType"), RangeImpl.class));
                 break;
             case SET:
                 break;

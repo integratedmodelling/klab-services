@@ -1,14 +1,9 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.ResolutionException;
@@ -16,11 +11,16 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+
 public class KimObservableImpl extends KimStatementImpl implements KimObservable {
 
 	private static final long serialVersionUID = -727467882879783393L;
 	private KimConcept main;
-	private Range range;
+	private RangeImpl range;
 	private String unit;
 	private String currency;
 	private String formalName;
@@ -45,7 +45,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	}
 
 	@Override
-	public Range getRange() {
+	public RangeImpl getRange() {
 		return this.range;
 	}
 
@@ -128,7 +128,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 		this.main = main;
 	}
 
-	public void setRange(Range range) {
+	public void setRange(RangeImpl range) {
 		this.range = range;
 	}
 

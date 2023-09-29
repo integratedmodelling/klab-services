@@ -32,7 +32,7 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Repository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -1007,7 +1007,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Return all the substituted templates after substituting the passed variables. The
-         * substitution for each variable can be null, a single POD, a {@link Range} or a collection
+         * substitution for each variable can be null, a single POD, a {@link RangeImpl} or a collection
          * of objects.
          * 
          * @param template
@@ -1125,9 +1125,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             Set<Object> ret = new LinkedHashSet<>();
             if (object == null) {
                 ret.add("");
-            } else if (object instanceof Range) {
-                int bottom = (int) ((Range) object).getLowerBound();
-                int upper = (int) ((Range) object).getUpperBound();
+            } else if (object instanceof RangeImpl) {
+                int bottom = (int) ((RangeImpl) object).getLowerBound();
+                int upper = (int) ((RangeImpl) object).getUpperBound();
                 for (int n = bottom; n <= upper; n++) {
                     ret.add(n);
                 }
@@ -1157,8 +1157,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             Map<String, Object> vars = new HashMap<>();
 
-            vars.put("year", Range.create(1998, 2010));
-            vars.put("month", Range.create(2, 3));
+            vars.put("year", RangeImpl.create(1998, 2010));
+            vars.put("month", RangeImpl.create(2, 3));
             vars.put("day", "monday,tuesday,happy_days");
 
             for (String uuh : expandMatches(url, vars)) {

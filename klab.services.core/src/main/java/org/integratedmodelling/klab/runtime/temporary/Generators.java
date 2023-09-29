@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.runtime.temporary;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Offset;
@@ -40,7 +40,7 @@ public class Generators {
         @Override
         public void resolve(State observation, ServiceCall call, ContextScope scope) {
 
-            Range range = call.getParameters().get("range", new Range(0., 4000., false, false));
+            NumericRange range = call.getParameters().get("range", NumericRange.create(0., 4000., false, false));
             List<Long> xy = scope.getGeometry().dimension(Dimension.Type.SPACE).getShape();
             var storage = observation.getStorage(DoubleStorage.class);
             Terrain terrain = new Terrain(call.getParameters().get("detail", 8), call.getParameters().get("roughness"

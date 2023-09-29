@@ -1,15 +1,15 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import java.util.Collection;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+
+import java.util.Collection;
+import java.util.List;
 
 public interface KimObservable extends KimStatement, KlabAsset {
 
@@ -21,7 +21,7 @@ public interface KimObservable extends KimStatement, KlabAsset {
     /**
      * @return the range
      */
-    Range getRange();
+    NumericRange getRange();
 
     /**
      * @return the unit

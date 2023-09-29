@@ -14,7 +14,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -259,7 +259,7 @@ public interface Time extends Extent<Time> {
 
             Type type = Resolution.Type.MILLISECOND;
             // order of magnitude
-            Range order = Range.create(1, 9.999, false);
+            RangeImpl order = RangeImpl.create(1, 9.999, false);
 
             if (order.contains((double) ms / Resolution.Type.MILLENNIUM.getMilliseconds())) {
                 type = Resolution.Type.MILLENNIUM;

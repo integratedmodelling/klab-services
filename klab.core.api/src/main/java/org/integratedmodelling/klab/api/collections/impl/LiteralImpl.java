@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.collections.impl;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
@@ -37,7 +37,7 @@ public class LiteralImpl implements Literal {
             return ValueType.STRING;
         } else if (o instanceof Boolean) {
             return ValueType.BOOLEAN;
-        } else if (o instanceof Range) {
+        } else if (o instanceof RangeImpl) {
             return ValueType.RANGE;
         } else if (o instanceof KimObservable) {
             return ValueType.OBSERVABLE;

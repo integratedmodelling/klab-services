@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 import java.util.List;
 
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 
@@ -28,7 +28,7 @@ public interface KimClassifier extends KimStatement {
 
     List<KimClassifier> getClassifierMatches();
 
-    Range getIntervalMatch();
+    RangeImpl getIntervalMatch();
 
     boolean isNullMatch();
 

@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import java.util.ArrayList;
 
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.kim.KimClassifier;
@@ -26,7 +26,7 @@ public class KimClassifierImpl extends KimStatementImpl implements KimClassifier
     private Double numberMatch;
     private Boolean booleanMatch;
     private ArrayList<KimClassifier> classifierMatches;
-    private Range intervalMatch;
+    private RangeImpl intervalMatch;
     private boolean nullMatch;
     private ExpressionCode expressionMatch;
     private String stringMatch;
@@ -71,7 +71,7 @@ public class KimClassifierImpl extends KimStatementImpl implements KimClassifier
     }
 
     @Override
-    public Range getIntervalMatch() {
+    public RangeImpl getIntervalMatch() {
         return intervalMatch;
     }
 
@@ -138,7 +138,7 @@ public class KimClassifierImpl extends KimStatementImpl implements KimClassifier
         this.classifierMatches = classifierMatches;
     }
 
-    public void setIntervalMatch(Range intervalMatch) {
+    public void setIntervalMatch(RangeImpl intervalMatch) {
         this.intervalMatch = intervalMatch;
     }
 

@@ -17,7 +17,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -192,7 +192,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
                 return BOOLEAN;
             } else if (o instanceof String) {
                 return TEXT;
-            } else if (o instanceof Range) {
+            } else if (o instanceof RangeImpl) {
                 return RANGE;
             } else if (o instanceof List) {
                 return LIST;

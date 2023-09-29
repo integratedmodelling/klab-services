@@ -16,7 +16,7 @@
 package org.integratedmodelling.klab.api.data.mediation;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.mediation.impl.Range;
+import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 
 /**
  * The Interface INumericRange.
@@ -114,7 +114,7 @@ public interface NumericRange extends ValueMediator, Comparable<NumericRange> {
      * that are not contained in either input range.
      *
      * <p>
-     * Like {@link #intersection(Range) intersection}, this operation is commutative, associative
+     * Like {@link #intersection(RangeImpl) intersection}, this operation is commutative, associative
      * and idempotent. Unlike it, it is always well-defined for any two input ranges.
      */
     NumericRange span(NumericRange other);
@@ -166,4 +166,15 @@ public interface NumericRange extends ValueMediator, Comparable<NumericRange> {
     double getFocalPoint();
 
     boolean isUpperExclusive();
+
+    public static NumericRange create(double left, double right) {
+        return new RangeImpl(left, right, false, true);
+    }
+    public static NumericRange create(double left, double right, boolean leftExclusive, boolean rightExclusive) {
+        return new RangeImpl(left, right, leftExclusive, rightExclusive);
+    }
+    public static NumericRange create(String specification) {
+        return new RangeImpl(specification);
+    }
+
 }

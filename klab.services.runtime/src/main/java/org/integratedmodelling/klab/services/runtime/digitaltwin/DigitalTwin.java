@@ -1,33 +1,40 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.knowledge.Model;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
+import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.*;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.runtime.storage.StorageScope;
 import org.integratedmodelling.klab.runtime.storage.StorageManager;
+import org.integratedmodelling.klab.runtime.storage.StorageScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.ojalgo.concurrent.Parallelism;
 
 import java.io.Serial;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 /**
  * A DigitalTwin is the server-side observation content kept with a context scope, which acts as a "handle" to it. It
@@ -63,6 +70,12 @@ public class DigitalTwin {
      * object throughout the context lifetime.
      */
     public static final String KEY = "klab.context.data";
+    private long MAXIMUM_TASK_TIMEOUT_HOURS = 48l;
+
+    public boolean validate(ContextScope scope) {
+        // check out all calls etc.
+        return true;
+    }
 
     /**
      * Types of the events that can be subscribed to and get communicated. This should evolve into a comprehensive
@@ -94,87 +107,6 @@ public class DigitalTwin {
      */
     private Set<RuntimeAsset> runtimeAssets = new HashSet<>();
 
-    /**
-     * <p>Holder of atomic "executors" that implement one or more contextualizers (sequential scalar ones are merged
-     * into chains to avoid storage of intermediate products unless requested).</p>
-     *
-     * <p>Has two separate and equivalent call sets, one with debugging and one without, to avoid constant checking in
-     * time-critical contextualizers.</p>
-     *
-     * <p>It implements a bifunction that takes the localized observations (with the name that each is known as in the
-     * actuator) and returns an observation, normally the same that corresponds to "self" in the observation map, but
-     * possibly a different one for observation resolvers</p>
-     */
-    abstract class Executor implements BiConsumer<Map<String, Observation>, ContextScope> {
-
-
-        enum Type {
-            VALUE_RESOLVER, BOXING_VALUE_RESOLVER,
-            OBSERVATION_RESOLVER, OBSERVATION_INSTANTIATOR, OBSERVATION_CHARACTERIZER, OBSERVABLE_CLASSIFIER,
-            OBJECT_CLASSIFIER
-        }
-
-        Type type;
-        Parallelism parallelism;
-
-        public Executor(Type type, Parallelism parallelism) {
-            this.type = type;
-            this.parallelism = parallelism;
-        }
-
-        public Executor(Type type, Parallelism parallelism, IntValueResolver iresolver) {
-            this(type, parallelism);
-            // TODO
-        }
-
-        public Executor(Type type, Parallelism parallelism, DoubleValueResolver iresolver) {
-            this(type, parallelism);
-            // TODO
-        }
-
-        public Executor(Type type, Parallelism parallelism, ConceptValueResolver iresolver) {
-            this(type, parallelism);
-            // TODO
-        }
-
-        public Executor(Type type, Parallelism parallelism, BoxingValueResolver iresolver) {
-            this(type, parallelism);
-            // TODO
-        }
-
-
-        /**
-         * Execute a distributed contextualization chain using non-boxing optimizations if all the functors are
-         * non-boxing, or without if one or more are boxing contextualizers.
-         *
-         * @param stringObservationMap
-         * @param scope
-         */
-        protected void executeChain(Map<String, Observation> stringObservationMap, ContextScope scope) {
-            // TODO find the strategy based on types of value resolvers and parallelism, then run it
-        }
-
-        public Executor chain(IntValueResolver iresolver) {
-            // TODO
-            return this;
-        }
-
-        public Executor chain(DoubleValueResolver iresolver) {
-            // TODO
-            return this;
-        }
-
-        public Executor chain(ConceptValueResolver iresolver) {
-            // TODO
-            return this;
-        }
-
-        public Executor chain(BoxingValueResolver iresolver) {
-            // TODO
-            return this;
-        }
-    }
-
 
     /**
      * Create an executor for the computation and return it, or - if appropriate - merge the computation into the
@@ -192,50 +124,55 @@ public class DigitalTwin {
 
         var languageService = Configuration.INSTANCE.getService(Language.class);
         var functor = languageService.execute(computation, scope, Object.class);
+        var parallelism = getParallelism(scope);
 
-        Parallelism parallelism = getParallelism(scope);
         return switch (functor) {
             case null ->
                     throw new KlabInternalErrorException("function call " + computation.getName() + " produced a null" +
                             " result");
             case Instantiator instantiator -> new Executor(Executor.Type.OBSERVATION_INSTANTIATOR, parallelism) {
                 @Override
-                public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
-
+                public void accept(Observation observation, ContextScope contextScope) {
+                    var observable = observation.getObservable().as(DescriptionType.ACKNOWLEDGEMENT);
+                    var instances = instantiator.resolve(observation.getObservable(), computation, scope);
+                    // TODO this should be external at this point, part of the deferral strategy
+                    // create observation, add it and call the resolver back; cache the dataflow if so configured
+                    // configuration may only cache the dataflow above a certain number of instances
+                    // parallelize the resolution of the observations as needed using virtual threads
                 }
             };
             case DoubleValueResolver dresolver ->
                     previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, dresolver) {
                         @Override
-                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
-                            executeChain(stringObservationMap, contextScope);
+                        public void accept(Observation observation, ContextScope contextScope) {
+                            executeChain((State) observation, contextScope);
                         }
                     } : previousExecutor.chain(dresolver);
             case IntValueResolver iresolver ->
                     previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, iresolver) {
                         @Override
-                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
-                            executeChain(stringObservationMap, contextScope);
+                        public void accept(Observation observation, ContextScope contextScope) {
+                            executeChain((State) observation, contextScope);
                         }
                     } : previousExecutor.chain(iresolver);
             case ConceptValueResolver cresolver ->
                     previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, cresolver) {
                         @Override
-                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
-                            executeChain(stringObservationMap, contextScope);
+                        public void accept(Observation observation, ContextScope contextScope) {
+                            executeChain((State) observation, contextScope);
                         }
                     } : previousExecutor.chain(cresolver);
             case BoxingValueResolver bresolver ->
                     previousExecutor == null ? new Executor(Executor.Type.BOXING_VALUE_RESOLVER, parallelism,
                             bresolver) {
                         @Override
-                        public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
-                            executeChain(stringObservationMap, contextScope);
+                        public void accept(Observation observation, ContextScope contextScope) {
+                            executeChain((State) observation, contextScope);
                         }
                     } : previousExecutor.chain(bresolver);
             case Resolver resolver -> new Executor(Executor.Type.OBSERVATION_RESOLVER, parallelism) {
                 @Override
-                public void accept(Map<String, Observation> stringObservationMap, ContextScope contextScope) {
+                public void accept(Observation observation, ContextScope contextScope) {
                     resolver.resolve(observation, computation, contextScope);
                 }
             };
@@ -250,10 +187,52 @@ public class DigitalTwin {
         return Parallelism.ONE;
     }
 
+    /**
+     * Register an actuator and create all support info before execution. Return true if the actuator is new and has
+     * computations.
+     *
+     * @param actuator
+     * @param scope
+     * @return
+     */
+    public boolean registerActuator(Actuator actuator, ContextScope scope) {
+
+        var data = observationData.get(actuator.getId());
+        if (data == null && /* shouldn't happen */ !actuator.isReference()) {
+            data = new ObservationData();
+            data.actuator = actuator;
+            data.observation = createObservation(actuator, scope);
+            data.scale = null; // actuator.getCoverage(); // TODO if partial, must intersect
+
+            for (Actuator child : actuator.getChildren()) {
+                if (child.isInput() && !child.getName().equals(child.getAlias())) {
+                    data.localNames.put(child.getName(), child.getAlias());
+                }
+            }
+
+            Executor executor = null;
+            for (var computation : data.actuator.getComputation()) {
+                Executor step = createExecutor(actuator, data.observation, computation, scope, executor);
+                if (executor != step) {
+                    data.executors.add(step);
+                }
+                executor = step;
+            }
+
+            observationData.put(actuator.getId(), data);
+
+            return data.executors.size() > 0;
+        }
+
+        return false;
+    }
+
     class ObservationData {
 
         Observation observation;
         Actuator actuator;
+        // the scale of contextualization of the actuator, computed in context based on coverage + context scale
+        Scale scale;
         // the last timestamp in the influence graph starting at this
         long lastUpdate = -1;
 
@@ -261,7 +240,17 @@ public class DigitalTwin {
         Map<String, String> localNames = new HashMap<>();
 
         // executors in order of application. Implemented by the Executor class.
-        List<BiConsumer<Map<String, Observation>, ContextScope>> executors = new ArrayList<>();
+        List<BiConsumer<Observation, ContextScope>> executors = new ArrayList<>();
+
+        /**
+         * TODO create a new scope with localized names in the catalog and the scale of contextualization
+         *
+         * @param scope
+         * @return
+         */
+        ContextScope contextualize(ContextScope scope) {
+            return scope;
+        }
     }
 
     static class InfluenceEdge extends DefaultEdge {
@@ -309,10 +298,61 @@ public class DigitalTwin {
         this.storageScope = new StorageScope(scope);
     }
 
+    /**
+     * Run all the actuators, honoring execution order and parallelism
+     *
+     * @param dataflow
+     * @param scope
+     * @return
+     */
+    public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope scope) {
+
+        if (!validate(scope)) {
+            return Observation.empty();
+        }
+
+        var executionOrder = sortComputation(dataflow, scope);
+        var groups = executionOrder.stream().collect(Collectors.groupingBy(s -> s.getSecond()));
+        var lastOrder = executionOrder.getLast().getSecond();
+        var parallelism = getParallelism(scope);
+        var initializationScope = scope.withGeometry(scope.getGeometry().initialization());
+
+        for (int i = 0; i <= lastOrder; i++) {
+            var actuatorGroup = groups.get(i);
+            if (actuatorGroup.size() > 1 && parallelism.getAsInt() > 1) {
+                try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                    for (var actuator : actuatorGroup) {
+                        executor.submit(() -> runActuator(actuator.getFirst(), initializationScope));
+                    }
+                    // ehm.
+                    if (!executor.awaitTermination(MAXIMUM_TASK_TIMEOUT_HOURS, TimeUnit.HOURS)) {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    scope.error(e);
+                    break;
+                }
+            } else {
+                boolean error = false;
+                for (var actuator : actuatorGroup) {
+                    if ((error = !runActuator(actuator.getFirst(), initializationScope))) {
+                        break;
+                    }
+                }
+                if (error) {
+                    break;
+                }
+            }
+        }
+
+        return getObservation(dataflow.getComputation().iterator().next().getId());
+    }
 
     /**
      * Run the passed actuator, building the necessary observations and updating all records. Sound dependency order
      * must be guaranteed by the caller. Notify whatever info we have subscribed to.
+     * <p>
+     * TODO obs data for an actuator should contain the actual coverage in the context scale
      *
      * @param actuator
      * @param scope
@@ -321,41 +361,26 @@ public class DigitalTwin {
     public boolean runActuator(Actuator actuator, ContextScope scope) {
 
         var data = observationData.get(actuator.getId());
-        if (data == null && /* shouldn't happen */ !actuator.isReference()) {
-            data = new ObservationData();
-            data.actuator = actuator;
-            data.observation = createObservation(actuator, scope);
 
-            for (Actuator child : actuator.getChildren()) {
-                if (child.isInput() && !child.getName().equals(child.getAlias())) {
-                    data.localNames.put(child.getName(), child.getAlias());
-                }
-            }
-
-            Executor executor = null;
-            for (var computation : data.actuator.getComputation()) {
-                Executor step = createExecutor(actuator, data.observation, computation, scope, executor);
-                if (executor != step) {
-                    data.executors.add(step);
-                }
-                executor = step;
-            }
-
-            observationData.put(actuator.getId(), data);
-        }
-
-        /**
-         If not done already: initialize by
-         1. Separate chains of scalar functions and merge into chained contextualizers
-         2. Add individual non-scalar contextualizers
-         3. Define run strategy and naming in new context
-         */
-
+        ContextScope localizedScope = data.contextualize(scope);
         /**
          Run computational chain. Report any errors through the scope and return false on error or exception.
          */
+        for (var executor : data.executors) {
+            try {
+                executor.accept(data.observation, scope);
+            } catch (Throwable t) {
+                return handleContexualizationException(t, scope);
+            }
+        }
 
         return true;
+    }
+
+    private boolean handleContexualizationException(Throwable t, ContextScope scope) {
+        // TODO specialize handling w.r.t. exception. Not sure anything should ever return true, but OK for now
+        scope.error(t);
+        return false;
     }
 
     private Storage createStorage(Observable observable, ContextScope scope) {
@@ -400,6 +425,109 @@ public class DigitalTwin {
             link(ret, scope.getContextObservation());
         }
 
+        return ret;
+    }
+
+
+    /**
+     * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by dependency
+     * and appended in order to the result list along with its order of execution. Successive roots can refer to the
+     * previous roots but they must be executed sequentially.
+     * <p>
+     * The DigitalTwin is asked to register the actuator in the scope and prepare the environment and state for its
+     * execution, including defining its contextualization scale in context.
+     *
+     * @param dataflow
+     * @return
+     */
+    private List<Pair<Actuator, Integer>> sortComputation(Dataflow<Observation> dataflow, ContextScope scope) {
+        List<Pair<Actuator, Integer>> ret = new ArrayList<>();
+        for (Actuator root : dataflow.getComputation()) {
+            int executionOrder = 0;
+            Map<String, Actuator> branch = new HashMap<>();
+            collectActuators(Collections.singletonList(root), branch);
+            var dependencyGraph = createDependencyGraph(branch);
+            TopologicalOrderIterator<Actuator, DefaultEdge> order = new TopologicalOrderIterator<>(
+                    dependencyGraph);
+
+            // group by dependency w.r.t. the previous group and assign the execution order based on the
+            // group index, so that we know what we can execute in parallel
+            Set<Actuator> group = new HashSet<>();
+            while (order.hasNext()) {
+                Actuator next = order.next();
+                if (registerActuator(next, scope)) {
+                    ret.add(Pair.of(next, (executionOrder = checkExecutionOrder(executionOrder, next, dependencyGraph,
+                            group))));
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * If the actuator depends on any in the currentGroup, empty the group and increment the order; otherwise, add it to
+     * the group and return the same order.
+     *
+     * @param executionOrder
+     * @param current
+     * @param dependencyGraph
+     * @param currentGroup
+     * @return
+     */
+    private int checkExecutionOrder(int executionOrder, Actuator current, Graph<Actuator, DefaultEdge> dependencyGraph,
+                                    Set<Actuator> currentGroup) {
+        boolean dependency = false;
+        for (Actuator previous : currentGroup) {
+            for (var edge : dependencyGraph.incomingEdgesOf(current)) {
+                if (currentGroup.contains(dependencyGraph.getEdgeSource(edge))) {
+                    dependency = true;
+                    break;
+                }
+            }
+        }
+
+        if (dependency) {
+            currentGroup.clear();
+            return executionOrder + 1;
+        }
+
+        currentGroup.add(current);
+
+        return executionOrder;
+    }
+
+    private void collectActuators(List<Actuator> actuators, Map<String, Actuator> ret) {
+        for (Actuator actuator : actuators) {
+            if (!actuator.isReference()) {
+                /*
+                 * TODO compile a list of all services + versions, validate the actuator, create
+                 * any needed notifications and a table of translations for local names
+                 */
+                ret.put(actuator.getId(), actuator);
+            }
+            collectActuators(actuator.getChildren(), ret);
+        }
+    }
+
+    /**
+     * Build and return the dependency graph for the passed actuators. Save externally if appropriate - caching does
+     * create issues in contextualization and scheduling.
+     *
+     * @return
+     */
+    public Graph<Actuator, DefaultEdge> createDependencyGraph(Map<String, Actuator> actuators) {
+        Graph<Actuator, DefaultEdge> ret = new DefaultDirectedGraph<>(DefaultEdge.class);
+        for (Actuator actuator : actuators.values()) {
+            ret.addVertex(actuator);
+            for (Actuator child : actuator.getChildren()) {
+                var ref = actuators.get(child.getId());
+                if (ref != null) {
+                    ret.addVertex(ref);
+                    ret.addEdge(child, actuator);
+                }
+            }
+        }
         return ret;
     }
 

@@ -1,26 +1,26 @@
 package org.integratedmodelling.kcli;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.text.NumberFormat;
-
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
 import org.integratedmodelling.kcli.visualization.Graphs;
 import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.utilities.Utils;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
+
+import java.io.File;
+import java.io.PrintWriter;
+import java.text.NumberFormat;
 
 @Command(name = "resolver", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to access resolution services.",
@@ -140,6 +140,7 @@ public class Resolver {
             super.run();
 
             if (this.resolution instanceof Resolution) {
+
                 ContextScope ctx = context == null
                         ? Engine.INSTANCE.getCurrentContext(false)
                         : Engine.INSTANCE.getContext(context);
@@ -180,6 +181,8 @@ public class Resolver {
                 ContextScope ctx = context == null
                         ? Engine.INSTANCE.getCurrentContext(false)
                         : Engine.INSTANCE.getContext(context);
+
+                ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
 
                 var runtime = ctx.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
                 runtime.run(this.dataflow, ctx);
