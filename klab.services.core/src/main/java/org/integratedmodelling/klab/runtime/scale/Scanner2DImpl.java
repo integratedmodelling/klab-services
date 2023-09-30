@@ -105,10 +105,6 @@ public class Scanner2DImpl implements Scanner2D {
         return originalScale.collapse(dimensions);
     }
 
-    public Scale except(Dimension.Type dimension) {
-        return originalScale.except(dimension);
-    }
-
     public Extent<?> extent(Dimension.Type extentType) {
         return originalScale.extent(extentType);
     }

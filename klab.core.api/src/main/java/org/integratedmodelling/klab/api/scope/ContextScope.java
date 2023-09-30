@@ -7,7 +7,6 @@ import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -108,7 +107,7 @@ public interface ContextScope extends SessionScope {
      * {@link #withContextObservation(DirectObservation)}}. If no root observation is present in the scope, the
      * arguments must fully specify a subject, either through an
      * {@link org.integratedmodelling.klab.api.knowledge.Instance} or a URN specifying a subject observable + a scale.
-     * If the parent session was focused on a scale, this is available through {@link #getGeometry()} and the context
+     * If the parent session was focused on a scale, this is available through {@link #getScale()} and the context
      * can decide to use it as a scale for the root subject.
      * <p>
      * Observables will be routinely specified through URNs, which will be validated as any observable object -

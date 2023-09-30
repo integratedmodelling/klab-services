@@ -29,7 +29,7 @@ public class EngineSessionScope extends EngineScope implements SessionScope {
 	}
 
 	@Override
-	public Scale getGeometry() {
+	public Scale getScale() {
 		return geometry;
 	}
 

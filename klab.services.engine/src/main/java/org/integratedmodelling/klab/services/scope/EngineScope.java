@@ -253,6 +253,11 @@ public abstract class EngineScope implements UserScope {
 	}
 
 	@Override
+	public void interrupt() {
+		this.status = Status.INTERRUPTED;
+	}
+
+	@Override
 	public boolean hasErrors() {
 		// TODO Auto-generated method stub
 		return false;

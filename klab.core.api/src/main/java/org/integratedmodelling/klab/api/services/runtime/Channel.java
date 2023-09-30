@@ -133,6 +133,8 @@ public interface Channel {
 	 */
 	void post(Consumer<Message> handler, Object... message);
 
+	void interrupt();
+
 //	/**
 //	 * Use to communicate that a wait is necessary. The receiving end should check
 //	 * getWaitTime().

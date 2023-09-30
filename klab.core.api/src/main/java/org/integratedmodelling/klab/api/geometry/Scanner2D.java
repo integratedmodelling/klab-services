@@ -7,12 +7,13 @@ package org.integratedmodelling.klab.api.geometry;
  * object.
  *
  * <p>Implementations can be derived to implement e.g. space-filling curves, prioritized lists or other iteration
- * strategies.</p>
+ * strategies. We should also have a generic SplitIterator that the scale can be adapted to, each using the iterator of
+ * choice.</p>
  */
 public interface Scanner2D extends Geometry, Iterable<Offset> {
     /**
-     * A 2D offset can be converted into the needed offset for the geometry. The returned object
-     * should be a threadlocal object that gets allocated only once per thread.
+     * A 2D offset can be converted into the needed offset for the geometry. The returned object should be a threadlocal
+     * object that gets allocated only once per thread.
      *
      * @param x
      * @param y

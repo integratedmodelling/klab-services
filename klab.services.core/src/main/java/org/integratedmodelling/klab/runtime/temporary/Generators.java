@@ -41,22 +41,27 @@ public class Generators {
         public void resolve(State observation, ServiceCall call, ContextScope scope) {
 
             NumericRange range = call.getParameters().get("range", NumericRange.create(0., 4000., false, false));
-            List<Long> xy = scope.getGeometry().dimension(Dimension.Type.SPACE).getShape();
+            List<Long> xy = scope.getScale().dimension(Dimension.Type.SPACE).getShape();
             var storage = observation.getStorage(DoubleStorage.class);
             Terrain terrain = new Terrain(call.getParameters().get("detail", 8), call.getParameters().get("roughness"
                     , 0.55),
                     range.getLowerBound(), range.getUpperBound());
 
-            /*
+            /**
              appropriate pattern for generic scale when we handle only one dimension, even if in most situations (all
-              at the moment) only one subscale will be returned. Inside the loop, adapt each sub-scale to a grid
-             scanner for speed. The geometry requirement ensures that we get a regular 2D spatial extent.
-            */
-            for (Geometry subscale : scope.getGeometry().without(Dimension.Type.SPACE)) {
+             at the moment) only one subscale will be returned. If there is no time or other dimension, a unit scale
+             will be returned and at(unit) will later return self. Inside the loop, adapt the overall geometry
+             located by each sub-scale to a grid scanner. The geometry requirement ensures that we get a regular 2D
+             spatial extent.
+             */
+            for (Geometry subscale : scope.getScale().without(Dimension.Type.SPACE)) {
                 double dx = 1.0 / (double) xy.get(0);
                 double dy = 1.0 / (double) xy.get(1);
-                // iterate to Offsets after adapting to a Scanner2D for speed
-                for (Offset offset : subscale.as(Scanner2D.class)) {
+                /**
+                 * The overall geometry is first located to the current non-spatial location, then the
+                 * space is iterated through a fast 2D offset.
+                 */
+                for (Offset offset : scope.getScale().at(subscale).as(Scanner2D.class)) {
                     storage.set(terrain.getAltitude(dx * offset.offsets()[0], dy * offset.offsets()[1]), offset);
                 }
             }

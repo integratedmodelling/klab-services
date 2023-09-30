@@ -315,7 +315,7 @@ public class DigitalTwin {
         var groups = executionOrder.stream().collect(Collectors.groupingBy(s -> s.getSecond()));
         var lastOrder = executionOrder.getLast().getSecond();
         var parallelism = getParallelism(scope);
-        var initializationScope = scope.withGeometry(scope.getGeometry().initialization());
+        var initializationScope = scope.withGeometry(scope.getScale().initialization());
 
         for (int i = 0; i <= lastOrder; i++) {
             var actuatorGroup = groups.get(i);
@@ -370,15 +370,16 @@ public class DigitalTwin {
             try {
                 executor.accept(data.observation, scope);
             } catch (Throwable t) {
-                return handleContexualizationException(t, scope);
+                return handleContextualizationException(t, scope);
             }
         }
 
         return true;
     }
 
-    private boolean handleContexualizationException(Throwable t, ContextScope scope) {
-        // TODO specialize handling w.r.t. exception. Not sure anything should ever return true, but OK for now
+    private boolean handleContextualizationException(Throwable t, ContextScope scope) {
+        // TODO specialize handling w.r.t. exception. Not sure anything should ever return true (-> continue
+        //  contextualizing to the next executor), but OK for now
         scope.error(t);
         return false;
     }

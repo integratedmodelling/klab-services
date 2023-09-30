@@ -156,9 +156,9 @@ public class LanguageService implements Language {
             } else if (ServiceCall.class.isAssignableFrom(cls)) {
                 ret[i] = call;
             } else if (Geometry.class.isAssignableFrom(cls)) {
-                ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getGeometry() : null;
+                ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getScale() : null;
             } else if (Scale.class.isAssignableFrom(cls)) {
-                ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getGeometry() : null;
+                ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getScale() : null;
             } else if (Parameters.class.isAssignableFrom(cls)) {
                 ret[i] = call.getParameters();
             } else if (DirectObservation.class.isAssignableFrom(cls)) {

@@ -1,13 +1,13 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
@@ -27,7 +27,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
 /**
- * The Interface IScale.
+ * The Interface Scale.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
@@ -147,41 +147,35 @@ public interface Scale extends Geometry, Topology<Scale> {
 	/**
 	 * Return the scale after the end of contextualization. This scale is not
 	 * produced by the scale iterator, and is used during scheduling.
-	 * 
+	 *
 	 * @return
 	 */
 	Scale termination();
 
 	/**
 	 * Get the extent of the specified type, or null.
-	 * 
+	 *
 	 * @param extentType
 	 * @return
 	 */
 	Extent<?> extent(Dimension.Type extentType);
 
 	/**
-	 * Return a new scale that will iterate through all dimensions except the passed
-	 * one. To be used in an outer for() loop when a particular dimension must be
-	 * iterated over but the implementation must account for others as well: <code>
-	 * for (Scale otherDims : scale.except(Geometry.Dimension.Type.SPACE) {
-	 * 	
+	 * <p>Return a new scale without the passed dimension.</p>
+	 *
+	 * <p>This can be used in an outer for() loop when a particular dimension must be
+	 * iterated over but the implementation must account for others as well:</p>
+     *
+     * <pre>
+	 * for (Scale otherDims : scale.without(Geometry.Dimension.Type.SPACE) {
+	 *
 	 * 		... code that sets the context from dimensions other than space
-	 * 
+     *
 	 * 		for (Scale space : otherDims) {
-	 * 			... code that goes over space only
-	 * 		}
+	 * 			... code that goes over space only* 		}
 	 * }
-	 * </code>
-	 * 
-	 * @param dimension
-	 * @return
-	 */
-	Scale except(Geometry.Dimension.Type dimension);
-
-	/**
-	 * Return a new scale without the passed dimension.
-	 * 
+     * </pre>
+	 *
 	 * @param dimension
 	 * @return
 	 */
@@ -196,10 +190,10 @@ public interface Scale extends Geometry, Topology<Scale> {
 	/**
 	 * Return the same scale but with multiplicity 1 and all extents collapsed to
 	 * their containing extent.
-	 * 
+	 *
 	 * @param dimensions select the dimensions to collapse. Pass none to collapse
 	 *                   everything.
-	 * 
+	 *
 	 * @return
 	 */
 	Scale collapse(Dimension.Type... dimensions);
@@ -207,7 +201,7 @@ public interface Scale extends Geometry, Topology<Scale> {
 	/**
 	 * Produce another scale with the passed extent, merging it with any existing
 	 * one if it's present.
-	 * 
+	 *
 	 * @param extent
 	 * @return
 	 */

@@ -106,10 +106,6 @@ public class Scanner1DImpl implements Scanner1D {
         return originalScale.collapse(dimensions);
     }
 
-    public Scale except(Dimension.Type dimension) {
-        return originalScale.except(dimension);
-    }
-
     public Extent<?> extent(Dimension.Type extentType) {
         return originalScale.extent(extentType);
     }

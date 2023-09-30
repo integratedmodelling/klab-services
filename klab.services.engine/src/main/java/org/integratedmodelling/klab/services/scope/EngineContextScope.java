@@ -65,7 +65,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public Scale getGeometry() {
+    public Scale getScale() {
         return geometry;
     }
 

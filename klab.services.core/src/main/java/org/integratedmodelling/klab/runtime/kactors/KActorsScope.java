@@ -560,6 +560,11 @@ public class KActorsScope implements VM.BehaviorScope {
 	}
 
 	@Override
+	public void interrupt() {
+		// TODO
+	}
+
+	@Override
 	public boolean isInterrupted() {
 		return mainScope.isInterrupted();
 	}

@@ -123,7 +123,7 @@ public class ResolverService extends BaseService implements Resolver {
     public Resolution resolve(Knowledge knowledge, ContextScope scope) {
 
         Observable observable = null;
-        Scale scale = scope.getGeometry();
+        Scale scale = scope.getScale();
 
         switch (Knowledge.classify(knowledge)) {
             case CONCEPT:

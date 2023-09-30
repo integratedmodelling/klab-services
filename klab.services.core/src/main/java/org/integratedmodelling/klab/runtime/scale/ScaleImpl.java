@@ -132,6 +132,16 @@ public class ScaleImpl implements Scale {
         define(extents);
     }
 
+    /**
+     * Dumb private constructor for pre-defined, pre-sorted inputs
+     * @param extents
+     * @param size
+     */
+    private ScaleImpl(Extent[] extents, long size) {
+        this.extents = extents;
+        this.size = size;
+    }
+
     protected void define(List<Extent<?>> extents) {
         Collections.sort(extents, new Comparator<Extent<?>>() {
             // use the natural order in the dimension type enum
@@ -163,7 +173,7 @@ public class ScaleImpl implements Scale {
         } else if (Scanner1D.class.isAssignableFrom(cls)) {
             return (T) new Scanner1DImpl(this);
         } else if (Geometry.class.equals(cls)) {
-
+            return (T)Geometry.create(encode());
         } else if (Coverage.class.equals(cls)) {
             return (T) new CoverageImpl(this, 1.0);
         }
@@ -299,7 +309,27 @@ public class ScaleImpl implements Scale {
 
     @Override
     public Scale without(Type dimension) {
-        // TODO Auto-generated method stub
+        if (getDimension(dimension) == null) {
+            return this;
+        }
+        Extent[] extents = new Extent[this.extents.length -1];
+        long size = 1;
+        int next = 0;
+        for (Extent extent : this.extents) {
+            if (extent.getType() != dimension) {
+                extents[next++] = extent;
+                size *= extent.size();
+            }
+        }
+        return new ScaleImpl(extents, size);
+    }
+
+    private Extent getDimension(Type dimension) {
+        for (Extent extent : this.extents) {
+            if (extent.getType() == dimension) {
+                return extent;
+            }
+        }
         return null;
     }
 
@@ -311,12 +341,6 @@ public class ScaleImpl implements Scale {
 
     @Override
     public Scale collapse(Type... dimensions) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Scale except(Type dimension) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -458,11 +482,6 @@ public class ScaleImpl implements Scale {
         @Override
         public Scale termination() {
             return ScaleImpl.this.termination();
-        }
-
-        @Override
-        public Scale except(Type dimension) {
-            return ScaleImpl.this.except(dimension);
         }
 
         @Override
