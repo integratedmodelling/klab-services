@@ -173,7 +173,7 @@ public class ScaleImpl implements Scale {
         } else if (Scanner1D.class.isAssignableFrom(cls)) {
             return (T) new Scanner1DImpl(this);
         } else if (Geometry.class.equals(cls)) {
-            return (T)Geometry.create(encode());
+            return null; // TODO
         } else if (Coverage.class.equals(cls)) {
             return (T) new CoverageImpl(this, 1.0);
         }

@@ -233,8 +233,8 @@ public class ResolverService extends BaseService implements Resolver {
      * @return
      */
     private ResolutionImpl resolveStrategy(ObservationStrategy strategy, Scale scale, ContextScope scope,
-                                     ResolutionImpl parent,
-                                     Model parentModel) {
+                                           ResolutionImpl parent,
+                                           Model parentModel) {
 
         Coverage coverage = Coverage.create(scale, 0.0);
         ResolutionImpl ret = new ResolutionImpl(strategy.getObservable(), scale, scope, parent);
@@ -311,7 +311,7 @@ public class ResolverService extends BaseService implements Resolver {
 
             if (root.getFirst() instanceof Model) {
                 var actuator = compileActuator((Model) root.getFirst(), resolution, resolution.getResolvable(),
-                        rootActuator,
+                        null,
                         compiled, scope);
                 if (rootActuator == null) {
                     ret.getComputation().add(actuator);
@@ -327,7 +327,7 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     private ActuatorImpl compileActuator(Model model, Resolution resolution, Observable observable,
-                                         Actuator rootActuator,
+                                         Actuator parentActuator,
                                          Map<String, Actuator> compiled, ContextScope scope) {
 
         ActuatorImpl ret = null;
@@ -339,8 +339,8 @@ public class ResolverService extends BaseService implements Resolver {
             ret = new ActuatorImpl();
 
             // dependencies first
-            for (ResolutionType type : Arrays.asList(ResolutionType.DIRECT, ResolutionType.DEFER_INHERENCY,
-                    ResolutionType.DEFER_SEMANTICS)) {
+            for (ResolutionType type : new ResolutionType[]{ResolutionType.DIRECT, ResolutionType.DEFER_INHERENCY,
+                    ResolutionType.DEFER_SEMANTICS}) {
                 for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model, type)) {
                     // alias is the dependency getName()
                     if (resolved.getFirst() instanceof Model) {
@@ -349,7 +349,9 @@ public class ResolverService extends BaseService implements Resolver {
                                 compiled, scope);
                         ret.getChildren().add(dependency);
                         ret.setCoverage(((Model) resolved.getFirst()).getCoverage().as(Geometry.class));
-                    } // TODO
+                    } else {
+                        assert(parentActuator != null);
+                    }
                 }
             }
 

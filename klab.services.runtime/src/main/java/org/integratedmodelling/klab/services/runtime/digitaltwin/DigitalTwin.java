@@ -374,6 +374,10 @@ public class DigitalTwin {
             }
         }
 
+        while (!actuator.getDeferrals().isEmpty()) {
+
+        }
+
         return true;
     }
 

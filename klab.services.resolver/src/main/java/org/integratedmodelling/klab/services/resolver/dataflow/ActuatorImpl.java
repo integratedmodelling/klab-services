@@ -2,12 +2,16 @@ package org.integratedmodelling.klab.services.resolver.dataflow;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 
 public class ActuatorImpl implements Actuator {
@@ -29,6 +33,7 @@ public class ActuatorImpl implements Actuator {
     private String observer;
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
+    private Queue<Pair<Resolution.ResolutionType, Observable>> deferrals = new ConcurrentLinkedQueue<>();
 
     @Override
     public String getId() {
@@ -157,15 +162,20 @@ public class ActuatorImpl implements Actuator {
     }
 
     @Override
-	public String getObserver() {
-		return observer;
-	}
+    public String getObserver() {
+        return observer;
+    }
 
-	public void setObserver(String observer) {
-		this.observer = observer;
-	}
+    @Override
+    public Queue<Pair<Resolution.ResolutionType, Observable>> getDeferrals() {
+        return this.deferrals;
+    }
 
-	@Override
+    public void setObserver(String observer) {
+        this.observer = observer;
+    }
+
+    @Override
     public boolean isDeferred() {
         return deferred;
     }

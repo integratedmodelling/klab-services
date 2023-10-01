@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -46,6 +47,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     private Set<Observable> resolving = new HashSet<>();
     private Map<Observable, Collection<Knowledge>> resolved = new HashMap<>();
     private List<Pair<Knowledge, Coverage>> resolution = new ArrayList<>();
+    private DirectObservation resolutionContext;
 
     private boolean empty;
 
@@ -254,6 +256,11 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     @Override
     public Observable getResolvable() {
         return this.resolvable;
+    }
+
+    @Override
+    public DirectObservation getResolutionContext() {
+        return resolutionContext;
     }
 
     @Override
