@@ -13,18 +13,17 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * The Interface Scale.
@@ -185,7 +184,7 @@ public interface Scale extends Geometry, Topology<Scale> {
 	 * The at method mandatorily returns a scale.
 	 */
 	@Override
-	Scale at(Object... dimensions);
+	Scale at(Locator dimension);
 
 	/**
 	 * Return the same scale but with multiplicity 1 and all extents collapsed to

@@ -38,11 +38,11 @@ public class Generators {
     public static class FractalTerrain implements Resolver<State> {
 
         @Override
-        public void resolve(State observation, ServiceCall call, ContextScope scope) {
+        public void resolve(State state, ServiceCall call, ContextScope scope) {
 
             NumericRange range = call.getParameters().get("range", NumericRange.create(0., 4000., false, false));
             List<Long> xy = scope.getScale().dimension(Dimension.Type.SPACE).getShape();
-            var storage = observation.getStorage(DoubleStorage.class);
+            var storage = state.getStorage(DoubleStorage.class);
             Terrain terrain = new Terrain(call.getParameters().get("detail", 8), call.getParameters().get("roughness"
                     , 0.55),
                     range.getLowerBound(), range.getUpperBound());

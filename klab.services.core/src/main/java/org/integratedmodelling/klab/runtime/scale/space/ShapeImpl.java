@@ -1,13 +1,5 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.geotools.geojson.GeoJSON;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
@@ -30,22 +22,17 @@ import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.locationtech.jts.algorithm.ConvexHull;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryCollection;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.MultiLineString;
-import org.locationtech.jts.geom.MultiPoint;
-import org.locationtech.jts.geom.MultiPolygon;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.geom.Polygonal;
+import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
 import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBWriter;
 import org.locationtech.jts.io.WKTReader;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.*;
 
 public class ShapeImpl extends SpaceImpl implements Shape {
 
@@ -154,7 +141,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     public static Shape create(Envelope envelope) {
-        return create(envelope.getMinX(), envelope.getMinY(), envelope.getMaxX(), envelope.getMaxY(), envelope.getProjection());
+        return create(envelope.getMinX(), envelope.getMinY(), envelope.getMaxX(), envelope.getMaxY(),
+                envelope.getProjection());
     }
 
     public static ShapeImpl create(Geometry geometry, Projection projection) {
@@ -167,7 +155,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     public static Shape create(Collection<Geometry> geometries, Projection projection) {
 
-        if (geometries.size() == 0) {
+        if (geometries.isEmpty()) {
             return null;
         }
 
@@ -175,13 +163,14 @@ public class ShapeImpl extends SpaceImpl implements Shape {
             return create(geometries.iterator().next(), projection);
         }
 
-        return create(SpaceImpl.gFactory.createGeometryCollection(geometries.toArray(new Geometry[geometries.size()])),
+        return create(SpaceImpl.gFactory.createGeometryCollection(geometries.toArray(new Geometry[0])),
                 projection);
     }
 
     public static Geometry makeCell(double x1, double y1, double x2, double y2) {
 
-        Coordinate[] pts = {new Coordinate(x1, y1), new Coordinate(x2, y1), new Coordinate(x2, y2), new Coordinate(x1, y2),
+        Coordinate[] pts = {new Coordinate(x1, y1), new Coordinate(x2, y1), new Coordinate(x2, y2), new Coordinate(x1
+                , y2),
                 new Coordinate(x1, y1)};
 
         return SpaceImpl.gFactory.createPolygon(SpaceImpl.gFactory.createLinearRing(pts), null);
@@ -246,7 +235,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public double getArea(Unit unit) {
-        return unit.convert(getMeteredShape().getArea(), Configuration.INSTANCE.getService(UnitService.class).squareMeters())
+        return unit.convert(getMeteredShape().getArea(),
+                        Configuration.INSTANCE.getService(UnitService.class).squareMeters())
                 .doubleValue();
     }
 
@@ -272,8 +262,9 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         Geometry g = null;
 
         try {
-            g = JTS.transform(geometry, CRS.findMathTransform(ProjectionImpl.promote(projection).getCoordinateReferenceSystem(),
-                    ProjectionImpl.promote(otherProjection).getCoordinateReferenceSystem()));
+            g = JTS.transform(geometry,
+                    CRS.findMathTransform(ProjectionImpl.promote(projection).getCoordinateReferenceSystem(),
+                            ProjectionImpl.promote(otherProjection).getCoordinateReferenceSystem()));
         } catch (Exception e) {
             throw new KValidationException(e);
         }
@@ -466,19 +457,19 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     @Override
     public int getDimensionality() {
         int ret = 0;
-        switch(getGeometryType()) {
-        case POINT:
-        case MULTIPOINT:
-        case EMPTY:
-            break;
-        case LINESTRING:
-        case MULTILINESTRING:
-            ret = 1;
-            break;
-        case MULTIPOLYGON:
-        case POLYGON:
-            ret = 2;
-            break;
+        switch (getGeometryType()) {
+            case POINT:
+            case MULTIPOINT:
+            case EMPTY:
+                break;
+            case LINESTRING:
+            case MULTILINESTRING:
+                ret = 1;
+                break;
+            case MULTIPOLYGON:
+            case POLYGON:
+                ret = 2;
+                break;
         }
         return ret;
     }
@@ -578,7 +569,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     /**
      * WKB code without projection
-     * 
+     *
      * @return the WKB code
      */
     public String getWKB() {
@@ -765,17 +756,17 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         // if geometry is a point or line, buffer return an empty polygon, so we must
         // check it
         // a double check for a well formed polygon is needed
-        if (jtsGeometry instanceof GeometryCollection && !(jtsGeometry instanceof MultiLineString
-                || jtsGeometry instanceof LineString || jtsGeometry instanceof MultiPoint || jtsGeometry instanceof Point)) {
+        if ((jtsGeometry instanceof GeometryCollection && !(jtsGeometry instanceof MultiLineString
+                || jtsGeometry instanceof MultiPoint)) || jtsGeometry instanceof LineString || jtsGeometry instanceof Point) {
             return jtsGeometry.buffer(0);
         }
         return jtsGeometry;
     }
 
     /**
-     * If the number of coordinates is higher than a passed threshold, simplify to the distance that
-     * retains the max number of subdivisions along the diagonal of the envelope.
-     * 
+     * If the number of coordinates is higher than a passed threshold, simplify to the distance that retains the max
+     * number of subdivisions along the diagonal of the envelope.
+     *
      * @param maxCoordinates
      * @param nDivisions
      * @return
@@ -790,11 +781,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     /**
-     * Join the passed shapes into another shape of the passed type, optionally including or
-     * excluding the shapes themselves.
-     * 
+     * Join the passed shapes into another shape of the passed type, optionally including or excluding the shapes
+     * themselves.
+     * <p>
      * Assumes both shapes have the same projection.
-     * 
+     *
      * @param a
      * @param b
      * @param type
@@ -807,25 +798,21 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         Geometry bj = ((ShapeImpl) b).getStandardizedGeometry();
         Geometry merged = null;
 
-        switch(type) {
-        case LINESTRING:
-            merged = aj.getFactory().createLineString(
-                    new Coordinate[]{aj.getCentroid().getCoordinates()[0], bj.getCentroid().getCoordinates()[0]});
-            break;
-        case POLYGON:
-        case MULTIPOLYGON:
-            List<Coordinate> cloud = new ArrayList<>();
-            for (Coordinate c : aj.getBoundary().getCoordinates()) {
-                cloud.add(c);
-            }
-            for (Coordinate c : bj.getBoundary().getCoordinates()) {
-                cloud.add(c);
-            }
-            ConvexHull hull = new ConvexHull(cloud.toArray(new Coordinate[0]), aj.getFactory());
-            merged = hull.getConvexHull().buffer(0);
-            break;
-        default:
-            throw new IllegalArgumentException("cannot join two shapes into a " + type.name().toLowerCase());
+        switch (type) {
+            case LINESTRING:
+                merged = aj.getFactory().createLineString(
+                        new Coordinate[]{aj.getCentroid().getCoordinates()[0], bj.getCentroid().getCoordinates()[0]});
+                break;
+            case POLYGON:
+            case MULTIPOLYGON:
+                List<Coordinate> cloud = new ArrayList<>();
+                cloud.addAll(Arrays.asList(aj.getBoundary().getCoordinates()));
+                cloud.addAll(Arrays.asList(bj.getBoundary().getCoordinates()));
+                ConvexHull hull = new ConvexHull(cloud.toArray(new Coordinate[0]), aj.getFactory());
+                merged = hull.getConvexHull().buffer(0);
+                break;
+            default:
+                throw new IllegalArgumentException("cannot join two shapes into a " + type.name().toLowerCase());
         }
 
         if (merged != null && !includeSources) {
@@ -988,7 +975,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     /**
      * Returned shape is guaranteed to be a polygon
-     * 
+     *
      * @return
      */
     public String getStandardizedEnvelopeWKT() {
@@ -1002,18 +989,16 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     @Override
-    public Space at(Object... locators) {
-        if (locators != null && locators.length == 1) {
-            if (locators[0] instanceof Number && ((Number) locators[0]).longValue() == 0) {
+    public Space at(Locator locator) {
+        if (locator instanceof Number && ((Number) locator).longValue() == 0) {
+            return this;
+        }
+        if (locator instanceof Shape) {
+            if (getEnvelope().intersects(((Shape) locator).getEnvelope())) {
+                // TODO coverage
                 return this;
             }
-            if (locators[0] instanceof Shape) {
-                if (getEnvelope().intersects(((Shape) locators[0]).getEnvelope())) {
-                    // TODO coverage
-                    return this;
-                }
-                return null;
-            }
+            return null;
         }
         throw new IllegalStateException("an individual shape cannot be further located");
     }
@@ -1046,9 +1031,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         if (how == LogicalConnector.UNION) {
             return create(geometry.union(promote(shape.transform(this.projection)).getJTSGeometry()), this.projection);
         } else if (how == LogicalConnector.INTERSECTION) {
-            return create(geometry.intersection(promote(shape.transform(this.projection)).getJTSGeometry()), this.projection);
+            return create(geometry.intersection(promote(shape.transform(this.projection)).getJTSGeometry()),
+                    this.projection);
         } else if (how == LogicalConnector.EXCLUSION) {
-            return create(geometry.difference(promote(shape.transform(this.projection)).getJTSGeometry()), this.projection);
+            return create(geometry.difference(promote(shape.transform(this.projection)).getJTSGeometry()),
+                    this.projection);
         }
         throw new IllegalArgumentException("cannot merge a shape with " + other);
     }

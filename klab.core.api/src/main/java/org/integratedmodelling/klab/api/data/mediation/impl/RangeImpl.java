@@ -173,6 +173,11 @@ public class RangeImpl implements NumericRange {
     }
 
     @Override
+    public boolean isEmpty() {
+        return lowerBound == upperBound;
+    }
+
+    @Override
     public boolean isUpperOpen() {
         return upperExclusive;
     }
@@ -467,7 +472,7 @@ public class RangeImpl implements NumericRange {
     }
 
     /**
-     * Returns the minimal range that {@linkplain #encloses encloses} both this range and {@code
+     * Returns the minimal range that {@linkplain #contains(NumericRange)}} both this range and {@code
      * other}. For example, the span of {@code [1..3]} and {@code (5..7)} is {@code [1..7)}.
      *
      * <p>

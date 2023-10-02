@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
@@ -16,6 +12,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDur
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 public class TimePeriodImpl implements TimePeriod {
 
@@ -130,7 +130,7 @@ public class TimePeriodImpl implements TimePeriod {
 	}
 
 	@Override
-	public Time at(Object... locators) {
+	public Time at(Locator locator) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -205,6 +205,12 @@ public class TimePeriodImpl implements TimePeriod {
 	public Iterator<Time> iterator() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public long[] locate(Dimension dimension) {
+		// TODO
+		return new long[0];
 	}
 
 	@Override

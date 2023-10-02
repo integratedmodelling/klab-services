@@ -47,14 +47,6 @@ public interface ObservationStrategy extends Iterable<Pair<ObservationStrategy.O
          */
         OBSERVE,
 
-        /**
-         * The operation implies the instantiation of other direct observables, then the application of the following
-         * operation(s) to each of the results.
-         *
-         * @deprecated probably OBSERVE(instance) + RESOLVE(resolve) is enough
-         */
-        REIFY,
-
         APPLY,
 
         /**

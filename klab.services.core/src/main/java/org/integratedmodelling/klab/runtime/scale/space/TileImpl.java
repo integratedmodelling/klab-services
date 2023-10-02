@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
+import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
@@ -28,7 +29,7 @@ public class TileImpl extends ShapeImpl implements Tile {
 	}
 
 	@Override
-	public TileImpl at(Object... locators) {
+	public TileImpl at(Locator locator) {
 		// TODO Auto-generated method stub
 		return null;
 	}

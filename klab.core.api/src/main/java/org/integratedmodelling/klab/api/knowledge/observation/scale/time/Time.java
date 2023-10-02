@@ -1,13 +1,13 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
@@ -46,22 +46,27 @@ import org.integratedmodelling.klab.api.lang.Quantity;
  * <li>Real time is a grid aligned with the current time. Start time is now if not specified. End
  * time, if specified, must be in the actual future.</li>
  * </ul>
- * 
+ *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
 public interface Time extends Extent<Time> {
 
-    /** Constant <code>MIN_SCALE_RANK=0</code> */
+    /**
+     * Constant <code>MIN_SCALE_RANK=0</code>
+     */
     int MIN_SCALE_RANK = 0;
-    /** Constant <code>MAX_SCALE_RANK=10</code> */
+    /**
+     * Constant <code>MAX_SCALE_RANK=10</code>
+     */
     int MAX_SCALE_RANK = 10;
 
     static public interface Resolution {
 
         public enum Type {
 
-            MILLENNIUM(0), CENTURY(1), DECADE(2), YEAR(3), MONTH(4), WEEK(5), DAY(6), HOUR(7), MINUTE(8), SECOND(9), MILLISECOND(
+            MILLENNIUM(0), CENTURY(1), DECADE(2), YEAR(3), MONTH(4), WEEK(5), DAY(6), HOUR(7), MINUTE(8), SECOND(9),
+            MILLISECOND(
                     10);
 
             int rank;
@@ -75,80 +80,42 @@ public interface Time extends Extent<Time> {
             }
 
             public boolean isRegular() {
-                switch(this) {
-                case DAY:
-                case HOUR:
-                case MILLISECOND:
-                case MINUTE:
-                case SECOND:
-                case WEEK:
-                    return true;
-                default:
-                    break;
-                }
-                return false;
+                return switch (this) {
+                    case DAY, HOUR, MILLISECOND, MINUTE, SECOND, WEEK -> true;
+                    default -> false;
+                };
             }
 
             public long getMilliseconds() {
-                switch(this) {
-                case MILLISECOND:
-                    return 1;
-                case SECOND:
-                    return 1000;
-                case MINUTE:
-                    return 1000L * 60L;
-                case HOUR:
-                    return 1000L * 60L * 60L;
-                case DAY:
-                    return 1000L * 60L * 60L * 24L;
-                case WEEK:
-                    return 1000L * 60L * 60L * 24L * 7L;
-                case MONTH:
-                    return 1000L * 60L * 60L * 24L * 30;
-                case YEAR:
-                    return 1000L * 60L * 60L * 24L * 365L;
-                case DECADE:
-                    return 1000L * 60L * 60L * 24L * 365L * 10L;
-                case CENTURY:
-                    return 1000L * 60L * 60L * 24L * 365L * 100L;
-                case MILLENNIUM:
-                    return 1000L * 60L * 60L * 24L * 365L * 1000L;
-                default:
-                    break;
-
-                }
-                return 0;
+                return switch (this) {
+                    case MILLISECOND -> 1;
+                    case SECOND -> 1000;
+                    case MINUTE -> 1000L * 60L;
+                    case HOUR -> 1000L * 60L * 60L;
+                    case DAY -> 1000L * 60L * 60L * 24L;
+                    case WEEK -> 1000L * 60L * 60L * 24L * 7L;
+                    case MONTH -> 1000L * 60L * 60L * 24L * 30;
+                    case YEAR -> 1000L * 60L * 60L * 24L * 365L;
+                    case DECADE -> 1000L * 60L * 60L * 24L * 365L * 10L;
+                    case CENTURY -> 1000L * 60L * 60L * 24L * 365L * 100L;
+                    case MILLENNIUM -> 1000L * 60L * 60L * 24L * 365L * 1000L;
+                };
             }
 
             public String getPredicate() {
-                switch(this) {
-                case MILLISECOND:
-                    return "millisecond";
-                case SECOND:
-                    return "second";
-                case MINUTE:
-                    return "minute";
-                case HOUR:
-                    return "hourly";
-                case DAY:
-                    return "daily";
-                case WEEK:
-                    return "weekly";
-                case MONTH:
-                    return "monthly";
-                case YEAR:
-                    return "yearly";
-                case DECADE:
-                    return "decadal";
-                case CENTURY:
-                    return "century";
-                case MILLENNIUM:
-                    return "millennial";
-                default:
-                    break;
-
-                }
-                return "what?";
+                return switch (this) {
+                    case MILLISECOND -> "millisecond";
+                    case SECOND -> "second";
+                    case MINUTE -> "minute";
+                    case HOUR -> "hourly";
+                    case DAY -> "daily";
+                    case WEEK -> "weekly";
+                    case MONTH -> "monthly";
+                    case YEAR -> "yearly";
+                    case DECADE -> "decadal";
+                    case CENTURY -> "century";
+                    case MILLENNIUM -> "millennial";
+                };
             }
 
             public static Type parse(String unit) {
@@ -158,56 +125,56 @@ public interface Time extends Extent<Time> {
                     unit = unit.toLowerCase();
                 }
 
-                switch(unit) {
-                case "M":
-                case "millennium":
-                case "millennia":
-                    return Type.MILLENNIUM;
-                case "C":
-                case "century":
-                case "centuries":
-                    return Type.CENTURY;
-                case "decades":
-                case "decade":
-                    return Type.DECADE;
-                case "y":
-                case "yr":
-                case "year":
-                    return Type.YEAR;
-                case "month":
-                case "months":
-                case "mon":
-                    return Type.MONTH;
-                case "week":
-                case "weeks":
-                case "wk":
-                case "w":
-                    return Type.WEEK;
-                case "d":
-                case "day":
-                case "days":
-                    return Type.DAY;
-                case "h":
-                case "hr":
-                case "hour":
-                case "hours":
-                    return Type.HOUR;
-                case "m":
-                case "min":
-                case "mins":
-                case "minute":
-                case "minutes":
-                    return Type.MINUTE;
-                case "s":
-                case "sec":
-                case "secs":
-                case "second":
-                case "seconds":
-                    return Type.SECOND;
-                case "ms":
-                case "milliseconds":
-                case "millisecond":
-                    return Type.MILLISECOND;
+                switch (unit) {
+                    case "M":
+                    case "millennium":
+                    case "millennia":
+                        return Type.MILLENNIUM;
+                    case "C":
+                    case "century":
+                    case "centuries":
+                        return Type.CENTURY;
+                    case "decades":
+                    case "decade":
+                        return Type.DECADE;
+                    case "y":
+                    case "yr":
+                    case "year":
+                        return Type.YEAR;
+                    case "month":
+                    case "months":
+                    case "mon":
+                        return Type.MONTH;
+                    case "week":
+                    case "weeks":
+                    case "wk":
+                    case "w":
+                        return Type.WEEK;
+                    case "d":
+                    case "day":
+                    case "days":
+                        return Type.DAY;
+                    case "h":
+                    case "hr":
+                    case "hour":
+                    case "hours":
+                        return Type.HOUR;
+                    case "m":
+                    case "min":
+                    case "mins":
+                    case "minute":
+                    case "minutes":
+                        return Type.MINUTE;
+                    case "s":
+                    case "sec":
+                    case "secs":
+                    case "second":
+                    case "seconds":
+                        return Type.SECOND;
+                    case "ms":
+                    case "milliseconds":
+                    case "millisecond":
+                        return Type.MILLISECOND;
                 }
                 throw new KValidationException("invalid time unit for resolution: " + unit);
             }
@@ -220,7 +187,7 @@ public interface Time extends Extent<Time> {
 
         /**
          * Get the number of units of this resolution between the two time points.
-         * 
+         *
          * @param start
          * @param end
          * @return
@@ -228,17 +195,15 @@ public interface Time extends Extent<Time> {
         double getMultiplier(TimeInstant start, TimeInstant end);
 
         /**
-         * Get the <em>indicative</em> span of one step in milliseconds. Spans may be
-         * under-estimates if the resolution is in irregular steps, such as months, years and
-         * multiple thereof. In such cases, the smallest interval will be reported and isRegular()
-         * will return false.
-         * 
+         * Get the <em>indicative</em> span of one step in milliseconds. Spans may be under-estimates if the resolution
+         * is in irregular steps, such as months, years and multiple thereof. In such cases, the smallest interval will
+         * be reported and isRegular() will return false.
+         *
          * @return
          */
         long getSpan();
 
         /**
-         * 
          * @param multiplier
          * @param type
          * @return
@@ -300,14 +265,14 @@ public interface Time extends Extent<Time> {
         INITIALIZATION,
 
         /**
-         * Time after all transitions have happened. Also used to contexualize views and
-         * non-semantic artifacts that must see the entire context.
+         * Time after all transitions have happened. Also used to contexualize views and non-semantic artifacts that
+         * must see the entire context.
          */
         TERMINATION,
 
         /**
-         * Generic focus on a period without temporally locating it but specifying the length of the
-         * period of interest.
+         * Generic focus on a period without temporally locating it but specifying the length of the period of
+         * interest.
          */
         LOGICAL,
 
@@ -322,17 +287,17 @@ public interface Time extends Extent<Time> {
         GRID,
 
         /**
-         * Real time, which is necessarily a grid, potentially irregular, multiplicity may be
-         * infinite if end is undefined.
+         * Real time, which is necessarily a grid, potentially irregular, multiplicity may be infinite if end is
+         * undefined.
          */
         REAL
     }
 
     /**
      * {@inheritDoc}
-     *
-     * Overriding to require that the collapsed type is Time. This allows simpler coding against the
-     * API, and is the most logical way to enforce that {@link #size()} == 1.
+     * <p>
+     * Overriding to require that the collapsed type is Time. This allows simpler coding against the API, and is the
+     * most logical way to enforce that {@link #size()} == 1.
      */
     @Override
     Time collapsed();
@@ -348,9 +313,8 @@ public interface Time extends Extent<Time> {
     TimeInstant getStart();
 
     /**
-     * May be null in partially specified extents. Returns the timestep BEYOND the end of
-     * computation - the one that the time reaches, not the one it computes last. The latter is
-     * returned by getLast().
+     * May be null in partially specified extents. Returns the timestep BEYOND the end of computation - the one that the
+     * time reaches, not the one it computes last. The latter is returned by getLast().
      *
      * @return end time
      */
@@ -358,7 +322,7 @@ public interface Time extends Extent<Time> {
 
     /**
      * If multiplicity is 1, return the whole temporal extent.
-     *
+     * <p>
      * FIXME this should only be defined if time is a grid - as done in ISpatialExtent (use a Grid
      * object).
      *
@@ -368,41 +332,39 @@ public interface Time extends Extent<Time> {
 
     /**
      * Resolution of time observation according to this extent.
-     * 
+     *
      * @return
      */
     Resolution getResolution();
 
     /**
-     * A logical time can have a resolution for its coverage, e.g. specifying "any month of january
-     * within a year" would have resolution = year and coverageResolution = month, with a start
-     * coverage = 0 and end coverage = 1. If null, there is no partial coverage.
-     * 
+     * A logical time can have a resolution for its coverage, e.g. specifying "any month of january within a year" would
+     * have resolution = year and coverageResolution = month, with a start coverage = 0 and end coverage = 1. If null,
+     * there is no partial coverage.
+     *
      * @return
      */
     Resolution getCoverageResolution();
 
     /**
-     * Only for logical time: specifies the start offset of the covered portion within the overall
-     * span if the coverage resolution is specified. The value is given in the coverage resolution
-     * unit.
-     * 
+     * Only for logical time: specifies the start offset of the covered portion within the overall span if the coverage
+     * resolution is specified. The value is given in the coverage resolution unit.
+     *
      * @return
      */
     long getCoverageLocatorStart();
 
     /**
-     * Only for logical time: specifies the end offset of the covered portion within the overall
-     * span if the coverage resolution is specified. The value is given in the coverage resolution
-     * unit.
-     * 
+     * Only for logical time: specifies the end offset of the covered portion within the overall span if the coverage
+     * resolution is specified. The value is given in the coverage resolution unit.
+     *
      * @return
      */
     long getCoverageLocatorEnd();
 
     /**
      * Check the type against the passed one.
-     * 
+     *
      * @param type
      * @return
      */
@@ -410,15 +372,15 @@ public interface Time extends Extent<Time> {
 
     /**
      * Get the time type. Turns out there may be many, many ways to interpret time.
-     * 
+     *
      * @return
      */
     Type getTimeType();
 
     /**
-     * Needed to check for intersection with resource geometry. Should probably redefine intersects
-     * etc. in Geometry.Dimension and specialize, but for now keep the ad-hoc redundancy.
-     * 
+     * Needed to check for intersection with resource geometry. Should probably redefine intersects etc. in
+     * Geometry.Dimension and specialize, but for now keep the ad-hoc redundancy.
+     *
      * @param dimension, guaranteed to have Type = TIME.
      * @return
      */
@@ -426,50 +388,49 @@ public interface Time extends Extent<Time> {
 
     /**
      * Return the length of the period in the passed unit, which must be temporal.
-     * 
+     *
      * @param temporalUnit
      * @return
      */
     double getLength(Unit temporalUnit);
 
     /**
-     * If this extent is a subdivision of a distributed extent, return the next in line after it, or
-     * null if it's the last subdivision. Otherwise return null.
-     * 
+     * If this extent is a subdivision of a distributed extent, return the next in line after it, or null if it's the
+     * last subdivision. Otherwise return null.
+     *
      * @return
      */
     Time getNext();
 
     /**
-     * If this extent is a subdivision of a distributed extent, return the first sub-extent time
-     * that is not initialization. If not, return null.
-     * 
+     * If this extent is a subdivision of a distributed extent, return the first sub-extent time that is not
+     * initialization. If not, return null.
+     *
      * @return
      */
     Time earliest();
 
     /**
-     * If this extent is a subdivision of a distributed extent, return the last sub-extent time that
-     * is not initialization. If not, return null.
-     * 
+     * If this extent is a subdivision of a distributed extent, return the last sub-extent time that is not
+     * initialization. If not, return null.
+     *
      * @return
      */
     Time latest();
 
     /**
-     * A temporal extent always represents a period, but when created from a query may be simply
-     * focused on a particular timepoint, used to locate the correct period in a scale that has
-     * (regular or irregular) timeslices. These are not produced during contextualization but can be
-     * used as locators.
-     * 
+     * A temporal extent always represents a period, but when created from a query may be simply focused on a particular
+     * timepoint, used to locate the correct period in a scale that has (regular or irregular) timeslices. These are not
+     * produced during contextualization but can be used as locators.
+     *
      * @return
      */
     TimeInstant getFocus();
 
     /**
-     * Time extents record the actual changes in the observations they describe. This method checks
-     * if there have been one or more changes in the artifact's state during the time passed.
-     * 
+     * Time extents record the actual changes in the observations they describe. This method checks if there have been
+     * one or more changes in the artifact's state during the time passed.
+     *
      * @param time
      * @return
      */

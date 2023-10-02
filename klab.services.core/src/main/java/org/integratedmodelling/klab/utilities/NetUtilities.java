@@ -15,15 +15,10 @@
  */
 package org.integratedmodelling.klab.utilities;
 
-import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.URL;
-
 import org.integratedmodelling.klab.api.exceptions.KIOException;
+
+import java.io.IOException;
+import java.net.*;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -65,7 +60,7 @@ public class NetUtilities {
 
         URL u;
         try {
-            u = new URL(url);
+            u = new URI(url).toURL();
 
             // if (!isServerAlive(u.getHost())) {
             // return false;

@@ -15,26 +15,26 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
-import java.util.Collection;
-
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 
+import java.util.Collection;
+
 /**
  * A {@code IExtent} is a semantically aware {@link Dimension geometry
  * dimension} that represents an observation of the topology it describes.
  * {@code IExtent}s make up the dimensions of the semantically aware
- * {@link org.integratedmodelling.klab.api.data.Geometry} represented by
- * {@link org.integratedmodelling.klab.api.Scale.scale.IScale}.
+ * {@link Geometry} represented by
+ * {@link Scale}.
  *
- * In a {@code IExtent}, the {{@link #size()} will never return
- * {IGeometry#UNDEFINED} and the shape returned by {{@link #shape()} will never
+ * In a {@code Extent}, the {{@link #size()} will never return
+ * {IGeometry#UNDEFINED} and the shape returned by {{@link #getShape()} will never
  * contain undefined values.
  *
- * {@code IExtent}s can be used as {@link Locator locators} to address the value
+ * {@code Extent}s can be used as {@link Locator locators} to address the value
  * space of observations.
  *
  * @author ferdinando.villa
@@ -58,10 +58,10 @@ public interface Extent<T extends TopologicallyComparable<T>> extends Locator, T
 	 * in a grid space), one or more integer locators, a time period, or anything
 	 * that can be understood by the extent.
 	 * 
-	 * @param locator
+	 * @param locators
 	 * @return the extent, or null if location is impossible.
 	 */
-	T at(Object... locators);
+	T at(Locator locator);
 
 	/**
 	 * Each extent must be able to return a worldview-dependent integer scale rank,
@@ -93,7 +93,6 @@ public interface Extent<T extends TopologicallyComparable<T>> extends Locator, T
 	 * Return the dimensional coverage in the unit returned by
 	 * {@link #getDimensionUnit()}.
 	 * 
-	 * @param unit
 	 * @return
 	 */
 	double getDimensionSize();

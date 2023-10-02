@@ -1,11 +1,12 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
-import java.util.Collection;
-
+import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Mesh;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.locationtech.jts.geom.Geometry;
+
+import java.util.Collection;
 
 
 public class MeshImpl extends ShapeImpl implements Mesh {
@@ -24,7 +25,7 @@ public class MeshImpl extends ShapeImpl implements Mesh {
 	}
 
 	@Override
-	public MeshImpl at(Object... locators) {
+	public MeshImpl at(Locator locator) {
 		// TODO Auto-generated method stub
 		return null;
 	}

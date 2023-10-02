@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.scale;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.geometry.Scanner2D;
@@ -154,7 +155,7 @@ public class Scanner2DImpl implements Scanner2D {
     }
 
     @Override
-    public Locator at(Object... dimensions) {
+    public Geometry at(Locator dimension) {
         return null;
     }
 

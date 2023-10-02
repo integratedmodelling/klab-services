@@ -1,45 +1,34 @@
 package org.integratedmodelling.klab.api.geometry.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.util.*;
 
 public class GeometryImpl implements Geometry {
 
     private static final long serialVersionUID = 8430057200107796568L;
 
     /**
-     * These are useful for common geometry creation from programs. Append to a space definition
-     * within curly brackets.
+     * These are useful for common geometry creation from programs. Append to a space definition within curly brackets.
      */
     public static final String WORLD_BBOX_PARAMETERS = "bbox=[-180.0 180.0 -90.0 90.0],proj=EPSG:4326";
 
     /**
-     * An internal descriptor for a locator. The API requires using this to disambiguate locators
-     * that use world coordinates.
-     * 
-     * @author ferdinando.villa
+     * An internal descriptor for a locator. The API requires using this to disambiguate locators that use world
+     * coordinates.
      *
+     * @author ferdinando.villa
      */
     public static class DimensionTarget {
 
@@ -90,9 +79,8 @@ public class GeometryImpl implements Geometry {
         }
 
         /**
-         * Public constructor for when this is used by a semantic IExtent to disambiguate a
-         * world-coordinate locator.
-         * 
+         * Public constructor for when this is used by a semantic IExtent to disambiguate a world-coordinate locator.
+         *
          * @param dimension
          * @param offsets
          */
@@ -105,98 +93,99 @@ public class GeometryImpl implements Geometry {
         @Override
         public String toString() {
             return "<L " + (type == null ? "" : type.name()) + (extent == null ? "" : extent.toString())
-                    + (geometry == null ? "" : geometry.toString()) + (offsets == null ? "" : Arrays.toString(offsets)) + ">";
+                    + (geometry == null ? "" : geometry.toString()) + (offsets == null ? "" :
+                    Arrays.toString(offsets)) + ">";
         }
     }
 
-    public static List<DimensionTarget> separateTargets(Object... locators) {
-        List<DimensionTarget> ret = new ArrayList<>();
-        DimensionTarget current = null;
-        List<Number> numbers = new ArrayList<>();
-        List<Object> others = new ArrayList<>();
-
-        boolean haveGeometry = false;
-        int nExtents = 0;
-
-        if (locators != null) {
-            for (int i = 0; i < locators.length; i++) {
-                Object o = locators[i];
-                if (o instanceof Number) {
-
-                    if (current == null) {
-                        current = new DimensionTarget();
-                    }
-
-                    numbers.add((Number) o);
-
-                } else if (o instanceof int[]) {
-                    for (int of : (int[]) o) {
-                        numbers.add(of);
-                    }
-                } else if (o instanceof long[]) {
-                    for (long of : (long[]) o) {
-                        numbers.add(of);
-                    }
-                } else {
-
-                    if (current != null) {
-                        current.defineOffsets(numbers);
-                        current.defineOthers(others);
-                        ret.add(current);
-                    }
-                    current = new DimensionTarget();
-                    numbers.clear();
-                    others.clear();
-
-                    if (o instanceof Dimension.Type) {
-                        current.type = (Dimension.Type) o;
-                    } else if (o instanceof Dimension) {
-                        nExtents++;
-                        current.extent = (Dimension) o;
-                        current.type = ((Dimension) o).getType();
-                    } else if (o instanceof Scale) {
-                        current.geometry = (Scale) o;
-                    } else if (o instanceof Geometry) {
-                        haveGeometry = true;
-                        current.geometry = (Geometry) o;
-                    } else if (o instanceof Class<?>) {
-                        if (Space.class.isAssignableFrom((Class<?>) o)) {
-                            current.type = Dimension.Type.SPACE;
-                        } else if (Time.class.isAssignableFrom((Class<?>) o)) {
-                            current.type = Dimension.Type.TIME;
-                        } else {
-                            throw new KIllegalArgumentException("illegal locator definition: " + o);
-                        }
-                    } else {
-                        // add to 'weird' stuff for other APIs to process
-                        others.add(o);
-                    }
-                }
-            }
-
-            if (current != null) {
-                current.defineOffsets(numbers);
-                ret.add(current);
-            }
-        }
-
-        if (ret.isEmpty() && !numbers.isEmpty()) {
-            current = new DimensionTarget();
-            current.defineOffsets(numbers);
-            ret.add(current);
-        }
-
-        if (haveGeometry && ret.size() > 1) {
-            throw new KIllegalArgumentException(
-                    "locators defined through a concrete geometry cannot have any other locator parameter");
-        }
-        if (nExtents > 0 && ret.size() != nExtents) {
-            throw new KIllegalArgumentException(
-                    "locators defined through concrete extents cannot have non-extent locator parameters");
-        }
-
-        return ret;
-    }
+//    public static List<DimensionTarget> separateTargets(Object... locators) {
+//        List<DimensionTarget> ret = new ArrayList<>();
+//        DimensionTarget current = null;
+//        List<Number> numbers = new ArrayList<>();
+//        List<Object> others = new ArrayList<>();
+//
+//        boolean haveGeometry = false;
+//        int nExtents = 0;
+//
+//        if (locators != null) {
+//            for (int i = 0; i < locators.length; i++) {
+//                Object o = locators[i];
+//                if (o instanceof Number) {
+//
+//                    if (current == null) {
+//                        current = new DimensionTarget();
+//                    }
+//
+//                    numbers.add((Number) o);
+//
+//                } else if (o instanceof int[]) {
+//                    for (int of : (int[]) o) {
+//                        numbers.add(of);
+//                    }
+//                } else if (o instanceof long[]) {
+//                    for (long of : (long[]) o) {
+//                        numbers.add(of);
+//                    }
+//                } else {
+//
+//                    if (current != null) {
+//                        current.defineOffsets(numbers);
+//                        current.defineOthers(others);
+//                        ret.add(current);
+//                    }
+//                    current = new DimensionTarget();
+//                    numbers.clear();
+//                    others.clear();
+//
+//                    if (o instanceof Dimension.Type) {
+//                        current.type = (Dimension.Type) o;
+//                    } else if (o instanceof Dimension) {
+//                        nExtents++;
+//                        current.extent = (Dimension) o;
+//                        current.type = ((Dimension) o).getType();
+//                    } else if (o instanceof Scale) {
+//                        current.geometry = (Scale) o;
+//                    } else if (o instanceof Geometry) {
+//                        haveGeometry = true;
+//                        current.geometry = (Geometry) o;
+//                    } else if (o instanceof Class<?>) {
+//                        if (Space.class.isAssignableFrom((Class<?>) o)) {
+//                            current.type = Dimension.Type.SPACE;
+//                        } else if (Time.class.isAssignableFrom((Class<?>) o)) {
+//                            current.type = Dimension.Type.TIME;
+//                        } else {
+//                            throw new KIllegalArgumentException("illegal locator definition: " + o);
+//                        }
+//                    } else {
+//                        // add to 'weird' stuff for other APIs to process
+//                        others.add(o);
+//                    }
+//                }
+//            }
+//
+//            if (current != null) {
+//                current.defineOffsets(numbers);
+//                ret.add(current);
+//            }
+//        }
+//
+//        if (ret.isEmpty() && !numbers.isEmpty()) {
+//            current = new DimensionTarget();
+//            current.defineOffsets(numbers);
+//            ret.add(current);
+//        }
+//
+//        if (haveGeometry && ret.size() > 1) {
+//            throw new KIllegalArgumentException(
+//                    "locators defined through a concrete geometry cannot have any other locator parameter");
+//        }
+//        if (nExtents > 0 && ret.size() != nExtents) {
+//            throw new KIllegalArgumentException(
+//                    "locators defined through concrete extents cannot have non-extent locator parameters");
+//        }
+//
+//        return ret;
+//    }
 
     /**
      * Bounding box as a double[]{minX, maxX, minY, maxY}
@@ -284,8 +273,8 @@ public class GeometryImpl implements Geometry {
     public static final String PARAMETER_TIME_LOCATOR = "time";
 
     /**
-     * Time scope unit: one of millennium, century, decade, year, month, week, day, hour, minute,
-     * second, millisecond, nanosecond; use lowercase values of {@link Resolution}.
+     * Time scope unit: one of millennium, century, decade, year, month, week, day, hour, minute, second, millisecond,
+     * nanosecond; use lowercase values of {@link Resolution}.
      */
     public static final String PARAMETER_TIME_SCOPE_UNIT = "tunit";
 
@@ -305,13 +294,14 @@ public class GeometryImpl implements Geometry {
         ret += dim.getType() == Dimension.Type.SPACE
                 ? (dim.isGeneric() ? (dim.isRegular() ? "\u03a3" : "\u03c3") : (dim.isRegular() ? "S" : "s"))
                 : (dim.getType() == Dimension.Type.TIME
-                        ? (dim.isGeneric() ? (dim.isRegular() ? "\u03a4" : "\u03c4") : (dim.isRegular() ? "T" : "t"))
-                        : /* TODO others */ "");
+                ? (dim.isGeneric() ? (dim.isRegular() ? "\u03a4" : "\u03c4") : (dim.isRegular() ? "T" : "t"))
+                : /* TODO others */ "");
         ret += dim.getDimensionality();
         if (dim.getShape() != null && !isUndefined(dim.getShape())) {
             ret += "(";
             for (int i = 0; i < dim.getShape().size(); i++) {
-                ret += (i == 0 ? "" : ",") + (dim.getShape().get(i) == INFINITE_SIZE ? "\u221E" : ("" + dim.getShape().get(i)));
+                ret += (i == 0 ? "" : ",") + (dim.getShape().get(i) == INFINITE_SIZE ? "\u221E" :
+                        ("" + dim.getShape().get(i)));
             }
             ret += ")";
         }
@@ -456,7 +446,7 @@ public class GeometryImpl implements Geometry {
 
     /**
      * The empty geometry.
-     * 
+     *
      * @return the empty geometry
      */
     public static GeometryImpl empty() {
@@ -465,7 +455,7 @@ public class GeometryImpl implements Geometry {
 
     /**
      * The scalar geometry.
-     * 
+     *
      * @return the scalar geometry
      */
     public static GeometryImpl scalar() {
@@ -475,28 +465,28 @@ public class GeometryImpl implements Geometry {
     }
 
     public static GeometryImpl distributedIn(ExtentDimension key) {
-        switch(key) {
-        case AREAL:
-            return create("S2");
-        case LINEAL:
-            return create("S1");
-        case PUNTAL:
-            return create("S0");
-        case TEMPORAL:
-            return create("T1");
-        case VOLUMETRIC:
-            return create("S3");
-        case CONCEPTUAL:
-        default:
-            break;
+        switch (key) {
+            case AREAL:
+                return create("S2");
+            case LINEAL:
+                return create("S1");
+            case PUNTAL:
+                return create("S0");
+            case TEMPORAL:
+                return create("T1");
+            case VOLUMETRIC:
+                return create("S3");
+            case CONCEPTUAL:
+            default:
+                break;
         }
         return empty();
     }
 
     /**
-     * Encode into a string representation. Keys in parameter maps are sorted so the results can be
-     * compared for equality.
-     * 
+     * Encode into a string representation. Keys in parameter maps are sorted so the results can be compared for
+     * equality.
+     *
      * @return the string representation for the geometry
      */
     public String encode(Encoding... options) {
@@ -511,7 +501,7 @@ public class GeometryImpl implements Geometry {
 
         // put time first
         List<Dimension> dims = new ArrayList<>(dimensions);
-        dims.sort(new Comparator<Dimension>(){
+        dims.sort(new Comparator<Dimension>() {
 
             @Override
             public int compare(Dimension o1, Dimension o2) {
@@ -646,6 +636,13 @@ public class GeometryImpl implements Geometry {
         }
 
         @Override
+        public long[] locate(Dimension dimension) {
+            // TODO
+//            return new long[0];
+            throw new KUnimplementedException("Dimension::locate");
+        }
+
+        @Override
         public boolean isGeneric() {
             return generic;
         }
@@ -671,7 +668,7 @@ public class GeometryImpl implements Geometry {
             }
             return ret;
         }
-        
+
         @Override
         public String encode(Encoding... options) {
             return encodeDimension(this);
@@ -770,15 +767,15 @@ public class GeometryImpl implements Geometry {
 
         @Override
         public ExtentDimension extentDimension() {
-            switch(this.type) {
-            case NUMEROSITY:
-                return ExtentDimension.CONCEPTUAL;
-            case SPACE:
-                return ExtentDimension.spatial(this.dimensionality);
-            case TIME:
-                return ExtentDimension.TEMPORAL;
-            default:
-                break;
+            switch (this.type) {
+                case NUMEROSITY:
+                    return ExtentDimension.CONCEPTUAL;
+                case SPACE:
+                    return ExtentDimension.spatial(this.dimensionality);
+                case TIME:
+                    return ExtentDimension.TEMPORAL;
+                default:
+                    break;
             }
             return null;
         }
@@ -807,7 +804,7 @@ public class GeometryImpl implements Geometry {
 //        return this.coverage;
 //    }
 
-//    @Override
+    //    @Override
     public Geometry getChild() {
         return child;
     }
@@ -837,7 +834,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param minX
      * @param maxX
      * @param minY
@@ -854,7 +850,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param shapeSpecs
      * @return this
      */
@@ -869,7 +864,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param gridResolution
      * @return this
      */
@@ -893,9 +887,9 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * Return self if we have space, otherwise create a spatial dimension according to parameters
-     * and return the merged geometry.
-     * 
+     * Return self if we have space, otherwise create a spatial dimension according to parameters and return the merged
+     * geometry.
+     *
      * @return
      */
     public GeometryImpl spatial(int dimensions, boolean regular) {
@@ -912,9 +906,9 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * Return self if we have space, otherwise create a spatial dimension according to parameters
-     * and return the merged geometry.
-     * 
+     * Return self if we have space, otherwise create a spatial dimension according to parameters and return the merged
+     * geometry.
+     *
      * @return
      */
     public GeometryImpl temporal(boolean regular) {
@@ -931,7 +925,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param shape
      * @return this
      */
@@ -945,7 +938,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param timeResolution
      * @return this
      */
@@ -961,7 +953,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param n
      * @return this
      */
@@ -975,7 +966,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param projection
      * @return this
      */
@@ -989,7 +979,6 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * 
      * @param start
      * @param end
      * @return this
@@ -1091,7 +1080,7 @@ public class GeometryImpl implements Geometry {
                 if (geometry.length() > (idx + 1) && geometry.charAt(idx + 1) == '(') {
                     idx += 2;
                     StringBuffer shape = new StringBuffer(geometry.length());
-                    while(geometry.charAt(idx) != ')') {
+                    while (geometry.charAt(idx) != ')') {
                         shape.append(geometry.charAt(idx));
                         idx++;
                     }
@@ -1111,7 +1100,7 @@ public class GeometryImpl implements Geometry {
                 if (geometry.length() > (idx + 1) && geometry.charAt(idx + 1) == '{') {
                     idx += 2;
                     StringBuffer shape = new StringBuffer(geometry.length());
-                    while(geometry.charAt(idx) != '}') {
+                    while (geometry.charAt(idx) != '}') {
                         shape.append(geometry.charAt(idx));
                         idx++;
                     }
@@ -1158,7 +1147,7 @@ public class GeometryImpl implements Geometry {
             } else {
                 v = val;
             }
-            
+
             ret.put(key, v);
 
         }
@@ -1166,9 +1155,9 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * Turn encoded entities back into separators used in geometries that would cause conflict in
-     * parameters transmitted as text.
-     * 
+     * Turn encoded entities back into separators used in geometries that would cause conflict in parameters transmitted
+     * as text.
+     *
      * @param val
      * @return
      */
@@ -1177,9 +1166,9 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * Translate separators used in geometries into harmless entities so that they won't cause
-     * conflict in parameters transmitted as text.
-     * 
+     * Translate separators used in geometries into harmless entities so that they won't cause conflict in parameters
+     * transmitted as text.
+     *
      * @param val
      * @return
      */
@@ -1188,9 +1177,9 @@ public class GeometryImpl implements Geometry {
     }
 
     private static Class<?> getParameterPODType(String kvp) {
-        switch(kvp) {
-        case PARAMETER_TIME_PERIOD:
-            return Long.class;
+        switch (kvp) {
+            case PARAMETER_TIME_PERIOD:
+                return Long.class;
         }
         return null;
     }
@@ -1275,7 +1264,8 @@ public class GeometryImpl implements Geometry {
     public <T extends Locator> T as(Class<T> cls) {
         /*
          * if (KScale.class.isAssignableFrom(cls)) { return (T) originalScale; } else
-         */if (Geometry.class.isAssignableFrom(cls)) {
+         */
+        if (Geometry.class.isAssignableFrom(cls)) {
             return (T) this;
         } else if (OffsetImpl.class.isAssignableFrom(cls)) {
             if (!hasShape(this)) {
@@ -1288,72 +1278,93 @@ public class GeometryImpl implements Geometry {
     }
 
     @Override
-    public Locator at(Object... locators) {
-        return at(separateTargets(locators));
-    }
+    public Geometry at(Locator locator) {
+//        return at(separateTargets(locators));
+//    }
+//
+//    private Locator at(List<DimensionTarget> targets) {
+//
+//        if (!hasShape(this)) {
+        throw new KUnimplementedException("Geometry::at");
+//        }
 
-    private Locator at(List<DimensionTarget> targets) {
-
-        if (!hasShape(this)) {
-            throw new KIllegalStateException("Geometry has no specified shape: cannot create locators");
-        }
+        /*
+        TODO if the locator is a dimension, locate the corresponding offsets and produce a subset geometry. If a
+         geometry, do the same with all offsets. Empty geometry should return self. Non-empty geometry with empty locator should also
+         return self.
+         */
 
         /*
          * dimension-specific targets cannot be combined with an overall targets.
          */
-        DimensionTarget overall = null;
-        for (DimensionTarget target : targets) {
-            if (target.type == null) {
-                overall = target;
-                break;
-            }
-        }
+//        DimensionTarget locator = null;
+//        for (DimensionTarget target : targets) {
+//            if (target.type == null) {
+//                locator = target;
+//                break;
+//            }
+//        }
 
-        if (overall != null && targets.size() > 1) {
-            throw new KIllegalStateException("Geometry cannot be located with both dimension-specific and overall locators");
-        }
+//        if (locator != null && targets.size() > 1) {
+//            throw new KIllegalStateException("Geometry cannot be located with both dimension-specific and overall
+//            locators");
+//        }
 
-        if (overall != null) {
-            return new OffsetImpl(this, overall.offsets);
-        }
 
-        if (!targets.isEmpty()) {
-            long[] pos = new long[this.dimensions.size()];
-            int i = 0;
-            for (Dimension dimension : this.dimensions) {
-                boolean found = false;
-                for (DimensionTarget target : targets) {
+//        if (locator != null) {
+//        return (locator instanceof Geometry g && g.isEmpty()) ? this : new OffsetImpl(this, convertToOffsets
+//        (locator));
+//        }
 
-                    if (target.coordinates != null || target.otherLocators != null) {
-                        // we don't handle these here
-                        throw new KIllegalStateException("Unrecognized locators for a Geometry: check usage");
-                    }
-
-                    if (target.type != null && target.type == dimension.getType()) {
-                        found = true;
-                        if (target.offsets != null) {
-                            if (target.offsets.length > 1) {
-                                pos[i] = dimension.offset(target.offsets);
-                            } else {
-                                pos[i] = target.offsets[0];
-                            }
-                        } else {
-                            pos[i] = dimension.size() == 1 ? 0 : -1;
-                        }
-                    }
-                    if (!found) {
-                        pos[i] = dimension.size() == 1 ? 0 : -1;
-                    }
-                }
-                i++;
-            }
-
-            return new OffsetImpl(this, pos);
-        }
-
-        // no arguments: locate this with this
-        return this;
+//        if (!targets.isEmpty()) {
+//            long[] pos = new long[this.dimensions.size()];
+//            int i = 0;
+//            for (Dimension dimension : this.dimensions) {
+//                boolean found = false;
+//                for (DimensionTarget target : targets) {
+//
+//                    if (target.coordinates != null || target.otherLocators != null) {
+//                        // we don't handle these here
+//                        throw new KIllegalStateException("Unrecognized locators for a Geometry: check usage");
+//                    }
+//
+//                    if (target.type != null && target.type == dimension.getType()) {
+//                        found = true;
+//                        if (target.offsets != null) {
+//                            if (target.offsets.length > 1) {
+//                                pos[i] = dimension.offset(target.offsets);
+//                            } else {
+//                                pos[i] = target.offsets[0];
+//                            }
+//                        } else {
+//                            pos[i] = dimension.size() == 1 ? 0 : -1;
+//                        }
+//                    }
+//                    if (!found) {
+//                        pos[i] = dimension.size() == 1 ? 0 : -1;
+//                    }
+//                }
+//                i++;
+//            }
+//
+//            return new OffsetImpl(this, pos);
     }
+
+    /**
+     * Return the located offsets corresponding to the passed locator.
+     * TODO turn this into a subsetting operation so that the locator may select multiple offsets in one or more
+     * dimensions
+     *
+     * @param locator
+     * @return
+     */
+    protected long[] convertToOffsets(Locator locator) {
+        throw new KUnimplementedException("Geometry::convertToOffsets");
+    }
+
+//    // no arguments: locate this with this
+//        return this;
+//    }
     //
     // @Override
     // public MultidimensionalCursor getCursor() {
@@ -1371,7 +1382,7 @@ public class GeometryImpl implements Geometry {
     // return geometry.getCursor().getElementIndexes(pos);
     // }
 
-//    @Override
+    //    @Override
     public Iterator<Locator> iterator() {
         return new GeometryIterator(this);
     }
@@ -1382,16 +1393,16 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * Merge in the passed geometry and modify our data accordingly. If the passed geometry is
-     * incompatible, return null without error.
-     * 
-     * In general, any geometry can merge in a scalar geometry (an empty one will become scalar);
-     * other dimensions can be inherited if they are not present, or they must have the same
-     * dimensionality in order to be kept without error. If the receiver has a generic dimension and
-     * the incoming dimension is not generic, the result adopts the specific one.
-     * 
+     * Merge in the passed geometry and modify our data accordingly. If the passed geometry is incompatible, return null
+     * without error.
+     * <p>
+     * In general, any geometry can merge in a scalar geometry (an empty one will become scalar); other dimensions can
+     * be inherited if they are not present, or they must have the same dimensionality in order to be kept without
+     * error. If the receiver has a generic dimension and the incoming dimension is not generic, the result adopts the
+     * specific one.
+     * <p>
      * If we have a dimension that the other doesn't, just leave it there in the result.
-     * 
+     *
      * @param geometry
      * @return
      */
@@ -1438,9 +1449,9 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * Return a copy of this geometry after removing the passed dimension. If the dimension isn't
-     * there, return a copy of this.
-     * 
+     * Return a copy of this geometry after removing the passed dimension. If the dimension isn't there, return a copy
+     * of this.
+     *
      * @param dim
      * @return
      */
@@ -1464,9 +1475,8 @@ public class GeometryImpl implements Geometry {
     }
 
     /**
-     * Return another geometry where all dimensions that are in the passed one override any we have
-     * of the same type.
-     * 
+     * Return another geometry where all dimensions that are in the passed one override any we have of the same type.
+     *
      * @param geometry
      * @return
      */
@@ -1532,9 +1542,8 @@ public class GeometryImpl implements Geometry {
     // }
 
     /**
-     * Based on conventions, extract any parameters from a dimension that can provide location
-     * within a scale.
-     * 
+     * Based on conventions, extract any parameters from a dimension that can provide location within a scale.
+     *
      * @param extent
      * @return
      */
@@ -1548,7 +1557,7 @@ public class GeometryImpl implements Geometry {
         return null;
     }
 
-//    @Override
+    //    @Override
     public boolean is(String string) {
 
         /*

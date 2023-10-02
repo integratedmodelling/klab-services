@@ -1,9 +1,9 @@
 package org.integratedmodelling.klab.runtime.scale;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.geometry.Scanner1D;
-import org.integratedmodelling.klab.api.geometry.Scanner2D;
 import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -155,7 +155,7 @@ public class Scanner1DImpl implements Scanner1D {
     }
 
     @Override
-    public Locator at(Object... dimensions) {
+    public Geometry at(Locator dimension) {
         return null;
     }
 

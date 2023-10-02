@@ -25,7 +25,9 @@ import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
  * @version $Id: $Id
  */
 public interface NumericRange extends ValueMediator, Comparable<NumericRange> {
-    
+
+    static NumericRange EMPTY = create(0,0);
+
     /**
      * Any unbounded boundary will be the corresponding Double.(NEGATIVE_)INFINITE.
      *
@@ -157,6 +159,8 @@ public interface NumericRange extends ValueMediator, Comparable<NumericRange> {
 
     boolean isWithin(double n);
 
+    boolean isEmpty();
+
     /**
      * A reference point in the interval, i.e. the midpoint if bounded, any boundary point that is
      * not infinity if not, and NaN if infinite.
@@ -166,6 +170,10 @@ public interface NumericRange extends ValueMediator, Comparable<NumericRange> {
     double getFocalPoint();
 
     boolean isUpperExclusive();
+
+    public static NumericRange empty() {
+        return EMPTY;
+    }
 
     public static NumericRange create(double left, double right) {
         return new RangeImpl(left, right, false, true);

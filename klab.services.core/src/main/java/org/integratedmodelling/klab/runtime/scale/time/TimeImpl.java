@@ -1,8 +1,5 @@
 package org.integratedmodelling.klab.runtime.scale.time;
 
-import java.util.Collection;
-import java.util.Iterator;
-
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
@@ -16,6 +13,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
+
+import java.util.Collection;
+import java.util.Iterator;
 
 public class TimeImpl extends ExtentImpl<Time> implements Time {
 
@@ -54,7 +54,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     }
 
     @Override
-    public Time at(Object... locators) {
+    public Time at(Locator locator) {
         // TODO Auto-generated method stub
         return null;
     }

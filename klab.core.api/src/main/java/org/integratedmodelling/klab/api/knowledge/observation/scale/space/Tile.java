@@ -1,10 +1,9 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
-import java.util.Iterator;
-
 /**
- * <p>>A regularly tiled shape, including the single cell.Covers raster grids and any other regular subdivition, Named
- * Tile to reflect the fact that implementation may provide tiles of different shape than rectangular.</p
+ * <p>>A <code>Tile</code> is a regularly tiled shape, including the single cell.Covers raster grids and any other
+ * regular subdivition, Named Tile to reflect the fact that implementation may provide tiles of different shape than
+ * rectangular. </p
  *
  * <p>A Tile is an Iterable<Tile> therefore multiple levels of tiling are supported, each implementing a given
  * {@link Grid} specification.</p>

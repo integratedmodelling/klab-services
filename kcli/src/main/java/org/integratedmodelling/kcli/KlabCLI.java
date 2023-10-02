@@ -1,11 +1,5 @@
 package org.integratedmodelling.kcli;
 
-import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.function.Supplier;
-
 import org.fusesource.jansi.AnsiConsole;
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KIOException;
@@ -22,31 +16,24 @@ import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
 import org.jline.console.impl.SystemRegistryImpl;
 import org.jline.keymap.KeyMap;
-import org.jline.reader.Binding;
-import org.jline.reader.EndOfFileException;
-import org.jline.reader.History;
-import org.jline.reader.LineReader;
-import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.MaskingCallback;
-import org.jline.reader.Parser;
-import org.jline.reader.Reference;
-import org.jline.reader.UserInterruptException;
+import org.jline.reader.*;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.reader.impl.history.DefaultHistory;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.widget.TailTipWidgets;
-
 import picocli.CommandLine;
-import picocli.CommandLine.Command;
+import picocli.CommandLine.*;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
-import picocli.CommandLine.ParentCommand;
-import picocli.CommandLine.Spec;
 import picocli.shell.jline3.PicocliCommands;
 import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
+
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Command line for the next k.LAB. No longer tied to an engine.
@@ -198,10 +185,10 @@ public class KlabCLI {
 
         @Command(name = "alias", mixinStandardHelpOptions = true, description = {"Define an alias for a command.",
                 "Use @x to store option -x"},
-                 subcommands = {Alias.List.class})
+                 subcommands = {Alias.List.class, Alias.Clear.class})
         static class Alias implements Runnable {
 
-            @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all know aliases."})
+            @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all aliases."})
             static class List implements Runnable {
                 @Spec
                 CommandSpec commandSpec;
@@ -212,6 +199,20 @@ public class KlabCLI {
                         commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|yellow " + alias + "|@: " +
                                 "@|green " + Run.aliases.get(alias) + "|@"));
                     }
+                }
+            }
+
+            @Command(name = "clear", mixinStandardHelpOptions = true, description = {"Remove all aliases."})
+            static class Clear implements Runnable {
+                @Spec
+                CommandSpec commandSpec;
+
+                @Override
+                public void run() {
+                    int nal = Run.aliases.size();
+                    Run.aliases.clear();
+                    Run.storeAliases();
+                    commandSpec.commandLine().getOut().println(nal + " aliases removed");
                 }
             }
 

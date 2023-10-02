@@ -1,15 +1,9 @@
 package org.integratedmodelling.klab.services.reasoner.authorities;
 
-import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
+import kong.unirest.json.JSONObject;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
@@ -32,10 +26,10 @@ import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 import org.springframework.stereotype.Service;
 
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
-import kong.unirest.json.JSONObject;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.*;
 
 //@Authority(id = CaliperAuthority.ID, description = CaliperAuthority.DESCRIPTION, catalogs = {"ISIC", /*
 //                                                                                                      * "ICC10",
@@ -175,7 +169,7 @@ public class CaliperAuthority implements Authority {
         } else {
 
             String url = CALIPER_URLS.get(catalog) + "/" + identityId.replace('.', '-') + ".ttl";
-            try (InputStream input = new URL(url).openStream()) {
+            try (InputStream input = new URI(url).toURL().openStream()) {
                 Model model = Rio.parse(input, RDFFormat.TURTLE);
                 Set<String> parents = new HashSet<>();
                 source = new AuthorityIdentity();
@@ -294,7 +288,7 @@ public class CaliperAuthority implements Authority {
 
     public static void main(String[] args) {
 
-        try (InputStream input = new URL("http://stats-class.fao.uniroma2.it/CPC/v2.0/0.ttl").openStream()) {
+        try (InputStream input = new URI("http://stats-class.fao.uniroma2.it/CPC/v2.0/0.ttl").toURL().openStream()) {
             Model model = Rio.parse(input, RDFFormat.TURTLE);
             for (Statement statement : model) {
                 System.out.println("CIAPA EL STATEMENT: " + statement);

@@ -107,8 +107,10 @@ public interface Grid extends Serializable {
     Envelope getEnvelope();
 
     /**
-     * The projection is never null, so there is a separate method as the envelope may be. In a grid specification used
-     * as constraint, the projection specified in the grid overrides any other specification.
+     * The projection is never null, so we have a separate method, as the envelope may be null. In a grid specification
+     * used as constraint, the projection specified in the grid overrides any other specification. If the envelope is
+     * not null, the projection and the envelope's projection must be the same and any specification that makes them
+     * diverge must cause a {@link org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException} exception.
      *
      * @return
      */

@@ -1,13 +1,5 @@
 package org.integratedmodelling.klab.runtime.scale;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
@@ -23,6 +15,8 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
 import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
+
+import java.util.*;
 
 public class ScaleImpl implements Scale {
 
@@ -334,8 +328,8 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
-    public Scale at(Object... dimensions) {
-        // TODO Auto-generated method stub
+    public Scale at(Locator dimension) {
+
         return null;
     }
 
@@ -490,8 +484,8 @@ public class ScaleImpl implements Scale {
         }
 
         @Override
-        public Scale at(Object... dimensions) {
-            return ScaleImpl.this.at(dimensions);
+        public Scale at(Locator dimension) {
+            return ScaleImpl.this.at(dimension);
         }
 
         @Override

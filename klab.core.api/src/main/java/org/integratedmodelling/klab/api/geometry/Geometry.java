@@ -1,18 +1,17 @@
 package org.integratedmodelling.klab.api.geometry;
 
-import java.io.Serializable;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
-import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.Prototype;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
- *
  * TODO obsolete - revise these javadocs!
- *
+ * <p>
  * A Geometry is the declaration of the topological dimensions for the artifacts specified by (or allowed for) a
  * resource or computation (for example a resource identified by a URN) or by a
  * {@link Prototype#getGeometry() service prototype} declared in k.DL or through annotations). When used in such a
@@ -23,7 +22,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  * peer of artifact) expose into a worldview-aware {@link Scale scale} instead,
  * whose API extends {@link Geometry}. The scale also precisely locates the geometry and guarantees valid values of the
  * corresponding <strong>shape</strong>, consisting of long sizes and extents, which the geometry can describe using
- * {@link #size()} and its dimensions but is allowed to leave them unspecified. When used as a {@link Scale} the geometry
+ * {@link #size()} and its dimensions but is allowed to leave them unspecified. When used as a {@link Scale} the
+ * geometry
  * is currently always associated to an observation, not to a computation or resource, so it never has granularity != 1.
  * Currently a non-API observation group (corresponding to the object artifact) exposes the overall S/T scale but does
  * not specify granularity.
@@ -141,6 +141,15 @@ public interface Geometry extends Serializable, Locator {
              */
             SPACE;
         }
+
+        /**
+         * Return the [start, end] offsets corresponding to the span of the passed dimension in the offset space of this
+         * dimension. Used for subsetting of geometries in {@link Geometry#at(Locator)}.
+         *
+         * @param dimension
+         * @return
+         */
+        long[] locate(Dimension dimension);
 
         /**
          * Generic means 'not completely defined', i.e. not usable for contextualization. This corresponds to the Greek
@@ -306,7 +315,8 @@ public interface Geometry extends Serializable, Locator {
     Granularity getGranularity();
 
     /**
-     * An empty geometry applies to any resource that does not produce raw information but processes data instead.
+     * An empty geometry applies to any resource that does not produce raw information but processes data instead. A
+     * geometry {@link #at(Locator)} with an empty geometry as argument must return the same geometry.
      *
      * @return true for a geometry that was not specified.
      */
@@ -328,6 +338,8 @@ public interface Geometry extends Serializable, Locator {
     long size();
 
     /**
+     * TODO javadocs obsolete!
+     * <p>
      * Return a locator to select specific dimensions and states within them. Use in contextualizers to preserve
      * semantics when addressing dependent states and numeric offsets are required to interface to other APIs.
      * <p>
@@ -354,13 +366,13 @@ public interface Geometry extends Serializable, Locator {
      * dimensionality of the target is multiple, it will be treated as a linear
      * offset and converted.</li>
      * </ul>
-     * Passing an extent locator that is not present in the scale returns the
+     * Passing an extent locator that is not present in the scale  or the empty geometry returns the
      * locator unmodified.
      *
-     * @param dimensions identifiers to subset the geometry
-     * @return a valid locator
+     * @param dimension a locator to subset the geometry. Further locations can be done by chaining at() calls.
+     * @return a valid located geometry
      */
-    Locator at(Object... dimensions);
+    Geometry at(Locator dimension);
 
     /**
      * If this is true, the reported size will not include the time, and the time dimension will have
