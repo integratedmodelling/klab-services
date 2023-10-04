@@ -63,9 +63,10 @@ abstract class Executor implements BiConsumer<Observation, ContextScope> {
 
     /**
      * Execute a distributed contextualization chain using non-boxing optimizations if all the functors are non-boxing,
-     * or without if one or more are boxing contextualizers.
+     * or without if one or more are boxing contextualizers. This should be done by compiling an ad-hoc Groovy/Java
+     * class.
      *
-     * @param stringObservationMap
+     * @param targetState
      * @param scope
      */
     protected void executeChain(State targetState, ContextScope scope) {

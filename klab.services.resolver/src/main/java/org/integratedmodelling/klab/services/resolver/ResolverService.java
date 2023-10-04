@@ -307,18 +307,20 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         Map<String, Actuator> compiled = new HashMap<>();
+
         for (Pair<Knowledge, Coverage> root : resolution.getResolution()) {
 
             if (root.getFirst() instanceof Model) {
-                var actuator = compileActuator((Model) root.getFirst(), resolution, resolution.getResolvable(),
+                var actuator = compileActuator((Model) root.getFirst(), resolution, root.getSecond(),
+                        resolution.getResolvable(),
                         null,
-                        compiled, scope);
+                        ret, compiled, scope);
                 if (rootActuator == null) {
                     ret.getComputation().add(actuator);
                 } else {
                     rootActuator.getChildren().add(actuator);
                 }
-            } // TODO
+            }
         }
 
         ret.computeCoverage();
@@ -326,11 +328,12 @@ public class ResolverService extends BaseService implements Resolver {
         return ret;
     }
 
-    private ActuatorImpl compileActuator(Model model, Resolution resolution, Observable observable,
-                                         Actuator parentActuator,
+    private ActuatorImpl compileActuator(Model model, Resolution resolution, Coverage coverage, Observable observable,
+                                         Actuator parentActuator, Dataflow dataflow,
                                          Map<String, Actuator> compiled, ContextScope scope) {
 
         ActuatorImpl ret = null;
+        var id = createId(observable, scope);
 
         if (compiled.containsKey(observable.getReferenceName())) {
             ret = compileReference(compiled.get(observable.getReferenceName()));
@@ -338,47 +341,53 @@ public class ResolverService extends BaseService implements Resolver {
 
             ret = new ActuatorImpl();
 
+            // keep the coverage in the dataflow aux data if it's not full, so that the runtime doesn't have to
+            // recalculate it.
+            if (coverage.getCoverage() < 1) {
+                dataflow.getResources().put(id + "_coverage", coverage);
+            }
+
             // dependencies first
             for (ResolutionType type : new ResolutionType[]{ResolutionType.DIRECT, ResolutionType.DEFER_INHERENCY,
                     ResolutionType.DEFER_SEMANTICS}) {
                 for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model, type)) {
                     // alias is the dependency getName()
-                    if (resolved.getFirst() instanceof Model) {
-                        var dependency = compileActuator((Model) resolved.getFirst(), resolution,
-                                resolved.getSecond(), ret,
+                    if (resolved.getFirst() instanceof Model m) {
+                        var dependency = compileActuator(m, resolution, resolved.getThird(),
+                                resolved.getSecond(), ret, dataflow,
                                 compiled, scope);
                         ret.getChildren().add(dependency);
                         ret.setCoverage(((Model) resolved.getFirst()).getCoverage().as(Geometry.class));
-                    } else {
-                        assert(parentActuator != null);
+                    } else if (resolved.getFirst() instanceof Observable o) {
+                        ret.getDeferrals().add(Pair.of(type, o));
                     }
                 }
             }
-
-            // self
-            for (Contextualizable computation : model.getComputation()) {
-
-                /*
-                 * TODO establish which components are needed to satisfy the call, and make the
-                 * dataflow empty if the resource services in the scope do not locate a component.
-                 * (shouldn't happen as the models shouldn't be resolved in that case). Versions
-                 * should also be collected.
-                 */
-
-                ret.getComputation().add(getServiceCall(computation));
-            }
-
-            ret.setId(createId(observable, scope));
-            ret.setName(observable.getName());
-            ret.setAlias(observable.getStatedName());
-
-            // add to hash
-            compiled.put(observable.getReferenceName(), ret);
-
         }
 
+        // self
+        for (Contextualizable computation : model.getComputation()) {
+
+            /*
+             * TODO establish which components are needed to satisfy the call, and make the
+             * dataflow empty if the resource services in the scope do not locate a component.
+             * (shouldn't happen as the models shouldn't be resolved in that case). Versions
+             * should also be collected.
+             */
+
+            ret.getComputation().add(getServiceCall(computation));
+        }
+
+        ret.setId(id);
+        ret.setName(observable.getName());
+        ret.setAlias(observable.getStatedName());
+
+        // add to hash
+        compiled.put(observable.getReferenceName(), ret);
+
         // filters apply to references as well
-        for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model, ResolutionType.FILTER)) {
+        for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model,
+                ResolutionType.FILTER)) {
             // TODO
         }
 
