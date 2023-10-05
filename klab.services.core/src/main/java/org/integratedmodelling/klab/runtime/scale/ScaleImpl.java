@@ -2,16 +2,14 @@ package org.integratedmodelling.klab.runtime.scale;
 
 import com.google.common.primitives.Longs;
 import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.*;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
-import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.geometry.Scanner1D;
-import org.integratedmodelling.klab.api.geometry.Scanner2D;
 import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
@@ -162,14 +160,18 @@ public class ScaleImpl implements Scale {
         }
         return switch (changingExtents) {
             case 0 -> new ScaleLocator() {
+
+                boolean done;
+
                 @Override
                 Scale doAdvance() { // not called
-                    return null;
+                    done = true;
+                    return this;
                 }
 
                 @Override
                 boolean isDone() {
-                    return true;
+                    return done;
                 }
             };
             case 1 -> new ScaleLocator1D(extents, dims, changingExtent);
@@ -406,7 +408,19 @@ public class ScaleImpl implements Scale {
 
     @Override
     public Scale at(Locator dimension) {
+        /*
+        if the dimension is a scale, locate all extents. If an extent, locate all. If an offset, locate whatever is
+        in the offset.
+         */
+        if (dimension instanceof Offset offset) {
 
+        } else if (dimension instanceof Extent extent) {
+
+        } else if (dimension instanceof Scale scale) {
+
+        } else if (dimension instanceof TimeInstant timeInstant) {
+
+        }
         return null;
     }
 
