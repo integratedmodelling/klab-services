@@ -1,18 +1,13 @@
 package org.integratedmodelling.klab.api.collections.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
-import org.integratedmodelling.klab.api.collections.Parameters;
-//import org.integratedmodelling.klab.api.data.TemplateValue;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * An order-preserving map with improved get() methods to enable simpler and more flexible use
@@ -59,7 +54,7 @@ public class ParametersImpl<T> implements Parameters<T> {
     }
 
     @Override
-    public <K> K get(T name, Class<? extends K> cls) {
+    public <K> K get(T name, Class<K> cls) {
         Object ret = get(name);
         if (ret == null) {
             return null;
@@ -68,7 +63,7 @@ public class ParametersImpl<T> implements Parameters<T> {
     }
 
     @Override
-    public <K> K getNotNull(T name, Class<? extends K> cls) {
+    public <K> K getNotNull(T name, Class<K> cls) {
         Object ret = get(name);
         if (ret == null) {
             return Utils.Data.notNull(cls);
@@ -254,6 +249,15 @@ public class ParametersImpl<T> implements Parameters<T> {
             }
         }
         return false;
+    }
+
+    @Override
+    public Parameters<T> rename(Map<T, T> translationTable) {
+        Parameters<T> ret = new ParametersImpl<T>();
+        for (T key : keySet()) {
+
+        }
+        throw new KUnimplementedException("ParameterImpl::rename");
     }
 
     @Override

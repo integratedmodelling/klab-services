@@ -1,54 +1,50 @@
 package org.integratedmodelling.klab.api.collections;
 
+import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
-
 /**
- * API for a read-only, nicer to use Map<String, Object> that collects named parameters of a
- * function. Implemented in {@link ParametersImpl} which can be used as a drop-in replacement for a
- * parameter map.
- * 
- * @author ferdinando.villa
+ * API for a read-only, nicer to use Map<String, Object> that collects named parameters of a function. Implemented in
+ * {@link ParametersImpl} which can be used as a drop-in replacement for a parameter map.
  *
+ * @author ferdinando.villa
  */
 public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
-     * Get the value as the passed type, if necessary converting between numeric types or casting to
-     * strings.
-     * 
+     * Get the value as the passed type, if necessary converting between numeric types or casting to strings.
+     *
      * @param name
-     * @param cls the expected class of the result
+     * @param cls  the expected class of the result
      * @return a plain Java object
      * @throws IllegalArgumentException if the requested class is incompatible with the type.
      */
-    <K> K get(T name, Class<? extends K> cls);
+    <K> K get(T name, Class<K> cls);
 
     /**
-     * Get the value as the passed type, if necessary converting between numeric types or casting to
-     * strings. If the result is null, do your best to convert to a suitable primitive POD so that
-     * it can be assigned to one without NPEs, but with possible inaccuracies (e.g. ints and longs
-     * will be 0).
-     * 
+     * Get the value as the passed type, if necessary converting between numeric types or casting to strings. If the
+     * result is null, do your best to convert to a suitable primitive POD so that it can be assigned to one without
+     * NPEs, but with possible inaccuracies (e.g. ints and longs will be 0).
+     *
      * @param name
-     * @param cls the expected class of the result
+     * @param cls  the expected class of the result
      * @return a plain Java object
      * @throws IllegalArgumentException if the requested class is incompatible with the type.
      */
-    <K> K getNotNull(T name, Class<? extends K> cls);
+    <K> K getNotNull(T name, Class<K> cls);
 
     /**
-     * Get the value as the passed type, returning a set default if the value is not there,
-     * otherwise converting if necessary between numeric types or casting to strings.
-     * 
+     * Get the value as the passed type, returning a set default if the value is not there, otherwise converting if
+     * necessary between numeric types or casting to strings.
+     *
      * @param name
-     * @param defaultValue the default value returned if the map does not contain the value; also
-     *        specifies the expected class of the result and a potential conversion if found.
+     * @param defaultValue the default value returned if the map does not contain the value; also specifies the expected
+     *                     class of the result and a potential conversion if found.
      * @return a plain Java object
      * @throws IllegalArgumentException if the requested class is incompatible with the type.
      */
@@ -56,7 +52,7 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
      * Return the value that matches any of the passed keys, or null.
-     * 
+     *
      * @param <K>
      * @param keys
      * @return
@@ -64,33 +60,32 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
     <K> K getAny(T... keys);
 
     /**
-     * When used as a parameter list parsed from a function call, this may contain arguments that
-     * are unnamed. These are given default names and if any is present, their names are returned
-     * here. Usage of this functionality is restricted to T == String.class and any usage outside of
-     * that will generate runtime errors.
-     * 
+     * When used as a parameter list parsed from a function call, this may contain arguments that are unnamed. These are
+     * given default names and if any is present, their names are returned here. Usage of this functionality is
+     * restricted to T == String.class and any usage outside of that will generate runtime errors.
+     *
      * @return a list of unnamed argument keys, possibly empty.
      */
     List<T> getUnnamedKeys();
 
     /**
      * Return all the unnamed arguments in order of declaration.
-     * 
+     *
      * @return
      */
     List<Object> getUnnamedArguments();
 
     /**
      * Return all the keys that correspond to named parameters.
-     * 
+     *
      * @return a list of unnamed argument keys, possibly empty.
      */
     List<T> getNamedKeys();
 
     /**
-     * Like {@link #containsKey(Object)}, except it returns false also if the key is there but the
-     * corresponding object is null.
-     * 
+     * Like {@link #containsKey(Object)}, except it returns false also if the key is there but the corresponding object
+     * is null.
+     *
      * @param key
      * @return false if key is not there or points to a null object
      */
@@ -98,7 +93,7 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
      * Check if an object is present for the key and it is of the passed class.
-     * 
+     *
      * @param key
      * @param cls
      * @return true if object is there and belongs to cls
@@ -107,15 +102,24 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
      * True if this contains any of the passed keys
-     * 
+     *
      * @param keys
      * @return
      */
     boolean containsAnyKey(T... keys);
 
     /**
+     * Return a new Parameters object with the corresponding names translated according to the translation table
+     * passed.
+     *
+     * @param translationTable A map old->new name
+     * @return the translated parameter table
+     */
+    Parameters<T> rename(Map<T, T> translationTable);
+
+    /**
      * True if this contains any of the passed values
-     * 
+     *
      * @param keys
      * @return
      */
@@ -123,16 +127,16 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
      * Return the subset of the map whose keys start with the passed string.
-     * 
+     *
      * @param string
      * @return
      */
     Map<T, Object> getLike(String string);
 
     /**
-     * Return a new parameter object with the same content that automatically resolves templated
-     * values using the passed map.
-     * 
+     * Return a new parameter object with the same content that automatically resolves templated values using the passed
+     * map.
+     *
      * @param templateVariables
      * @return
      */
@@ -140,16 +144,16 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
      * If {@link #with(Parameters)} has been called, return the variables, otherwise return null.
-     * 
+     *
      * @return
      */
     Parameters<String> getTemplateVariables();
 
     /**
-     * Create a parameters object from a list of key/value pairs, optionally including also other
-     * (non-paired) map objects whose values are added as is. A null in first position of a pair is
-     * ignored, as well as anything whose key is {@link #IGNORED_PARAMETER}.
-     * 
+     * Create a parameters object from a list of key/value pairs, optionally including also other (non-paired) map
+     * objects whose values are added as is. A null in first position of a pair is ignored, as well as anything whose
+     * key is {@link #IGNORED_PARAMETER}.
+     *
      * @param o
      * @return
      */
@@ -173,7 +177,7 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
      * Like the other create() but also ignores null values for non-null keys.
-     * 
+     *
      * @param <T>
      * @param o
      * @return
@@ -197,10 +201,10 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
     }
 
     /**
-     * Create a parameters object from a list of key/value pairs, optionally including also other
-     * (non-paired) map objects whose values are added as is. A null in first position of a pair is
-     * ignored, as well as anything whose key is {@link #IGNORED_PARAMETER}.
-     * 
+     * Create a parameters object from a list of key/value pairs, optionally including also other (non-paired) map
+     * objects whose values are added as is. A null in first position of a pair is ignored, as well as anything whose
+     * key is {@link #IGNORED_PARAMETER}.
+     *
      * @param o
      * @return
      */
@@ -224,7 +228,7 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
 
     /**
      * Wrap an existing map and enjoy.
-     * 
+     *
      * @param <T>
      * @param map
      * @return

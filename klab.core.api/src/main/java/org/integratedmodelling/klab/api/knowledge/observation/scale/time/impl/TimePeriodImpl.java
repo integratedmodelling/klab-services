@@ -118,6 +118,16 @@ public class TimePeriodImpl implements TimePeriod {
 	}
 
 	@Override
+	public Time initialization() {
+		return null;
+	}
+
+	@Override
+	public Time termination() {
+		return null;
+	}
+
+	@Override
 	public TimeInstant getFocus() {
 		// TODO Auto-generated method stub
 		return null;

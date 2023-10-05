@@ -1,10 +1,5 @@
 package org.integratedmodelling.klab.api.scope;
 
-import java.net.URL;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.Future;
-
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -12,9 +7,15 @@ import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+
+import java.net.URL;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * The scope for a context and any observations made within it. The context scope is the "digital twin" of the
@@ -80,13 +81,16 @@ public interface ContextScope extends SessionScope {
      * be consistent with the overall geometry and context observations; if observations of direct observables are made,
      * the parent's geometry should be updated to reflect it.
      *
+     * <p>This does not reinitialize the catalog, as it's meant to focus on a subset of an overall scale.</p>
+     *
      * @param geometry
      * @return
      */
     ContextScope withGeometry(Geometry geometry);
 
     /**
-     * Return a scope focused on a specific context observation.
+     * Return a scope focused on a specific context observation. The catalog will be reinitialized to empty, and there
+     * is no guarantee that passing the same observation as the current context will not do so.
      *
      * @param contextObservation
      * @return
@@ -107,8 +111,8 @@ public interface ContextScope extends SessionScope {
      * {@link #withContextObservation(DirectObservation)}}. If no root observation is present in the scope, the
      * arguments must fully specify a subject, either through an
      * {@link org.integratedmodelling.klab.api.knowledge.Instance} or a URN specifying a subject observable + a scale.
-     * If the parent session was focused on a scale, this is available through {@link #getScale()} and the context
-     * can decide to use it as a scale for the root subject.
+     * If the parent session was focused on a scale, this is available through {@link #getScale()} and the context can
+     * decide to use it as a scale for the root subject.
      * <p>
      * Observables will be routinely specified through URNs, which will be validated as any observable object -
      * concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a context/observation in
@@ -266,4 +270,13 @@ public interface ContextScope extends SessionScope {
      */
     DirectObservation getResolutionObservation();
 
+    /**
+     * Create a new scope if necessary where the catalog uses the passed local names and the scale, if not null, is the
+     * passed one. Called before each actuator's functors are executed and passed to the functor executor.
+     *
+     * @param scale      may be null, meaning that the original scale is unchanged
+     * @param localNames if empty, the catalog remains the same
+     * @return a localized context or this one if nothing needs to change
+     */
+    ContextScope withContextualizationData(Scale scale, Map<String, String> localNames);
 }

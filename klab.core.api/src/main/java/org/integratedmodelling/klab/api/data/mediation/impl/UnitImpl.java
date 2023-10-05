@@ -1,8 +1,5 @@
 package org.integratedmodelling.klab.api.data.mediation.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
@@ -13,6 +10,9 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDistribution;
 import org.integratedmodelling.klab.api.services.UnitService;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class UnitImpl implements Unit {
 
@@ -52,7 +52,7 @@ public class UnitImpl implements Unit {
     @Override
     public Number convert(Number d, ValueMediator scale) {
         try {
-            return unitService.convert(d, (Unit) scale, this);
+            return unitService.convert(d, this, (Unit)scale);
         } catch (NullPointerException e) {
             throw new KInternalErrorException("calling convert() without a unit service");
         }

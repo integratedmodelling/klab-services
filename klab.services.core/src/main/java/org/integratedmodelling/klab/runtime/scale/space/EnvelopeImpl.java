@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.runtime.scale.space;
 
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
@@ -167,8 +168,11 @@ public class EnvelopeImpl implements Envelope {
 
 	@Override
 	public Envelope transform(Projection projection, boolean lenient) {
-		// TODO Auto-generated method stub
-		return null;
+		if (projection.equals(this.projection)) {
+			return this;
+		}
+		throw new KUnimplementedException("Envelope::transform");
+//		return null;
 	}
 
 	public static EnvelopeImpl create(org.locationtech.jts.geom.Envelope envelope, ProjectionImpl projection) {

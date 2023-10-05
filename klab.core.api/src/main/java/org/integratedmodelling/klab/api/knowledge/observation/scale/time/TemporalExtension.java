@@ -10,11 +10,8 @@ import java.util.NavigableSet;
 import java.util.TreeSet;
 
 /**
- * A time line that can be broken in as many segments as needed based on incoming transitions, without ever breaking the
- * continuity of the overall interval.
- * <p>
- * TODO this can be useful in different context and its generalized form belongs
- * in the API package.
+ * A timeline with event markers that can be broken in as many segments as needed based on incoming transitions, without
+ * ever breaking the continuity of the overall interval.
  *
  * @author Ferd
  */

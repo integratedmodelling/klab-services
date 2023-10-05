@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
@@ -195,14 +196,19 @@ public class DigitalTwin {
      * @param scope
      * @return
      */
-    public boolean registerActuator(Actuator actuator, ContextScope scope) {
+    public boolean registerActuator(Actuator actuator, Dataflow dataflow, ContextScope scope) {
 
         var data = observationData.get(actuator.getId());
         if (data == null && /* shouldn't happen */ !actuator.isReference()) {
             data = new ObservationData();
             data.actuator = actuator;
             data.observation = createObservation(actuator, scope);
-            data.scale = null; // actuator.getCoverage(); // TODO if partial, must intersect
+            data.scale = scope.getScale();
+            var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
+            if (customScale != null) {
+                // FIXME why the heck is this an Object and I have to cast?
+                data.scale = data.scale.merge((Scale) customScale, LogicalConnector.INTERSECTION);
+            }
 
             for (Actuator child : actuator.getChildren()) {
                 if (child.isInput() && !child.getName().equals(child.getAlias())) {
@@ -212,7 +218,7 @@ public class DigitalTwin {
 
             Executor executor = null;
             for (var computation : data.actuator.getComputation()) {
-                Executor step = createExecutor(actuator, data.observation, computation, scope, executor);
+                var step = createExecutor(actuator, data.observation, computation, scope, executor);
                 if (executor != step) {
                     data.executors.add(step);
                 }
@@ -249,7 +255,7 @@ public class DigitalTwin {
          * @return
          */
         ContextScope contextualize(ContextScope scope) {
-            return scope;
+            return scope.withContextualizationData(this.scale, this.localNames);
         }
     }
 
@@ -317,7 +323,7 @@ public class DigitalTwin {
         var parallelism = getParallelism(scope);
         var initializationScope = scope.withGeometry(scope.getScale().initialization());
 
-        for (int i = 0; i <= lastOrder; i++) {
+        for (var i = 0; i <= lastOrder; i++) {
             var actuatorGroup = groups.get(i);
             if (actuatorGroup.size() > 1 && parallelism.getAsInt() > 1) {
                 try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -460,7 +466,7 @@ public class DigitalTwin {
             Set<Actuator> group = new HashSet<>();
             while (order.hasNext()) {
                 Actuator next = order.next();
-                if (registerActuator(next, scope)) {
+                if (registerActuator(next, dataflow, scope)) {
                     ret.add(Pair.of(next, (executionOrder = checkExecutionOrder(executionOrder, next, dependencyGraph,
                             group))));
                 }

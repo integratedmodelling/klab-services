@@ -39,6 +39,7 @@ public class ExtentLibrary {
 
 	@KlabFunction(name = Klab.StandardLibrary.Extents.SPACE, description = "Create spatial extents of all supported types", type = Type.SPATIALEXTENT, version = Version.CURRENT, parameters = {
 			@Argument(name = "shape", type = Type.TEXT, description = "A geometric shape in WKT or WKB form"),
+			@Argument(name = "squareCells", type = Type.BOOLEAN, description = "Force square cells (may change the envelope)"),
 			@Argument(name = "grid", type = { Type.QUANTITY,
 					Type.TEXT }, description = "Grid resolution", optional = true) })
 	public static Space space(ServiceCall call, Scope scope) {
@@ -49,6 +50,7 @@ public class ExtentLibrary {
 		Projection projection = null;
 		double simplifyFactor = Double.NaN;
 		boolean gridConstraint = false;
+		boolean squareCells = false;
 
 		Parameters<String> parameters = call.getParameters();
 		Space ret = null;
@@ -94,10 +96,13 @@ public class ExtentLibrary {
 		if (parameters.containsKey("simplify")) {
 			simplifyFactor = parameters.get("simplify", Double.class);
 		}
+		if (parameters.containsKey("squareCells")) {
+			squareCells = parameters.get("squareCells", Boolean.class);
+		}
 
 		if (shape != null) {
 			if (resolution != null) {
-				Grid grid = GridImpl.create(resolution);
+				Grid grid = GridImpl.create(resolution, squareCells);
 				ret = TileImpl.create(shape, grid);
 			} else {
 				ret = shape;

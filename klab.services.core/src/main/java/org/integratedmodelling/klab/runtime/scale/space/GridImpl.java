@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
-import java.awt.geom.Point2D;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.geotools.referencing.GeodeticCalculator;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -13,6 +9,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projec
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.locationtech.jts.geom.Point;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+
+import java.awt.geom.Point2D;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GridImpl implements Grid {
 
@@ -34,9 +34,16 @@ public class GridImpl implements Grid {
     private EnvelopeImpl envelope;
     private double xCellSize, yCellSize;
     private long size = 1;
+    private boolean squareCells;
 
     public static Grid create(double resolutionInM) {
         GridImpl ret = new GridImpl(resolutionInM);
+        return ret;
+    }
+
+    public static Grid create(double resolutionInM, boolean squareCells) {
+        GridImpl ret = new GridImpl(resolutionInM);
+        ret.squareCells = squareCells;
         return ret;
     }
 
@@ -56,7 +63,7 @@ public class GridImpl implements Grid {
      */
     public GridImpl(Shape shape, double resolutionInM, boolean makeCellsSquare) {
         this.declaredResolutionM = resolutionInM;
-        adjustEnvelope(shape, resolutionInM, makeCellsSquare);
+        adjustEnvelope(shape.getEnvelope(), resolutionInM, makeCellsSquare);
     }
 
     public GridImpl(double resolutionInM) {
@@ -67,9 +74,35 @@ public class GridImpl implements Grid {
         this.declaredResolutionM = resolutionInM;
     }
 
+    @Override
+    public boolean isSquareCells() {
+        return squareCells;
+    }
+
     public GridImpl(Point anchorPoint, Projection projection, double resolutionInProjectionUnits) {
         this.declaredResolutionM = resolutionInProjectionUnits;
         this.projection = ProjectionImpl.promote(projection);
+    }
+
+    @Override
+    public Grid locate(Envelope envelope) {
+        GridImpl ret = copy();
+        ret.adjustEnvelope(envelope, declaredResolutionM, this.squareCells);
+        return ret;
+    }
+
+    private GridImpl copy() {
+        GridImpl ret = new GridImpl();
+        ret.size = this.size;
+        ret.anchorPoints.addAll(this.anchorPoints);
+        ret.declaredResolutionM = this.declaredResolutionM;
+        ret.envelope = this.envelope;
+        ret.xCells = this.xCells;
+        ret.yCells = this.yCells;
+        ret.xCellSize = this.xCellSize;
+        ret.yCellSize = this.yCellSize;
+        ret.squareCells = this.squareCells;
+        return ret;
     }
 
     /**
@@ -78,20 +111,23 @@ public class GridImpl implements Grid {
      * Depending on the requested resolution and the configuration, this can change the envelope or just adapt the
      * resolution to best fit the region context.
      *
-     * @param shape     the shape to take the envelope from.
-     * @param squareRes the resolution to use.
-     * @throws KlabException
+     * @param envelope  the envelope, which may be reprojected to the projection in this grid
+     * @param squareRes the resolution to use in meters.
      */
-    private void adjustEnvelope(Shape shape, double squareRes, boolean forceSquareCells) {
+    private void adjustEnvelope(Envelope envelope, double squareRes, boolean forceSquareCells) {
 
-        Envelope env = shape.getEnvelope();
-        Projection prj = shape.getProjection();
+        Projection prj = getProjection() == null ? envelope.getProjection() : getProjection();
+        envelope = envelope.transform(prj, true);
         CoordinateReferenceSystem crs = ProjectionImpl.promote(prj).getCoordinateReferenceSystem();
 
-        double minX = clamp(env.getMinX(), -180, 180);
-        double maxX = clamp(env.getMaxX(), -180, 180);
-        double minY = clamp(env.getMinY(), -90, 90);
-        double maxY = clamp(env.getMaxY(), -90, 90);
+        this.squareCells = forceSquareCells;
+        this.envelope = EnvelopeImpl.promote(envelope);
+        this.projection = ProjectionImpl.promote(envelope.getProjection());
+
+        double minX = envelope.getMinX();
+        double maxX = envelope.getMaxX();
+        double minY = envelope.getMinY();
+        double maxY = envelope.getMaxY();
 
         if (forceSquareCells) {
             if (prj.isMeters()) {
@@ -105,6 +141,12 @@ public class GridImpl implements Grid {
                 this.xCellSize = squareRes;
                 this.yCellSize = squareRes;
             } else {
+
+                minX = clamp(envelope.getMinX(), -180, 180);
+                maxX = clamp(envelope.getMaxX(), -180, 180);
+                minY = clamp(envelope.getMinY(), -90, 90);
+                maxY = clamp(envelope.getMaxY(), -90, 90);
+
                 GeodeticCalculator gc = new GeodeticCalculator(crs);
                 gc.setStartingGeographicPoint(minX, (maxY - minY) / 2.0);
                 gc.setDestinationGeographicPoint(maxX, (maxY - minY) / 2.0);
@@ -141,12 +183,18 @@ public class GridImpl implements Grid {
 
         } else {
             long x = 0, y = 0;
-            if (shape.getProjection().isMeters()) {
-                double height = env.getHeight();
-                double width = env.getWidth();
+            if (prj.isMeters()) {
+                double height = envelope.getHeight();
+                double width = envelope.getWidth();
                 x = (long) Math.ceil(width / squareRes);
                 y = (long) Math.ceil(height / squareRes);
             } else {
+
+                minX = clamp(envelope.getMinX(), -180, 180);
+                maxX = clamp(envelope.getMaxX(), -180, 180);
+                minY = clamp(envelope.getMinY(), -90, 90);
+                maxY = clamp(envelope.getMaxY(), -90, 90);
+
                 GeodeticCalculator gc = new GeodeticCalculator(crs);
                 gc.setStartingGeographicPoint(minX, (maxY - minY) / 2.0);
                 gc.setDestinationGeographicPoint(maxX, (maxY - minY) / 2.0);
@@ -164,6 +212,7 @@ public class GridImpl implements Grid {
             this.xCellSize = getEnvelope().getWidth() / xCells;
             this.yCellSize = getEnvelope().getHeight() / yCells;
         }
+        this.size = this.xCells * this.yCells;
     }
 
     private static double clamp(double x, double min, double max) {

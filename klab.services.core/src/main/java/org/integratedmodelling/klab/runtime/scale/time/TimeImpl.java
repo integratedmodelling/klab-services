@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -66,8 +67,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
     @Override
     public double getDimensionSize() {
-        // TODO Auto-generated method stub
-        return 0;
+        return 1;
     }
 
     @Override
@@ -79,6 +79,63 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     @Override
     public <T extends Locator> T as(Class<T> cls) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public long size() {
+        return size;
+    }
+
+    public String encode() {
+//        Set<Encoding> opts = EnumSet.noneOf(Encoding.class);
+//        if (options != null) {
+//            for (Encoding e : options) {
+//                opts.add(e);
+//            }
+//        }
+//
+//        String prefix = "T";
+//        if (getTimeType() == ITime.Type.LOGICAL) {
+//            prefix = "\u03c4";
+//        } /*else if (partial && step == null) {
+//            prefix = "t";
+//        }*/
+//
+//        String ret = prefix + getDimensionality() + "(" + size + ")";
+//        String args = GeometryImpl.PARAMETER_TIME_REPRESENTATION + "=" + getTimeType();
+//
+//        Time target = this;
+//
+//        if (this.is(Time.Type.INITIALIZATION) && opts.contains(IGeometry.Encoding.CONCRETE_TIME_INTERVALS)) {
+//            args = GeometryImpl.PARAMETER_TIME_REPRESENTATION + "=" + ITime.Type.PHYSICAL;
+//            if (this.size() > 1) {
+//                target = getPreviousExtent(this);
+//            }
+//        }
+//
+//        if (target.getStart() != null) {
+//            if (target.getEnd() != null) {
+//                args += "," + GeometryImpl.PARAMETER_TIME_PERIOD + "=[" + target.getStart().getMilliseconds() + " "
+//                        + target.end.getMilliseconds() + "]";
+//            } else {
+//                args += "," + GeometryImpl.PARAMETER_TIME_LOCATOR + "=" + target.getEnd().getMilliseconds();
+//            }
+//        }
+//        if (target.getStart() != null) {
+//            args += "," + GeometryImpl.PARAMETER_TIME_GRIDRESOLUTION + "=" + target.step.getMilliseconds();
+//        }
+//        if (target.resolution != null) {
+//            args += "," + GeometryImpl.PARAMETER_TIME_SCOPE + "=" + target.resolution.getMultiplier();
+//            args += "," + GeometryImpl.PARAMETER_TIME_SCOPE_UNIT + "=" + target.resolution.getType();
+//        }
+//        if (target.coverageResolution != null) {
+//            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_UNIT + "=" + target.coverageResolution.getType();
+//            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_START + "=" + target.coverageStart;
+//            args += "," + GeometryImpl.PARAMETER_TIME_COVERAGE_END + "=" + target.coverageEnd;
+//        }
+//
+//        return ret + "{" + args + "}";
         return null;
     }
 
@@ -119,26 +176,22 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
     @Override
     public TimeInstant getStart() {
-        // TODO Auto-generated method stub
-        return null;
+        return start;
     }
 
     @Override
     public TimeInstant getEnd() {
-        // TODO Auto-generated method stub
-        return null;
+        return end;
     }
 
     @Override
     public TimeDuration getStep() {
-        // TODO Auto-generated method stub
-        return null;
+        return step;
     }
 
     @Override
     public Resolution getResolution() {
-        // TODO Auto-generated method stub
-        return null;
+        return resolution;
     }
 
     @Override
@@ -160,13 +213,13 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     }
 
     @Override
-    public boolean is(org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Type type) {
+    public boolean is(Time.Type type) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Type getTimeType() {
+    public Time.Type getTimeType() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -192,13 +245,22 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     @Override
     public Time earliest() {
         // TODO Auto-generated method stub
-        return null;
+        throw new KUnimplementedException("Time::earliest");
     }
 
     @Override
     public Time latest() {
-        // TODO Auto-generated method stub
-        return null;
+        throw new KUnimplementedException("Time::latest");
+    }
+
+    @Override
+    public Time initialization() {
+        throw new KUnimplementedException("Time::initialization");
+    }
+
+    @Override
+    public Time termination() {
+        throw new KUnimplementedException("Time::termination");
     }
 
     @Override

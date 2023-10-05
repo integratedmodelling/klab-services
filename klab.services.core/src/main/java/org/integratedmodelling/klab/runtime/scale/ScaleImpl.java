@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.scale;
 
+import com.google.common.primitives.Longs;
 import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
@@ -16,10 +17,13 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
 import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
 
+import java.io.Serial;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ScaleImpl implements Scale {
 
+    @Serial
     private static final long serialVersionUID = -4518044986262539876L;
 
     Extent<?>[] extents;
@@ -36,11 +40,29 @@ public class ScaleImpl implements Scale {
      */
     abstract class ScaleLocator extends DelegatingScale {
 
+        @Serial
         private static final long serialVersionUID = 797929992176158102L;
-        boolean empty;
         long offset;
 
-        abstract Scale advance();
+        // lazy container for localized extents. Initialized to those that don't change.
+        public Scale advance() {
+            return doAdvance();
+        }
+
+        abstract Scale doAdvance();
+
+        abstract boolean isDone();
+
+        @Override
+        public <T extends Locator> T as(Class<T> cls) {
+            // TODO adapt to the various scanners
+            return super.as(cls);
+        }
+
+        @Override
+        public Extent<?> extent(Type extentType) {
+            return super.extent(extentType);
+        }
     }
 
     /**
@@ -53,8 +75,19 @@ public class ScaleImpl implements Scale {
         private static final long serialVersionUID = 2969366247696737476L;
         NDCursor cursor;
 
-        Scale advance() {
+        public ScaleLocatorND(Extent<?>[] extents, List<Long> dims) {
+            super();
+            cursor.defineDimensions(dims);
+        }
+
+        Scale doAdvance() {
+            offset++;
             return this;
+        }
+
+        @Override
+        boolean isDone() {
+            return offset == this.cursor.getMultiplicity();
         }
 
     }
@@ -67,14 +100,25 @@ public class ScaleImpl implements Scale {
      */
     class ScaleLocator1D extends ScaleLocator {
 
+        @Serial
         private static final long serialVersionUID = -4207775306893203109L;
-        long offset;
         int changingIndex;
         long[] extents;
-        boolean empty;
 
-        Scale advance() {
+        public ScaleLocator1D(Extent<?>[] extents, List<Long> dims, int changingIndex) {
+            super();
+            this.extents = Longs.toArray(dims);
+            this.changingIndex = changingIndex;
+        }
+
+        Scale doAdvance() {
+            offset++;
             return this;
+        }
+
+        @Override
+        boolean isDone() {
+            return offset == extents[changingIndex];
         }
 
     }
@@ -89,13 +133,12 @@ public class ScaleImpl implements Scale {
         ThreadLocal<ScaleLocator> locator = new ThreadLocal<>();
 
         ScaleIterator() {
-            // TODO initialize the locator to the most appropriate of the above, pointing at
-            // the first usable offset
+            this.locator.set(createLocator(extents));
         }
 
         @Override
         public boolean hasNext() {
-            return !locator.get().empty;
+            return !locator.get().isDone();
         }
 
         @Override
@@ -103,6 +146,35 @@ public class ScaleImpl implements Scale {
             return locator.get().advance();
         }
 
+    }
+
+
+    private ScaleLocator createLocator(Extent<?>[] extents) {
+        int changingExtents = 0;
+        int i = 0, changingExtent = 0;
+        List<Long> dims = new ArrayList<>();
+        for (Extent extent : extents) {
+            if (extent.size() > 1) {
+                changingExtents++;
+                changingExtent = i;
+            }
+            i++;
+        }
+        return switch (changingExtents) {
+            case 0 -> new ScaleLocator() {
+                @Override
+                Scale doAdvance() { // not called
+                    return null;
+                }
+
+                @Override
+                boolean isDone() {
+                    return true;
+                }
+            };
+            case 1 -> new ScaleLocator1D(extents, dims, changingExtent);
+            default -> new ScaleLocatorND(extents, dims);
+        };
     }
 
     ;
@@ -128,6 +200,7 @@ public class ScaleImpl implements Scale {
 
     /**
      * Dumb private constructor for pre-defined, pre-sorted inputs
+     *
      * @param extents
      * @param size
      */
@@ -137,7 +210,7 @@ public class ScaleImpl implements Scale {
     }
 
     protected void define(List<Extent<?>> extents) {
-        Collections.sort(extents, new Comparator<Extent<?>>() {
+        Collections.sort(extents, new Comparator<>() {
             // use the natural order in the dimension type enum
             @Override
             public int compare(Extent<?> o1, Extent<?> o2) {
@@ -240,26 +313,22 @@ public class ScaleImpl implements Scale {
 
     @Override
     public Space getSpace() {
-        // TODO Auto-generated method stub
-        return null;
+        return (Space) extent(Dimension.Type.SPACE);
     }
 
     @Override
     public Time getTime() {
-        // TODO Auto-generated method stub
-        return null;
+        return (Time) extent(Dimension.Type.TIME);
     }
 
     @Override
     public boolean isTemporallyDistributed() {
-        // TODO Auto-generated method stub
-        return false;
+        return getTime() != null && getTime().distributed();
     }
 
     @Override
     public boolean isSpatiallyDistributed() {
-        // TODO Auto-generated method stub
-        return false;
+        return getSpace() != null && getSpace().distributed();
     }
 
     @Override
@@ -291,14 +360,22 @@ public class ScaleImpl implements Scale {
 
     @Override
     public Scale initialization() {
-        // TODO Auto-generated method stub
-        return null;
+        Time time = getTime();
+        if (time == null) {
+            return this;
+        }
+        return new ScaleImpl(Arrays.stream(extents).map(e -> e.getType() == Type.TIME ? ((Time) e).initialization() :
+                e).collect(Collectors.toList()));
     }
 
     @Override
     public Scale termination() {
-        // TODO Auto-generated method stub
-        return null;
+        Time time = getTime();
+        if (time == null) {
+            return this;
+        }
+        return new ScaleImpl(Arrays.stream(extents).map(e -> e.getType() == Type.TIME ? ((Time) e).termination() :
+                e).collect(Collectors.toList()));
     }
 
     @Override
@@ -306,7 +383,7 @@ public class ScaleImpl implements Scale {
         if (getDimension(dimension) == null) {
             return this;
         }
-        Extent[] extents = new Extent[this.extents.length -1];
+        Extent[] extents = new Extent[this.extents.length - 1];
         long size = 1;
         int next = 0;
         for (Extent extent : this.extents) {

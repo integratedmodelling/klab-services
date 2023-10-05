@@ -419,6 +419,19 @@ public interface Time extends Extent<Time> {
     Time latest();
 
     /**
+     * The initialization time, before time exists. Only defined for occurrent time extents.
+     * @return
+     */
+    Time initialization();
+
+    /**
+     * The termination time, after time has finished existing. Only defined for occurrent time extents.
+     * @return
+     */
+    Time termination();
+
+
+    /**
      * A temporal extent always represents a period, but when created from a query may be simply focused on a particular
      * timepoint, used to locate the correct period in a scale that has (regular or irregular) timeslices. These are not
      * produced during contextualization but can be used as locators.

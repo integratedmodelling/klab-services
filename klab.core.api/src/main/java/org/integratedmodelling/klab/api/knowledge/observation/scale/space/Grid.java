@@ -75,6 +75,18 @@ public interface Grid extends Serializable {
     long size();
 
     /**
+     * Produce a new grid that inherits the same parameters but redefines itself to fit the passed envelope, with the
+     * possible constraint of keeping square cells (which may redefine the envelope).
+     * <p>
+     * If this grid has an anchor point, the resulting grid must also be exactly aligned to it.
+     *
+     * @param envelope the requested envelope. If the projection in the envelope is different, the envelope will be
+     *                 reprojected to fit this grid's.
+     * @return a new grid with the passed envelope.
+     */
+    Grid locate(Envelope envelope);
+
+    /**
      * Number of cells along the horizontal direction. This will be 0 if there is no envelope.
      *
      * @return
@@ -129,4 +141,11 @@ public interface Grid extends Serializable {
      */
     Grid align(Grid other);
 
+    /**
+     * True if the grid has been explicitly constrained to have square cells. The grid may return false and still have
+     * square cells if that was the result of adapting to a requested envelope where the cells fit exactly.
+     *
+     * @return true if the grid was created with the square cells option
+     */
+    boolean isSquareCells();
 }

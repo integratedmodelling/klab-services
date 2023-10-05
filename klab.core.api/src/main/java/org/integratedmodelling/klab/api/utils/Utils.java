@@ -3935,7 +3935,7 @@ public class Utils {
             HttpURLConnection connection = null;
             boolean ret = false;
             try {
-                connection = (HttpURLConnection) new URL(url).openConnection();
+                connection = (HttpURLConnection) new URI(url).toURL().openConnection();
                 connection.setRequestMethod("HEAD");
                 int responseCode = connection.getResponseCode();
                 if (responseCode > 100 && responseCode < 400) {

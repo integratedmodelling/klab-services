@@ -1,19 +1,9 @@
 package org.integratedmodelling.klab.services.scope;
 
-import java.net.URL;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
-import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -25,6 +15,11 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
+import org.integratedmodelling.klab.utilities.Utils;
+
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.Future;
 
 public class EngineContextScope extends EngineSessionScope implements ContextScope {
 
@@ -34,7 +29,8 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     private Scale geometry = Scale.empty();
     private String resolutionNamespace;
     private String resolutionProject;
-    private Map<Observable, Observation> catalog = new HashMap<>();
+    private Map<Observable, Observation> catalog;
+    private Map<String, Observable> namedCatalog = new HashMap<>();
     private URL url;
 
     protected EngineContextScope parent;
@@ -43,20 +39,23 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     EngineContextScope(EngineSessionScope parent) {
         super(parent);
         this.observer = parent.getUser();
-		this.data = Parameters.create();
-		this.data.putAll(parent.data);
+        this.data = Parameters.create();
+        this.data.putAll(parent.data);
+        this.catalog = new HashMap<>();
 
         /*
          * TODO choose the services if this context or user requires specific ones
          */
     }
 
+    // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private EngineContextScope(EngineContextScope parent) {
         super(parent);
         this.parent = parent;
         this.observer = parent.observer;
         this.contextObservation = parent.contextObservation;
-        this.catalog.putAll(parent.catalog);
+        this.catalog = parent.catalog;
+        this.namedCatalog.putAll(parent.namedCatalog);
     }
 
     @Override
@@ -86,6 +85,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     public EngineContextScope withObserver(Identity observer) {
         EngineContextScope ret = new EngineContextScope(this);
         ret.observer = observer;
+        ret.catalog = new HashMap<>(this.catalog);
         return ret;
     }
 
@@ -193,6 +193,21 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
+    public ContextScope withContextualizationData(Scale scale, Map<String, String> localNames) {
+        if (scale == null && localNames.isEmpty()) {
+            return this;
+        }
+        EngineContextScope ret = new EngineContextScope(this);
+        if (scale != null) {
+            ret.geometry = scale;
+        }
+        if (!localNames.isEmpty()) {
+            this.namedCatalog = Utils.Maps.translateKeys(namedCatalog, localNames);
+        }
+        return ret;
+    }
+
+    @Override
     public <T extends Observation> T getObservation(String localName, Class<T> cls) {
         // TODO Auto-generated method stub
         return null;
@@ -251,6 +266,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     public ContextScope withContextObservation(DirectObservation contextObservation) {
         EngineContextScope ret = new EngineContextScope(this);
         ret.contextObservation = contextObservation;
+        ret.catalog = new HashMap<>(this.catalog);
         return ret;
     }
 
