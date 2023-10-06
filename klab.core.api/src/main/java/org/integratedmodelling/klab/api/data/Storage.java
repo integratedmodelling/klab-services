@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.data;
 
-import org.integratedmodelling.klab.api.data.RuntimeAsset;
-
 /**
  * Base storage providing the general methods. Children enable either boxed I/O or faster native operation
  * (recommended). The runtime makes the choice. The default state implementation keeps the getStorage method as an
@@ -16,7 +14,8 @@ public interface Storage extends RuntimeAsset {
         DOUBLE,
         FLOAT,
         INTEGER,
-        KEYED
+        KEYED,
+        BOOLEAN
     }
 
     Type getType();

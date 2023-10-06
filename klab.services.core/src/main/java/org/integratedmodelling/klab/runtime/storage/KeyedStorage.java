@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.geometry.Offset;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
  * Base storage providing the general methods. Children enable either boxed I/O
@@ -12,7 +13,11 @@ import org.integratedmodelling.klab.api.geometry.Offset;
 public class KeyedStorage extends IntStorage {
 
 
-	@Override
+    public KeyedStorage(Scale scale) {
+        super(scale);
+    }
+
+    @Override
 	public Type getType() {
 		return Type.KEYED;
 	}

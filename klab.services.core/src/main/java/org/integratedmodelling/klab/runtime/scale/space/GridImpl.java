@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.scale.space;
 import org.geotools.referencing.GeodeticCalculator;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
@@ -17,6 +18,13 @@ import java.util.List;
 public class GridImpl implements Grid {
 
     private List<Pair<Double, Double>> anchorPoints = new ArrayList<>();
+
+    public static GridImpl promote(Grid grid) {
+        if (grid instanceof GridImpl grid1) {
+            return grid1;
+        }
+        throw new KUnimplementedException("GridImpl::promote with external grid");
+    }
 
     /**
      * Positions a cell may be located at in a fully specified grid.
@@ -44,6 +52,21 @@ public class GridImpl implements Grid {
     public static Grid create(double resolutionInM, boolean squareCells) {
         GridImpl ret = new GridImpl(resolutionInM);
         ret.squareCells = squareCells;
+        return ret;
+    }
+
+    public GridImpl copy() {
+        GridImpl ret = new GridImpl();
+        ret.projection = this.projection;
+        ret.declaredResolutionM = this.declaredResolutionM;
+        ret.envelope = this.envelope == null? null : this.envelope.copy();
+        ret.xCells = this.xCells;
+        ret.yCells = this.yCells;
+        ret.xCellSize = this.xCellSize;
+        ret.yCellSize = this.yCellSize;
+        ret.size = this.size;
+        ret.squareCells = this.squareCells;
+        ret.anchorPoints.addAll(this.anchorPoints);
         return ret;
     }
 
@@ -88,20 +111,6 @@ public class GridImpl implements Grid {
     public Grid locate(Envelope envelope) {
         GridImpl ret = copy();
         ret.adjustEnvelope(envelope, declaredResolutionM, this.squareCells);
-        return ret;
-    }
-
-    private GridImpl copy() {
-        GridImpl ret = new GridImpl();
-        ret.size = this.size;
-        ret.anchorPoints.addAll(this.anchorPoints);
-        ret.declaredResolutionM = this.declaredResolutionM;
-        ret.envelope = this.envelope;
-        ret.xCells = this.xCells;
-        ret.yCells = this.yCells;
-        ret.xCellSize = this.xCellSize;
-        ret.yCellSize = this.yCellSize;
-        ret.squareCells = this.squareCells;
         return ret;
     }
 

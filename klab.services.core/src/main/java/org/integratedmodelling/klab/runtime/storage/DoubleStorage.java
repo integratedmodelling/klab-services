@@ -15,6 +15,9 @@ import java.util.function.LongToDoubleFunction;
  */
 public class DoubleStorage implements Storage {
 
+    public DoubleStorage(Scale scale) {
+    }
+
     public void set(double value, Offset locator) {
 
     }

@@ -11,48 +11,68 @@ import java.util.Arrays;
 
 public class TileImpl extends ShapeImpl implements Tile {
 
-	private static final long serialVersionUID = -645107030417341241L;
-	private Grid grid;
-	private long size = 1;
+    private static final long serialVersionUID = -645107030417341241L;
+    private Grid grid;
+    private long size = 1;
 
-	/**
-	 * The grid may contain constraints that change the projection or the extent.
-	 * 
-	 * @param geometry
-	 * @param grid
-	 */
-	public TileImpl(Geometry geometry, Projection projection, Grid grid) {
-		super(ShapeImpl.create(geometry, projection));
-		this.grid = grid.locate(getEnvelope());
-		this.size = this.grid.size();
-		setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
-	}
+    /**
+     * The grid may contain constraints that change the projection or the extent.
+     *
+     * @param geometry
+     * @param grid
+     */
+    public TileImpl(Geometry geometry, Projection projection, Grid grid) {
+        super(ShapeImpl.create(geometry, projection));
+        this.grid = grid.locate(getEnvelope());
+        this.size = this.grid.size();
+        setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
+    }
 
-	public TileImpl(Shape shape, Grid grid) {
-		super(ShapeImpl.promote(shape));
-		this.grid = grid.locate(this.getEnvelope());
-		this.size = this.grid.size();
-		setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
-	}
+    /**
+     * Constructor without a grid, internal, not enough to create a fully specified object.
+     *
+     * @param geometry
+     * @param projection
+     */
+    private TileImpl(Geometry geometry, Projection projection) {
+        super(ShapeImpl.create(geometry, projection));
+    }
 
-	@Override
-	public TileImpl at(Locator locator) {
-		// TODO Auto-generated method stub - must create a cell if covered
-		return null;
-	}
+    public TileImpl(Shape shape, Grid grid) {
+        super(ShapeImpl.promote(shape));
+        this.grid = grid.locate(this.getEnvelope());
+        this.size = this.grid.size();
+        setShape(Arrays.asList(this.grid.getXCells(), this.grid.getYCells()));
+    }
 
-	@Override
-	public Grid getGrid() {
-		return this.grid;
-	}
+    @Override
+    public TileImpl at(Locator locator) {
+        // TODO Auto-generated method stub - must create a cell if covered
+        return null;
+    }
 
-	@Override
-	public long size() {
-		return this.size;
-	}
+    @Override
+    public TileImpl copy() {
+        TileImpl ret = new TileImpl(getJTSGeometry(), getProjection());
+        ret.grid = GridImpl.promote(grid).copy();
+        ret.size = ret.grid.size();
+        ret.setShape(Arrays.asList(ret.grid.getXCells(), ret.grid.getYCells()));
+        return ret;
 
-	public static TileImpl create(Shape shape, Grid grid) {
-		return new TileImpl(shape, grid);
-	}
+    }
+
+    @Override
+    public Grid getGrid() {
+        return this.grid;
+    }
+
+    @Override
+    public long size() {
+        return this.size;
+    }
+
+    public static TileImpl create(Shape shape, Grid grid) {
+        return new TileImpl(shape, grid);
+    }
 
 }

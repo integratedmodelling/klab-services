@@ -1,41 +1,57 @@
 package org.integratedmodelling.klab.runtime.scale;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.geometry.Offset;
-import org.integratedmodelling.klab.api.geometry.Scanner1D;
-import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
+import com.google.common.primitives.Longs;
+import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.geometry.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-public class Scanner1DImpl implements Scanner1D {
+public class DimensionScanner2DImpl implements DimensionScanner2D {
 
     ScaleImpl originalScale;
-    NDCursor cursor;
+    int changingDimension;
+    long[] changingDimensionShape;
 
-    public Scanner1DImpl(ScaleImpl scale) {
-        // must have a single extent with size() > 1 and dimensionality == 1, or be a singleton
+    public DimensionScanner2DImpl(ScaleImpl scale) {
+        // must have a single extent with size() > 1 and dimensionality == 2, or be a singleton
         this.originalScale = scale;
-        this.cursor = scale.cursor();
+        boolean assigned = false;
+        int i = 0;
+        for (var e : originalScale.getExtents()) {
+            if (e.size() > 1) {
+                if (assigned) {
+                    throw new KIllegalStateException("Scanner2D cannot be applied to a scale where 2 or more extents " +
+                            "have size() > 1");
+                }
+                changingDimension = i;
+                changingDimensionShape = Longs.toArray(e.getShape());
+
+                if (changingDimensionShape.length != 2) {
+                    throw new KIllegalStateException("Scanner2D cannot be applied to a scale the scanned extent " +
+                            "has dimensionality != 2");
+                }
+
+                assigned = true;
+            }
+            i++;
+        }
     }
 
     @Override
-    public Offset locate(long x) {
+    public Offset locate(long x, long y) {
         return null;
     }
 
-    @NotNull
     @Override
-    public Iterator<Offset> iterator() {
-        return null;
+    public Iterator<Offset2D> iterator() {
+        return new OffsetIterator();
     }
 
     public void define(List<Extent<?>> extents) {
@@ -116,56 +132,110 @@ public class Scanner1DImpl implements Scanner1D {
 
     @Override
     public String encode(Encoding... options) {
-        return null;
+        return originalScale.encode(options);
     }
 
     @Override
     public boolean isGeneric() {
-        return false;
+        return originalScale.isGeneric();
     }
 
     @Override
     public List<Dimension> getDimensions() {
-        return null;
+        return originalScale.getDimensions();
     }
 
     @Override
     public Dimension dimension(Dimension.Type type) {
-        return null;
+        return originalScale.dimension(type);
     }
 
     @Override
     public Granularity getGranularity() {
-        return null;
+        return originalScale.getGranularity();
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return originalScale.isEmpty();
     }
 
     @Override
     public boolean isScalar() {
-        return false;
+        return originalScale.isScalar();
     }
 
     @Override
     public long size() {
-        return 0;
+        return originalScale.size();
     }
 
     @Override
     public Geometry at(Locator dimension) {
-        return null;
+        return originalScale.at(dimension);
     }
 
     @Override
     public boolean infiniteTime() {
-        return false;
+        return originalScale.infiniteTime();
     }
 
     @Override
     public <T extends Locator> T as(Class<T> cls) {
-        return null;
+        return originalScale.as(cls);
     }
+
+    class OffsetIterator implements Iterator<Offset2D> {
+
+        long nextPosition;
+        long[] offsets = new long[originalScale.getExtentCount()];
+
+        OffsetIterator() {
+            int i = 0;
+            for (var e : originalScale.getExtents()) {
+                offsets[i] = (i == changingDimension) ? 0 : e.size();
+                i++;
+            }
+        }
+
+        ScannedOffset ret = new ScannedOffset() {
+
+            @Override
+            public long position() {
+                return nextPosition - 1;
+            }
+
+            @Override
+            public long[] offsets() {
+                return offsets;
+            }
+        };
+
+        @Override
+        public boolean hasNext() {
+            return nextPosition < size();
+        }
+
+        @Override
+        public Offset2D next() {
+            offsets[changingDimension] = nextPosition;
+            nextPosition++;
+            return ret;
+        }
+    }
+
+    private abstract class ScannedOffset implements Offset2D {
+        @Override
+        public long x() {
+            return position() % changingDimensionShape[0];
+        }
+
+        @Override
+        public long y() {
+            return changingDimensionShape[1] - (position() / changingDimensionShape[0]) - 1;
+        }
+
+    }
+
+    ;
 }

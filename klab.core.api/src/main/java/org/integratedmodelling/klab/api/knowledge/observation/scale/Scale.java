@@ -33,64 +33,58 @@ import java.util.List;
  */
 public interface Scale extends Geometry, Topology<Scale> {
 
-	/**
-	 * We deal with space and time in all natural systems, so we expose these to
-	 * ease API use.
-	 *
-	 * @return the space, or null
-	 */
-	Space getSpace();
+    /**
+     * We deal with space and time in all natural systems, so we expose these to ease API use.
+     *
+     * @return the space, or null
+     */
+    Space getSpace();
 
-	/**
-	 * We deal with space and time in all natural systems, so we expose these to
-	 * ease API use.
-	 *
-	 * @return the time, or null
-	 */
-	Time getTime();
+    /**
+     * We deal with space and time in all natural systems, so we expose these to ease API use.
+     *
+     * @return the time, or null
+     */
+    Time getTime();
 
-	/**
-	 * True if we have time and the time topology determines more than a single
-	 * state. It's also in IObservation, but it's convenient to duplicate it here
-	 * too.
-	 *
-	 * @return true if distributed in time
-	 */
-	boolean isTemporallyDistributed();
+    /**
+     * True if we have time and the time topology determines more than a single state. It's also in IObservation, but
+     * it's convenient to duplicate it here too.
+     *
+     * @return true if distributed in time
+     */
+    boolean isTemporallyDistributed();
 
-	/**
-	 * True if we have space and the space topology determines more than a single
-	 * state. It's also in IObservation, but it's convenient to duplicate it here
-	 * too.
-	 *
-	 * @return true if distributed in space
-	 */
-	boolean isSpatiallyDistributed();
+    /**
+     * True if we have space and the space topology determines more than a single state. It's also in IObservation, but
+     * it's convenient to duplicate it here too.
+     *
+     * @return true if distributed in space
+     */
+    boolean isSpatiallyDistributed();
 
-	/**
-	 * Total number of extents available in this Scale. Note that in principle there
-	 * may be more extents than just space and/or time, although this is not
-	 * supported at the moment. Read the non-existing documentation.
-	 *
-	 * @return the number of extents for this topology
-	 */
-	int getExtentCount();
+    /**
+     * Total number of extents available in this Scale. Note that in principle there may be more extents than just space
+     * and/or time, although this is not supported at the moment. Read the non-existing documentation.
+     *
+     * @return the number of extents for this topology
+     */
+    int getExtentCount();
 
-	/**
-	 * Return the list of extents, ordered by contextualization priority (time, if
-	 * present, will always be first).
-	 *
-	 * @return the extents
-	 */
-	List<Extent<?>> getExtents();
+    /**
+     * Return the list of extents, ordered by contextualization priority (time, if present, will always be first).
+     *
+     * @return the extents
+     */
+    List<Extent<?>> getExtents();
 
-	/**
-	 * Return true only if he scale has > 0 extents and any of them is empty, so
-	 * that the coverage of any other scale can only be 0.
-	 *
-	 * @return true if scale cannot be the context for any observation.
-	 */
-	boolean isEmpty();
+    /**
+     * Return true only if he scale has > 0 extents and any of them is empty, so that the coverage of any other scale
+     * can only be 0.
+     *
+     * @return true if scale cannot be the context for any observation.
+     */
+    boolean isEmpty();
 
 //	/**
 //	 * Merge in another scale (possibly limited to specified extents) to return a
@@ -122,119 +116,121 @@ public interface Scale extends Geometry, Topology<Scale> {
 //	 */
 //	public Scale mergeContext(Scale scale, Dimension.Type... dimensions);
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * Return a new scale merging all extents from the passed parameter. The extents
-	 * of the merged in scale are authoritative in terms of extent; granularity is
-	 * negotiated as defined by each extent individually.
-	 * <p>
-	 * Extents in common are merged according to how the merge is implemented; any
-	 * extents that are in one scale and not the other are left in the returned
-	 * scale as they are.
-	 * <p>
-	 * Must not modify the original scales.
-	 */
-	Scale merge(Scale other, LogicalConnector how);
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Return a new scale merging all extents from the passed parameter. The extents of the merged in scale are
+     * authoritative in terms of extent; granularity is negotiated as defined by each extent individually.
+     * <p>
+     * Extents in common are merged according to how the merge is implemented; any extents that are in one scale and not
+     * the other are left in the returned scale as they are.
+     * <p>
+     * Must not modify the original scales.
+     */
+    Scale merge(Scale other, LogicalConnector how);
 
-	/**
-	 * Return the scale at the beginning of time, or the scale itself if there is no
-	 * time at all.
-	 */
-	Scale initialization();
+    /**
+     * Return the scale at the beginning of time, or the scale itself if there is no time at all.
+     */
+    Scale initialization();
 
-	/**
-	 * Return the scale after the end of contextualization. This scale is not
-	 * produced by the scale iterator, and is used during scheduling.
-	 *
-	 * @return
-	 */
-	Scale termination();
+    /**
+     * Return the scale after the end of contextualization. This scale is not produced by the scale iterator, and is
+     * used during scheduling.
+     *
+     * @return
+     */
+    Scale termination();
 
-	/**
-	 * Get the extent of the specified type, or null.
-	 *
-	 * @param extentType
-	 * @return
-	 */
-	Extent<?> extent(Dimension.Type extentType);
+    /**
+     * Get the extent of the specified type, or null.
+     *
+     * @param extentType
+     * @return
+     */
+    Extent<?> extent(Dimension.Type extentType);
 
-	/**
-	 * <p>Return a new scale without the passed dimension.</p>
-	 *
-	 * <p>This can be used in an outer for() loop when a particular dimension must be
-	 * iterated over but the implementation must account for others as well:</p>
+    /**
+     * Return a new scale with the passed dimension. This can be used to substitute an extent of the same type or to add
+     * an extent that wasn't there.
+     *
+     * @param extent
+     * @return
+     */
+    Scale with(Extent<?> extent);
+
+    /**
+     * <p>Return a new scale without the passed dimension.</p>
+     *
+     * <p>This can be used in an outer for() loop when a particular dimension must be
+     * iterated over but the implementation must account for others as well:</p>
      *
      * <pre>
-	 * for (Scale otherDims : scale.without(Geometry.Dimension.Type.SPACE) {
-	 *
-	 * 		... code that sets the context from dimensions other than space
+     * for (Scale otherDims : scale.without(Geometry.Dimension.Type.SPACE) {
      *
-	 * 		for (Scale space : otherDims) {
-	 * 			... code that goes over space only* 		}
-	 * }
+     * 		... code that sets the context from dimensions other than space
+     *
+     * 		for (Scale space : otherDims) {
+     * 			... code that goes over space only* 		}
+     * }
      * </pre>
-	 *
-	 * @param dimension
-	 * @return
-	 */
-	Scale without(Geometry.Dimension.Type dimension);
+     *
+     * @param dimension
+     * @return
+     */
+    Scale without(Geometry.Dimension.Type dimension);
 
-	/**
-	 * The at method mandatorily returns a scale.
-	 */
-	@Override
-	Scale at(Locator dimension);
+    /**
+     * The at method mandatorily returns a scale.
+     */
+    @Override
+    Scale at(Locator dimension);
 
-	/**
-	 * Return the same scale but with multiplicity 1 and all extents collapsed to
-	 * their containing extent.
-	 *
-	 * @param dimensions select the dimensions to collapse. Pass none to collapse
-	 *                   everything.
-	 *
-	 * @return
-	 */
-	Scale collapse(Dimension.Type... dimensions);
+    /**
+     * Return the same scale but with multiplicity 1 and all extents collapsed to their containing extent.
+     *
+     * @param dimensions select the dimensions to collapse. Pass none to collapse everything.
+     * @return
+     */
+    Scale collapse(Dimension.Type... dimensions);
 
-	/**
-	 * Produce another scale with the passed extent, merging it with any existing
-	 * one if it's present.
-	 *
-	 * @param extent
-	 * @return
-	 */
-	Scale mergeExtent(Extent<?> extent);
+    /**
+     * Produce another scale with the passed extent, merging it with any existing one if it's present.
+     *
+     * @param extent
+     * @return
+     */
+    Scale mergeExtent(Extent<?> extent);
 
-	public static Scale create(String geometrySpecifications) {
-		return create(Geometry.create(geometrySpecifications));
-	}
+    public static Scale create(String geometrySpecifications) {
+        return create(Geometry.create(geometrySpecifications));
+    }
 
-	public static Scale create(Collection<Extent<?>> extents) {
-		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-		if (configuration == null) {
-			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
-		}
-		return configuration.createScaleFromExtents(extents);
-	}
+    public static Scale create(Collection<Extent<?>> extents) {
+        Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+        if (configuration == null) {
+            throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+        }
+        return configuration.createScaleFromExtents(extents);
+    }
 
-	public static Scale create(Extent<?>... extents) {
-		return extents == null ? create(Geometry.EMPTY) : create(Arrays.asList(extents));
-	}
+    public static Scale create(Extent<?>... extents) {
+        return extents == null ? create(Geometry.EMPTY) : create(Arrays.asList(extents));
+    }
 
-	public static Scale create(Geometry geometry) {
-		if (geometry instanceof Scale) {
-			return (Scale) geometry;
-		}
-		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
-		if (configuration == null) {
-			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
-		}
-		return configuration.promoteGeometryToScale(geometry);
-	}
+    public static Scale create(Geometry geometry) {
+        if (geometry instanceof Scale) {
+            return (Scale) geometry;
+        }
+        Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
+        if (configuration == null) {
+            throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+        }
+        return configuration.promoteGeometryToScale(geometry);
+    }
 
-	public static Scale empty() {
-		return create(Geometry.EMPTY);
-	}
+    public static Scale empty() {
+        return create(Geometry.EMPTY);
+    }
 
 }

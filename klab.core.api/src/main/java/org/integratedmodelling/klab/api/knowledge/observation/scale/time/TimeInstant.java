@@ -15,19 +15,20 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
-import java.io.Serializable;
-import java.time.ZonedDateTime;
-
+import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimeInstantImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimDate;
+
+import java.io.Serializable;
+import java.time.ZonedDateTime;
 
 /**
  * 
  * @author Ferd
  *
  */
-public interface TimeInstant extends Serializable, Comparable<TimeInstant> {
+public interface TimeInstant extends Serializable, Comparable<TimeInstant>, Locator {
 
 	/**
 	 * <p>

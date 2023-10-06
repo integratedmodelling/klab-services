@@ -234,13 +234,13 @@ public class ScaleImpl implements Scale {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Locator> T as(Class<T> cls) {
-        if (Scanner2D.class.isAssignableFrom(cls)) {
+        if (DimensionScanner2D.class.isAssignableFrom(cls)) {
 			/*
 			must have a single extent with size() > 1 and dimensionality = 2, or be a singleton
 			 */
-            return (T) new Scanner2DImpl(this);
-        } else if (Scanner1D.class.isAssignableFrom(cls)) {
-            return (T) new Scanner1DImpl(this);
+            return (T) new DimensionScanner2DImpl(this);
+        } else if (DimensionScanner1D.class.isAssignableFrom(cls)) {
+            return (T) new DimensionScanner1DImpl(this);
         } else if (Geometry.class.equals(cls)) {
             return null; // TODO
         } else if (Coverage.class.equals(cls)) {
@@ -381,6 +381,24 @@ public class ScaleImpl implements Scale {
     }
 
     @Override
+    public Scale with(Extent<?> extent) {
+        List<Extent<?>> exts = new ArrayList<>();
+        boolean wasThere = false;
+        for (var e : this.extents) {
+            if ((extent.getType() == e.getType())) {
+                wasThere = true;
+                exts.add(extent);
+            } else {
+                exts.add(e);
+            }
+        }
+        if (!wasThere) {
+            exts.add(extent);
+        }
+        return new ScaleImpl(exts);
+    }
+
+    @Override
     public Scale without(Type dimension) {
         if (getDimension(dimension) == null) {
             return this;
@@ -413,15 +431,37 @@ public class ScaleImpl implements Scale {
         in the offset.
          */
         if (dimension instanceof Offset offset) {
-
+            // TODO
         } else if (dimension instanceof Extent extent) {
-
+            Extent<?> mine = extent(extent.getType());
+            if (mine != null) {
+                return with(mine.at(extent));
+            }
         } else if (dimension instanceof Scale scale) {
-
+            List<Extent<?>> exts = new ArrayList<>();
+            Set<Dimension.Type> dims = new HashSet<>();
+            for (var extent : scale.getExtents()) {
+                var mine = extent(extent.getType());
+                if (mine != null) {
+                    exts.add(mine.at(extent));
+                } else {
+                    exts.add(Extent.copyOf(extent));
+                }
+                dims.add(extent.getType());
+            }
+            for (var extent : this.extents) {
+                if (!dims.contains(extent.getType())) {
+                    exts.add(Extent.copyOf(extent));
+                }
+            }
+            return new ScaleImpl(exts);
         } else if (dimension instanceof TimeInstant timeInstant) {
-
+            Time time = getTime();
+            if (time != null) {
+                return with(time.at(timeInstant));
+            }
         }
-        return null;
+        return this;
     }
 
     @Override
@@ -432,7 +472,11 @@ public class ScaleImpl implements Scale {
 
     @Override
     public Extent<?> extent(Type extentType) {
-        // TODO Auto-generated method stub
+        for (var e : extents) {
+            if (e.getType() == extentType) {
+                return e;
+            }
+        }
         return null;
     }
 
@@ -457,6 +501,10 @@ public class ScaleImpl implements Scale {
         @Override
         public String encode(Encoding... options) {
             return ScaleImpl.this.encode(options);
+        }
+
+        public Scale with(Extent dimension) {
+            return ScaleImpl.this.with(dimension);
         }
 
         @Override
@@ -548,11 +596,6 @@ public class ScaleImpl implements Scale {
         public boolean isEmpty() {
             return ScaleImpl.this.isEmpty();
         }
-
-//		@Override
-//		public Scale mergeContext(Scale scale, Type... dimensions) {
-//			return ScaleImpl.this.mergeContext(scale, dimensions);
-//		}
 
         @Override
         public Scale merge(Scale other, LogicalConnector how) {

@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Encoding;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
@@ -601,7 +602,8 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public ShapeImpl copy() {
-        return create((Geometry) geometry.copy(), projection);
+        // the geometry is immutable, so a shallow copy is OK
+        return create((Geometry) geometry, projection);
     }
 
     // @Override
@@ -864,6 +866,28 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         return getStandardizedArea();
     }
 
+    @Override
+    public <T extends TopologicallyComparable<T>> Extent<T> merge(Extent<T> other, LogicalConnector how) {
+
+        Shape shape = other instanceof Shape ? (Shape) other : null;
+        if (shape == null && other instanceof Space) {
+            shape = ((Space) other).getGeometricShape();
+        }
+        if (shape == null) {
+            return (Extent<T>) copy();
+        }
+        if (how == LogicalConnector.UNION) {
+            return (Extent<T>) create(geometry.union(promote(shape.transform(this.projection)).getJTSGeometry()), this.projection);
+        } else if (how == LogicalConnector.INTERSECTION) {
+            return (Extent<T>) create(geometry.intersection(promote(shape.transform(this.projection)).getJTSGeometry()),
+                    this.projection);
+        } else if (how == LogicalConnector.EXCLUSION) {
+            return (Extent<T>) create(geometry.difference(promote(shape.transform(this.projection)).getJTSGeometry()),
+                    this.projection);
+        }
+        throw new IllegalArgumentException("cannot merge a shape with " + other);
+    }
+
     // @Override
     // public Geometry getGeometry() {
     // return geometry;
@@ -1017,29 +1041,6 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     public Unit getDimensionUnit() {
         return Configuration.INSTANCE.getService(UnitService.class).squareMeters();
     }
-
-    @Override
-    public Extent<?> merge(Extent<?> other, LogicalConnector how) {
-
-        Shape shape = other instanceof Shape ? (Shape) other : null;
-        if (shape == null && other instanceof Space) {
-            shape = ((Space) other).getGeometricShape();
-        }
-        if (shape == null) {
-            return copy();
-        }
-        if (how == LogicalConnector.UNION) {
-            return create(geometry.union(promote(shape.transform(this.projection)).getJTSGeometry()), this.projection);
-        } else if (how == LogicalConnector.INTERSECTION) {
-            return create(geometry.intersection(promote(shape.transform(this.projection)).getJTSGeometry()),
-                    this.projection);
-        } else if (how == LogicalConnector.EXCLUSION) {
-            return create(geometry.difference(promote(shape.transform(this.projection)).getJTSGeometry()),
-                    this.projection);
-        }
-        throw new IllegalArgumentException("cannot merge a shape with " + other);
-    }
-
     @Override
     public boolean matches(Collection<Constraint> constraints) {
         // TODO Auto-generated method stub

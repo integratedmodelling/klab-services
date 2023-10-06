@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.data.mediation;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
@@ -15,14 +11,18 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.utils.Utils;
-
 import si.uom.NonSI;
 import tech.units.indriya.format.SimpleUnitFormat;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UnitServiceImpl implements UnitService {
 
     private Unit meters;
     private Unit squareMeters;
+    private Unit milliseconds;
 
     class FunctionalUnit extends AbstractMediator {
 
@@ -47,6 +47,7 @@ public class UnitServiceImpl implements UnitService {
         // necessary ugliness
         UnitImpl.setService(this);
         this.meters = getUnit("m");
+        this.milliseconds = getUnit("ms");
         this.squareMeters = getUnit("m^2");
     }
 
@@ -100,6 +101,9 @@ public class UnitServiceImpl implements UnitService {
     public Unit squareMeters() {
         return squareMeters;
     }
+
+    @Override
+    public Unit milliseconds() { return milliseconds; }
 
     @Override
     public boolean isCompatible(Unit unit, Unit other) {

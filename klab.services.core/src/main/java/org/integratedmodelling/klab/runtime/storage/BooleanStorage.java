@@ -14,10 +14,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  *
  */
 public class BooleanStorage implements Storage {
-	
-	@Override
+
+	public BooleanStorage(Scale scale) {
+	}
+
+    @Override
 	public Type getType() {
-		return Type.INTEGER;
+		return Type.BOOLEAN;
 	}
 
 	public void set(boolean value, Offset locator) {

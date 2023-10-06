@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.runtime.scale;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
-import org.integratedmodelling.klab.api.geometry.Scanner2D;
+import org.integratedmodelling.klab.api.geometry.DimensionScanner1D;
 import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -16,19 +16,19 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-public class Scanner2DImpl implements Scanner2D {
+public class DimensionScanner1DImpl implements DimensionScanner1D {
 
     ScaleImpl originalScale;
     NDCursor cursor;
 
-    public Scanner2DImpl(ScaleImpl scale) {
-        // must have a single extent with size() > 1 and dimensionality == 2, or be a singleton
+    public DimensionScanner1DImpl(ScaleImpl scale) {
+        // must have a single extent with size() > 1 and dimensionality == 1, or be a singleton
         this.originalScale = scale;
         this.cursor = scale.cursor();
     }
 
     @Override
-    public Offset locate(long x, long y) {
+    public Offset locate(long x) {
         return null;
     }
 

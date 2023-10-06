@@ -13,30 +13,10 @@
  */
 package org.integratedmodelling.klab.configuration;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.logging.Level;
-
-import io.github.classgraph.*;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
+import javassist.Modifier;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -45,14 +25,11 @@ import org.integratedmodelling.klab.api.exceptions.KIOException;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.knowledge.Model;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
@@ -62,11 +39,7 @@ import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
 import org.integratedmodelling.klab.api.lang.impl.PrototypeImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
-import org.integratedmodelling.klab.api.services.CurrencyService;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.Service;
-import org.integratedmodelling.klab.api.services.UnitService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
@@ -90,11 +63,17 @@ import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 import org.pf4j.update.PluginInfo;
 import org.pf4j.update.UpdateManager;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
 
-import javassist.Modifier;
+import java.io.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 
 /**
  * TODO use a declarative approach for all properties, so that there is one place for all default
@@ -207,6 +186,11 @@ public enum Configuration {
             @Override
             public Model.Builder getModelLearner(String outputResourceUrn) {
                 return new ModelBuilderImpl(outputResourceUrn);
+            }
+
+            @Override
+            public Extent<?> createExtentCopy(Extent<?> extent) {
+                return (Extent<?>) ((GeometryImpl.DimensionImpl)extent).copy();
             }
         });
 

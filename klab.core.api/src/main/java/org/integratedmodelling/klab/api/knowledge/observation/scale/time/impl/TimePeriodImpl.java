@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry.Encoding;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDuration;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
@@ -134,12 +135,6 @@ public class TimePeriodImpl implements TimePeriod {
 	}
 
 	@Override
-	public boolean hasChangeDuring(Time time) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public Time at(Locator locator) {
 		// TODO Auto-generated method stub
 		return null;
@@ -170,8 +165,7 @@ public class TimePeriodImpl implements TimePeriod {
 	}
 
 	@Override
-	public Extent<?> merge(Extent<?> other, LogicalConnector how) {
-		// TODO Auto-generated method stub
+	public <T extends TopologicallyComparable<T>> Extent<T> merge(Extent<T> other, LogicalConnector how) {
 		return null;
 	}
 

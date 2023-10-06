@@ -4,8 +4,8 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
-import org.integratedmodelling.klab.api.geometry.Offset;
-import org.integratedmodelling.klab.api.geometry.Scanner2D;
+import org.integratedmodelling.klab.api.geometry.Offset2D;
+import org.integratedmodelling.klab.api.geometry.DimensionScanner2D;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -61,8 +61,8 @@ public class Generators {
                  * The overall geometry is first located to the current non-spatial location, then the
                  * space is iterated through a fast 2D offset.
                  */
-                for (Offset offset : scope.getScale().at(subscale).as(Scanner2D.class)) {
-                    storage.set(terrain.getAltitude(dx * offset.offsets()[0], dy * offset.offsets()[1]), offset);
+                for (Offset2D offset : scope.getScale().at(subscale).as(DimensionScanner2D.class)) {
+                    storage.set(terrain.getAltitude(dx * offset.x(), dy * offset.y()), offset);
                 }
             }
         }

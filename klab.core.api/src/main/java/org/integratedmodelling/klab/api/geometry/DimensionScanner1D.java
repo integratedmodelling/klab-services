@@ -12,7 +12,7 @@ package org.integratedmodelling.klab.api.geometry;
  * iteration strategies.
  * </p>
  */
-public interface Scanner1D extends Geometry, Iterable<Offset> {
+public interface DimensionScanner1D extends Geometry, Iterable<Offset> {
 
     /**
      * A linear offset can be converted into the needed offset for the geometry. The returned object

@@ -10,7 +10,7 @@ package org.integratedmodelling.klab.api.geometry;
  * strategies. We should also have a generic SplitIterator that the scale can be adapted to, each using the iterator of
  * choice.</p>
  */
-public interface Scanner2D extends Geometry, Iterable<Offset> {
+public interface DimensionScanner2D extends Geometry, Iterable<Offset2D> {
     /**
      * A 2D offset can be converted into the needed offset for the geometry. The returned object should be a threadlocal
      * object that gets allocated only once per thread.

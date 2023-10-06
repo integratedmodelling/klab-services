@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api;
 
-import java.util.Collection;
-
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -14,6 +12,8 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+
+import java.util.Collection;
 
 /**
  * Holds global configurations and functions that allow generic interfaces to
@@ -124,6 +124,8 @@ public enum Klab {
 		Model.Builder getModelBuilder(Literal value);
 
 		Model.Builder getModelLearner(String outputResourceUrn);
+
+		Extent<?> createExtentCopy(Extent<?> extent);
 	}
 
 	private Configuration configuration;

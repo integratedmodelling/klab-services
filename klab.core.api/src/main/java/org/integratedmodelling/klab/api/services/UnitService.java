@@ -38,6 +38,8 @@ public interface UnitService extends Service {
      */
     Unit squareMeters();
 
+    Unit milliseconds();
+
     /**
      * 
      * @param unitImpl

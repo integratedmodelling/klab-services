@@ -54,7 +54,7 @@ public enum StorageManager {
      * @return
      */
     public DoubleStorage getDoubleStorage(ContextScope scope, Parallelism parallelism) {
-        return null;
+        return new DoubleStorage(scope.getScale());
     }
 
     /**
@@ -69,7 +69,7 @@ public enum StorageManager {
      * @return
      */
     public IntStorage getIntStorage(ContextScope scope, Parallelism parallelism) {
-        return null;
+        return new IntStorage(scope.getScale());
     }
 
     /**
@@ -83,11 +83,11 @@ public enum StorageManager {
      * @return
      */
     public KeyedStorage getKeyedStorage(ContextScope scope, Parallelism parallelism) {
-        return null;
+        return new KeyedStorage(scope.getScale());
     }
 
     public BooleanStorage getBooleanStorage(ContextScope scope, Parallelism parallelism) {
-        return null;
+        return new BooleanStorage(scope.getScale());
     }
 
     /**

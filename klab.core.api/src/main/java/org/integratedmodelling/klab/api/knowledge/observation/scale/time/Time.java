@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
+import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.ResolutionImpl;
 import org.integratedmodelling.klab.api.lang.Quantity;
@@ -116,6 +117,10 @@ public interface Time extends Extent<Time> {
                     case CENTURY -> "century";
                     case MILLENNIUM -> "millennial";
                 };
+            }
+
+            public Resolution as(Type type) {
+               return new ResolutionImpl(type, (double) type.getMilliseconds() / (double) this.getMilliseconds());
             }
 
             public static Type parse(String unit) {
@@ -306,6 +311,18 @@ public interface Time extends Extent<Time> {
     Time getExtent(long stateIndex);
 
     /**
+     * Locating a temporal extent includes the possibility of "focusing" it on a specific time instant. When a
+     * {@link TimeInstant} is passed to locate an extent whose span includes it, the resulting extent will be the
+     * narrowest span that includes it (a sub-extent if this time is multiple, or the whole extent if not) and will
+     * include the specific instant as its focal time point, returned by {@link #getFocus()}.
+     *
+     * @param locator
+     * @return
+     */
+    @Override
+    Time at(Locator locator);
+
+    /**
      * May be null in partially specified extents.
      *
      * @return start time
@@ -420,12 +437,14 @@ public interface Time extends Extent<Time> {
 
     /**
      * The initialization time, before time exists. Only defined for occurrent time extents.
+     *
      * @return
      */
     Time initialization();
 
     /**
      * The termination time, after time has finished existing. Only defined for occurrent time extents.
+     *
      * @return
      */
     Time termination();
@@ -433,20 +452,21 @@ public interface Time extends Extent<Time> {
 
     /**
      * A temporal extent always represents a period, but when created from a query may be simply focused on a particular
-     * timepoint, used to locate the correct period in a scale that has (regular or irregular) timeslices. These are not
-     * produced during contextualization but can be used as locators.
+     * time point, used to locate the correct period in a scale that has (regular or irregular) time slices. These are
+     * not produced during contextualization but can be used as locators. The focal instant is guaranteed to be within
+     * the time span this represents.
      *
      * @return
      */
     TimeInstant getFocus();
 
-    /**
-     * Time extents record the actual changes in the observations they describe. This method checks if there have been
-     * one or more changes in the artifact's state during the time passed.
-     *
-     * @param time
-     * @return
-     */
-    boolean hasChangeDuring(Time time);
+//    /**
+//     * Time extents record the actual changes in the observations they describe. This method checks if there have been
+//     * one or more changes in the artifact's state during the time passed.
+//     *
+//     * @param time
+//     * @return
+//     */
+//    boolean hasChangeDuring(Time time);
 
 }

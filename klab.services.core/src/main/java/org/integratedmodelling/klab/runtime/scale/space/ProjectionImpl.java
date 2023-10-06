@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.runtime.scale.space;
 
-import javax.measure.Unit;
-
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.CRS.AxisOrder;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
@@ -10,6 +8,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelo
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
+
+import javax.measure.Unit;
+import java.util.Objects;
 
 public class ProjectionImpl implements Projection {
 
@@ -83,7 +84,20 @@ public class ProjectionImpl implements Projection {
 	public String getWKTDefinition() {
 		return crs.toWKT();
 	}
-	
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ProjectionImpl that = (ProjectionImpl) o;
+		return Objects.equals(code, that.code);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(code);
+	}
+
 	/**
 	 * Get the UTM projection most appropriate to geolocate the passed envelope,
 	 * which can be in any projection.
