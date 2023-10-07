@@ -51,18 +51,20 @@ public class Generators {
              appropriate pattern for generic scale when we handle only one dimension, even if in most situations (all
              at the moment) only one subscale will be returned. If there is no time or other dimension, a unit scale
              will be returned and at(unit) will later return self. Inside the loop, adapt the overall geometry
-             located by each sub-scale to a grid scanner. The geometry requirement ensures that we get a regular 2D
-             spatial extent.
+             located by each sub-scale to a grid scanner and use a buffer for fast access to storage. The geometry
+             requirement ensures that we get a regular 2D spatial extent, so this is safe w/o error checking.
              */
             for (Geometry subscale : scope.getScale().without(Dimension.Type.SPACE)) {
+
                 double dx = 1.0 / (double) xy.get(0);
                 double dy = 1.0 / (double) xy.get(1);
+                var buffer = storage.getSliceBuffer(subscale);
                 /**
                  * The overall geometry is first located to the current non-spatial location, then the
-                 * space is iterated through a fast 2D offset.
+                 * space is iterated through a fast 2D offset and storage buffer.
                  */
                 for (Offset2D offset : scope.getScale().at(subscale).as(DimensionScanner2D.class)) {
-                    storage.set(terrain.getAltitude(dx * offset.x(), dy * offset.y()), offset);
+                    buffer.set(terrain.getAltitude(dx * offset.x(), dy * offset.y()), offset.position());
                 }
             }
         }

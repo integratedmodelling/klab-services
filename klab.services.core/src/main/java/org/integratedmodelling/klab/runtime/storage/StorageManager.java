@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.runtime.storage;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.ojalgo.array.BufferArray;
 import org.ojalgo.concurrent.Parallelism;
 
 /**
@@ -11,20 +12,24 @@ import org.ojalgo.concurrent.Parallelism;
  * by default, made intelligently according to scale size, available RAM, disk space, disk transfer rates, processors
  * and CPU load.
  *
+ * TODO this should be context-wide and manage its storage with the lifetime of the scope
+ *
  * @author Ferd
  */
 public enum StorageManager {
 
     INSTANCE;
 
-//    private StorageScope getStorageImplementation(ContextScope scope) {
-//        var ret = scope.getData().get(StorageScope.KEY, StorageScope.class);
-//        if (ret == null) {
-//            ret = new StorageScope(scope);
-//            scope.getData().put(StorageScope.KEY, ret);
-//        }
-//        return ret;
-//    }
+    private static final String STORAGE_SCOPE_KEY = "klab.storage.scope";
+
+    private StorageScope getStorageScope(ContextScope scope) {
+        var ret = scope.getData().get(STORAGE_SCOPE_KEY, StorageScope.class);
+        if (ret == null) {
+            ret = new StorageScope(scope);
+            scope.getData().put(STORAGE_SCOPE_KEY, ret);
+        }
+        return ret;
+    }
 
     /**
      * Return a boxing storage for the requested geometry, semantics, expected parallelism, and JVM environment. Use
@@ -54,7 +59,7 @@ public enum StorageManager {
      * @return
      */
     public DoubleStorage getDoubleStorage(ContextScope scope, Parallelism parallelism) {
-        return new DoubleStorage(scope.getScale());
+        return new DoubleStorage(scope.getScale(), getStorageScope(scope));
     }
 
     /**
@@ -69,7 +74,7 @@ public enum StorageManager {
      * @return
      */
     public IntStorage getIntStorage(ContextScope scope, Parallelism parallelism) {
-        return new IntStorage(scope.getScale());
+        return new IntStorage(scope.getScale(), getStorageScope(scope));
     }
 
     /**
@@ -83,11 +88,11 @@ public enum StorageManager {
      * @return
      */
     public KeyedStorage getKeyedStorage(ContextScope scope, Parallelism parallelism) {
-        return new KeyedStorage(scope.getScale());
+        return new KeyedStorage(scope.getScale(), getStorageScope(scope));
     }
 
     public BooleanStorage getBooleanStorage(ContextScope scope, Parallelism parallelism) {
-        return new BooleanStorage(scope.getScale());
+        return new BooleanStorage(scope.getScale(), getStorageScope(scope));
     }
 
     /**
@@ -102,5 +107,12 @@ public enum StorageManager {
      */
     public FloatStorage getFloatStorage(ContextScope scope, Parallelism parallelism) {
         return null;
+    }
+
+    public void freeStorage(ContextScope scope) {
+        var storageScope = scope.getData().get(STORAGE_SCOPE_KEY, StorageScope.class);
+        if (storageScope != null) {
+            storageScope.close();
+        }
     }
 }

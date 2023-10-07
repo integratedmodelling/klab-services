@@ -15,7 +15,7 @@ import java.util.function.LongToIntFunction;
  */
 public class IntStorage implements Storage {
 
-    public IntStorage(Scale scale) {
+    public IntStorage(Scale scale, StorageScope scope) {
     }
 
     @Override
@@ -26,6 +26,27 @@ public class IntStorage implements Storage {
     public void set(int value, Offset locator) {
 
     }
+    /**
+     * A quick-access buffer that simply addresses a dimension using a long. Obtained through
+     * {@link #getSliceBuffer(Locator)}.
+     */
+    interface DirectSliceBuffer {
+        public void set(int value, long position);
+
+        public int get(long position);
+    }
+
+    /**
+     * Using the slice buffer provides the quickest access with little code impact. Using the buffer is alternative to
+     * the standard get/set and should be done only when one dimension is scanned at the time and the dimension size is
+     * high.
+     *
+     * @param locator
+     * @return
+     */
+    public DirectSliceBuffer getSliceBuffer(Locator locator) {
+        return null;
+    };
 
     /**
      * Map the passed operator within as many threads as specified by the level of parallelism defined in the

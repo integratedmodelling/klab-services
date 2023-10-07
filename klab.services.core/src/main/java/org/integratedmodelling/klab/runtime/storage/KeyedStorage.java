@@ -13,8 +13,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 public class KeyedStorage extends IntStorage {
 
 
-    public KeyedStorage(Scale scale) {
-        super(scale);
+    public KeyedStorage(Scale scale, StorageScope scope) {
+        super(scale, scope);
     }
 
     @Override

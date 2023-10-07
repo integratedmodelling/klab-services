@@ -15,6 +15,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  */
 public class FloatStorage implements Storage {
 
+	public FloatStorage(Scale scale, StorageScope scope) {
+
+	}
 
 	@Override
 	public Type getType() {
@@ -24,6 +27,28 @@ public class FloatStorage implements Storage {
 	public void set(float value, Offset locator) {
 
 	}
+	/**
+	 * A quick-access buffer that simply addresses a dimension using a long. Obtained through
+	 * {@link #getSliceBuffer(Locator)}.
+	 */
+	interface DirectSliceBuffer {
+		public void set(float value, long position);
+
+		public float get(long position);
+	}
+
+	/**
+	 * Using the slice buffer provides the quickest access with little code impact. Using the buffer is alternative to
+	 * the standard get/set and should be done only when one dimension is scanned at the time and the dimension size is
+	 * high.
+	 *
+	 * @param locator
+	 * @return
+	 */
+	public DirectSliceBuffer getSliceBuffer(Locator locator) {
+		return null;
+	};
+
 
 	/**
 	 * Map the passed operator within as many threads as specified by the level of parallelism defined in the

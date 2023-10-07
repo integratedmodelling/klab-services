@@ -24,11 +24,11 @@ public class ObservationTask implements Future<Observation> {
     public ObservationTask(Dataflow<Observation> dataflow, ContextScope scope, boolean start) {
         this.scope = scope;
         if (start) {
+            started.set(true);
+            this.running.set(true);
             Thread.ofVirtual().unstarted(() -> {
-                started.set(true);
                 DigitalTwin digitalTwin = getContextData(scope);
-                this.running.set(true);
-                result.set(digitalTwin.runDataflow(dataflow, scope));
+                this.result.set(digitalTwin.runDataflow(dataflow, scope));
                 this.running.set(false);
             }).start();
         }
@@ -59,7 +59,7 @@ public class ObservationTask implements Future<Observation> {
     @Override
     public Observation get() throws InterruptedException, ExecutionException {
         if (!started.get()) {
-            throw new ExecutionException(new KIllegalStateException("cancel: observation task not started"));
+            throw new ExecutionException(new KIllegalStateException("get: observation task not started"));
         }
         while (this.result.get() == null && !canceled.get() && running.get()) {
             Thread.sleep(200);
@@ -72,6 +72,9 @@ public class ObservationTask implements Future<Observation> {
             throws InterruptedException, ExecutionException, TimeoutException {
         long limit = TimeUnit.MILLISECONDS.convert(timeout, unit);
         long time = System.currentTimeMillis();
+        if (!started.get()) {
+            throw new ExecutionException(new KIllegalStateException("get: observation task not started"));
+        }
         while (this.result.get() == null && !canceled.get() && running.get()) {
             Thread.sleep(200);
             if (System.currentTimeMillis() - time > limit) {

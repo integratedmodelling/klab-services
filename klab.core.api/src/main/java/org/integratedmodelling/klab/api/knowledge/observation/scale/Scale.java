@@ -152,7 +152,7 @@ public interface Scale extends Geometry, Topology<Scale> {
 
     /**
      * Return a new scale with the passed dimension. This can be used to substitute an extent of the same type or to add
-     * an extent that wasn't there.
+     * an extent that wasn't there. This method creates a new scale and the extents must be copied to the new one.
      *
      * @param extent
      * @return
@@ -160,10 +160,12 @@ public interface Scale extends Geometry, Topology<Scale> {
     Scale with(Extent<?> extent);
 
     /**
-     * <p>Return a new scale without the passed dimension.</p>
+     * <p>Return a new scale without the passed dimension. This method must not copy the extents: it's meant as a view
+     * over the same scale, not a new scale. If an independent scale is wanted, call without() then call copy() on
+     * it.</p>
      *
-     * <p>This can be used in an outer for() loop when a particular dimension must be
-     * iterated over but the implementation must account for others as well:</p>
+     * <p>The result can be used in an outer for() loop when a particular dimension must be
+     * iterated over but the core implementation handles others:</p>
      *
      * <pre>
      * for (Scale otherDims : scale.without(Geometry.Dimension.Type.SPACE) {

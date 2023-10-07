@@ -11,7 +11,6 @@ public class Observe extends AgentMessage {
     private String urn;
     private Geometry geometry;
     private ContextScope scope;
-    
     public String getUrn() {
         return urn;
     }

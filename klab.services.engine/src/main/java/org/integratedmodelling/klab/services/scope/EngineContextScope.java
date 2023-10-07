@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 import org.integratedmodelling.klab.utilities.Utils;
 
+import java.io.Closeable;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -142,7 +143,6 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     @Override
     public DirectObservation getParentOf(Observation observation) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -278,4 +278,16 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     }
 
+    @Override
+    public void close() throws Exception {
+        // Call close() on all closeables in our dataset, including AutoCloseable if any.
+        for (String key : getData().keySet()) {
+            Object object = getData().get(key);
+            if (object instanceof AutoCloseable autoCloseable) {
+                autoCloseable.close();
+            } else if (object instanceof Closeable closeable) {
+                closeable.close();
+            }
+        }
+    }
 }

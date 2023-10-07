@@ -387,7 +387,7 @@ public class ScaleImpl implements Scale {
         for (var e : this.extents) {
             if ((extent.getType() == e.getType())) {
                 wasThere = true;
-                exts.add(extent);
+                exts.add(Extent.copyOf(extent));
             } else {
                 exts.add(e);
             }

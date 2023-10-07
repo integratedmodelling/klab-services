@@ -136,6 +136,12 @@ public interface Extent<T extends TopologicallyComparable<T>> extends Locator, T
      */
     boolean matches(Collection<Constraint> constraints);
 
+    /**
+     * Make a deep copy of another extent, copying anything that is not immutable.
+     *
+     * @param extent
+     * @return
+     */
     public static Extent<?> copyOf(Extent<?> extent) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {

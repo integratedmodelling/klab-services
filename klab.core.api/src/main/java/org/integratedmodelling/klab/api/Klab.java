@@ -125,6 +125,11 @@ public enum Klab {
 
 		Model.Builder getModelLearner(String outputResourceUrn);
 
+		/**
+		 * Deep copy of an extent - anything not immutable must be a new object.
+		 * @param extent
+		 * @return
+		 */
 		Extent<?> createExtentCopy(Extent<?> extent);
 	}
 

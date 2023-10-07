@@ -30,6 +30,8 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.ojalgo.concurrent.Parallelism;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -46,7 +48,8 @@ import java.util.stream.Collectors;
  * the instance container built for the instantiators, which is kept in the physical structure.
  * <p>
  * The DigitalTwin is accessed through the {@link ContextScope}. Eventually it may have its own API contract, although
- * all interaction is currently managed through {@link ContextScope}.</p>
+ * all interaction is currently managed through {@link ContextScope}. It is a {@link Closeable} and its close() method
+ * should notify every listener, stop all active threads, then free up all internal resources.</p>
  *
  * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage  and context, so that
  * successive resolutions of instances can reuse a previous dataflow when it is applicable instead of asking the
@@ -64,13 +67,14 @@ import java.util.stream.Collectors;
  *
  * @author Ferd
  */
-public class DigitalTwin {
+public class DigitalTwin implements Closeable {
 
     /**
      * Key to locate this in the context scope data. The first contextualization creates it, and it remains the same
      * object throughout the context lifetime.
      */
     public static final String KEY = "klab.context.data";
+    private final ContextScope scope;
     private long MAXIMUM_TASK_TIMEOUT_HOURS = 48l;
 
     public boolean validate(ContextScope scope) {
@@ -100,8 +104,6 @@ public class DigitalTwin {
     /*
      * TODO another fast map of event and subscriptions.
      */
-
-    StorageScope storageScope;
 
     /**
      * The local asset catalog. Most importantly for disposal at end.
@@ -301,7 +303,7 @@ public class DigitalTwin {
      */
 
     public DigitalTwin(ContextScope scope) {
-        this.storageScope = new StorageScope(scope);
+        this.scope = scope;
     }
 
     /**
@@ -740,5 +742,18 @@ public class DigitalTwin {
         ObservationData data = observationData.get(id);
         return data == null ? Observation.empty() : data.observation;
     }
+
+    @Override
+    public void close() throws IOException {
+        // TODO notify all listeners of the shutdown
+        // TODO free up all observations and dataflows
+        // TODO disconnect gracefully from any linked remote DT
+        // TODO disconnect any active service connection
+        // TODO ensure history is up to date and consistent
+        // TODO log everything
+        // free up storage
+        StorageManager.INSTANCE.freeStorage(scope);
+    }
+
 
 }

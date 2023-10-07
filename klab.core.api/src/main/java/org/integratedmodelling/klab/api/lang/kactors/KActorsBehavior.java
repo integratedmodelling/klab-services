@@ -126,7 +126,7 @@ public interface KActorsBehavior extends KActorsCodeStatement, KlabAsset {
 		/**
 		 * Ask a question and wait for the response for at most the passed duration. In
 		 * case of timeout, this method should behave the same way as
-		 * {@link #ask(Object, Class)}.
+		 * {@link #ask(Serializable, Class)}.
 		 * 
 		 * @param <T>
 		 * @param <R>
