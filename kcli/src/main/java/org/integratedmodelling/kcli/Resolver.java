@@ -208,9 +208,11 @@ public class Resolver {
             }
         }
 
-        private void dumpObservationStructure(Observation observation, ContextScope scope, RuntimeService service, PrintWriter out, int level) {
+        private void dumpObservationStructure(Observation observation, ContextScope scope, RuntimeService service,
+                                              PrintWriter out, int level) {
             var spacer = Utils.Strings.spaces(level);
-            out.println(spacer + (observation instanceof DirectObservation dobs ? (dobs.getName() + " ") : "") + observation.getObservable());
+            out.println(Ansi.AUTO.string("@|green " + spacer + (observation instanceof DirectObservation dobs ?
+                    (dobs.getName() + " ") : "") + observation.getObservable() + "|@"));
             for (var child : service.children(scope, observation)) {
                 dumpObservationStructure(child, scope, service, out, level + 3);
             }
