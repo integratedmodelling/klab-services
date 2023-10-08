@@ -190,7 +190,7 @@ public enum Configuration {
 
             @Override
             public Extent<?> createExtentCopy(Extent<?> extent) {
-                return (Extent<?>) ((GeometryImpl.DimensionImpl)extent).copy();
+                return (Extent<?>) ((GeometryImpl.DimensionImpl) extent).copy();
             }
         });
 
@@ -792,7 +792,7 @@ public enum Configuration {
     }
 
     /**
-     * Return a new directory in the temporary area
+     * Return a new directory in the temporary area. The directory is automatically removed when the VM shuts down.
      *
      * @param directoryPrefix
      * @return
@@ -800,6 +800,7 @@ public enum Configuration {
     public File getScratchDataDirectory(String directoryPrefix) {
         File ret = new File(getTemporaryDataDirectory() + File.separator + directoryPrefix + Utils.Names.shortUUID());
         ret.mkdirs();
+        ret.deleteOnExit();
         return ret;
     }
 

@@ -30,11 +30,15 @@ public class DoubleStorage implements Storage {
     long sliceSize;
     private NavigableMap<Long, DirectSliceBuffer> buffers = new TreeMap<>();
     private StorageScope scope;
+    private Histogram histogram;
 
     public DoubleStorage(Scale scale, StorageScope scope) {
         this.scope = scope;
         this.scale = scale;
         this.sliceSize = scale.without(Geometry.Dimension.Type.TIME).size();
+        if (scope.isRecordHistogram()) {
+            this.histogram = new Histogram(scope.getHistogramBinSize());
+        }
     }
 
     public void set(double value, Offset locator) {
@@ -55,10 +59,16 @@ public class DoubleStorage implements Storage {
         public DirectSliceBuffer(long startTime) {
             this.startTime = startTime;
             this.data = scope.getDoubleBuffer(sliceSize);
+            if (DoubleStorage.this.histogram != null) {
+                this.histogram = new Histogram(DoubleStorage.this.histogram.getMaxBins());
+            }
         }
 
         public void set(double value, long position) {
             this.data.set(position, value);
+            if (histogram != null) {
+                histogram.insert(value);
+            }
         }
 
         public double get(long position) {

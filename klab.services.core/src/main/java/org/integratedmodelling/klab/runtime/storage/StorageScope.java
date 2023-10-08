@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.ojalgo.array.BufferArray;
+import org.ojalgo.concurrent.Parallelism;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,10 +23,19 @@ public class StorageScope {
     private File doubleBackupFile;
     private File intBackupFile;
     private File booleanBackupFile;
+    private int histogramBinSize = 20;
+
+    public boolean isRecordHistogram() {
+        return recordHistogram;
+    }
+
+    private boolean recordHistogram = true;
+
+    private Parallelism parallelism = Parallelism.ONE;
 
     public StorageScope(ContextScope scope) {
         // choose the mm files, parallelism level and the floating point representation
-        this.workspace = Configuration.INSTANCE.getScratchDataDirectory("sw" + Utils.Names.shortUUID());
+        this.workspace = Configuration.INSTANCE.getScratchDataDirectory("ktmp");
         this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
         this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
         this.intBackupFile = new File(this.workspace + File.separator + "istorage.bin");
@@ -141,5 +151,9 @@ public class StorageScope {
     }
     public BufferArray getDoubleBuffer(long sliceSize) {
         return getDoubleFactory().make(sliceSize);
+    }
+
+    public int getHistogramBinSize() {
+        return histogramBinSize;
     }
 }
