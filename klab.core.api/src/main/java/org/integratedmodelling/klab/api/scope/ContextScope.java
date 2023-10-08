@@ -278,5 +278,5 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param localNames if empty, the catalog remains the same
      * @return a localized context or this one if nothing needs to change
      */
-    ContextScope withContextualizationData(Scale scale, Map<String, String> localNames);
+    ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String, String> localNames);
 }

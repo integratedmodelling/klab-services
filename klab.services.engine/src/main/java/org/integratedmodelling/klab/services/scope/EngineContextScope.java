@@ -195,11 +195,12 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public ContextScope withContextualizationData(Scale scale, Map<String, String> localNames) {
+    public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String, String> localNames) {
         if (scale == null && localNames.isEmpty()) {
             return this;
         }
         EngineContextScope ret = new EngineContextScope(this);
+        ret.contextObservation = contextObservation;
         if (scale != null) {
             ret.geometry = scale;
         }

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -41,7 +42,9 @@ public class ObservationImpl implements Observation {
     }
 
     protected ObservationImpl(Observable observable, String id, ContextScope scope) {
-
+        this.observable = observable;
+        this.id = id;
+        this.scale = scope.getScale();
     }
 
     @Override
@@ -97,8 +100,7 @@ public class ObservationImpl implements Observation {
 
     @Override
     public Type getType() {
-        // TODO Auto-generated method stub
-        return null;
+        return observable.getArtifactType();
     }
 
     @Override
@@ -157,14 +159,12 @@ public class ObservationImpl implements Observation {
 
     @Override
     public Iterator<Artifact> iterator() {
-        // TODO Auto-generated method stub
-        return null;
+        return Collections.singleton((Artifact)this).iterator();
     }
 
     @Override
     public Observable getObservable() {
-        // TODO Auto-generated method stub
-        return null;
+        return this.observable;
     }
 
     @Override
@@ -172,12 +172,6 @@ public class ObservationImpl implements Observation {
         // TODO Auto-generated method stub
         return null;
     }
-
-//    @Override
-//    public Scale getScale() {
-//        // TODO Auto-generated method stub
-//        return this.scale;
-//    }
 
     @Override
     public Observation at(Locator locator) {

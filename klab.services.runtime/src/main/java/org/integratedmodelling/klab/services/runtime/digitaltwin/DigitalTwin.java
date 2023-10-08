@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
@@ -197,14 +198,17 @@ public class DigitalTwin implements Closeable {
      * @param scope
      * @return
      */
-    public boolean registerActuator(Actuator actuator, Dataflow dataflow, ContextScope scope) {
+    public boolean registerActuator(Actuator actuator, Dataflow dataflow, ContextScope scope,
+                                    DirectObservation contextObservation) {
 
         var data = observationData.get(actuator.getId());
         if (data == null && /* shouldn't happen */ !actuator.isReference()) {
             data = new ObservationData();
             data.actuator = actuator;
-            data.observation = createObservation(actuator, scope);
+            data.observation = createObservation(actuator, contextObservation, scope);
             data.scale = scope.getScale();
+            data.contextObservation = contextObservation;
+
             var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
             if (customScale != null) {
                 // FIXME why the heck is this an Object and I have to cast?
@@ -228,7 +232,7 @@ public class DigitalTwin implements Closeable {
 
             observationData.put(actuator.getId(), data);
 
-            return data.executors.size() > 0;
+            return true;
         }
 
         return false;
@@ -237,6 +241,7 @@ public class DigitalTwin implements Closeable {
     class ObservationData {
 
         Observation observation;
+        DirectObservation contextObservation;
         Actuator actuator;
         // the scale of contextualization of the actuator, computed in context based on coverage + context scale
         Scale scale;
@@ -256,7 +261,7 @@ public class DigitalTwin implements Closeable {
          * @return
          */
         ContextScope contextualize(ContextScope scope) {
-            return scope.withContextualizationData(this.scale, this.localNames);
+            return scope.withContextualizationData(this.contextObservation, this.scale, this.localNames);
         }
     }
 
@@ -401,14 +406,14 @@ public class DigitalTwin implements Closeable {
         var storage = switch (observable.getDescriptionType()) {
             case QUANTIFICATION -> new DoubleStorage(scope.getScale(), storageScope);
             case CATEGORIZATION -> new KeyedStorage(scope.getScale(), storageScope);
-            case VERIFICATION ->  new BooleanStorage(scope.getScale(), storageScope);
+            case VERIFICATION -> new BooleanStorage(scope.getScale(), storageScope);
             default -> throw new KIllegalStateException("Unexpected value: " + observable.getDescriptionType());
         };
         this.runtimeAssets.add(storage);
         return storage;
     }
 
-    private ObservationImpl createObservation(Actuator actuator, ContextScope scope) {
+    private ObservationImpl createObservation(Actuator actuator, DirectObservation parent, ContextScope scope) {
 
         var ret = switch (actuator.getObservable().getDescriptionType()) {
             case ACKNOWLEDGEMENT -> new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
@@ -434,8 +439,8 @@ public class DigitalTwin implements Closeable {
         };
 
         add(ret);
-        if (scope.getContextObservation() != null) {
-            link(ret, scope.getContextObservation());
+        if (parent != null) {
+            link(ret, parent);
         }
 
         return ret;
@@ -458,7 +463,7 @@ public class DigitalTwin implements Closeable {
         for (Actuator root : dataflow.getComputation()) {
             int executionOrder = 0;
             Map<String, Actuator> branch = new HashMap<>();
-            collectActuators(Collections.singletonList(root), branch);
+            collectActuators(Collections.singletonList(root), dataflow, scope, null, branch);
             var dependencyGraph = createDependencyGraph(branch);
             TopologicalOrderIterator<Actuator, DefaultEdge> order = new TopologicalOrderIterator<>(
                     dependencyGraph);
@@ -468,9 +473,13 @@ public class DigitalTwin implements Closeable {
             Set<Actuator> group = new HashSet<>();
             while (order.hasNext()) {
                 Actuator next = order.next();
-                if (registerActuator(next, dataflow, scope)) {
-                    ret.add(Pair.of(next, (executionOrder = checkExecutionOrder(executionOrder, next, dependencyGraph,
-                            group))));
+                if (!next.isReference()) {
+                    var data = observationData.get(next.getId());
+                    if (data.executors.size() > 0) {
+                        ret.add(Pair.of(next, (executionOrder = checkExecutionOrder(executionOrder, next,
+                                dependencyGraph,
+                                group))));
+                    }
                 }
             }
         }
@@ -510,16 +519,22 @@ public class DigitalTwin implements Closeable {
         return executionOrder;
     }
 
-    private void collectActuators(List<Actuator> actuators, Map<String, Actuator> ret) {
+    private void collectActuators(List<Actuator> actuators, Dataflow dataflow, ContextScope scope,
+                                  DirectObservation contextObservation, Map<String, Actuator> ret) {
+        var context = contextObservation;
         for (Actuator actuator : actuators) {
-            if (!actuator.isReference()) {
+            if (registerActuator(actuator, dataflow, scope, contextObservation)) {
                 /*
                  * TODO compile a list of all services + versions, validate the actuator, create
                  * any needed notifications and a table of translations for local names
                  */
+                if (actuator.getObservable().getDescriptionType() == DescriptionType.ACKNOWLEDGEMENT) {
+                    var odata = this.observationData.get(actuator.getId());
+                    context = (DirectObservation) odata.observation;
+                }
                 ret.put(actuator.getId(), actuator);
             }
-            collectActuators(actuator.getChildren(), ret);
+            collectActuators(actuator.getChildren(), dataflow, scope, context, ret);
         }
     }
 

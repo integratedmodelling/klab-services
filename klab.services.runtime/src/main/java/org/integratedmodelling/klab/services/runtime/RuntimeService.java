@@ -93,7 +93,7 @@ public class RuntimeService extends BaseService
     @Override
     public Collection<Observation> children(ContextScope scope, Observation rootObservation) {
         var digitalTwin = getDigitalTwin(scope);
-        return digitalTwin.getLogicalChildren(rootObservation);
+        return digitalTwin == null ? Collections.emptyList() : digitalTwin.getLogicalChildren(rootObservation);
     }
 
     @Override
