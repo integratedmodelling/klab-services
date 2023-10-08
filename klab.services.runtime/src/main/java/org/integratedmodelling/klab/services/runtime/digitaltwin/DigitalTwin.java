@@ -77,6 +77,10 @@ public class DigitalTwin implements Closeable {
         return true;
     }
 
+    public Collection<Observation> getRootObservations() {
+        return rootObservations;
+    }
+
     /**
      * Types of the events that can be subscribed to and get communicated. This should evolve into a comprehensive
      * taxonomy of DT events for remote client scopes, debuggers and loggers.
@@ -277,7 +281,7 @@ public class DigitalTwin implements Closeable {
     /**
      * The observations that have no parents.
      */
-    List<Observation> rootObservations = new ArrayList<>();
+    Set<Observation> rootObservations = new LinkedHashSet<>();
 
     /**
      * The influence diagram tells us which observation is influenced by changes in which others (info mutuated by
@@ -612,6 +616,10 @@ public class DigitalTwin implements Closeable {
      * @param parentArtifact
      */
     public void link(Observation childArtifact, Observation parentArtifact) {
+
+        if (rootObservations.contains(childArtifact)) {
+            rootObservations.remove(childArtifact);
+        }
 
         // these are redirected no matter what.
         if (parentArtifact instanceof Process) {

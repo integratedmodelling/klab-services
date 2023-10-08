@@ -6,6 +6,7 @@ import java.util.concurrent.Future;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -87,6 +88,18 @@ public class RuntimeService extends BaseService
     @Override
     public Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope) {
         return new ObservationTask(dataflow, scope, getDigitalTwin(scope), true);
+    }
+
+    @Override
+    public Collection<Observation> children(ContextScope scope, Observation rootObservation) {
+        var digitalTwin = getDigitalTwin(scope);
+        return digitalTwin.getLogicalChildren(rootObservation);
+    }
+
+    @Override
+    public Observation parent(ContextScope scope, Observation rootObservation) {
+        var digitalTwin = getDigitalTwin(scope);
+        return digitalTwin.getLogicalParent(rootObservation);
     }
 
     private DigitalTwin getDigitalTwin(ContextScope scope) {

@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import java.util.Collection;
 import java.util.concurrent.Future;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -52,6 +54,16 @@ public class RuntimeClient implements RuntimeService {
     @Override
     public Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Collection<Observation> children(ContextScope scope, Observation rootObservation) {
+        return null;
+    }
+
+    @Override
+    public Observation parent(ContextScope scope, Observation rootObservation) {
         return null;
     }
 

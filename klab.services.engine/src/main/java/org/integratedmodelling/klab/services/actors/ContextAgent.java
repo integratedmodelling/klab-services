@@ -9,6 +9,8 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
+import org.integratedmodelling.klab.services.actors.messages.context.GetChildren;
+import org.integratedmodelling.klab.services.actors.messages.context.GetParent;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
 
 import io.reacted.core.messages.reactors.ReActorInit;
@@ -30,7 +32,22 @@ public class ContextAgent extends KAgent {
     }
 
     protected ReActions.Builder setBehavior() {
-        return super.setBehavior().reAct(Observe.class, this::observe);
+        return super.setBehavior()
+                .reAct(Observe.class, this::observe)
+                .reAct(GetChildren.class, this::getChildren)
+                .reAct(GetParent.class, this::getParent);
+    }
+
+    protected void getChildren(ReActorContext rctx, GetChildren message) {
+        var runtime = scope.getService(RuntimeService.class);
+        scope.send(message.response(Status.FINISHED, runtime.children((ContextScope) scope,
+                message.getRootObservation())));
+    }
+
+    protected void getParent(ReActorContext rctx, GetParent message) {
+        var runtime = scope.getService(RuntimeService.class);
+        scope.send(message.response(Status.FINISHED, runtime.parent((ContextScope) scope,
+                message.getRootObservation())));
     }
 
     protected void observe(ReActorContext rctx, Observe message) {
@@ -47,7 +64,8 @@ public class ContextAgent extends KAgent {
 
             resolvable = resolver.resolveKnowledge(message.getUrn(), Knowledge.class, scope);
             if (resolvable == null) {
-                scope.send(message.response(Status.ABORTED, AgentResponse.ERROR, "Cannot resolve URN " + message.getUrn()));
+                scope.send(message.response(Status.ABORTED, AgentResponse.ERROR,
+                        "Cannot resolve URN " + message.getUrn()));
                 return;
             }
 
@@ -58,8 +76,8 @@ public class ContextAgent extends KAgent {
 
             if (resolution.getCoverage().isRelevant()) {
 
-            	Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, message.getScope());
-            	
+                Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, message.getScope());
+
                 /*
                  * Run the dataflow
                  */

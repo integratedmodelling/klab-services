@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -197,7 +198,7 @@ public class Resolver {
                 var result = runtime.run(this.dataflow, ctx);
                 out.println("Dataflow submitted to the runtime for execution");
                 try {
-                    dumpObservationStructure(result.get(), ctx, out, 0);
+                    dumpObservationStructure(result.get(), ctx, runtime, out, 0);
                 } catch (Exception e) {
                     throw new KIOException(e);
                 }
@@ -207,11 +208,11 @@ public class Resolver {
             }
         }
 
-        private void dumpObservationStructure(Observation observation, ContextScope scope, PrintWriter out, int level) {
+        private void dumpObservationStructure(Observation observation, ContextScope scope, RuntimeService service, PrintWriter out, int level) {
             var spacer = Utils.Strings.spaces(level);
             out.println(spacer + (observation instanceof DirectObservation dobs ? (dobs.getName() + " ") : "") + observation.getObservable());
-            for (var child : scope.getChildrenOf(observation)) {
-                dumpObservationStructure(child, scope, out, level + 3);
+            for (var child : service.children(scope, observation)) {
+                dumpObservationStructure(child, scope, service, out, level + 3);
             }
         }
     }

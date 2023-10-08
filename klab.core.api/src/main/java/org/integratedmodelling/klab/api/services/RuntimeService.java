@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -32,6 +33,7 @@ public interface RuntimeService extends KlabService {
      */
     boolean releaseScope(ContextScope scope);
 
+
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available contextualizers and
      * verbs, with associated costs, so that they can be checked before sending a dataflow.
@@ -45,11 +47,31 @@ public interface RuntimeService extends KlabService {
     Capabilities capabilities();
 
     /**
+     * Run the passed dataflow in the passed scope. The two must be valid for each other.
+     *
      * @param dataflow
      * @param scope
      * @return
      */
     Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope);
+
+    /**
+     * Get the first-level children of the passed observation in the scope.
+     *
+     * @param scope
+     * @param rootObservation
+     * @return
+     */
+    Collection<Observation> children(ContextScope scope, Observation rootObservation);
+
+    /**
+     * Get the parent observation of the passed observation in the scope.
+     *
+     * @param scope
+     * @param rootObservation
+     * @return
+     */
+    Observation parent(ContextScope scope, Observation rootObservation);
 
     interface Admin {
 
