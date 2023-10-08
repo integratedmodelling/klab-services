@@ -21,13 +21,12 @@ public class ObservationTask implements Future<Observation> {
     AtomicReference<Observation> result = new AtomicReference<>(null);
     ContextScope scope;
 
-    public ObservationTask(Dataflow<Observation> dataflow, ContextScope scope, boolean start) {
+    public ObservationTask(Dataflow<Observation> dataflow, ContextScope scope, DigitalTwin digitalTwin, boolean start) {
         this.scope = scope;
         if (start) {
             started.set(true);
             this.running.set(true);
             Thread.ofVirtual().unstarted(() -> {
-                DigitalTwin digitalTwin = getContextData(scope);
                 this.result.set(digitalTwin.runDataflow(dataflow, scope));
                 this.running.set(false);
             }).start();
@@ -83,16 +82,5 @@ public class ObservationTask implements Future<Observation> {
         }
         return result.get();
     }
-
-
-    public DigitalTwin getContextData(ContextScope scope) {
-        var dt = scope.getData().get(DigitalTwin.KEY, DigitalTwin.class);
-        if (dt == null) {
-            dt = new DigitalTwin(scope);
-            scope.getData().put(DigitalTwin.KEY, dt);
-        }
-        return dt;
-    }
-
 
 }

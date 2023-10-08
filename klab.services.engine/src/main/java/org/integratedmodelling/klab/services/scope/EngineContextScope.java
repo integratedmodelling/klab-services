@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;
@@ -39,6 +40,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     EngineContextScope(EngineSessionScope parent) {
         super(parent);
+        this.setId(parent.getId() + "/c_" + org.integratedmodelling.klab.api.utils.Utils.Names.shortUUID());
         this.observer = parent.getUser();
         this.data = Parameters.create();
         this.data.putAll(parent.data);
@@ -280,6 +282,9 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     @Override
     public void close() throws Exception {
+
+        getService(RuntimeService.class).releaseScope(this);
+
         // Call close() on all closeables in our dataset, including AutoCloseable if any.
         for (String key : getData().keySet()) {
             Object object = getData().get(key);

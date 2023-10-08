@@ -54,6 +54,17 @@ public abstract class EngineScope implements UserScope {
 	protected EngineScope parentScope;
 	private Status status = Status.STARTED;
 
+	@Override
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	private String id;
+
 	private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers = Collections
 			.synchronizedMap(new HashMap<>());
 
@@ -62,6 +73,7 @@ public abstract class EngineScope implements UserScope {
 	public EngineScope(UserIdentity user) {
 		this.user = user;
 		this.data = Parameters.create();
+		this.id = user.getId();
 	}
 
 	/**

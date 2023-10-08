@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
 
 public class EngineSessionScope extends EngineScope implements SessionScope {
@@ -24,6 +25,7 @@ public class EngineSessionScope extends EngineScope implements SessionScope {
 
 	EngineSessionScope(EngineScope parent) {
 		super(parent);
+		this.setId(parent.getId() + "/s_" + name + Utils.Names.shortUUID());
 		this.data = Parameters.create();
 		this.data.putAll(parent.data);
 	}

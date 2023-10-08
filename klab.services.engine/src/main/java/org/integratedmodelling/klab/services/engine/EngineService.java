@@ -202,6 +202,11 @@ public enum EngineService {
 
         return new LocalServiceScope(cls){
 
+            @Override
+            public String getId() {
+                return cls.getCanonicalName();
+            }
+
             // no agents for services in this implementation
             @Override
             public Ref getAgent() {

@@ -23,8 +23,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.runtime.storage.StorageManager;
-import org.integratedmodelling.klab.runtime.storage.StorageScope;
+import org.integratedmodelling.klab.runtime.storage.*;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.traverse.TopologicalOrderIterator;
@@ -69,13 +68,9 @@ import java.util.stream.Collectors;
  */
 public class DigitalTwin implements Closeable {
 
-    /**
-     * Key to locate this in the context scope data. The first contextualization creates it, and it remains the same
-     * object throughout the context lifetime.
-     */
-    public static final String KEY = "klab.context.data";
     private final ContextScope scope;
     private long MAXIMUM_TASK_TIMEOUT_HOURS = 48l;
+    private StorageScope storageScope;
 
     public boolean validate(ContextScope scope) {
         // check out all calls etc.
@@ -304,6 +299,7 @@ public class DigitalTwin implements Closeable {
 
     public DigitalTwin(ContextScope scope) {
         this.scope = scope;
+        this.storageScope = new StorageScope(scope);
     }
 
     /**
@@ -399,9 +395,9 @@ public class DigitalTwin implements Closeable {
     private Storage createStorage(Observable observable, ContextScope scope) {
         // TODO use options from the scope for parallelization and choice float/double
         var storage = switch (observable.getDescriptionType()) {
-            case QUANTIFICATION -> StorageManager.INSTANCE.getDoubleStorage(scope, Parallelism.CORES);
-            case CATEGORIZATION -> StorageManager.INSTANCE.getKeyedStorage(scope, Parallelism.CORES);
-            case VERIFICATION -> StorageManager.INSTANCE.getBooleanStorage(scope, Parallelism.CORES);
+            case QUANTIFICATION -> new DoubleStorage(scope.getScale(), storageScope);
+            case CATEGORIZATION -> new KeyedStorage(scope.getScale(), storageScope);
+            case VERIFICATION ->  new BooleanStorage(scope.getScale(), storageScope);
             default -> throw new KIllegalStateException("Unexpected value: " + observable.getDescriptionType());
         };
         this.runtimeAssets.add(storage);
@@ -752,7 +748,7 @@ public class DigitalTwin implements Closeable {
         // TODO ensure history is up to date and consistent
         // TODO log everything
         // free up storage
-        StorageManager.INSTANCE.freeStorage(scope);
+        storageScope.close();
     }
 
 

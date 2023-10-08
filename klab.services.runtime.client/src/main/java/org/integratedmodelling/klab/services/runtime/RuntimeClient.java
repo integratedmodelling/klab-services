@@ -39,6 +39,11 @@ public class RuntimeClient implements RuntimeService {
     }
 
     @Override
+    public boolean releaseScope(ContextScope scope) {
+        return false;
+    }
+
+    @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
         return null;
