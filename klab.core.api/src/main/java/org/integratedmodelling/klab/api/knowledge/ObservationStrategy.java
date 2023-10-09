@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.knowledge;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.impl.ObservationStrategyImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 
 import java.io.Serializable;
 
@@ -21,10 +22,15 @@ import java.io.Serializable;
  * dataflow is populated with the actuators of the secondary resolution when that is done, and coverage isn't known
  * until the process is completed.
  */
-public interface ObservationStrategy extends Iterable<Pair<ObservationStrategy.Operation,
+public interface ObservationStrategy extends Serializable, Iterable<Pair<ObservationStrategy.Operation,
         ObservationStrategy.Arguments>> {
 
     interface Builder {
+
+        Builder withOperation(Operation operation, Observable target);
+
+        Builder withOperation(Operation operation, ServiceCall target);
+
         ObservationStrategy build();
     }
 
@@ -72,15 +78,23 @@ public interface ObservationStrategy extends Iterable<Pair<ObservationStrategy.O
 
     }
 
+    Observable getOriginalObservable();
+
     /**
-     * The original observable that this strategy applies to.
+     * Ranks start from 0 (best) and move on to indicate more and more complex and/or valuable strategies, so they can
+     * be executed in sequence.
+     * {@link org.integratedmodelling.klab.api.services.Reasoner#inferStrategies(Observable, ContextScope)} will return
+     * the strategies in rank order, but those with the same rank are equivalent and can be resolved in parallel if
+     * needed.
      *
      * @return
      */
-    Observable getObservable();
+    int getRank();
 
     static ObservationStrategy.Builder builder(Observable observable) {
-        return new ObservationStrategyImpl.Builder(observable);
+        var ret = new ObservationStrategyImpl.Builder();
+        ret.setOriginalObservable(observable);
+        return ret;
     }
 
 }

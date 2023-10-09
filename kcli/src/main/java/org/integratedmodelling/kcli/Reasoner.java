@@ -1,28 +1,29 @@
 package org.integratedmodelling.kcli;
 
+import groovyjarjarpicocli.CommandLine.Help.Ansi;
+import org.integratedmodelling.kcli.engine.Engine;
+import org.integratedmodelling.kcli.functional.FunctionalCommand;
+import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.knowledge.Concept;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.utilities.Utils;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.function.Function;
 
-import org.integratedmodelling.kcli.engine.Engine;
-import org.integratedmodelling.kcli.functional.FunctionalCommand;
-import org.integratedmodelling.klab.Version;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.utilities.Utils;
-
-import groovyjarjarpicocli.CommandLine.Help.Ansi;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Parameters;
-import picocli.CommandLine.Spec;
-
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate semantic knowledge.",
         ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class, Reasoner.Type.class,
-        Reasoner.Export.class})
+        Reasoner.Strategy.class, Reasoner.Export.class})
 public class Reasoner {
 
 
@@ -61,6 +62,78 @@ public class Reasoner {
         for (var child : producer.apply(concept)) {
             out.println(spaces + child.getUrn());
             printRelated(out, child, producer, offset + 3);
+        }
+    }
+
+    @Command(name = "strategy", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "Compute and visualize the observation strategy for an observable in the current context."},
+             subcommands = {})
+    public static class Strategy extends FunctionalCommand {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Option(names = {"-c", "--context"}, defaultValue = Parameters.NULL_VALUE, description = {
+                "Choose a context for the observation (default is the current context)"}, required = false)
+        String context;
+
+        @Option(names = {"-w", "--within"}, defaultValue = Parameters.NULL_VALUE, description = {
+                "Choose an observation to become the context of the observation.",
+                "Use a dot to select the root subject if there is one."}, required = false)
+        String within;
+
+        @Option(names = {"-g", "--geometry"}, defaultValue = Parameters.NULL_VALUE, description = {
+                "Specify a focal geometry for the context."}, required = false)
+        String geometry;
+
+        @Parameters
+        java.util.List<String> observables;
+
+        @Option(names = {"-a", "--acknowledgement"}, defaultValue = "false", description = {
+                "Force a direct observable to represent the acknowledgement of the observable."}, required = false)
+        boolean show;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            ContextScope ctx = context == null ? Engine.INSTANCE.getCurrentContext(true) :
+                    Engine.INSTANCE.getContext(context);
+
+            if (within != null) {
+                // TODO find the context observation and switch the context to it. If a dot,
+                // must have a single root subject
+            }
+
+            var urn = Utils.Strings.join(observables, " ");
+            var reasoner = ctx.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            var observable = reasoner.resolveObservable(urn);
+
+            if (observable == null) {
+                err.println(Ansi.AUTO.string("URN @|red " + urn + "|@ does not resolve to a valid observable"));
+                return;
+            }
+
+            out.println(Ansi.AUTO.string("Observation strategies for @|bold " + observable.getDescriptionType().name().toLowerCase()
+                    + "|@ of @|green " + observable.getUrn() + "|@:"));
+            for (var strategy : reasoner.inferStrategies(observable, ctx)) {
+                dumpStrategy(strategy, out);
+            }
+        }
+
+        private void dumpStrategy(ObservationStrategy strategy, PrintWriter out) {
+
+            boolean first = true;
+            for (var step : strategy) {
+                out.println(Ansi.AUTO.string((first ? Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".", " ",
+                        5) :
+                        Utils.Strings.spaces(5)) +
+                        "@|yellow " + step.getFirst().name() + "|@ " + (step.getSecond().observable() == null ?
+                        step.getSecond().serviceCall() : step.getSecond().observable())));
+                first = false;
+            }
         }
     }
 

@@ -1,53 +1,22 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import java.io.File;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategyPattern;
-import org.integratedmodelling.klab.api.knowledge.SemanticRole;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimInstance;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimScope;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement.KimVisitor;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -81,9 +50,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Sets;
+import java.io.File;
+import java.io.Serial;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class ReasonerService extends BaseService implements Reasoner, Reasoner.Admin {
@@ -138,9 +110,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private Map<Concept, Emergence> emergent = new HashMap<>();
     private IntelligentMap<Set<Emergence>> emergence;
     // TODO fill in from classpath
-    private Collection<ObservationStrategyPattern> observationStrategyPatterns = new ArrayList<>();
     private Map<String, Concept> concepts = Collections.synchronizedMap(new HashMap<>());
     private Map<String, Observable> observables = Collections.synchronizedMap(new HashMap<>());
+    private ObservationReasoner observationReasoner;
 
     // /**
     // * Caches for concepts and observables, linked to the URI in the corresponding
@@ -291,6 +263,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (ProjectConfiguration authority : configuration.getAuthorities()) {
             loadAuthority(authority);
         }
+
+        this.observationReasoner = new ObservationReasoner(this);
+
     }
 
     @SuppressWarnings("unchecked")
@@ -2255,7 +2230,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      * until timeout or completion.
      *
      * @param request
-     * @param message
      */
     @Override
     public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
@@ -2352,47 +2326,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
-
-        List<ObservationStrategy> ret = new ArrayList<>();
-
-        /*
-         * If observable is abstract due to abstract traits, strategy is to find a model
-         * for each of the traits, then defer the resolution of a concretized observable
-         * into an OR-joined meta-observable,which will use a merger model with all the
-         * independent observables as dependencies.
-         */
-
-        /*
-         * first course of action is always direct
-         * TODO unless observable is abstract or unsatisfiable
-         * TODO the other alternatives should be added only if there are no matching patterns
-         */
-        ret.add(ObservationStrategy.builder(observable).build());
-
-        /*
-         * these should be obtained from the classpath. Plug-ins may extend them.
-         */
-        List<ObservationStrategyPattern> strategies = new ArrayList<>();
-        for (ObservationStrategyPattern pattern : this.observationStrategyPatterns) {
-            if (pattern.matches(observable, scope)) {
-                strategies.add(pattern);
-            }
-        }
-
-        if (!strategies.isEmpty()) {
-            strategies.sort(new Comparator<>() {
-
-                @Override
-                public int compare(ObservationStrategyPattern o1, ObservationStrategyPattern o2) {
-                    return Integer.compare(o1.getCost(observable, scope), o2.getCost(observable, scope));
-                }
-            });
-            for (ObservationStrategyPattern strategy : strategies) {
-                ret.add(strategy.getStrategy(observable, scope));
-            }
-        }
-
-        return ret;
+        return observationReasoner.inferStrategies(observable, scope);
     }
 
     @Override

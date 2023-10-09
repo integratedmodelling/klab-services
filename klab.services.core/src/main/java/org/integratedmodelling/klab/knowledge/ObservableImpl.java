@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.knowledge;
 
-import java.util.*;
-
+import groovy.lang.GroovyObjectSupport;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -11,15 +10,9 @@ import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
@@ -27,7 +20,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.util.StringUtils;
 
-import groovy.lang.GroovyObjectSupport;
+import java.util.*;
 
 public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
@@ -53,7 +46,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private Literal value;
     private String statedName;
     private List<Annotation> annotations = new ArrayList<>();
-    private Collection<Pair<ValueOperator, Literal>> valueOperators;
+    private List<Pair<ValueOperator, Literal>> valueOperators = new ArrayList<>();
     private String referenceName;
     private String name;
     private String namespace;
@@ -191,7 +184,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     }
 
     @Override
-    public Collection<Pair<ValueOperator, Literal>> getValueOperators() {
+    public List<Pair<ValueOperator, Literal>> getValueOperators() {
         return valueOperators;
     }
 
@@ -394,7 +387,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.annotations = annotations;
     }
 
-    public void setValueOperators(Collection<Pair<ValueOperator, Literal>> valueOperators) {
+    public void setValueOperators(List<Pair<ValueOperator, Literal>> valueOperators) {
         this.valueOperators = valueOperators;
     }
 
@@ -447,7 +440,8 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
             ret.referenceName = concept.getNamespace() + "_" + concept.getName();
         }
         ret.artifactType = Artifact.Type.forSemantics(concept.getType());
-        ret.descriptionType = DescriptionType.forSemantics(concept.getType(), false);
+        ret.descriptionType = DescriptionType.forSemantics(concept.getType(),
+                concept.is(SemanticType.COUNTABLE));
 
         return ret;
     }

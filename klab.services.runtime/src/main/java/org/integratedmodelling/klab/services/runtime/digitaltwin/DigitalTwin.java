@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.contrib.jgrapht.graph.DefaultEdge;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
@@ -425,7 +426,12 @@ public class DigitalTwin implements Closeable {
                         private Storage storage = createStorage(actuator.getObservable(), scope);
 
                         @Override
-                        public <T extends Storage> T getStorage(Class<T> storageClass) {
+                        public Histogram getHistogram() {
+                            return storage.getHistogram();
+                        }
+
+                        @Override
+                        public <T extends Storage> T storage(Class<T> storageClass) {
                             // Just let this throw a cast exception instead of adding painful checks
                             return (T) storage;
                         }

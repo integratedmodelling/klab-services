@@ -1,27 +1,13 @@
 package org.integratedmodelling.klab.services.resolver;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Instance;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
-import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
-import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -29,20 +15,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KimInstance;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimScope;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.Authentication;
-import org.integratedmodelling.klab.api.services.Language;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType;
@@ -60,6 +37,8 @@ import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.*;
 
 public class ResolverService extends BaseService implements Resolver {
 
@@ -237,20 +216,20 @@ public class ResolverService extends BaseService implements Resolver {
                                            Model parentModel) {
 
         Coverage coverage = Coverage.create(scale, 0.0);
-        ResolutionImpl ret = new ResolutionImpl(strategy.getObservable(), scale, scope, parent);
+        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope, parent);
 
         for (Pair<ObservationStrategy.Operation, ObservationStrategy.Arguments> operation : strategy) {
             switch (operation.getFirst()) {
                 case OBSERVE -> {
                     for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
-                        ResolutionImpl resolution = resolveModel(model, strategy.getObservable(), scale,
+                        ResolutionImpl resolution = resolveModel(model, strategy.getOriginalObservable(), scale,
                                 scope.withResolutionNamespace(model.getNamespace()), parent);
                         coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
                         if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
                             continue;
                         }
                         // merge the model at root level within the local resolution
-                        resolution.merge(model, coverage, strategy.getObservable(), ResolutionType.DIRECT);
+                        resolution.merge(model, coverage, strategy.getOriginalObservable(), ResolutionType.DIRECT);
                         if (coverage.isRelevant()) {
                             // merge the resolution with the parent resolution
                             ret.merge(parentModel, resolution, ResolutionType.DIRECT);

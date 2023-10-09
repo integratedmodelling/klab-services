@@ -13,8 +13,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
-import java.util.Iterator;
-
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -35,16 +34,18 @@ import org.integratedmodelling.klab.api.knowledge.DataArtifact;
  */
 public interface State extends Observation, DataArtifact {
 
+    public Histogram getHistogram();
+
     /**
      * Retrieve the storage that the runtime has assigned to this state. The implementation is expected to know how to
      * choose the storage class based on semantics, state class or other clues, so that non-boxing native
-     * implementations can be used.
+     * implementations can be used. The storage should be a transient field if the state is serialized.
      *
      * @param storageClass
      * @param <T>          the class of storage for fluency. Class cast exceptions will be thrown if wrong.
      * @return
      */
-    public abstract <T extends Storage> T getStorage(Class<T> storageClass);
+    public abstract <T extends Storage> T storage(Class<T> storageClass);
 
     /**
      * If this is called with a type different from the original one returned by {@link #getType()}, an additional layer
@@ -56,16 +57,16 @@ public interface State extends Observation, DataArtifact {
      * @return a typed view of this state.
      */
     State as(Artifact.Type type);
-
-    /**
-     * Iterate the values in the state as the specified type, converting when possible.
-     *
-     * @param index
-     * @param cls
-     * @return a valid iterator. Never null.
-     * @throws IllegalArgumentException if an iterator cannot be produced for the passed type.
-     */
-    <T> Iterator<T> iterator(Locator index, Class<? extends T> cls);
+//
+//    /**
+//     * Iterate the values in the state as the specified type, converting when possible.
+//     *
+//     * @param index
+//     * @param cls
+//     * @return a valid iterator. Never null.
+//     * @throws IllegalArgumentException if an iterator cannot be produced for the passed type.
+//     */
+//    <T> Iterator<T> iterator(Locator index, Class<? extends T> cls);
 
     /**
      * Create a state that will see this state through a value mediator, both when setting and getting. Will only create

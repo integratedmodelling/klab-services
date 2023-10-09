@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
-import java.util.Iterator;
-
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.data.mediation.classification.DataKey;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -28,12 +26,12 @@ public abstract class StateImpl extends ObservationImpl implements State {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	@Override
-	public long set(Locator index, Object value) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+//
+//	@Override
+//	public long set(Locator index, Object value) {
+//		// TODO Auto-generated method stub
+//		return 0;
+//	}
 
 	@Override
 	public long size() {
@@ -53,11 +51,11 @@ public abstract class StateImpl extends ObservationImpl implements State {
 		return null;
 	}
 
-	@Override
-	public ValuePresentation getValuePresentation() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+//	@Override
+//	public ValuePresentation getValuePresentation() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
 
 	@Override
 	public State as(Type type) {
@@ -65,11 +63,11 @@ public abstract class StateImpl extends ObservationImpl implements State {
 		return null;
 	}
 
-	@Override
-	public <T> Iterator<T> iterator(Locator index, Class<? extends T> cls) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+//	@Override
+//	public <T> Iterator<T> iterator(Locator index, Class<? extends T> cls) {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
 
 	@Override
 	public State in(ValueMediator mediator) {

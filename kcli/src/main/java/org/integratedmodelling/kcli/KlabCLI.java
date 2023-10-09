@@ -196,7 +196,7 @@ public class KlabCLI {
                 @Override
                 public void run() {
                     for (String alias : Run.aliases.keySet()) {
-                        commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|yellow " + alias + "|@: " +
+                        commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias + "|@: " +
                                 "@|green " + Run.aliases.get(alias) + "|@"));
                     }
                 }
@@ -216,11 +216,22 @@ public class KlabCLI {
                 }
             }
 
-            @Parameters
+            @Parameters(defaultValue = Parameters.NULL_VALUE)
             java.util.List<String> arguments;
+            @Spec
+            CommandSpec commandSpec;
 
             @Override
             public void run() {
+
+                if (arguments == null || arguments.size() == 0) {
+                    for (String alias : Run.aliases.keySet()) {
+                        commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias + "|@: " +
+                                "@|green " + Run.aliases.get(alias) + "|@"));
+                    }
+                    return;
+                }
+
                 if (arguments.size() < 2) {
                     throw new KIllegalStateException("Must name an alias and its value");
                 }

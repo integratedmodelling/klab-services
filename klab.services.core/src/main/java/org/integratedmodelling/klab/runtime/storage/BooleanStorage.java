@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.runtime.storage;
 
 import org.eclipse.collections.api.block.function.primitive.LongToBooleanFunction;
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
@@ -20,6 +21,11 @@ public class BooleanStorage implements Storage {
     @Override
     public Type getType() {
         return Type.BOOLEAN;
+    }
+
+    @Override
+    public Histogram getHistogram() {
+        return null;
     }
 
     public void set(boolean value, Offset locator) {

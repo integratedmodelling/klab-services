@@ -10,7 +10,7 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.integratedmodelling.klab.data.histogram.Histogram.TargetType;
+import org.integratedmodelling.klab.data.histogram.SPDTHistogram.TargetType;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

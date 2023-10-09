@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.integratedmodelling.klab.data.histogram.Histogram.TargetType;
+import org.integratedmodelling.klab.data.histogram.SPDTHistogram.TargetType;
 import org.json.simple.JSONArray;
 
 public class GroupTarget extends Target<GroupTarget> {
@@ -65,7 +65,7 @@ public class GroupTarget extends Target<GroupTarget> {
 
   @Override
   public TargetType getTargetType() {
-    return Histogram.TargetType.group;
+    return SPDTHistogram.TargetType.group;
   }
 
   @Override

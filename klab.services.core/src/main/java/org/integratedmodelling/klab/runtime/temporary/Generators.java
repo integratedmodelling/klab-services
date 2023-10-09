@@ -42,7 +42,7 @@ public class Generators {
 
             NumericRange range = call.getParameters().get("range", NumericRange.create(0., 4000., false, false));
             List<Long> xy = scope.getScale().dimension(Dimension.Type.SPACE).getShape();
-            var storage = state.getStorage(DoubleStorage.class);
+            var storage = state.storage(DoubleStorage.class);
             Terrain terrain = new Terrain(call.getParameters().get("detail", 8), call.getParameters().get("roughness"
                     , 0.55),
                     range.getLowerBound(), range.getUpperBound());
@@ -64,7 +64,7 @@ public class Generators {
                  * space is iterated through a fast 2D offset and storage buffer.
                  */
                 for (Offset2D offset : scope.getScale().at(subscale).as(DimensionScanner2D.class)) {
-                    buffer.set(terrain.getAltitude(dx * offset.x(), dy * offset.y()), offset.position());
+                    buffer.add(terrain.getAltitude(dx * offset.x(), dy * offset.y()), offset.position());
                 }
             }
         }

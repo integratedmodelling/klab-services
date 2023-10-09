@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.integratedmodelling.klab.data.histogram.Histogram.TargetType;
+import org.integratedmodelling.klab.data.histogram.SPDTHistogram.TargetType;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -59,7 +59,7 @@ public class ArrayCategoricalTarget extends Target<ArrayCategoricalTarget> imple
 
   @Override
   public TargetType getTargetType() {
-    return Histogram.TargetType.categorical;
+    return SPDTHistogram.TargetType.categorical;
   }
   
   @Override

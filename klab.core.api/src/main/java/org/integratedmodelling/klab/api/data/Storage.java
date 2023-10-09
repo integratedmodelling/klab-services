@@ -20,4 +20,6 @@ public interface Storage extends RuntimeAsset {
 
     Type getType();
 
+    Histogram getHistogram();
+
 }

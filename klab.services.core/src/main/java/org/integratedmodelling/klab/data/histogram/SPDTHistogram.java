@@ -3,17 +3,12 @@
  */
 package org.integratedmodelling.klab.data.histogram;
 
+import org.json.simple.JSONArray;
+
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
-
-import org.json.simple.JSONArray;
 
 /**
  * Implements a Histogram as defined by the
@@ -35,7 +30,7 @@ import org.json.simple.JSONArray;
  *
  * @author Adam Ashenfelter (ashenfelter@bigml.com)
  */
-public class Histogram<T extends Target<T>> {
+public class SPDTHistogram<T extends Target<T>> {
 
     public static final String DEFAULT_FORMAT_STRING = "#.#####";
     public static final int RESERVOIR_THRESHOLD = 256;
@@ -56,8 +51,8 @@ public class Histogram<T extends Target<T>> {
      * @param reservoirType     selects the bin reservoir implementation, defaults
      *                          to 'array' when # bins < 256 and 'tree' otherwise
      */
-    public Histogram(int maxBins, boolean countWeightedGaps, Collection<Object> categories,
-                     Collection<TargetType> groupTypes, Long freezeThreshold, BinReservoirType reservoirType) {
+    public SPDTHistogram(int maxBins, boolean countWeightedGaps, Collection<Object> categories,
+                         Collection<TargetType> groupTypes, Long freezeThreshold, BinReservoirType reservoirType) {
         if (reservoirType == BinReservoirType.tree || (reservoirType == null && maxBins > RESERVOIR_THRESHOLD)) {
             _bins = new TreeBinReservoir<T>(maxBins, countWeightedGaps, freezeThreshold);
         } else {
@@ -92,7 +87,7 @@ public class Histogram<T extends Target<T>> {
      * @param maxBins           the maximum number of bins for this histogram
      * @param countWeightedGaps true if count weighted gaps are desired
      */
-    public Histogram(int maxBins, boolean countWeightedGaps) {
+    public SPDTHistogram(int maxBins, boolean countWeightedGaps) {
         this(maxBins, countWeightedGaps, null, null, null, null);
     }
 
@@ -101,7 +96,7 @@ public class Histogram<T extends Target<T>> {
      *
      * @param maxBins the maximum number of bins for this histogram
      */
-    public Histogram(int maxBins) {
+    public SPDTHistogram(int maxBins) {
         this(maxBins, false);
     }
 
@@ -111,7 +106,7 @@ public class Histogram<T extends Target<T>> {
      *
      * @param point the new point
      */
-    public Histogram<T> insert(Double point) throws MixedInsertException {
+    public SPDTHistogram<T> insert(Double point) throws MixedInsertException {
         checkType(TargetType.none);
         processPointTarget(point, SimpleTarget.TARGET);
         return this;
@@ -124,7 +119,7 @@ public class Histogram<T extends Target<T>> {
      * @param point  the new point
      * @param target the numeric target
      */
-    public Histogram<T> insert(Double point, double target) throws MixedInsertException {
+    public SPDTHistogram<T> insert(Double point, double target) throws MixedInsertException {
         return insertNumeric(point, target);
     }
 
@@ -135,7 +130,7 @@ public class Histogram<T extends Target<T>> {
      * @param point  the new point
      * @param target the categorical target
      */
-    public Histogram<T> insert(Double point, String target) throws MixedInsertException {
+    public SPDTHistogram<T> insert(Double point, String target) throws MixedInsertException {
         return insertCategorical(point, target);
     }
 
@@ -146,7 +141,7 @@ public class Histogram<T extends Target<T>> {
      * @param point  the new point
      * @param group the group targets
      */
-    public Histogram<T> insert(Double point, Collection<Object> group) throws MixedInsertException {
+    public SPDTHistogram<T> insert(Double point, Collection<Object> group) throws MixedInsertException {
         return insertGroup(point, group);
     }
 
@@ -157,7 +152,7 @@ public class Histogram<T extends Target<T>> {
      * @param point  the new point
      * @param target the categorical target
      */
-    public Histogram<T> insertCategorical(Double point, Object target) throws MixedInsertException {
+    public SPDTHistogram<T> insertCategorical(Double point, Object target) throws MixedInsertException {
         checkType(TargetType.categorical);
         Target catTarget;
         if (_indexMap == null) {
@@ -176,7 +171,7 @@ public class Histogram<T extends Target<T>> {
      * @param point  the new point
      * @param target the categorical target
      */
-    public Histogram<T> insertNumeric(Double point, Double target) throws MixedInsertException {
+    public SPDTHistogram<T> insertNumeric(Double point, Double target) throws MixedInsertException {
         checkType(TargetType.numeric);
         processPointTarget(point, new NumericTarget(target));
         return this;
@@ -189,7 +184,7 @@ public class Histogram<T extends Target<T>> {
      * @param point  the new point
      * @param target the categorical target
      */
-    public Histogram<T> insertGroup(Double point, Collection<Object> group) throws MixedInsertException {
+    public SPDTHistogram<T> insertGroup(Double point, Collection<Object> group) throws MixedInsertException {
         checkType(TargetType.group);
         if (group == null) {
             throw new MixedInsertException();
@@ -214,7 +209,7 @@ public class Histogram<T extends Target<T>> {
      *
      * @param bin the new bin
      */
-    public Histogram<T> insertBin(Bin<T> bin) {
+    public SPDTHistogram<T> insertBin(Bin<T> bin) {
         if (_minimum == null || _minimum > bin.getMean()) {
             _minimum = bin.getMean();
         }
@@ -486,7 +481,7 @@ public class Histogram<T extends Target<T>> {
      * @param histogram the histogram to be merged
      */
     @SuppressWarnings("unchecked")
-    public Histogram<T> merge(Histogram<T> histogram) throws MixedInsertException {
+    public SPDTHistogram<T> merge(SPDTHistogram<T> histogram) throws MixedInsertException {
         if (_indexMap == null && histogram._indexMap != null) {
             if (getBins().isEmpty()) {
                 _indexMap = histogram._indexMap;
@@ -620,7 +615,7 @@ public class Histogram<T extends Target<T>> {
      * @param count the target sum for the missing values
      */
     @SuppressWarnings("unchecked")
-    public Histogram<T> insertMissing(long count, T target) {
+    public SPDTHistogram<T> insertMissing(long count, T target) {
         if (_missingTarget == null) {
             _missingTarget = target;
         } else {
@@ -650,7 +645,7 @@ public class Histogram<T extends Target<T>> {
      *
      * @param minimum the minimum value observed by the histogram
      */
-    public Histogram setMinimum(Double minimum) {
+    public SPDTHistogram setMinimum(Double minimum) {
         _minimum = minimum;
         return this;
     }
@@ -661,7 +656,7 @@ public class Histogram<T extends Target<T>> {
      *
      * @param maximum the maximum value observed by the histogram
      */
-    public Histogram setMaximum(Double maximum) {
+    public SPDTHistogram setMaximum(Double maximum) {
         _maximum = maximum;
         return this;
     }

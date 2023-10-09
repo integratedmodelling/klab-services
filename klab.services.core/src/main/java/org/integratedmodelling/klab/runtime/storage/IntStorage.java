@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
@@ -57,5 +58,10 @@ public class IntStorage implements Storage {
      */
     public void map(LongToIntFunction operator) {
 
+    }
+
+    @Override
+    public Histogram getHistogram() {
+        return null;
     }
 }

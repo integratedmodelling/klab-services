@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Locator;
 
@@ -19,6 +20,11 @@ public class BoxingStorage implements Storage {
 
 	public void set(Object value, Locator locator) {
 		
+	}
+
+	@Override
+	public Histogram getHistogram() {
+		return null;
 	}
 
 }

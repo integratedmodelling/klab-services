@@ -68,7 +68,7 @@ public class Bin<T extends Target<T>> implements Comparable<Bin<T>> {
 
 	@Override
 	public String toString() {
-		return toJSON(new DecimalFormat(Histogram.DEFAULT_FORMAT_STRING)).toJSONString();
+		return toJSON(new DecimalFormat(SPDTHistogram.DEFAULT_FORMAT_STRING)).toJSONString();
 	}
 
 	/**

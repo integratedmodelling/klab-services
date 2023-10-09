@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -15,11 +11,14 @@ import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Observables are concepts with additional information that specifies how they may be observed. This additional
@@ -425,7 +424,7 @@ public interface Observable extends Semantics {
     /**
      * @return
      */
-    Collection<Pair<ValueOperator, Literal>> getValueOperators();
+    List<Pair<ValueOperator, Literal>> getValueOperators();
 
     /**
      * Each observable must be able to quickly assess the type of the description (observation activity) that will

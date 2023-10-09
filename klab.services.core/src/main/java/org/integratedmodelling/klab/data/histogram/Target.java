@@ -13,7 +13,7 @@ import org.json.simple.JSONArray;
 public abstract class Target<T extends Target<T>> {
 
   public abstract double getMissingCount();
-  public abstract Histogram.TargetType getTargetType();
+  public abstract SPDTHistogram.TargetType getTargetType();
   
   protected abstract void addJSON(JSONArray binJSON, DecimalFormat format);
   protected abstract void appendTo(Appendable appendable, DecimalFormat format) throws IOException;

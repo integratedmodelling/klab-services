@@ -8,7 +8,7 @@ package org.integratedmodelling.klab.data.histogram;
 import java.io.IOException;
 import java.text.DecimalFormat;
 
-import org.integratedmodelling.klab.data.histogram.Histogram.TargetType;
+import org.integratedmodelling.klab.data.histogram.SPDTHistogram.TargetType;
 import org.json.simple.JSONArray;
 
 public class SimpleTarget extends Target<SimpleTarget> {
@@ -22,7 +22,7 @@ public class SimpleTarget extends Target<SimpleTarget> {
 
   @Override
   public TargetType getTargetType() {
-    return Histogram.TargetType.none;
+    return SPDTHistogram.TargetType.none;
   }
 
   @Override

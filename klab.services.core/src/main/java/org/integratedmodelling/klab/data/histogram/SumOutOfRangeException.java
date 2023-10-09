@@ -5,7 +5,7 @@
  */
 package org.integratedmodelling.klab.data.histogram;
 
-public class SumOutOfRangeException extends Exception {
+public class SumOutOfRangeException extends RuntimeException {
 
 	private static final long serialVersionUID = 987685669915428993L;
 

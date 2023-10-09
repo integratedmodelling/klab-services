@@ -1,17 +1,17 @@
 package org.integratedmodelling.klab.runtime.storage;
 
+import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.data.histogram.Histogram;
-import org.ojalgo.array.*;
+import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
+import org.ojalgo.array.BufferArray;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
-import java.util.function.LongToDoubleFunction;
 
 /**
  * Base storage providing the general methods. Children enable either boxed I/O or faster native operation
@@ -30,19 +30,36 @@ public class DoubleStorage implements Storage {
     long sliceSize;
     private NavigableMap<Long, DirectSliceBuffer> buffers = new TreeMap<>();
     private StorageScope scope;
-    private Histogram histogram;
 
     public DoubleStorage(Scale scale, StorageScope scope) {
         this.scope = scope;
         this.scale = scale;
         this.sliceSize = scale.without(Geometry.Dimension.Type.TIME).size();
-        if (scope.isRecordHistogram()) {
-            this.histogram = new Histogram(scope.getHistogramBinSize());
-        }
     }
 
     public void set(double value, Offset locator) {
 
+    }
+
+    /**
+     * Retrieve the merged histogram. TODO we should cache if the owning state is finalized.
+     *
+     * @return
+     */
+    public SPDTHistogram histogram() {
+        if (buffers.size() == 1) {
+            return buffers.values().iterator().next().histogram;
+        } else if (buffers.size() > 1) {
+            SPDTHistogram ret = new SPDTHistogram(20);
+            for (DirectSliceBuffer buffer : buffers.values()) {
+                if (buffer.histogram != null) {
+                    ret.merge(buffer.histogram);
+                }
+            }
+            // TODO cache if storage is finalized
+            return ret;
+        }
+        return new SPDTHistogram(20);
     }
 
     /**
@@ -53,18 +70,35 @@ public class DoubleStorage implements Storage {
 
         long startTime;
         private final BufferArray data;
-        Histogram histogram;
-
+        SPDTHistogram histogram;
 
         public DirectSliceBuffer(long startTime) {
             this.startTime = startTime;
             this.data = scope.getDoubleBuffer(sliceSize);
-            if (DoubleStorage.this.histogram != null) {
-                this.histogram = new Histogram(DoubleStorage.this.histogram.getMaxBins());
+            if (scope.isRecordHistogram()) {
+                this.histogram = new SPDTHistogram(scope.getHistogramBinSize());
             }
         }
 
+        /**
+         * <code>set</code> will set the data but not insert the value in the histogram. Use to modify the values. It
+         * will invalidate the histogram when used.
+         *
+         * @param value
+         * @param position
+         */
         public void set(double value, long position) {
+            this.data.set(position, value);
+        }
+
+        /**
+         * <code>add</code> should be used for successive inserts that cover the entire value space. It will insert the
+         * value in the histogram if one is configured.
+         *
+         * @param value
+         * @param position
+         */
+        public void add(double value, long position) {
             this.data.set(position, value);
             if (histogram != null) {
                 histogram.insert(value);
@@ -114,6 +148,12 @@ public class DoubleStorage implements Storage {
     @Override
     public Type getType() {
         return Type.DOUBLE;
+    }
+
+    @Override
+    public Histogram getHistogram() {
+        // TODO return new HistogramImpl(histogram());
+        return null;
     }
 
 }

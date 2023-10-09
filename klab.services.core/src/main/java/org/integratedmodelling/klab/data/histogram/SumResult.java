@@ -32,7 +32,7 @@ public class SumResult<T extends Target<T>> {
   
   @Override
   public String toString() {
-    return toJSON(new DecimalFormat(Histogram.DEFAULT_FORMAT_STRING)).toString();
+    return toJSON(new DecimalFormat(SPDTHistogram.DEFAULT_FORMAT_STRING)).toString();
   }
   
   private final double _count;
