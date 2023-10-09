@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+
+import java.util.List;
 
 public interface KimModel extends KimActiveStatement {
 
@@ -46,13 +46,5 @@ public interface KimModel extends KimActiveStatement {
     String getDocstring();
 
     String getProjectName();
-    
-//    /**
-//     * Normally true, it will return false in models that were expressed as non-semantic operations,
-//     * using the 'number', 'text', etc. keywords. These are also, by default, private and are used
-//     * only directly by name.
-//     * 
-//     * @return
-//     */
-//    boolean isSemantic();
+
 }

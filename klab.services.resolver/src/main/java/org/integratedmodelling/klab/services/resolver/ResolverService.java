@@ -573,13 +573,18 @@ public class ResolverService extends BaseService implements Resolver {
         ModelImpl model = new ModelImpl();
 
         model.getAnnotations().addAll(statement.getAnnotations());
+        boolean first = true;
         for (KimObservable observable : statement.getObservables()) {
-            model.getObservables().add(reasoner.declareObservable(observable));
+            var obs = reasoner.declareObservable(observable);
+            model.getObservables().add(first && statement.isInstantiator() ? obs.as(DescriptionType.ACKNOWLEDGEMENT)
+                    : obs);
+            first = false;
         }
         for (KimObservable observable : statement.getDependencies()) {
             model.getDependencies().add(reasoner.declareObservable(observable));
         }
 
+        // TODO learners etc.
         model.setUrn(statement.getNamespace() + "." + statement.getName());
         model.setMetadata(statement.getMetadata());
         model.getComputation().addAll(statement.getContextualization());
