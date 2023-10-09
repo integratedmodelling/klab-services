@@ -576,8 +576,8 @@ public class ResolverService extends BaseService implements Resolver {
         boolean first = true;
         for (KimObservable observable : statement.getObservables()) {
             var obs = reasoner.declareObservable(observable);
-            model.getObservables().add(first && statement.isInstantiator() ? obs.as(DescriptionType.ACKNOWLEDGEMENT)
-                    : obs);
+            model.getObservables().add(first && statement.isInstantiator() ? obs :
+                    obs.as(DescriptionType.ACKNOWLEDGEMENT));
             first = false;
         }
         for (KimObservable observable : statement.getDependencies()) {
