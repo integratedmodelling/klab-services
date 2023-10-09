@@ -321,7 +321,7 @@ public class DigitalTwin implements Closeable {
      */
     public Observation runDataflow(Dataflow<Observation> dataflow, ContextScope scope) {
 
-        if (!validate(scope)) {
+        if (!validate(scope) || dataflow.isEmpty()) {
             return Observation.empty();
         }
 

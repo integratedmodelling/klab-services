@@ -517,7 +517,7 @@ public class ResolverService extends BaseService implements Resolver {
         InstanceImpl instance = new InstanceImpl();
         instance.setNamespace(statement.getNamespace());
         instance.getAnnotations().addAll(statement.getAnnotations());
-        instance.setObservable(reasoner.declareObservable(statement.getObservable()));
+        instance.setObservable(reasoner.declareObservable(statement.getObservable()).as(DescriptionType.ACKNOWLEDGEMENT));
         instance.setUrn(statement.getNamespace() + "." + statement.getName());
         instance.setMetadata(statement.getMetadata());
         instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));

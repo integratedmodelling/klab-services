@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.services.reasoner;
 
+import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 
@@ -36,24 +39,24 @@ public class ObservationReasoner {
         var traits = observable.is(SemanticType.QUALITY) ? reasoner.attributes(observable) :
                 reasoner.traits(observable);
 
-
         if (generics.isEmpty() && !observable.isAbstract()) {
             ret.addAll(getDirectConcreteStrategies(observable));
         }
 
-        var traitStrategies = getTraitConcreteStrategies(ret, observable, traits);
-
-        if (generics == null) {
-            ret.addAll(traitStrategies);
-        } else {
-            ret.addAll(getGenericConcreteStrategies(ret, observable, generics));
-        }
-
         if (!observable.getValueOperators().isEmpty()) {
-            ret = addValueOperatorStrategies(ret, observable);
+            Observable withoutOperators = observable.builder(scope).withoutValueOperators().buildObservable();
+            return addValueOperatorStrategies(inferStrategies(withoutOperators, scope), observable.getValueOperators());
         }
 
-        ret = insertSpecializedDeferralStrategies(ret, observable, scope);
+//        var traitStrategies = getTraitConcreteStrategies(ret, observable, traits);
+//
+//        if (generics == null) {
+//            ret.addAll(traitStrategies);
+//        } else {
+//            ret.addAll(getGenericConcreteStrategies(ret, observable, generics));
+//        }
+//
+//        ret = insertSpecializedDeferralStrategies(ret, observable, scope);
 
         // TODO sort by rank
 
@@ -67,7 +70,8 @@ public class ObservationReasoner {
         return ret;
     }
 
-    private List<ObservationStrategy> addValueOperatorStrategies(List<ObservationStrategy> ret, Observable observable) {
+    private List<ObservationStrategy> addValueOperatorStrategies(List<ObservationStrategy> ret,
+                                                                 List<Pair<ValueOperator, Literal>> observable) {
         // TODO
         return ret;
     }
