@@ -34,7 +34,6 @@ public class ObservationReasoner {
          * into an OR-joined meta-observable,which will use a merger model with all the
          * independent observables as dependencies.
          */
-
         var generics = observable.getGenericComponents();
         var traits = observable.is(SemanticType.QUALITY) ? reasoner.attributes(observable) :
                 reasoner.traits(observable);
@@ -47,6 +46,7 @@ public class ObservationReasoner {
             Observable withoutOperators = observable.builder(scope).withoutValueOperators().buildObservable();
             return addValueOperatorStrategies(inferStrategies(withoutOperators, scope), observable.getValueOperators());
         }
+
 
 //        var traitStrategies = getTraitConcreteStrategies(ret, observable, traits);
 //
@@ -72,7 +72,7 @@ public class ObservationReasoner {
 
     private List<ObservationStrategy> addValueOperatorStrategies(List<ObservationStrategy> ret,
                                                                  List<Pair<ValueOperator, Literal>> observable) {
-        // TODO
+        // TODO add new strategies to the previous one; increment their rank by 1
         return ret;
     }
 
@@ -105,8 +105,9 @@ public class ObservationReasoner {
 
         // resolve the instances if instantiating
         if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
-            builder.withOperation(ObservationStrategy.Operation.RESOLVE,
-                    observable.as(DescriptionType.ACKNOWLEDGEMENT));
+            builder.withStrategy(ObservationStrategy.Operation.DEFER,
+                    ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.OBSERVE,
+                            observable.as(DescriptionType.ACKNOWLEDGEMENT)).build());
         }
 
         ret.add(builder.build());

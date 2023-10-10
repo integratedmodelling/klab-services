@@ -31,21 +31,24 @@ public interface ObservationStrategy extends Serializable, Iterable<Pair<Observa
 
         Builder withOperation(Operation operation, ServiceCall target);
 
+        Builder withStrategy(Operation operation, ObservationStrategy strategy);
+
         ObservationStrategy build();
     }
 
-    public record Arguments(Observable observable, ServiceCall serviceCall) implements Serializable {
+    // Only one of these at a time.
+    public record Arguments(Observable observable, ServiceCall serviceCall,
+                            ObservationStrategy contextualStrategy) implements Serializable {
     }
 
     enum Operation {
 
         /**
-         * the operation implies further resolution of the associated observable, in the context set by the previous
-         * operation (or top-level). If the previous operation has resolved a type of Trait, resolve is for each
-         * predicate as incarnated by the concrete classes, in the correspondent context (if an OR, expanding all
-         * observables)
+         * the operation implies deferral, i.e. further resolution of the associated observable, in the context set by
+         * the previous operation. If the previous operation has resolved a type of Trait, resolve is for each predicate
+         * as incarnated by the concrete classes, in the correspondent context (if an OR, expanding all observables)
          */
-        RESOLVE,
+        DEFER,
 
         /**
          * The operation requires the observation of the associated observable. i.e. looking up a model or a previous

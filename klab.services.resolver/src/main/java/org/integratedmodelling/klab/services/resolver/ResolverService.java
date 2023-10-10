@@ -239,7 +239,7 @@ public class ResolverService extends BaseService implements Resolver {
                         }
                     }
                 }
-                case RESOLVE -> {
+                case DEFER -> {
 
                 }
             }

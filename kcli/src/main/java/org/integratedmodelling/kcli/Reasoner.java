@@ -5,7 +5,7 @@ import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
 import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -91,7 +91,7 @@ public class Reasoner {
 
         @Option(names = {"-a", "--acknowledgement"}, defaultValue = "false", description = {
                 "Force a direct observable to represent the acknowledgement of the observable."}, required = false)
-        boolean show;
+        boolean acknowledge;
 
         @Override
         public void run() {
@@ -116,23 +116,20 @@ public class Reasoner {
                 return;
             }
 
+            if (acknowledge) {
+                if (!observable.getDescriptionType().isInstantiation()) {
+                    err.println(Ansi.AUTO.string("Cannot acknowledge something that is not countable"));
+                    return;
+                }
+                observable = observable.as(DescriptionType.ACKNOWLEDGEMENT);
+            }
+
             out.println(Ansi.AUTO.string("Observation strategies for @|bold " + observable.getDescriptionType().name().toLowerCase()
                     + "|@ of @|green " + observable.getUrn() + "|@:"));
             for (var strategy : reasoner.inferStrategies(observable, ctx)) {
-                dumpStrategy(strategy, out);
-            }
-        }
-
-        private void dumpStrategy(ObservationStrategy strategy, PrintWriter out) {
-
-            boolean first = true;
-            for (var step : strategy) {
-                out.println(Ansi.AUTO.string((first ? Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".", " ",
-                        5) :
-                        Utils.Strings.spaces(5)) +
-                        "@|yellow " + step.getFirst().name() + "|@ " + (step.getSecond().observable() == null ?
-                        step.getSecond().serviceCall() : step.getSecond().observable())));
-                first = false;
+                out.println(Ansi.AUTO.string("@|yellow " + Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".",
+                        " ", 4) + "|@-------------------------------------------"));
+                out.println(strategy);
             }
         }
     }
