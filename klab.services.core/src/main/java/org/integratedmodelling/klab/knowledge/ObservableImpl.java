@@ -77,6 +77,11 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     public ObservableImpl() {
     }
 
+    public ObservableImpl(Concept concept) {
+        setSemantics(concept);
+
+    }
+
     private ObservableImpl(ObservableImpl other) {
         this.semantics = other.semantics;
         this.version = other.version;

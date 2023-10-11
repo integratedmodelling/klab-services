@@ -53,6 +53,7 @@ import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
 import org.integratedmodelling.klab.knowledge.ModelBuilderImpl;
+import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.logging.Logging;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
@@ -92,8 +93,8 @@ public enum Configuration {
     private Map<String, Authority> authorities = new HashMap<>();
 
     /**
-     * Standard library loader. Must be registered explicitly when calling {@link #scanPackage(String, Map)}. Not
-     * registering this along with the {@link Library} annotation can lead to interesting behaviors.
+     * Standard library loader. Must be registered explicitly when calling {@link #scanPackage(String, Map)}.
+     * Not registering this along with the {@link Library} annotation can lead to interesting behaviors.
      */
     public BiConsumer<Annotation, Class<?>> LIBRARY_LOADER = (annotation, cls) -> {
         var languageService = getService(Language.class);
@@ -119,8 +120,11 @@ public enum Configuration {
 
             @Override
             public Observable promoteConceptToObservable(Concept concept) {
-                // TODO Auto-generated method stub
-                throw new KException("IMPLEMENTAMI OSTIA");
+                var ret = new ObservableImpl();
+                ret.setSemantics(concept);
+                ret.setDescriptionType(DescriptionType.forSemantics(concept.getType(),
+                        concept.is(SemanticType.COUNTABLE)));
+                return ret;
             }
 
             @Override
@@ -226,9 +230,9 @@ public enum Configuration {
     public static final String LOCAL_STATS_PRIVATE_PROPERTY = "org.integratedmodelling.stats.private";
 
     /**
-     * If false, coverage of merged spatial layers is interpreted strictly, i.e. if a covered portion with higher
-     * priority has nodata and a filler with lower priority has data, the nodata from the covered portions substitute
-     * the filler's data.
+     * If false, coverage of merged spatial layers is interpreted strictly, i.e. if a covered portion with
+     * higher priority has nodata and a filler with lower priority has data, the nodata from the covered
+     * portions substitute the filler's data.
      */
     public static final String KLAB_FILL_COVERED_NODATA = "klab.space.fillcoverednodata";
 
@@ -250,7 +254,8 @@ public enum Configuration {
     public static final String KLAB_ACCEPTED_WAIT_TIME_SECONDS = "klab.accepted.wait.time";
 
     /**
-     * Name of work directory relative to ${user.home}. Ignored if THINKLAB_DATA_DIRECTORY_PROPERTY is specified.
+     * Name of work directory relative to ${user.home}. Ignored if THINKLAB_DATA_DIRECTORY_PROPERTY is
+     * specified.
      */
     public static final String KLAB_WORK_DIRECTORY = "klab.work.directory";
 
@@ -267,7 +272,8 @@ public enum Configuration {
     public static final String STORAGE_PROVIDER_COMPONENT = "klab.storage.provider.class";
 
     /**
-     * Class to choose to create dataflow runtimes - used only to disambiguate if > 1 runtime providers are available.
+     * Class to choose to create dataflow runtimes - used only to disambiguate if > 1 runtime providers are
+     * available.
      */
     public static final String RUNTIME_PROVIDER_COMPONENT = "klab.runtime.provider.class";
 
@@ -277,19 +283,20 @@ public enum Configuration {
     public static final String KLAB_SHOWTIMES_PROPERTY = "klab.showtimes";
 
     /**
-     * If defined and set to <code>true</code>, then the region context will be extended assure square grid cells.
+     * If defined and set to <code>true</code>, then the region context will be extended assure square grid
+     * cells.
      */
     public static final String KLAB_GRID_CONSTRAINT = "klab.grid.forceSquarecells";
 
     /**
-     * If defined and set to <code>true</code>, then intermediate data processed by the models are to be dumped to
-     * disk.
+     * If defined and set to <code>true</code>, then intermediate data processed by the models are to be
+     * dumped to disk.
      */
     public static final String KLAB_MODEL_DUMP_INTERMEDIATE = "klab.model.dumpIntermediateData";
 
     /**
-     * URL of local node (must match certfile) when running in develop config. Pass to hub as -D to override the default
-     * (which won't work on Win), normally with a 127.0.0.1-based URL.
+     * URL of local node (must match certfile) when running in develop config. Pass to hub as -D to override
+     * the default (which won't work on Win), normally with a 127.0.0.1-based URL.
      */
     public static final String KLAB_DEV_NODE_URL = "klab.dev.node.url";
 
@@ -354,16 +361,19 @@ public enum Configuration {
     public List<Prototype> loadLibrary(Library annotation, Class<?> cls) {
 
         List<Prototype> ret = new ArrayList<>();
-        String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" : (annotation.name() + ".");
+        String namespacePrefix = Library.CORE_LIBRARY.equals(annotation.name()) ? "" :
+                                 (annotation.name() + ".");
 
         for (Class<?> clss : cls.getClasses()) {
             if (clss.isAnnotationPresent(KlabFunction.class)) {
-                ret.add(createContextualizerPrototype(namespacePrefix, clss.getAnnotation(KlabFunction.class), clss,
+                ret.add(createContextualizerPrototype(namespacePrefix,
+                        clss.getAnnotation(KlabFunction.class), clss,
                         null));
             } else if (clss.isAnnotationPresent(Verb.class)) {
                 ret.add(createVerbPrototype(namespacePrefix, clss.getAnnotation(Verb.class), clss, null));
             } else if (clss.isAnnotationPresent(KlabAnnotation.class)) {
-                ret.add(createAnnotationPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class), clss,
+                ret.add(createAnnotationPrototype(namespacePrefix, clss.getAnnotation(KlabAnnotation.class)
+                        , clss,
                         null));
             }
         }
@@ -371,10 +381,12 @@ public enum Configuration {
         // annotated methods
         for (Method method : cls.getDeclaredMethods()) {
             if (Modifier.isPublic(method.getModifiers()) && method.isAnnotationPresent(KlabFunction.class)) {
-                ret.add(createContextualizerPrototype(namespacePrefix, method.getAnnotation(KlabFunction.class), cls,
+                ret.add(createContextualizerPrototype(namespacePrefix,
+                        method.getAnnotation(KlabFunction.class), cls,
                         method));
             } else if (method.isAnnotationPresent(KlabAnnotation.class)) {
-                ret.add(createAnnotationPrototype(namespacePrefix, cls.getAnnotation(KlabAnnotation.class), cls,
+                ret.add(createAnnotationPrototype(namespacePrefix, cls.getAnnotation(KlabAnnotation.class),
+                        cls,
                         method));
             } else if (method.isAnnotationPresent(Verb.class)) {
                 ret.add(createVerbPrototype(namespacePrefix, cls.getAnnotation(Verb.class), cls, method));
@@ -383,12 +395,14 @@ public enum Configuration {
         return ret;
     }
 
-    public Prototype createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss, Method method) {
+    public Prototype createVerbPrototype(String namespacePrefix, Verb annotation, Class<?> clss,
+                                         Method method) {
         // TODO
         return null;
     }
 
-    public Prototype createContextualizerPrototype(String namespacePrefix, KlabFunction annotation, Class<?> clss,
+    public Prototype createContextualizerPrototype(String namespacePrefix, KlabFunction annotation,
+                                                   Class<?> clss,
                                                    Method method) {
 
         var ret = new PrototypeImpl();
@@ -423,7 +437,8 @@ public enum Configuration {
         return ret;
     }
 
-    public Prototype createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation, Class<?> clss,
+    public Prototype createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation,
+                                               Class<?> clss,
                                                Method method) {
 
         var ret = new PrototypeImpl();
@@ -481,7 +496,8 @@ public enum Configuration {
                 PluginInfo.PluginRelease lastRelease = componentUpdateManager.getLastPluginRelease(plugin.id);
                 String lastVersion = lastRelease.version;
                 String installedVersion = componentManager.getPlugin(plugin.id).getDescriptor().getVersion();
-                Logging.INSTANCE.debug("Update plugin '{}' from version {} to version {}", plugin.id, installedVersion,
+                Logging.INSTANCE.debug("Update plugin '{}' from version {} to version {}", plugin.id,
+                        installedVersion,
                         lastVersion);
                 boolean updated = componentUpdateManager.updatePlugin(plugin.id, lastVersion);
                 if (updated) {
@@ -521,8 +537,8 @@ public enum Configuration {
     }
 
     /**
-     * Single scanning loop for all registered annotations in a package. Done on the main codebase and in each component
-     * based on the declared packages.
+     * Single scanning loop for all registered annotations in a package. Done on the main codebase and in each
+     * component based on the declared packages.
      * <p>
      * TODO use plug-in manifest to declare packages to scan.
      * Moved to ClassGraph to allow development with Java 21 before Spring Boot 3.2.0 is released
@@ -531,7 +547,8 @@ public enum Configuration {
      * @return all annotations found with the corresponding class
      */
     public List<Pair<Annotation, Class<?>>> scanPackage(String packageId,
-                                                        Map<Class<? extends Annotation>, BiConsumer<Annotation,
+                                                        Map<Class<? extends Annotation>,
+                                                                BiConsumer<Annotation,
                                                                 Class<?>>> annotationHandlers) {
 
         List<Pair<Annotation, Class<?>>> ret = new ArrayList<>();
@@ -558,7 +575,8 @@ public enum Configuration {
         }
 
 // Spring-based, uses ASM which is not yet compatible with Java 21
-//        ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
+//        ClassPathScanningCandidateComponentProvider provider = new
+//        ClassPathScanningCandidateComponentProvider(false);
 //        for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
 //            provider.addIncludeFilter(new AnnotationTypeFilter(ah));
 //        }
@@ -596,8 +614,8 @@ public enum Configuration {
     }
 
     /**
-     * Non-API Save the properties after making changes from outside configuration. Should be used only internally, or
-     * removed in favor of a painful setting API.
+     * Non-API Save the properties after making changes from outside configuration. Should be used only
+     * internally, or removed in favor of a painful setting API.
      */
     public void save() {
 
@@ -688,7 +706,8 @@ public enum Configuration {
     }
 
     public File getDefaultExportDirectory() {
-        File ret = new File(getProperties().getProperty(KLAB_EXPORT_PATH, dataPath + File.separator + "export"));
+        File ret = new File(getProperties().getProperty(KLAB_EXPORT_PATH, dataPath + File.separator +
+                "export"));
         ret.mkdirs();
         return ret;
     }
@@ -772,7 +791,8 @@ public enum Configuration {
     }
 
     public boolean useInMemoryStorage() {
-        return System.getProperty("mmap") == null && properties.getProperty(KLAB_USE_IN_MEMORY_STORAGE, "true").equals("true");
+        return System.getProperty("mmap") == null && properties.getProperty(KLAB_USE_IN_MEMORY_STORAGE,
+                "true").equals("true");
     }
 
     public File getExportFile(String export) {
@@ -787,18 +807,21 @@ public enum Configuration {
     }
 
     public File getTemporaryDataDirectory() {
-        return new File(getProperties().getProperty(KLAB_TEMPORARY_DATA_DIRECTORY, System.getProperty("java.io" +
+        return new File(getProperties().getProperty(KLAB_TEMPORARY_DATA_DIRECTORY, System.getProperty("java" +
+                ".io" +
                 ".tmpdir")));
     }
 
     /**
-     * Return a new directory in the temporary area. The directory is automatically removed when the VM shuts down.
+     * Return a new directory in the temporary area. The directory is automatically removed when the VM shuts
+     * down.
      *
      * @param directoryPrefix
      * @return
      */
     public File getScratchDataDirectory(String directoryPrefix) {
-        File ret = new File(getTemporaryDataDirectory() + File.separator + directoryPrefix + Utils.Names.shortUUID());
+        File ret =
+                new File(getTemporaryDataDirectory() + File.separator + directoryPrefix + Utils.Names.shortUUID());
         ret.mkdirs();
         ret.deleteOnExit();
         return ret;
@@ -814,8 +837,8 @@ public enum Configuration {
 
     /**
      * Find a file correspondent to the passed argument. If the string encodes a full path, just return the
-     * correspondent file; otherwise explore any configured filepath. In all case only return non-null if the file
-     * exists and is readable.
+     * correspondent file; otherwise explore any configured filepath. In all case only return non-null if the
+     * file exists and is readable.
      *
      * @param argument
      * @return
@@ -848,8 +871,8 @@ public enum Configuration {
     }
 
     /**
-     * Obtain the best service available for the class and parameters. If multiple are available, choose the one with
-     * the lightest load or access cost, according to implementation. If not found, throw a
+     * Obtain the best service available for the class and parameters. If multiple are available, choose the
+     * one with the lightest load or access cost, according to implementation. If not found, throw a
      * {@link KServiceAccessException}.
      *
      * @param <T>
@@ -863,13 +886,14 @@ public enum Configuration {
         if (results.size() > 0) {
             return results.iterator().next();
         }
-        throw new KServiceAccessException("no service of class " + serviceClass.getCanonicalName() + " was registered");
+        throw new KServiceAccessException("no service of class " + serviceClass.getCanonicalName() + " was " +
+                "registered");
     }
 
     /**
-     * Return all registered and available services of the passed class, potentially filtering through the passed
-     * parameters. If none available, return an empty collection. If multiple services are available, they should be
-     * sorted with the "best" service on top.
+     * Return all registered and available services of the passed class, potentially filtering through the
+     * passed parameters. If none available, return an empty collection. If multiple services are available,
+     * they should be sorted with the "best" service on top.
      *
      * @param <T>
      * @param serviceClass
@@ -932,7 +956,7 @@ public enum Configuration {
             for (Pair<String, String> sub : authority.getCapabilities().getSubAuthorities()) {
                 String aname = authority.getName() + (sub.getFirst().isEmpty() ? "" : ("." + sub.getFirst()));
                 this.authorities.put(aname, sub.getFirst().isEmpty() ? authority :
-                        authority.subAuthority(sub.getFirst()));
+                                            authority.subAuthority(sub.getFirst()));
             }
         }
     }
@@ -940,8 +964,8 @@ public enum Configuration {
     private static int MAX_THREADS = 10;
 
     /**
-     * Broadcast a request to all accessible services of a given type concurrently and merge the results of the request
-     * function into a collection.
+     * Broadcast a request to all accessible services of a given type concurrently and merge the results of
+     * the request function into a collection.
      *
      * @param <S>
      * @param <T>
@@ -956,8 +980,8 @@ public enum Configuration {
     }
 
     /**
-     * Use to concurrently submit a request to the available federated services of a particular type and merge the
-     * results into a given collection.
+     * Use to concurrently submit a request to the available federated services of a particular type and merge
+     * the results into a given collection.
      *
      * @param <T>                    type of result in the resulting collections
      * @param serviceClass           type of the service (use the interfaces!)
