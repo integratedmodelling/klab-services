@@ -1,9 +1,8 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import java.util.Collection;
-
 import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+
+import java.util.Collection;
 
 /**
  * A classification of the primary observation activity (odo:Description) that can produce an observation of
@@ -61,7 +60,8 @@ public enum DescriptionType {
 //     */
 //    COMPILATION(false, "void"),
     /**
-     * Acknowledgement is the "void" of observation activity: an object exists and we just take notice of it.
+     * Acknowledgement is the "void" of observation activity: an object exists and we take notice of its
+     * existence. It does not <em>produce</em> an observation but simply explains it through a description.
      * The resolution of an instantiated object is an acknowledgement and descriptions can be written of it
      * (appearing as void actuators in the dataflow, internal to the instantiator's actuator).
      * Acknowledgements can also be explicitly programmed in k.IM through the
