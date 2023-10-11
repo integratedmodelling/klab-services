@@ -457,8 +457,7 @@ public class DigitalTwin implements Closeable {
                     };
             case SIMULATION -> new ProcessImpl(actuator.getObservable(), actuator.getId(), scope);
             case CHARACTERIZATION,
-                    CLASSIFICATION,
-                    COMPILATION -> null; // TODO
+                    CLASSIFICATION -> null; // TODO
             case DETECTION -> new ConfigurationImpl(actuator.getObservable(), actuator.getId(), scope);
             default -> null;
         };
