@@ -41,7 +41,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 //    private Resolution resolution;
     private boolean optional;
     private boolean generic;
-    private Collection<ResolutionException> resolutionExceptions;
+    private Collection<ResolutionException> resolutionExceptions = EnumSet.noneOf(ResolutionException.class);
     private Literal defaultValue;
     private Literal value;
     private String statedName;
@@ -203,7 +203,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         return this.descriptionType;
     }
 
-    @Override
+    //    @Override
     public Observable as(DescriptionType descriptionType) {
         var ret = new ObservableImpl(this);
         // TODO check for compatibility!

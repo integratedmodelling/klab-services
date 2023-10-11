@@ -22,8 +22,9 @@ import java.util.function.Function;
 
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate semantic knowledge.",
-        ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class, Reasoner.Type.class,
-        Reasoner.Strategy.class, Reasoner.Export.class})
+        ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class,
+                            Reasoner.Type.class,
+                            Reasoner.Strategy.class, Reasoner.Export.class})
 public class Reasoner {
 
 
@@ -56,7 +57,8 @@ public class Reasoner {
         }
     }
 
-    public static void printRelated(PrintWriter out, Concept concept, Function<Concept, Collection<Concept>> producer
+    public static void printRelated(PrintWriter out, Concept concept, Function<Concept,
+            Collection<Concept>> producer
             , int offset) {
         String spaces = Utils.Strings.spaces(offset);
         for (var child : producer.apply(concept)) {
@@ -90,7 +92,8 @@ public class Reasoner {
         java.util.List<String> observables;
 
         @Option(names = {"-a", "--acknowledgement"}, defaultValue = "false", description = {
-                "Force a direct observable to represent the acknowledgement of the observable."}, required = false)
+                "Force a direct observable to represent the acknowledgement of the observable."}, required
+                = false)
         boolean acknowledge;
 
         @Override
@@ -100,7 +103,7 @@ public class Reasoner {
             PrintWriter err = commandSpec.commandLine().getErr();
 
             ContextScope ctx = context == null ? Engine.INSTANCE.getCurrentContext(true) :
-                    Engine.INSTANCE.getContext(context);
+                               Engine.INSTANCE.getContext(context);
 
             if (within != null) {
                 // TODO find the context observation and switch the context to it. If a dot,
@@ -112,7 +115,8 @@ public class Reasoner {
             var observable = reasoner.resolveObservable(urn);
 
             if (observable == null) {
-                err.println(Ansi.AUTO.string("URN @|red " + urn + "|@ does not resolve to a valid observable"));
+                err.println(Ansi.AUTO.string("URN @|red " + urn + "|@ does not resolve to a valid " +
+                        "observable"));
                 return;
             }
 
@@ -121,15 +125,15 @@ public class Reasoner {
                     err.println(Ansi.AUTO.string("Cannot acknowledge something that is not countable"));
                     return;
                 }
-                observable = observable.as(DescriptionType.ACKNOWLEDGEMENT);
+                observable = observable.builder(ctx).as(DescriptionType.ACKNOWLEDGEMENT).buildObservable();
             }
 
             out.println(Ansi.AUTO.string("Observation strategies for @|bold " + observable.getDescriptionType().name().toLowerCase()
                     + "|@ of @|green " + observable.getUrn() + "|@:"));
             for (var strategy : reasoner.inferStrategies(observable, ctx)) {
-                out.println(Ansi.AUTO.string("@|yellow " + Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".",
-                        " ", 4) + "|@-------------------------------------------"));
-                out.println(strategy);
+                out.println(Utils.Strings.indent(strategy.toString(),
+                        Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".",
+                                " ", 4)));
             }
         }
     }

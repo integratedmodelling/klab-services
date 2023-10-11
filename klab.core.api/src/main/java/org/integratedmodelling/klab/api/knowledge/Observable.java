@@ -125,6 +125,15 @@ public interface Observable extends Semantics {
         Builder as(UnarySemanticOperator type, Concept... participants) throws KValidationException;
 
         /**
+         * Change the description type. Due to ontological constraints, basically only useful to swap
+         * {@link DescriptionType#ACKNOWLEDGEMENT} and {@link DescriptionType#INSTANTIATION} on substantials.
+         *
+         * @param descriptionType
+         * @return
+         */
+        Builder as(DescriptionType descriptionType);
+
+        /**
          * Add traits to the concept being built. Pair with (@link {@link #withTrait(Collection)} as Java is
          * WriteEverythingTwice, not DontRepeatYourself.
          *
@@ -279,15 +288,15 @@ public interface Observable extends Semantics {
          */
         Builder withoutValueOperators();
 
-        /**
-         * Tags the classifier of an abstract attribute as targeting a specific concrete attribute, so that any
-         * classified objects that won't have that specific attribute can be recognized as irrelevant to this
-         * observation and hidden.
-         *
-         * @param targetPredicate
-         * @return
-         */
-        Builder withTargetPredicate(Concept targetPredicate);
+//        /**
+//         * Tags the classifier of an abstract attribute as targeting a specific concrete attribute, so that any
+//         * classified objects that won't have that specific attribute can be recognized as irrelevant to this
+//         * observation and hidden.
+//         *
+//         * @param targetPredicate
+//         * @return
+//         */
+//        Builder withTargetPredicate(Concept targetPredicate);
 
         /**
          * Set the observable resulting from buildObservable() as optional.
@@ -392,6 +401,13 @@ public interface Observable extends Semantics {
          */
         Builder withAnnotation(Annotation annotation);
 
+        /**
+         * Advanced. Use ONLY internally!
+         *
+         * @param s
+         * @return
+         */
+        Builder withReferenceName(String s);
     }
 
     /**
@@ -435,16 +451,16 @@ public interface Observable extends Semantics {
      */
     DescriptionType getDescriptionType();
 
-    /**
-     * Return an exact copy of this observable but with the passed description type. The description type must be
-     * compatible with the semantic or an exception should occur. This is a simpler operation that doesn't require a
-     * builder (which is processed by the reasoner) and if needed can be used to copy the observable by passing the
-     * result of {@link #getDescriptionType()}.
-     *
-     * @param descriptionType
-     * @return
-     */
-    Observable as(DescriptionType descriptionType);
+//    /**
+//     * Return an exact copy of this observable but with the passed description type. The description type must be
+//     * compatible with the semantic or an exception should occur. This is a simpler operation that doesn't require a
+//     * builder (which is processed by the reasoner) and if needed can be used to copy the observable by passing the
+//     * result of {@link #getDescriptionType()}.
+//     *
+//     * @param descriptionType
+//     * @return
+//     */
+//    Observable as(DescriptionType descriptionType);
 
     /**
      * Check if the description type equals or is subsumed by the passed one.

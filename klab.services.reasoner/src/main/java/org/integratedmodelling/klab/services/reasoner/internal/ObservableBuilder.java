@@ -58,7 +58,7 @@ public class ObservableBuilder implements Observable.Builder {
     private Concept relationshipTarget;
     private boolean optional;
     private String name;
-    private Concept targetPredicate;
+    //    private Concept targetPredicate;
     private Concept temporalInherent;
     private boolean mustContextualize = false;
     private String statedName;
@@ -103,6 +103,7 @@ public class ObservableBuilder implements Observable.Builder {
     private Observable incarnatedAbstractObservable;
 
     private Observable deferredTarget;
+    private DescriptionType descriptionType;
 
     public static ObservableBuilder getBuilder(Concept concept, Scope scope, OWL owl) {
         return new ObservableBuilder(concept, scope, owl);
@@ -131,15 +132,16 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     /**
-     * Copies all info from the first level of specification of the passed observable. Will retain the original
-     * semantics, so it won't separate prefix operators from the original observables: at the moment it will simply
-     * collect the traits, roles, and operands of infix operators.
+     * Copies all info from the first level of specification of the passed observable. Will retain the
+     * original semantics, so it won't separate prefix operators from the original observables: at the moment
+     * it will simply collect the traits, roles, and operands of infix operators.
      *
      * @param observable
      */
     public ObservableBuilder(Observable observable, Scope scope, OWL owl) {
         this.owl = owl;
         this.main = owl.reasoner().rawObservable(observable.getSemantics());
+        this.scope = scope;
         this.type = this.main.getType();
         this.ontology = owl.getOntology(observable.getSemantics().getNamespace());
         this.context = owl.reasoner().directContext(observable.getSemantics());
@@ -167,7 +169,8 @@ public class ObservableBuilder implements Observable.Builder {
             this.traits.add(trait);
         }
 
-        this.isTrivial = this.context == null && this.adjacent == null && this.inherent == null && this.causant == null
+        this.isTrivial =
+                this.context == null && this.adjacent == null && this.inherent == null && this.causant == null
                 && this.caused == null && this.cooccurrent == null && this.goal == null && this.compresent == null
                 && this.roles.isEmpty() && this.traits.isEmpty();
 
@@ -432,6 +435,12 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
+    @Override
+    public Observable.Builder as(DescriptionType descriptionType) {
+        this.descriptionType = descriptionType;
+        return this;
+    }
+
     /**
      * Copy the builder exactly but revise the declaration so that it does not include the operator.
      *
@@ -472,7 +481,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         KimConcept newDeclaration = ((KimConceptImpl) this.declaration).removeComponents(roles);
-        ObservableBuilder ret = new ObservableBuilder(owl.reasoner().declareConcept(newDeclaration), scope, owl);
+        ObservableBuilder ret = new ObservableBuilder(owl.reasoner().declareConcept(newDeclaration), scope,
+                owl);
 
         /*
          * copy the rest unless excluded
@@ -491,7 +501,7 @@ public class ObservableBuilder implements Observable.Builder {
          * for now these have no roles associated
          */
         ret.name = name;
-        ret.targetPredicate = targetPredicate;
+//        ret.targetPredicate = targetPredicate;
         ret.optional = this.optional;
         ret.mustContextualize = mustContextualize;
         ret.annotations.addAll(annotations);
@@ -748,7 +758,8 @@ public class ObservableBuilder implements Observable.Builder {
     public Observable.Builder withTrait(Concept... concepts) {
         for (Concept concept : concepts) {
             if (!concept.is(SemanticType.TRAIT)) {
-                notifications.add(Notification.of("cannot use concept " + concept + " as a trait", Level.Error));
+                notifications.add(Notification.of("cannot use concept " + concept + " as a trait",
+                        Level.Error));
             } else {
                 traits.add(concept);
                 if (!declarationIsComplete) {
@@ -783,7 +794,8 @@ public class ObservableBuilder implements Observable.Builder {
                 }
                 if (ontology == null) {
                     notifications.add(Notification.of(
-                            "cannot create a new concept from an ID if the ontology is not specified", Level.Error));
+                            "cannot create a new concept from an ID if the ontology is not specified",
+                            Level.Error));
                 }
             }
         }
@@ -953,7 +965,8 @@ public class ObservableBuilder implements Observable.Builder {
             Concept other = owl.reasoner().inherent(main);
             if (other != null && !owl.reasoner().compatible(inherent, other)) {
                 scope.error("cannot set the inherent type of " + main.displayName() + " to " + inherent.displayName()
-                        + " as it already has an incompatible inherency: " + other.displayName(), declaration);
+                        + " as it already has an incompatible inherency: " + other.displayName(),
+                        declaration);
             }
             cleanId = getCleanId(inherent);
             cId += (distributedInherency ? "OfEach" : "Of") + cleanId;
@@ -997,7 +1010,8 @@ public class ObservableBuilder implements Observable.Builder {
             Concept other = owl.reasoner().goal(main);
             if (other != null && !owl.reasoner().compatible(goal, other)) {
                 scope.error("cannot set the goal type of " + main.displayName() + " to " + goal.displayName()
-                        + " as it already has an incompatible goal type: " + other.displayName(), declaration);
+                        + " as it already has an incompatible goal type: " + other.displayName(),
+                        declaration);
             }
             cleanId = getCleanId(goal);
             cId += "For" + cleanId;
@@ -1065,13 +1079,15 @@ public class ObservableBuilder implements Observable.Builder {
             Concept other = owl.reasoner().relationshipSource(main);
             if (other != null && !owl.reasoner().compatible(relationshipSource, other)) {
                 scope.error("cannot set the relationship source type of " + main.displayName() + " to "
-                        + relationshipSource.displayName() + " as it already has an incompatible source type: "
+                        + relationshipSource.displayName() + " as it already has an incompatible source " +
+                        "type: "
                         + other.displayName(), declaration);
             }
             Concept other2 = owl.reasoner().relationshipTarget(main);
             if (other2 != null && !owl.reasoner().compatible(relationshipTarget, other2)) {
                 scope.error("cannot set the relationship target type of " + main.displayName() + " to "
-                        + relationshipTarget.displayName() + " as it already has an incompatible target type: "
+                        + relationshipTarget.displayName() + " as it already has an incompatible target " +
+                        "type: "
                         + other2.displayName(), declaration);
             }
             cleanId = getCleanId(relationshipSource);
@@ -1152,7 +1168,8 @@ public class ObservableBuilder implements Observable.Builder {
          */
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CORE_OBSERVABLE_PROPERTY, main.toString()));
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, rId));
-        axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, declaration.getUrn()));
+        axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY,
+                declaration.getUrn()));
 
         if (type.contains(SemanticType.ABSTRACT)) {
             axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_ABSTRACT, "true"));
@@ -1168,16 +1185,20 @@ public class ObservableBuilder implements Observable.Builder {
          */
 
         if (identities.size() > 0) {
-            owl.restrict(ret, owl.getProperty(NS.HAS_IDENTITY_PROPERTY), LogicalConnector.UNION, identities, ontology);
+            owl.restrict(ret, owl.getProperty(NS.HAS_IDENTITY_PROPERTY), LogicalConnector.UNION, identities
+                    , ontology);
         }
         if (realms.size() > 0) {
-            owl.restrict(ret, owl.getProperty(NS.HAS_REALM_PROPERTY), LogicalConnector.UNION, realms, ontology);
+            owl.restrict(ret, owl.getProperty(NS.HAS_REALM_PROPERTY), LogicalConnector.UNION, realms,
+                    ontology);
         }
         if (attributes.size() > 0) {
-            owl.restrict(ret, owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY), LogicalConnector.UNION, attributes, ontology);
+            owl.restrict(ret, owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY), LogicalConnector.UNION,
+                    attributes, ontology);
         }
         if (acceptedRoles.size() > 0) {
-            owl.restrictSome(ret, owl.getProperty(NS.HAS_ROLE_PROPERTY), LogicalConnector.UNION, acceptedRoles,
+            owl.restrictSome(ret, owl.getProperty(NS.HAS_ROLE_PROPERTY), LogicalConnector.UNION,
+                    acceptedRoles,
                     ontology);
         }
         if (inherent != null) {
@@ -1206,7 +1227,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
         if (relationshipSource != null) {
             owl.restrictSome(ret, owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY), relationshipSource, ontology);
-            owl.restrictSome(ret, owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY), relationshipTarget, ontology);
+            owl.restrictSome(ret, owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY), relationshipTarget,
+                    ontology);
         }
 
         if (scope != null && !owl.reasoner().satisfiable(ret)) {
@@ -1233,7 +1255,8 @@ public class ObservableBuilder implements Observable.Builder {
                 remove = !inherent.isAbstract();
             }
             if (this.type.contains(SemanticType.RELATIONSHIP)) {
-                remove = relationshipSource != null && !relationshipSource.isAbstract() && relationshipTarget != null
+                remove =
+                        relationshipSource != null && !relationshipSource.isAbstract() && relationshipTarget != null
                         && !relationshipTarget.isAbstract();
             }
 
@@ -1257,7 +1280,8 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     private Ontology getTargetOntology() {
-        return owl.getTargetOntology(ontology, main, traits, roles, inherent, context, caused, causant, compresent,
+        return owl.getTargetOntology(ontology, main, traits, roles, inherent, context, caused, causant,
+                compresent,
                 goal, cooccurrent, adjacent);
     }
 
@@ -1334,7 +1358,8 @@ public class ObservableBuilder implements Observable.Builder {
 
                 if (name == null) {
                     ret.setName(ret.getName() + "_"
-                            + ((Concept) valueOperand).displayName().replaceAll("\\-", "_").replaceAll(" ", "_"));
+                            + ((Concept) valueOperand).displayName().replaceAll("\\-", "_").replaceAll(" ",
+                            "_"));
                 }
 
             } else if (valueOperand instanceof Observable) {
@@ -1411,6 +1436,11 @@ public class ObservableBuilder implements Observable.Builder {
             ret.setRange(this.range);
         }
 
+        if (this.descriptionType != null) {
+            // TODO validate
+            ret.setDescriptionType(this.descriptionType);
+        }
+
         return ret;
     }
 
@@ -1423,10 +1453,10 @@ public class ObservableBuilder implements Observable.Builder {
             return ("i" + o).replaceAll("-", "_");
         } else if (o instanceof KimConcept) {
             return reference ? owl.reasoner().declareConcept((KimConcept) o).getReferenceName()
-                    : owl.reasoner().declareConcept((KimConcept) o).getName();
+                             : owl.reasoner().declareConcept((KimConcept) o).getName();
         } else if (o instanceof KimObservable) {
             return reference ? owl.reasoner().declareObservable((KimObservable) o).getReferenceName()
-                    : owl.reasoner().declareObservable((KimObservable) o).getName();
+                             : owl.reasoner().declareObservable((KimObservable) o).getName();
         }
         return ("h" + o.hashCode()).replaceAll("-", "_");
     }
@@ -1467,11 +1497,11 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Observable.Builder withTargetPredicate(Concept targetPredicate) {
-        this.targetPredicate = targetPredicate;
-        return this;
-    }
+//    @Override
+//    public Observable.Builder withTargetPredicate(Concept targetPredicate) {
+//        this.targetPredicate = targetPredicate;
+//        return this;
+//    }
 
     @Override
     public Observable.Builder withDereifiedAttribute(String dereifiedAttribute) {
@@ -1532,6 +1562,12 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     @Override
+    public Observable.Builder withReferenceName(String s) {
+        this.referenceName = s;
+        return this;
+    }
+
+    @Override
     public Observable.Builder withDefaultValue(Object defaultValue) {
         this.defaultValue = Literal.of(defaultValue);
         return this;
@@ -1550,7 +1586,8 @@ public class ObservableBuilder implements Observable.Builder {
      * @param concept
      * @return collection without the concepts and the concepts removed
      */
-    public Pair<Collection<Concept>, Collection<Concept>> copyWithout(Collection<Concept> concepts, Concept concept) {
+    public Pair<Collection<Concept>, Collection<Concept>> copyWithout(Collection<Concept> concepts,
+                                                                      Concept concept) {
         Set<Concept> ret = new HashSet<>();
         Set<Concept> rem = new HashSet<>();
         for (Concept c : concepts) {

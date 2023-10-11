@@ -7,10 +7,13 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -74,24 +77,24 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     /**
      * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)}, only types that have the exact same core type will
-     * be accepted.
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, only types that have the exact same core
+     * type will be accepted.
      */
     static public final int REQUIRE_SAME_CORE_TYPE = 0x02;
 
     /**
      * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with roles that are more general of the roles
-     * in the first concept will be accepted.
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with roles that are more general of
+     * the roles in the first concept will be accepted.
      */
     static public final int USE_ROLE_PARENT_CLOSURE = 0x04;
 
     /**
      * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with traits that are more general of the
-     * traits in the first concept will be accepted.
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with traits that are more general of
+     * the traits in the first concept will be accepted.
      */
     static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
 
@@ -161,9 +164,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * An emergence is the appearance of an observation triggered by another, under the assumptions stated in the
-     * worldview. It applies to processes and relationships and its emergent observable can be a configuration, subject
-     * or process.
+     * An emergence is the appearance of an observation triggered by another, under the assumptions stated in
+     * the worldview. It applies to processes and relationships and its emergent observable can be a
+     * configuration, subject or process.
      *
      * @author Ferd
      */
@@ -246,6 +249,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public ReasonerService(Authentication authenticationService, ServiceScope scope) {
         super(scope);
         this.authenticationService = authenticationService;
+        this.scope = scope;
         this.owl = new OWL(scope);
         this.owl.initialize();
         this.indexer = new Indexer(scope);
@@ -272,7 +276,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private void loadAuthority(ProjectConfiguration authority) {
         if (authority.getUrl().startsWith("classpath:")) {
             try {
-                Logging.INSTANCE.info("loading authority " + authority.getProject() + " from local classpath");
+                Logging.INSTANCE.info("loading authority " + authority.getProject() + " from local " +
+                        "classpath");
                 Class<? extends Authority> cls = (Class<? extends Authority>) Class
                         .forName(authority.getUrl().substring("classpath:".length()));
                 Configuration.INSTANCE.registerAuthority(cls.getDeclaredConstructor().newInstance());
@@ -293,7 +298,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Concept defineConcept(KimConceptStatement statement, Scope scope) {
-        return build(statement, this.owl.requireOntology(statement.getNamespace(), OWL.DEFAULT_ONTOLOGY_PREFIX), null,
+        return build(statement, this.owl.requireOntology(statement.getNamespace(),
+                        OWL.DEFAULT_ONTOLOGY_PREFIX), null,
                 scope);
     }
 
@@ -354,7 +360,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return this.owl.getChildren(target.asConcept());
     }
 
-    public Map<Concept, Collection<Observation>> emergentResolvables(Observation trigger, ContextScope scope) {
+    public Map<Concept, Collection<Observation>> emergentResolvables(Observation trigger,
+                                                                     ContextScope scope) {
 
         Map<Concept, Collection<Observation>> ret = new HashMap<>();
         Collection<Emergence> emergents = this.emergence.get(trigger.getObservable().getSemantics());
@@ -469,16 +476,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 		/*
 		TODO if these are observables, the observer also must be considered and matched by semantic distance.
 
-		TODO the observable now just carries an Observer identity but NOT a contract about the type of observer it
-		accepts. This is necessary for models to be able to declare their observers before they are actually observed.
+		TODO the observable now just carries an Observer identity but NOT a contract about the type of
+		 observer it
+		accepts. This is necessary for models to be able to declare their observers before they are actually
+		 observed.
 
-        In each observable, the actual Observer (if semantic) takes over the contract when matching. This, with the
+        In each observable, the actual Observer (if semantic) takes over the contract when matching. This,
+        with the
         fact that the observer may be a mere Identity, makes for a pretty complicated comparison.
 
-		The observer instance is an Identity - if that's also a DirectObservation use semantics, otherwise match with
+		The observer instance is an Identity - if that's also a DirectObservation use semantics, otherwise
+		match with
 		equals().
 
-		 An incoming without observer will match one with, but not the other way around unless the observers are
+		 An incoming without observer will match one with, but not the other way around unless the observers
+		  are
 		 compatible.
 		 */
 
@@ -493,17 +505,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-        return semanticDistance(target.asConcept(), other.asConcept(), context == null ? null : context.asConcept(),
+        return semanticDistance(target.asConcept(), other.asConcept(), context == null ? null :
+                                                                       context.asConcept(),
                 true, null);
     }
 
     /**
-     * The workhorse of semantic distance computation can also consider any predicates that were abstract in the lineage
-     * of the passed concept (i.e. the concept is the result of a query with the abstract predicates, which has been
-     * contextualized to incarnate them into the passed correspondence with concrete counterparts). In that case, and
-     * only in that case, the distance between a concrete candidate and one that contains its predicates in the abstract
-     * form can be positive, i.e. a concept with abstract predicates can resolve one with concrete subclasses as long as
-     * the lineage contains its resolution.
+     * The workhorse of semantic distance computation can also consider any predicates that were abstract in
+     * the lineage of the passed concept (i.e. the concept is the result of a query with the abstract
+     * predicates, which has been contextualized to incarnate them into the passed correspondence with
+     * concrete counterparts). In that case, and only in that case, the distance between a concrete candidate
+     * and one that contains its predicates in the abstract form can be positive, i.e. a concept with abstract
+     * predicates can resolve one with concrete subclasses as long as the lineage contains its resolution.
      *
      * @param to
      * @param context
@@ -684,8 +697,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * Get the distance between the core described observables after factoring out all operators and ensuring they are
-     * the same. If not the same, the concepts are incompatible and the distance is negative.
+     * Get the distance between the core described observables after factoring out all operators and ensuring
+     * they are the same. If not the same, the concepts are incompatible and the distance is negative.
      *
      * @param to
      * @return
@@ -821,9 +834,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public Collection<Concept> traits(Semantics concept) {
         Set<Concept> ret = new HashSet<>();
-        ret.addAll(this.owl.getRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
-        ret.addAll(this.owl.getRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY)));
-        ret.addAll(this.owl.getRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY)));
+        ret.addAll(this.owl.getRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
+        ret.addAll(this.owl.getRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY)));
+        ret.addAll(this.owl.getRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY)));
         return ret;
     }
 
@@ -1016,7 +1032,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public String displayName(Semantics semantics) {
         return semantics instanceof Observable ? observableDisplayName((Observable) semantics)
-                : conceptDisplayName(semantics.asConcept());
+                                               : conceptDisplayName(semantics.asConcept());
     }
 
     private String conceptDisplayName(Concept t) {
@@ -1071,17 +1087,20 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Collection<Concept> identities(Semantics concept) {
-        return this.owl.getRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY));
+        return this.owl.getRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY));
     }
 
     @Override
     public Collection<Concept> attributes(Semantics concept) {
-        return this.owl.getRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY));
+        return this.owl.getRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY));
     }
 
     @Override
     public Collection<Concept> realms(Semantics concept) {
-        return this.owl.getRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY));
+        return this.owl.getRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_REALM_PROPERTY));
     }
 
     @Override
@@ -1135,7 +1154,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Collection<Concept> directTraits(Semantics concept) {
         Set<Concept> ret = new HashSet<>();
         ret.addAll(
-                this.owl.getDirectRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
+                this.owl.getDirectRestrictedClasses(concept.asConcept(),
+                        this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
         ret.addAll(this.owl.getDirectRestrictedClasses(concept.asConcept(),
                 this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY)));
         ret.addAll(this.owl.getDirectRestrictedClasses(concept.asConcept(),
@@ -1151,12 +1171,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Collection<Concept> directIdentities(Semantics concept) {
-        return this.owl.getDirectRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY));
+        return this.owl.getDirectRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY));
     }
 
     @Override
     public Collection<Concept> directRealms(Semantics concept) {
-        return this.owl.getDirectRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_REALM_PROPERTY));
+        return this.owl.getDirectRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_REALM_PROPERTY));
     }
 
     @Override
@@ -1222,7 +1244,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Collection<Concept> directRoles(Semantics concept) {
-        return this.owl.getDirectRestrictedClasses(concept.asConcept(), this.owl.getProperty(NS.HAS_ROLE_PROPERTY));
+        return this.owl.getDirectRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_ROLE_PROPERTY));
     }
 
     @Override
@@ -1332,12 +1355,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Concept declareConcept(KimConcept conceptDeclaration) {
-        return declare(conceptDeclaration, this.owl.requireOntology(conceptDeclaration.getNamespace()), scope);
+        return declare(conceptDeclaration, this.owl.requireOntology(conceptDeclaration.getNamespace()),
+                scope);
     }
 
     @Override
     public Observable declareObservable(KimObservable observableDeclaration) {
-        return declare(observableDeclaration, this.owl.requireOntology(observableDeclaration.getMain().getNamespace()),
+        return declare(observableDeclaration,
+                this.owl.requireOntology(observableDeclaration.getMain().getNamespace()),
                 scope);
     }
 
@@ -1368,7 +1393,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         Concept core1 = coreObservable(o1);
         Concept core2 = coreObservable(o2);
 
-        if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : subsumes(core1, core2))) {
+        if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : subsumes(core1,
+                core2))) {
             return false;
         }
 
@@ -1558,7 +1584,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         coreConceptPeers.put(worldviewConcept, coreConcept);
     }
 
-    public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject, Scope monitor) {
+    public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject,
+                         Scope monitor) {
 
         if (concept.isMacro()) {
             return null;
@@ -1575,7 +1602,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 if (concept.getUpperConceptDefined() != null) {
                     parent = this.owl.getConcept(concept.getUpperConceptDefined());
                     if (parent == null) {
-                        monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
+                        monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown",
+                                concept);
                     } else {
                         parent.getType().addAll(concept.getType());
                     }
@@ -1586,14 +1614,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     for (ParentConcept p : concept.getParents()) {
 
                         if (i > 0) {
-                            monitor.error("concepts defining aliases with 'equals' cannot have more than one parent",
+                            monitor.error("concepts defining aliases with 'equals' cannot have more than " +
+                                            "one parent",
                                     p);
                         }
 
                         for (KimConcept pdecl : p.getConcepts()) {
                             Concept declared = declare(pdecl, ontology, monitor);
                             if (declared == null) {
-                                monitor.error("parent declaration " + pdecl + " does not identify known concepts",
+                                monitor.error("parent declaration " + pdecl + " does not identify known " +
+                                                "concepts",
                                         pdecl);
                                 return null;
                             }
@@ -1624,7 +1654,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     if (concept.getUpperConceptDefined() != null) {
                         upperConceptDefined = parent = this.owl.getConcept(concept.getUpperConceptDefined());
                         if (parent == null) {
-                            monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown", concept);
+                            monitor.error("Core concept " + concept.getUpperConceptDefined() + " is " +
+                                    "unknown", concept);
                         }
                     } else {
                         parent = this.owl.getCoreOntology().getCoreType(concept.getType());
@@ -1644,7 +1675,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 ontology.define();
 
                 if (coreConceptPeers.containsKey(ret.toString()) && upperConceptDefined != null
-                        && "true".equals(upperConceptDefined.getMetadata().get(NS.IS_CORE_KIM_TYPE, "false"))) {
+                        && "true".equals(upperConceptDefined.getMetadata().get(NS.IS_CORE_KIM_TYPE,
+                        "false"))) {
                     this.owl.getCoreOntology().setAsCoreType(ret);
                 }
 
@@ -1658,7 +1690,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return null;
     }
 
-    private Concept buildInternal(final KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject,
+    private Concept buildInternal(final KimConceptStatement concept, Ontology ontology,
+                                  KimConceptStatement kimObject,
                                   final Scope monitor) {
 
         Concept main = null;
@@ -1759,7 +1792,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept inherited : concept.getTraitsInherited()) {
             Concept trait = declare(inherited, ontology, monitor);
             if (trait == null) {
-                monitor.error("inherited " + inherited.getName() + " does not identify known concepts", inherited);
+                monitor.error("inherited " + inherited.getName() + " does not identify known concepts",
+                        inherited);
                 // return null;
             } else {
                 this.owl.addTrait(main, trait, ontology);
@@ -1770,25 +1804,30 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept affected : concept.getQualitiesAffected()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.error("affected " + affected.getName() + " does not identify known concepts", affected);
+                monitor.error("affected " + affected.getName() + " does not identify known concepts",
+                        affected);
             } else {
-                this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality, ontology);
+                this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality
+                        , ontology);
             }
         }
 
         for (KimConcept required : concept.getRequiredIdentities()) {
             Concept quality = declare(required, ontology, monitor);
             if (quality == null) {
-                monitor.error("required " + required.getName() + " does not identify known concepts", required);
+                monitor.error("required " + required.getName() + " does not identify known concepts",
+                        required);
             } else {
-                this.owl.restrictSome(main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality, ontology);
+                this.owl.restrictSome(main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality,
+                        ontology);
             }
         }
 
         for (KimConcept affected : concept.getObservablesCreated()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.error("created " + affected.getName() + " does not identify known concepts", affected);
+                monitor.error("created " + affected.getName() + " does not identify known concepts",
+                        affected);
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(NS.CREATES_PROPERTY), quality, ontology);
             }
@@ -1820,7 +1859,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * Arrange a set of concepts into the collection of the most specific members of each concept hierarchy therein.
+     * Arrange a set of concepts into the collection of the most specific members of each concept hierarchy
+     * therein.
      * <p>
      * TODO/FIXME not exposed, as I'm not sure this one is useful or intuitive
      * enough.
@@ -1851,7 +1891,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * Return the most specific ancestor that the concepts in the passed collection have in common, or null if none.
+     * Return the most specific ancestor that the concepts in the passed collection have in common, or null if
+     * none.
      *
      * @param cc
      * @return
@@ -1937,7 +1978,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             ns.add(Axiom.ObjectPropertyAssertion(pName));
             ns.add(Axiom.ObjectPropertyRange(pName, ret.getName()));
             ns.add(Axiom.SubObjectProperty(pProp, pName));
-            ns.add(Axiom.AnnotationAssertion(ret.getName(), NS.TRAIT_RESTRICTING_PROPERTY, ns.getName() + ":" + pName));
+            ns.add(Axiom.AnnotationAssertion(ret.getName(), NS.TRAIT_RESTRICTING_PROPERTY, ns.getName() +
+                    ":" + pName));
         }
     }
 
@@ -1964,7 +2006,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             return null;
         }
 
-        ObservableBuilder builder = new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
+        ObservableBuilder builder =
+                new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
 
         if (concept.getDistributedInherent() != null) {
             builder.withDistributedInherency(true);
@@ -2058,7 +2101,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             if (concept.getComparisonConcept() != null) {
                 other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
             }
-            builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null : new Concept[]{other});
+            builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null :
+                                                      new Concept[]{other});
         }
 
         Concept ret = null;
@@ -2076,8 +2120,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     concepts.add(declareInternal(op, ontology, monitor));
                 }
                 ret = concept.getExpressionType() == KimConcept.Expression.INTERSECTION
-                        ? this.owl.getIntersection(concepts, ontology, concept.getOperands().get(0).getType())
-                        : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
+                      ? this.owl.getIntersection(concepts, ontology, concept.getOperands().get(0).getType())
+                      : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
             }
 
             // set the k.IM definition in the concept.This must only happen if the
@@ -2085,12 +2129,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             if (builder.axiomsAdded()) {
 
                 this.owl.getOntology(ret.getNamespace()).define(Collections.singletonList(
-                        Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY, concept.getUrn())));
+                        Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY,
+                                concept.getUrn())));
 
                 // consistency check
                 if (!satisfiable(ret)) {
                     ret.getType().add(SemanticType.NOTHING);
-                    monitor.error("the definition of this concept has logical errors and is inconsistent", concept);
+                    monitor.error("the definition of this concept has logical errors and is inconsistent",
+                            concept);
                 }
 
                 /**
@@ -2121,7 +2167,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Observable declare(KimObservable concept, Ontology declarationOntology, Scope monitor) {
 
         if (concept.getNonSemanticType() != null) {
-            Concept nsmain = this.owl.getNonsemanticPeer(concept.getModelReference(), concept.getNonSemanticType());
+            Concept nsmain = this.owl.getNonsemanticPeer(concept.getModelReference(),
+                    concept.getNonSemanticType());
             ObservableImpl observable = ObservableImpl.promote(nsmain);
 //			observable.setModelReference(concept.getModelReference());
             observable.setName(concept.getFormalName());
@@ -2178,7 +2225,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             builder = builder.withRange(concept.getRange());
         }
 
-        builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept.isGlobal()) */
+        builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept
+        .isGlobal()) */
                 .named(concept.getFormalName());
 
         // TODO gather generic concepts and abstract ones
@@ -2226,8 +2274,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * Entry point of a semantic search. If the request has a new searchId, start a new SemanticExpression and keep it
-     * until timeout or completion.
+     * Entry point of a semantic search. If the request has a new searchId, start a new SemanticExpression and
+     * keep it until timeout or completion.
      *
      * @param request
      */
@@ -2301,7 +2349,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                         response.getErrors().add("Timeout during search");
                     }
 
-                    for (var match : indexer.query(request.getQueryString(), expression.getCurrent().getScope(),
+                    for (var match : indexer.query(request.getQueryString(),
+                            expression.getCurrent().getScope(),
                             request.getMaxResults())) {
                         response.getMatches().add(match);
                     }
@@ -2419,14 +2468,126 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Concept buildConcept(ObservableBuildStrategy builder) {
-        // TODO Auto-generated method stub
-        return null;
+        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
+        ret = defineBuilder(builder, ret);
+        return ret.buildConcept();
     }
 
     @Override
     public Observable buildObservable(ObservableBuildStrategy builder) {
-        // TODO Auto-generated method stub
-        return null;
+        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
+        ret = defineBuilder(builder, ret);
+        return ret.buildObservable();
+    }
+
+    private Observable.Builder defineBuilder(ObservableBuildStrategy builder, Observable.Builder ret) {
+        for (ObservableBuildStrategy.Operation op : builder.getOperations()) {
+            switch (op.getType()) {
+                case OF -> {
+                    ret = ret.of(op.getConcepts().get(0));
+                }
+                case WITH -> {
+                    ret = ret.with(op.getConcepts().get(0));
+                }
+                case WITHIN -> {
+                    ret = ret.within(op.getConcepts().get(0));
+                }
+                case GOAL -> {
+                    ret = ret.withGoal(op.getConcepts().get(0));
+                }
+                case FROM -> {
+                    ret = ret.from(op.getConcepts().get(0));
+                }
+                case TO -> {
+                    ret = ret.to(op.getConcepts().get(0));
+                }
+                case WITH_ROLE -> {
+                    ret = ret.withRole(op.getConcepts().get(0));
+                }
+                case AS -> {
+                    ret = ret.as(op.getOperator(), op.getConcepts().toArray(new Concept[0]));
+                }
+                case WITH_TRAITS -> {
+                    ret = ret.withTrait(op.getConcepts().toArray(new Concept[0]));
+                }
+                case WITHOUT -> {
+                    ret = ret.without(op.getRoles().toArray(new SemanticRole[0]));
+                }
+                case WITHOUT_ANY -> {
+                    ret = ret.withoutAny(op.getTypes().toArray(new SemanticType[0]));
+                }
+                case ADJACENT -> {
+                    ret = ret.withAdjacent(op.getConcepts().get(0));
+                }
+                case COOCCURRENT -> {
+                    ret = ret.withCooccurrent(op.getConcepts().get(0));
+                }
+                case WITH_UNIT -> {
+                    ret = ret.withUnit(op.getUnit());
+                }
+                case WITH_CURRENCY -> {
+                    ret = ret.withCurrency(op.getCurrency());
+                }
+                case WITH_RANGE -> {
+                    ret = ret.withRange(op.getRange());
+                }
+                case WITH_VALUE_OPERATOR -> {
+                    ret = ret.withValueOperator(op.getValueOperation().getFirst(),
+                            op.getValueOperation().getSecond().get(Object.class));
+                }
+                case LINKING -> {
+                    ret = ret.linking(op.getConcepts().get(0), op.getConcepts().get(1));
+                }
+                case NAMED -> {
+                    ret = ret.named(op.getPod().get(String.class));
+                }
+                case WITH_DISTRIBUTED_INHERENCY -> {
+                    ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
+                }
+                case WITHOUT_VALUE_OPERATORS -> {
+                    ret = ret.withoutValueOperators();
+                }
+                case AS_OPTIONAL -> {
+                    ret = ret.optional(op.getPod().get(Boolean.class));
+                }
+                case WITHOUT_ROLES -> {
+                    ret = ret.without(op.getRoles().toArray(new SemanticRole[0]));
+                }
+                case WITH_TEMPORAL_INHERENT -> {
+                    ret = ret.withTemporalInherent(op.getConcepts().get(0));
+                }
+                case WITH_DEREIFIED_ATTRIBUTE -> {
+                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
+                }
+                case REFERENCE_NAMED -> {
+                    ret = ret.withReferenceName(op.getPod().get(String.class));
+                }
+                case WITH_INLINE_VALUE -> {
+                    ret = ret.withInlineValue(op.getPod().get(Object.class));
+                }
+                case WITH_DEFAULT_VALUE -> {
+                    ret = ret.withDefaultValue(op.getPod().get(Object.class));
+                }
+                case WITH_RESOLUTION_EXCEPTION -> {
+                    ret = ret.withResolutionException(op.getResolutionException());
+                }
+                case AS_GENERIC -> {
+                    ret = ret.generic(op.getPod().get(Boolean.class));
+                }
+                case WITH_ANNOTATION -> {
+                    for (Annotation annotation : op.getAnnotations()) {
+                        ret = ret.withAnnotation(annotation);
+                    }
+                }
+                case AS_DESCRIPTION_TYPE -> {
+                    ret = ret.as(op.getDescriptionType());
+                }
+                default ->
+                        throw new KUnimplementedException("ReasonerService::defineBuilder: unhandled " +
+                                "operation " + op.getType());
+            }
+        }
+        return ret;
     }
 
     @Override

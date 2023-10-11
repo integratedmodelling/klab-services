@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.collections.ImmutableList;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
@@ -22,14 +23,15 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
- * A builder that just registers actions called on it and gets sent to a reasoner to replicate them in the reasoner and
- * return the result, which may contain operation results in its metadata.
+ * A builder that just registers actions called on it and gets sent to a reasoner to replicate them in the
+ * reasoner and return the result, which may contain operation results in its metadata.
  *
  * @author Ferd
  */
 public class ObservableBuildStrategy implements Observable.Builder {
 
-    private static final String REMOVED_CONCEPTS_METADATA_KEY = "observable.builder.metadata.removed.concepts";
+    private static final String REMOVED_CONCEPTS_METADATA_KEY = "observable.builder.metadata.removed" +
+            ".concepts";
 
     private static final long serialVersionUID = -5968594309897960639L;
 
@@ -37,13 +39,22 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     // all the methods codified as an enum
     public enum OperationType {
-        OF, WITH, WITHIN, GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY, ADJACENT, COOCCURRENT,
-        WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR
+        OF, WITH, WITHIN, GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY, ADJACENT,
+        COOCCURRENT,
+        WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR, LINKING, NAMED,
+        WITH_DISTRIBUTED_INHERENCY, WITHOUT_VALUE_OPERATORS, AS_OPTIONAL, WITHOUT_ROLES,
+        WITH_TEMPORAL_INHERENT, WITH_DEREIFIED_ATTRIBUTE, REFERENCE_NAMED, WITH_INLINE_VALUE,
+        WITH_DEFAULT_VALUE, WITH_RESOLUTION_EXCEPTION, AS_GENERIC, WITH_ANNOTATION, AS_DESCRIPTION_TYPE
     }
 
     public static class Operation implements Serializable {
 
         private static final long serialVersionUID = -3560499809607527771L;
+
+        private List<Annotation> annotations = new ArrayList<>();
+        private ResolutionException resolutionException;
+
+        private DescriptionType descriptionType;
         private Unit unit;
         private Currency currency;
         private NumericRange range;
@@ -112,6 +123,43 @@ public class ObservableBuildStrategy implements Observable.Builder {
         public Operation(OperationType operationType, Pair<ValueOperator, Literal> unit) {
             this.type = type;
             this.valueOperation = unit;
+        }
+
+        public Operation(OperationType operationType, DescriptionType descriptionType) {
+            this.type = operationType;
+            this.descriptionType = descriptionType;
+        }
+
+        public Operation(OperationType operationType, boolean generic) {
+            this.type = operationType;
+            this.pod = Literal.of(generic);
+        }
+
+        public Operation(OperationType operationType) {
+            this.type = operationType;
+        }
+
+        public Operation(OperationType operationType, String name) {
+            this.type = operationType;
+            this.pod = Literal.of(name);
+        }
+
+        public Operation(OperationType operationType, ResolutionException resolutionException) {
+            this.type = operationType;
+            this.resolutionException = resolutionException;
+        }
+
+        public Operation(OperationType operationType, Annotation annotation) {
+            this.type = operationType;
+            this.annotations.add(annotation);
+        }
+
+        public DescriptionType getDescriptionType() {
+            return descriptionType;
+        }
+
+        public void setDescriptionType(DescriptionType descriptionType) {
+            this.descriptionType = descriptionType;
         }
 
         public OperationType getType() {
@@ -193,6 +241,23 @@ public class ObservableBuildStrategy implements Observable.Builder {
         public void setValueOperation(Pair<ValueOperator, Literal> valueOperation) {
             this.valueOperation = valueOperation;
         }
+
+        public ResolutionException getResolutionException() {
+            return resolutionException;
+        }
+
+        public void setResolutionException(ResolutionException resolutionException) {
+            this.resolutionException = resolutionException;
+        }
+
+        public List<Annotation> getAnnotations() {
+            return annotations;
+        }
+
+        public void setAnnotations(List<Annotation> annotations) {
+            this.annotations = annotations;
+        }
+
     }
 
     private Observable baseObservable;
@@ -260,6 +325,12 @@ public class ObservableBuildStrategy implements Observable.Builder {
     }
 
     @Override
+    public Builder as(DescriptionType descriptionType) {
+        this.operations.add(new Operation(OperationType.AS_DESCRIPTION_TYPE, descriptionType));
+        return this;
+    }
+
+    @Override
     public Builder withTrait(Concept... concepts) {
         this.operations.add(new Operation(OperationType.WITH_TRAITS, concepts));
         return this;
@@ -267,13 +338,15 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder withTrait(Collection<Concept> concepts) {
-        this.operations.add(new Operation(OperationType.WITH_TRAITS, concepts.toArray(new Concept[concepts.size()])));
+        this.operations.add(new Operation(OperationType.WITH_TRAITS,
+                concepts.toArray(new Concept[concepts.size()])));
         return this;
     }
 
     @Override
     public Builder without(Collection<Concept> concepts) {
-        this.operations.add(new Operation(OperationType.WITHOUT, concepts.toArray(new Concept[concepts.size()])));
+        this.operations.add(new Operation(OperationType.WITHOUT,
+                concepts.toArray(new Concept[concepts.size()])));
         return this;
     }
 
@@ -309,7 +382,8 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder withoutAny(Collection<Concept> concepts) {
-        this.operations.add(new Operation(OperationType.WITHOUT_ANY, concepts.toArray(new Concept[concepts.size()])));
+        this.operations.add(new Operation(OperationType.WITHOUT_ANY,
+                concepts.toArray(new Concept[concepts.size()])));
         return this;
     }
 
@@ -339,7 +413,8 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder withValueOperator(ValueOperator operator, Object valueOperand) {
-        this.operations.add(new Operation(OperationType.WITH_VALUE_OPERATOR, Pair.of(operator, Literal.of(valueOperand))));
+        this.operations.add(new Operation(OperationType.WITH_VALUE_OPERATOR, Pair.of(operator,
+                Literal.of(valueOperand))));
         return this;
     }
 
@@ -351,91 +426,92 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder linking(Concept source, Concept target) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.LINKING, source, target));
         return this;
     }
 
     @Override
     public Builder named(String name) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.NAMED, name));
         return this;
     }
 
     @Override
     public Builder withDistributedInherency(boolean ofEach) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_DISTRIBUTED_INHERENCY, ofEach));
         return this;
     }
 
     @Override
     public Builder withoutValueOperators() {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITHOUT_VALUE_OPERATORS));
         return this;
     }
 
-    @Override
-    public Builder withTargetPredicate(Concept targetPredicate) {
-        // TODO Auto-generated method stub
-        return this;
-    }
+//    @Override
+//    public Builder withTargetPredicate(Concept targetPredicate) {
+//        this.operations.add(new Operation(OperationType.WITH_TARGET_PREDICATE, targetPredicate));
+//        return this;
+//    }
 
     @Override
     public Builder optional(boolean optional) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.AS_OPTIONAL, optional));
         return this;
     }
 
     @Override
     public Builder without(SemanticRole... roles) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITHOUT_ROLES, roles));
         return this;
     }
 
     @Override
     public Builder withTemporalInherent(Concept concept) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_TEMPORAL_INHERENT, concept));
         return this;
     }
 
     @Override
     public Builder withDereifiedAttribute(String dereifiedAttribute) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_DEREIFIED_ATTRIBUTE, dereifiedAttribute));
         return this;
     }
 
     @Override
     public Builder named(String name, String referenceName) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.REFERENCE_NAMED, referenceName));
+        this.operations.add(new Operation(OperationType.NAMED, name));
         return this;
     }
 
     @Override
     public Builder withUnit(String unit) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_UNIT, unit));
         return this;
     }
 
     @Override
     public Builder withCurrency(String currency) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_CURRENCY, currency));
         return this;
     }
 
     @Override
     public Builder withInlineValue(Object value) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_INLINE_VALUE, Literal.of(value)));
         return this;
     }
 
     @Override
     public Builder withDefaultValue(Object defaultValue) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_DEFAULT_VALUE, Literal.of(defaultValue)));
         return this;
     }
 
     @Override
     public Builder withResolutionException(ResolutionException resolutionException) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_RESOLUTION_EXCEPTION, resolutionException));
         return this;
     }
 
@@ -447,13 +523,19 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder generic(boolean generic) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.AS_GENERIC, generic));
         return this;
     }
 
     @Override
     public Builder withAnnotation(Annotation annotation) {
-        // TODO Auto-generated method stub
+        this.operations.add(new Operation(OperationType.WITH_ANNOTATION, annotation));
+        return this;
+    }
+
+    @Override
+    public Builder withReferenceName(String s) {
+        this.operations.add(new Operation(OperationType.REFERENCE_NAMED, s));
         return this;
     }
 

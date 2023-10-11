@@ -27,7 +27,10 @@ public interface Literal extends Serializable {
      * @param o
      * @return
      */
-    public static LiteralImpl of(Object o) {
+    public static Literal of(Object o) {
+        if (o instanceof Literal literal) {
+            return literal;
+        }
         LiteralImpl ret = new LiteralImpl();
         ret.setValue(o);
         ret.setValueType(LiteralImpl.classifyLiteral(o));

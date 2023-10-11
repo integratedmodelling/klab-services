@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 
 import java.util.ArrayList;
@@ -12,8 +13,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Specialized functions to infer observation strategies. Kept separately for clarity as this is a crucial k.LAB
- * component, although they are part of the reasoner services.
+ * Specialized functions to infer observation strategies. Kept separately for clarity as this is a crucial
+ * k.LAB component, although they are part of the reasoner services.
  */
 public class ObservationReasoner {
     private Reasoner reasoner;
@@ -36,15 +37,16 @@ public class ObservationReasoner {
          */
         var generics = observable.getGenericComponents();
         var traits = observable.is(SemanticType.QUALITY) ? reasoner.attributes(observable) :
-                reasoner.traits(observable);
+                     reasoner.traits(observable);
 
         if (generics.isEmpty() && !observable.isAbstract()) {
-            ret.addAll(getDirectConcreteStrategies(observable));
+            ret.addAll(getDirectConcreteStrategies(observable, scope));
         }
 
         if (!observable.getValueOperators().isEmpty()) {
             Observable withoutOperators = observable.builder(scope).withoutValueOperators().buildObservable();
-            return addValueOperatorStrategies(inferStrategies(withoutOperators, scope), observable.getValueOperators());
+            return addValueOperatorStrategies(inferStrategies(withoutOperators, scope),
+                    observable.getValueOperators());
         }
 
 
@@ -65,7 +67,8 @@ public class ObservationReasoner {
     }
 
     private List<ObservationStrategy> insertSpecializedDeferralStrategies(List<ObservationStrategy> ret,
-                                                                          Observable observable, ContextScope scope) {
+                                                                          Observable observable,
+                                                                          ContextScope scope) {
         // TODO
         return ret;
     }
@@ -77,7 +80,8 @@ public class ObservationReasoner {
     }
 
     private List<ObservationStrategy> getTraitConcreteStrategies(List<ObservationStrategy> strategies,
-                                                                 Observable observable, Collection<Concept> traits) {
+                                                                 Observable observable,
+                                                                 Collection<Concept> traits) {
         List<ObservationStrategy> ret = new ArrayList<>();
         return ret;
     }
@@ -92,7 +96,8 @@ public class ObservationReasoner {
     /**
      * Direct strategies have rank 0
      */
-    private Collection<? extends ObservationStrategy> getDirectConcreteStrategies(Observable observable) {
+    private Collection<? extends ObservationStrategy> getDirectConcreteStrategies(Observable observable,
+                                                                                  Scope scope) {
 
         List<ObservationStrategy> ret = new ArrayList<>();
 
@@ -100,14 +105,15 @@ public class ObservationReasoner {
          * first course of action for concrete observables is always direct observation (finding a model and
          * contextualizing it)
          */
-        var builder = ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.OBSERVE
+        var builder =
+                ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.OBSERVE
                 , observable);
 
         // resolve the instances if instantiating
         if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
             builder.withStrategy(ObservationStrategy.Operation.DEFER,
                     ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.OBSERVE,
-                            observable.as(DescriptionType.ACKNOWLEDGEMENT)).build());
+                            observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).optional(true).buildObservable()).build());
         }
 
         ret.add(builder.build());

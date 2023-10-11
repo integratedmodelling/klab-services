@@ -41,28 +41,34 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * A DigitalTwin is the server-side observation content kept with a context scope, which acts as a "handle" to it. It
- * contains all observations, their storage, the influence diagram between observations with the log of any modification
- * event timestamp, the scheduler, the event manager and the catalog of ID->{observation, actuator, storage, runtime
- * data...}. Also maintains the logical and physical "family tree" of observation and manages the bookkeeping of any
- * runtime assets so that they are known and disposed of properly when the context scope ends. The logical tree skips
- * the instance container built for the instantiators, which is kept in the physical structure.
+ * A DigitalTwin is the server-side observation content kept with a context scope, which acts as a "handle" to
+ * it. It contains all observations, their storage, the influence diagram between observations with the log of
+ * any modification event timestamp, the scheduler, the event manager and the catalog of ID->{observation,
+ * actuator, storage, runtime data...}. Also maintains the logical and physical "family tree" of observation
+ * and manages the bookkeeping of any runtime assets so that they are known and disposed of properly when the
+ * context scope ends. The logical tree skips the instance container built for the instantiators, which is
+ * kept in the physical structure.
  * <p>
- * The DigitalTwin is accessed through the {@link ContextScope}. Eventually it may have its own API contract, although
- * all interaction is currently managed through {@link ContextScope}. It is a {@link Closeable} and its close() method
- * should notify every listener, stop all active threads, then free up all internal resources.</p>
+ * The DigitalTwin is accessed through the {@link ContextScope}. Eventually it may have its own API contract,
+ * although all interaction is currently managed through {@link ContextScope}. It is a {@link Closeable} and
+ * its close() method should notify every listener, stop all active threads, then free up all internal
+ * resources.</p>
  *
- * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage  and context, so that
- * successive resolutions of instances can reuse a previous dataflow when it is applicable instead of asking the
- * resolver again. This can be configured to be applied only above a certain threshold in the number of instances, or
- * turned off completely, in case speed and space occupation are no issue but maximum dataflow "fit" to the resolved
- * object and its scale must be ensured.</p>
+ * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage  and context,
+ * so that
+ * successive resolutions of instances can reuse a previous dataflow when it is applicable instead of asking
+ * the resolver again. This can be configured to be applied only above a certain threshold in the number of
+ * instances, or turned off completely, in case speed and space occupation are no issue but maximum dataflow
+ * "fit" to the resolved object and its scale must be ensured.</p>
  *
  * <p>Ideas for the DT API and interface:</p>
  * <ul>
- *     <li>Use GraphQL on the main DT GET endpoint for inquiries along the observation structure and possibly the
- *     dataflow. That could be just the URL of the runtime + /{observation|dataflow}/+ the ID of the DT/context,
- *     possibly starting at a non-root observation or actuator (their IDs are the same). This can be the basis for
+ *     <li>Use GraphQL on the main DT GET endpoint for inquiries along the observation structure and
+ *     possibly the
+ *     dataflow. That could be just the URL of the runtime + /{observation|dataflow}/+ the ID of the
+ *     DT/context,
+ *     possibly starting at a non-root observation or actuator (their IDs are the same). This can be the
+ *     basis for
  *     the remote digital twin API.</li>
  * </ul>
  *
@@ -84,8 +90,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Types of the events that can be subscribed to and get communicated. This should evolve into a comprehensive
-     * taxonomy of DT events for remote client scopes, debuggers and loggers.
+     * Types of the events that can be subscribed to and get communicated. This should evolve into a
+     * comprehensive taxonomy of DT events for remote client scopes, debuggers and loggers.
      *
      * @author Ferd
      */
@@ -94,8 +100,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Fastest possible way to check if an event must be sent. This does not specify what the listeners are and is just
-     * used to wrap the event sending code.
+     * Fastest possible way to check if an event must be sent. This does not specify what the listeners are
+     * and is just used to wrap the event sending code.
      * <p>
      * TODO this should be a map pointing to a list of scopes for each event. New events should be pushed and
      * processed in a FIFO queue handled by a monitor thread
@@ -113,8 +119,8 @@ public class DigitalTwin implements Closeable {
 
 
     /**
-     * Create an executor for the computation and return it, or - if appropriate - merge the computation into the
-     * previous executor and return it.
+     * Create an executor for the computation and return it, or - if appropriate - merge the computation into
+     * the previous executor and return it.
      *
      * @param actuator
      * @param computation
@@ -132,35 +138,43 @@ public class DigitalTwin implements Closeable {
 
         return switch (functor) {
             case null ->
-                    throw new KlabInternalErrorException("function call " + computation.getName() + " produced a null" +
+                    throw new KlabInternalErrorException("function call " + computation.getName() + " " +
+                            "produced a null" +
                             " result");
-            case Instantiator instantiator -> new Executor(Executor.Type.OBSERVATION_INSTANTIATOR, parallelism) {
-                @Override
-                public void accept(Observation observation, ContextScope contextScope) {
-                    var observable = observation.getObservable().as(DescriptionType.ACKNOWLEDGEMENT);
-                    var instances = instantiator.resolve(observation.getObservable(), computation, scope);
-                    // TODO this should be external at this point, part of the deferral strategy
-                    // create observation, add it and call the resolver back; cache the dataflow if so configured
-                    // configuration may only cache the dataflow above a certain number of instances
-                    // parallelize the resolution of the observations as needed using virtual threads
-                }
-            };
+            case Instantiator instantiator ->
+                    new Executor(Executor.Type.OBSERVATION_INSTANTIATOR, parallelism) {
+                        @Override
+                        public void accept(Observation observation, ContextScope contextScope) {
+                            var observable =
+                                    observation.getObservable().builder(contextScope).as(DescriptionType.ACKNOWLEDGEMENT).buildObservable();
+                            var instances = instantiator.resolve(observation.getObservable(), computation,
+                                    scope);
+                            // TODO this should be external at this point, part of the deferral strategy
+                            // create observation, add it and call the resolver back; cache the dataflow if
+                            // so configured
+                            // configuration may only cache the dataflow above a certain number of instances
+                            // parallelize the resolution of the observations as needed using virtual threads
+                        }
+                    };
             case DoubleValueResolver dresolver ->
-                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, dresolver) {
+                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism,
+                            dresolver) {
                         @Override
                         public void accept(Observation observation, ContextScope contextScope) {
                             executeChain((State) observation, contextScope);
                         }
                     } : previousExecutor.chain(dresolver);
             case IntValueResolver iresolver ->
-                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, iresolver) {
+                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism,
+                            iresolver) {
                         @Override
                         public void accept(Observation observation, ContextScope contextScope) {
                             executeChain((State) observation, contextScope);
                         }
                     } : previousExecutor.chain(iresolver);
             case ConceptValueResolver cresolver ->
-                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism, cresolver) {
+                    previousExecutor == null ? new Executor(Executor.Type.VALUE_RESOLVER, parallelism,
+                            cresolver) {
                         @Override
                         public void accept(Observation observation, ContextScope contextScope) {
                             executeChain((State) observation, contextScope);
@@ -192,8 +206,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Register an actuator and create all support info before execution. Return true if the actuator is new and has
-     * computations.
+     * Register an actuator and create all support info before execution. Return true if the actuator is new
+     * and has computations.
      *
      * @param actuator
      * @param scope
@@ -244,7 +258,8 @@ public class DigitalTwin implements Closeable {
         Observation observation;
         DirectObservation contextObservation;
         Actuator actuator;
-        // the scale of contextualization of the actuator, computed in context based on coverage + context scale
+        // the scale of contextualization of the actuator, computed in context based on coverage + context
+        // scale
         Scale scale;
         // the last timestamp in the influence graph starting at this
         long lastUpdate = -1;
@@ -279,8 +294,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Events that must reach the client side are communicated through this. It's probably the entire scope but we don't
-     * store the scope, we pass it to individual methods.
+     * Events that must reach the client side are communicated through this. It's probably the entire scope
+     * but we don't store the scope, we pass it to individual methods.
      */
     Channel bus;
 
@@ -290,9 +305,10 @@ public class DigitalTwin implements Closeable {
     Set<Observation> rootObservations = new LinkedHashSet<>();
 
     /**
-     * The influence diagram tells us which observation is influenced by changes in which others (info mutuated by
-     * actuators at first, then potentially modified through behaviors or messages). Holds for actuators and
-     * observations because the IDs are the same. The edges should keep the list of modification timesteps.
+     * The influence diagram tells us which observation is influenced by changes in which others (info
+     * mutuated by actuators at first, then potentially modified through behaviors or messages). Holds for
+     * actuators and observations because the IDs are the same. The edges should keep the list of modification
+     * timesteps.
      */
     Graph<String, DefaultEdge> influenceDiagram = new DefaultDirectedGraph<>(DefaultEdge.class);
 
@@ -363,8 +379,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Run the passed actuator, building the necessary observations and updating all records. Sound dependency order
-     * must be guaranteed by the caller. Notify whatever info we have subscribed to.
+     * Run the passed actuator, building the necessary observations and updating all records. Sound dependency
+     * order must be guaranteed by the caller. Notify whatever info we have subscribed to.
      * <p>
      * TODO obs data for an actuator should contain the actual coverage in the context scale
      *
@@ -408,16 +424,19 @@ public class DigitalTwin implements Closeable {
             case QUANTIFICATION -> new DoubleStorage(scope.getScale(), storageScope);
             case CATEGORIZATION -> new KeyedStorage(scope.getScale(), storageScope);
             case VERIFICATION -> new BooleanStorage(scope.getScale(), storageScope);
-            default -> throw new KIllegalStateException("Unexpected value: " + observable.getDescriptionType());
+            default ->
+                    throw new KIllegalStateException("Unexpected value: " + observable.getDescriptionType());
         };
         this.runtimeAssets.add(storage);
         return storage;
     }
 
-    private ObservationImpl createObservation(Actuator actuator, DirectObservation parent, ContextScope scope) {
+    private ObservationImpl createObservation(Actuator actuator, DirectObservation parent,
+                                              ContextScope scope) {
 
         var ret = switch (actuator.getObservable().getDescriptionType()) {
-            case ACKNOWLEDGEMENT -> new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
+            case ACKNOWLEDGEMENT ->
+                    new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
             case INSTANTIATION, CONNECTION ->
                     new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
             case CATEGORIZATION, VERIFICATION, QUANTIFICATION ->
@@ -454,17 +473,18 @@ public class DigitalTwin implements Closeable {
 
 
     /**
-     * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by dependency
-     * and appended in order to the result list along with its order of execution. Successive roots can refer to the
-     * previous roots but they must be executed sequentially.
+     * Establish the order of execution and the possible parallelism. Each root actuator should be sorted by
+     * dependency and appended in order to the result list along with its order of execution. Successive roots
+     * can refer to the previous roots but they must be executed sequentially.
      * <p>
-     * The DigitalTwin is asked to register the actuator in the scope and prepare the environment and state for its
-     * execution, including defining its contextualization scale in context.
+     * The DigitalTwin is asked to register the actuator in the scope and prepare the environment and state
+     * for its execution, including defining its contextualization scale in context.
      *
      * @param dataflow
      * @return
      */
-    private List<Pair<Actuator, Integer>> sortComputation(Dataflow<Observation> dataflow, ContextScope scope) {
+    private List<Pair<Actuator, Integer>> sortComputation(Dataflow<Observation> dataflow,
+                                                          ContextScope scope) {
         List<Pair<Actuator, Integer>> ret = new ArrayList<>();
         for (Actuator root : dataflow.getComputation()) {
             int executionOrder = 0;
@@ -494,8 +514,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * If the actuator depends on any in the currentGroup, empty the group and increment the order; otherwise, add it to
-     * the group and return the same order.
+     * If the actuator depends on any in the currentGroup, empty the group and increment the order; otherwise,
+     * add it to the group and return the same order.
      *
      * @param executionOrder
      * @param current
@@ -503,7 +523,8 @@ public class DigitalTwin implements Closeable {
      * @param currentGroup
      * @return
      */
-    private int checkExecutionOrder(int executionOrder, Actuator current, Graph<Actuator, DefaultEdge> dependencyGraph,
+    private int checkExecutionOrder(int executionOrder, Actuator current,
+                                    Graph<Actuator, DefaultEdge> dependencyGraph,
                                     Set<Actuator> currentGroup) {
         boolean dependency = false;
         for (Actuator previous : currentGroup) {
@@ -545,8 +566,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Build and return the dependency graph for the passed actuators. Save externally if appropriate - caching does
-     * create issues in contextualization and scheduling.
+     * Build and return the dependency graph for the passed actuators. Save externally if appropriate -
+     * caching does create issues in contextualization and scheduling.
      *
      * @return
      */
@@ -573,7 +594,8 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Call at scope disposal and service shutdown (scope disposal should be scheduled after configured inactivity).
+     * Call at scope disposal and service shutdown (scope disposal should be scheduled after configured
+     * inactivity).
      *
      * @return
      */
@@ -581,9 +603,11 @@ public class DigitalTwin implements Closeable {
         return true;
     }
 
-    private Graph<Observation, DefaultEdge> logicalStructure = new DefaultDirectedGraph<Observation, DefaultEdge>(
+    private Graph<Observation, DefaultEdge> logicalStructure = new DefaultDirectedGraph<Observation,
+            DefaultEdge>(
             DefaultEdge.class);
-    private Graph<Observation, DefaultEdge> physicalStructure = new DefaultDirectedGraph<Observation, DefaultEdge>(
+    private Graph<Observation, DefaultEdge> physicalStructure = new DefaultDirectedGraph<Observation,
+            DefaultEdge>(
             DefaultEdge.class);
     private Map<String, Process> derivedOccurrents = new HashMap<>();
 
@@ -628,10 +652,10 @@ public class DigitalTwin implements Closeable {
     }
 
     /**
-     * Link observations, using artifact logics, as specified during contextualization. The artifact structure will
-     * contains the graph as specified, attributing process states to the parent subject. The logical structure will
-     * skip folders and processes, always attributing observations to their parent observations and linking process
-     * qualities to subjects.
+     * Link observations, using artifact logics, as specified during contextualization. The artifact structure
+     * will contains the graph as specified, attributing process states to the parent subject. The logical
+     * structure will skip folders and processes, always attributing observations to their parent observations
+     * and linking process qualities to subjects.
      *
      * @param childArtifact
      * @param parentArtifact
