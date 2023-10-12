@@ -146,7 +146,7 @@ public class DigitalTwin implements Closeable {
                         @Override
                         public void accept(Observation observation, ContextScope contextScope) {
                             var observable =
-                                    observation.getObservable().builder(contextScope).as(DescriptionType.ACKNOWLEDGEMENT).buildObservable();
+                                    observation.getObservable().builder(contextScope).as(DescriptionType.ACKNOWLEDGEMENT).build();
                             var instances = instantiator.resolve(observation.getObservable(), computation,
                                     scope);
                             // TODO this should be external at this point, part of the deferral strategy

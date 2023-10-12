@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -112,6 +113,11 @@ public class ReasonerClient implements Reasoner {
 	@Override
 	public Concept parent(Semantics c) {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Concept compose(Collection<Concept> concepts, LogicalConnector connector) {
 		return null;
 	}
 

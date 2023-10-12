@@ -171,8 +171,8 @@ public class ObservableBuilder implements Observable.Builder {
 
         this.isTrivial =
                 this.context == null && this.adjacent == null && this.inherent == null && this.causant == null
-                && this.caused == null && this.cooccurrent == null && this.goal == null && this.compresent == null
-                && this.roles.isEmpty() && this.traits.isEmpty();
+                        && this.caused == null && this.cooccurrent == null && this.goal == null && this.compresent == null
+                        && this.roles.isEmpty() && this.traits.isEmpty();
 
         // these are only used if buildObservable() is called
         this.unit = observable.getUnit();
@@ -365,7 +365,7 @@ public class ObservableBuilder implements Observable.Builder {
 
         if (incarnatedAbstractObservable != null) {
             incarnatedAbstractObservable = incarnatedAbstractObservable.builder(scope).as(type, participants)
-                    .buildObservable();
+                    .build();
         }
 
         if (argument != null) {
@@ -806,6 +806,11 @@ public class ObservableBuilder implements Observable.Builder {
     @Override
     public Concept buildConcept() throws KValidationException {
 
+        // finalize the concept by recomputing its URN
+        if (declaration instanceof KimConceptImpl impl) {
+            impl.finalizeDefinition();
+        }
+
         if (notifications.size() > 0) {
 
             // build anyway but leave errors for notification
@@ -965,7 +970,7 @@ public class ObservableBuilder implements Observable.Builder {
             Concept other = owl.reasoner().inherent(main);
             if (other != null && !owl.reasoner().compatible(inherent, other)) {
                 scope.error("cannot set the inherent type of " + main.displayName() + " to " + inherent.displayName()
-                        + " as it already has an incompatible inherency: " + other.displayName(),
+                                + " as it already has an incompatible inherency: " + other.displayName(),
                         declaration);
             }
             cleanId = getCleanId(inherent);
@@ -1010,7 +1015,7 @@ public class ObservableBuilder implements Observable.Builder {
             Concept other = owl.reasoner().goal(main);
             if (other != null && !owl.reasoner().compatible(goal, other)) {
                 scope.error("cannot set the goal type of " + main.displayName() + " to " + goal.displayName()
-                        + " as it already has an incompatible goal type: " + other.displayName(),
+                                + " as it already has an incompatible goal type: " + other.displayName(),
                         declaration);
             }
             cleanId = getCleanId(goal);
@@ -1257,7 +1262,7 @@ public class ObservableBuilder implements Observable.Builder {
             if (this.type.contains(SemanticType.RELATIONSHIP)) {
                 remove =
                         relationshipSource != null && !relationshipSource.isAbstract() && relationshipTarget != null
-                        && !relationshipTarget.isAbstract();
+                                && !relationshipTarget.isAbstract();
             }
 
             if (remove) {
@@ -1307,7 +1312,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     @Override
-    public Observable buildObservable() throws KValidationException {
+    public Observable build() throws KValidationException {
 
         Concept obs = buildConcept();
 
@@ -1420,11 +1425,13 @@ public class ObservableBuilder implements Observable.Builder {
             /* TODO CHECK */
             Unit unit = new UnitImpl(this.unitStatement);
             ret.setUnit(unit);
+            ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
         }
         if (currencyStatement != null) {
             /* TODO CHECK */
             Currency currency = Currency.create(currencyStatement);
             ret.setCurrency(currency);
+            ret.setUrn(ret.getUrn() + " in " + ret.getCurrency());
         }
 
         if (this.inlineValue != null) {
@@ -1434,6 +1441,12 @@ public class ObservableBuilder implements Observable.Builder {
         if (this.range != null) {
             /* TODO CHECK */
             ret.setRange(this.range);
+            ret.setUrn(ret.getUrn() + " " + this.range);
+        }
+
+        if (this.optional) {
+            ret.setOptional(true);
+            ret.setUrn(ret.getUrn() + " optional");
         }
 
         if (this.descriptionType != null) {

@@ -916,7 +916,7 @@ public class ModelKbox extends ObservableKbox {
             Concept oobsContext = reasoner.context(oobs);
             if (specialized != null
                     && (oobsContext == null || !scope.getService(Reasoner.class).subsumes(oobsContext, specialized))) {
-                oobs = oobs.builder(monitor).within(specialized).buildObservable();
+                oobs = oobs.builder(monitor).within(specialized).build();
             }
         }
         ret.add(oobs);

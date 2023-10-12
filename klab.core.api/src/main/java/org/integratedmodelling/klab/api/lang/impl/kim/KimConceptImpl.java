@@ -451,7 +451,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 			}
 		}
 
-		this.urn = computeUrn();
+		this.urn = ret.urn = computeUrn();
 
 		return ret;
 	}
@@ -790,4 +790,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 		return Objects.equals(urn, other.urn);
 	}
 
+	/**
+	 * Call after making modifications to finalize the concept and update the URN
+	 *
+	 * TODO check abstract state as well
+	 */
+	public void finalizeDefinition() {
+		this.urn = computeUrn();
+	}
 }

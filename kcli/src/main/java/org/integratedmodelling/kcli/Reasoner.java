@@ -125,7 +125,7 @@ public class Reasoner {
                     err.println(Ansi.AUTO.string("Cannot acknowledge something that is not countable"));
                     return;
                 }
-                observable = observable.builder(ctx).as(DescriptionType.ACKNOWLEDGEMENT).buildObservable();
+                observable = observable.builder(ctx).as(DescriptionType.ACKNOWLEDGEMENT).build();
             }
 
             out.println(Ansi.AUTO.string("Observation strategies for @|bold " + observable.getDescriptionType().name().toLowerCase()

@@ -187,7 +187,7 @@ public interface Observable extends Semantics {
          * @return the built concept
          * @throws KValidationException
          */
-        Observable buildObservable() throws KValidationException;
+        Observable build() throws KValidationException;
 
         /**
          * Return any exceptions accumulated through the building process before build() is called. If build() is called

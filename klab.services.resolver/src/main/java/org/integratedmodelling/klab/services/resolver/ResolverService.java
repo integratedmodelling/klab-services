@@ -530,7 +530,7 @@ public class ResolverService extends BaseService implements Resolver {
         InstanceImpl instance = new InstanceImpl();
         instance.setNamespace(statement.getNamespace());
         instance.getAnnotations().addAll(statement.getAnnotations());
-        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).buildObservable());
+        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
         instance.setUrn(statement.getNamespace() + "." + statement.getName());
         instance.setMetadata(statement.getMetadata());
         instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
@@ -591,7 +591,7 @@ public class ResolverService extends BaseService implements Resolver {
         for (KimObservable observable : statement.getObservables()) {
             var obs = reasoner.declareObservable(observable);
             model.getObservables().add(first && statement.isInstantiator() ? obs :
-                                       obs.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).buildObservable());
+                                       obs.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
             first = false;
         }
         for (KimObservable observable : statement.getDependencies()) {
