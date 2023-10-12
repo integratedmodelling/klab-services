@@ -177,7 +177,7 @@ public interface Artifact extends Provenance.Node, Iterable<Artifact> {
          * produce map values should return tables, not maps, as a map is a special case of a value
          * table.
          */
-        MAP;
+        MAP, RELATIONSHIP, CONFIGURATION;
 
         /**
          * Classify a POD type producing the type that represents it.

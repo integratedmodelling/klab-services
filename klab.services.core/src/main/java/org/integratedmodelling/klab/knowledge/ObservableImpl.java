@@ -494,7 +494,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
     @Override
     public String toString() {
-        return urn + " [" + getDescriptionType().name().toLowerCase() + "]";
+        return Utils.Strings.capitalize(getDescriptionType().getVerbalForm().toLowerCase()) + " " + urn;
     }
 
 }

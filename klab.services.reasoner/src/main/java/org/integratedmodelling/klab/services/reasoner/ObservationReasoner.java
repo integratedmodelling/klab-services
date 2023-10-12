@@ -93,16 +93,16 @@ public class ObservationReasoner {
      * DEFER infrastructure:City [instantiation]
      *      RESOLVE landcover:LandCoverType of infrastructure:City [classification]
      *      APPLY filter(trait=landcover:Urban, artifact=infrastructure:City) // -> builds the filtered view
-     *</pre>
-     *
+     * </pre>
+     * <p>
      * Solution for >1 traits, e.g. im:Big landcover:Urban infrastructure:City, is simply
      *
      * <pre>
      * DEFER landcover:Urban infrastructure:City [instantiation]
      *      RESOLVE im:SizeRelated of landcover:Urban infrastructure:City [classification]
      *      APPLY filter(trait=im:Big, artifact=landcover:Urban infrastructure:City)
-     *</pre>
-     *
+     * </pre>
+     * <p>
      * as the recursion implicit in DEFER takes care of the strategy for landcover:Urban
      *
      * @param observable
@@ -158,7 +158,7 @@ public class ObservationReasoner {
         }
 
         return ret;
-}
+    }
 
     private List<ObservationStrategy> getGenericConcreteStrategies(List<ObservationStrategy> strategies,
                                                                    Observable observable,
@@ -183,11 +183,11 @@ public class ObservationReasoner {
                 ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.RESOLVE
                         , observable);
 
-        // resolve the instances if instantiating
+        // defer resolution of the instances
         if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
             builder.withStrategy(ObservationStrategy.Operation.DEFER,
-                    ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.RESOLVE,
-                            observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).optional(true).build()).build());
+                    ObservationStrategy.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).optional(true).build())
+                            .build());
         }
 
         ret.add(builder.build());

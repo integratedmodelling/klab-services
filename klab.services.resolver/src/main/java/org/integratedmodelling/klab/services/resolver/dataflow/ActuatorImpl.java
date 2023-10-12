@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -33,7 +34,7 @@ public class ActuatorImpl implements Actuator {
     private String observer;
     private Geometry coverage = Geometry.EMPTY;
     private Parameters<String> data = Parameters.create();
-    private Queue<Pair<Resolution.ResolutionType, Observable>> deferrals = new ConcurrentLinkedQueue<>();
+    private Queue<ObservationStrategy> deferrals = new ConcurrentLinkedQueue<>();
 
     @Override
     public String getId() {
@@ -167,7 +168,7 @@ public class ActuatorImpl implements Actuator {
     }
 
     @Override
-    public Queue<Pair<Resolution.ResolutionType, Observable>> getDeferrals() {
+    public Queue<ObservationStrategy> getDeferrals() {
         return this.deferrals;
     }
 

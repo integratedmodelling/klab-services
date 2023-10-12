@@ -349,7 +349,7 @@ public class ResolverService extends BaseService implements Resolver {
                         ret.getChildren().add(dependency);
                         ret.setCoverage(((Model) resolved.getFirst()).getCoverage().as(Geometry.class));
                     } else if (resolved.getFirst() instanceof Observable o) {
-                        ret.getDeferrals().add(Pair.of(type, o));
+                       //  ret.getDeferrals().add(Pair.of(type, o));
                     }
                 }
             }

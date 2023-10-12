@@ -19,40 +19,40 @@ public enum DescriptionType {
      * <code>observe</code> statement). The instantiation of relationships ({@link #CONNECTION}) is handled
      * separately because of the non-independence from its targets.
      */
-    INSTANTIATION(true, "object"),
+    INSTANTIATION(true, "object", Artifact.Type.OBJECT, "instantiate"),
     /**
      * The observation activity that produces a configuration (aka EMERGENCE) - the instantiation of a
      * configuration.
      */
-    DETECTION(true, "configuration"),
+    DETECTION(true, "configuration", Artifact.Type.CONFIGURATION, "detect"),
     /**
      * The observation activity that produces a dynamic account of a process
      */
-    SIMULATION(false, "process"),
+    SIMULATION(false, "process", Artifact.Type.PROCESS, "simulate"),
     /**
      * The observation activity that produces a numeric quality
      */
-    QUANTIFICATION(false, "number"),
+    QUANTIFICATION(false, "number", Artifact.Type.QUANTITY, "quantify"),
     /**
      * The observation activity that produces a categorical quality (observes a conceptual category) over a
      * context.
      */
-    CATEGORIZATION(false, "concept"),
+    CATEGORIZATION(false, "concept", Artifact.Type.CONCEPT, "categorize"),
     /**
      * The observation activity that produces a boolean quality (presence/absence)
      */
-    VERIFICATION(false, "boolean"),
+    VERIFICATION(false, "boolean", Artifact.Type.BOOLEAN, "verify"),
     /**
      * The observation activity that attributes a trait or role to another observation (if it is a quality, it
      * may transform its values). Equivalent to INSTANTIATION of a concrete t/a given the abstract form and an
      * inherent observable.
      */
-    CLASSIFICATION(true, "resolve"),
+    CLASSIFICATION(true, "resolve", Artifact.Type.VOID, "classify"),
     /**
      * The resolution activity of a concrete trait or role that has been previously attributed to an
      * observation through {@link #CLASSIFICATION}. Produces a FILTER observation strategy.
      */
-    CHARACTERIZATION(false, "resolve"),
+    CHARACTERIZATION(false, "resolve", Artifact.Type.CONCEPT, "characterize"),
 //    /**
 //     * Compilation is the observation of a void observable, producing only side effects. Creates
 //     non-semantic
@@ -67,15 +67,17 @@ public enum DescriptionType {
      * Acknowledgements can also be explicitly programmed in k.IM through the
      * <code>observe</code> statement.
      */
-    ACKNOWLEDGEMENT(false, "void"),
+    ACKNOWLEDGEMENT(false, "void", Artifact.Type.VOID, "explain"),
     /**
      * Instantiation of relationships, requiring the "connected" countables to be observed as well.
      */
-    CONNECTION(true, "object");
+    CONNECTION(true, "object", Artifact.Type.RELATIONSHIP, "connect");
 
     private final boolean instantiation;
     private final String kdlType;
-    Artifact.Type observationType;
+    private Artifact.Type observationType;
+    private String verbalForm;
+
 
     /**
      * Return whether this description activity is an instantiation, i.e. is resolved by creating zero or more
@@ -99,6 +101,14 @@ public enum DescriptionType {
         return kdlType;
     }
 
+    public Artifact.Type getObservationType() {
+        return observationType;
+    }
+
+    public String getVerbalForm() {
+        return verbalForm;
+    }
+
     /**
      * Return whether this description activity is a resolution, i.e. is resolved by "explaining" an existing
      * observation so that it corresponds to its stated semantics.
@@ -109,9 +119,11 @@ public enum DescriptionType {
         return !instantiation;
     }
 
-    DescriptionType(boolean mode, String kdlKeyword) {
+    DescriptionType(boolean mode, String kdlKeyword, Artifact.Type observationType, String verbalForm) {
         this.instantiation = mode;
         this.kdlType = kdlKeyword;
+        this.observationType = observationType;
+        this.verbalForm = verbalForm;
     }
 
     public static DescriptionType forSemantics(Collection<SemanticType> type, boolean distributed) {

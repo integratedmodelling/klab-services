@@ -45,42 +45,37 @@ public interface ObservationStrategy extends Serializable, Iterable<Pair<Observa
     enum Operation {
 
         /**
-         * the operation implies deferral, i.e. further resolution of the associated observable, in the
-         * context set by the previous operation. If the previous operation has resolved a type of Trait,
-         * resolve is for each predicate as incarnated by the concrete classes, in the correspondent context
-         * (if an OR, expanding all observables)
-         */
-        DEFER,
-
-        /**
          * The operation requires the direct resolution of the associated observable. i.e. looking up a model
-         * or a previous observation.
+         * or a previous observation, without going through the resolver for a strategy again. The 0-rank,
+         * default strategy for any concrete observable X is always RESOLVE X.
          */
         RESOLVE,
 
         /**
+         * the operation implies deferral, i.e. further resolution of a different observable, finding the
+         * associated ObservationStrategies for it. The data associated to the operation is another
+         * ObservationStrategy for a different observable. After the resolution of the deferred observable,
+         * the operations in the deferred strategy build the original observations.
+         */
+        DEFER,
+
+        /**
          * The operation consists of the application of a contextualizer to the result of the previous
-         * operation. The applied contextualizer is specified by the associated {@link ServiceCall }. Scalar
-         * functors will be joined into a chain compiled by the runtime into a Java/Groovy class and executed
-         * in parallel as configured, to avoid having to keep intermediate states.
+         * operation. The applied contextualizer is specified by the associated {@link ServiceCall} from the
+         * core library. Scalar functors will be joined into a chain compiled by the runtime into a
+         * Java/Groovy class and executed in parallel as configured, to avoid having to keep intermediate
+         * states.
          */
         APPLY,
 
         /**
-         * The operation requires the characterization of quality dependencies through the observation of the
-         * concrete concepts incarnating the generic/abstract observable associated, then collecting all the
-         * different types from the resulting categorization (which will be a state observing <code>type of
-         * Observable</code>) and resolving them independently in the different sub-contexts implied by the
-         * resulting category values.
+         * This is used as the operation in a deferral associated with an observable for the semantic
+         * characterizer that will build the concrete qualities associated with an original generic quality.
+         * Those are then deferred to independently, with different sub-contexts (where...) as implied by the
+         * resulting category values. The associated data is the characterization observable and the operation
+         * is the concretization of the original one.
          */
-        CHARACTERIZE,
-
-        /**
-         * CLassify the objects in the context according to the observable just resolved "within" them.
-         * <p>
-         * FIXME may be unnecessary given that the previous one should cover the application needs.
-         */
-        CLASSIFY,
+        CONCRETIZE,
 
     }
 
