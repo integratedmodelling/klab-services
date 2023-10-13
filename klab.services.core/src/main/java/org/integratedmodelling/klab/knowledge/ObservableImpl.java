@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.util.StringUtils;
 
@@ -430,7 +431,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
         this.semantics = semantics;
     }
 
-    public static ObservableImpl promote(Concept concept) {
+    public static ObservableImpl promote(Concept concept, Scope scope) {
 
         ObservableImpl ret = new ObservableImpl();
 
@@ -445,8 +446,13 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
             ret.referenceName = concept.getNamespace() + "_" + concept.getName();
         }
         ret.artifactType = Artifact.Type.forSemantics(concept.getType());
-        ret.descriptionType = DescriptionType.forSemantics(concept.getType(),
-                concept.is(SemanticType.COUNTABLE));
+
+        var reasoner = scope.getService(Reasoner.class);
+        boolean distributedDescription = concept.is(SemanticType.TRAIT)
+                                         ? reasoner.inherent(concept) != null
+                                         : concept.is(SemanticType.COUNTABLE);
+
+        ret.descriptionType = DescriptionType.forSemantics(concept.getType(), distributedDescription);
 
         return ret;
     }

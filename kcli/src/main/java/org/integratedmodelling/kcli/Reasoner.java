@@ -6,6 +6,7 @@ import org.integratedmodelling.kcli.functional.FunctionalCommand;
 import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -23,7 +24,7 @@ import java.util.function.Function;
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate semantic knowledge.",
         ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class,
-                            Reasoner.Type.class,
+                            Reasoner.Type.class, Reasoner.BaseConcept.class,
                             Reasoner.Strategy.class, Reasoner.Export.class})
 public class Reasoner {
 
@@ -93,7 +94,7 @@ public class Reasoner {
 
         @Option(names = {"-a", "--acknowledgement"}, defaultValue = "false", description = {
                 "Force a direct observable to represent the acknowledgement of the observable."}, required
-                = false)
+                        = false)
         boolean acknowledge;
 
         @Override
@@ -132,7 +133,7 @@ public class Reasoner {
                     + "|@ of @|green " + observable.getUrn() + "|@:"));
             for (var strategy : reasoner.inferStrategies(observable, ctx)) {
                 out.println(Utils.Strings.indent(strategy.toString(),
-                        Utils.Strings.fillUpLeftAligned(strategy.getRank() + ".",
+                        Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
                                 " ", 4)));
             }
         }
@@ -167,6 +168,37 @@ public class Reasoner {
         }
     }
 
+    @Command(name = "base", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "Display the declared base concept for a concept."}, subcommands = {})
+    public static class BaseConcept extends FunctionalCommand {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> observables;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            var urn = Utils.Strings.join(observables, " ");
+            var reasoner = Engine.INSTANCE.getCurrentUser()
+                    .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            Concept concept = reasoner.resolveConcept(urn);
+            if (concept == null) {
+                err.println("Concept " + urn + " not found");
+            } else {
+                if (concept.is(SemanticType.TRAIT)) {
+                    out.println(Ansi.AUTO.string("Base parent trait: @|green " + reasoner.baseParentTrait(concept).getUrn() + "|@"));
+                } else {
+                    out.println(Ansi.AUTO.string("Base observable: @|green " + reasoner.baseParentTrait(concept).getUrn() + "|@"));
+                }
+            }
+        }
+    }
 
     @Command(name = "type", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "List the syntactic types of a concept."}, subcommands = {})

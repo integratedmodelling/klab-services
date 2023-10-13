@@ -1,13 +1,5 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -16,6 +8,7 @@ import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
 import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -35,6 +28,8 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.QualifiedName;
 import org.integratedmodelling.klab.utilities.Utils;
+
+import java.util.*;
 
 public class ObservableBuilder implements Observable.Builder {
 
@@ -1320,7 +1315,7 @@ public class ObservableBuilder implements Observable.Builder {
             return null;
         }
 
-        ObservableImpl ret = ObservableImpl.promote(obs);
+        ObservableImpl ret = ObservableImpl.promote(obs, scope);
 
         if (currency != null) {
             ret.setCurrency(currency);

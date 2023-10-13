@@ -8,20 +8,42 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import java.io.Serializable;
 
 /**
- * Each observation strategy iterates to directives for the resolver, each consisting of a type and an
- * argument. The resolver resolves the whole strategy returning the final coverage of the resolution.
+ * Each observation strategy provides directives for the resolver to resolve a specified observable. The
+ * reasoner defines the possible strategies for a specified observable in a given context
+ * ({@link org.integratedmodelling.klab.api.services.Reasoner#inferStrategies(Observable, ContextScope)} and
+ * ranks them in order of cost. The resolver tries to resolve them in increasing cost order, using the
+ * resulting coverage to decide when to stop.
  * <p>
- * The directives are applied in turn and each is executed in the context of the observation resulting from
- * the previous one. REIFY and CLASSIFY directives cause a deferred resolution, which resolves an intermediate
- * observable and then encodes an observable or observable pattern that must be resolved within the context of
- * the result of the previous operation, causing the resolver to send the dataflow for execution with the
- * deferred observable in it, followed by a trip back to the resolver from the runtime. In these cases the
- * resolution graph will link to the observable or observable pattern in lieu of a model, and the link to the
- * dependent observable will be of
- * {@link org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType#DEFER_INHERENCY} or
- * {@link org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType#DEFER_SEMANTICS} type.
- * The dataflow is populated with the actuators of the secondary resolution when that is done, and coverage
- * isn't known until the process is completed.
+ * The strategy specifies the main observable it handles and iterates to a set of operations, which can be of
+ * a few types. RESOLVE strategies instruct the resolver to find one or more models for the observable
+ * associated with the operation. APPLY strategies request the compilation of a particular service call, which
+ * must be known to the resolver through a core library implementation recognized by the runtime.  The first
+ * strategy for a concrete observable X should always be its direct resolution, i.e. RESOLVE X, with cost ==
+ * 0.
+ * <p>
+ * Operations of type DEFER are associated with another ObservationStrategy, whose
+ * {@link ObservationStrategy#getOriginalObservable()} specifies a different observable that the resolver must
+ * defer to. These are recorded in the dataflow so that the runtime can ask the resolver again after the
+ * "deferring" observation has been made, to provide the context observation for the {@link ContextScope} in
+ * which to resolve the deferred strategy. The body of the deferred strategy specifies the operations needed
+ * to produce the intended original observation. Because the resolution of the deferred strategy is contextual
+ * to the result of the first observation, there is no guarantee that it will succeed. For this reason
+ * observation strategies that imply deferral should never have cost == 0 or their observable should be
+ * optional. If the , the resulting dataflow will be appended to the actuator, substituting the deferral and
+ * completing the dataflow. Dataflows that still contain deferred strategies are not self-consistent and cannot be
+ * saved as resources.
+ * <p>
+ * The deferral mechanism allows inferred observations to be made incrementally. For example a classified
+ * object with multiple classification traits can be first observed by deferring to an instantiator and a
+ * classifier for the first trait, leaving the second trait in the observable for the first deferral, which
+ * will in turn trigger deferral of the second if a direct observation is not possible.
+ * <p>
+ * The {@link ObservationStrategyPattern} class is a placeholder for plug-in observation strategy patterns
+ * that can be matched to observables and produce strategies to observe them. These would be supplied
+ * externally instead of hard-coded and loaded on startup or upon plug-in initialization. These aren't used at
+ * this time, but they are in the code because it would be very useful to contribute strategies along with
+ * plug-ins and specialized service calls. In case these are implemented, the built-in strategies should be
+ * collected in declarative form and supplied with the core implementation as resources.
  */
 public interface ObservationStrategy extends Serializable, Iterable<Pair<ObservationStrategy.Operation,
         ObservationStrategy.Arguments>> {
@@ -34,7 +56,10 @@ public interface ObservationStrategy extends Serializable, Iterable<Pair<Observa
 
         Builder withStrategy(Operation operation, ObservationStrategy strategy);
 
+        Builder withCost(int cost);
+
         ObservationStrategy build();
+
     }
 
     // Only one of these at a time.
@@ -90,7 +115,7 @@ public interface ObservationStrategy extends Serializable, Iterable<Pair<Observa
      *
      * @return
      */
-    int getRank();
+    int getCost();
 
     static ObservationStrategy.Builder builder(Observable observable) {
         var ret = new ObservationStrategyImpl.Builder();

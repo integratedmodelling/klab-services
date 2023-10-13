@@ -43,14 +43,16 @@ public enum DescriptionType {
      */
     VERIFICATION(false, "boolean", Artifact.Type.BOOLEAN, "verify"),
     /**
-     * The observation activity that attributes a trait or role to another observation (if it is a quality, it
-     * may transform its values). Equivalent to INSTANTIATION of a concrete t/a given the abstract form and an
-     * inherent observable.
+     * The observation activity that scans a group of observation to attribute a concrete trait or role to
+     * each of them (if it is a quality, it will produce a transforming state for successive subsetting of
+     * another observation). Equivalent to INSTANTIATION of a concrete t/a given the abstract form and an
+     * inherent observable. This is specified as <code>TRAIT of OBSERVABLE</code>.
      */
     CLASSIFICATION(true, "resolve", Artifact.Type.VOID, "classify"),
     /**
      * The resolution activity of a concrete trait or role that has been previously attributed to an
-     * observation through {@link #CLASSIFICATION}. Produces a FILTER observation strategy.
+     * observation through {@link #CLASSIFICATION}. Explains the trait within the observation.  This is
+     * specified as <code>TRAIT within OBSERVABLE</code>.
      */
     CHARACTERIZATION(false, "resolve", Artifact.Type.CONCEPT, "characterize"),
 //    /**
@@ -126,6 +128,16 @@ public enum DescriptionType {
         this.verbalForm = verbalForm;
     }
 
+    /**
+     * Return the description type that corresponds to the specified semantics, according to the context of
+     * resolution.
+     *
+     * @param type        the semantic types for the observable
+     * @param distributed if true, the description type refers to instantiation (of either observations or
+     *                    their traits); otherwise it refers to "explanation" of an existing observation or
+     *                    characteristic. It's only relevant for countables and traits.
+     * @return the description type
+     */
     public static DescriptionType forSemantics(Collection<SemanticType> type, boolean distributed) {
         if (type.contains(SemanticType.CLASS)) {
             return CATEGORIZATION;
@@ -140,7 +152,7 @@ public enum DescriptionType {
         } else if (type.contains(SemanticType.PROCESS)) {
             return SIMULATION;
         } else if (type.contains(SemanticType.TRAIT)) {
-            return distributed ? CHARACTERIZATION : CLASSIFICATION;
+            return distributed ? CLASSIFICATION : CHARACTERIZATION;
         } else if (type.contains(SemanticType.DIRECT_OBSERVABLE)) {
             return distributed ? INSTANTIATION : ACKNOWLEDGEMENT;
         }

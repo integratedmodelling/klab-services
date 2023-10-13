@@ -1,18 +1,18 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import com.google.common.collect.Sets;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Specialized functions to infer observation strategies. Kept separately for clarity as this is a crucial
@@ -42,18 +42,19 @@ public class ObservationReasoner {
                      ? reasoner.directAttributes(observable)
                      : reasoner.directTraits(observable);
 
+        int rank = 0;
         if (generics.isEmpty() && !observable.isAbstract()) {
-            ret.addAll(getDirectConcreteStrategies(observable, scope));
+            ret.addAll(getDirectConcreteStrategies(observable, scope, rank++));
         }
 
         if (!traits.isEmpty()) {
-            ret.addAll(getTraitConcreteStrategies(observable, traits, scope));
+            ret.addAll(getTraitConcreteStrategies(observable, traits, scope, rank));
         }
 
         if (!observable.getValueOperators().isEmpty()) {
             Observable withoutOperators = observable.builder(scope).withoutValueOperators().build();
             return addValueOperatorStrategies(inferStrategies(withoutOperators, scope),
-                    observable.getValueOperators());
+                    observable.getValueOperators(), rank);
         }
 
 
@@ -75,19 +76,23 @@ public class ObservationReasoner {
 
     private List<ObservationStrategy> insertSpecializedDeferralStrategies(List<ObservationStrategy> ret,
                                                                           Observable observable,
-                                                                          ContextScope scope) {
+                                                                          ContextScope scope, int rank) {
         // TODO
         return ret;
     }
 
     private List<ObservationStrategy> addValueOperatorStrategies(List<ObservationStrategy> ret,
-                                                                 List<Pair<ValueOperator, Literal>> observable) {
+                                                                 List<Pair<ValueOperator, Literal>> observable, int rank) {
         // TODO add new strategies to the previous one; increment their rank by 1
         return ret;
     }
 
     /**
-     * Solution for landcover:Urban infrastructure:City should be
+     * Indirect resolution of concrete traits in qualities and instances
+     * <p>
+     * For qualities: TODO
+     * <p>
+     * For instances: solution for (e.g.) landcover:Urban infrastructure:City should be
      *
      * <pre>
      * DEFER infrastructure:City [instantiation]
@@ -95,12 +100,12 @@ public class ObservationReasoner {
      *      APPLY filter(trait=landcover:Urban, artifact=infrastructure:City) // -> builds the filtered view
      * </pre>
      * <p>
-     * Solution for >1 traits, e.g. im:Big landcover:Urban infrastructure:City, is simply
-     *
+     * The solution for >1 traits, e.g. im:Big landcover:Urban infrastructure:City, simply resolves the first
+     * trait and leaves the other in the deferred observation:
      * <pre>
      * DEFER landcover:Urban infrastructure:City [instantiation]
      *      RESOLVE im:SizeRelated of landcover:Urban infrastructure:City [classification]
-     *      APPLY filter(trait=im:Big, artifact=landcover:Urban infrastructure:City)
+     *      APPLY klab.core.filter.objects(trait=im:Big, artifact=landcover:Urban infrastructure:City)
      * </pre>
      * <p>
      * as the recursion implicit in DEFER takes care of the strategy for landcover:Urban
@@ -108,61 +113,69 @@ public class ObservationReasoner {
      * @param observable
      * @param traits
      * @param scope
+     * @param rank
      * @return
      */
     private List<ObservationStrategy> getTraitConcreteStrategies(Observable observable,
-                                                                 Collection<Concept> traits, Scope scope) {
+                                                                 Collection<Concept> traits, Scope scope,
+                                                                 int rank) {
         List<ObservationStrategy> ret = new ArrayList<>();
-        Set<Set<Concept>> toSolve = new LinkedHashSet<>();
-        var traitSet = traits instanceof Set ? (Set<Concept>) traits : new HashSet<>(traits);
-        if (traits.size() < 5) {
-            toSolve.addAll(Sets.powerSet(traitSet));
+        Concept toResolve = traits.iterator().next();
+
+        var nakedObservable = observable.builder(scope).without(toResolve).build();
+        var builder = ObservationStrategy.builder(observable).withCost(rank);
+
+        // TODO this is the strategy for instances, not for qualities
+
+        var deferred = ObservationStrategy.builder(nakedObservable).withCost(rank);
+        var baseTrait = reasoner.baseParentTrait(toResolve);
+        if (baseTrait == null) {
+            throw new KInternalErrorException("no base trait for " + toResolve);
+        }
+        deferred
+                .withOperation(ObservationStrategy.Operation.RESOLVE,
+                        Observable.promote(baseTrait).builder(scope).of(nakedObservable.getSemantics()).build());
+
+        if (observable.is(SemanticType.QUALITY)) {
+
+            // The resolve above has produced a quality of x observation, we must resolve the quality
+            // selectively
+            // where that quality is our target
+            // TODO defer to concrete dependencies using CONCRETIZE which creates the concrete deps and applies
+            //  an implicit WHERE to their resolution; then APPLY an aggregator for the main
+            //  observation. NO - CONCRETIZE is for generic quality observables. Generic countable observables
+            //  remain one dependency, which triggers classification and then resolution of the individual classes on
+            //  filtered groups.
+//            deferred.withOperation(ObservationStrategy.Operation.CONCRETIZE, )
+
         } else {
-            // all traits and only one observable, at once, no combinations or we make the resolver explode
-            toSolve.add(new HashSet<>(traits));
+            deferred
+                    // filter the instances to set the ones with the trait in context
+                    .withOperation(ObservationStrategy.Operation.APPLY,
+                            // FIXME this must be the FILTER call to filter instances with toSolve as
+                            //  arguments
+                            (ServiceCall) null)
+                    // Explain the instantiated classification, deferring the resolution of the attributed
+                    // trait within the instances
+                    .withStrategy(ObservationStrategy.Operation.DEFER,
+                            ObservationStrategy.builder(
+                                            Observable.promote(toResolve).builder(scope)
+                                                    .within(observable.getSemantics())
+                                                    .optional(true).build())
+                                    .withCost(rank)
+                                    .build());
         }
 
-        // no need for this one
-        toSolve.remove(Collections.emptySet());
-        for (Set<Concept> strait : toSolve) {
+        builder.withStrategy(ObservationStrategy.Operation.DEFER, deferred.build());
 
-            var nakedObservable = observable.builder(scope).without(strait).build();
-            var builder =
-                    ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.RESOLVE, nakedObservable);
-
-            // TODO this is the strategy for instances, not for qualities
-            // FIXME wrong - see meaning of deferred in notepad.
-
-            var deferred = ObservationStrategy.builder(nakedObservable);
-            var baseTraits = new HashSet<Concept>();
-            for (Concept trait : strait) {
-                var baseTrait = reasoner.baseParentTrait(trait);
-                if (baseTrait == null) {
-                    throw new KInternalErrorException("no base trait for " + trait);
-                }
-                if (baseTraits.contains(baseTrait)) {
-                    continue;
-                }
-                baseTraits.add(baseTrait);
-                deferred.withOperation(ObservationStrategy.Operation.RESOLVE,
-                        Observable.promote(trait).builder(scope).of(nakedObservable.getSemantics()).build());
-            }
-            deferred.withOperation(ObservationStrategy.Operation.APPLY,
-                    // FIXME this must be the FILTER call with the OR of the straits as argument, not an
-                    //  observable
-                    Observable.promote(reasoner.compose(strait, LogicalConnector.UNION)).builder(scope).of(nakedObservable.getSemantics()).build());
-
-            builder.withStrategy(ObservationStrategy.Operation.DEFER, deferred.build());
-
-            ret.add(builder.build());
-        }
+        ret.add(builder.build());
 
         return ret;
     }
 
     private List<ObservationStrategy> getGenericConcreteStrategies(List<ObservationStrategy> strategies,
                                                                    Observable observable,
-                                                                   Collection<Concept> generics) {
+                                                                   Collection<Concept> generics, int rank) {
         List<ObservationStrategy> ret = new ArrayList<>();
         return ret;
     }
@@ -171,7 +184,7 @@ public class ObservationReasoner {
      * Direct strategies have rank 0
      */
     private Collection<? extends ObservationStrategy> getDirectConcreteStrategies(Observable observable,
-                                                                                  Scope scope) {
+                                                                                  Scope scope, int rank) {
 
         List<ObservationStrategy> ret = new ArrayList<>();
 
@@ -180,13 +193,16 @@ public class ObservationReasoner {
          * contextualizing it)
          */
         var builder =
-                ObservationStrategy.builder(observable).withOperation(ObservationStrategy.Operation.RESOLVE
-                        , observable);
+                ObservationStrategy.builder(observable)
+                        .withCost(rank)
+                        .withOperation(ObservationStrategy.Operation.RESOLVE, observable);
 
         // defer resolution of the instances
         if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
             builder.withStrategy(ObservationStrategy.Operation.DEFER,
-                    ObservationStrategy.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).optional(true).build())
+                    ObservationStrategy.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT)
+                                    .optional(true).build())
+                            .withCost(rank)
                             .build());
         }
 

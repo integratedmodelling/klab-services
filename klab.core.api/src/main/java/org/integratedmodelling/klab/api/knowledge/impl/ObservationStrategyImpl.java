@@ -15,7 +15,7 @@ public class ObservationStrategyImpl implements ObservationStrategy {
     private Observable originalObservable;
     private List<Pair<Operation, Arguments>> body = new ArrayList<>();
 
-    private int rank;
+    private int cost;
 
     public List<Pair<Operation, Arguments>> getBody() {
         return body;
@@ -40,12 +40,12 @@ public class ObservationStrategyImpl implements ObservationStrategy {
     }
 
     @Override
-    public int getRank() {
-        return rank;
+    public int getCost() {
+        return cost;
     }
 
-    public void setRank(int rank) {
-        this.rank = rank;
+    public void setCost(int cost) {
+        this.cost = cost;
     }
 
 
@@ -59,15 +59,12 @@ public class ObservationStrategyImpl implements ObservationStrategy {
         String spacer = Utils.Strings.spaces(spaces);
         for (var op : strategy) {
             ret.append(spacer + op.getFirst().name() + " ");
-            if (op.getSecond().contextualStrategy() != null) {
-                ret.append(strategy.getOriginalObservable() + ":\n");
-                ret.append(toString(op.getSecond().contextualStrategy(), spaces + 3));
-            } else {
-                ret.append(op.getSecond().observable() == null ?
-                        op.getSecond().serviceCall() :
-                        op.getSecond().observable());
-            }
-            ret.append("\n");
+            ret.append(switch(op.getFirst()) {
+                case RESOLVE -> op.getSecond().observable() + "\n";
+                case DEFER -> op.getSecond().contextualStrategy().getOriginalObservable() + "\n" + toString(op.getSecond().contextualStrategy(), spaces + 3);
+                case APPLY -> op.getSecond().serviceCall() + "\n";
+                case CONCRETIZE -> op.getSecond().observable() + "\n";
+            });
         }
         return ret.toString();
     }
@@ -90,8 +87,8 @@ public class ObservationStrategyImpl implements ObservationStrategy {
         public Builder() {
         }
 
-        public Builder withRank(int rank) {
-            this.rank = rank;
+        public Builder withCost(int cost) {
+            this.rank = cost;
             return this;
         }
 
@@ -117,7 +114,7 @@ public class ObservationStrategyImpl implements ObservationStrategy {
         public ObservationStrategy build() {
             ObservationStrategyImpl ret = new ObservationStrategyImpl();
             ret.setOriginalObservable(this.originalObservable);
-            ret.setRank(this.rank);
+            ret.setCost(this.rank);
             ret.body.addAll(operations);
             return ret;
         }
