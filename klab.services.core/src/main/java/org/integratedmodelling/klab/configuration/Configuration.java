@@ -122,6 +122,7 @@ public enum Configuration {
             public Observable promoteConceptToObservable(Concept concept) {
                 var ret = new ObservableImpl();
                 ret.setSemantics(concept);
+                ret.setUrn(concept.getUrn());
                 ret.setDescriptionType(DescriptionType.forSemantics(concept.getType(),
                         concept.is(SemanticType.COUNTABLE)));
                 return ret;

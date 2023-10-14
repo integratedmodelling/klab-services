@@ -124,11 +124,12 @@ public class OWL {
     }
 
     /**
-     * Given a collection of namespace-specified knowledge and/or collections thereof, return the ontology of a
-     * namespace that sits on top of all others in the asserted dependency chain and imports all concepts. If that is
-     * not possible, return the "fallback" ontology which must already import all the concepts (typically the one where
-     * the targets are used in a declaration). Used to establish where to put derived concepts and restrictions so as to
-     * avoid circular dependencies in the underlying OWL model while minimizing redundant concepts.
+     * Given a collection of namespace-specified knowledge and/or collections thereof, return the ontology of
+     * a namespace that sits on top of all others in the asserted dependency chain and imports all concepts.
+     * If that is not possible, return the "fallback" ontology which must already import all the concepts
+     * (typically the one where the targets are used in a declaration). Used to establish where to put derived
+     * concepts and restrictions so as to avoid circular dependencies in the underlying OWL model while
+     * minimizing redundant concepts.
      *
      * @param targets
      * @return
@@ -292,7 +293,8 @@ public class OWL {
         // monitor);
         // }
         if (Configuration.INSTANCE.useReasoner()) {
-            this.reasoner = new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
+            this.reasoner =
+                    new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
             reasonerActive = true;
         }
 
@@ -306,7 +308,8 @@ public class OWL {
         return this.coreOntology;
     }
 
-    String importOntology(OWLOntology ontology, String resource, String namespace, boolean imported, Channel monitor) {
+    String importOntology(OWLOntology ontology, String resource, String namespace, boolean imported,
+                          Channel monitor) {
 
         if (!ontologies.containsKey(namespace)) {
             ontologies.put(namespace, new Ontology(this, ontology, namespace));
@@ -479,9 +482,9 @@ public class OWL {
     }
 
     /**
-     * Load OWL files from given directory and in its subdirectories, using a prefix mapper to resolve URLs internally
-     * and deriving ontology names from the relative paths. This uses the resolver passed at initialization only to
-     * create the namespace. It's only meant for core knowledge not seen by users.
+     * Load OWL files from given directory and in its subdirectories, using a prefix mapper to resolve URLs
+     * internally and deriving ontology names from the relative paths. This uses the resolver passed at
+     * initialization only to create the namespace. It's only meant for core knowledge not seen by users.
      *
      * @param kdir
      */
@@ -510,8 +513,8 @@ public class OWL {
     private void loadInternal(File f, String path, boolean forcePath, Channel monitor) {
 
         String pth = path == null ? ""
-                : (path + (path.isEmpty() ? "" : ".")
-                + Utils.CamelCase.toLowerCase(Utils.Files.getFileBaseName(f.toString()), '-'));
+                                  : (path + (path.isEmpty() ? "" : ".")
+                                          + Utils.CamelCase.toLowerCase(Utils.Files.getFileBaseName(f.toString()), '-'));
 
         if (forcePath) {
             pth = path;
@@ -616,13 +619,15 @@ public class OWL {
                 // TODO check - there should be a base identity per leaf vocabulary
                 axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.BASE_DECLARATION, "true"));
                 axioms.add(
-                        Axiom.AnnotationAssertion(baseIdentity, NS.AUTHORITY_ID_PROPERTY, identity.getAuthorityName()));
+                        Axiom.AnnotationAssertion(baseIdentity, NS.AUTHORITY_ID_PROPERTY,
+                                identity.getAuthorityName()));
                 axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.REFERENCE_NAME_PROPERTY,
                         "auth_" + identity.getAuthorityName().toLowerCase() + "_" + baseIdentity.toLowerCase()));
                 axioms.add(Axiom.ObjectPropertyAssertion(pName));
                 axioms.add(Axiom.ObjectPropertyRange(pName, baseIdentity));
                 axioms.add(Axiom.SubObjectProperty(NS.HAS_IDENTITY_PROPERTY, pName));
-                axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.TRAIT_RESTRICTING_PROPERTY, oid + ":" + pName));
+                axioms.add(Axiom.AnnotationAssertion(baseIdentity, NS.TRAIT_RESTRICTING_PROPERTY,
+                        oid + ":" + pName));
             }
 
             // if we created the parent, add the restricting property and prepare to
@@ -630,9 +635,11 @@ public class OWL {
 
             axioms.add(Axiom.ClassAssertion(identity.getConceptName(), type));
             axioms.add(Axiom.SubClass(baseIdentity, identity.getConceptName()));
-            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.REFERENCE_NAME_PROPERTY, "auth_"
-                    + identity.getAuthorityName().toLowerCase() + "_" + identity.getConceptName().toLowerCase()));
-            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), Metadata.DC_LABEL, identity.getLabel()));
+            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.REFERENCE_NAME_PROPERTY,
+                    "auth_"
+                            + identity.getAuthorityName().toLowerCase() + "_" + identity.getConceptName().toLowerCase()));
+            axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), Metadata.DC_LABEL,
+                    identity.getLabel()));
             axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.DISPLAY_LABEL_PROPERTY,
                     identity.getLabel()));
             axioms.add(Axiom.AnnotationAssertion(identity.getConceptName(), NS.AUTHORITY_ID_PROPERTY,
@@ -790,8 +797,8 @@ public class OWL {
     }
 
     /**
-     * Get the restricted classes only if the target concept of the restriction is the one passed. This simply returns
-     * one class - TODO improve API.
+     * Get the restricted classes only if the target concept of the restriction is the one passed. This simply
+     * returns one class - TODO improve API.
      *
      * @param target
      * @param restricted
@@ -842,8 +849,8 @@ public class OWL {
     }
 
     /**
-     * Return the concept or concepts (if a union) restricted by the passed object property in the restriction closest
-     * to the passed concept in its asserted parent hierarchy.
+     * Return the concept or concepts (if a union) restricted by the passed object property in the restriction
+     * closest to the passed concept in its asserted parent hierarchy.
      *
      * @param target
      * @param restricted
@@ -853,7 +860,8 @@ public class OWL {
         return new SpecializingRestrictionVisitor(target, restricted, true, this).getResult();
     }
 
-    public Collection<Concept> getRestrictedClasses(Concept target, Property restricted, boolean useSuperproperties) {
+    public Collection<Concept> getRestrictedClasses(Concept target, Property restricted,
+                                                    boolean useSuperproperties) {
         return new SpecializingRestrictionVisitor(target, restricted, useSuperproperties, this).getResult();
     }
 
@@ -863,7 +871,8 @@ public class OWL {
                         property.toString(), filler.getNamespace() + ":" + filler.getName())));
     }
 
-    public void restrictAll(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
+    public void restrictAll(Concept target, Property property, LogicalConnector how,
+                            Collection<Concept> fillers,
                             Ontology ontology) {
 
         if (fillers.size() == 1) {
@@ -881,13 +890,16 @@ public class OWL {
         }
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = how.equals(LogicalConnector.UNION) ? factory.getOWLObjectUnionOf(classes)
-                : factory.getOWLObjectIntersectionOf(classes);
-        OWLClassExpression restriction = factory.getOWLObjectAllValuesFrom(property._owl.asOWLObjectProperty(), union);
+                                                                      :
+                                   factory.getOWLObjectIntersectionOf(classes);
+        OWLClassExpression restriction =
+                factory.getOWLObjectAllValuesFrom(property._owl.asOWLObjectProperty(), union);
         manager.addAxiom((getTargetOntology(ontology, target, property, fillers)).ontology,
                 factory.getOWLSubClassOfAxiom(getOWLClass(target), restriction));
     }
 
-    public void restrictSome(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
+    public void restrictSome(Concept target, Property property, LogicalConnector how,
+                             Collection<Concept> fillers,
                              Ontology ontology) {
 
         if (fillers.size() == 1) {
@@ -905,8 +917,10 @@ public class OWL {
         }
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = how.equals(LogicalConnector.UNION) ? factory.getOWLObjectUnionOf(classes)
-                : factory.getOWLObjectIntersectionOf(classes);
-        OWLClassExpression restriction = factory.getOWLObjectSomeValuesFrom(property._owl.asOWLObjectProperty(), union);
+                                                                      :
+                                   factory.getOWLObjectIntersectionOf(classes);
+        OWLClassExpression restriction =
+                factory.getOWLObjectSomeValuesFrom(property._owl.asOWLObjectProperty(), union);
         manager.addAxiom(((Ontology) property.getOntology(this)).ontology,
                 factory.getOWLSubClassOfAxiom(getOWLClass(target), restriction));
     }
@@ -917,7 +931,8 @@ public class OWL {
                         property.toString(), filler.getNamespace() + ":" + filler.getName())));
     }
 
-    public void restrictAtLeast(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
+    public void restrictAtLeast(Concept target, Property property, LogicalConnector how,
+                                Collection<Concept> fillers,
                                 int min, Ontology ontology) {
 
         if (fillers.size() == 1) {
@@ -935,20 +950,24 @@ public class OWL {
         }
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = how.equals(LogicalConnector.UNION) ? factory.getOWLObjectUnionOf(classes)
-                : factory.getOWLObjectIntersectionOf(classes);
-        OWLClassExpression restriction = factory.getOWLObjectMinCardinality(min, property._owl.asOWLObjectProperty(),
+                                                                      :
+                                   factory.getOWLObjectIntersectionOf(classes);
+        OWLClassExpression restriction = factory.getOWLObjectMinCardinality(min,
+                property._owl.asOWLObjectProperty(),
                 union);
         manager.addAxiom((getTargetOntology(ontology, target, property, fillers)).ontology,
                 factory.getOWLSubClassOfAxiom(getOWLClass(target), restriction));
     }
 
-    public void restrictAtLeast(Concept target, Property property, Concept filler, int min, Ontology ontology) {
+    public void restrictAtLeast(Concept target, Property property, Concept filler, int min,
+                                Ontology ontology) {
         getTargetOntology(ontology, target, property, filler)
                 .define(Collections.singleton(Axiom.AtLeastNValuesFrom(target.getNamespace() + ":" + target.getName(),
                         property.toString(), filler.getNamespace() + ":" + filler.getName(), min)));
     }
 
-    public void restrictAtMost(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
+    public void restrictAtMost(Concept target, Property property, LogicalConnector how,
+                               Collection<Concept> fillers,
                                int max, Ontology ontology) {
 
         if (fillers.size() == 1) {
@@ -964,20 +983,23 @@ public class OWL {
         }
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = how.equals(LogicalConnector.UNION) ? factory.getOWLObjectUnionOf(classes)
-                : factory.getOWLObjectIntersectionOf(classes);
+                                                                      :
+                                   factory.getOWLObjectIntersectionOf(classes);
         OWLClassExpression restriction = factory.getOWLObjectMaxCardinality(max,
                 ((Property) property)._owl.asOWLObjectProperty(), union);
         manager.addAxiom((getTargetOntology(ontology, target, property, fillers)).ontology,
                 factory.getOWLSubClassOfAxiom(getOWLClass(target), restriction));
     }
 
-    public void restrictAtMost(Concept target, Property property, Concept filler, int max, Ontology ontology) {
+    public void restrictAtMost(Concept target, Property property, Concept filler, int max,
+                               Ontology ontology) {
         getTargetOntology(ontology, target, property, filler)
                 .define(Collections.singleton(Axiom.AtMostNValuesFrom(target.getNamespace() + ":" + target.getName(),
                         property.toString(), filler.getNamespace() + ":" + filler.getName(), max)));
     }
 
-    public void restrictExactly(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
+    public void restrictExactly(Concept target, Property property, LogicalConnector how,
+                                Collection<Concept> fillers,
                                 int howmany, Ontology ontology) {
 
         if (fillers.size() == 1) {
@@ -993,22 +1015,24 @@ public class OWL {
         }
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = how.equals(LogicalConnector.UNION) ? factory.getOWLObjectUnionOf(classes)
-                : factory.getOWLObjectIntersectionOf(classes);
+                                                                      :
+                                   factory.getOWLObjectIntersectionOf(classes);
         OWLClassExpression restriction = factory.getOWLObjectExactCardinality(howmany,
                 property._owl.asOWLObjectProperty(), union);
         manager.addAxiom((getTargetOntology(ontology, target, property, fillers)).ontology,
                 factory.getOWLSubClassOfAxiom(getOWLClass(target), restriction));
     }
 
-    public void restrictExactly(Concept target, Property property, Concept filler, int howMany, Ontology ontology) {
+    public void restrictExactly(Concept target, Property property, Concept filler, int howMany,
+                                Ontology ontology) {
         getTargetOntology(ontology, target, property, filler)
                 .define(Collections.singleton(Axiom.ExactlyNValuesFrom(target.getNamespace() + ":" + target.getName(),
                         property.toString(), filler.getNamespace() + ":" + filler.getName(), howMany)));
     }
 
     /**
-     * Return whether the restriction on type involving concept is optional. If there is no such restriction, return
-     * false.
+     * Return whether the restriction on type involving concept is optional. If there is no such restriction,
+     * return false.
      *
      * @param type
      * @param concept
@@ -1019,8 +1043,8 @@ public class OWL {
     }
 
     /**
-     * Return whether the restriction on type involving concept is a negation. If there is no such restriction, return
-     * false.
+     * Return whether the restriction on type involving concept is a negation. If there is no such
+     * restriction, return false.
      *
      * @param type
      * @param concept
@@ -1069,7 +1093,8 @@ public class OWL {
         return ret;
     }
 
-    public Concept getIntersection(Collection<Concept> concepts, Ontology destination, Collection<SemanticType> stype) {
+    public Concept getIntersection(Collection<Concept> concepts, Ontology destination,
+                                   Collection<SemanticType> stype) {
 
         EnumSet<SemanticType> type = EnumSet.copyOf(stype);
         type.add(SemanticType.INTERSECTION);
@@ -1095,12 +1120,14 @@ public class OWL {
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = factory.getOWLObjectIntersectionOf(classes);
         ret = (ConceptImpl) ((Ontology) destination).createConcept(id.toString(), type);
-        manager.addAxiom(((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
+        manager.addAxiom(((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret),
+                union));
 
         return ret;
     }
 
-    public Concept getUnion(Collection<Concept> concepts, Ontology destination, Collection<SemanticType> stype) {
+    public Concept getUnion(Collection<Concept> concepts, Ontology destination,
+                            Collection<SemanticType> stype) {
 
         EnumSet<SemanticType> type = EnumSet.copyOf(stype);
         type.add(SemanticType.UNION);
@@ -1126,7 +1153,8 @@ public class OWL {
         OWLDataFactory factory = manager.getOWLDataFactory();
         OWLClassExpression union = factory.getOWLObjectUnionOf(classes);
         ret = (ConceptImpl) ((Ontology) destination).createConcept(id.toString(), type);
-        manager.addAxiom(((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret), union));
+        manager.addAxiom(((Ontology) destination).ontology, factory.getOWLSubClassOfAxiom(getOWLClass(ret),
+                union));
 
         return ret;
     }
@@ -1161,7 +1189,8 @@ public class OWL {
 
     public Concept getNonsemanticPeer(String name, Artifact.Type type) {
 
-        String conceptId = Utils.Strings.capitalize(type.name().toLowerCase()) + CamelCase.toUpperCamelCase(name, '.');
+        String conceptId =
+                Utils.Strings.capitalize(type.name().toLowerCase()) + CamelCase.toUpperCamelCase(name, '.');
         SemanticType qualityType = switch (type) {
             case TEXT -> SemanticType.CATEGORY;
             case NUMBER -> SemanticType.QUANTITY;
@@ -1170,18 +1199,22 @@ public class OWL {
             case OBJECT -> SemanticType.SUBJECT;
             case EVENT -> SemanticType.EVENT;
             default ->
-                    throw new IllegalArgumentException("wrong type passed for non-semantic peer generation: " + type);
+                    throw new IllegalArgumentException("wrong type passed for non-semantic peer generation:" +
+                            " " + type);
         };
         EnumSet<SemanticType> identity = type.isCountable()
-                ? EnumSet.of(SemanticType.SUBJECT, SemanticType.OBSERVABLE, SemanticType.DIRECT_OBSERVABLE,
+                                         ? EnumSet.of(SemanticType.SUBJECT, SemanticType.OBSERVABLE,
+                SemanticType.DIRECT_OBSERVABLE,
                 SemanticType.COUNTABLE)
-                : EnumSet.of(SemanticType.QUALITY, SemanticType.OBSERVABLE, qualityType);
+                                         : EnumSet.of(SemanticType.QUALITY, SemanticType.OBSERVABLE,
+                                                 qualityType);
 
         Concept ret = nonSemanticConcepts.getConcept(conceptId);
         if (ret != null) {
             if (!ret.is(qualityType)) {
                 throw new KInternalErrorException(
-                        "non-semantic peer concept for " + name + " was declared previously with a different type");
+                        "non-semantic peer concept for " + name + " was declared previously with a " +
+                                "different type");
             }
             return ret;
         }
@@ -1203,7 +1236,8 @@ public class OWL {
 
     public Ontology readOntology(String string) {
         try {
-            return new Ontology(this, manager.loadOntology(IRI.create(string)), Utils.URLs.getURLBaseName(string));
+            return new Ontology(this, manager.loadOntology(IRI.create(string)),
+                    Utils.URLs.getURLBaseName(string));
         } catch (OWLOntologyCreationException e) {
             throw new KIOException(e);
         }
@@ -1254,20 +1288,23 @@ public class OWL {
      */
     public void setApplicableObservables(Concept type, List<Concept> applicables, Ontology ontology) {
         // TODO validate
-        restrictSome(type, getProperty(CoreOntology.NS.APPLIES_TO_PROPERTY), LogicalConnector.UNION, applicables,
+        restrictSome(type, getProperty(CoreOntology.NS.APPLIES_TO_PROPERTY), LogicalConnector.UNION,
+                applicables,
                 ontology);
     }
 
     public void defineRelationship(Concept relationship, Concept source, Concept target, Ontology ontology) {
         Property hasSource = getProperty(CoreOntology.NS.IMPLIES_SOURCE_PROPERTY);
         Property hasTarget = getProperty(CoreOntology.NS.IMPLIES_DESTINATION_PROPERTY);
-        restrictSome(relationship, hasSource, LogicalConnector.UNION, Collections.singleton(source), ontology);
-        restrictSome(relationship, hasTarget, LogicalConnector.UNION, Collections.singleton(target), ontology);
+        restrictSome(relationship, hasSource, LogicalConnector.UNION, Collections.singleton(source),
+                ontology);
+        restrictSome(relationship, hasTarget, LogicalConnector.UNION, Collections.singleton(target),
+                ontology);
     }
 
     /**
-     * Analyze an observable concept and return the main observable with all the original identities and realms but no
-     * attributes; separately, return the list of the attributes that were removed.
+     * Analyze an observable concept and return the main observable with all the original identities and
+     * realms but no attributes; separately, return the list of the attributes that were removed.
      *
      * @param observable
      * @return attribute profile
@@ -1307,7 +1344,8 @@ public class OWL {
             property = getProperty(CoreOntology.NS.HAS_ATTRIBUTE_PROPERTY);
         }
         if (property != null) {
-            restrict(main, property, LogicalConnector.UNION, Collections.singleton(trait), (Ontology) ontology);
+            restrict(main, property, LogicalConnector.UNION, Collections.singleton(trait),
+                    (Ontology) ontology);
         }
     }
 
@@ -1337,7 +1375,8 @@ public class OWL {
                     "not_" + attribute.getReferenceName()));
             aontology.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", "Not" + getCleanId(attribute)));
             aontology.add(
-                    Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, "not  " + attribute.getUrn()));
+                    Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY,
+                            "not  " + attribute.getUrn()));
 
             if (prop != null) {
                 aontology.add(Axiom.AnnotationAssertion(conceptId, NS.TRAIT_RESTRICTING_PROPERTY, prop));
@@ -1354,7 +1393,8 @@ public class OWL {
     }
 
     /**
-     * Return all atomic components of a concept, recursing any logical combination irrespective of the operator.
+     * Return all atomic components of a concept, recursing any logical combination irrespective of the
+     * operator.
      *
      * @param trigger
      * @return
@@ -1389,14 +1429,15 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its change if it's not already one, implementing the corresponding semantic operator.
+     * Turn a concept into its change if it's not already one, implementing the corresponding semantic
+     * operator.
      *
      * @param concept       the untransformed concept
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from
+     *                      outside the builder
      * @return the transformed concept
      */
-    public Concept makeChange(Concept concept, boolean addDefinition) {
+    public Concept makeChange(Concept concept) {
 
         if (concept.is(SemanticType.CHANGE)) {
             return concept;
@@ -1420,7 +1461,8 @@ public class OWL {
 
             conceptId = ontology.createIdForDefinition(definition);
 
-            String reference = UnarySemanticOperator.CHANGE.getReferenceName(concept.getReferenceName(), null);
+            String reference = UnarySemanticOperator.CHANGE.getReferenceName(concept.getReferenceName(),
+                    null);
 
             Set<SemanticType> newType = UnarySemanticOperator.CHANGE.apply(concept.getType());
 
@@ -1431,10 +1473,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
 
             Concept ret = ontology.getConcept(conceptId);
@@ -1457,14 +1496,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its change if it's not already one, implementing the corresponding semantic operator.
+     * Turn a concept into its change if it's not already one, implementing the corresponding semantic
+     * operator.
      *
-     * @param concept       the untransformed concept
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept
      * @return the transformed concept
      */
-    public Concept makeRate(Concept concept, boolean addDefinition) {
+    public Concept makeRate(Concept concept) {
 
         if (concept.is(SemanticType.RATE)) {
             return concept;
@@ -1499,10 +1537,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
 
             Concept ret = ontology.getConcept(conceptId);
@@ -1524,14 +1559,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its change if it's not already one, implementing the corresponding semantic operator.
+     * Turn a concept into its change if it's not already one, implementing the corresponding semantic
+     * operator.
      *
-     * @param concept       the untransformed concept
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept
      * @return the transformed concept
      */
-    public Concept makeChanged(Concept concept, boolean addDefinition) {
+    public Concept makeChanged(Concept concept) {
 
         if (concept.is(SemanticType.CHANGED)) {
             return concept;
@@ -1555,7 +1589,8 @@ public class OWL {
 
             conceptId = ontology.createIdForDefinition(definition);
 
-            String reference = UnarySemanticOperator.CHANGED.getReferenceName(concept.getReferenceName(), null);
+            String reference = UnarySemanticOperator.CHANGED.getReferenceName(concept.getReferenceName(),
+                    null);
 
             Set<SemanticType> newType = UnarySemanticOperator.CHANGED.apply(concept.getType());
 
@@ -1566,10 +1601,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
 
             Concept ret = ontology.getConcept(conceptId);
@@ -1592,15 +1624,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its count/numerosity if it's not already one, implementing the corresponding semantic
-     * operator. Also makes the original concept the numerosity's inherent.
+     * Turn a concept into its count/numerosity if it's not already one, implementing the corresponding
+     * semantic operator. Also makes the original concept the numerosity's inherent.
      *
-     * @param concept       the untransformed concept
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept
      * @return the transformed concept
      */
-    public Concept makeCount(Concept concept, boolean addDefinition) {
+    public Concept makeCount(Concept concept) {
 
         if (concept.is(SemanticType.NUMEROSITY)) {
             return concept;
@@ -1637,9 +1667,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
             Concept ret = ontology.getConcept(conceptId);
 
@@ -1654,15 +1682,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into the distance from it if it's not already one, implementing the corresponding semantic
-     * operator.
+     * Turn a concept into the distance from it if it's not already one, implementing the corresponding
+     * semantic operator.
      *
-     * @param concept       the untransformed concept
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept
      * @return the transformed concept
      */
-    public Concept makeDistance(Concept concept, boolean addDefinition) {
+    public Concept makeDistance(Concept concept) {
 
         if (concept.is(SemanticType.DISTANCE)) {
             return concept;
@@ -1682,7 +1708,8 @@ public class OWL {
         if (conceptId == null) {
 
             conceptId = ontology.createIdForDefinition(definition);
-            String reference = UnarySemanticOperator.DISTANCE.getReferenceName(concept.getReferenceName(), null);
+            String reference = UnarySemanticOperator.DISTANCE.getReferenceName(concept.getReferenceName(),
+                    null);
 
             Set<SemanticType> newType = UnarySemanticOperator.DISTANCE.apply(concept.getType());
 
@@ -1692,12 +1719,11 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
 
             Concept ret = ontology.getConcept(conceptId);
+
             /*
              * distance is inherent to the thing that's present.
              */
@@ -1708,15 +1734,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its presence if it's not already one, implementing the corresponding semantic operator. Also
-     * makes the original concept the numerosity's inherent.
+     * Turn a concept into its presence if it's not already one, implementing the corresponding semantic
+     * operator. Also makes the original concept the numerosity's inherent.
      *
-     * @param concept       the untransformed concept
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept
      * @return the transformed concept
      */
-    public Concept makePresence(Concept concept, boolean addDefinition) {
+    public Concept makePresence(Concept concept) {
 
         if (concept.is(SemanticType.PRESENCE)) {
             return concept;
@@ -1739,7 +1763,8 @@ public class OWL {
 
             conceptId = ontology.createIdForDefinition(definition);
 
-            String reference = UnarySemanticOperator.PRESENCE.getReferenceName(concept.getReferenceName(), null);
+            String reference = UnarySemanticOperator.PRESENCE.getReferenceName(concept.getReferenceName(),
+                    null);
 
             Set<SemanticType> newType = UnarySemanticOperator.PRESENCE.apply(concept.getType());
             ArrayList<Axiom> ax = new ArrayList<>();
@@ -1748,9 +1773,6 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
             ontology.define(ax);
             Concept ret = ontology.getConcept(conceptId);
 
@@ -1767,12 +1789,10 @@ public class OWL {
      * Turn a concept into its occurrence (probability of presence) if it's not already one, implementing the
      * corresponding semantic operator. Also makes the original concept the numerosity's inherent.
      *
-     * @param concept       the untransformed concept. Must be a direct observable.
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept. Must be a direct observable.
      * @return the transformed concept
      */
-    public Concept makeOccurrence(Concept concept, boolean addDefinition) {
+    public Concept makeOccurrence(Concept concept) {
 
         if (concept.is(SemanticType.OCCURRENCE)) {
             return concept;
@@ -1780,7 +1800,8 @@ public class OWL {
 
         if (!concept.is(SemanticType.DIRECT_OBSERVABLE)) {
             throw new KValidationException(
-                    "occurrences (probability of presence) can be observed only for subjects, events, processes and " +
+                    "occurrences (probability of presence) can be observed only for subjects, events, " +
+                            "processes and " +
                             "relationships");
         }
 
@@ -1793,7 +1814,8 @@ public class OWL {
 
         if (conceptId == null) {
 
-            String reference = UnarySemanticOperator.OCCURRENCE.getReferenceName(concept.getReferenceName(), null);
+            String reference = UnarySemanticOperator.OCCURRENCE.getReferenceName(concept.getReferenceName()
+                    , null);
 
             conceptId = ontology.createIdForDefinition(definition);
             Set<SemanticType> newType = UnarySemanticOperator.OCCURRENCE.apply(concept.getType());
@@ -1804,10 +1826,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
             Concept ret = ontology.getConcept(conceptId);
 
@@ -1821,15 +1840,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its probability if it's not already one, implementing the corresponding semantic operator.
-     * Also makes the original concept the numerosity's inherent.
+     * Turn a concept into its probability if it's not already one, implementing the corresponding semantic
+     * operator. Also makes the original concept the numerosity's inherent.
      *
-     * @param concept       the untransformed concept. Must be an event.
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept. Must be an event.
      * @return the transformed concept
      */
-    public Concept makeMagnitude(Concept concept, boolean addDefinition) {
+    public Concept makeMagnitude(Concept concept) {
 
         if (concept.is(SemanticType.MAGNITUDE)) {
             return concept;
@@ -1850,7 +1867,8 @@ public class OWL {
 
             conceptId = ontology.createIdForDefinition(definition);
 
-            String reference = UnarySemanticOperator.MAGNITUDE.getReferenceName(concept.getReferenceName(), null);
+            String reference = UnarySemanticOperator.MAGNITUDE.getReferenceName(concept.getReferenceName(),
+                    null);
 
             Set<SemanticType> newType = UnarySemanticOperator.MAGNITUDE.apply(concept.getType());
 
@@ -1860,9 +1878,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
             Concept ret = ontology.getConcept(conceptId);
 
@@ -1876,15 +1892,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its probability if it's not already one, implementing the corresponding semantic operator.
-     * Also makes the original concept the numerosity's inherent.
+     * Turn a concept into its probability if it's not already one, implementing the corresponding semantic
+     * operator. Also makes the original concept the numerosity's inherent.
      *
-     * @param concept       the untransformed concept. Must be an event.
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept. Must be an event.
      * @return the transformed concept
      */
-    public Concept makeLevel(Concept concept, boolean addDefinition) {
+    public Concept makeLevel(Concept concept) {
 
         if (concept.is(SemanticType.ORDERING)) {
             return concept;
@@ -1915,9 +1929,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
             Concept ret = ontology.getConcept(conceptId);
 
@@ -1931,15 +1943,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its probability if it's not already one, implementing the corresponding semantic operator.
-     * Also makes the original concept the numerosity's inherent.
+     * Turn a concept into its probability if it's not already one, implementing the corresponding semantic
+     * operator. Also makes the original concept the numerosity's inherent.
      *
-     * @param concept       the untransformed concept. Must be an event.
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept. Must be an event.
      * @return the transformed concept
      */
-    public Concept makeProbability(Concept concept, boolean addDefinition) {
+    public Concept makeProbability(Concept concept) {
 
         if (concept.is(SemanticType.PROBABILITY)) {
             return concept;
@@ -1962,7 +1972,8 @@ public class OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.PROBABILITY.apply(concept.getType());
 
-            String reference = UnarySemanticOperator.PROBABILITY.getReferenceName(concept.getReferenceName(), null);
+            String reference =
+                    UnarySemanticOperator.PROBABILITY.getReferenceName(concept.getReferenceName(), null);
 
             ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
@@ -1970,9 +1981,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
             Concept ret = ontology.getConcept(conceptId);
 
@@ -1986,15 +1995,13 @@ public class OWL {
     }
 
     /**
-     * Turn a concept into its uncertainty if it's not already one, implementing the corresponding semantic operator.
-     * Also makes the original concept the numerosity's inherent.
+     * Turn a concept into its uncertainty if it's not already one, implementing the corresponding semantic
+     * operator. Also makes the original concept the numerosity's inherent.
      *
-     * @param concept       the untransformed concept.
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from outside
-     *                      the builder
+     * @param concept the untransformed concept.
      * @return the transformed concept
      */
-    public Concept makeUncertainty(Concept concept, boolean addDefinition) {
+    public Concept makeUncertainty(Concept concept) {
 
         if (concept.is(SemanticType.UNCERTAINTY)) {
             return concept;
@@ -2009,7 +2016,8 @@ public class OWL {
 
         if (conceptId == null) {
 
-            String reference = UnarySemanticOperator.UNCERTAINTY.getReferenceName(concept.getReferenceName(), null);
+            String reference =
+                    UnarySemanticOperator.UNCERTAINTY.getReferenceName(concept.getReferenceName(), null);
 
             conceptId = ontology.createIdForDefinition(definition);
             Set<SemanticType> newType = UnarySemanticOperator.UNCERTAINTY.apply(concept.getType());
@@ -2020,9 +2028,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
             Concept ret = ontology.getConcept(conceptId);
             /*
@@ -2034,7 +2040,7 @@ public class OWL {
         return ontology.getConcept(conceptId);
     }
 
-    public Concept makeProportion(Concept concept, Concept comparison, boolean addDefinition, boolean isPercentage) {
+    public Concept makeProportion(Concept concept, Concept comparison, boolean isPercentage) {
 
         if (concept.is(SemanticType.PROPORTION) || concept.is(SemanticType.PERCENTAGE)) {
             return concept;
@@ -2051,11 +2057,12 @@ public class OWL {
         // this.hasUnaryOp = true;
 
         String definition = (isPercentage ? UnarySemanticOperator.PERCENTAGE.declaration[0]
-                : UnarySemanticOperator.PROPORTION.declaration[0])
+                                          : UnarySemanticOperator.PROPORTION.declaration[0])
                 + " (" + concept.getUrn() + ")"
                 + (comparison == null ? ""
-                : (" " + (isPercentage ? UnarySemanticOperator.PERCENTAGE.declaration[1]
-                : UnarySemanticOperator.PROPORTION.declaration[1]) + " (" + comparison.getUrn() + ")"));
+                                      : (" " + (isPercentage ? UnarySemanticOperator.PERCENTAGE.declaration[1]
+                                                             :
+                                                UnarySemanticOperator.PROPORTION.declaration[1]) + " (" + comparison.getUrn() + ")"));
 
         Ontology ontology = getOntology(concept.getNamespace());
         String conceptId = ontology.getIdForDefinition(definition);
@@ -2065,13 +2072,15 @@ public class OWL {
             conceptId = ontology.createIdForDefinition(definition);
 
             String reference = isPercentage
-                    ? UnarySemanticOperator.PERCENTAGE.getReferenceName(concept.getReferenceName(),
+                               ? UnarySemanticOperator.PERCENTAGE.getReferenceName(concept.getReferenceName(),
                     comparison == null ? null : comparison.getReferenceName())
-                    : UnarySemanticOperator.PROPORTION.getReferenceName(concept.getReferenceName(),
-                    comparison == null ? null : comparison.getReferenceName());
+                               : UnarySemanticOperator.PROPORTION.getReferenceName(concept.getReferenceName(),
+                                       comparison == null ? null : comparison.getReferenceName());
 
-            Set<SemanticType> newType = isPercentage ? UnarySemanticOperator.PERCENTAGE.apply(concept.getType())
-                    : UnarySemanticOperator.PROPORTION.apply(concept.getType());
+            Set<SemanticType> newType = isPercentage ?
+                                        UnarySemanticOperator.PERCENTAGE.apply(concept.getType())
+                                                     :
+                                        UnarySemanticOperator.PROPORTION.apply(concept.getType());
 
             ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
@@ -2079,9 +2088,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
 
             Concept ret = ontology.getConcept(conceptId);
@@ -2097,7 +2104,7 @@ public class OWL {
         return ontology.getConcept(conceptId);
     }
 
-    public Concept makeRatio(Concept concept, Concept comparison, boolean addDefinition) {
+    public Concept makeRatio(Concept concept, Concept comparison) {
 
         if (concept.is(SemanticType.RATIO)) {
             return concept;
@@ -2118,7 +2125,8 @@ public class OWL {
 
         String definition = UnarySemanticOperator.RATIO.declaration[0] + " (" + concept.getUrn() + ")"
                 + (comparison == null ? ""
-                : " " + (UnarySemanticOperator.RATIO.declaration[1] + " (" + comparison.getUrn() + ")"));
+                                      :
+                   " " + (UnarySemanticOperator.RATIO.declaration[1] + " (" + comparison.getUrn() + ")"));
 
         Ontology ontology = getOntology(concept.getNamespace());
         String conceptId = ontology.getIdForDefinition(definition);
@@ -2138,9 +2146,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
 
             // unit for ratios of physical properties
             if ((concept.is(SemanticType.EXTENSIVE_PROPERTY) || concept.is(SemanticType.INTENSIVE_PROPERTY))
@@ -2169,7 +2175,7 @@ public class OWL {
         return ontology.getConcept(conceptId);
     }
 
-    public Concept makeValue(Concept concept, Concept comparison, boolean addDefinition, boolean monetary) {
+    public Concept makeValue(Concept concept, Concept comparison, boolean monetary) {
 
         if (concept.is(SemanticType.VALUE) || concept.is(SemanticType.MONETARY_VALUE)) {
             return concept;
@@ -2179,9 +2185,10 @@ public class OWL {
                 + (comparison == null ? "" : ("Vs" + getCleanId(comparison)));
 
         String definition = (monetary ? UnarySemanticOperator.MONETARY_VALUE.declaration[0]
-                : UnarySemanticOperator.VALUE.declaration[0]) + " (" + concept.getUrn() + ")"
+                                      : UnarySemanticOperator.VALUE.declaration[0]) + " (" + concept.getUrn() + ")"
                 + (comparison == null ? ""
-                : " " + (UnarySemanticOperator.VALUE.declaration[1] + " (" + comparison.getUrn() + ")"));
+                                      :
+                   " " + (UnarySemanticOperator.VALUE.declaration[1] + " (" + comparison.getUrn() + ")"));
 
         Ontology ontology = getOntology(concept.getNamespace());
         String conceptId = ontology.getIdForDefinition(definition);
@@ -2193,13 +2200,15 @@ public class OWL {
             conceptId = ontology.createIdForDefinition(definition);
 
             String reference = monetary
-                    ? UnarySemanticOperator.MONETARY_VALUE.getReferenceName(concept.getReferenceName(),
-                    comparison == null ? null : comparison.getReferenceName())
-                    : UnarySemanticOperator.VALUE.getReferenceName(concept.getReferenceName(),
-                    comparison == null ? null : comparison.getReferenceName());
+                               ?
+                               UnarySemanticOperator.MONETARY_VALUE.getReferenceName(concept.getReferenceName(),
+                                       comparison == null ? null : comparison.getReferenceName())
+                               : UnarySemanticOperator.VALUE.getReferenceName(concept.getReferenceName(),
+                                       comparison == null ? null : comparison.getReferenceName());
 
-            Set<SemanticType> newType = monetary ? UnarySemanticOperator.MONETARY_VALUE.apply(concept.getType())
-                    : UnarySemanticOperator.VALUE.apply(concept.getType());
+            Set<SemanticType> newType = monetary ?
+                                        UnarySemanticOperator.MONETARY_VALUE.apply(concept.getType())
+                                                 : UnarySemanticOperator.VALUE.apply(concept.getType());
 
             ArrayList<Axiom> ax = new ArrayList<>();
             ax.add(Axiom.ClassAssertion(conceptId, newType));
@@ -2207,9 +2216,7 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.BASE_DECLARATION, "true"));
             ax.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cName));
-            if (addDefinition) {
-                ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(ax);
 
             Concept ret = ontology.getConcept(conceptId);
@@ -2227,14 +2234,13 @@ public class OWL {
     }
 
     /**
-     * type of <trait> makes a CLASS that incarnates the trait as a quality and whose values are the concrete children
-     * of the trait.
+     * type of <trait> makes a CLASS that incarnates the trait as a quality and whose values are the concrete
+     * children of the trait.
      *
      * @param classified
-     * @param addDefinition
      * @return
      */
-    public Concept makeType(Concept classified, boolean addDefinition) {
+    public Concept makeType(Concept classified) {
 
         if (classified.is(SemanticType.CLASS)) {
             return classified;
@@ -2254,7 +2260,8 @@ public class OWL {
 
             Set<SemanticType> newType = UnarySemanticOperator.TYPE.apply(classified.getType());
 
-            String reference = UnarySemanticOperator.TYPE.getReferenceName(classified.getReferenceName(), null);
+            String reference = UnarySemanticOperator.TYPE.getReferenceName(classified.getReferenceName(),
+                    null);
 
             List<Axiom> axioms = new ArrayList<>();
             axioms.add(Axiom.ClassAssertion(conceptId, newType));
@@ -2263,9 +2270,7 @@ public class OWL {
             axioms.add(Axiom.AnnotationAssertion(conceptId, NS.REFERENCE_NAME_PROPERTY, reference));
             axioms.add(Axiom.AnnotationAssertion(conceptId, NS.IS_TYPE_DELEGATE, "true"));
             axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", traitID));
-            if (addDefinition) {
-                axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
-            }
+            axioms.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
             ontology.define(axioms);
             Concept ret = ontology.getConcept(conceptId);
 
@@ -2364,8 +2369,9 @@ public class OWL {
     }
 
     /**
-     * Synonym of getAllParents(), in Concept; defaults to asserted parents if reasoner is off. Will not return
-     * owl:Thing (which should never appear anyway) or owl:Nothing, even if the concept is inconsistent.
+     * Synonym of getAllParents(), in Concept; defaults to asserted parents if reasoner is off. Will not
+     * return owl:Thing (which should never appear anyway) or owl:Nothing, even if the concept is
+     * inconsistent.
      *
      * @param main
      * @return the parent closure of the concept
@@ -2393,8 +2399,8 @@ public class OWL {
     }
 
     /**
-     * Synonym of getSubclasses, in Concepts; defaults to asserted children if reasoner is off. Will not return
-     * owl:Thing (which should never appear anyway) or owl:Nothing, which is a child of everything.
+     * Synonym of getSubclasses, in Concepts; defaults to asserted children if reasoner is off. Will not
+     * return owl:Thing (which should never appear anyway) or owl:Nothing, which is a child of everything.
      *
      * @param main
      * @return the semantic closure of the concept
@@ -2464,7 +2470,8 @@ public class OWL {
     }
 
     public Node<OWLClass> getEquivalentClasses(OWLClassExpression arg0)
-            throws InconsistentOntologyException, ClassExpressionNotInProfileException, FreshEntitiesException,
+            throws InconsistentOntologyException, ClassExpressionNotInProfileException,
+            FreshEntitiesException,
             ReasonerInterruptedException, TimeOutException {
         return reasoner.getEquivalentClasses(arg0);
     }
@@ -2481,7 +2488,8 @@ public class OWL {
     }
 
     public NodeSet<OWLNamedIndividual> getInstances(OWLClassExpression arg0, boolean arg1)
-            throws InconsistentOntologyException, ClassExpressionNotInProfileException, FreshEntitiesException,
+            throws InconsistentOntologyException, ClassExpressionNotInProfileException,
+            FreshEntitiesException,
             ReasonerInterruptedException, TimeOutException {
         return reasoner.getInstances(arg0, arg1);
     }
@@ -2535,14 +2543,16 @@ public class OWL {
         return reasoner.getSubDataProperties(arg0, arg1);
     }
 
-    public NodeSet<OWLObjectPropertyExpression> getSubObjectProperties(OWLObjectPropertyExpression arg0, boolean arg1)
+    public NodeSet<OWLObjectPropertyExpression> getSubObjectProperties(OWLObjectPropertyExpression arg0,
+                                                                       boolean arg1)
             throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException,
             TimeOutException {
         return reasoner.getSubObjectProperties(arg0, arg1);
     }
 
     public NodeSet<OWLClass> getSuperClasses(OWLClassExpression arg0, boolean arg1)
-            throws InconsistentOntologyException, ClassExpressionNotInProfileException, FreshEntitiesException,
+            throws InconsistentOntologyException, ClassExpressionNotInProfileException,
+            FreshEntitiesException,
             ReasonerInterruptedException, TimeOutException {
         return reasoner.getSuperClasses(arg0, arg1);
     }
@@ -2553,7 +2563,8 @@ public class OWL {
         return reasoner.getSuperDataProperties(arg0, arg1);
     }
 
-    public NodeSet<OWLObjectPropertyExpression> getSuperObjectProperties(OWLObjectPropertyExpression arg0, boolean arg1)
+    public NodeSet<OWLObjectPropertyExpression> getSuperObjectProperties(OWLObjectPropertyExpression arg0,
+                                                                         boolean arg1)
             throws InconsistentOntologyException, FreshEntitiesException, ReasonerInterruptedException,
             TimeOutException {
         return reasoner.getSuperObjectProperties(arg0, arg1);
@@ -2581,8 +2592,10 @@ public class OWL {
         return reasoner.isConsistent();
     }
 
-    public boolean isEntailed(OWLAxiom arg0) throws ReasonerInterruptedException, UnsupportedEntailmentTypeException,
-            TimeOutException, AxiomNotInProfileException, FreshEntitiesException, InconsistentOntologyException {
+    public boolean isEntailed(OWLAxiom arg0) throws ReasonerInterruptedException,
+            UnsupportedEntailmentTypeException,
+            TimeOutException, AxiomNotInProfileException, FreshEntitiesException,
+            InconsistentOntologyException {
         return reasoner.isEntailed(arg0);
     }
 
@@ -2600,7 +2613,8 @@ public class OWL {
         return reasoner.isPrecomputed(arg0);
     }
 
-    public boolean isSatisfiable(OWLClassExpression arg0) throws ReasonerInterruptedException, TimeOutException,
+    public boolean isSatisfiable(OWLClassExpression arg0) throws ReasonerInterruptedException,
+            TimeOutException,
             ClassExpressionNotInProfileException, FreshEntitiesException, InconsistentOntologyException {
         return reasoner.isSatisfiable(arg0);
     }

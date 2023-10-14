@@ -21,7 +21,7 @@ public class Test implements Runnable {
         Generic method to put temporary stuff to test quickly or debug with.
          */
         var session = Engine.INSTANCE.getCurrentSession(true, Engine.INSTANCE.getAnonymousScope());
-        var urban = session.getService(Reasoner.class).resolveConcept("landcover:Urban");
+        var urban = session.getService(Reasoner.class).resolveConcept("distance to infrastructure:City");
         var city = session.getService(Reasoner.class).resolveConcept("infrastructure:City");
         var obwithin = Observable.promote(urban).builder(session).within(city).build();
         System.out.println(obwithin.toString());

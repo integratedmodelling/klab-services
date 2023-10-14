@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,17 +39,39 @@ public class ObservationReasoner {
          * independent observables as dependencies.
          */
         var generics = observable.getGenericComponents();
+        var resources = reasoner.scope().getService(ResourcesService.class);
         var traits = observable.is(SemanticType.QUALITY)
                      ? reasoner.directAttributes(observable)
                      : reasoner.directTraits(observable);
 
+        /*
+        TODO with traits, we should switch off the direct resolution if the unmodified observation is
+         available for the naked observable, and switch directly to trait resolution
+         */
+
+        /**
+         * FIXME check if the "one strategy at a time" technique works in all situations
+         */
         int rank = 0;
         if (generics.isEmpty() && !observable.isAbstract()) {
             ret.addAll(getDirectConcreteStrategies(observable, scope, rank++));
         }
 
+        // TODO deferred strategies for unary operators that have built-in functors
+        if (observable.is(SemanticType.DISTANCE)) {
+
+        } else if (observable.is(SemanticType.NUMEROSITY)) {
+
+        } else if (observable.is(SemanticType.PRESENCE)) {
+
+        } else if (observable.is(SemanticType.PERCENTAGE) || observable.is(SemanticType.PROPORTION)) {
+
+        } else if (observable.is(SemanticType.RATIO)) {
+
+        }
+
         if (!traits.isEmpty()) {
-            ret.addAll(getTraitConcreteStrategies(observable, traits, scope, rank));
+            ret.addAll(getTraitConcreteStrategies(observable, traits, scope, rank++));
         }
 
         if (!observable.getValueOperators().isEmpty()) {
@@ -141,10 +164,12 @@ public class ObservationReasoner {
             // The resolve above has produced a quality of x observation, we must resolve the quality
             // selectively
             // where that quality is our target
-            // TODO defer to concrete dependencies using CONCRETIZE which creates the concrete deps and applies
+            // TODO defer to concrete dependencies using CONCRETIZE which creates the concrete deps and
+            //  applies
             //  an implicit WHERE to their resolution; then APPLY an aggregator for the main
             //  observation. NO - CONCRETIZE is for generic quality observables. Generic countable observables
-            //  remain one dependency, which triggers classification and then resolution of the individual classes on
+            //  remain one dependency, which triggers classification and then resolution of the individual
+            //  classes on
             //  filtered groups.
 //            deferred.withOperation(ObservationStrategy.Operation.CONCRETIZE, )
 
@@ -160,7 +185,7 @@ public class ObservationReasoner {
                     .withStrategy(ObservationStrategy.Operation.DEFER,
                             ObservationStrategy.builder(
                                             Observable.promote(toResolve).builder(scope)
-                                                    .within(observable.getSemantics())
+                                                    .within(nakedObservable.getSemantics())
                                                     .optional(true).build())
                                     .withCost(rank)
                                     .build());

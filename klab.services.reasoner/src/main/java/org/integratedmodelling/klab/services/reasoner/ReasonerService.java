@@ -2038,6 +2038,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ObservableBuilder builder =
                 new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
 
+        if (concept.getSemanticModifier() != null) {
+            Concept other = null;
+            if (concept.getComparisonConcept() != null) {
+                other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
+            }
+            builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null :
+                                                      new Concept[]{other});
+        }
+
         if (concept.getDistributedInherent() != null) {
             builder.withDistributedInherency(true);
         }
@@ -2123,15 +2132,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             if (role != null) {
                 builder.withRole(role);
             }
-        }
-
-        if (concept.getSemanticModifier() != null) {
-            Concept other = null;
-            if (concept.getComparisonConcept() != null) {
-                other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
-            }
-            builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null :
-                                                      new Concept[]{other});
         }
 
         Concept ret = null;

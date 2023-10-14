@@ -368,55 +368,55 @@ public class ObservableBuilder implements Observable.Builder {
             try {
                 switch (type) {
                     case CHANGE:
-                        reset(owl.makeChange(argument, true), type);
+                        reset(owl.makeChange(argument), type);
                         break;
                     case CHANGED:
-                        reset(owl.makeChanged(argument, true), type);
+                        reset(owl.makeChanged(argument), type);
                         break;
                     case COUNT:
-                        reset(owl.makeCount(argument, true), type);
+                        reset(owl.makeCount(argument), type);
                         break;
                     case DISTANCE:
-                        reset(owl.makeDistance(argument, true), type);
+                        reset(owl.makeDistance(argument), type);
                         break;
                     case OCCURRENCE:
-                        reset(owl.makeOccurrence(argument, true), type);
+                        reset(owl.makeOccurrence(argument), type);
                         break;
                     case PRESENCE:
-                        reset(owl.makePresence(argument, true), type);
+                        reset(owl.makePresence(argument), type);
                         break;
                     case PROBABILITY:
-                        reset(owl.makeProbability(argument, true), type);
+                        reset(owl.makeProbability(argument), type);
                         break;
                     case PROPORTION:
-                        reset(owl.makeProportion(argument, this.comparison, true, false), type);
+                        reset(owl.makeProportion(argument, this.comparison, false), type);
                         break;
                     case PERCENTAGE:
-                        reset(owl.makeProportion(argument, this.comparison, true, true), type);
+                        reset(owl.makeProportion(argument, this.comparison, true), type);
                         break;
                     case RATIO:
-                        reset(owl.makeRatio(argument, this.comparison, true), type);
+                        reset(owl.makeRatio(argument, this.comparison), type);
                         break;
                     case RATE:
-                        reset(owl.makeRate(argument, true), type);
+                        reset(owl.makeRate(argument), type);
                         break;
                     case UNCERTAINTY:
-                        reset(owl.makeUncertainty(argument, true), type);
+                        reset(owl.makeUncertainty(argument), type);
                         break;
                     case VALUE:
                     case MONETARY_VALUE:
-                        reset(owl.makeValue(argument, this.comparison, true,
+                        reset(owl.makeValue(argument, this.comparison,
                                         type == UnarySemanticOperator.MONETARY_VALUE),
                                 type);
                         break;
                     case MAGNITUDE:
-                        reset(owl.makeMagnitude(argument, true), type);
+                        reset(owl.makeMagnitude(argument), type);
                         break;
                     case LEVEL:
-                        reset(owl.makeLevel(argument, true), type);
+                        reset(owl.makeLevel(argument), type);
                         break;
                     case TYPE:
-                        reset(owl.makeType(argument, true), type);
+                        reset(owl.makeType(argument), type);
                         break;
                     default:
                         break;
