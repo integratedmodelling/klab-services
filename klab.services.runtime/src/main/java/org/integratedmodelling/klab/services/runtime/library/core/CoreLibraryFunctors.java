@@ -138,4 +138,9 @@ public class CoreLibraryFunctors {
         }
     }
 
+    @Library(name = "dereifiers", description = "")
+    public static class Dereifiers {
+        // TODO mediator methods
+    }
+
 }

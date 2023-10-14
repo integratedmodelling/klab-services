@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.Service;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,17 +58,38 @@ public class ObservationReasoner {
             ret.addAll(getDirectConcreteStrategies(observable, scope, rank++));
         }
 
-        // TODO deferred strategies for unary operators that have built-in functors
+        // TODO deferred strategies for unary operators that have built-in dereifiers
+        //  defer to the argument(s), add distance computation
+        ObservationStrategy opDeferred = null;
         if (observable.is(SemanticType.DISTANCE)) {
-
+            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+                    .withCost(rank++)
+                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+                    .build();
         } else if (observable.is(SemanticType.NUMEROSITY)) {
-
+            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+                    .withCost(rank++)
+                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+                    .build();
         } else if (observable.is(SemanticType.PRESENCE)) {
-
+            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+                    .withCost(rank++)
+                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+                    .build();
         } else if (observable.is(SemanticType.PERCENTAGE) || observable.is(SemanticType.PROPORTION)) {
-
+//            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+//                    .withCost(rank++)
+//                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+//                    .build();
         } else if (observable.is(SemanticType.RATIO)) {
+//            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+//                    .withCost(rank++)
+//                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+//                    .build();
+        }
 
+        if (opDeferred != null) {
+            ret.add(ObservationStrategy.builder(observable).withStrategy(ObservationStrategy.Operation.DEFER, opDeferred).withCost(rank).build());
         }
 
         if (!traits.isEmpty()) {
