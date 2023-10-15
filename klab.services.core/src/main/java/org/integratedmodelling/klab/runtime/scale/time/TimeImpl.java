@@ -15,6 +15,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDur
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
@@ -467,6 +469,17 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     public boolean matches(Collection<Constraint> constraints) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    protected ServiceCall encodeCall() {
+        ServiceCallImpl ret = new ServiceCallImpl();
+        // TODO
+        return ret;
+    }
+
+    @Override
+    public String encode(String language) {
+        return encodeCall().encode(language);
     }
 
     public static Time create(Dimension dimension) {

@@ -43,7 +43,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private boolean mediation;
     private Geometry geometry;
     private boolean variable;
-//    private boolean isFinal;
     private boolean empty;
 
     @Override
@@ -151,11 +150,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         return this.variable;
     }
 
-//    @Override
-//    public boolean isFinal() {
-//        return this.isFinal;
-//    }
-
     @Override
     public boolean isEmpty() {
         return this.empty;
@@ -244,10 +238,6 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     public void setVariable(boolean variable) {
         this.variable = variable;
     }
-
-//    public void setFinal(boolean isFinal) {
-//        this.isFinal = isFinal;
-//    }
 
     public void setEmpty(boolean empty) {
         this.empty = empty;

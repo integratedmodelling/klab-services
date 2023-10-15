@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.api.knowledge.impl;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -67,6 +70,26 @@ public class ObservationStrategyImpl implements ObservationStrategy {
             });
         }
         return ret.toString();
+    }
+
+    @Override
+    public String getUrn() {
+        return null;
+    }
+
+    @Override
+    public Version getVersion() {
+        return null;
+    }
+
+    @Override
+    public Metadata getMetadata() {
+        return null;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
+        return null;
     }
 
     public static class Builder implements ObservationStrategy.Builder {

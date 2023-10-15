@@ -56,7 +56,7 @@ public class ExpressionCodeImpl implements ExpressionCode {
 	}
 
 	@Override
-	public String encode() {
+	public String encode(String language) {
 		return (forcedScalar ? "#" : "") + "[" + code + "]";
 	}
 

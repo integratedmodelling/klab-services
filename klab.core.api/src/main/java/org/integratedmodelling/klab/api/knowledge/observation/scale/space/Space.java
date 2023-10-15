@@ -16,6 +16,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.lang.Encodeable;
 
 /**
  * The Interface ISpace.
@@ -23,7 +24,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Space extends Extent<Space>, Spatial {
+public interface Space extends Extent<Space>, Spatial, Encodeable {
 
 	/** Constant <code>MIN_SCALE_RANK=0</code> */
 	int MIN_SCALE_RANK = 0;

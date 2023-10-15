@@ -19,6 +19,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -1071,5 +1073,16 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     @Override
     public Shape getGeometricShape() {
         return this;
+    }
+
+    protected ServiceCall encodeCall() {
+        ServiceCallImpl ret = new ServiceCallImpl();
+        // TODO
+        return ret;
+    }
+
+    @Override
+    public String encode(String language) {
+        return encodeCall().encode(language);
     }
 }

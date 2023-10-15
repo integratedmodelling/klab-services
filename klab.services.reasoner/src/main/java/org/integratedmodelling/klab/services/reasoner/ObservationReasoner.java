@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -12,9 +13,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * Specialized functions to infer observation strategies. Kept separately for clarity as this is a crucial
@@ -96,6 +95,10 @@ public class ObservationReasoner {
             ret.addAll(getTraitConcreteStrategies(observable, traits, scope, rank++));
         }
 
+        if (observable.is(SemanticType.QUALITY) && reasoner.directInherent(observable) != null) {
+            ret.addAll(getInherencyStrategies(observable, scope, rank++));
+        }
+
         if (!observable.getValueOperators().isEmpty()) {
             Observable withoutOperators = observable.builder(scope).withoutValueOperators().build();
             return addValueOperatorStrategies(inferStrategies(withoutOperators, scope),
@@ -130,6 +133,22 @@ public class ObservationReasoner {
                                                                  List<Pair<ValueOperator, Literal>> observable, int rank) {
         // TODO add new strategies to the previous one; increment their rank by 1
         return ret;
+    }
+
+    /**
+     * Inherency-based strategies are for qualities distributed to inherent contexts through <code>of</code>,
+     * resolved by deferring the inherent objects with their inherent qualities and inserting an aggregating
+     * core function for the main observable.
+     *
+     * @param observable
+     * @param scope
+     * @param rank
+     * @return
+     */
+    private List<ObservationStrategy> getInherencyStrategies(Observable observable, ContextScope scope,
+                                                             int rank) {
+        // TODO
+        return Collections.emptyList();
     }
 
     /**
@@ -182,6 +201,8 @@ public class ObservationReasoner {
                         Observable.promote(baseTrait).builder(scope).of(nakedObservable.getSemantics()).build());
 
         if (observable.is(SemanticType.QUALITY)) {
+
+            // TODO probably not necessary, the model seems generic enough
 
             // The resolve above has produced a quality of x observation, we must resolve the quality
             // selectively
@@ -241,8 +262,19 @@ public class ObservationReasoner {
          */
         var builder =
                 ObservationStrategy.builder(observable)
-                        .withCost(rank)
-                        .withOperation(ObservationStrategy.Operation.RESOLVE, observable);
+                        .withCost(rank);
+
+        /**
+         * If we are resolving a relationship, we need the targets of the relationship first of all
+         */
+        if (observable.is(SemanticType.RELATIONSHIP)) {
+            for (var target : reasoner.relationshipTargets(observable)) {
+                builder.withOperation(ObservationStrategy.Operation.RESOLVE, Observable.promote(target));
+            }
+        }
+
+        // main target
+        builder.withOperation(ObservationStrategy.Operation.RESOLVE, observable);
 
         // defer resolution of the instances
         if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {

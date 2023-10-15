@@ -26,6 +26,19 @@ public interface Language extends Service {
 
     public final static String DEFAULT_EXPRESSION_LANGUAGE = "K.LAB.GROOVY";
 
+    /**
+     * k.IM is the k.LAB semantic modeling language
+     */
+    public final static String KIM = "k.IM";
+    /**
+     * k.Actors is the k.LAB actors language
+     */
+    public final static String KACTORS = "k.Actors";
+    /**
+     * k.DL is the k.LAB dataflow encoding language
+     */
+    public final static String KDL = "k.DL";
+
     default String getServiceName() {
         return "klab.language.service";
     }

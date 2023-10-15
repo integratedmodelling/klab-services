@@ -542,7 +542,8 @@ public interface Reasoner extends KlabService {
     Concept relationshipTarget(Semantics relationship);
 
     /**
-     * Return all the asserted targets of the relationship.
+     * Return all the asserted targets of the relationship. If the asserted target are the same concept,
+     * return only one concept.
      *
      * @param relationship a relationship concept
      * @return the targets. May be empty in abstract relationships.
@@ -702,29 +703,25 @@ public interface Reasoner extends KlabService {
 
     /**
      * <p>Return all the possible strategies to observe the passed observable in this context, in order of
-     * increasing
-     * cost/complexity. These will be resolved by the resolver in the order returned, stopping when coverage
-     * is enough. Except in case of abstract observables or patterns, the first should always be the direct
-     * observation of the observable without any additional computation.</p>
+     * increasing cost/complexity. These will be resolved by the resolver in the order returned, stopping when
+     * coverage is enough. Except in case of abstract observables or patterns, the first should always be the
+     * direct observation of the observable without any additional computation.</p>
      *
      * <p>A resolution strategy is the result of analyzing an observable to assess the different ways it can
-     * be
-     * contextualized. Given an observable and a context, the reasoner produces strategies in increasing order
-     * of cost and/or complexity. The resolver will resolve them in sequence, stopping when the context
+     * be contextualized. Given an observable and a context, the reasoner produces strategies in increasing
+     * order of cost and/or complexity. The resolver will resolve them in sequence, stopping when the context
      * coverage is complete. Unless the observable is a non-resolvable abstract/pattern, the first strategy
      * will always be the direct observation of the observable with no further computations.</p>
      *
      * <p>The observation strategy, by listing all the observables that must be resolved prior to
-     * contextualization of
-     * the target observable, also ensures that the dataflow contains all the needed references to properly
-     * maintain the influence graph in the digital twin, which picks up links as new observations are
-     * made.</p>
+     * contextualization of the target observable, also ensures that the dataflow contains all the needed
+     * references to properly maintain the influence graph in the digital twin, which picks up links as new
+     * observations are made.</p>
      *
      * <p>Inferring these is not a job for the AI, as most of the needed reasoning is contextual and
-     * priority-driven,
-     * way beyond the scope of DL reasoning. For the time being, this function is expected to hard-code the
-     * majority of the resolution rules, including ¶as a minimum those summarized below. Stubs exist for an
-     * experimental extension strategy based on
+     * priority-driven, way beyond the scope of DL reasoning. For the time being, this function is expected to
+     * hard-code the majority of the resolution rules, including ¶as a minimum those summarized below. Stubs
+     * exist for an experimental extension strategy based on
      * {@link org.integratedmodelling.klab.api.knowledge.ObservationStrategyPattern} but for the time being
      * it's not specified or used. As we're talking about reproducible science, I do NOT think that this is a
      * place for machine-learned correlative inference.</p>
@@ -732,15 +729,13 @@ public interface Reasoner extends KlabService {
      * <h3>Direct observation</h3>
      *
      * <p>These considerations apply to the direct observation of an observable, not handled through
-     * alternative
-     * strategies:</p>
+     * alternative strategies:</p>
      *
      * <p>Resolution uses the semantic closure of the concept, choosing, all else being equal, the model that
-     * resolves
-     * the observable whose semantic distance to the observable being resolved is closest to 0, with the
-     * caveat that models of abstract <em>main</em> observables are illegal, so catch-alls like <code>model
-     * Quality</code> cannot be written. The ability of using resolvers or instantiators for the main
-     * observable that have semantic distance > 0 could be questioned, and may be a configurable resolver
+     * resolves the observable whose semantic distance to the observable being resolved is closest to 0, with
+     * the caveat that models of abstract <em>main</em> observables are illegal, so catch-alls like
+     * <code>model Quality</code> cannot be written. The ability of using resolvers or instantiators for the
+     * main observable that have semantic distance > 0 could be questioned, and may be a configurable resolver
      * option along with the other priorities. But in general, resolution by semantic distance should catch
      * the least generic models analyzing the structure of the observable. This should always apply for
      * concepts used as the arguments of operators, both unary or binary. So for example,
@@ -751,24 +746,22 @@ public interface Reasoner extends KlabService {
      * handling.</p>
      *
      * <p>The direct observation of a direct observable with concrete traits should always check if instances
-     * of
-     * the base type have been observed already (i.e. the scope contains an observation of the base type) and
-     * see if the base trait(s) has been resolved previously <em>within</em> the instances. If so, the result
-     * is present and the query is resolved through a RESOLVED strategy, which simply produces the observation
-     * group ("folder") containing the classified instances.</p>
+     * of the base type have been observed already (i.e. the scope contains an observation of the base type)
+     * and see if the base trait(s) has been resolved previously <em>within</em> the instances. If so, the
+     * result is present and the query is resolved through a RESOLVED strategy, which simply produces the
+     * observation group ("folder") containing the classified instances.</p>
      *
      * <p>After each new observation, the emergence detector must check for new matching patterns and resolve
-     * whatever
-     * configuration, relationship, subject or event has emerged, also installing the correspondent
+     * whatever configuration, relationship, subject or event has emerged, also installing the correspondent
      * <code>change in Configuration</code> with the configuration triggers as dependencies. Configurations
      * such as networks will be influenced by the relevant observation groups, which change when instances are
      * added, removed or modified (e.g. through classification and characterization).</p>
      *
      * <h3>Alternative strategies</h3>
      *
-     * <p> Current list of observation strategy rules by observable beyond the direct observation, waiting for
-     * actual
-     * documentation:</p>
+     * <p> Current list of observation strategy rules by observable beyond the direct observation, waiting
+     * for
+     * actual documentation:</p>
      *
      * <dl>
      *

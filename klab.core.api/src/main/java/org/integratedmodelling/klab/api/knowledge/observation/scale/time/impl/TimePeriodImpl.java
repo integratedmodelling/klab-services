@@ -13,6 +13,8 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDur
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -313,4 +315,15 @@ public class TimePeriodImpl implements TimePeriod {
 		return 0;
 	}
 
+
+	protected ServiceCall encodeCall() {
+		ServiceCallImpl ret = new ServiceCallImpl();
+		// TODO
+		return ret;
+	}
+
+	@Override
+	public String encode(String language) {
+		return encodeCall().encode(language);
+	}
 }

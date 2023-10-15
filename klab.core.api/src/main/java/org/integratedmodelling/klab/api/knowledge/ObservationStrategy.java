@@ -30,8 +30,8 @@ import java.io.Serializable;
  * to the result of the first observation, there is no guarantee that it will succeed. For this reason
  * observation strategies that imply deferral should never have cost == 0 or their observable should be
  * optional. If the , the resulting dataflow will be appended to the actuator, substituting the deferral and
- * completing the dataflow. Dataflows that still contain deferred strategies are not self-consistent and cannot be
- * saved as resources.
+ * completing the dataflow. Dataflows that still contain deferred strategies are not self-consistent and
+ * cannot be saved as resources.
  * <p>
  * The deferral mechanism allows inferred observations to be made incrementally. For example a classified
  * object with multiple classification traits can be first observed by deferring to an instantiator and a
@@ -45,7 +45,8 @@ import java.io.Serializable;
  * plug-ins and specialized service calls. In case these are implemented, the built-in strategies should be
  * collected in declarative form and supplied with the core implementation as resources.
  */
-public interface ObservationStrategy extends Serializable, Iterable<Pair<ObservationStrategy.Operation,
+public interface ObservationStrategy extends Serializable, Knowledge,
+        Iterable<Pair<ObservationStrategy.Operation,
         ObservationStrategy.Arguments>> {
 
     interface Builder {
@@ -79,8 +80,10 @@ public interface ObservationStrategy extends Serializable, Iterable<Pair<Observa
         /**
          * the operation implies deferral, i.e. further resolution of a different observable, finding the
          * associated ObservationStrategies for it. The data associated to the operation is another
-         * ObservationStrategy for a different observable. After the resolution of the deferred observable,
-         * the operations in the deferred strategy build the original observations.
+         * ObservationStrategy for a different observable. The deferred strategy is inserted in the dataflow
+         * using a {@link org.integratedmodelling.klab.api.services.runtime.Actuator#DEFERRED_STRATEGY_CALL}
+         * call. After the resolution of the deferring observable, the operations in the deferred strategy
+         * build the original observations.
          */
         DEFER,
 
@@ -104,6 +107,12 @@ public interface ObservationStrategy extends Serializable, Iterable<Pair<Observa
 
     }
 
+    /**
+     * The original observable is either the one being resolved when the strategy is created by the reasoner,
+     * or the one to defer resolution to when the strategy is the argument of a DEFER operation.
+     *
+     * @return
+     */
     Observable getOriginalObservable();
 
     /**

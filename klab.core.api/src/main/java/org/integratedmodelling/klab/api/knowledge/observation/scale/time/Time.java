@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.ResolutionImpl;
+import org.integratedmodelling.klab.api.lang.Encodeable;
 import org.integratedmodelling.klab.api.lang.Quantity;
 
 /**
@@ -51,7 +52,7 @@ import org.integratedmodelling.klab.api.lang.Quantity;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Time extends Extent<Time> {
+public interface Time extends Extent<Time>, Encodeable {
 
     /**
      * Constant <code>MIN_SCALE_RANK=0</code>

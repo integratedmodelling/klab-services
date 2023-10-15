@@ -249,6 +249,11 @@ public class ResolverService extends BaseService implements Resolver {
                 case DEFER -> {
 
                 }
+                case APPLY -> {
+                }
+                case CONCRETIZE -> {
+                    // TODO deprecated?
+                }
             }
         }
 
@@ -757,7 +762,7 @@ public class ResolverService extends BaseService implements Resolver {
     private String encodeServiceCall(ServiceCall contextualizable, int offset,
                                      Map<String, String> resources) {
         // TODO extract resource parameters and substitute with variables
-        return Utils.Strings.spaces(offset) + contextualizable.encode();
+        return Utils.Strings.spaces(offset) + contextualizable.encode(Language.KDL);
     }
 
 }

@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.lang.Encodeable;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -60,7 +61,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	}
 
 	@Override
-	public String encode() {
+	public String encode(String language) {
 
 		if (super.getSourceCode() == null || super.getSourceCode().trim().isEmpty()) {
 			String ret = name + "(";
@@ -91,13 +92,13 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 
 	@Override
 	public String toString() {
-		return encode();
+		return encode(Language.KIM);
 	}
 
 	private String stringValue(Object val) {
 
 		if (val instanceof Encodeable) {
-			return ((Encodeable) val).encode();
+			return ((Encodeable) val).encode(Language.KIM);
 		} else if (val instanceof List) {
 			String ret = "(";
 			for (Object o : ((List<?>) val)) {

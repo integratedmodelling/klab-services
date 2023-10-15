@@ -65,6 +65,12 @@ import java.util.Queue;
 public interface Actuator extends Plan, Serializable {
 
     /**
+     * Name of the service call that encodes deferred resolution when that must be included in the
+     * computation.
+     */
+    static final String DEFERRED_STRATEGY_CALL = "klab.internal.deferred";
+
+    /**
      * All actuators have a name that corresponds 1-to-1 to the semantics it was created to resolve
      * (observable reference name). The only case for duplication of the same name is when a direct
      * observation is made as instantiation (with type
@@ -129,6 +135,12 @@ public interface Actuator extends Plan, Serializable {
     /**
      * Return the list of all computations in this actuator, or an empty list. If the actuator is a reference,
      * the list should be empty: any mediations are part of the referencing actuator's computations.
+     * <p>
+     * An internal service call named {@link #DEFERRED_STRATEGY_CALL} should be used to specify deferred
+     * observation strategies, with the {@link ObservationStrategy} communicated by the resolver as default
+     * {@link ServiceCall#DEFAULT_PARAMETER_NAME} parameter. The runtime will resolve the strategy once the
+     * context observation has been made and insert the resulting dataflow's actuators as children of the
+     * current one.
      *
      * @return all computations. Never null, possibly empty.
      */

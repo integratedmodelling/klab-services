@@ -4,6 +4,8 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Mesh;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Collection;
@@ -36,4 +38,9 @@ public class MeshImpl extends ShapeImpl implements Mesh {
 		return null;
 	}
 
-}
+	@Override
+	public String encode(String language) {
+		ServiceCall ret = super.encodeCall();
+		// TODO have ShapeImpl return a service call with a protected method, then use that and add arguments
+		return ret.encode(language);
+	}}
