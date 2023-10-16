@@ -1544,11 +1544,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Concept baseObservable(Semantics c) {
+
+        if (c instanceof Concept concept) {
+            return concept;
+        }
+
         Collection<Concept> traits = directTraits(c);
         Collection<Concept> roles = directRoles(c);
         if (traits.size() == 0 && roles.size() == 0 && derived(c)) {
             return c.asConcept();
         }
+        
         return baseObservable(parent(c));
     }
 

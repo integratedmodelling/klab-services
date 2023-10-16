@@ -1,5 +1,6 @@
 package org.integratedmodelling.tests.services.reasoner;
 
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.junit.jupiter.api.AfterEach;
@@ -10,6 +11,7 @@ import org.springframework.util.Assert;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 class ReasonerServiceTest extends ReasonerTestSetup {
 
@@ -20,10 +22,7 @@ class ReasonerServiceTest extends ReasonerTestSetup {
      *
      * @param observable
      * @param expected
-     * @param notExpected
-     * @param expectedContext
-     * @param expectedBaseType
-     * @param expectedInherent
+     * @param expectAbstract
      */
     record ObservableTestData(String observable, Set<SemanticType> expected, boolean expectAbstract) {
 
@@ -40,21 +39,62 @@ class ReasonerServiceTest extends ReasonerTestSetup {
 
     }
 
-    record ConceptData(String concept, Set<SemanticType> types) {}
-    record BuilderData(String concept, Observable.Builder builder) {}
+    record ConceptData(String concept, Set<SemanticType> types) {
+    }
+
+    /**
+     * These include the string declaration of an observable and a builder that will reconstruct it based on
+     * its components and its base observable.
+     *
+     * @param observableDefinition the k.IM definition of an observable
+     * @param builderConfigurator  a function that starts with a builder pre-configured with the
+     *                             {@link Observable#promote(Concept)} of the {@link
+     *                             <p>
+     *                             <p>
+     *                             org.integratedmodelling.klab.api.services.Reasoner#baseObservable
+     *                             (Semantics)} returned when applied to the {@link Observable} built from the
+     *                             string definition.
+     */
+    record RebuilderData(String observableDefinition, Consumer<Observable.Builder> builderConfigurator) {
+    }
+
+    /**
+     * Like the above but specifying the base concept so that unary operators can be tested
+     *
+     * @param observableDefinition
+     * @param baseConcept
+     * @param builderConfigurator
+     */
+    record BuilderData(String observableDefinition, String baseConcept,
+                       Consumer<Observable.Builder> builderConfigurator) {
+    }
 
     /**
      * All individual concepts that participate in the observables below
      * TODO add the expected types and inheritance
      */
-    private static ConceptData[] testConcepts = new ConceptData[] {
+    private static ConceptData[] testConcepts = new ConceptData[]{
             new ConceptData("geography:Elevation", EnumSet.of(SemanticType.LENGTH)),
             new ConceptData("infrastructure:City", EnumSet.of(SemanticType.SUBJECT)),
             new ConceptData("landcover:Urban", EnumSet.of(SemanticType.PREDICATE)),
-            new ConceptData("im:Height", EnumSet.of(SemanticType.PREDICATE)),
+            new ConceptData("im:Height", EnumSet.of(SemanticType.LENGTH)),
+            new ConceptData("hydrology:Watershed", EnumSet.of(SemanticType.SUBJECT))
     };
 
+    private Concept c(String concept) {
+        return reasonerService.resolveConcept(concept);
+    }
 
+    private RebuilderData[] testRebuilders = new RebuilderData[]{
+            new RebuilderData("geography:Elevation of hydrology:Watershed",
+                    (builder) -> builder.of(c("hydrology:Watershed")))
+    };
+
+    private BuilderData[] testBuilders = new BuilderData[]{
+            new BuilderData("geography:Elevation of hydrology:Watershed",
+                    "geography:Elevation",
+                    (builder) -> builder.of(c("hydrology:Watershed")))
+    };
 
     private static String[] testObservables = new String[]{
             "geography:Elevation in m",
@@ -109,7 +149,8 @@ class ReasonerServiceTest extends ReasonerTestSetup {
             var concept = reasonerService.resolveConcept(declaration.concept);
             Assert.notNull(concept, "Concept " + declaration + " did not parse correctly");
             for (SemanticType type : declaration.types) {
-                assert concept.getType().contains(type);
+                Assert.isTrue(concept.getType().contains(type), "Concept " + concept + " does not contain " +
+                        "one or more of " + declaration.types);
             }
         }
     }
@@ -121,6 +162,50 @@ class ReasonerServiceTest extends ReasonerTestSetup {
     @Test
     void resolveObservable() {
     }
+
+    void testRebuilding() {
+        // TODO take apart each observable and rebuild it using the builder
+        for (var odef : testObservables) {
+            var observable = reasonerService.resolveObservable(odef);
+        }
+    }
+
+    @Test
+    void rebuilderTests() {
+        for (var bt : testRebuilders) {
+            Observable observable = reasonerService.resolveObservable(bt.observableDefinition);
+            Assert.notNull(observable, "observable '" + bt.observableDefinition + "' failed to parse");
+            var builder =
+                    Observable.promote(reasonerService.baseObservable(observable)).builder(resourcesService.scope());
+            bt.builderConfigurator.accept(builder);
+            Observable expected = builder.build();
+            // this does not compare units or currencies or names
+            Assert.isTrue(expected.equals(observable),
+                    "Observable built is not equal for " + bt.observableDefinition);
+            // this compares everything
+            Assert.isTrue(expected.getUrn().equals(observable.getUrn()), "Observable builder: URNs differ: " +
+                    "'" + expected.getUrn() + "' != '" + observable.getUrn() + "'");
+        }
+    }
+
+    @Test
+    void builderTests() {
+        for (var bt : testBuilders) {
+            Observable observable = reasonerService.resolveObservable(bt.observableDefinition);
+            Assert.notNull(observable, "observable '" + bt.observableDefinition + "' failed to parse");
+            var builder =
+                    Observable.promote(reasonerService.resolveConcept(bt.baseConcept)).builder(resourcesService.scope());
+            bt.builderConfigurator.accept(builder);
+            Observable expected = builder.build();
+            // this does not compare units or currencies or names
+            Assert.isTrue(expected.equals(observable),
+                    "Observable built is not equal for " + bt.observableDefinition);
+            // this compares everything
+            Assert.isTrue(expected.getUrn().equals(observable.getUrn()), "Observable builder: URNs differ: " +
+                    "'" + expected.getUrn() + "' != '" + observable.getUrn() + "'");
+        }
+    }
+
     @Test
     void derived() {
     }

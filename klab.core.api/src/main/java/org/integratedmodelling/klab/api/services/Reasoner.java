@@ -1,19 +1,8 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.io.File;
-import java.io.OutputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
@@ -23,6 +12,11 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The reasoner service collects all functionalities that use semantics in k.LAB.
@@ -423,8 +417,9 @@ public interface Reasoner extends KlabService {
     Concept baseParentTrait(Semantics trait);
 
     /**
-     * The base observable is the one that was specified in k.IM as the root of the hierarchy where the
-     * observable was specified, without any traits, modifiers or roles. Can be the concept itself.
+     * The base observable is the one that was specified in k.IM as the main concept for the observable when
+     * specified, without any predicates or modifiers (but keeping any unary operators). If a concept is
+     * passed, the base observable is the concept itself.
      *
      * @param observable
      * @return
@@ -760,8 +755,7 @@ public interface Reasoner extends KlabService {
      * <h3>Alternative strategies</h3>
      *
      * <p> Current list of observation strategy rules by observable beyond the direct observation, waiting
-     * for
-     * actual documentation:</p>
+     * for actual documentation:</p>
      *
      * <dl>
      *
