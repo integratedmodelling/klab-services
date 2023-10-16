@@ -101,31 +101,18 @@ public class ResolverService extends BaseService implements Resolver {
      */
     public Resolution resolve(Knowledge knowledge, ContextScope scope) {
 
-        Observable observable = null;
         Scale scale = scope.getScale();
-
-        switch (Knowledge.classify(knowledge)) {
-            case CONCEPT:
-                observable = Observable.promote((Concept) knowledge);
-                break;
-            case INSTANCE:
-                observable = ((Instance) knowledge).getObservable();
+        var observable = switch (knowledge) {
+            case Concept concept -> Observable.promote(concept);
+            case Instance instance -> {
                 scale = ((Instance) knowledge).getScale();
                 scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
-                break;
-            case MODEL:
-                observable = ((Model) knowledge).getObservables().get(0);
-                break;
-            case OBSERVABLE:
-                observable = (Observable) knowledge;
-                break;
-            case RESOURCE:
-                // break; for now just refuse it
-            default:
-                // throw new KIllegalStateException("knowledge " + knowledge + " is not
-                // resolvable");
-                break;
-        }
+                yield ((Instance) knowledge).getObservable();
+            }
+            case Model model -> model.getObservables().get(0);
+            case Observable obs -> obs;
+            default -> throw new KIllegalStateException("knowledge " + knowledge + " is not resolvable");
+        };
 
         if (scale == null || scale.isEmpty()) {
             throw new KIllegalStateException("cannot resolve " + knowledge + " without a focal scale in the" +
@@ -354,7 +341,7 @@ public class ResolverService extends BaseService implements Resolver {
                         ret.getChildren().add(dependency);
                         ret.setCoverage(((Model) resolved.getFirst()).getCoverage().as(Geometry.class));
                     } else if (resolved.getFirst() instanceof Observable o) {
-                       //  ret.getDeferrals().add(Pair.of(type, o));
+                        //  ret.getDeferrals().add(Pair.of(type, o));
                     }
                 }
             }

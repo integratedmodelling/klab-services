@@ -1,7 +1,6 @@
 package org.integratedmodelling.tests.services.reasoner;
 
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.DescriptionType;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,7 +8,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.Assert;
 
-import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Set;
 
 class ReasonerServiceTest extends ReasonerTestSetup {
@@ -26,11 +25,7 @@ class ReasonerServiceTest extends ReasonerTestSetup {
      * @param expectedBaseType
      * @param expectedInherent
      */
-    record ObservableTestData(String observable, Set<SemanticType> expected, Set<SemanticType> notExpected,
-                              Concept expectedContext, Concept expectedBaseType, Concept expectedInherent,
-                              DescriptionType expectedDescriptionType, Collection<Concept> expectedIdentities,
-                              Collection<Concept> expectedRealms, Collection<Concept> expectedAttributes,
-                              Collection<Concept> expectedGenerics, boolean expectAbstract) {
+    record ObservableTestData(String observable, Set<SemanticType> expected, boolean expectAbstract) {
 
         void testConsistency() {
             // TODO try them all
@@ -45,15 +40,21 @@ class ReasonerServiceTest extends ReasonerTestSetup {
 
     }
 
+    record ConceptData(String concept, Set<SemanticType> types) {}
+    record BuilderData(String concept, Observable.Builder builder) {}
+
     /**
      * All individual concepts that participate in the observables below
      * TODO add the expected types and inheritance
      */
-    private static String[] testConcepts = new String[] {
-            "geography:Elevation",
-            "infrastructure:City",
-            "landcover:Urban",
+    private static ConceptData[] testConcepts = new ConceptData[] {
+            new ConceptData("geography:Elevation", EnumSet.of(SemanticType.LENGTH)),
+            new ConceptData("infrastructure:City", EnumSet.of(SemanticType.SUBJECT)),
+            new ConceptData("landcover:Urban", EnumSet.of(SemanticType.PREDICATE)),
+            new ConceptData("im:Height", EnumSet.of(SemanticType.PREDICATE)),
     };
+
+
 
     private static String[] testObservables = new String[]{
             "geography:Elevation in m",
@@ -99,14 +100,17 @@ class ReasonerServiceTest extends ReasonerTestSetup {
 
 
     /**
-     * First test checks for the concepts
+     * First test: basic checks for the concepts
      */
     @Test
     @Order(1)
     void resolveConcept() {
         for (var declaration : testConcepts) {
-            var concept = reasonerService.resolveConcept(declaration);
+            var concept = reasonerService.resolveConcept(declaration.concept);
             Assert.notNull(concept, "Concept " + declaration + " did not parse correctly");
+            for (SemanticType type : declaration.types) {
+                assert concept.getType().contains(type);
+            }
         }
     }
 
