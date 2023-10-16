@@ -3,19 +3,17 @@ package org.integratedmodelling.tests.services.reasoner;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+class ReasonerServiceTest extends ReasonerTestSetup {
 
-class ReasonerServiceTest {
-
-    ReasonerService reasoner;
 
     /**
      * TODO basic idea for testing unit for an observable. Anything not null must be there as expected.
@@ -47,6 +45,16 @@ class ReasonerServiceTest {
 
     }
 
+    /**
+     * All individual concepts that participate in the observables below
+     * TODO add the expected types and inheritance
+     */
+    private static String[] testConcepts = new String[] {
+            "geography:Elevation",
+            "infrastructure:City",
+            "landcover:Urban",
+    };
+
     private static String[] testObservables = new String[]{
             "geography:Elevation in m",
             "geography:Elevation optional",
@@ -77,27 +85,44 @@ class ReasonerServiceTest {
 
     @BeforeEach
     void setUp() {
-        // set up resolver and reasoner with stable test worldview
+        if (reasonerService == null) {
+            prepare();
+        }
     }
 
     @AfterEach
     void tearDown() {
+        if (reasonerService != null) {
+            shutdown();
+        }
     }
 
+
+    /**
+     * First test checks for the concepts
+     */
+    @Test
+    @Order(1)
+    void resolveConcept() {
+        for (var declaration : testConcepts) {
+            var concept = reasonerService.resolveConcept(declaration);
+            Assert.notNull(concept, "Concept " + declaration + " did not parse correctly");
+        }
+    }
+
+    /**
+     * Then resolve the observables
+     */
+    @Order(2)
+    @Test
+    void resolveObservable() {
+    }
     @Test
     void derived() {
     }
 
     @Test
     void defineConcept() {
-    }
-
-    @Test
-    void resolveConcept() {
-    }
-
-    @Test
-    void resolveObservable() {
     }
 
     @Test
@@ -486,10 +511,6 @@ class ReasonerServiceTest {
 
     @Test
     void semanticSearch() {
-    }
-
-    @Test
-    void shutdown() {
     }
 
     @Test
