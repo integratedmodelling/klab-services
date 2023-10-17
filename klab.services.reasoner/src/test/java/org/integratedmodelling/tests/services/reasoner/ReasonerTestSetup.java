@@ -121,7 +121,6 @@ class ReasonerTestSetup {
 
     public static void prepare() {
 
-
         AnonymousAuthenticationService authenticationService = new AnonymousAuthenticationService();
 
 //        Services.INSTANCE.registerAuthority(new GBIFAuthority());
@@ -165,10 +164,9 @@ class ReasonerTestSetup {
         resourcesService = new ResourcesProvider(authenticationService, scope);
         resourcesService.initializeService();
         reasonerService.initializeService();
-
-        /**
-         * TODO ensure the test worldview is there or set from git repo
-         */
+        // ensure the test worldview is there or set from git repo
+        // TODO use a dedicated branch or a dedicated test worldview project
+        resourcesService.addProject("worldview", "https://bitbucket.org/integratedmodelling/im.git#develop", false);
         var worldview = resourcesService.loadWorldview();
         reasonerService.loadKnowledge(worldview, scope);
     }

@@ -74,10 +74,11 @@ class ReasonerServiceTest extends ReasonerTestSetup {
      * TODO add the expected types and inheritance
      */
     private static ConceptData[] testConcepts = new ConceptData[]{
-            new ConceptData("geography:Elevation", EnumSet.of(SemanticType.LENGTH)),
+            new ConceptData("geography:Elevation", EnumSet.of(SemanticType.LENGTH, SemanticType.INTENSIVE_PROPERTY)),
             new ConceptData("infrastructure:City", EnumSet.of(SemanticType.SUBJECT)),
             new ConceptData("landcover:Urban", EnumSet.of(SemanticType.PREDICATE)),
-            new ConceptData("im:Height", EnumSet.of(SemanticType.LENGTH)),
+            new ConceptData("type of landcover:LandCover", EnumSet.of(SemanticType.CLASS)),
+            new ConceptData("im:Height", EnumSet.of(SemanticType.LENGTH, SemanticType.INTENSIVE_PROPERTY)),
             new ConceptData("hydrology:Watershed", EnumSet.of(SemanticType.SUBJECT))
     };
 
@@ -163,10 +164,39 @@ class ReasonerServiceTest extends ReasonerTestSetup {
     void resolveObservable() {
     }
 
+    @Test
     void testRebuilding() {
-        // TODO take apart each observable and rebuild it using the builder
+
+        // take apart each observable and rebuild it using the builder. This tests everything except names and unary operators.
         for (var odef : testObservables) {
             var observable = reasonerService.resolveObservable(odef);
+            Assert.notNull(observable, "Observable " + odef + " did not parse correctly");
+            var builder = Observable.promote(reasonerService.baseObservable(observable)).builder(resourcesService.scope());
+
+            // TODO rebuild
+            var attributes = reasonerService.directAttributes(observable);
+            var realms = reasonerService.directRealms(observable);
+            var adjacent = reasonerService.directAdjacent(observable);
+            var caused = reasonerService.directCaused(observable);
+            var causant = reasonerService.directCausant(observable);
+            var compresent = reasonerService.directCompresent(observable);
+            var context = reasonerService.directContext(observable);
+            var cooccurrent = reasonerService.directCooccurrent(observable);
+            var goal = reasonerService.directGoal(observable);
+            var identities = reasonerService.directIdentities(observable);
+            var relativeTo = reasonerService.directRelativeTo(observable);
+            var roles = reasonerService.directRoles(observable);
+            var unit = observable.getUnit();
+            var currency = observable.getCurrency();
+            var range = observable.getRange();
+            var valueOperators = observable.getValueOperators();
+            var value = observable.getValue();
+            var optional = observable.isOptional();
+            var distributedInherency = observable.isDistributedInherency();
+
+            var reconstructed = builder.build();
+            // TODO check
+            Assert.notNull(reconstructed, "Observable " + odef + " did not reconstruct correctly");
         }
     }
 
