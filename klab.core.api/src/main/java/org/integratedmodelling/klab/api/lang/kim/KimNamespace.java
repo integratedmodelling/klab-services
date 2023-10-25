@@ -1,13 +1,13 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The syntactic peer of a k.LAB namespace.
@@ -25,7 +25,7 @@ public interface KimNamespace extends KimStatement, KlabAsset {
 	 *
 	 */
 	public enum Role {
-		KNOWLEDGE, SCRIPT, TESTCASE, CALIBRATION, SCENARIO
+		KNOWLEDGE, SCRIPT, TESTCASE, CALIBRATION, SCENARIOalias
 	}
 
 	/**

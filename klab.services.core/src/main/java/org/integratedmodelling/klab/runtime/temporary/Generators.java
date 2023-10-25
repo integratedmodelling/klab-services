@@ -2,10 +2,9 @@ package org.integratedmodelling.klab.runtime.temporary;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
+import org.integratedmodelling.klab.api.geometry.DimensionScanner2D;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
-import org.integratedmodelling.klab.api.geometry.Offset2D;
-import org.integratedmodelling.klab.api.geometry.DimensionScanner2D;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -15,9 +14,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Resolver;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 
-import java.util.List;
-
-@Library(name = "klab.geospatial.generators", description = "Contextualizers that generate realistic geographic " +
+@Library(name = "klab.geospatial.generators", description = "Contextualizers that generate realistic-looking geographic " +
         "terrains and features for stress-testing")
 public class Generators {
 
@@ -40,10 +37,10 @@ public class Generators {
         @Override
         public void resolve(State state, ServiceCall call, ContextScope scope) {
 
-            NumericRange range = call.getParameters().get("range", NumericRange.create(0., 4000., false, false));
-            List<Long> xy = scope.getScale().dimension(Dimension.Type.SPACE).getShape();
+            var range = call.getParameters().get("range", NumericRange.create(0., 4000., false, false));
+            var xy = scope.getScale().dimension(Dimension.Type.SPACE).getShape();
             var storage = state.storage(DoubleStorage.class);
-            Terrain terrain = new Terrain(call.getParameters().get("detail", 8), call.getParameters().get("roughness"
+            var terrain = new Terrain(call.getParameters().get("detail", 8), call.getParameters().get("roughness"
                     , 0.55),
                     range.getLowerBound(), range.getUpperBound());
 
@@ -63,7 +60,7 @@ public class Generators {
                  * The overall geometry is first located to the current non-spatial location, then the
                  * space is iterated through a fast 2D offset and storage buffer.
                  */
-                for (Offset2D offset : scope.getScale().at(subscale).as(DimensionScanner2D.class)) {
+                for (var offset : scope.getScale().at(subscale).as(DimensionScanner2D.class)) {
                     buffer.add(terrain.getAltitude(dx * offset.x(), dy * offset.y()), offset.position());
                 }
             }
