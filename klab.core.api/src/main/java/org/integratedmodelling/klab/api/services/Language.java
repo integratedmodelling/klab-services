@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.util.List;
-
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -10,6 +8,8 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+
+import java.util.List;
 
 /**
  * The language service provides validation and compilation for expressions and service calls used in k.IM an k.Actors,
@@ -26,10 +26,12 @@ public interface Language extends Service {
 
     public final static String DEFAULT_EXPRESSION_LANGUAGE = "K.LAB.GROOVY";
 
+    public final static String KWV = "k.IM worldview definition";
+
     /**
      * k.IM is the k.LAB semantic modeling language
      */
-    public final static String KIM = "k.IM";
+    public final static String KIM = "k.IM modelling";
     /**
      * k.Actors is the k.LAB actors language
      */
