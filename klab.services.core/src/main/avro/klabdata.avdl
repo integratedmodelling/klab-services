@@ -1,0 +1,17 @@
+@namespace("org.integratedmodelling.klab.data")
+protocol KlabData {
+
+	enum Level {
+		INFO, WARNING, DEBUG
+	}
+
+	record Notification {
+		string message;
+		int    code;
+		Level  level;
+	}
+
+	record Scale {
+
+	}
+}
