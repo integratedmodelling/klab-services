@@ -1,23 +1,13 @@
 package org.integratedmodelling.klab.services.engine;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
+import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
+import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
@@ -27,8 +17,11 @@ import org.integratedmodelling.klab.services.authentication.impl.LocalServiceSco
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scope.EngineScope;
 
-import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
-import io.reacted.core.reactorsystem.ReActorSystem;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Reference implementation for the new modular engine. Should eventually allow substituting
@@ -78,14 +71,14 @@ public enum EngineService {
              * Logic is intricated, careful when making changes.
              */
             ResourceSet worldview = null;
-            for (KlabService service : new KlabService[]{defaultResourcesService, defaultReasoner, defaultResolver,
+            for (var service : new KlabService[]{defaultResourcesService, defaultReasoner, defaultResolver,
                     defaultRuntime}) {
-                if (service instanceof BaseService) {
-                    ((BaseService) service).initializeService();
-                    if (service instanceof ResourcesService.Admin) {
-                        worldview = ((ResourcesService.Admin) service).loadWorldview();
-                    } else if (service instanceof Reasoner.Admin && worldview != null) {
-                        ((Reasoner.Admin) service).loadKnowledge(worldview, ((BaseService) service).scope());
+                if (service instanceof BaseService baseService) {
+                    baseService.initializeService();
+                    if (service instanceof ResourcesService.Admin admin) {
+                        worldview = admin.loadWorldview();
+                    } else if (service instanceof Reasoner.Admin admin && worldview != null) {
+                        admin.loadKnowledge(worldview, baseService.scope());
                     }
                 }
             }

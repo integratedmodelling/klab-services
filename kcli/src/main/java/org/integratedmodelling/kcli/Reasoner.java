@@ -68,7 +68,7 @@ public class Reasoner {
         }
     }
 
-    @Command(name = "strategy", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+    @Command(name = "explain", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "Compute and visualize the observation strategy for an observable in the current context."},
              subcommands = {})
     public static class Strategy extends FunctionalCommand {

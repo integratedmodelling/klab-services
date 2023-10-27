@@ -105,9 +105,9 @@ public class ResolverService extends BaseService implements Resolver {
         var observable = switch (knowledge) {
             case Concept concept -> Observable.promote(concept);
             case Instance instance -> {
-                scale = ((Instance) knowledge).getScale();
+                scale = instance.getScale();
                 scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
-                yield ((Instance) knowledge).getObservable();
+                yield instance.getObservable();
             }
             case Model model -> model.getObservables().get(0);
             case Observable obs -> obs;
