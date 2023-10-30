@@ -696,7 +696,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 		if (parsed == null) {
 			return null;
 		}
-		return KimAdapter.adaptKimObservable(parsed).getMain();
+		return KimAdapter.adaptKimObservable(parsed).getSemantics();
 
 	}
 

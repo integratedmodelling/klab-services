@@ -19,7 +19,7 @@ import java.util.Objects;
 public class KimObservableImpl extends KimStatementImpl implements KimObservable {
 
 	private static final long serialVersionUID = -727467882879783393L;
-	private KimConcept main;
+	private KimConcept semantics;
 	private RangeImpl range;
 	private String unit;
 	private String currency;
@@ -40,8 +40,8 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	private Version version;
 
 	@Override
-	public KimConcept getMain() {
-		return this.main;
+	public KimConcept getSemantics() {
+		return this.semantics;
 	}
 
 	@Override
@@ -124,8 +124,8 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 		return this.exclusive;
 	}
 
-	public void setMain(KimConcept main) {
-		this.main = main;
+	public void setSemantics(KimConcept semantics) {
+		this.semantics = semantics;
 	}
 
 	public void setRange(RangeImpl range) {

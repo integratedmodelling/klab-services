@@ -16,7 +16,7 @@ public interface KimObservable extends KimStatement, KlabAsset {
     /**
      * @return the main concept
      */
-    KimConcept getMain();
+    KimConcept getSemantics();
 
     /**
      * @return the range

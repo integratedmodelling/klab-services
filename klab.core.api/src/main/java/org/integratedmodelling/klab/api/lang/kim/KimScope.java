@@ -14,7 +14,7 @@ public interface KimScope extends Serializable {
 	 * @return the location
 	 */
 	String getLocationDescriptor();
-
-	String getUri();
+//
+//	String getUri();
 
 }

@@ -855,9 +855,9 @@ public class ModelKbox extends ObservableKbox {
                 m.setInScenario(namespace.isScenario());
                 m.setReification(model.isInstantiator());
                 m.setResolved(model.getDependencies().size() == 0);
-                m.setHasDirectData(m.isResolved() && model.getObservables().get(0).getMain().is(SemanticType.QUALITY));
+                m.setHasDirectData(m.isResolved() && model.getObservables().get(0).getSemantics().is(SemanticType.QUALITY));
                 m.setHasDirectObjects(
-                        m.isResolved() && model.getObservables().get(0).getMain().is(SemanticType.DIRECT_OBSERVABLE));
+                        m.isResolved() && model.getObservables().get(0).getSemantics().is(SemanticType.DIRECT_OBSERVABLE));
 
                 m.setMinSpatialScaleFactor(model.getMetadata().get(Metadata.IM_MIN_SPATIAL_SCALE,
                         Space.MIN_SCALE_RANK));

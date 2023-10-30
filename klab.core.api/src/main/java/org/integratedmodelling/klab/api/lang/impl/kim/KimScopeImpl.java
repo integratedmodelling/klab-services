@@ -11,7 +11,7 @@ public abstract class KimScopeImpl implements KimScope {
 
 	private List<KimScope> children = new ArrayList<>();
 	private String locationDescriptor;
-	private String uri;
+//	private String uri;
 
 	@Override
 	public List<KimScope> getChildren() {
@@ -22,11 +22,11 @@ public abstract class KimScopeImpl implements KimScope {
 	public String getLocationDescriptor() {
 		return this.locationDescriptor;
 	}
-
-	@Override
-	public String getUri() {
-		return this.uri;
-	}
+//
+//	@Override
+//	public String getUri() {
+//		return this.uri;
+//	}
 
 	public void setChildren(List<KimScope> children) {
 		this.children = children;
@@ -35,9 +35,9 @@ public abstract class KimScopeImpl implements KimScope {
 	public void setLocationDescriptor(String locationDescriptor) {
 		this.locationDescriptor = locationDescriptor;
 	}
-
-	public void setUri(String uri) {
-		this.uri = uri;
-	}
+//
+//	public void setUri(String uri) {
+//		this.uri = uri;
+//	}
 
 }

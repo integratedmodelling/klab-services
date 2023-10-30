@@ -162,20 +162,20 @@ public class Indexer {
 		} else if (object instanceof KimModel && ((KimModel) object).getType() == Type.CONCEPT) {
 
 			ret = new SemanticMatch(SemanticMatch.Type.MODEL,
-					((KimModel) object).getObservables().get(0).getMain().getType());
+					((KimModel) object).getObservables().get(0).getSemantics().getType());
 			ret.setDescription(((KimModel) object).getDocstring());
 			ret.setName(((KimModel) object).getName());
 			ret.setId(((KimModel) object).getName());
-			semanticType = (((KimModel) object).getObservables().get(0).getMain().getType());
+			semanticType = (((KimModel) object).getObservables().get(0).getSemantics().getType());
 
 		} else if (object instanceof KimInstance) {
 
 			ret = new SemanticMatch(SemanticMatch.Type.OBSERVATION,
-					((KimInstance) object).getObservable().getMain().getType());
+					((KimInstance) object).getObservable().getSemantics().getType());
 			ret.setDescription(((KimInstance) object).getDocstring());
 			ret.setName(((KimInstance) object).getName());
 			ret.setId(((KimInstance) object).getName());
-			semanticType = (((KimInstance) object).getObservable().getMain().getType());
+			semanticType = (((KimInstance) object).getObservable().getSemantics().getType());
 		}
 
 		if (ret != null) {

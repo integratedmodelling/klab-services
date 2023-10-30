@@ -36,7 +36,7 @@ public class LangUtils {
 
 	public static void copyStatementData(IKimStatement source, KimStatementImpl destination) {
 
-		destination.setUri(((IKimStatement) source).getURI());
+//		destination.setUri(((IKimStatement) source).getURI());
 		destination.setLocationDescriptor(((IKimStatement) source).getLocationDescriptor());
 		destination.setNamespace(((IKimStatement) source).getNamespace());
 

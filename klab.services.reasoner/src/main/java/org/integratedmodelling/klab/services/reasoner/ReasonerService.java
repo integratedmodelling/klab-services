@@ -1363,7 +1363,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public Observable declareObservable(KimObservable observableDeclaration) {
         return declare(observableDeclaration,
-                this.owl.requireOntology(observableDeclaration.getMain().getNamespace()),
+                this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
                 scope);
     }
 
@@ -2213,7 +2213,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             return observable;
         }
 
-        Concept main = declareInternal(concept.getMain(), declarationOntology, monitor);
+        Concept main = declareInternal(concept.getSemantics(), declarationOntology, monitor);
         if (main == null) {
             return null;
         }

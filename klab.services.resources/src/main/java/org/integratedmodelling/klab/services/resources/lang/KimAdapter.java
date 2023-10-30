@@ -133,7 +133,7 @@ public class KimAdapter {
         }
         ret.setUrn(statement.getUrn());
         ret.setBehavior(adaptKimBehavior(statement.getBehavior()));
-        ret.setUri(statement.getURI());
+//        ret.setUri(statement.getURI());
 
         return ret;
     }
@@ -155,7 +155,7 @@ public class KimAdapter {
         ret.setFormalName(parsed.getFormalName());
         ret.setGeneric(parsed.isGeneric());
         ret.setGlobal(parsed.isGlobal());
-        ret.setMain(adaptKimConcept(parsed.getMain()));
+        ret.setSemantics(adaptKimConcept(parsed.getMain()));
         ret.setModelReference(parsed.getModelReference());
         ret.setNonSemanticType(
                 parsed.getNonSemanticType() == null ? null : Artifact.Type.valueOf(parsed.getNonSemanticType().name()));
@@ -173,7 +173,7 @@ public class KimAdapter {
                     LiteralImpl.of(adapt(vop.getSecond()))));
         }
 
-        ret.setUri(ret.getUri());
+//        ret.setUri(ret.getUri());
 
         return ret;
     }
@@ -259,7 +259,7 @@ public class KimAdapter {
         ret.setTemporalInherent(original.getTemporalInherent() == null ? null :
                 adaptKimConcept(original.getTemporalInherent()));
 
-        ret.setUri(ret.getUri());
+//        ret.setUri(ret.getUri());
 
         return ret;
     }
@@ -312,7 +312,7 @@ public class KimAdapter {
                 statement.isInactive() ? Artifact.Type.VOID :
                         Artifact.Type.valueOf(statement.getType().artifactType().name()));
 
-        ret.setUri(statement.getURI());
+//        ret.setUri(statement.getURI());
 
         return ret;
     }
