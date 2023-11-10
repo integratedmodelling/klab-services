@@ -80,12 +80,5 @@
 			<version>5.9.2</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.integratedmodelling</groupId>
-			<artifactId>klab.core.api</artifactId>
-			<version>${klab.version}</version>
-			<scope>compile</scope>
-		</dependency>
-
 	</dependencies>
 </project>
