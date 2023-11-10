@@ -364,12 +364,6 @@
             <version>5.9.2</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.github.classgraph</groupId>
-            <artifactId>classgraph</artifactId>
-            <version>4.8.162</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
 </project>
