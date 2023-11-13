@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.scope;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -266,10 +267,19 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public ContextScope withContextObservation(DirectObservation contextObservation) {
+    public ContextScope within(DirectObservation contextObservation) {
         EngineContextScope ret = new EngineContextScope(this);
         ret.contextObservation = contextObservation;
         ret.catalog = new HashMap<>(this.catalog);
+        return ret;
+    }
+
+    @Override
+    public ContextScope with(Concept abstractTrait, Concept concreteTrait) {
+        EngineContextScope ret = new EngineContextScope(this);
+
+        // TODO
+
         return ret;
     }
 

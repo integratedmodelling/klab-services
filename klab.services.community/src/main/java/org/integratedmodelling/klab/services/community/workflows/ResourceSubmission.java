@@ -10,5 +10,28 @@ public class ResourceSubmission extends PersistentWorkflow<ResourceSubmissionSta
     @Override
     public void main() throws Interrupt {
 
+        /*
+        1. request arrives from resource service upon publishing or reconsideration
+         */
+
+        /*
+        2. initial status assigned and request for editor(s)
+         */
+
+        /*
+        3. editor(s) assigned, request for reviewer(s)
+         */
+
+        /*
+        4. reviewer(s) assigned, wait for all reviews to be in
+         */
+
+        /*
+         5. reviews in, back to editor for final decision
+         */
+
+        /*
+         6. final decision in, back to originating resource service to update review tier and status
+         */
     }
 }
