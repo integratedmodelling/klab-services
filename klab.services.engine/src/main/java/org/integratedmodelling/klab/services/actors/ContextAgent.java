@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -58,7 +59,7 @@ public class ContextAgent extends KAgent {
 
         var resolver = scope.getService(Resolver.class);
 
-        scope.send(message.response(Status.STARTED));
+        scope.send(message.statusResponse(Status.STARTED));
 
         try {
 
@@ -69,19 +70,24 @@ public class ContextAgent extends KAgent {
                 return;
             }
 
+            ContextScope resolutionScope = message.getScope();
+            if (resolvable instanceof Instance instance) {
+                resolutionScope = resolutionScope.withGeometry(instance.getScale());
+            }
+
             /*
              * Build the dataflow in the scope
              */
-            var resolution = resolver.resolve(resolvable, message.getScope());
+            var resolution = resolver.resolve(resolvable, resolutionScope);
 
             if (resolution.getCoverage().isRelevant()) {
 
-                Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, message.getScope());
+                Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, resolutionScope);
 
                 /*
                  * Run the dataflow
                  */
-                result = scope.getService(RuntimeService.class).run(dataflow, message.getScope()).get();
+                result = scope.getService(RuntimeService.class).run(dataflow, resolutionScope).get();
 
                 /*
                  * TODO adjust overall geometry and catalog

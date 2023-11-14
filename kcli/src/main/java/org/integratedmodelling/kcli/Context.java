@@ -1,7 +1,5 @@
 package org.integratedmodelling.kcli;
 
-import java.io.PrintWriter;
-
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.engine.Geometries;
 import org.integratedmodelling.klab.Version;
@@ -10,14 +8,11 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.utils.NameGenerator;
-
-import picocli.CommandLine.Command;
+import picocli.CommandLine.*;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
-import picocli.CommandLine.ParentCommand;
-import picocli.CommandLine.Spec;
+
+import java.io.PrintWriter;
 
 @Command(name = "context", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
 		"Commands to create, access and manipulate contexts.",
@@ -130,7 +125,7 @@ public class Context {
 		public void run() {
 
 			PrintWriter out = commandSpec.commandLine().getOut();
-			ContextScope ctx = context == null ? Engine.INSTANCE.getCurrentContext(false)
+			ContextScope ctx = context == null ? Engine.INSTANCE.getCurrentContext(true)
 					: Engine.INSTANCE.getContext(context);
 
 			if (within != null) {

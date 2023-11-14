@@ -1,17 +1,6 @@
 package org.integratedmodelling.klab.services.scope;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-
+import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.klab.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -30,7 +19,13 @@ import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
 
-import io.reacted.core.messages.reactors.ReActorStop;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Implementations must fill in the getService() strategy. This is a scope that
@@ -221,7 +216,9 @@ public abstract class EngineScope implements UserScope {
 			if (handler != null) {
 				executor.execute(() -> {
 					handler.getSecond().accept(handler.getFirst(), (AgentResponse) message[0]);
-					responseHandlers.remove(((AgentResponse) message[0]).getId());
+					if (((AgentResponse)message[0]).isRemoveHandler()) {
+						responseHandlers.remove(((AgentResponse) message[0]).getId());
+					}
 				});
 			}
 			return;
