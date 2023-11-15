@@ -96,17 +96,27 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     @Override
     public Future<Observation> observe(Object... observables) {
 
+        /**
+         * The Observe message ID is the task ID
+         */
         Observe message = registerMessage(Observe.class, (m, r) -> {
 
-            System.out.println("DIOCAN REGISTER THIS MESSAGE: " + m);
+            System.out.println("DIOCÁ REGISTER THIS MESSAGE: task " + m.getId() + " has status " + r.getStatus());
 
             /**
              * 1. If the response contains a dataflow and we don't have it, set our dataflow; else
              * merge it with the existing based on the observation contextualized.
              */
+
+
             /**
              * 2. Adjust the geometry as needed
              */
+
+            /*
+             * Notifications and bookkeeping
+             */
+
         });
 
         for (Object o : observables) {

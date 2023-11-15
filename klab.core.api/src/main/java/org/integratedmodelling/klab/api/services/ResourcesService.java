@@ -1,10 +1,5 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.io.File;
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
@@ -17,16 +12,17 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+
+import java.io.File;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Management of all {@link KlabAsset}s, collectively called "resources" (although this conflicts with {@link Resource},
@@ -251,7 +247,7 @@ public interface ResourcesService extends KlabService {
 
     /**
      * Return the candidate models for the passed observables in the passed scope (which will provide the reasoner
-     * service). The result should contain an unordered list of candidate model URNs (in {@link ResourceSet#getUrns()})
+     * service). The result should contain an unordered list of candidate model URNs (in {@link ResourceSet#getResults()})
      * along with the needed resources, namespaces and behaviors needed to run them. Prioritization happens in the
      * resolver.
      *
