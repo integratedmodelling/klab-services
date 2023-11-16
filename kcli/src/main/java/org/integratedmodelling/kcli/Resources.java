@@ -383,7 +383,7 @@ public class Resources {
 			public void run() {
 				var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
 				if (service instanceof ResourcesService.Admin) {
-					if (!((ResourcesService.Admin) service).addProject(workspace, projectUrl.toString(), false)) {
+					if (!((ResourcesService.Admin) service).importProject(workspace, projectUrl.toString(), false)) {
 						System.out.println("project " + projectUrl + " was present or in error, not added");
 					} else {
 						System.out.println("project " + projectUrl + " added to workspace " + workspace);
