@@ -8,10 +8,10 @@
   <artifactId>klab-services</artifactId>
   <packaging>pom</packaging>
   <modules>
-  	<module>klab.services.engine</module> 
-	<module>klab.services.reasoner</module> 
-	<module>klab.services.core</module> 
-	<module>klab.core.api</module> 
+	<module>klab.services.engine</module>
+	<module>klab.services.reasoner</module>
+	<module>klab.services.core</module>
+	<module>klab.core.api</module>
 	<module>klab.services.resources</module>
 	<module>klab.services.authentication</module>
 	<module>klab.services.reasoner.server</module>
@@ -29,7 +29,7 @@
 	<module>klab.services.resolver</module>
 	<module>kcli</module>
   </modules>
-	
+
 	<licenses>
 		<license>
 			<name>GNU Affero General Public License (AGPL) version 3.0</name>
@@ -85,7 +85,7 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
 		</repository>
 	</distributionManagement>
-	
+
 	<properties>
 
 		<klab.version>0.11.0-SNAPSHOT</klab.version>
@@ -139,6 +139,15 @@
 					</configuration>
 				</plugin>
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>3.6.2</version>
+					<configuration>
+						<!-- Recover doclint checks: https://integratedmodelling.atlassian.net/browse/IM-229 !-->
+						<doclint>none</doclint>
+					</configuration>
+				</plugin>
+				<plugin>
 					<groupId>com.google.cloud.tools</groupId>
 					<artifactId>jib-maven-plugin</artifactId>
 					<version>${googleJibVersion}</version>
@@ -146,7 +155,7 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-	
+
 	<repositories>
 		<repository>
 			<snapshots>

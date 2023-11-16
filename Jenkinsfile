@@ -6,6 +6,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'mvn -B -U clean package'
+                sh 'mvn -B --projects klab.core.api javadoc:javadoc'
             }
         }
     }
