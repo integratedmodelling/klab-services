@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.services.authentication.impl;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.ServiceIdentity;
@@ -11,6 +7,10 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 
 public abstract class LocalServiceScope extends Monitor implements ServiceScope {
 

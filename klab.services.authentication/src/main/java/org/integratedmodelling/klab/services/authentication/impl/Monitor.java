@@ -1,11 +1,8 @@
 package org.integratedmodelling.klab.services.authentication.impl;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessageBus;
@@ -15,24 +12,35 @@ import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.logging.Logging;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 /**
  * Generic monitor class with logging. Use to derive any scope, linking the needed message bus.
- * 
- * @author Ferd
  *
+ * @author Ferd
  */
 public class Monitor implements Channel {
+
+    private BiConsumer<Scope, Notification> notificationConsumer;
+
+    private BiConsumer<Scope, Object> sendConsumer;
 
     private int errorCount = 0;
     private AtomicBoolean isInterrupted = new AtomicBoolean(false);
     private int waitTime;
     private Identity identity;
 
+    /**
+     * FIXME probably this whole messageBus thing can be dealt with using the consumers above
+     */
     transient MessageBus messageBus;
 
     protected Monitor() {
     }
-    
+
     public Monitor(Identity identity) {
         this.identity = identity;
     }
@@ -98,6 +106,15 @@ public class Monitor implements Channel {
         Message message = null;
 
         if (o != null && o.length > 0) {
+
+            if (this instanceof Scope scope) {
+                if (notificationConsumer != null && o[0] instanceof Notification notification) {
+                    notificationConsumer.accept(scope, notification);
+                } else if (sendConsumer != null) {
+                    sendConsumer.accept(scope, o[0]);
+                }
+            }
+
             if (messageBus != null) {
                 if (o.length == 1 && o[0] instanceof Message) {
                     messageBus.post(message = (Message) o[0]);
@@ -167,12 +184,13 @@ public class Monitor implements Channel {
     /**
      * Called to notify the start of any runtime job pertaining to our identity (always a
      * {@link IRuntimeIdentity} such as a task or script).
-     * 
+     *
      * @param error true for abnormal exit
      */
     public void notifyEnd(boolean error) {
         ((errorCount > 0 || error) ? System.err : System.out)
-                .println(identity + ((errorCount > 0 || error) ? " finished with errors" : " finished with no errors"));
+                .println(identity + ((errorCount > 0 || error) ? " finished with errors" : " finished with " +
+                        "no errors"));
     }
 
     public void interrupt() {
@@ -222,5 +240,19 @@ public class Monitor implements Channel {
     public void setIdentity(Identity identity) {
         this.identity = identity;
     }
+    public BiConsumer<Scope, Notification> getNotificationConsumer() {
+        return notificationConsumer;
+    }
 
+    public void setNotificationConsumer(BiConsumer<Scope, Notification> notificationConsumer) {
+        this.notificationConsumer = notificationConsumer;
+    }
+
+    public BiConsumer<Scope, Object> getSendConsumer() {
+        return sendConsumer;
+    }
+
+    public void setSendConsumer(BiConsumer<Scope, Object> sendConsumer) {
+        this.sendConsumer = sendConsumer;
+    }
 }
