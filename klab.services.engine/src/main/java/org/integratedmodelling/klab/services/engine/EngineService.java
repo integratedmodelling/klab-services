@@ -5,10 +5,12 @@ import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
@@ -19,9 +21,8 @@ import org.integratedmodelling.klab.services.scope.EngineScope;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.function.BiConsumer;
 
 /**
  * Reference implementation for the new modular engine. Should eventually allow substituting
@@ -30,18 +31,24 @@ import java.util.Map;
  * @author Ferd
  *
  */
-public enum EngineService {
+public class EngineService {
 
-    INSTANCE;
+//    INSTANCE;
 
     private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
     private ReActorSystem actorSystem;
-
     private Reasoner defaultReasoner;
     private ResourcesService defaultResourcesService;
     private RuntimeService defaultRuntime;
     private Resolver defaultResolver;
     private boolean booted;
+    private List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
+
+    public EngineService(BiConsumer<Scope, Message>... eventListeners) {
+        if (eventListeners != null) {
+            Arrays.stream(eventListeners).map(e -> this.eventListeners.add(e));
+        }
+    }
 
     /**
      * The boot process creates the servicontexce scope for all services and calls initialization on
@@ -136,7 +143,18 @@ public enum EngineService {
                 }
             }
         }
+
+        notify(ret,Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, user);
+
         return ret;
+    }
+
+    private void notify(Scope scope, Object... objects) {
+        if (!eventListeners.isEmpty()) {
+            for(var listener : eventListeners) {
+                listener.accept(scope,Message.create(scope, objects));
+            }
+        }
     }
 
     public void registerScope(EngineScope scope) {

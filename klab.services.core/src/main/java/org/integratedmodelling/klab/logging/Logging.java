@@ -64,7 +64,7 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.INFO.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.Type.Info, payload.getFirst(),
+            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.MessageType.Info, payload.getFirst(),
                     payload.getSecond()));
         }
 
@@ -84,7 +84,7 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.WARNING.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), Message.MessageClass.Notification, Message.Type.Warning,
+            messageBus.post(Message.create(rootIdentity.getId(), Message.MessageClass.Notification, Message.MessageType.Warning,
                     payload.getFirst(), payload.getSecond()));
         }
 
@@ -103,7 +103,7 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.Type.Error,
+            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.MessageType.Error,
                     payload.getFirst(), payload.getSecond()));
         }
 
@@ -122,7 +122,7 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.FINE.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.Type.Debug,
+            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.MessageType.Debug,
                     payload.getFirst(), payload.getSecond()));
         }
 

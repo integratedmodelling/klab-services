@@ -208,7 +208,7 @@ public class TestScope {
 			}
 		}
 
-		this.monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.Type.TestFinished,
+		this.monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.MessageType.TestFinished,
 				this.actionStatistics));
 
 	}
@@ -232,7 +232,7 @@ public class TestScope {
 		ret.setSourceCode(action.getSourceCode());
 		ret.setStart(System.currentTimeMillis());
 
-		monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.Type.TestStarted, ret));
+		monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.MessageType.TestStarted, ret));
 
 		test.getActions().add(ret);
 		return ret;
@@ -249,7 +249,7 @@ public class TestScope {
 		docBuilder.writeToFile(new File(System.getProperty("user.home") + File.separator + "testoutput.adoc").toPath(),
 				Charset.forName("UTF-8"));
 
-		monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.Type.TestCaseFinished,
+		monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.MessageType.TestCaseFinished,
 				this.testStatistics));
 
 	}

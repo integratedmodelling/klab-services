@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.ResourceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -67,6 +68,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiConsumer;
 
 @Service
 public class ResourcesProvider extends BaseService implements ResourcesService, ResourcesService.Admin {
@@ -122,8 +124,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * If this is used, {@link #loadWorkspaces()} must be called explicitly after the service scope is set.
      */
     @SuppressWarnings("unchecked")
-    public ResourcesProvider(ServiceScope scope) {
-        super(scope);
+    public ResourcesProvider(ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
+        super(scope, messageListeners);
         this.localName = "klab.services.resources." + UUID.randomUUID();
         // Services.INSTANCE.setResources(this);
         initializeLanguageServices();
@@ -142,8 +144,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Autowired
-    public ResourcesProvider(Authentication authenticationService, ServiceScope scope) {
-        this(scope);
+    public ResourcesProvider(Authentication authenticationService, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
+        this(scope, messageListeners);
         this.authenticationService = authenticationService;
     }
 

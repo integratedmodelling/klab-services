@@ -1,17 +1,17 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
-import java.util.logging.Level;
+import java.io.Serializable;
 
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
  * Messages exchanged between the engine and its clients.
- * 
- * @author ferdinando.villa
  *
+ * @author ferdinando.villa
  */
-public interface Message {
+public interface Message extends Serializable {
 
     public static Message NO_RESPONSE = null;
 
@@ -21,9 +21,8 @@ public interface Message {
 
     /**
      * Message class. Ugly type name makes life easier.
-     * 
-     * @author ferdinando.villa
      *
+     * @author ferdinando.villa
      */
     enum MessageClass {
 
@@ -33,8 +32,7 @@ public interface Message {
         Void,
 
         /**
-         * Used within a UI for communicating things to react to and between F/B to gather user
-         * input.
+         * Used within a UI for communicating things to react to and between F/B to gather user input.
          */
         UserInterface,
 
@@ -44,54 +42,53 @@ public interface Message {
         UserContextChange,
 
         /**
-         * B->F after UserContextChange was received, containing the remaining definition set by the
-         * engine
+         * B->F after UserContextChange was received, containing the remaining definition set by the engine
          */
         UserContextDefinition,
 
         /**
-         * 
+         *
          */
         EngineLifecycle,
 
         KimLifecycle,
 
         /**
-         * 
+         *
          */
         ResourceLifecycle,
 
         /**
-         * 
+         *
          */
         ProjectLifecycle,
         /**
-         * 
+         *
          */
         Authorization,
         /**
-         * 
+         *
          */
         TaskLifecycle,
         /**
-         * 
+         *
          */
         ObservationLifecycle,
         /**
-         * 
+         *
          */
         SessionLifecycle,
         /**
-         * 
+         *
          */
         UnitTests,
         /**
-         * 
+         *
          */
         Notification,
         /**
-         * Search-class messages are sent by the front end to initiate or continue incremental
-         * knowledge searches.
+         * Search-class messages are sent by the front end to initiate or continue incremental knowledge
+         * searches.
          */
         Search,
         /**
@@ -112,11 +109,10 @@ public interface Message {
 
     /**
      * Message type within its class.
-     * 
-     * @author ferdinando.villa
      *
+     * @author ferdinando.villa
      */
-    enum Type {
+    enum MessageType {
 
         /**
          * Only used as a default for the MessageClass annotation.
@@ -156,19 +152,18 @@ public interface Message {
          * F<->B
          */
         ResetContext,
-        
+
         /**
          * F->F (internal message between views)
          */
-        ResetScenarios, 
+        ResetScenarios,
 
         /**
-         * F->B whenever the user wants to (re)contextualize to either a URN specifying one or more
-         * contexts, a query (both may require users to choose one), or a specified observation ID.
-         * The last use case can happen with a parent context set, when users want to select a
-         * sub-context of the current, or without when the user wants to revert back to the original
-         * root context.
-         * 
+         * F->B whenever the user wants to (re)contextualize to either a URN specifying one or more contexts,
+         * a query (both may require users to choose one), or a specified observation ID. The last use case
+         * can happen with a parent context set, when users want to select a sub-context of the current, or
+         * without when the user wants to revert back to the original root context.
+         * <p>
          * Class: ObservationLifecycle
          */
         Recontextualize,
@@ -180,40 +175,40 @@ public interface Message {
         HistoryChanged, FocusChanged, Notification,
 
         /**
-         * B->F: notification for projects in user workspace when they are opened.UIs may not be
-         * aware of them and want to offer to import them. The backend does not modify or delete
-         * projects.
+         * B->F: notification for projects in user workspace when they are opened.UIs may not be aware of them
+         * and want to offer to import them. The backend does not modify or delete projects.
          * <p>
-         * F->B: notification for projects in IDE workspace that are opened and the engine may not
-         * be aware of.
+         * F->B: notification for projects in IDE workspace that are opened and the engine may not be aware
+         * of.
          */
         UserProjectOpened, UserProjectModified, UserProjectDeleted,
 
         /**
-         * Class UserInterface: User input requests and responses: request is B->F, response is
-         * F->B. Use beans {@link UserInputRequest} and {@link UserInputResponse} respectively.
+         * Class UserInterface: User input requests and responses: request is B->F, response is F->B. Use
+         * beans {@link UserInputRequested} and {@link UserInputProvided} respectively.
          */
         UserInputRequested, UserInputProvided,
 
+        UserAuthorized, UserDisconnected,
+
         /**
-         * Class UserInterface: B->F when a new documentation item becomes available for display at
-         * context level or at the dataflow actuator level. Uses bean {@link RuntimeDocumentation}.
+         * Class UserInterface: B->F when a new documentation item becomes available for display at context
+         * level or at the dataflow actuator level. Uses bean {@link RuntimeDocumentation}.
          */
         RuntimeDocumentation, DataflowDocumentation, TicketRequest, TicketResponse, AuthorityDocumentation,
 
         /**
-         * Class UserInterface: request addition of action to either context menu or global menu.
-         * Use bean {@link GlobalActionRequest}.
+         * Class UserInterface: request addition of action to either context menu or global menu. Use bean
+         * {@link GlobalActionRequest}.
          */
         AddGlobalAction,
 
         /**
          * Class UserInterface: handling of drop events in UI
-         * 
-         * {@link #DropInitiated}: F->B communicate content type, name and size (bean
-         * {@link DropRequest} {@link #DropPermission}: B->F accept/reject drop (bean
-         * {@link DropPermission} {@link #DropData}: F->B execute drop upload and communicate on
-         * finish (bean {@link DropData}
+         * <p>
+         * {@link #DropInitiated}: F->B communicate content type, name and size (bean {@link DropRequest}
+         * {@link #DropPermission}: B->F accept/reject drop (bean {@link DropPermission} {@link #DropData}:
+         * F->B execute drop upload and communicate on finish (bean {@link DropData}
          */
         DropInitiated, DropPermission, DropData,
 
@@ -230,7 +225,9 @@ public interface Message {
         /*
          * F->B: ask engine to modify or delete projects or project assets
          */
-        CreateNamespace, CreateScenario, DeleteNamespace, DeleteLocalResource, CreateCodelist, GetCodelist, UpdateCodelist, DeleteCodelist, CreateProject, DeleteProject, CreateScript, DeleteScript, CreateTestCase, DeleteTestCase, CreateBehavior, DeleteBehavior,
+        CreateNamespace, CreateScenario, DeleteNamespace, DeleteLocalResource, CreateCodelist, GetCodelist,
+        UpdateCodelist, DeleteCodelist, CreateProject, DeleteProject, CreateScript, DeleteScript,
+        CreateTestCase, DeleteTestCase, CreateBehavior, DeleteBehavior,
 
         /*
          * F->B: publish or update a local or public resource
@@ -248,22 +245,22 @@ public interface Message {
         ResourceInformation,
 
         /**
-         * B->F to report the status of a resource as its ResourceReference data plus online/offline
-         * status if known, or unknown + the URN if not.
+         * B->F to report the status of a resource as its ResourceReference data plus online/offline status if
+         * known, or unknown + the URN if not.
          */
         ResourceOnline, ResourceOffline, ResourceUnknown,
 
         /**
-         * F->B: notification when files are explicitly changed, added or deleted; notify projects
-         * to load and respond to project lifecycle requests
+         * F->B: notification when files are explicitly changed, added or deleted; notify projects to load and
+         * respond to project lifecycle requests
          */
         ProjectFileAdded, ProjectFileModified, ProjectFileDeleted, NotifyProjects, DocumentationModified,
 
         /**
-         * F <-> B: scenario selection from user action (if class == UserInterface) and/or from
-         * engine (after selection or from API) with class == SessionLifecycle. In all cases the
-         * list of scenarios is assumed to contain and honor all interdependencies and constraints.
-         * Scenario selection with no scenarios is a reset.
+         * F <-> B: scenario selection from user action (if class == UserInterface) and/or from engine (after
+         * selection or from API) with class == SessionLifecycle. In all cases the list of scenarios is
+         * assumed to contain and honor all interdependencies and constraints. Scenario selection with no
+         * scenarios is a reset.
          */
         ScenariosSelected,
 
@@ -281,8 +278,8 @@ public interface Message {
          * --- Observation lifecycle ---
          */
         /**
-         * Request the observation of a URN or logical expression. F->B. If the URN has resulted
-         * from a search, send the ID of the search so it can be disposed of.
+         * Request the observation of a URN or logical expression. F->B. If the URN has resulted from a
+         * search, send the ID of the search so it can be disposed of.
          */
         RequestObservation,
 
@@ -292,8 +289,8 @@ public interface Message {
         AuthorityQuery, AuthoritySearchResults,
 
         /**
-         * F->B: Start or stop watching an observation, i.e. receive messages about anything that
-         * changes related to it. Linked to a {@link WatchRequest} message payload.
+         * F->B: Start or stop watching an observation, i.e. receive messages about anything that changes
+         * related to it. Linked to a {@link WatchRequest} message payload.
          */
         WatchObservation,
 
@@ -308,8 +305,7 @@ public interface Message {
         ModifiedObservation,
 
         /**
-         * F->B: user has selected an action among those supplied by the engine with each
-         * observation.
+         * F->B: user has selected an action among those supplied by the engine with each observation.
          */
         ExecuteObservationAction,
 
@@ -319,15 +315,15 @@ public interface Message {
         NetworkStatus,
 
         /**
-         * -- Ticketing system monitoring, send around internally by UserInterface after engine
-         * notification
+         * -- Ticketing system monitoring, send around internally by UserInterface after engine notification
          */
         TicketResolved, TicketStatusChanged, TicketCreated,
 
         /**
          * --- Task lifecycle --- B -> F
          */
-        ScriptStarted, TaskStarted, TaskFinished, TaskAborted, DataflowCompiled, DataflowStateChanged, ProvenanceChanged,
+        ScriptStarted, TaskStarted, TaskFinished, TaskAborted, DataflowCompiled, DataflowStateChanged,
+        ProvenanceChanged,
 
         /**
          * Task lifecycle F -> B
@@ -338,7 +334,7 @@ public interface Message {
          * Test lifecycle B -> F
          */
         TestRunStarted, TestRunFinished, TestCaseStarted, TestCaseFinished, TestStarted, TestFinished,
-        
+
         /**
          * Scheduler lifecycle F->B
          */
@@ -369,12 +365,14 @@ public interface Message {
         /*
          * --- ResourceLifecycle-class types, F->B
          */
-        ImportResource, DeleteResource, UpdateResource, ValidateResource, PreviewResource, CopyResource, MoveResource, CreateResource, ImportIntoResource, ResourceOperation,
+        ImportResource, DeleteResource, UpdateResource, ValidateResource, PreviewResource, CopyResource,
+        MoveResource, CreateResource, ImportIntoResource, ResourceOperation,
 
         /*
          * --- ResourceLifecycle-class types, B->F
          */
-        ResourceImported, ResourceDeleted, ResourceUpdated, ResourceValidated, ResourceCreated, CodelistCreated, CodelistUpdated, CodelistDeleted,
+        ResourceImported, ResourceDeleted, ResourceUpdated, ResourceValidated, ResourceCreated,
+        CodelistCreated, CodelistUpdated, CodelistDeleted,
 
         /*
          * --- View actor messages
@@ -403,82 +401,81 @@ public interface Message {
 
     /**
      * Unique ID for each message.
-     * 
+     *
      * @return
      */
     long getId();
 
     /**
-     * The message exposes the identity that created it through a token, which may or may not be
-     * parseable at the receiving end but will be consistently linked to the message type. For
-     * example, task messages will have the identity of the task that generated them so they can be
-     * correctly distributed among tasks.
-     * 
+     * The message exposes the identity that created it through a token, which may or may not be parseable at
+     * the receiving end but will be consistently linked to the message type. For example, task messages will
+     * have the identity of the task that generated them so they can be correctly distributed among tasks.
+     *
      * @return the sender's identity. Never null.
      */
     String getIdentity();
 
     /**
-     * 
      * @return the message class
      */
     MessageClass getMessageClass();
 
     /**
-     * 
      * @return the message type
      */
-    Type getType();
+    MessageType getMessageType();
 
     /**
-     * Timestamp (milliseconds since epoch) of message at sender side. Meant to enforce
-     * sequentiality rather than reliable date/time attribution.
-     * 
+     * Timestamp (milliseconds since epoch) of message at sender side. Meant to enforce sequentiality rather
+     * than reliable date/time attribution.
+     *
      * @return
      */
     long getTimestamp();
 
     /**
      * Get the payload of the message, whatever it is.
-     * 
+     *
      * @return the payload or null.
      */
     Object getPayload();
 
     /**
      * Get the payload of the message, ensuring it is of type T.
-     * 
+     *
      * @param cls
      * @return the payload
      */
     <T> T getPayload(Class<? extends T> cls);
-    
+
+    public static MessageImpl create(Scope scope, Object... o) {
+        return create(scope.getId(), o);
+    }
+
     /**
-     * Build a message by arranging all the arguments appropriately. Only one
-     * payload object can be passed.
-     * 
+     * Build a message by arranging all the arguments appropriately. Only one payload object can be passed.
+     *
      * @param identity
      * @param o
      * @return a new message
-     * @throws IllegalArgumentException if there are not enough arguments or more
-     *                                  than one payload was passed
+     * @throws IllegalArgumentException if there are not enough arguments or more than one payload was passed
      */
     public static MessageImpl create(String identity, Object... o) {
         MessageImpl ret = new MessageImpl();
         ret.setIdentity(identity);
         Notification.Type notype = null;
         for (Object ob : o) {
-            if (ob instanceof Type) {
-                ret.setType((Type) ob);
+            if (ob instanceof MessageType) {
+                ret.setMessageType((MessageType) ob);
             } else if (ob instanceof MessageClass) {
                 ret.setMessageClass((MessageClass) ob);
             } else if (ob instanceof Notification.Type) {
                 notype = (Notification.Type) ob;
             } else if (ob instanceof Repeatability) {
-                ret.setRepeatability((Repeatability)ob);
-            }  else if (ob instanceof Notification) {
-               notype = ((Notification)ob).getType();
-               ret.setPayload(((Notification)ob).getMessage());
+                ret.setRepeatability((Repeatability) ob);
+            } else if (ob instanceof Notification) {
+                notype = ((Notification) ob).getType();
+                ret.setPayload(((Notification) ob).getMessage());
             } else if (ob != null) {
                 if (ret.getPayload() == null) {
                     ret.setPayload(ob);
@@ -492,8 +489,8 @@ public interface Message {
         // defaults so that we can just post a string
         if (ret.getMessageClass() == null) {
             ret.setMessageClass(MessageClass.Notification);
-            if (ret.getType() == null) {
-                ret.setType(Type.Info);
+            if (ret.getMessageType() == null) {
+                ret.setMessageType(MessageType.Info);
             }
         }
         ret.setNotificationType(notype);
@@ -502,8 +499,8 @@ public interface Message {
     }
 
     /**
-     * Build a message from a standard {@link INotification} and an identity.
-     * 
+     * Build a message from a standard {@link Notification} and an identity.
+     *
      * @param notification
      * @param identity
      * @return a new message
@@ -517,13 +514,13 @@ public interface Message {
         ret.setPayloadClass("String");
 
         if (notification.getLevel().equals(Notification.Level.Debug)) {
-            ret.setType(Type.Debug);
+            ret.setMessageType(MessageType.Debug);
         } else if (notification.getLevel().equals(Notification.Level.Info)) {
-            ret.setType(Type.Info);
+            ret.setMessageType(MessageType.Info);
         } else if (notification.getLevel().equals(Notification.Level.Warning)) {
-            ret.setType(Type.Warning);
+            ret.setMessageType(MessageType.Warning);
         } else if (notification.getLevel().equals(Notification.Level.Error)) {
-            ret.setType(Type.Error);
+            ret.setMessageType(MessageType.Error);
         }
 
         return ret;

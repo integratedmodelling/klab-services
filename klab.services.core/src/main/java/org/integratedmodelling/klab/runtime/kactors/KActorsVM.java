@@ -519,7 +519,7 @@ public class KActorsVM implements VM {
             // }
             // scope.getIdentity().setView(new ViewImpl(scope.getViewScope().getLayout()));
             scope.send(Message.MessageClass.UserInterface,
-                    "modal".equals(wspecs.getName()) ? Message.Type.CreateModalWindow : Message.Type.CreateWindow,
+                    "modal".equals(wspecs.getName()) ? Message.MessageType.CreateModalWindow : Message.MessageType.CreateWindow,
                     scope.getViewScope().getLayout());
         }
     }

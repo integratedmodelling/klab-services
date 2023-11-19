@@ -19,7 +19,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
-import java.util.logging.Level;
 
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -41,7 +40,7 @@ public class MessageImpl implements Message, Serializable {
 
 	private static AtomicLong nextId = new AtomicLong(0L);
 	
-	private Type type;
+	private MessageType messageType;
 	private MessageClass messageClass;
 	private String identity;
 	private String payloadClass;
@@ -60,7 +59,7 @@ public class MessageImpl implements Message, Serializable {
 
 	@Override
 	public String toString() {
-		return "{" + identity + ": " + messageClass + "/" + type + ": " + payload + "}";
+		return "{" + identity + ": " + messageClass + "/" + messageType + ": " + payload + "}";
 	}
 
 	public MessageImpl inResponseTo(Message message) {
@@ -74,8 +73,8 @@ public class MessageImpl implements Message, Serializable {
 	 * @return the type
 	 */
 	@Override
-	public Type getType() {
-		return type;
+	public MessageType getMessageType() {
+		return messageType;
 	}
 
 	@Override
@@ -88,8 +87,8 @@ public class MessageImpl implements Message, Serializable {
 	 *
 	 * @param type the new type
 	 */
-	public void setType(Type type) {
-		this.type = type;
+	public void setMessageType(MessageType type) {
+		this.messageType = type;
 	}
 
 	/**
@@ -174,7 +173,7 @@ public class MessageImpl implements Message, Serializable {
 		ret.messageClass = this.messageClass;
 		ret.payload = this.payload;
 		ret.payloadClass = this.payloadClass;
-		ret.type = this.type;
+		ret.messageType = this.messageType;
 		ret.inResponseTo = this.inResponseTo;
 		ret.timestamp = this.timestamp;
 		return ret;

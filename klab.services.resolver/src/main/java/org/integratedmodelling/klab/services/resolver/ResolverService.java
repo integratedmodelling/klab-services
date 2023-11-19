@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.InstanceImpl;
@@ -39,6 +40,7 @@ import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 public class ResolverService extends BaseService implements Resolver {
 
@@ -62,8 +64,8 @@ public class ResolverService extends BaseService implements Resolver {
     Parameters<String> defines = Parameters.createSynchronized();
 
     @Autowired
-    public ResolverService(Authentication authentication, ServiceScope scope) {
-        super(scope);
+    public ResolverService(Authentication authentication, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
+        super(scope, messageListeners);
     }
 
     @Override

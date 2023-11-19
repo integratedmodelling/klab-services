@@ -32,6 +32,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.indexing.Indexer;
@@ -58,6 +59,7 @@ import java.io.File;
 import java.io.Serial;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -247,8 +249,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Autowired
-    public ReasonerService(Authentication authenticationService, ServiceScope scope) {
-        super(scope);
+    public ReasonerService(Authentication authenticationService, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
+        super(scope, messageListeners);
         this.authenticationService = authenticationService;
         this.scope = scope;
         this.owl = new OWL(scope);

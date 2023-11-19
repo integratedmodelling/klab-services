@@ -44,7 +44,11 @@ public enum Engine implements Authentication {
 	Map<String, SessionScope> sessions = new LinkedHashMap<>();
 	Map<String, ContextScope> contexts = new LinkedHashMap<>();
 
+	EngineService engineService;
+
 	private Engine() {
+
+		engineService = new EngineService();
 
 		/*
 		 * discover and catalog services
@@ -55,40 +59,40 @@ public enum Engine implements Authentication {
 		 * client, otherwise create an embedded service
 		 */
 		if (Utils.Network.isAlive("http://127.0.0.1:" + ResourcesService.DEFAULT_PORT + " /resources/actuator")) {
-			EngineService.INSTANCE
+			engineService
 					.setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /resources"));
 		} else {
-			EngineService.INSTANCE.setResources(
-					new ResourcesProvider(this, EngineService.INSTANCE.newServiceScope(ResourcesService.class)));
+			engineService.setResources(
+					new ResourcesProvider(this, engineService.newServiceScope(ResourcesService.class)));
 		}
 
 		if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {
-			EngineService.INSTANCE
+			engineService
 					.setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner"));
 		} else {
-			EngineService.INSTANCE
-					.setReasoner(new ReasonerService(this, EngineService.INSTANCE.newServiceScope(Reasoner.class)));
+			engineService
+					.setReasoner(new ReasonerService(this, engineService.newServiceScope(Reasoner.class)));
 		}
 
 		// FIXME mutual dependency between resolver and runtime guarantees screwup
 		if (Utils.Network.isAlive("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver/actuator")) {
-			EngineService.INSTANCE
+			engineService
 					.setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver"));
 		} else {
-			EngineService.INSTANCE
-					.setResolver(new ResolverService(this, EngineService.INSTANCE.newServiceScope(Resolver.class)));
+			engineService
+					.setResolver(new ResolverService(this, engineService.newServiceScope(Resolver.class)));
 		}
 
 		if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
-			EngineService.INSTANCE
+			engineService
 					.setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime"));
 		} else {
-			EngineService.INSTANCE.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this,
-					EngineService.INSTANCE.newServiceScope(RuntimeService.class)));
+			engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this,
+					engineService.newServiceScope(RuntimeService.class)));
 		}
 
 		// Boot will initialize all embedded services
-		EngineService.INSTANCE.boot();
+		engineService.boot();
 
 		/*
 		 * add the anonymous identity
@@ -99,7 +103,7 @@ public enum Engine implements Authentication {
 
 	@Override
 	public UserScope authorizeUser(UserIdentity user) {
-		return EngineService.INSTANCE.login(user);
+		return engineService.login(user);
 	}
 
 	@Override
@@ -125,7 +129,7 @@ public enum Engine implements Authentication {
 
 	@Override
 	public UserScope getAnonymousScope() {
-		return EngineService.INSTANCE.login(new AnonymousUser());
+		return engineService.login(new AnonymousUser());
 	}
 
 	/**

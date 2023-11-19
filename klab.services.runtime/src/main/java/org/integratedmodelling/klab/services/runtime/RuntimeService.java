@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.runtime;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -32,9 +34,9 @@ public class RuntimeService extends BaseService
      */
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
 
-    public RuntimeService(Authentication testAuthentication, ServiceScope scope) {
+    public RuntimeService(Authentication testAuthentication, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
         // TODO Auto-generated constructor stub
-        super(scope);
+        super(scope, messageListeners);
     }
 
     @Override
