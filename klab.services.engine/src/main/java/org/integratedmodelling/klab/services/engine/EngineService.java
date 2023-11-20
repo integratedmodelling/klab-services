@@ -25,11 +25,10 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
- * Reference implementation for the new modular engine. Should eventually allow substituting
- * external RPC services for the default ones, based on configuration and a dedicated API.
- * 
- * @author Ferd
+ * Reference implementation for the new modular engine. Should eventually allow substituting external RPC
+ * services for the default ones, based on configuration and a dedicated API.
  *
+ * @author Ferd
  */
 public class EngineService {
 
@@ -55,13 +54,14 @@ public class EngineService {
         /*
          * boot the actor system right away, so that we can call login() before boot().
          */
-        this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
+        this.actorSystem =
+                new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
                 .initReActorSystem();
     }
 
     /**
-     * The boot process creates the servicontexce scope for all services and calls initialization on
-     * all services that are a BaseService. When called, the services must be all defined.
+     * The boot process creates the servicontexce scope for all services and calls initialization on all
+     * services that are a BaseService. When called, the services must be all defined.
      */
     public void boot() {
 
@@ -70,7 +70,8 @@ public class EngineService {
             booted = true;
 
             if (defaultReasoner == null || defaultResourcesService == null || defaultResolver == null || defaultRuntime == null) {
-                throw new KIllegalStateException("one or more services are not available: cannot boot the engine");
+                throw new KIllegalStateException("one or more services are not available: cannot boot the " +
+                        "engine");
             }
 
             /*
@@ -78,12 +79,12 @@ public class EngineService {
              * resources, reasoner, resolver and runtime. The community service should always be
              * remote except in test situations. The worldview must be loaded in the reasoner before
              * the resource workspaces are read.
-             * 
+             *
              * Logic is intricated, careful when making changes.
              */
             ResourceSet worldview = null;
             for (var service : new KlabService[]{defaultResourcesService, defaultReasoner, defaultResolver,
-                    defaultRuntime}) {
+                                                 defaultRuntime}) {
                 if (service instanceof BaseService baseService) {
                     baseService.initializeService();
                     if (service instanceof ResourcesService.Admin admin) {
@@ -107,7 +108,7 @@ public class EngineService {
         EngineScope ret = userScopes.get(user.getUsername());
         if (ret == null) {
 
-            ret = new EngineScope(user){
+            ret = new EngineScope(user) {
 
                 @SuppressWarnings("unchecked")
                 @Override
@@ -136,7 +137,8 @@ public class EngineService {
 
             userScopes.put(user.getUsername(), ret);
 
-            File userBehavior = new File(Configuration.INSTANCE.getDataPath() + File.separator + "user.kactors");
+            File userBehavior = new File(Configuration.INSTANCE.getDataPath() + File.separator + "user" +
+                    ".kactors");
             if (userBehavior.isFile() && userBehavior.canRead()) {
                 try {
                     var message = new RunBehavior();
@@ -148,15 +150,15 @@ public class EngineService {
             }
         }
 
-        notify(ret,Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, user);
+        notify(ret, Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, user);
 
         return ret;
     }
 
     private void notify(Scope scope, Object... objects) {
         if (!eventListeners.isEmpty()) {
-            for(var listener : eventListeners) {
-                listener.accept(scope,Message.create(scope, objects));
+            for (var listener : eventListeners) {
+                listener.accept(scope, Message.create(scope, objects));
             }
         }
     }
@@ -215,7 +217,7 @@ public class EngineService {
 
     public ServiceScope newServiceScope(Class<? extends KlabService> cls) {
 
-        return new LocalServiceScope(cls){
+        return new LocalServiceScope(cls, eventListeners.toArray(new BiConsumer[]{})) {
 
             @Override
             public String getId() {
