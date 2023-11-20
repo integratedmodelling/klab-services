@@ -115,15 +115,13 @@ public class Monitor implements Channel {
             if (this instanceof Scope scope) {
                 if (!eventListeners.isEmpty()) {
                     for (var listener : eventListeners) {
-                        listener.accept(scope, Message.create((Notification) o[0], this.identity.getId()));
+                        listener.accept(scope, Message.create(this.identity.getId(), o));
                     }
                 }
             }
             if (messageBus != null) {
                 if (o.length == 1 && o[0] instanceof Message) {
                     messageBus.post(message = (Message) o[0]);
-                } else if (o.length == 1 && o[0] instanceof Notification) {
-                    messageBus.post(message = Message.create((Notification) o[0], this.identity.getId()));
                 } else {
                     messageBus.post(message = Message.create(this.identity.getId(), o));
                 }

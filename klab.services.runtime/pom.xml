@@ -23,7 +23,13 @@
 			<artifactId>klab.authentication</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.authentication</artifactId>
+            <version>0.11.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>

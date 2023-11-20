@@ -20,11 +20,11 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
     class LocalService implements ServiceIdentity {
 
         Date boot = new Date();
-        KlabService service;
+        //        KlabService service;
         Scope delegate;
 
-        public LocalService(KlabService service) {
-            this.service = service;
+        public LocalService(/*KlabService service*/) {
+//            this.service = service;
         }
 
         @Override
@@ -98,6 +98,7 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
                              BiConsumer<Scope, Message>... listeners) {
         super(listeners);
         this.serviceClass = serviceClass;
+        setIdentity(new LocalService());
     }
 
     private Parameters<String> data = Parameters.create();
@@ -137,9 +138,6 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
 
     @Override
     public Identity getIdentity() {
-        if (this.serviceIdentity != null) {
-            this.serviceIdentity = new LocalService(getService(this.serviceClass));
-        }
         return this.serviceIdentity;
     }
 
@@ -153,4 +151,7 @@ public abstract class LocalServiceScope extends Monitor implements ServiceScope 
         this.data.put(key, value);
     }
 
+    public void setService(KlabService service) {
+        this.service = service;
+    }
 }

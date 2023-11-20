@@ -488,7 +488,7 @@ public interface Message extends Serializable {
             } else if (ob != null) {
                 if (ret.getPayload() == null) {
                     ret.setPayload(ob);
-                    ret.setPayloadClass(Utils.Paths.getLast(ob.getClass().getCanonicalName(), '.'));
+                    ret.setPayloadClass("Unknown");
                 } else {
                     throw new IllegalArgumentException("payload already set: too many arguments");
                 }

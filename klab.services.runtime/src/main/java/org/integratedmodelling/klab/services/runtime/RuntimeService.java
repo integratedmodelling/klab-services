@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
@@ -36,6 +37,9 @@ public class RuntimeService extends BaseService
     public RuntimeService(Authentication testAuthentication, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
         // TODO Auto-generated constructor stub
         super(scope, localName,messageListeners);
+        if (scope instanceof LocalServiceScope localScope) {
+            localScope.setService(this);
+        }
     }
 
     @Override
@@ -69,12 +73,6 @@ public class RuntimeService extends BaseService
 
     @Override
     public String getUrl() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getLocalName() {
         // TODO Auto-generated method stub
         return null;
     }

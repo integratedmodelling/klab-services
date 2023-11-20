@@ -27,7 +27,9 @@ public abstract class BaseService implements KlabService {
         }
     }
 
-    public String localName() {
+
+    public String getLocalName() {
+        // TODO Auto-generated method stub
         return localName;
     }
 

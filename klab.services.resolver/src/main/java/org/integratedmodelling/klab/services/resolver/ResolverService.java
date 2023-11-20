@@ -32,6 +32,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.InstanceImpl;
 import org.integratedmodelling.klab.knowledge.ModelImpl;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
@@ -67,16 +68,13 @@ public class ResolverService extends BaseService implements Resolver {
     public ResolverService(Authentication authentication, ServiceScope scope, String localName,
                            BiConsumer<Scope, Message>... messageListeners) {
         super(scope, localName, messageListeners);
+        if (scope instanceof LocalServiceScope localScope) {
+            localScope.setService(this);
+        }
     }
 
     @Override
     public String getUrl() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getLocalName() {
         // TODO Auto-generated method stub
         return null;
     }

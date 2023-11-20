@@ -40,6 +40,7 @@ import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration.ProjectConfiguration;
@@ -153,8 +154,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private Cache<Integer, SemanticExpression> semanticExpressions = CacheBuilder.newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES).build();
 
-    private Capabilities capabilities = new ReasonerCapabilities();
-
     private Authentication authenticationService;
 
     private OWL owl;
@@ -256,6 +255,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.owl.initialize();
         this.indexer = new Indexer(scope);
         this.emergence = new IntelligentMap<>(scope);
+        if (scope instanceof LocalServiceScope localScope) {
+            localScope.setService(this);
+        }
     }
 
     @Override
@@ -1084,11 +1086,22 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Capabilities capabilities() {
-        return this.capabilities;
-    }
+        return new Capabilities() {
+            @Override
+            public Type getType() {
+                return Type.REASONER;
+            }
 
-    public void setCapabilities(Capabilities capabilities) {
-        this.capabilities = capabilities;
+            @Override
+            public String getLocalName() {
+                return localName;
+            }
+
+            @Override
+            public String getServiceName() {
+                return "Reasoner";
+            }
+        };
     }
 
     @Override
@@ -1288,11 +1301,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    @Override
-    public String getLocalName() {
-        return localName;
     }
 
     public void setLocalName(String localName) {
