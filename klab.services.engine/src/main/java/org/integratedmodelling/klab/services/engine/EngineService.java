@@ -45,9 +45,18 @@ public class EngineService {
     private List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
     public EngineService(BiConsumer<Scope, Message>... eventListeners) {
+
         if (eventListeners != null) {
-            Arrays.stream(eventListeners).map(e -> this.eventListeners.add(e));
+            for (var e : eventListeners) {
+                this.eventListeners.add(e);
+            }
         }
+
+        /*
+         * boot the actor system right away, so that we can call login() before boot().
+         */
+        this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
+                .initReActorSystem();
     }
 
     /**
@@ -59,11 +68,6 @@ public class EngineService {
         if (!booted) {
 
             booted = true;
-            /*
-             * boot the actor system
-             */
-            this.actorSystem = new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-                    .initReActorSystem();
 
             if (defaultReasoner == null || defaultResourcesService == null || defaultResolver == null || defaultRuntime == null) {
                 throw new KIllegalStateException("one or more services are not available: cannot boot the engine");

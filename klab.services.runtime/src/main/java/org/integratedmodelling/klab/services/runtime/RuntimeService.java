@@ -1,13 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
-
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -23,6 +17,11 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
 
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
+
 public class RuntimeService extends BaseService
         implements
         org.integratedmodelling.klab.api.services.RuntimeService,
@@ -34,13 +33,16 @@ public class RuntimeService extends BaseService
      */
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
 
-    public RuntimeService(Authentication testAuthentication, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
+    public RuntimeService(Authentication testAuthentication, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
         // TODO Auto-generated constructor stub
-        super(scope, messageListeners);
+        super(scope, localName,messageListeners);
     }
 
     @Override
     public void initializeService() {
+
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities());
+
         /*
          * Components
          */
@@ -61,6 +63,8 @@ public class RuntimeService extends BaseService
             Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
         }
 
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities());
+
     }
 
     @Override
@@ -77,14 +81,31 @@ public class RuntimeService extends BaseService
 
     @Override
     public boolean shutdown() {
+
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
+
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public Capabilities capabilities() {
-        // TODO Auto-generated method stub
-        return null;
+        return new Capabilities() {
+            @Override
+            public Type getType() {
+                return Type.RUNTIME;
+            }
+
+            @Override
+            public String getLocalName() {
+                return localName;
+            }
+
+            @Override
+            public String getServiceName() {
+                return "Runtime";
+            }
+        };
     }
 
     @Override

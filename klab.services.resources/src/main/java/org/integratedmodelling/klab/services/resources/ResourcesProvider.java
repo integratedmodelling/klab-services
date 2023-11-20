@@ -9,6 +9,7 @@ import org.integratedmodelling.kim.api.IKimProject;
 import org.integratedmodelling.kim.model.Kim;
 import org.integratedmodelling.kim.model.KimLoader;
 import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
+import org.integratedmodelling.klab.api.authentication.CRUDPermission;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -36,7 +37,6 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
-import org.integratedmodelling.klab.api.services.resources.ResourceStatus.Type;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.ResourceReference;
@@ -78,8 +78,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private static boolean languagesInitialized;
 
     private String url;
-    private String localName;
-
     private KimLoader kimLoader;
     private ResourcesConfiguration configuration = new ResourcesConfiguration();
     private Authentication authenticationService;
@@ -124,9 +122,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * If this is used, {@link #loadWorkspaces()} must be called explicitly after the service scope is set.
      */
     @SuppressWarnings("unchecked")
-    public ResourcesProvider(ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, messageListeners);
-        this.localName = "klab.services.resources." + UUID.randomUUID();
+    public ResourcesProvider(ServiceScope scope, String localName,
+                             BiConsumer<Scope, Message>... messageListeners) {
+        super(scope, localName, messageListeners);
         // Services.INSTANCE.setResources(this);
         initializeLanguageServices();
 
@@ -144,18 +142,23 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Autowired
-    public ResourcesProvider(Authentication authenticationService, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
-        this(scope, messageListeners);
+    public ResourcesProvider(Authentication authenticationService, ServiceScope scope, String localName, BiConsumer<Scope,
+            Message>... messageListeners) {
+        this(scope, localName,messageListeners);
         this.authenticationService = authenticationService;
     }
 
     @Override
     public void initializeService() {
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+                capabilities());
         this.kbox = ModelKbox.create(localName, this.scope);
         updateProjects();
         /*
          * TODO launch update service
          */
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                capabilities());
     }
 
     private void saveConfiguration() {
@@ -313,9 +316,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                         status.setReviewStatus(level);
                         status.setFileLocation(subdir);
                         status.setType(Utils.Notifications.hasErrors(resource.getNotifications()) ?
-                                       Type.OFFLINE
-                                                                                                  :
-                                       Type.AVAILABLE);
+                                       ResourceStatus.Type.OFFLINE :
+                                       ResourceStatus.Type.AVAILABLE);
                         status.setLegacy(legacy);
                         status.setKnowledgeClass(KnowledgeClass.RESOURCE);
                         // TODO fill in the rest
@@ -677,6 +679,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     public boolean shutdown(int secondsToWait) {
+
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+                capabilities());
+
         // try {
         // projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
         return true;
@@ -688,8 +694,40 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public Capabilities capabilities() {
-        // TODO Auto-generated method stub
-        return null;
+        return new Capabilities() {
+            @Override
+            public boolean isWorldviewProvider() {
+                // TODO
+                return false;
+            }
+
+            @Override
+            public String getAdoptedWorldview() {
+                // TODO
+                return null;
+            }
+
+            @Override
+            public Set<CRUDPermission> getPermissions() {
+                // TODO
+                return EnumSet.noneOf(CRUDPermission.class);
+            }
+
+            @Override
+            public Type getType() {
+                return Type.RESOURCES;
+            }
+
+            @Override
+            public String getLocalName() {
+                return localName;
+            }
+
+            @Override
+            public String getServiceName() {
+                return null;
+            }
+        };
     }
 
     @Override
@@ -832,7 +870,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public Resource createResource(String projectName, String urnId, String adapter, Parameters<String> resourceData) {
+    public Resource createResource(String projectName, String urnId, String adapter,
+                                   Parameters<String> resourceData) {
         return null;
     }
 

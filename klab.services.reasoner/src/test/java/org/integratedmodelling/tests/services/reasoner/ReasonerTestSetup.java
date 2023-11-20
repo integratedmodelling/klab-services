@@ -160,8 +160,8 @@ class ReasonerTestSetup {
             }
         };
 
-        reasonerService = new ReasonerService(authenticationService, scope);
-        resourcesService = new ResourcesProvider(authenticationService, scope);
+        reasonerService = new ReasonerService(authenticationService, scope, "Test reasoner");
+        resourcesService = new ResourcesProvider(authenticationService, scope, "Test resources");
         resourcesService.initializeService();
         reasonerService.initializeService();
         // ensure the test worldview is there or set from git repo

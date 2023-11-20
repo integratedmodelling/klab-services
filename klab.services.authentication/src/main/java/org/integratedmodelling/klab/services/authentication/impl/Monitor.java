@@ -12,6 +12,8 @@ import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.logging.Logging;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -24,21 +26,24 @@ import java.util.function.Consumer;
  */
 public class Monitor implements Channel {
 
-    private BiConsumer<Scope, Notification> notificationConsumer;
-
-    private BiConsumer<Scope, Object> sendConsumer;
-
     private int errorCount = 0;
     private AtomicBoolean isInterrupted = new AtomicBoolean(false);
     private int waitTime;
     private Identity identity;
 
+    private List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
+
     /**
-     * FIXME probably this whole messageBus thing can be dealt with using the consumers above
+     * FIXME probably this whole messageBus thing can be dealt with using just the consumer=
      */
     transient MessageBus messageBus;
 
-    protected Monitor() {
+    protected Monitor(BiConsumer<Scope, Message>... listeners) {
+        if (listeners != null) {
+            for (var listener : listeners) {
+                this.eventListeners.add(listener);
+            }
+        }
     }
 
     public Monitor(Identity identity) {
@@ -108,13 +113,12 @@ public class Monitor implements Channel {
         if (o != null && o.length > 0) {
 
             if (this instanceof Scope scope) {
-                if (notificationConsumer != null && o[0] instanceof Notification notification) {
-                    notificationConsumer.accept(scope, notification);
-                } else if (sendConsumer != null) {
-                    sendConsumer.accept(scope, o[0]);
+                if (!eventListeners.isEmpty()) {
+                    for (var listener : eventListeners) {
+                        listener.accept(scope, Message.create((Notification) o[0], this.identity.getId()));
+                    }
                 }
             }
-
             if (messageBus != null) {
                 if (o.length == 1 && o[0] instanceof Message) {
                     messageBus.post(message = (Message) o[0]);
@@ -240,19 +244,5 @@ public class Monitor implements Channel {
     public void setIdentity(Identity identity) {
         this.identity = identity;
     }
-    public BiConsumer<Scope, Notification> getNotificationConsumer() {
-        return notificationConsumer;
-    }
 
-    public void setNotificationConsumer(BiConsumer<Scope, Notification> notificationConsumer) {
-        this.notificationConsumer = notificationConsumer;
-    }
-
-    public BiConsumer<Scope, Object> getSendConsumer() {
-        return sendConsumer;
-    }
-
-    public void setSendConsumer(BiConsumer<Scope, Object> sendConsumer) {
-        this.sendConsumer = sendConsumer;
-    }
 }

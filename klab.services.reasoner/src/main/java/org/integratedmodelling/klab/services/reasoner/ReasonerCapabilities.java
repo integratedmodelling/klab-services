@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.reasoner;
 
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 
 public class ReasonerCapabilities implements Reasoner.Capabilities {
@@ -11,6 +12,11 @@ public class ReasonerCapabilities implements Reasoner.Capabilities {
      * 
      */
     private static final long serialVersionUID = -1430274296197650332L;
+
+    @Override
+    public KlabService.Type getType() {
+        return KlabService.Type.REASONER;
+    }
 
     public String getLocalName() {
         return localName;
@@ -27,5 +33,7 @@ public class ReasonerCapabilities implements Reasoner.Capabilities {
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
+
+
 
 }

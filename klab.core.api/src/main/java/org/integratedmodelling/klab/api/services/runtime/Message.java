@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
-import java.io.Serializable;
-
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.io.Serializable;
 
 /**
  * Messages exchanged between the engine and its clients.
@@ -46,6 +46,10 @@ public interface Message extends Serializable {
          */
         UserContextDefinition,
 
+        /**
+         * Any event referring to a service
+         */
+        ServiceLifecycle,
         /**
          *
          */
@@ -129,6 +133,11 @@ public interface Message extends Serializable {
          * Console requests: new console, command received, response received
          */
         ConsoleCreated, ConsoleClosed, CommandRequest, CommandResponse,
+
+        /*
+         * Service messages, coming with service capabilities
+         */
+        ServiceInitializing, ServiceAvailable, ServiceUnavailable,
 
         /*
          * UserContextChange-class types.
@@ -475,7 +484,7 @@ public interface Message extends Serializable {
                 ret.setRepeatability((Repeatability) ob);
             } else if (ob instanceof Notification) {
                 notype = ((Notification) ob).getType();
-                ret.setPayload(((Notification) ob).getMessage());
+                ret.setPayload(ob);
             } else if (ob != null) {
                 if (ret.getPayload() == null) {
                     ret.setPayload(ob);
@@ -510,7 +519,7 @@ public interface Message extends Serializable {
         MessageImpl ret = new MessageImpl();
         ret.setIdentity(identity);
         ret.setMessageClass(MessageClass.Notification);
-        ret.setPayload(notification.getMessage());
+        ret.setPayload(notification);
         ret.setPayloadClass("String");
 
         if (notification.getLevel().equals(Notification.Level.Debug)) {

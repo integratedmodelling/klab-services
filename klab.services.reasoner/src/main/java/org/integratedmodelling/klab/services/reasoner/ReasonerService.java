@@ -110,7 +110,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
 
     private String url;
-    private String localName;
     private ReasonerConfiguration configuration = new ReasonerConfiguration();
     private Map<String, String> coreConceptPeers = new HashMap<>();
     private Map<Concept, Emergence> emergent = new HashMap<>();
@@ -249,8 +248,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Autowired
-    public ReasonerService(Authentication authenticationService, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, messageListeners);
+    public ReasonerService(Authentication authenticationService, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
+        super(scope, localName,messageListeners);
         this.authenticationService = authenticationService;
         this.scope = scope;
         this.owl = new OWL(scope);
@@ -262,6 +261,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public void initializeService() {
 
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities());
+
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         if (config.exists()) {
             configuration = Utils.YAML.load(config, ReasonerConfiguration.class);
@@ -272,6 +273,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
 
         this.observationReasoner = new ObservationReasoner(this);
+
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities());
 
     }
 
@@ -2407,6 +2410,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public boolean shutdown() {
+
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
         // TODO Auto-generated method stub
         return false;
     }

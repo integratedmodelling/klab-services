@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.api.services;
 
-import java.io.Serializable;
-
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+
+import java.io.Serializable;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation
@@ -19,6 +19,14 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
  */
 public interface KlabService extends Service {
 
+    enum Type {
+        REASONER,
+        RESOURCES,
+        RESOLVER,
+        RUNTIME,
+        COMMUNITY
+    }
+
     /**
      * At the very minimum, each service advertises its type and local name.
      * 
@@ -26,6 +34,8 @@ public interface KlabService extends Service {
      *
      */
     interface ServiceCapabilities extends Serializable {
+
+        Type getType();
 
         String getLocalName();
 
@@ -53,7 +63,6 @@ public interface KlabService extends Service {
      * @return
      */
     String getLocalName();
-
 
     /**
      * Each service operates under a root scope that is used to report issues, talk to clients and

@@ -64,8 +64,9 @@ public class ResolverService extends BaseService implements Resolver {
     Parameters<String> defines = Parameters.createSynchronized();
 
     @Autowired
-    public ResolverService(Authentication authentication, ServiceScope scope, BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, messageListeners);
+    public ResolverService(Authentication authentication, ServiceScope scope, String localName,
+                           BiConsumer<Scope, Message>... messageListeners) {
+        super(scope, localName, messageListeners);
     }
 
     @Override
@@ -82,14 +83,33 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public boolean shutdown() {
+
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+                capabilities());
+
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public Capabilities capabilities() {
-        // TODO Auto-generated method stub
-        return null;
+// TODO Auto-generated method stub
+        return new Capabilities() {
+            @Override
+            public Type getType() {
+                return Type.RESOLVER;
+            }
+
+            @Override
+            public String getLocalName() {
+                return localName;
+            }
+
+            @Override
+            public String getServiceName() {
+                return "Reasoner";
+            }
+        };
     }
 
     /**
@@ -632,6 +652,9 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public void initializeService() {
 
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+                capabilities());
+
         /*
          * Components
          */
@@ -651,6 +674,10 @@ public class ResolverService extends BaseService implements Resolver {
             Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
                     Configuration.INSTANCE.LIBRARY_LOADER));
         }
+
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                capabilities());
+
     }
 
     @Override

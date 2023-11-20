@@ -15,14 +15,20 @@ public abstract class BaseService implements KlabService {
     private static final long serialVersionUID = 1646569587945609013L;
 
     protected ServiceScope scope;
+    protected String localName = "Embedded";
 
     protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
-    protected BaseService(ServiceScope scope, BiConsumer<Scope, Message>...eventListeners) {
+    protected BaseService(ServiceScope scope, String localName, BiConsumer<Scope, Message>...eventListeners) {
         this.scope = scope;
+        this.localName = localName;
         if (eventListeners != null) {
             Arrays.stream(eventListeners).map(e -> this.eventListeners.add(e));
         }
+    }
+
+    public String localName() {
+        return localName;
     }
 
     @Override
