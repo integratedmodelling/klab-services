@@ -32,8 +32,6 @@ import java.util.function.BiConsumer;
  */
 public class EngineService {
 
-//    INSTANCE;
-
     private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
     private ReActorSystem actorSystem;
     private Reasoner defaultReasoner;
@@ -56,7 +54,7 @@ public class EngineService {
          */
         this.actorSystem =
                 new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-                .initReActorSystem();
+                        .initReActorSystem();
     }
 
     /**
@@ -98,9 +96,7 @@ public class EngineService {
             if (defaultResourcesService instanceof BaseService && defaultResourcesService instanceof ResourcesService.Admin) {
                 ((ResourcesService.Admin) defaultResourcesService).loadWorkspaces();
             }
-
         }
-
     }
 
     public UserScope login(UserIdentity user) {
@@ -155,7 +151,7 @@ public class EngineService {
         return ret;
     }
 
-    private void notify(Scope scope, Object... objects) {
+    public void notify(Scope scope, Object... objects) {
         if (!eventListeners.isEmpty()) {
             for (var listener : eventListeners) {
                 listener.accept(scope, Message.create(scope, objects));
@@ -214,6 +210,20 @@ public class EngineService {
         this.defaultRuntime.shutdown();
         return true;
     }
+
+    /**
+     * Return the named service of the passed class. If not found or not active, return null.
+     *
+     * @param class1
+     * @param localName
+     * @param <T>
+     * @return
+     */
+    public <T extends KlabService> T getService(Class<T> class1, String localName) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 
     public ServiceScope newServiceScope(Class<? extends KlabService> cls) {
 

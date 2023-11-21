@@ -728,7 +728,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
             @Override
             public String getServiceName() {
-                return null;
+                return "Resources";
             }
         };
     }

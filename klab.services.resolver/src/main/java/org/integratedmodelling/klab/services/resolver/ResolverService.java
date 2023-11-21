@@ -105,7 +105,7 @@ public class ResolverService extends BaseService implements Resolver {
 
             @Override
             public String getServiceName() {
-                return "Reasoner";
+                return "Resolver";
             }
         };
     }
