@@ -83,11 +83,11 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	public List<Pair<ValueOperator, Literal>> getValueOperators() {
 		return this.valueOperators;
 	}
-
-	@Override
-	public String getAttributeIdentifier() {
-		return this.attributeIdentifier;
-	}
+//
+//	@Override
+//	public String getAttributeIdentifier() {
+//		return this.attributeIdentifier;
+//	}
 
 	@Override
 	public boolean isOptional() {

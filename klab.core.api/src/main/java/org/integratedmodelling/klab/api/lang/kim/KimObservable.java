@@ -68,16 +68,16 @@ public interface KimObservable extends KimStatement, KlabAsset {
      */
     List<Pair<ValueOperator, Literal>> getValueOperators();
 
-    /**
-     * If the observable specification had an identifier (rather than a literal value) before an
-     * 'as' clause introducing the semantics, this will return it and the {@link #getValue()} method
-     * will return null. The interpretation of the identifier is context-dependent as it may refer
-     * to a value previously defined in a 'define' statement, or to an attribute to be looked up in
-     * a referenced resource.
-     * 
-     * @return true if identified by an attribute to be resolved
-     */
-    String getAttributeIdentifier();
+//    /**
+//     * If the observable specification had an identifier (rather than a literal value) before an
+//     * 'as' clause introducing the semantics, this will return it and the {@link #getValue()} method
+//     * will return null. The interpretation of the identifier is context-dependent as it may refer
+//     * to a value previously defined in a 'define' statement, or to an attribute to be looked up in
+//     * a referenced resource.
+//     *
+//     * @return true if identified by an attribute to be resolved
+//     */
+//    String getAttributeIdentifier();
 
     /**
      * True if the 'optional' clause has been passed.

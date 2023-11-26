@@ -153,6 +153,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public void initializeService() {
+
         scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities());
         this.kbox = ModelKbox.create(localName, this.scope);

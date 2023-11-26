@@ -12,13 +12,20 @@ import org.integratedmodelling.languages.api.SemanticSyntax;
  */
 public class LanguageAdapter {
 
+
+
     public KimObservable adaptObservable(ObservableSyntax observableSyntax) {
 
         KimObservableImpl ret = new KimObservableImpl();
 
         ret.setUrn(observableSyntax.encode());
         ret.setSemantics(adaptSemantics(observableSyntax.getSemantics()));
+        ret.setUnit(observableSyntax.getUnit());
+        ret.setCurrency(observableSyntax.getCurrency());
 
+        for (var valueOperator : observableSyntax.getValueOperators()) {
+
+        }
 
         return ret;
     }
