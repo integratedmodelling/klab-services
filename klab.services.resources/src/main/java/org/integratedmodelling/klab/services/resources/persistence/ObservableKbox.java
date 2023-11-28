@@ -21,23 +21,10 @@
  *******************************************************************************/
 package org.integratedmodelling.klab.services.resources.persistence;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.exceptions.KException;
 import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KStorageException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -46,12 +33,16 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.exceptions.KlabException;
-import org.integratedmodelling.klab.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.persistence.h2.H2Database;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox;
 import org.integratedmodelling.klab.persistence.h2.SQL;
 import org.integratedmodelling.klab.utilities.Utils;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.*;
 
 /**
  * Design principles:
@@ -141,7 +132,6 @@ public abstract class ObservableKbox extends H2Kbox {
      * 
      * @param namespaceId
      * @return
-     * @throws KlabException
      */
     protected abstract int deleteAllObjectsWithNamespace(String namespaceId, Channel monitor);
 
@@ -290,8 +280,8 @@ public abstract class ObservableKbox extends H2Kbox {
             cset.add(definition);
             conceptHash.put(cdef, coreType);
 
-        } catch (KlabException e) {
-            throw new KlabStorageException(e);
+        } catch (KException e) {
+            throw new KStorageException(e);
         }
 
         return ret;
@@ -440,12 +430,12 @@ public abstract class ObservableKbox extends H2Kbox {
 
         try {
             loadConcepts();
-        } catch (KlabException e) {
-            throw new KlabStorageException(e);
+        } catch (KException e) {
+            throw new KStorageException(e);
         }
     }
 
-    private void loadConcepts() throws KlabException {
+    private void loadConcepts() {
 
         if (!database.hasTable("concepts")) {
             return;
@@ -459,7 +449,7 @@ public abstract class ObservableKbox extends H2Kbox {
                     definitionHash.put(rs.getString(2), rs.getLong(1));
                     typeHash.put(rs.getLong(1), rs.getString(2));
                 } catch (SQLException e) {
-                    throw new KlabStorageException(e);
+                    throw new KStorageException(e);
                 }
             }
         });
@@ -475,7 +465,7 @@ public abstract class ObservableKbox extends H2Kbox {
         return o == null ? "" : o.toString();
     }
 
-    protected Map<String, String> getMetadataFor(long oid) throws KlabException {
+    protected Map<String, String> getMetadataFor(long oid) {
 
         class Handler extends SQL.SimpleResultHandler {
 
@@ -495,7 +485,7 @@ public abstract class ObservableKbox extends H2Kbox {
                     }
 
                 } catch (SQLException e) {
-                    throw new KlabStorageException(e);
+                    throw new KStorageException(e);
                 }
             }
         }
@@ -506,7 +496,7 @@ public abstract class ObservableKbox extends H2Kbox {
         return handler.ret;
     }
 
-    protected void deleteMetadataFor(long oid) throws KlabException {
+    protected void deleteMetadataFor(long oid) throws KException {
         database.execute("DELETE FROM metadata WHERE fid = " + oid);
     }
 
@@ -530,7 +520,7 @@ public abstract class ObservableKbox extends H2Kbox {
                 prsql.setObject(1, metadata.get(s), Types.JAVA_OBJECT);
                 prsql.executeUpdate();
             } catch (Exception e) {
-                throw new KlabStorageException(e);
+                throw new KStorageException(e);
             }
         }
     }
@@ -549,9 +539,8 @@ public abstract class ObservableKbox extends H2Kbox {
      * @param namespace
      * @param monitor
      * @return result action code
-     * @throws KlabException
      */
-    public int removeIfOlder(KimNamespace namespace, Channel monitor) throws KlabException {
+    public int removeIfOlder(KimNamespace namespace, Channel monitor) {
 
         if (!database.hasTable("namespaces")) {
             return 1;
@@ -591,7 +580,7 @@ public abstract class ObservableKbox extends H2Kbox {
         return 0;
     }
 
-    public void remove(String namespaceId, Channel monitor) throws KlabException {
+    public void remove(String namespaceId, Channel monitor) {
 
         if (!database.hasTable("namespaces")) {
             return;
@@ -607,9 +596,8 @@ public abstract class ObservableKbox extends H2Kbox {
      * @param namespace
      * 
      * @return result code
-     * @throws KlabException
      */
-    public long getNamespaceTimestamp(KimNamespace namespace) throws KlabException {
+    public long getNamespaceTimestamp(KimNamespace namespace) throws KException {
 
         if (!database.hasTable("namespaces")) {
             return 0L;

@@ -307,9 +307,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 } else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
                     loadResources(subdir, project, 1, false);
                 } else {
-                    resource = KimAdapter.adaptResource(Utils.Json
-                            .load(new File(subdir + File.separator + "resource.json"),
-                                    ResourceReference.class));
+// CHUPA CHUPA
+//                    resource = KimAdapter.adaptResource(Utils.Json
+//                            .load(new File(subdir + File.separator + "resource.json"),
+//                                    ResourceReference.class));
                 }
                 if (resource != null) {
                     localResources.add(resource.getUrn());
@@ -338,36 +339,35 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             /*
              * set up access to the k.IM grammar
              */
-            IInjectorProvider kimInjectorProvider = new KimInjectorProvider();
-            Injector kimInjector = kimInjectorProvider.getInjector();
-            if (kimInjector != null) {
-                Kim.INSTANCE.setup(kimInjector);
-            }
-
-            this.kimLoader = new KimLoader((nss) -> loadNamespaces(nss),
-                    (behaviors) -> loadBehaviors(behaviors));
-
-            /*
-             * k.DL....
-             */
-            IInjectorProvider kdlInjectorProvider = new KdlInjectorProvider();
-            Injector kdlInjector = kdlInjectorProvider.getInjector();
-            if (kdlInjector != null) {
-                Kdl.INSTANCE.setup(kdlInjector);
-            }
-
-            /*
-             * ...and k.Actors
-             */
-            IInjectorProvider kActorsInjectorProvider = new KactorsInjectorProvider();
-            Injector kActorsInjector = kActorsInjectorProvider.getInjector();
-            if (kActorsInjector != null) {
-                KActors.INSTANCE.setup(kActorsInjector);
-            }
+//            IInjectorProvider kimInjectorProvider = new KimInjectorProvider();
+//            Injector kimInjector = kimInjectorProvider.getInjector();
+//            if (kimInjector != null) {
+//                Kim.INSTANCE.setup(kimInjector);
+//            }
+//
+//            this.kimLoader = new KimLoader((nss) -> loadNamespaces(nss),
+//                    (behaviors) -> loadBehaviors(behaviors));
+//
+//            /*
+//             * k.DL....
+//             */
+//            IInjectorProvider kdlInjectorProvider = new KdlInjectorProvider();
+//            Injector kdlInjector = kdlInjectorProvider.getInjector();
+//            if (kdlInjector != null) {
+//                Kdl.INSTANCE.setup(kdlInjector);
+//            }
+//
+//            /*
+//             * ...and k.Actors
+//             */
+//            IInjectorProvider kActorsInjectorProvider = new KactorsInjectorProvider();
+//            Injector kActorsInjector = kActorsInjectorProvider.getInjector();
+//            if (kActorsInjector != null) {
+//                KActors.INSTANCE.setup(kActorsInjector);
+//            }
 
             languagesInitialized = true;
         }
-
     }
 
     private void loadBehaviors(List<File> behaviors) {

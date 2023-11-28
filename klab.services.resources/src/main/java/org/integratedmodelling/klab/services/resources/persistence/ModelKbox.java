@@ -1,17 +1,10 @@
 package org.integratedmodelling.klab.services.resources.persistence;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KException;
+import org.integratedmodelling.klab.api.exceptions.KStorageException;
+import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -32,13 +25,14 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.exceptions.KlabException;
-import org.integratedmodelling.klab.exceptions.KlabStorageException;
-import org.integratedmodelling.klab.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.persistence.h2.SQL;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference.Mediation;
 import org.locationtech.jts.geom.Geometry;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 public class ModelKbox extends ObservableKbox {
 
@@ -408,7 +402,7 @@ public class ModelKbox extends ObservableKbox {
             // Pair<String, String> defs = ((EnumeratedExtension)
             // space).getExtentDescriptors();
             // return "model.enumeratedspacedomain = '" + defs.getFirst() + "'";
-            throw new KlabUnimplementedException("enumerated extension");
+            throw new KUnimplementedException("enumerated extension");
         }
 
         if (space.getShape().isEmpty()) {
@@ -438,7 +432,7 @@ public class ModelKbox extends ObservableKbox {
 
         if (time /* still */ instanceof EnumeratedExtension) {
             // TODO
-            throw new KlabUnimplementedException("enumerated extension");
+            throw new KUnimplementedException("enumerated extension");
         }
 
         String ret = "";
@@ -459,7 +453,7 @@ public class ModelKbox extends ObservableKbox {
         return ret;
     }
 
-    public List<ModelReference> retrieveAll(Channel monitor) throws KlabException {
+    public List<ModelReference> retrieveAll(Channel monitor) throws KException {
 
         initialize(monitor);
 
@@ -524,7 +518,7 @@ public class ModelKbox extends ObservableKbox {
                         ret.setShape(Shape.create(geometry.toText(), Projection.getLatLon())); // +
                     }
                 } catch (SQLException e) {
-                    throw new KlabStorageException(e);
+                    throw new KStorageException(e);
                 }
             }
 
@@ -533,7 +527,7 @@ public class ModelKbox extends ObservableKbox {
         return ret;
     }
 
-    public ModelReference retrieveModel(long oid, Channel monitor) throws KlabException {
+    public ModelReference retrieveModel(long oid, Channel monitor) throws KException {
 
         ModelReference ret = retrieve("SELECT * FROM model WHERE oid = " + oid, monitor);
         ret.setMetadata(getMetadataFor(oid));
@@ -609,7 +603,6 @@ public class ModelKbox extends ObservableKbox {
     /**
      * @param name
      * @return true if model with given id exists in database
-     * @throws KlabException
      */
     public boolean hasModel(String name) {
 
@@ -773,7 +766,7 @@ public class ModelKbox extends ObservableKbox {
                 /*
                  * TODO handle the enumerated extension
                  */
-                throw new KlabUnimplementedException("enumerated extension");
+                throw new KUnimplementedException("enumerated extension");
                 // Pair<String, String> defs = ((EnumeratedExtension)
                 // scale.getSpace()).getExtension();
                 // enumeratedSpaceDomain = defs.getFirst();
@@ -791,7 +784,7 @@ public class ModelKbox extends ObservableKbox {
             if (time != null) {
                 if (time /* still */ instanceof EnumeratedExtension) {
                     // TODO
-                    throw new KlabUnimplementedException("enumerated extension");
+                    throw new KUnimplementedException("enumerated extension");
                 } else {
                     timeExtent = time.collapsed();
                     if (timeExtent != null) {
