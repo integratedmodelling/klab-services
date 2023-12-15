@@ -666,6 +666,53 @@ public interface Reasoner extends KlabService {
     Collection<Concept> created(Semantics semantics);
 
     /**
+     * Check for a match between a concept/observable and a pattern that may use generics. There is a match if
+     * the pattern is generic and the passed candidate aligns, or if the concepts are identical. Use the XXX
+     * version if you need to retrieve the actually matching generics.
+     *
+     * @param candidate
+     * @param pattern
+     * @return
+     */
+    boolean match(Semantics candidate, Semantics pattern);
+
+    /**
+     * Like {@link #match(Semantics, Semantics)}, if the return value is true the <code>matches</code> map
+     * will be filled in with the generics that are incarnated in the candidate.
+     *
+     * @param candidate
+     * @param pattern
+     * @param matches
+     * @return
+     */
+    boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches);
+
+    /**
+     * Create the concrete version of the passed generic pattern using the passed concrete concepts to
+     * substitute the corresponding generic components.
+     *
+     * @param pattern
+     * @param concreteConcepts
+     * @param <T>
+     * @return
+     */
+    <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts);
+
+    /**
+     * Create the concrete version of the passed generic pattern using the passed concrete concepts to
+     * substitute the corresponding generic components. Use inference to establish which generic components
+     * must be substituted by the passed concepts, ignoring those that don't fit. If there are ambiguities, an
+     * exception should be thrown as this method should be used only with patterns that are specifically
+     * designed for it (e.g. in a generic concept definition with identity redistribution).
+     *
+     * @param pattern
+     * @param concreteConcepts
+     * @param <T>
+     * @return
+     */
+    <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts);
+
+    /**
      * All the roles played by the passed observable within the passed context.
      *
      * @param observable

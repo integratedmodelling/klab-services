@@ -1,17 +1,13 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.utilities.Utils;
+
+import java.io.File;
+import java.util.*;
 
 /**
  * The core workspace only contains OWL ontologies and is read from the classpath.
@@ -26,7 +22,7 @@ public class CoreOntology {
 	private OWL owl;
     private static Map<SemanticType, String> coreConceptIds = Collections.synchronizedMap(new HashMap<>());
 
-    public static final String CORE_ONTOLOGY_NAME = "odo-im";
+    public static final String CORE_ONTOLOGY_NAME = "odo";
 
     static {
         coreConceptIds.put(SemanticType.PROCESS, NS.CORE_PROCESS);
@@ -67,9 +63,9 @@ public class CoreOntology {
         coreConceptIds.put(SemanticType.TEMPERATURE, NS.CORE_TEMPERATURE);
         coreConceptIds.put(SemanticType.VISCOSITY, NS.CORE_VISCOSITY);
         coreConceptIds.put(SemanticType.AGENT, NS.CORE_AGENT);
-        coreConceptIds.put(SemanticType.DELIBERATIVE, NS.CORE_DELIBERATIVE_AGENT);
-        coreConceptIds.put(SemanticType.INTERACTIVE, NS.CORE_INTERACTIVE_AGENT);
-        coreConceptIds.put(SemanticType.REACTIVE, NS.CORE_REACTIVE_AGENT);
+//        coreConceptIds.put(SemanticType.DELIBERATIVE, NS.CORE_DELIBERATIVE_AGENT);
+//        coreConceptIds.put(SemanticType.INTERACTIVE, NS.CORE_INTERACTIVE_AGENT);
+//        coreConceptIds.put(SemanticType.REACTIVE, NS.CORE_REACTIVE_AGENT);
         coreConceptIds.put(SemanticType.UNCERTAINTY, NS.CORE_UNCERTAINTY);
         coreConceptIds.put(SemanticType.PROBABILITY, NS.CORE_PROBABILITY);
         coreConceptIds.put(SemanticType.PROPORTION, NS.CORE_PROPORTION);
@@ -86,34 +82,34 @@ public class CoreOntology {
     public static interface NS {
         
         // core properties
-        public static final String IS_ABSTRACT = "observation:isAbstract";
-        public static final String BASE_DECLARATION = "observation:baseDeclaration";
-        public static final String ORDER_PROPERTY = "observation:orderingRank";
-        public static final String HAS_REALM_PROPERTY = "observation:hasRealm";
-        public static final String HAS_IDENTITY_PROPERTY = "observation:hasIdentity";
-        public static final String HAS_ATTRIBUTE_PROPERTY = "observation:hasAttribute";
-        public static final String HAS_CONTEXT_PROPERTY = "observation:hasContext";
-        public static final String HAS_COMPRESENT_PROPERTY = "observation:hasCompresent";
-        public static final String HAS_CAUSANT_PROPERTY = "observation:hasCausant";
-        public static final String HAS_CAUSED_PROPERTY = "observation:hasCaused";
-        public static final String HAS_PURPOSE_PROPERTY = "observation:hasPurpose";
-        public static final String OCCURS_DURING_PROPERTY = "observation:occursDuring";
-        public static final String IS_ADJACENT_TO_PROPERTY = "observation:isAdjacentTo";
-        public static final String HAS_SUBJECTIVE_TRAIT_PROPERTY = "observation:hasSubjectiveTrait";
-        public static final String IS_SUBJECTIVE = "observation:isSubjectiveTrait";
-        public static final String IS_INHERENT_TO_PROPERTY = "observation:isInherentTo";
-        public static final String DESCRIBES_OBSERVABLE_PROPERTY = "observation:describesObservable";
-        public static final String IS_COMPARED_TO_PROPERTY = "observation:isComparedTo";
-        public static final String HAS_ROLE_PROPERTY = "observation:hasRole";
-        public static final String DENIABILITY_PROPERTY = "observation:isDeniable";
-        public static final String APPLIES_TO_PROPERTY = "observation:appliesTo";
-        public static final String IMPLIES_SOURCE_PROPERTY = "observation:impliesSource";
-        public static final String IMPLIES_DESTINATION_PROPERTY = "observation:impliesDestination";
-        public static final String REQUIRES_IDENTITY_PROPERTY = "observation:requiresIdentity";
-        public static final String IS_TYPE_DELEGATE = "observation:isTypeDelegate";
-        public static final String IS_NEGATION_OF = "observation:isNegationOf";
-        public static final String INHERENCY_IS_DISTRIBUTED = "observation:inherencyIsDistributed";
-        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
+        public static final String IS_ABSTRACT = "odo:isAbstract";
+        public static final String BASE_DECLARATION = "klab:baseDeclaration";
+        public static final String ORDER_PROPERTY = "klab:orderingRank";
+        public static final String HAS_REALM_PROPERTY = "odo:hasRealm";
+        public static final String HAS_IDENTITY_PROPERTY = "odo:hasIdentity";
+        public static final String HAS_ATTRIBUTE_PROPERTY = "odo:hasAttribute";
+        public static final String HAS_CONTEXT_PROPERTY = "odo:hasContext";
+        public static final String HAS_COMPRESENT_PROPERTY = "odo:hasCompresent";
+        public static final String HAS_CAUSANT_PROPERTY = "odo:hasCausant";
+        public static final String HAS_CAUSED_PROPERTY = "odo:hasCaused";
+        public static final String HAS_PURPOSE_PROPERTY = "odo:hasPurpose";
+        public static final String OCCURS_DURING_PROPERTY = "odo:occursDuring";
+        public static final String IS_ADJACENT_TO_PROPERTY = "odo:isAdjacentTo";
+        public static final String HAS_SUBJECTIVE_TRAIT_PROPERTY = "odo:hasSubjectiveTrait";
+        public static final String IS_SUBJECTIVE = "odo:isSubjectiveTrait";
+        public static final String IS_INHERENT_TO_PROPERTY = "odo:isInherentTo";
+        public static final String DESCRIBES_OBSERVABLE_PROPERTY = "odo:describesObservable";
+        public static final String IS_COMPARED_TO_PROPERTY = "odo:isComparedTo";
+        public static final String HAS_ROLE_PROPERTY = "odo:hasRole";
+        public static final String DENIABILITY_PROPERTY = "odo:isDeniable";
+        public static final String APPLIES_TO_PROPERTY = "odo:appliesTo";
+        public static final String IMPLIES_SOURCE_PROPERTY = "odo:impliesSource";
+        public static final String IMPLIES_DESTINATION_PROPERTY = "odo:impliesDestination";
+        public static final String REQUIRES_IDENTITY_PROPERTY = "odo:requiresIdentity";
+        public static final String IS_TYPE_DELEGATE = "odo:isTypeDelegate";
+        public static final String IS_NEGATION_OF = "odo:isNegationOf";
+        public static final String INHERENCY_IS_DISTRIBUTED = "odo:inherencyIsDistributed";
+//        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
 
         // annotation property that specifies the base SI unit for a physical property
         public static final String SI_UNIT_PROPERTY = "observation:unit";
@@ -171,70 +167,70 @@ public class CoreOntology {
         /*
          * the core properties we use internally to establish observation semantics
          */
-        public static final String AFFECTS_PROPERTY = "observation:affects";
-        public static final String CREATES_PROPERTY = "observation:creates";
-        public static final String CHANGES_PROPERTY = "observation:changes";
-        public static final String CHANGED_PROPERTY = "observation:changed";
+        public static final String AFFECTS_PROPERTY = "odo:affects";
+        public static final String CREATES_PROPERTY = "odo:creates";
+        public static final String CHANGES_PROPERTY = "odo:changes";
+        public static final String CHANGED_PROPERTY = "odo:changed";
 
         /**
          * Core observables
          */
-        public static final String CORE_DOMAIN = "observation:Domain";
-        public static final String CORE_PROCESS = "observation:Process";
-        public static final String CORE_EVENT = "observation:Event";
-        public static final String CORE_IDENTITY = "observation:Identity";
-        public static final String CORE_QUANTITY = "observation:ContinuousNumericallyQuantifiableQuality";
-        public static final String CORE_SUBJECT = "observation:Subject";
-        public static final String CORE_EXTENSIVE_PHYSICAL_PROPERTY = "observation:ExtensivePhysicalProperty";
-        public static final String CORE_INTENSIVE_PHYSICAL_PROPERTY = "observation:IntensivePhysicalProperty";
-        public static final String CORE_ENERGY = "observation:Energy";
-        public static final String CORE_ENTROPY = "observation:Entropy";
-        public static final String CORE_LENGTH = "observation:Length";
-        public static final String CORE_MASS = "observation:Mass";
-        public static final String CORE_PROBABILITY = "observation:Probability";
-        public static final String CORE_MAGNITUDE = "observation:Magnitude";
-        public static final String CORE_LEVEL = "observation:Level";
-        public static final String CORE_VOLUME = "observation:Volume";
-        public static final String CORE_WEIGHT = "observation:Weight";
-        public static final String CORE_DURATION = "observation:Duration";
-        public static final String CORE_MONETARY_VALUE = "observation:MonetaryValue";
+        public static final String CORE_DOMAIN = "odo:Domain";
+        public static final String CORE_PROCESS = "odo:Process";
+        public static final String CORE_EVENT = "odo:Event";
+        public static final String CORE_IDENTITY = "odo:Identity";
+        public static final String CORE_QUANTITY = "odo:ContinuousNumericallyQuantifiableQuality";
+        public static final String CORE_SUBJECT = "odo:Subject";
+        public static final String CORE_EXTENSIVE_PHYSICAL_PROPERTY = "odo:ExtensivePhysicalProperty";
+        public static final String CORE_INTENSIVE_PHYSICAL_PROPERTY = "odo:IntensivePhysicalProperty";
+        public static final String CORE_ENERGY = "odo:Energy";
+        public static final String CORE_ENTROPY = "odo:Entropy";
+        public static final String CORE_LENGTH = "odo:Length";
+        public static final String CORE_MASS = "odo:Mass";
+        public static final String CORE_PROBABILITY = "odo:Probability";
+        public static final String CORE_MAGNITUDE = "odo:Magnitude";
+        public static final String CORE_LEVEL = "odo:Level";
+        public static final String CORE_VOLUME = "odo:Volume";
+        public static final String CORE_WEIGHT = "odo:Weight";
+        public static final String CORE_DURATION = "odo:Duration";
+        public static final String CORE_MONETARY_VALUE = "odo:MonetaryValue";
         @Deprecated // change rate of velocity
-        public static final String CORE_ACCELERATION = "observation:Acceleration";
-        public static final String CORE_AREA = "observation:Area";
-        public static final String CORE_ELECTRIC_POTENTIAL = "observation:ElectricPotential";
-        public static final String CORE_CHARGE = "observation:Charge";
-        public static final String CORE_RESISTANCE = "observation:Resistance";
-        public static final String CORE_RESISTIVITY = "observation:Resistivity";
-        public static final String CORE_PRESSURE = "observation:Pressure";
-        public static final String CORE_ANGLE = "observation:Angle";
-        public static final String CORE_CHANGE = "observation:Change";
-        public static final String CORE_CHANGE_RATE = "observation:ChangeRate";
-        public static final String CORE_SPEED = "observation:Speed";
-        public static final String CORE_TEMPERATURE = "observation:Temperature";
-        public static final String CORE_VISCOSITY = "observation:Viscosity";
-        public static final String CORE_AGENT = "observation:Agent";
-        public static final String CORE_CONFIGURATION = "observation:Configuration";
-        public static final String CORE_RELATIONSHIP = "observation:Relationship";
-        public static final String CORE_FUNCTIONAL_RELATIONSHIP = "observation:FunctionalRelationship";
-        public static final String CORE_STRUCTURAL_RELATIONSHIP = "observation:StructuralRelationship";
-        public static final String CORE_TYPE = "observation:Type";
-        public static final String CORE_ORDERING = "observation:Ordering";
-        public static final String CORE_REALM = "observation:Realm";
-        public static final String CORE_ATTRIBUTE = "observation:Attribute";
-        public static final String CORE_ROLE = "observation:Role";
-        public static final String CORE_PRIORITY = "observation:Priority";
-        public static final String CORE_COUNT = "observation:Numerosity";
-        public static final String CORE_PROPORTION = "observation:Proportion";
-        public static final String CORE_RATIO = "observation:Ratio";
-        public static final String CORE_PRESENCE = "observation:Presence";
-        public static final String CORE_OCCURRENCE = "observation:Occurrence";
-        public static final String CORE_VALUE = "observation:Value";
-        public static final String CORE_DISTANCE = "observation:Distance";
-        public static final String CORE_REACTIVE_AGENT = "observation:ReactiveAgent";
-        public static final String CORE_DELIBERATIVE_AGENT = "observation:DeliberativeAgent";
-        public static final String CORE_INTERACTIVE_AGENT = "observation:InteractiveAgent";
-        public static final String CORE_UNCERTAINTY = "observation:Uncertainty";
-        public static final String CORE_EXTENT = "observation:Extent";
+        public static final String CORE_ACCELERATION = "odo:Acceleration";
+        public static final String CORE_AREA = "odo:Area";
+        public static final String CORE_ELECTRIC_POTENTIAL = "odo:ElectricPotential";
+        public static final String CORE_CHARGE = "odo:Charge";
+        public static final String CORE_RESISTANCE = "odo:Resistance";
+        public static final String CORE_RESISTIVITY = "odo:Resistivity";
+        public static final String CORE_PRESSURE = "odo:Pressure";
+        public static final String CORE_ANGLE = "odo:Angle";
+        public static final String CORE_CHANGE = "odo:Change";
+        public static final String CORE_CHANGE_RATE = "odo:ChangeRate";
+        public static final String CORE_SPEED = "odo:Speed";
+        public static final String CORE_TEMPERATURE = "odo:Temperature";
+        public static final String CORE_VISCOSITY = "odo:Viscosity";
+        public static final String CORE_AGENT = "odo:Agent";
+        public static final String CORE_CONFIGURATION = "odo:Configuration";
+        public static final String CORE_RELATIONSHIP = "odo:Relationship";
+        public static final String CORE_FUNCTIONAL_RELATIONSHIP = "odo:FunctionalRelationship";
+        public static final String CORE_STRUCTURAL_RELATIONSHIP = "odo:StructuralRelationship";
+        public static final String CORE_TYPE = "odo:EnumerableQuality";
+        public static final String CORE_ORDERING = "odo:Ordering";
+        public static final String CORE_REALM = "odo:Realm";
+        public static final String CORE_ATTRIBUTE = "odo:Attribute";
+        public static final String CORE_ROLE = "odo:Role";
+        public static final String CORE_PRIORITY = "odo:Priority";
+        public static final String CORE_COUNT = "odo:Numerosity";
+        public static final String CORE_PROPORTION = "odo:Proportion";
+        public static final String CORE_RATIO = "odo:Ratio";
+        public static final String CORE_PRESENCE = "odo:Presence";
+        public static final String CORE_OCCURRENCE = "odo:Occurrence";
+        public static final String CORE_VALUE = "odo:Value";
+        public static final String CORE_DISTANCE = "odo:Distance";
+//        public static final String CORE_REACTIVE_AGENT = "observation:ReactiveAgent";
+//        public static final String CORE_DELIBERATIVE_AGENT = "observation:DeliberativeAgent";
+//        public static final String CORE_INTERACTIVE_AGENT = "observation:InteractiveAgent";
+        public static final String CORE_UNCERTAINTY = "odo:Uncertainty";
+        public static final String CORE_EXTENT = "odo:Extent";
     }
 
     public CoreOntology(File directory, OWL owl) {

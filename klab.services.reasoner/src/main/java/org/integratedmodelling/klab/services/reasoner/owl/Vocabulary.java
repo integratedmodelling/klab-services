@@ -237,7 +237,8 @@ public class Vocabulary {
     /**
      * Source of truth for identifier-friendly reference names
      * 
-     * @param main
+     * @param namespace
+     * @param name
      * @return
      */
     public static String getCleanFullId(String namespace, String name) {

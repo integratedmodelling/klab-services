@@ -56,7 +56,6 @@ import java.util.Objects;
  * @author Ferdinando Villa
  * @author Ioannis N. Athanasiadis
  * 
- * @see IKimConceptStatement
  */
 public class QualifiedName implements Serializable {
 
