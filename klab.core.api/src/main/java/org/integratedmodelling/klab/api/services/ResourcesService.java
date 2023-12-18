@@ -283,7 +283,7 @@ public interface ResourcesService extends KlabService {
      * report a coverage percentage == 0 when {@link Coverage#getCoverage()} is called whenever any of those
      * aren't met.
      *
-     * @param model a known model URN. If the URN is unknown a {@link KIllegalArgumentException} should be
+     * @param modelUrn a known model URN. If the URN is unknown a {@link KIllegalArgumentException} should be
      *              thrown.
      * @return the coverage of the model, reporting coverage == 1 unless constraints are not met.
      * @throws KIllegalArgumentException if the URN isn't recognized or does not specify a model.
@@ -460,7 +460,7 @@ public interface ResourcesService extends KlabService {
                                 Parameters<String> resourceData);
 
         /**
-         * @param resource
+         * @param resourceUrn
          * @param permissions
          * @return
          */
@@ -473,7 +473,6 @@ public interface ResourcesService extends KlabService {
         boolean unpublishResource(String resourceUrn);
 
         /**
-         * @param workspaceName
          * @param projectName
          * @return true if operation was carried out
          */

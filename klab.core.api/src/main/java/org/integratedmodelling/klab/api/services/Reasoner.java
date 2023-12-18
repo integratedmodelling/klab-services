@@ -744,6 +744,9 @@ public interface Reasoner extends KlabService {
     Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints);
 
     /**
+     *
+     * @deprecated to be substituted with declarative strategy compiler from worldview
+     *
      * <p>Return all the possible strategies to observe the passed observable in this context, in order of
      * increasing cost/complexity. These will be resolved by the resolver in the order returned, stopping when
      * coverage is enough. Except in case of abstract observables or patterns, the first should always be the
