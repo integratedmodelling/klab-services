@@ -24,7 +24,7 @@ import java.io.StringWriter;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public class KException extends RuntimeException {
+public class KlabException extends RuntimeException {
 
     private static final long serialVersionUID = 5999457326224959271L;
 //    private Artifact scope;
@@ -32,7 +32,7 @@ public class KException extends RuntimeException {
     /**
      * Instantiates a new klab exception.
      */
-    public KException() {
+    public KlabException() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -43,7 +43,7 @@ public class KException extends RuntimeException {
      * @param arg0 the arg 0
      * @param arg1 the arg 1
      */
-    public KException(String arg0, Throwable arg1) {
+    public KlabException(String arg0, Throwable arg1) {
         super(arg0, arg1);
         // TODO Auto-generated constructor stub
     }
@@ -53,7 +53,7 @@ public class KException extends RuntimeException {
      *
      * @param arg0 the arg 0
      */
-    public KException(String arg0) {
+    public KlabException(String arg0) {
         super(arg0);
     }
 
@@ -62,7 +62,7 @@ public class KException extends RuntimeException {
      *
      * @param arg0 the arg 0
      */
-    public KException(Throwable arg0) {
+    public KlabException(Throwable arg0) {
         super(arg0);
     }
     

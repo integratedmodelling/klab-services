@@ -49,8 +49,8 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.h2gis.functions.factory.H2GISFunctions;
 import org.h2gis.utilities.JDBCUtilities;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KStorageException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.logging.Logging;
@@ -118,14 +118,14 @@ public class H2Database {
 			}
 
 		} catch (SQLException e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		} finally {
 			try {
 				if (connection != null) {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KStorageException(e);
+				throw new KlabStorageException(e);
 			}
 		}
 
@@ -180,7 +180,7 @@ public class H2Database {
 		try {
 			pooledConnection = this.ds.getPooledConnection();
 		} catch (SQLException e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		}
 
 		if (isNew) {
@@ -190,7 +190,7 @@ public class H2Database {
 				execute("INSERT INTO hids VALUES (1)");
 				execute("CREATE TABLE knowledge_structure (knowledge VARCHAR(256) PRIMARY KEY, structure VARCHAR(4096))");
 			} catch (Exception e) {
-				throw new KStorageException(e);
+				throw new KlabStorageException(e);
 			}
 		} else {
 			try {
@@ -199,7 +199,7 @@ public class H2Database {
 				 * TODO fill derivedConcept cache
 				 */
 			} catch (Exception e) {
-				throw new KStorageException(e);
+				throw new KlabStorageException(e);
 			}
 		}
 		datastores.put(kboxName, this);
@@ -250,7 +250,7 @@ public class H2Database {
 		try {
 			execute("UPDATE hids SET id = " + (ret + 1));
 		} catch (Exception e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		}
 		return ret;
 	}
@@ -327,7 +327,7 @@ public class H2Database {
 			// FIXME must close the pooledconnection, not the wrapped connection
 			return JDBCUtilities.wrapConnection(pooledConnection.getConnection());
 		} catch (SQLException e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		}
 	}
 
@@ -348,14 +348,14 @@ public class H2Database {
 			connection.commit();
 			// connection.close();
 		} catch (Throwable e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		} finally {
 			try {
 				if (connection != null) {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KStorageException(e);
+				throw new KlabStorageException(e);
 			}
 		}
 	}
@@ -373,7 +373,7 @@ public class H2Database {
 		try {
 			connection.createStatement().execute(sql);
 		} catch (SQLException e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		}
 	}
 
@@ -393,7 +393,7 @@ public class H2Database {
 			}
 			handler.nResults(res);
 		} catch (SQLException e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		} finally {
 			// jesus christ
 			try {
@@ -407,7 +407,7 @@ public class H2Database {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KStorageException(e);
+				throw new KlabStorageException(e);
 			}
 		}
 	}
@@ -421,7 +421,7 @@ public class H2Database {
 			stmt = connection.createStatement();
 			return new DBIterator(stmt.executeQuery(sql), stmt, connection);
 		} catch (SQLException e) {
-			throw new KStorageException(e);
+			throw new KlabStorageException(e);
 		}
 	}
 
@@ -458,7 +458,7 @@ public class H2Database {
 					// connection.close();
 				}
 			} catch (Exception e) {
-				throw new KStorageException(e);
+				throw new KlabStorageException(e);
 			}
 		}
 
@@ -508,7 +508,7 @@ public class H2Database {
 					properties.load(input);
 					knownVersion = properties.getProperty(kboxName + ".h2.version");
 				} catch (IOException e) {
-					throw new KIOException(e);
+					throw new KlabIOException(e);
 				}
 			}
 			refresh = knownVersion == null;
@@ -521,7 +521,7 @@ public class H2Database {
 				try (OutputStream output = new FileOutputStream(propfile)) {
 					properties.store(output, null);
 				} catch (IOException e) {
-					throw new KIOException(e);
+					throw new KlabIOException(e);
 				}
 			}
 		}

@@ -2,8 +2,8 @@ package org.integratedmodelling.kcli;
 
 import org.fusesource.jansi.AnsiConsole;
 import org.integratedmodelling.kcli.engine.Engine;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -117,7 +117,7 @@ public class KlabCLI {
                     Run.aliases.put(property, properties.getProperty(property));
                 }
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -131,7 +131,7 @@ public class KlabCLI {
                 }
                 properties.store(output, "k.CLI alias file");
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -233,7 +233,7 @@ public class KlabCLI {
                 }
 
                 if (arguments.size() < 2) {
-                    throw new KIllegalStateException("Must name an alias and its value");
+                    throw new KlabIllegalStateException("Must name an alias and its value");
                 }
                 String alias = arguments.get(0);
                 for (int i = 1; i < arguments.size(); i++) {

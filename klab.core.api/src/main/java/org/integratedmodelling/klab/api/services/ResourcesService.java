@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -122,8 +122,9 @@ public interface ResourcesService extends KlabService {
 
     /**
      * Request the namespaces containing a given model along with anything else required to run it properly.
-     * This would normally include all the project namespaces and resources unless scoping has been analyzed
-     * and determined it's not necessary.
+     * This would normally include all the project namespaces and resources, unless the scope has been analyzed
+     * and the service has determined what is necessary. Only errors on the side of caution are allowed in
+     * determining what's included in the result.
      *
      * @param modelName
      * @param scope
@@ -271,8 +272,8 @@ public interface ResourcesService extends KlabService {
     ResourceSet queryModels(Observable observable, ContextScope scope);
 
     /**
-     * Compute and return the geometry for the model identified by this URN. The geometry comes from the
-     * namespace coverage merged with the model's own, which in turn is the intersected coverage of its
+     * Compute and return the "native" geometry for the model identified by this URN. The geometry comes from
+     * the namespace coverage merged with the model's own, which in turn is the intersected coverage of its
      * resources plus any model scale constraints, if any are specified. Models may also restrict their
      * geometry to specific representations of space/time using annotations or generic specifications (for
      * example request a grid or a temporal range without specifying a resolution, or specifying only a range
@@ -283,12 +284,12 @@ public interface ResourcesService extends KlabService {
      * report a coverage percentage == 0 when {@link Coverage#getCoverage()} is called whenever any of those
      * aren't met.
      *
-     * @param modelUrn a known model URN. If the URN is unknown a {@link KIllegalArgumentException} should be
-     *              thrown.
+     * @param modelUrn a known model URN. If the URN is unknown a {@link KlabIllegalArgumentException} should
+     *                 be thrown.
      * @return the coverage of the model, reporting coverage == 1 unless constraints are not met.
-     * @throws KIllegalArgumentException if the URN isn't recognized or does not specify a model.
+     * @throws KlabIllegalArgumentException if the URN isn't recognized or does not specify a model.
      */
-    Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException;
+    Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException;
 
     /**
      * Read a behavior from the passed URL and return the parsed behavior.

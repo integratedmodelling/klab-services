@@ -15,7 +15,6 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;

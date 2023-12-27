@@ -26,10 +26,10 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -204,7 +204,7 @@ public class OWL {
             ontologies.put(id, ret);
             iri2ns.put(((Ontology) ret).getPrefix(), id);
         } catch (OWLOntologyCreationException e) {
-            throw new KInternalErrorException(e);
+            throw new KlabInternalErrorException(e);
         }
 
         return ret;
@@ -232,7 +232,7 @@ public class OWL {
         }
 
         if (ret == null) {
-            throw new KInternalErrorException(
+            throw new KlabInternalErrorException(
                     "internal: OWL entity " + owl + " does not correspond to a known ontology");
         }
 
@@ -500,7 +500,7 @@ public class OWL {
                 loadInternal(fl, "", false, null);
             }
         } else {
-            throw new KIOException("Errors reading core ontologies: system will be nonfunctional.");
+            throw new KlabIOException("Errors reading core ontologies: system will be nonfunctional.");
         }
     }
 
@@ -558,7 +558,7 @@ public class OWL {
                 /*
                  * everything else is probably an error
                  */
-                monitor.error(new KIOException("reading " + f + ": " + e.getMessage()));
+                monitor.error(new KlabIOException("reading " + f + ": " + e.getMessage()));
             }
 
             Ontology o = ontologies.get(pth);
@@ -608,7 +608,7 @@ public class OWL {
                 baseIdentity = StringUtils.capitalize(oid.toLowerCase()) + "Identity";
             } else {
                 // TODO recursively resolve the base identity
-                throw new KUnimplementedException(
+                throw new KlabUnimplementedException(
                         "explicit base identities for authority concepts are still unimplemented");
             }
 
@@ -688,7 +688,7 @@ public class OWL {
             /*
              * everything else is probably an error
              */
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
 
         Ontology o = ontologies.get(id);
@@ -1212,7 +1212,7 @@ public class OWL {
         Concept ret = nonSemanticConcepts.getConcept(conceptId);
         if (ret != null) {
             if (!ret.is(qualityType)) {
-                throw new KInternalErrorException(
+                throw new KlabInternalErrorException(
                         "non-semantic peer concept for " + name + " was declared previously with a " +
                                 "different type");
             }
@@ -1239,12 +1239,12 @@ public class OWL {
             return new Ontology(this, manager.loadOntology(IRI.create(string)),
                     Utils.URLs.getURLBaseName(string));
         } catch (OWLOntologyCreationException e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
     }
 
     public void restrict(Concept target, Property property, LogicalConnector how, Collection<Concept> fillers,
-                         Ontology ontology) throws KValidationException {
+                         Ontology ontology) throws KlabValidationException {
 
         /*
          * divide up in bins according to base trait; take property from annotation;
@@ -1273,7 +1273,7 @@ public class OWL {
                      */
                     prop = CoreOntology.NS.HAS_SUBJECTIVE_TRAIT_PROPERTY;
                 } else {
-                    throw new KValidationException("cannot find a property to restrict for trait " + base);
+                    throw new KlabValidationException("cannot find a property to restrict for trait " + base);
                 }
             }
             restrictSome(target, getProperty(prop), how, pairs.get(base), (Ontology) ontology);
@@ -1640,7 +1640,7 @@ public class OWL {
          * first, ensure we're counting countable things.
          */
         if (!concept.is(SemanticType.COUNTABLE)) {
-            throw new KValidationException("cannot count a non-countable observable");
+            throw new KlabValidationException("cannot count a non-countable observable");
         }
 
         // this.hasUnaryOp = true;
@@ -1695,7 +1695,7 @@ public class OWL {
         }
 
         if (!concept.is(SemanticType.COUNTABLE)) {
-            throw new KValidationException("cannot compute the distance to a non-countable observable");
+            throw new KlabValidationException("cannot compute the distance to a non-countable observable");
         }
 
         // this.hasUnaryOp = true;
@@ -1748,7 +1748,7 @@ public class OWL {
 
         if (concept.is(SemanticType.QUALITY) || concept.is(SemanticType.CONFIGURATION) || concept.is(SemanticType.TRAIT)
                 || concept.is(SemanticType.ROLE)) {
-            throw new KValidationException(
+            throw new KlabValidationException(
                     "presence can be observed only for subjects, events, processes and relationships");
         }
 
@@ -1799,7 +1799,7 @@ public class OWL {
         }
 
         if (!concept.is(SemanticType.DIRECT_OBSERVABLE)) {
-            throw new KValidationException(
+            throw new KlabValidationException(
                     "occurrences (probability of presence) can be observed only for subjects, events, " +
                             "processes and " +
                             "relationships");
@@ -1853,7 +1853,7 @@ public class OWL {
         }
 
         if (Sets.intersection(concept.getType(), SemanticType.CONTINUOUS_QUALITY_TYPES).size() == 0) {
-            throw new KValidationException("magnitudes can only be observed only for quantifiable qualities");
+            throw new KlabValidationException("magnitudes can only be observed only for quantifiable qualities");
         }
 
         // this.hasUnaryOp = true;
@@ -1905,7 +1905,7 @@ public class OWL {
         }
 
         if (Sets.intersection(concept.getType(), SemanticType.CONTINUOUS_QUALITY_TYPES).size() == 0) {
-            throw new KValidationException("magnitudes can only be observed only for quantifiable qualities");
+            throw new KlabValidationException("magnitudes can only be observed only for quantifiable qualities");
         }
 
         // this.hasUnaryOp = true;
@@ -1956,7 +1956,7 @@ public class OWL {
         }
 
         if (!concept.is(SemanticType.EVENT)) {
-            throw new KValidationException("probabilities can only be observed only for events");
+            throw new KlabValidationException("probabilities can only be observed only for events");
         }
 
         // this.hasUnaryOp = true;
@@ -2048,7 +2048,7 @@ public class OWL {
 
         if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.TRAIT))
                 && (comparison != null && !comparison.is(SemanticType.QUALITY))) {
-            throw new KValidationException("proportion must be of qualities or traits to qualities");
+            throw new KlabValidationException("proportion must be of qualities or traits to qualities");
         }
 
         String cName = getCleanId(concept) + (isPercentage ? "Percentage" : "Proportion")
@@ -2115,7 +2115,7 @@ public class OWL {
          */
         if (!(concept.is(SemanticType.QUALITY) || concept.is(SemanticType.TRAIT))
                 || !comparison.is(SemanticType.QUALITY)) {
-            throw new KValidationException(
+            throw new KlabValidationException(
                     "ratios must be between qualities of the same nature or traits to qualities");
         }
 

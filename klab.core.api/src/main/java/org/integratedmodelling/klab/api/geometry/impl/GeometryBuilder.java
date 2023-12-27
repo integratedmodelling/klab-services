@@ -5,7 +5,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl.DimensionImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
@@ -252,7 +252,7 @@ public class GeometryBuilder {
 			}
 			// TODO irregular coverage?
 		}
-		throw new KIllegalArgumentException("wrong year parameters passed to TimeBuilder.years");
+		throw new KlabIllegalArgumentException("wrong year parameters passed to TimeBuilder.years");
 	}
 
 	private long startOfYear(int i) {

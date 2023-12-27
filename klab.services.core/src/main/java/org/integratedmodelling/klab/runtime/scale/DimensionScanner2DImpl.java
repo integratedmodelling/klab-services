@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.runtime.scale;
 
 import com.google.common.primitives.Longs;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -27,14 +27,14 @@ public class DimensionScanner2DImpl implements DimensionScanner2D {
         for (var e : originalScale.getExtents()) {
             if (e.size() > 1) {
                 if (assigned) {
-                    throw new KIllegalStateException("Scanner2D cannot be applied to a scale where 2 or more extents " +
+                    throw new KlabIllegalStateException("Scanner2D cannot be applied to a scale where 2 or more extents " +
                             "have size() > 1");
                 }
                 changingDimension = i;
                 changingDimensionShape = Longs.toArray(e.getShape());
 
                 if (changingDimensionShape.length != 2) {
-                    throw new KIllegalStateException("Scanner2D cannot be applied to a scale the scanned extent " +
+                    throw new KlabIllegalStateException("Scanner2D cannot be applied to a scale the scanned extent " +
                             "has dimensionality != 2");
                 }
 

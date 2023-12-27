@@ -17,7 +17,7 @@ import java.util.Collection;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent.Constraint;
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.TopologicallyComparable;
@@ -179,7 +179,7 @@ public interface Coverage extends Scale {
     static Coverage create(Scale scale, double coverage) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a scale to a coverage");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a scale to a coverage");
         }
         return configuration.promoteScaleToCoverage(scale, coverage);
     }

@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl.TimeInstantImpl;
 
@@ -88,10 +88,10 @@ public class TemporalExtension {
     public boolean add(Time transition) {
 
         if (transition.getStart().getMilliseconds() < this.start) {
-            throw new KIllegalArgumentException("cannot add time extension before overall start time");
+            throw new KlabIllegalArgumentException("cannot add time extension before overall start time");
         }
         if (transition.getEnd().getMilliseconds() > this.end) {
-            throw new KIllegalArgumentException("cannot add time extension after overall end time");
+            throw new KlabIllegalArgumentException("cannot add time extension after overall end time");
         }
 
         boolean as = extension.add(transition.getStart().getMilliseconds());
@@ -122,7 +122,7 @@ public class TemporalExtension {
             end = extension.ceiling(start);
         }
         if (end == null) {
-            throw new KIllegalArgumentException("Invalid timestamp");
+            throw new KlabIllegalArgumentException("Invalid timestamp");
         }
         return new long[]{start, end};
     }

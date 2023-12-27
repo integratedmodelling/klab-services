@@ -6,9 +6,9 @@ import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.geometry.jts.WKBReader;
 import org.geotools.referencing.CRS;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Encoding;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -92,7 +92,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
             GeoJSON.write(geometry, writer);
             return Utils.Json.parseObject(writer.toString(), Map.class);
         } catch (IOException e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
     }
 
@@ -102,11 +102,11 @@ public class ShapeImpl extends SpaceImpl implements Shape {
             GeoJSON.write(geometry, writer);
             return writer.toString();
         } catch (IOException e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
     }
 
-    public static ShapeImpl create(String wkt) throws KValidationException {
+    public static ShapeImpl create(String wkt) throws KlabValidationException {
         ShapeImpl ret = new ShapeImpl();
         ret.parseWkt(wkt);
         if (ret.geometry != null) {
@@ -115,7 +115,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         return ret;
     }
 
-    public static Shape create(String wkt, Projection projection) throws KValidationException {
+    public static Shape create(String wkt, Projection projection) throws KlabValidationException {
         ShapeImpl ret = new ShapeImpl();
         ret.parseWkt(wkt);
         ret.projection = ProjectionImpl.promote(projection);
@@ -257,7 +257,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     }
 
     @Override
-    public ShapeImpl transform(Projection otherProjection) throws KValidationException {
+    public ShapeImpl transform(Projection otherProjection) throws KlabValidationException {
 
         if (this.projection.equals(otherProjection)) {
             return this;
@@ -269,7 +269,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
                     CRS.findMathTransform(ProjectionImpl.promote(projection).getCoordinateReferenceSystem(),
                             ProjectionImpl.promote(otherProjection).getCoordinateReferenceSystem()));
         } catch (Exception e) {
-            throw new KValidationException(e);
+            throw new KlabValidationException(e);
         }
 
         return ShapeImpl.create(g, otherProjection);
@@ -285,7 +285,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         if ((projection != null || other.getProjection() != null) && !projection.equals(other.getProjection())) {
             try {
                 other = other.transform(projection);
-            } catch (KValidationException e) {
+            } catch (KlabValidationException e) {
                 return empty();
             }
         }
@@ -305,7 +305,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         if ((projection != null || other.getProjection() != null) && !projection.equals(other.getProjection())) {
             try {
                 other = other.transform(projection);
-            } catch (KValidationException e) {
+            } catch (KlabValidationException e) {
                 return empty();
             }
         }
@@ -352,7 +352,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     // return preparedShape.covers(gm) ? 1.0 : (gm.intersection(geometry).getArea() / gm.getArea());
     // }
 
-    private void parseWkt(String s) throws KValidationException {
+    private void parseWkt(String s) throws KlabValidationException {
 
         String pcode = Projection.DEFAULT_PROJECTION_CODE;
         Geometry geometry = null;
@@ -374,7 +374,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
                 geometry = new WKBReader().read(WKBReader.hexToBytes(s));
             }
         } catch (ParseException e) {
-            throw new KValidationException("error parsing " + (wkt ? "WKT" : "WBT") + ": " + e.getMessage());
+            throw new KlabValidationException("error parsing " + (wkt ? "WKT" : "WBT") + ": " + e.getMessage());
         }
 
         this.projection = new ProjectionImpl(pcode);
@@ -712,7 +712,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
         }
         Unit unit = units.getUnit(resolution.getUnit());
         if (unit == null || !units.meters().isCompatible(unit)) {
-            throw new KIllegalArgumentException("Can't use a non-length unit to simplify a shape");
+            throw new KlabIllegalArgumentException("Can't use a non-length unit to simplify a shape");
         }
         // in m
         double simplifyFactor = units.meters().convert(resolution.getValue(), unit).doubleValue();

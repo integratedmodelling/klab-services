@@ -15,7 +15,7 @@
  */
 package org.integratedmodelling.klab.utilities;
 
-import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 
 import java.io.IOException;
 import java.net.*;
@@ -142,7 +142,7 @@ public class NetUtilities {
             ret = sb.toString();
 
         } catch (Exception e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
 
         return ret;

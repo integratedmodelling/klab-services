@@ -2,8 +2,8 @@ package org.integratedmodelling.klab.api.utils;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -175,9 +175,10 @@ public class Utils {
          * Create a resource set describing the passed resources and automatically adding the passed service.
          *
          * @param service
-         * @param resources pass the actual resources to build their descriptor. Not passing anything will result in an
-         *                  empty resource set. If an empty array is passed the resource set will not contain resources,
-         *                  but the {@link ResourceSet#isEmpty()} method will return false.
+         * @param resources pass the actual resources to build their descriptor. Not passing anything will
+         *                  result in an empty resource set. If an empty array is passed the resource set will
+         *                  not contain resources, but the {@link ResourceSet#isEmpty()} method will return
+         *                  false.
          * @return
          */
         public static ResourceSet create(ResourcesService service, KlabAsset... resources) {
@@ -204,8 +205,8 @@ public class Utils {
         }
 
         /**
-         * Merge two or more resource sets into a new one. If the same resources are available keep the one with the
-         * most recent version. Behaves well with no arguments or just one.
+         * Merge two or more resource sets into a new one. If the same resources are available keep the one
+         * with the most recent version. Behaves well with no arguments or just one.
          *
          * @param resourceSets
          * @return
@@ -253,7 +254,8 @@ public class Utils {
         }
 
         private static Map<String, ResourceSet.Resource> collectNewerOrAbsent(Collection<ResourceSet.Resource> resources,
-                                                                              Map<String, ResourceSet.Resource> destination) {
+                                                                              Map<String,
+                                                                                      ResourceSet.Resource> destination) {
             for (ResourceSet.Resource r : resources) {
                 boolean swap = !destination.containsKey(r.getResourceUrn());
                 if (!swap) {
@@ -273,13 +275,13 @@ public class Utils {
     }
 
     /**
-     * Utility to reduce the ugliness of casting generic collections in Java. If you have say a Collection<A> (ca) that
-     * you know is a Collection<B extends A> and you need a Collection<B>, do the following:
+     * Utility to reduce the ugliness of casting generic collections in Java. If you have say a Collection<A>
+     * (ca) that you know is a Collection<B extends A> and you need a Collection<B>, do the following:
      * <p>
      * Collection<B> cb = new Cast<A,B>.cast(ca);
      * <p>
-     * and type safety be damned. This will not generate any warning and will avoid any silly copy. Works for generic
-     * collections, arraylists and hashsets - add more if needed. Needs something else for maps.
+     * and type safety be damned. This will not generate any warning and will avoid any silly copy. Works for
+     * generic collections, arraylists and hashsets - add more if needed. Needs something else for maps.
      *
      * @param <B> the generic type
      * @param <T> the generic type
@@ -501,17 +503,17 @@ public class Utils {
          * List for all ASCII characters whether it can be part of an URL line.
          */
         static boolean isacceptable[] = {false, false, false, false, false, false, false, false, // !"#$%&'
-                false, false, true, true, true, true, true, false, // ()*+,-./
-                true, true, true, true, true, true, true, true, // 01234567
-                true, true, true, false, false, false, false, false, // 89:;<=>?
-                true, true, true, true, true, true, true, true, // @ABCDEFG
-                true, true, true, true, true, true, true, true, // HIJKLMNO
-                true, true, true, true, true, true, true, true, // PQRSTUVW
-                true, true, true, false, false, false, false, true, // XYZ[\]^_
-                false, true, true, true, true, true, true, true, // `abcdefg
-                true, true, true, true, true, true, true, true, // hijklmno
-                true, true, true, true, true, true, true, true, // pqrstuvw
-                true, true, true, false, false, false, false, false // xyz{|}~
+                                         false, false, true, true, true, true, true, false, // ()*+,-./
+                                         true, true, true, true, true, true, true, true, // 01234567
+                                         true, true, true, false, false, false, false, false, // 89:;<=>?
+                                         true, true, true, true, true, true, true, true, // @ABCDEFG
+                                         true, true, true, true, true, true, true, true, // HIJKLMNO
+                                         true, true, true, true, true, true, true, true, // PQRSTUVW
+                                         true, true, true, false, false, false, false, true, // XYZ[\]^_
+                                         false, true, true, true, true, true, true, true, // `abcdefg
+                                         true, true, true, true, true, true, true, true, // hijklmno
+                                         true, true, true, true, true, true, true, true, // pqrstuvw
+                                         true, true, true, false, false, false, false, false // xyz{|}~
         };
 
         /**
@@ -525,8 +527,8 @@ public class Utils {
         static char HEX_ESCAPE = '%';
 
         /**
-         * Escape a url. Replaces 'invalid characters' with their Escaped code, i.e. the questionmark (?) is escaped
-         * with %3F.
+         * Escape a url. Replaces 'invalid characters' with their Escaped code, i.e. the questionmark (?) is
+         * escaped with %3F.
          *
          * @param str the urls to escape
          * @return the escaped url.
@@ -557,15 +559,15 @@ public class Utils {
          */
         private static char from_hex(char c) {
             return (char) (c >= '0' && c <= '9'
-                    ? c - '0'
-                    : c >= 'A' && c <= 'F'
-                    ? c - 'A' + 10
-                    : c - 'a' + 10); /* accept small letters just in case */
+                           ? c - '0'
+                           : c >= 'A' && c <= 'F'
+                             ? c - 'A' + 10
+                             : c - 'a' + 10); /* accept small letters just in case */
         }
 
         /**
-         * Unescape a url. Replaces escapesequenced with the actual character. i.e %3F is replaced with the the
-         * questionmark (?).
+         * Unescape a url. Replaces escapesequenced with the actual character. i.e %3F is replaced with the
+         * the questionmark (?).
          *
          * @param str the urls to unescape
          * @return the unescaped url.
@@ -593,8 +595,8 @@ public class Utils {
          * Escape characters for text appearing in HTML markup.
          *
          * <p>
-         * This method exists as a defence against Cross Site Scripting (XSS) hacks. This method escapes all characters
-         * recommended by the Open Web App Security Project -
+         * This method exists as a defence against Cross Site Scripting (XSS) hacks. This method escapes all
+         * characters recommended by the Open Web App Security Project -
          * <a href='http://www.owasp.org/index.php/Cross_Site_Scripting'>link</a>.
          *
          * <p>
@@ -646,12 +648,13 @@ public class Utils {
          * Synonym for <tt>URLEncoder.encode(String, "UTF-8")</tt>.
          *
          * <p>
-         * Used to ensure that HTTP query strings are in proper form, by escaping special characters such as spaces.
+         * Used to ensure that HTTP query strings are in proper form, by escaping special characters such as
+         * spaces.
          *
          * <p>
-         * It is important to note that if a query string appears in an <tt>HREF</tt> attribute, then there are two
-         * issues - ensuring the query string is valid HTTP (it is URL-encoded), and ensuring it is valid HTML (ensuring
-         * the ampersand is escaped).
+         * It is important to note that if a query string appears in an <tt>HREF</tt> attribute, then there
+         * are two issues - ensuring the query string is valid HTTP (it is URL-encoded), and ensuring it is
+         * valid HTML (ensuring the ampersand is escaped).
          *
          * @param aURLFragment
          * @return the escaped string
@@ -670,12 +673,13 @@ public class Utils {
          * Synonym for <tt>URLEncoder.encode(String, "UTF-8")</tt>.
          *
          * <p>
-         * Used to ensure that HTTP query strings are in proper form, by escaping special characters such as spaces.
+         * Used to ensure that HTTP query strings are in proper form, by escaping special characters such as
+         * spaces.
          *
          * <p>
-         * It is important to note that if a query string appears in an <tt>HREF</tt> attribute, then there are two
-         * issues - ensuring the query string is valid HTTP (it is URL-encoded), and ensuring it is valid HTML (ensuring
-         * the ampersand is escaped).
+         * It is important to note that if a query string appears in an <tt>HREF</tt> attribute, then there
+         * are two issues - ensuring the query string is valid HTTP (it is URL-encoded), and ensuring it is
+         * valid HTML (ensuring the ampersand is escaped).
          *
          * @param aURLFragment
          * @return the escaped string
@@ -752,8 +756,8 @@ public class Utils {
         }
 
         /**
-         * Replace characters having special meaning in regular expressions with their escaped equivalents, preceded by
-         * a '\' character.
+         * Replace characters having special meaning in regular expressions with their escaped equivalents,
+         * preceded by a '\' character.
          *
          * @param aRegexFragment
          * @return the escaped string
@@ -882,8 +886,8 @@ public class Utils {
     public static class CamelCase {
 
         /**
-         * Converts a string to upper underscore case (Ex. "justASimple_String" becomes "JUST_A_SIMPLE_STRING"). This
-         * function is not idempotent (Eg. "abc" => "ABC" => "A_B_C").
+         * Converts a string to upper underscore case (Ex. "justASimple_String" becomes
+         * "JUST_A_SIMPLE_STRING"). This function is not idempotent (Eg. "abc" => "ABC" => "A_B_C").
          *
          * @param value
          * @param sep
@@ -894,8 +898,8 @@ public class Utils {
         }
 
         /**
-         * Converts a string to lower underscore case (Ex. "justASimple_String" becomes "just_a_simple_string"). This
-         * function is idempotent.
+         * Converts a string to lower underscore case (Ex. "justASimple_String" becomes
+         * "just_a_simple_string"). This function is idempotent.
          *
          * @param value
          * @param sep
@@ -906,8 +910,8 @@ public class Utils {
         }
 
         /**
-         * Turn any ABCD consecutive string of uppercase characters into Abcd so that lowercase conversion becomes abcd_
-         * instead of a_b_c_d_.
+         * Turn any ABCD consecutive string of uppercase characters into Abcd so that lowercase conversion
+         * becomes abcd_ instead of a_b_c_d_.
          *
          * @param value
          * @return the normalized string
@@ -934,8 +938,8 @@ public class Utils {
         }
 
         /**
-         * Converts a string to lower came case (Ex. "justASimple_String" becomes "JustASimpleString"). This function is
-         * idempotent.
+         * Converts a string to lower came case (Ex. "justASimple_String" becomes "JustASimpleString"). This
+         * function is idempotent.
          *
          * @param value
          * @param sep
@@ -946,8 +950,8 @@ public class Utils {
         }
 
         /**
-         * Converts a string to lower came case (Ex. "justASimple_String" becomes "justASimpleString"). This function is
-         * idempotent.
+         * Converts a string to lower came case (Ex. "justASimple_String" becomes "justASimpleString"). This
+         * function is idempotent.
          *
          * @param value
          * @param sep
@@ -1032,8 +1036,8 @@ public class Utils {
         }
 
         /**
-         * Converts the specified character to upper case if it is a valid latin letter, otherwise the same character is
-         * returned.
+         * Converts the specified character to upper case if it is a valid latin letter, otherwise the same
+         * character is returned.
          *
          * @param ch
          * @return the upper cased char
@@ -1047,8 +1051,8 @@ public class Utils {
         }
 
         /**
-         * Converts the specified character to lower case if it is a valid latin letter, otherwise the same character is
-         * returned.
+         * Converts the specified character to lower case if it is a valid latin letter, otherwise the same
+         * character is returned.
          *
          * @param ch
          * @return the upper cased char
@@ -1110,10 +1114,12 @@ public class Utils {
 
         /**
          * 2 ^ -24 - this is for FLOAT precision, but I'm using it for doubles as well. See:
-         * http://en.wikipedia.org/wiki/Machine_epsilon#Values_for_standard_hardware_floating_point_arithmetics
+         * http://en.wikipedia
+         * .org/wiki/Machine_epsilon#Values_for_standard_hardware_floating_point_arithmetics
          */
         public static final double EPSILON = 5.96e-08;
-        public static final Pattern DOUBLE_PATTERN = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
+        public static final Pattern DOUBLE_PATTERN = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+" +
+         "([eE][-+]?[0-9]+)?");
         public static final Pattern INTEGER_PATTERN = Pattern.compile("^-?\\d+$");
 
         public static boolean encodesDouble(String s) {
@@ -1284,7 +1290,7 @@ public class Utils {
                     return (List<T>) ret;
             }
 
-            throw new KIllegalArgumentException("cannot turn array into PODs: type not handled");
+            throw new KlabIllegalArgumentException("cannot turn array into PODs: type not handled");
         }
 
         public static Object podArrayFromString(String array, String splitRegex, Class<?> cls) {
@@ -1327,7 +1333,7 @@ public class Utils {
                     return bret;
             }
 
-            throw new KIllegalArgumentException("cannot turn array into PODs: type not handled");
+            throw new KlabIllegalArgumentException("cannot turn array into PODs: type not handled");
         }
 
         public static double[] doubleArrayFromString(String array, String splitRegex) {
@@ -1514,7 +1520,8 @@ public class Utils {
         }
 
         private static int[] decimal = new int[]{1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
-        private static String[] roman = new String[]{"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV"
+        private static String[] roman = new String[]{"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX",
+ "V", "IV"
                 , "I"};
 
         public static String toRoman(int num) {
@@ -1604,7 +1611,7 @@ public class Utils {
         public static int log2int(int x) {
             int y, v;
             if (x <= 0) {
-                throw new KIllegalArgumentException("" + x + " <= 0");
+                throw new KlabIllegalArgumentException("" + x + " <= 0");
             }
             v = x;
             y = -1;
@@ -1659,12 +1666,13 @@ public class Utils {
         private static int NOT_FOUND = -1;
 
         /**
-         * Returns the index within {@code cs} of the first occurrence of the specified character, starting the search
-         * at the specified index.
+         * Returns the index within {@code cs} of the first occurrence of the specified character, starting
+         * the search at the specified index.
          * <p>
-         * If a character with value {@code searchChar} occurs in the character sequence represented by the {@code cs}
-         * object at an index no smaller than {@code start}, then the index of the first such occurrence is returned.
-         * For values of {@code searchChar} in the range from 0 to 0xFFFF (inclusive), this is the smallest value
+         * If a character with value {@code searchChar} occurs in the character sequence represented by the
+         * {@code cs} object at an index no smaller than {@code start}, then the index of the first such
+         * occurrence is returned. For values of {@code searchChar} in the range from 0 to 0xFFFF (inclusive),
+         * this is the smallest value
          * <i>k</i> such that: <blockquote>
          *
          * <pre>
@@ -1682,9 +1690,10 @@ public class Utils {
          * after position {@code start}, then {@code -1} is returned.
          *
          * <p>
-         * There is no restriction on the value of {@code start}. If it is negative, it has the same effect as if it
-         * were zero: the entire {@code CharSequence} may be searched. If it is greater than the length of {@code cs},
-         * it has the same effect as if it were equal to the length of {@code cs}: {@code -1} is returned.
+         * There is no restriction on the value of {@code start}. If it is negative, it has the same effect as
+         * if it were zero: the entire {@code CharSequence} may be searched. If it is greater than the length
+         * of {@code cs}, it has the same effect as if it were equal to the length of {@code cs}: {@code -1}
+         * is returned.
          *
          * <p>
          * All indices are specified in {@code char} values (Unicode code units).
@@ -1777,7 +1786,8 @@ public class Utils {
          * @param str the CharSequence to check, may be null
          * @param sub the substring to count, may be null
          * @return the number of occurrences, 0 if either CharSequence is {@code null}
-         * @since 3.0 Changed signature from countMatches(String, String) to countMatches(CharSequence, CharSequence)
+         * @since 3.0 Changed signature from countMatches(String, String) to countMatches(CharSequence,
+         * CharSequence)
          */
         public static int countMatches(final CharSequence str, final CharSequence sub) {
             if (isEmpty(str) || isEmpty(sub)) {
@@ -1857,8 +1867,8 @@ public class Utils {
         }
 
         /**
-         * Use the passed padding string to indent the first line, then indent the following ones by a space pad of the
-         * same length.
+         * Use the passed padding string to indent the first line, then indent the following ones by a space
+         * pad of the same length.
          *
          * @param text
          * @param firstLinePad
@@ -1893,8 +1903,8 @@ public class Utils {
         }
 
         /**
-         * Parse something like xxx(a, b, ... c) into an array [xxx a b c]. Accept xxx alone and send an array of one
-         * element. Not particularly smart, so use when the coder is.
+         * Parse something like xxx(a, b, ... c) into an array [xxx a b c]. Accept xxx alone and send an array
+         * of one element. Not particularly smart, so use when the coder is.
          *
          * @param string
          * @return
@@ -2011,13 +2021,13 @@ public class Utils {
 
         /**
          * <p>
-         * Capitalizes a String changing the first character to title case as per {@link Character#toTitleCase(int)}. No
-         * other characters are changed.
+         * Capitalizes a String changing the first character to title case as per
+         * {@link Character#toTitleCase(int)}. No other characters are changed.
          * </p>
          *
          * <p>
-         * For a word based algorithm, see {@link org.apache.commons.lang3.text.WordUtils#capitalize(String)}. A
-         * {@code null} input String returns {@code null}.
+         * For a word based algorithm, see {@link org.apache.commons.lang3.text.WordUtils#capitalize(String)}.
+         * A {@code null} input String returns {@code null}.
          * </p>
          *
          * <pre>
@@ -2128,9 +2138,10 @@ public class Utils {
         }
 
         /**
-         * Remove all leading and trailing whitespace; pack whitespace in between to single space; leave a blank line if
-         * there are at least two newlines in the original whitespace. Good for formatting indented and bullshitted text
-         * like what you put in XML files into something more suitable for text processing or wiki translation.
+         * Remove all leading and trailing whitespace; pack whitespace in between to single space; leave a
+         * blank line if there are at least two newlines in the original whitespace. Good for formatting
+         * indented and bullshitted text like what you put in XML files into something more suitable for text
+         * processing or wiki translation.
          *
          * @param s the s
          * @return packed string
@@ -2200,7 +2211,8 @@ public class Utils {
         }
 
         /**
-         * Pack the inside of a string but preserve leading and trailing whitespace. Written simply and expensively.
+         * Pack the inside of a string but preserve leading and trailing whitespace. Written simply and
+         * expensively.
          *
          * @param s the s
          * @return the string
@@ -2258,8 +2270,8 @@ public class Utils {
         }
 
         /**
-         * Join a collection of strings into one string using the given char as separator. Can pass any collection;
-         * toString() will be used.
+         * Join a collection of strings into one string using the given char as separator. Can pass any
+         * collection; toString() will be used.
          *
          * @param strings   the strings
          * @param separator the separator
@@ -2502,9 +2514,9 @@ public class Utils {
         }
 
         /**
-         * Takes a multi-line string and strips the smallest amount of whitespace that is common to all lines, basically
-         * removing the first level of indentation. One or more lines starting without any leading whitespace will cause
-         * this to return the same string.
+         * Takes a multi-line string and strips the smallest amount of whitespace that is common to all lines,
+         * basically removing the first level of indentation. One or more lines starting without any leading
+         * whitespace will cause this to return the same string.
          *
          * @param string
          * @return
@@ -2541,8 +2553,8 @@ public class Utils {
         }
 
         /**
-         * Ad-hoc behavior in need for generalization: insert the patch after every newline unless the previous line was
-         * empty.
+         * Ad-hoc behavior in need for generalization: insert the patch after every newline unless the
+         * previous line was empty.
          *
          * @param stripLeadingWhitespace
          * @param string
@@ -2572,7 +2584,8 @@ public class Utils {
         }
 
         /**
-         * Replace any of the characters contained in the first argument with the string passed as third argument.
+         * Replace any of the characters contained in the first argument with the string passed as third
+         * argument.
          *
          * @param charsToReplace
          * @param sourceString
@@ -2639,8 +2652,8 @@ public class Utils {
 
         /**
          * <p>
-         * Abbreviates a String using ellipses. This will turn "Now is the time for all good men" into "Now is the time
-         * for..."
+         * Abbreviates a String using ellipses. This will turn "Now is the time for all good men" into "Now is
+         * the time for..."
          * </p>
          *
          * <p>
@@ -2677,14 +2690,14 @@ public class Utils {
 
         /**
          * <p>
-         * Abbreviates a String using ellipses. This will turn "Now is the time for all good men" into "...is the time
-         * for..."
+         * Abbreviates a String using ellipses. This will turn "Now is the time for all good men" into "...is
+         * the time for..."
          * </p>
          *
          * <p>
-         * Works like {@code abbreviate(String, int)}, but allows you to specify a "left edge" offset. Note that this
-         * left edge is not necessarily going to be the leftmost character in the result, or the first character
-         * following the ellipses, but it will appear somewhere in the result.
+         * Works like {@code abbreviate(String, int)}, but allows you to specify a "left edge" offset. Note
+         * that this left edge is not necessarily going to be the leftmost character in the result, or the
+         * first character following the ellipses, but it will appear somewhere in the result.
          *
          * <p>
          * In no case will it return a String of length greater than {@code maxWidth}.
@@ -2719,8 +2732,9 @@ public class Utils {
 
         /**
          * <p>
-         * Abbreviates a String using another given String as replacement marker. This will turn "Now is the time for
-         * all good men" into "Now is the time for..." if "..." was defined as the replacement marker.
+         * Abbreviates a String using another given String as replacement marker. This will turn "Now is the
+         * time for all good men" into "Now is the time for..." if "..." was defined as the replacement
+         * marker.
          * </p>
          *
          * <p>
@@ -2751,7 +2765,8 @@ public class Utils {
          *
          * @param str          the String to check, may be null
          * @param abbrevMarker the String used as replacement marker
-         * @param maxWidth     maximum length of result String, must be at least {@code abbrevMarker.length + 1}
+         * @param maxWidth     maximum length of result String, must be at least
+         *                     {@code abbrevMarker.length + 1}
          * @return abbreviated String, {@code null} if null String input
          * @throws IllegalArgumentException if the width is too small
          * @since 3.6
@@ -2762,14 +2777,14 @@ public class Utils {
 
         /**
          * <p>
-         * Abbreviates a String using a given replacement marker. This will turn "Now is the time for all good men" into
-         * "...is the time for..." if "..." was defined as the replacement marker.
+         * Abbreviates a String using a given replacement marker. This will turn "Now is the time for all good
+         * men" into "...is the time for..." if "..." was defined as the replacement marker.
          * </p>
          *
          * <p>
-         * Works like {@code abbreviate(String, String, int)}, but allows you to specify a "left edge" offset. Note that
-         * this left edge is not necessarily going to be the leftmost character in the result, or the first character
-         * following the replacement marker, but it will appear somewhere in the result.
+         * Works like {@code abbreviate(String, String, int)}, but allows you to specify a "left edge" offset.
+         * Note that this left edge is not necessarily going to be the leftmost character in the result, or
+         * the first character following the replacement marker, but it will appear somewhere in the result.
          *
          * <p>
          * In no case will it return a String of length greater than {@code maxWidth}.
@@ -2800,7 +2815,8 @@ public class Utils {
          * @throws IllegalArgumentException if the width is too small
          * @since 3.6
          */
-        public static String abbreviate(final String str, final String abbrevMarker, int offset, final int maxWidth) {
+        public static String abbreviate(final String str, final String abbrevMarker, int offset,
+                                        final int maxWidth) {
             if (!isEmpty(str) && "".equals(abbrevMarker) && maxWidth > 0) {
                 return substring(str, 0, maxWidth);
             } else if (isAnyEmpty(str, abbrevMarker)) {
@@ -2811,7 +2827,8 @@ public class Utils {
             final int minAbbrevWidthOffset = abbrevMarkerLength + abbrevMarkerLength + 1;
 
             if (maxWidth < minAbbrevWidth) {
-                throw new IllegalArgumentException(String.format("Minimum abbreviation width is %d", minAbbrevWidth));
+                throw new IllegalArgumentException(String.format("Minimum abbreviation width is %d",
+                 minAbbrevWidth));
             }
             final int strLen = str.length();
             if (strLen <= maxWidth) {
@@ -2831,7 +2848,8 @@ public class Utils {
                         String.format("Minimum abbreviation width with offset is %d", minAbbrevWidthOffset));
             }
             if (offset + maxWidth - abbrevMarkerLength < strLen) {
-                return abbrevMarker + abbreviate(str.substring(offset), abbrevMarker, maxWidth - abbrevMarkerLength);
+                return abbrevMarker + abbreviate(str.substring(offset), abbrevMarker,
+                 maxWidth - abbrevMarkerLength);
             }
             return abbrevMarker + str.substring(strLen - (maxWidth - abbrevMarkerLength));
         }
@@ -2842,14 +2860,15 @@ public class Utils {
          * </p>
          *
          * <p>
-         * A negative start position can be used to start/end {@code n} characters from the end of the String.
+         * A negative start position can be used to start/end {@code n} characters from the end of the
+         * String.
          * </p>
          *
          * <p>
          * The returned substring starts with the character in the {@code start} position and ends before the
-         * {@code end} position. All position counting is zero-based -- i.e., to start at the beginning of the string
-         * use {@code start = 0}. Negative start and end positions can be used to specify offsets relative to the end of
-         * the String.
+         * {@code end} position. All position counting is zero-based -- i.e., to start at the beginning of the
+         * string use {@code start = 0}. Negative start and end positions can be used to specify offsets
+         * relative to the end of the String.
          * </p>
          *
          * <p>
@@ -2869,10 +2888,10 @@ public class Utils {
          * </pre>
          *
          * @param str   the String to get the substring from, may be null
-         * @param start the position to start from, negative means count back from the end of the String by this many
-         *              characters
-         * @param end   the position to end at (exclusive), negative means count back from the end of the String by this
-         *              many characters
+         * @param start the position to start from, negative means count back from the end of the String by
+         *              this many characters
+         * @param end   the position to end at (exclusive), negative means count back from the end of the
+         *              String by this many characters
          * @return substring from start position to end position, {@code null} if null String input
          */
         public static String substring(final String str, int start, int end) {
@@ -2910,8 +2929,8 @@ public class Utils {
 
         /**
          * <p>
-         * Abbreviates a String to the length passed, replacing the middle characters with the supplied replacement
-         * String.
+         * Abbreviates a String to the length passed, replacing the middle characters with the supplied
+         * replacement String.
          * </p>
          *
          * <p>
@@ -2939,8 +2958,8 @@ public class Utils {
          * @param str    the String to abbreviate, may be null
          * @param middle the String to replace the middle characters with, may be null
          * @param length the length to abbreviate {@code str} to.
-         * @return the abbreviated String if the above criteria is met, or the original String supplied for lied for
-         * abbreviation.
+         * @return the abbreviated String if the above criteria is met, or the original String supplied for
+         * lied for abbreviation.
          * @since 2.5
          */
         public static String abbreviateMiddle(final String str, final String middle, final int length) {
@@ -3003,8 +3022,8 @@ public class Utils {
          * </pre>
          *
          * <p>
-         * NOTE: This method changed in Lang version 2.0. It no longer trims the CharSequence. That functionality is
-         * available in isBlank().
+         * NOTE: This method changed in Lang version 2.0. It no longer trims the CharSequence. That
+         * functionality is available in isBlank().
          * </p>
          *
          * @param cs the CharSequence to check, may be null
@@ -3220,8 +3239,8 @@ public class Utils {
     }
 
     /**
-     * A utility class that knows how to create unique temporary names. Just a wrapper around Java nanotime with some
-     * recognition methods.
+     * A utility class that knows how to create unique temporary names. Just a wrapper around Java nanotime
+     * with some recognition methods.
      * <p>
      * TODO not sure if these methods need synchronization. This was changed from the call so UUID
      * because under some conditions the system can run out of entropy resulting in blocking and
@@ -3256,8 +3275,8 @@ public class Utils {
         }
 
         /**
-         * Create an identifier of the maximum given length from a passed name, avoiding conflicts with others. Use dash
-         * to separate parts if required.
+         * Create an identifier of the maximum given length from a passed name, avoiding conflicts with
+         * others. Use dash to separate parts if required.
          *
          * @param source
          * @param maxLength
@@ -3426,7 +3445,8 @@ public class Utils {
         }
 
         /**
-         * Call the valueOf method on an enum and return the value or null if there is no such value, without errors.
+         * Call the valueOf method on an enum and return the value or null if there is no such value, without
+         * errors.
          *
          * @param <T>
          * @param name
@@ -3465,8 +3485,8 @@ public class Utils {
         }
 
         /**
-         * Return URL base name with no path or extension. Just like getFileBaseName but uses / instead of system
-         * separator.
+         * Return URL base name with no path or extension. Just like getFileBaseName but uses / instead of
+         * system separator.
          *
          * @param s
          * @return extracted name from URL
@@ -3587,8 +3607,8 @@ public class Utils {
         }
 
         /**
-         * Return the closest POD that the value can be parsed into. For now only handle int and double. May add k.IM -
-         * like maps, lists, ranges.
+         * Return the closest POD that the value can be parsed into. For now only handle int and double. May
+         * add k.IM - like maps, lists, ranges.
          *
          * @param value
          * @return
@@ -3633,8 +3653,8 @@ public class Utils {
         }
 
         /**
-         * Basic conversions to match a type, including null -> NaN when what's wanted is a double or float. Any value
-         * will be put into a list if a list is asked for.
+         * Basic conversions to match a type, including null -> NaN when what's wanted is a double or float.
+         * Any value will be put into a list if a list is asked for.
          *
          * @param ret
          * @param cls
@@ -3736,7 +3756,8 @@ public class Utils {
                     }
                 } else if (Boolean.class.isAssignableFrom(cls)) {
                     if (cls.equals(Boolean.class)) {
-                        return (T) (Numbers.equal(((Number) ret).doubleValue(), 0) ? Boolean.FALSE : Boolean.TRUE);
+                        return (T) (Numbers.equal(((Number) ret).doubleValue(), 0) ? Boolean.FALSE :
+                         Boolean.TRUE);
                     }
                 }
             } else if (ret instanceof Boolean) {
@@ -3785,7 +3806,7 @@ public class Utils {
                 }
             }
 
-            throw new KIllegalArgumentException("cannot interpret value " + ret + " as a " + cls.getCanonicalName());
+            throw new KlabIllegalArgumentException("cannot interpret value " + ret + " as a " + cls.getCanonicalName());
         }
 
         @SuppressWarnings("unchecked")
@@ -3829,7 +3850,7 @@ public class Utils {
                 }
             }
 
-            throw new KIllegalArgumentException("cannot interpret value " + ret + " as a " + cls.getCanonicalName());
+            throw new KlabIllegalArgumentException("cannot interpret value " + ret + " as a " + cls.getCanonicalName());
         }
 
         /**
@@ -3906,7 +3927,7 @@ public class Utils {
                 default:
                     break;
             }
-            throw new KIllegalArgumentException("type " + type + " has no Java class equivalent");
+            throw new KlabIllegalArgumentException("type " + type + " has no Java class equivalent");
         }
 
     }
@@ -4035,7 +4056,7 @@ public class Utils {
          * @return the number of bytes copied.
          * @throws KlabIOException the klab IO exception
          */
-        public static long copy(URL url, File file) throws KIOException {
+        public static long copy(URL url, File file) throws KlabIOException {
             long count = 0;
             int oneChar = 0;
 
@@ -4051,17 +4072,17 @@ public class Utils {
                 is.close();
                 fos.close();
             } catch (Exception e) {
-                throw new KIOException(e.getMessage());
+                throw new KlabIOException(e.getMessage());
             }
 
             return count;
         }
 
         /**
-         * The listener interface for receiving copy events. The class that is interested in processing a copy event
-         * implements this interface, and the object created with that class is registered with a component using the
-         * component's <code>addCopyListener</code> method. When the copy event occurs, that object's appropriate method
-         * is invoked.
+         * The listener interface for receiving copy events. The class that is interested in processing a copy
+         * event implements this interface, and the object created with that class is registered with a
+         * component using the component's <code>addCopyListener</code> method. When the copy event occurs,
+         * that object's appropriate method is invoked.
          */
         public interface CopyListener {
             void onProgress(int percent);
@@ -4077,7 +4098,7 @@ public class Utils {
          * @return nothing
          * @throws KlabIOException the klab IO exception
          */
-        public static long copy(URL url, File file, CopyListener listener, long size, int timeoutMs) throws KIOException {
+        public static long copy(URL url, File file, CopyListener listener, long size, int timeoutMs) throws KlabIOException {
 
             long count = 0;
 
@@ -4119,7 +4140,7 @@ public class Utils {
                 fos.close();
 
             } catch (Exception e) {
-                throw new KIOException(e.getMessage());
+                throw new KlabIOException(e.getMessage());
             }
 
             return count;
@@ -4132,7 +4153,7 @@ public class Utils {
          * @param file the file
          * @throws KlabIOException the klab IO exception
          */
-        public static void copyChanneled(URL url, File file) throws KIOException {
+        public static void copyChanneled(URL url, File file) throws KlabIOException {
 
             InputStream is = null;
             FileOutputStream fos = null;
@@ -4143,7 +4164,7 @@ public class Utils {
                 ReadableByteChannel rbc = Channels.newChannel(is);
                 fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
             } catch (Exception e) {
-                throw new KIOException(e.getMessage());
+                throw new KlabIOException(e.getMessage());
             } finally {
                 if (is != null)
                     try {
@@ -4166,7 +4187,7 @@ public class Utils {
          * @return the number of bytes copied.
          * @throws KlabIOException the klab IO exception
          */
-        public static long copy(File url, File file) throws KIOException {
+        public static long copy(File url, File file) throws KlabIOException {
             long count = 0;
 
             try {
@@ -4182,7 +4203,7 @@ public class Utils {
                 is.close();
                 fos.close();
             } catch (Exception e) {
-                throw new KIOException(e.getMessage());
+                throw new KlabIOException(e.getMessage());
             }
 
             return count;
@@ -4195,7 +4216,7 @@ public class Utils {
          * @param dst the dst
          * @throws KlabIOException the klab IO exception
          */
-        public static void copyBuffered(File src, File dst) throws KIOException {
+        public static void copyBuffered(File src, File dst) throws KlabIOException {
 
             try {
                 InputStream in = new FileInputStream(src);
@@ -4210,10 +4231,19 @@ public class Utils {
                 in.close();
                 out.close();
             } catch (Exception e) {
-                throw new KIOException(e.getMessage());
+                throw new KlabIOException(e.getMessage());
             }
 
         }
+
+        public static File getFileForURL(String url) throws KlabIOException {
+            try {
+                return getFileForURL(new URL(url));
+            } catch (MalformedURLException e) {
+                throw new KlabIOException(e);
+            }
+        }
+
 
         /**
          * Gets the file for URL.
@@ -4222,7 +4252,7 @@ public class Utils {
          * @return the file for URL
          * @throws KlabIOException the klab IO exception
          */
-        public static File getFileForURL(URL url) throws KIOException {
+        public static File getFileForURL(URL url) throws KlabIOException {
             if (url.toString().startsWith("file:")) {
                 return new File(Escape.unescapeurl(url.getFile()));
             } else {
@@ -4230,7 +4260,7 @@ public class Utils {
                 try {
                     temp = File.createTempFile("url", "url");
                 } catch (IOException e) {
-                    throw new KIOException(e);
+                    throw new KlabIOException(e);
                 }
                 copy(url, temp);
                 return temp;
@@ -4262,8 +4292,8 @@ public class Utils {
         }
 
         /**
-         * Return URL base name with no path or extension. Just like getFileBaseName but uses / instead of system
-         * separator.
+         * Return URL base name with no path or extension. Just like getFileBaseName but uses / instead of
+         * system separator.
          *
          * @param s the s
          * @return extracted name from URL
@@ -4372,8 +4402,8 @@ public class Utils {
         }
 
         /**
-         * Pack the arguments into a collection; if any argument is a collection, add its elements but do not unpack
-         * below the first level.
+         * Pack the arguments into a collection; if any argument is a collection, add its elements but do not
+         * unpack below the first level.
          *
          * @param objects
          * @return
@@ -4391,8 +4421,8 @@ public class Utils {
         }
 
         /**
-         * Pack the arguments into a collection; if any argument is a collection, unpack its elements recursively so
-         * that no collections remain.
+         * Pack the arguments into a collection; if any argument is a collection, unpack its elements
+         * recursively so that no collections remain.
          *
          * @param objects
          * @return

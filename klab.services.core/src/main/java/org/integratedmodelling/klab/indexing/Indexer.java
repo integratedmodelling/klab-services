@@ -32,9 +32,9 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -92,7 +92,7 @@ public class Indexer {
 			nrtReopenThread.start();
 
 		} catch (IOException e) {
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		}
 	}
 
@@ -118,7 +118,7 @@ public class Indexer {
 
 			this.writer.addDocument(document);
 		} catch (IOException e) {
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		}
 	}
 
@@ -204,7 +204,7 @@ public class Indexer {
 				this.writer.addDocument(document);
 
 			} catch (Throwable e) {
-				throw new KInternalErrorException(e);
+				throw new KlabInternalErrorException(e);
 			}
 		}
 
@@ -226,7 +226,7 @@ public class Indexer {
 		try {
 			this.writer.commit();
 		} catch (IOException e) {
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		}
 	}
 
@@ -246,7 +246,7 @@ public class Indexer {
 					}
 					writer.commit();
 				} catch (Exception e) {
-					throw new KIOException(e);
+					throw new KlabIOException(e);
 				}
 			}
 		};
@@ -277,7 +277,7 @@ public class Indexer {
 			// hai voglia
 			return parser.parse("name:" + currentTerm + "*");
 		} catch (ParseException e) {
-			throw new KValidationException(e);
+			throw new KlabValidationException(e);
 		}
 	}
 
@@ -367,7 +367,7 @@ public class Indexer {
 				searcher = searcherManager.acquire();
 			} catch (IOException e) {
 				// adorable exception management
-				throw new KIOException(e);
+				throw new KlabIOException(e);
 			}
 
 			Set<String> ids = new HashSet<>();
@@ -409,14 +409,14 @@ public class Indexer {
 				}
 
 			} catch (Exception e) {
-				throw new KIOException(e);
+				throw new KlabIOException(e);
 			} finally {
 				try {
 					searcherManager.release(searcher);
 				} catch (IOException e) {
 					// fucking unbelievable, they want it in finally and make it throw a checked
 					// exception
-					throw new KIOException(e);
+					throw new KlabIOException(e);
 				}
 			}
 		}
@@ -478,7 +478,7 @@ public class Indexer {
 					searcher = searcherManager.acquire();
 				} catch (IOException e) {
 					// adorable exception management
-					throw new KIOException(e);
+					throw new KlabIOException(e);
 				}
 
 				try {
@@ -509,14 +509,14 @@ public class Indexer {
 					}
 
 				} catch (Exception e) {
-					throw new KIOException(e);
+					throw new KlabIOException(e);
 				} finally {
 					try {
 						searcherManager.release(searcher);
 					} catch (IOException e) {
 						// fucking unbelievable, they want it in finally and make it throw a checked
 						// exception
-						throw new KIOException(e);
+						throw new KlabIOException(e);
 					}
 				}
 			}

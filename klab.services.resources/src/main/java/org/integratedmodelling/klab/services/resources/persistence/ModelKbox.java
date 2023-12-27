@@ -2,9 +2,9 @@ package org.integratedmodelling.klab.services.resources.persistence;
 
 import org.h2gis.utilities.SpatialResultSet;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.exceptions.KException;
-import org.integratedmodelling.klab.api.exceptions.KStorageException;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabException;
+import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -402,7 +402,7 @@ public class ModelKbox extends ObservableKbox {
             // Pair<String, String> defs = ((EnumeratedExtension)
             // space).getExtentDescriptors();
             // return "model.enumeratedspacedomain = '" + defs.getFirst() + "'";
-            throw new KUnimplementedException("enumerated extension");
+            throw new KlabUnimplementedException("enumerated extension");
         }
 
         if (space.getShape().isEmpty()) {
@@ -432,7 +432,7 @@ public class ModelKbox extends ObservableKbox {
 
         if (time /* still */ instanceof EnumeratedExtension) {
             // TODO
-            throw new KUnimplementedException("enumerated extension");
+            throw new KlabUnimplementedException("enumerated extension");
         }
 
         String ret = "";
@@ -453,7 +453,7 @@ public class ModelKbox extends ObservableKbox {
         return ret;
     }
 
-    public List<ModelReference> retrieveAll(Channel monitor) throws KException {
+    public List<ModelReference> retrieveAll(Channel monitor) throws KlabException {
 
         initialize(monitor);
 
@@ -518,7 +518,7 @@ public class ModelKbox extends ObservableKbox {
                         ret.setShape(Shape.create(geometry.toText(), Projection.getLatLon())); // +
                     }
                 } catch (SQLException e) {
-                    throw new KStorageException(e);
+                    throw new KlabStorageException(e);
                 }
             }
 
@@ -527,7 +527,7 @@ public class ModelKbox extends ObservableKbox {
         return ret;
     }
 
-    public ModelReference retrieveModel(long oid, Channel monitor) throws KException {
+    public ModelReference retrieveModel(long oid, Channel monitor) throws KlabException {
 
         ModelReference ret = retrieve("SELECT * FROM model WHERE oid = " + oid, monitor);
         ret.setMetadata(getMetadataFor(oid));
@@ -766,7 +766,7 @@ public class ModelKbox extends ObservableKbox {
                 /*
                  * TODO handle the enumerated extension
                  */
-                throw new KUnimplementedException("enumerated extension");
+                throw new KlabUnimplementedException("enumerated extension");
                 // Pair<String, String> defs = ((EnumeratedExtension)
                 // scale.getSpace()).getExtension();
                 // enumeratedSpaceDomain = defs.getFirst();
@@ -784,7 +784,7 @@ public class ModelKbox extends ObservableKbox {
             if (time != null) {
                 if (time /* still */ instanceof EnumeratedExtension) {
                     // TODO
-                    throw new KUnimplementedException("enumerated extension");
+                    throw new KlabUnimplementedException("enumerated extension");
                 } else {
                     timeExtent = time.collapsed();
                     if (timeExtent != null) {

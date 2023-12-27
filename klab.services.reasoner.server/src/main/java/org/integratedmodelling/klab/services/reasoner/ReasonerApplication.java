@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.services.reasoner;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.data.encoding.JacksonConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

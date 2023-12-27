@@ -11,9 +11,9 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Codelist;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity;
@@ -158,7 +158,7 @@ public class CaliperAuthority implements Authority {
     public Identity resolveIdentity(String identityId) {
 
         if (catalog == null) {
-            throw new KIllegalStateException("The CALIPER authority can only be used through its secondary catalogs");
+            throw new KlabIllegalStateException("The CALIPER authority can only be used through its secondary catalogs");
         }
         
         Identity source = null;
@@ -218,7 +218,7 @@ public class CaliperAuthority implements Authority {
                 }
 
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
 
             cache.put(identityId, Utils.Json.asString(source));
@@ -279,7 +279,7 @@ public class CaliperAuthority implements Authority {
                 }
             } catch (Throwable t) {
                 // TODO monitor the error, return nothing
-                throw new KInternalErrorException(t);
+                throw new KlabInternalErrorException(t);
             }
         }
 
@@ -294,7 +294,7 @@ public class CaliperAuthority implements Authority {
                 System.out.println("CIAPA EL STATEMENT: " + statement);
             }
         } catch (Exception e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
 
     }

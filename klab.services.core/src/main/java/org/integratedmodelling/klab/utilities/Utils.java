@@ -18,7 +18,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -415,7 +415,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         path = ((ClassPathResource) resource).getPath();
                     }
                     if (path == null) {
-                        throw new KIOException("internal: cannot establish path for resource " + resource);
+                        throw new KlabIOException("internal: cannot establish path for resource " + resource);
                     }
 
                     if (!path.endsWith("owl")) {
@@ -436,7 +436,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     is.close();
                 }
             } catch (IOException ex) {
-                throw new KIOException(ex);
+                throw new KlabIOException(ex);
             }
         }
 
@@ -460,7 +460,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         path = ((ClassPathResource) resource).getPath();
                     }
                     if (path == null) {
-                        throw new KIOException("internal: cannot establish path for resource " + resource);
+                        throw new KlabIOException("internal: cannot establish path for resource " + resource);
                     }
                     String fileName = Files.getFileName(path);
                     File dest = new File(destinationDirectory + File.separator + fileName);
@@ -469,7 +469,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     is.close();
                 }
             } catch (IOException ex) {
-                throw new KIOException(ex);
+                throw new KlabIOException(ex);
             }
         }
     }
@@ -488,13 +488,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param url the input stream
          * @param cls the class
          * @return the object
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static <T> T load(InputStream url, Class<T> cls) throws KIOException {
+        public static <T> T load(InputStream url, Class<T> cls) throws KlabIOException {
             try {
                 return defaultMapper.readValue(url, cls);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -504,13 +504,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param file
          * @param cls
          * @return the object
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static <T> T load(File file, Class<T> cls) throws KIOException {
+        public static <T> T load(File file, Class<T> cls) throws KlabIOException {
             try {
                 return defaultMapper.readValue(file, cls);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -520,13 +520,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param url
          * @param cls
          * @return the object
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static <T> T load(URL url, Class<T> cls) throws KIOException {
+        public static <T> T load(URL url, Class<T> cls) throws KlabIOException {
             try {
                 return defaultMapper.readValue(url, cls);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -535,13 +535,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * 
          * @param object
          * @param outFile
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static void save(Object object, File outFile) throws KIOException {
+        public static void save(Object object, File outFile) throws KlabIOException {
             try {
                 defaultMapper.writeValue(outFile, object);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -658,13 +658,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param url the input stream
          * @param cls the class
          * @return the object
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static <T> T load(InputStream url, Class<T> cls) throws KIOException {
+        public static <T> T load(InputStream url, Class<T> cls) throws KlabIOException {
             try {
                 return defaultMapper.readValue(url, cls);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -674,13 +674,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param file
          * @param cls
          * @return the object
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static <T> T load(File file, Class<T> cls) throws KIOException {
+        public static <T> T load(File file, Class<T> cls) throws KlabIOException {
             try {
                 return defaultMapper.readValue(file, cls);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -690,13 +690,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param url
          * @param cls
          * @return the object
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static <T> T load(URL url, Class<T> cls) throws KIOException {
+        public static <T> T load(URL url, Class<T> cls) throws KlabIOException {
             try {
                 return defaultMapper.readValue(url, cls);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -705,13 +705,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * 
          * @param object
          * @param outFile
-         * @throws KIOException
+         * @throws KlabIOException
          */
-        public static void save(Object object, File outFile) throws KIOException {
+        public static void save(Object object, File outFile) throws KlabIOException {
             try {
                 defaultMapper.writeValue(outFile, object);
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -782,11 +782,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     public static class Files extends org.integratedmodelling.klab.api.utils.Utils.Files {
 
+        static public final Set<String> JAVA_ARCHIVE_EXTENSIONS = Set.of("zip", "jar");
+
         public static void deleteDirectory(File pdir) {
             try {
                 FileUtils.deleteDirectory(pdir);
             } catch (IOException e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -794,7 +796,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             try {
                 FileUtils.touch(file);
             } catch (IOException e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -806,7 +808,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             try {
                 FileUtils.copyDirectory(directory, backupDir);
             } catch (IOException e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -814,7 +816,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             try {
                 FileUtils.write(file, string, StandardCharsets.UTF_8);
             } catch (IOException e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -847,10 +849,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     try {
                         Files.deleteDirectory(pdir);
                     } catch (Throwable e) {
-                        throw new KIOException(e);
+                        throw new KlabIOException(e);
                     }
                 } else {
-                    throw new KIOException("git clone: directory " + pdir + " already exists");
+                    throw new KlabIOException("git clone: directory " + pdir + " already exists");
                 }
             }
 
@@ -878,7 +880,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
 
             } catch (Throwable e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
 
             return dirname;
@@ -903,10 +905,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     // result.getFetchResult().
 
                 } catch (Throwable e) {
-                    throw new KIOException("error pulling repository " + localRepository + ": " + e.getLocalizedMessage());
+                    throw new KlabIOException("error pulling repository " + localRepository + ": " + e.getLocalizedMessage());
                 }
             } catch (IOException e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
         }
 
@@ -1250,7 +1252,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 ret = sb.toString();
 
             } catch (Exception e) {
-                throw new KIOException(e);
+                throw new KlabIOException(e);
             }
 
             return ret;

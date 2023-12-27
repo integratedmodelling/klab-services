@@ -4,7 +4,7 @@ import java.util.Currency;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
@@ -88,7 +88,7 @@ public class StyledKimToken {
                 ret.value = c.toString();
                 ret.font = FontStyle.BOLD;
             } else {
-                throw new KIllegalArgumentException("token " + c + " is not a recognized k.IM token");
+                throw new KlabIllegalArgumentException("token " + c + " is not a recognized k.IM token");
             }
 
         } else if (c instanceof Unit) {
@@ -96,7 +96,7 @@ public class StyledKimToken {
         } else if (c instanceof Currency) {
             ret.value = c.toString();
         } else {
-            throw new KIllegalArgumentException("token " + c + " is not a recognized k.IM token");
+            throw new KlabIllegalArgumentException("token " + c + " is not a recognized k.IM token");
         }
         
         return ret;

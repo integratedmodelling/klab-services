@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -190,7 +190,7 @@ public class ExtentLibrary {
 			}
 
 			if (resolution == null) {
-				throw new KValidationException("wrong specification of temporal focus in time function: expecting "
+				throw new KlabValidationException("wrong specification of temporal focus in time function: expecting "
 						+ "a quantity with temporal unit (e.g. 1.year) or a"
 						+ " span description (e.g. 'year', 'month', 'century'...)");
 			}
@@ -206,7 +206,7 @@ public class ExtentLibrary {
 				} else if (parameters.get("start") instanceof Number) {
 					start = TimeInstant.create(parameters.get("start", Number.class).intValue());
 				} else {
-					throw new KValidationException(
+					throw new KlabValidationException(
 							"wrong specification of start time in time function: expecting a date literal or an integer year.");
 				}
 			}
@@ -216,7 +216,7 @@ public class ExtentLibrary {
 				} else if (parameters.get("end") instanceof Number) {
 					end = TimeInstant.create(parameters.get("end", Number.class).intValue());
 				} else {
-					throw new KValidationException(
+					throw new KlabValidationException(
 							"wrong specification of end time in time function: expecting a date literal or an integer year.");
 				}
 			}
@@ -250,7 +250,7 @@ public class ExtentLibrary {
 			} else if (parameters.get("step") instanceof Number && resolution != null) {
 				step = TimeDuration.of(parameters.get("step", Number.class), resolution.getType());
 			} else {
-				throw new KValidationException(
+				throw new KlabValidationException(
 						"wrong specification of step in time function: expecting number with units. "
 								+ "A number is only allowed if focus is specified");
 			}
@@ -270,12 +270,12 @@ public class ExtentLibrary {
 		if (parameters.contains("realtime") && parameters.get("realtime", Boolean.FALSE)) {
 			type = Time.Type.REAL;
 			if (step == null) {
-				throw new KValidationException("real time requires specification of start, end and step");
+				throw new KlabValidationException("real time requires specification of start, end and step");
 			}
 		} else if (parameters.contains("generic") && parameters.get("generic", Boolean.FALSE)) {
 			type = Time.Type.LOGICAL;
 			if (step != null) {
-				throw new KValidationException("generic time must have a focus and cannot have a step");
+				throw new KlabValidationException("generic time must have a focus and cannot have a step");
 			}
 		}
 
@@ -321,7 +321,7 @@ public class ExtentLibrary {
 		}
 
 		if (pd == null || pd.getFirst() == null || pd.getSecond() == null)
-			throw new KValidationException("wrong resolution specification: " + spec);
+			throw new KlabValidationException("wrong resolution specification: " + spec);
 
 		Unit uu = Configuration.INSTANCE.getService(UnitService.class).getUnit(pd.getSecond());
 		Unit mm = Configuration.INSTANCE.getService(UnitService.class).meters();

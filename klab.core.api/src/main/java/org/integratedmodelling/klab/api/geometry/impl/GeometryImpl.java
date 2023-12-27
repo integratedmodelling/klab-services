@@ -2,9 +2,9 @@ package org.integratedmodelling.klab.api.geometry.impl;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
@@ -639,7 +639,7 @@ public class GeometryImpl implements Geometry {
         public long[] locate(Dimension dimension) {
             // TODO
 //            return new long[0];
-            throw new KUnimplementedException("Dimension::locate");
+            throw new KlabUnimplementedException("Dimension::locate");
         }
 
         @Override
@@ -681,11 +681,11 @@ public class GeometryImpl implements Geometry {
                 return 0;
             }
             if (offsets.length != dimensionality) {
-                throw new KIllegalArgumentException("geometry: cannot address a " + dimensionality
+                throw new KlabIllegalArgumentException("geometry: cannot address a " + dimensionality
                         + "-dimensional extent with an offset array of lenght " + offsets.length);
             }
             if (shape == null) {
-                throw new KIllegalArgumentException("geometry: cannot address a geometry with no shape");
+                throw new KlabIllegalArgumentException("geometry: cannot address a geometry with no shape");
             }
 
             if (offsets.length == 1) {
@@ -843,7 +843,7 @@ public class GeometryImpl implements Geometry {
     public GeometryImpl withBoundingBox(double minX, double maxX, double minY, double maxY) {
         Dimension space = dimension(Dimension.Type.SPACE);
         if (space == null) {
-            throw new KIllegalStateException("cannot set spatial parameters on a geometry without space");
+            throw new KlabIllegalStateException("cannot set spatial parameters on a geometry without space");
         }
         space.getParameters().put(PARAMETER_SPACE_BOUNDINGBOX, new double[]{minX, maxX, minY, maxY});
         return this;
@@ -986,7 +986,7 @@ public class GeometryImpl implements Geometry {
     public GeometryImpl withTemporalBoundaries(long start, long end) {
         Dimension time = dimension(Dimension.Type.TIME);
         if (time == null) {
-            throw new KIllegalStateException("cannot set temporal parameters on a geometry without time");
+            throw new KlabIllegalStateException("cannot set temporal parameters on a geometry without time");
         }
         time.getParameters().put(PARAMETER_TIME_PERIOD, List.of(start, end));
         return this;
@@ -1060,7 +1060,7 @@ public class GeometryImpl implements Geometry {
                     dimensionality.regular = (c == 'T' || c == 0x03A4);
 
                 } else {
-                    throw new KIllegalArgumentException("unrecognized geometry dimension identifier " + c);
+                    throw new KlabIllegalArgumentException("unrecognized geometry dimension identifier " + c);
                     // if (dimDictionary.containsKey(Character.toLowerCase(c))) {
                     // dimensionality.type = dimDictionary.get(Character.toLowerCase(c));
                     // } else {
@@ -1127,7 +1127,7 @@ public class GeometryImpl implements Geometry {
         for (String kvp : kvs.trim().split(",")) {
             String[] kk = kvp.trim().split("=");
             if (kk.length != 2) {
-                throw new KIllegalArgumentException("wrong key/value pair in geometry definition: " + kvp);
+                throw new KlabIllegalArgumentException("wrong key/value pair in geometry definition: " + kvp);
             }
             String key = kk[0].trim();
             String val = kk[1].trim();
@@ -1269,12 +1269,12 @@ public class GeometryImpl implements Geometry {
             return (T) this;
         } else if (OffsetImpl.class.isAssignableFrom(cls)) {
             if (!hasShape(this)) {
-                throw new KIllegalStateException(
+                throw new KlabIllegalStateException(
                         "cannot see a geometry as an offset locator unless shape is specified for all extents");
             }
             return (T) new OffsetImpl(this);
         }
-        throw new KIllegalArgumentException("cannot translate a simple geometry into a " + cls.getCanonicalName());
+        throw new KlabIllegalArgumentException("cannot translate a simple geometry into a " + cls.getCanonicalName());
     }
 
     @Override
@@ -1285,7 +1285,7 @@ public class GeometryImpl implements Geometry {
 //    private Locator at(List<DimensionTarget> targets) {
 //
 //        if (!hasShape(this)) {
-        throw new KUnimplementedException("Geometry::at");
+        throw new KlabUnimplementedException("Geometry::at");
 //        }
 
         /*
@@ -1359,7 +1359,7 @@ public class GeometryImpl implements Geometry {
      * @return
      */
     protected long[] convertToOffsets(Locator locator) {
-        throw new KUnimplementedException("Geometry::convertToOffsets");
+        throw new KlabUnimplementedException("Geometry::convertToOffsets");
     }
 
 //    // no arguments: locate this with this

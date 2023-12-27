@@ -3,15 +3,13 @@
  */
 package org.integratedmodelling.klab.api.exceptions;
 
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-
 /**
  * The KlabResourceAccessException
  * 
  * @author Enrico Girotto
  *
  */
-public class KResourceAccessException extends KException {
+public class KlabResourceAccessException extends KlabException {
 
 	/**
 	 * 
@@ -21,28 +19,28 @@ public class KResourceAccessException extends KException {
 	/**
 	 * 
 	 */
-	public KResourceAccessException() {
+	public KlabResourceAccessException() {
 	}
 
 	/**
 	 * @param message
 	 * @param arg1
 	 */
-	public KResourceAccessException(String message, Throwable arg1) {
+	public KlabResourceAccessException(String message, Throwable arg1) {
 		super(message, arg1);
 	}
 
 	/**
 	 * @param message
 	 */
-	public KResourceAccessException(String message) {
+	public KlabResourceAccessException(String message) {
 		super(message);
 	}
 
 	/**
 	 * @param message
 	 */
-	public KResourceAccessException(Throwable message) {
+	public KlabResourceAccessException(Throwable message) {
 		super(message);
 	}
 

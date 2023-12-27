@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Objects;
 
-import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 
 /**
  * File appender that opens and closes the file at every write. Use for simplicity when performance
@@ -54,7 +54,7 @@ public class LogFile {
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
     }
 

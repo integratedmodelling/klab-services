@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.engine;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -68,7 +68,7 @@ public class EngineService {
             booted = true;
 
             if (defaultReasoner == null || defaultResourcesService == null || defaultResolver == null || defaultRuntime == null) {
-                throw new KIllegalStateException("one or more services are not available: cannot boot the " +
+                throw new KlabIllegalStateException("one or more services are not available: cannot boot the " +
                         "engine");
             }
 

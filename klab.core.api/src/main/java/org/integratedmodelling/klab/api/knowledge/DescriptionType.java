@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 
 import java.util.Collection;
 
@@ -156,7 +156,7 @@ public enum DescriptionType {
         } else if (type.contains(SemanticType.DIRECT_OBSERVABLE)) {
             return distributed ? INSTANTIATION : ACKNOWLEDGEMENT;
         }
-        throw new KUnimplementedException("DescriptionType::forSemantics - unexpected semantic typeset " + type);
+        throw new KlabUnimplementedException("DescriptionType::forSemantics - unexpected semantic typeset " + type);
 //        return COMPILATION;
     }
 }

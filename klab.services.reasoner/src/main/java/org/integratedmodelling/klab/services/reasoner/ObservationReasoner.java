@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.reasoner;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -11,7 +11,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.Service;
 
 import java.util.*;
 
@@ -194,7 +193,7 @@ public class ObservationReasoner {
         var deferred = ObservationStrategy.builder(nakedObservable).withCost(rank);
         var baseTrait = reasoner.baseParentTrait(toResolve);
         if (baseTrait == null) {
-            throw new KInternalErrorException("no base trait for " + toResolve);
+            throw new KlabInternalErrorException("no base trait for " + toResolve);
         }
         deferred
                 .withOperation(ObservationStrategy.Operation.RESOLVE,

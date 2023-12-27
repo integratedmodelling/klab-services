@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -198,7 +198,7 @@ public class OffsetImpl implements Locator, Offset {
                 if (i < sret.length) {
                     sret[i++] = nl;
                 } else {
-                    throw new KValidationException("locator mismatches the size of the dimensions");
+                    throw new KlabValidationException("locator mismatches the size of the dimensions");
 
                 }
                 internal = null;
@@ -211,7 +211,7 @@ public class OffsetImpl implements Locator, Offset {
                 } else if (i < sret.length) {
                     sret[i++] = l;
                 } else {
-                    throw new KValidationException("locator mismatches the size of the dimensions");
+                    throw new KlabValidationException("locator mismatches the size of the dimensions");
 
                 }
             }
@@ -233,7 +233,7 @@ public class OffsetImpl implements Locator, Offset {
             ret.pos = read(spec.substring(at + 1), ret.geometry);
             ret.linear = ret.computeOffset(ret.pos, ret.geometry);
         } else {
-            throw new KValidationException("locator string must contain both a geometry and a locator, separated by @");
+            throw new KlabValidationException("locator string must contain both a geometry and a locator, separated by @");
         }
         return ret;
     }

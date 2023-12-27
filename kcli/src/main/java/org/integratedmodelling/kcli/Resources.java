@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.net.URL;
 
 import org.integratedmodelling.kcli.engine.Engine;
-import org.integratedmodelling.kim.model.KimModel;
+//import org.integratedmodelling.kim.model.KimModel;
 import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -492,10 +492,10 @@ public class Resources {
 			if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance
 					&& on.equals(((KimInstance) statement).getName())) {
 				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
-			} else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
+			} /*else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
 					&& resourceUrn.equals(((KimModel) statement).getName())) {
 				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
-			}
+			}*/
 		}
 
 		return null;

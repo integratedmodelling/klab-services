@@ -13,7 +13,7 @@ import java.util.Stack;
 
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
@@ -362,7 +362,7 @@ public class SemanticExpression {
             }
 
         } else {
-            throw new KIllegalStateException("internal: semantic token was accepted but is not handled: " + token);
+            throw new KlabIllegalStateException("internal: semantic token was accepted but is not handled: " + token);
         }
 
         graph.addVertex(added);

@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -336,7 +336,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     @Override
-    public Observable.Builder as(UnarySemanticOperator type, Concept... participants) throws KValidationException {
+    public Observable.Builder as(UnarySemanticOperator type, Concept... participants) throws KlabValidationException {
 
         Concept argument = null;
         if (resolveMain()) {
@@ -353,7 +353,7 @@ public class ObservableBuilder implements Observable.Builder {
                 ((KimConceptImpl) this.declaration).setComparisonConcept(getDeclaration((participants[0])));
             }
             if (participants.length > 1) {
-                throw new KValidationException(
+                throw new KlabValidationException(
                         "cannot handle more than one participant concept in semantic operator");
             }
         }
@@ -421,7 +421,7 @@ public class ObservableBuilder implements Observable.Builder {
                     default:
                         break;
                 }
-            } catch (KValidationException e) {
+            } catch (KlabValidationException e) {
                 // thrown by the makeXXX functions in case of incompatibility
                 scope.error(e.getMessage(), declaration);
             }
@@ -799,7 +799,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     @Override
-    public Concept buildConcept() throws KValidationException {
+    public Concept buildConcept() throws KlabValidationException {
 
         // finalize the concept by recomputing its URN
         if (declaration instanceof KimConceptImpl impl) {
@@ -1307,7 +1307,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     @Override
-    public Observable build() throws KValidationException {
+    public Observable build() throws KlabValidationException {
 
         Concept obs = buildConcept();
 

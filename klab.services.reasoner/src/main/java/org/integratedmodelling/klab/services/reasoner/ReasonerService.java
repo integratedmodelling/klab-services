@@ -7,8 +7,8 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
@@ -1531,6 +1531,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
+    public boolean match(Semantics candidate, Semantics pattern) {
+        return false;
+    }
+
+    @Override
+    public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
+        return false;
+    }
+
+    @Override
+    public <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts) {
+        return null;
+    }
+
+    @Override
+    public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
+        return null;
+    }
+
+    @Override
     public boolean affectedBy(Semantics affected, Semantics affecting) {
         Concept described = describedType(affected);
         for (Concept c : affected(affecting)) {
@@ -1581,7 +1601,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Concept compose(Collection<Concept> concepts, LogicalConnector connector) {
 
         if (connector == LogicalConnector.EXCLUSION || connector == LogicalConnector.DISJOINT_UNION) {
-            throw new KIllegalArgumentException("Reasoner::compose: connector " + connector + " not " +
+            throw new KlabIllegalArgumentException("Reasoner::compose: connector " + connector + " not " +
                     "supported");
         }
         if (concepts.size() == 1) {
@@ -1720,8 +1740,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 ontology.define();
 
                 if (coreConceptPeers.containsKey(ret.toString()) && upperConceptDefined != null
-                        && "true".equals(upperConceptDefined.getMetadata().get(NS.IS_CORE_KIM_TYPE,
-                        "false"))) {
+                       /* && "true".equals(upperConceptDefined.getMetadata().get(NS.IS_CORE_KIM_TYPE,
+                        "false")*/) {
+                    // TODO revise - use core ontology statements only
                     this.owl.getCoreOntology().setAsCoreType(ret);
                 }
 
@@ -2637,7 +2658,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 case AS_DESCRIPTION_TYPE -> {
                     ret = ret.as(op.getDescriptionType());
                 }
-                default -> throw new KUnimplementedException("ReasonerService::defineBuilder: unhandled " +
+                default -> throw new KlabUnimplementedException("ReasonerService::defineBuilder: unhandled " +
                         "operation " + op.getType());
             }
         }

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.configuration;
 
 import java.io.File;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -22,6 +23,7 @@ public class ResourcesConfiguration implements Serializable {
 
     public static class ResourceConfiguration implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = -8966889570222340019L;
 
         private ResourcePrivileges privileges;
@@ -58,6 +60,7 @@ public class ResourcesConfiguration implements Serializable {
 
     public static class ProjectConfiguration implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = -8989429880321748157L;
 
         private String sourceUrl;

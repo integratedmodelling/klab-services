@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -161,7 +161,7 @@ public class RuntimeService extends BaseService
             try {
                 dt.close();
             } catch (IOException e) {
-                throw new KInternalErrorException(e);
+                throw new KlabInternalErrorException(e);
             }
         }
         return dt != null;

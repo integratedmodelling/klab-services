@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 
@@ -199,7 +199,7 @@ public class AsciiDocBuilder {
             write(rootSection, writer, true);
             writer.flush();
         } catch (Exception e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
     }
 

@@ -29,7 +29,7 @@ import org.geotools.styling.Stroke;
 import org.geotools.styling.Style;
 import org.geotools.styling.StyleFactory;
 import org.geotools.swing.JMapFrame;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
@@ -99,7 +99,7 @@ public class SpatialDisplay {
                             + (shape.getSRID() == 0 ? 4326 : shape.getSRID()) + ",number:Integer");
                     featureBuilder = new SimpleFeatureBuilder(fType);
                 } catch (SchemaException e) {
-                    throw new KValidationException(e);
+                    throw new KlabValidationException(e);
                 }
             }
 
@@ -117,7 +117,7 @@ public class SpatialDisplay {
                             + ProjectionImpl.promote(shape.getProjection()).getSRID() + ",number:Integer");
                     featureBuilder = new SimpleFeatureBuilder(fType);
                 } catch (SchemaException e) {
-                    throw new KValidationException(e);
+                    throw new KlabValidationException(e);
                 }
             }
 

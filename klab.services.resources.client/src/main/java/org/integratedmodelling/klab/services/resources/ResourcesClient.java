@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.data.KlabData;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -170,7 +170,7 @@ public class ResourcesClient implements ResourcesService {
 	}
 
 	@Override
-	public Coverage modelGeometry(String modelUrn) throws KIllegalArgumentException {
+	public Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException {
 		// TODO Auto-generated method stub
 		return null;
 	}

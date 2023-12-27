@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.time.impl;
 
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time.Resolution.Type;
@@ -127,7 +127,7 @@ public class TimeInstantImpl implements TimeInstant {
             case YEAR:
                 return new TimeInstantImpl(time.plusYears((int) resolution.getMultiplier() * periods));
         }
-        throw new KValidationException("wrong resolution passed to ITimeInstant::plus");
+        throw new KlabValidationException("wrong resolution passed to ITimeInstant::plus");
     }
 
     @Override
@@ -156,7 +156,7 @@ public class TimeInstantImpl implements TimeInstant {
             case YEAR:
                 return new TimeInstantImpl(time.minusYears((int) resolution.getMultiplier() * periods));
         }
-        throw new KValidationException("wrong resolution passed to ITimeInstant::plus");
+        throw new KlabValidationException("wrong resolution passed to ITimeInstant::plus");
     }
 
     @Override
@@ -195,7 +195,7 @@ public class TimeInstantImpl implements TimeInstant {
                 return ChronoUnit.YEARS.between(start, end) / (int) resolution.getMultiplier();
         }
 
-        throw new KValidationException("wrong resolution passed to ITimeInstant::getPeriods");
+        throw new KlabValidationException("wrong resolution passed to ITimeInstant::getPeriods");
     }
 
     @Override
@@ -302,7 +302,7 @@ public class TimeInstantImpl implements TimeInstant {
                 return new TimeInstantImpl(time.getYear(), 1, 1, 0, 0, 0, 0);
         }
 
-        throw new KInternalErrorException("cannot adjust time to " + temporalAggregation);
+        throw new KlabInternalErrorException("cannot adjust time to " + temporalAggregation);
     }
 
     @Override

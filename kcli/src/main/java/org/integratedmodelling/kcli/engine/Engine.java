@@ -1,7 +1,7 @@
 package org.integratedmodelling.kcli.engine;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -209,10 +209,10 @@ public enum Engine implements Authentication {
     public SessionScope createSession(String name, boolean makeCurrent) {
 
         if (currentUser == null) {
-            throw new KIllegalStateException("no current user scope: cannot create session " + name);
+            throw new KlabIllegalStateException("no current user scope: cannot create session " + name);
         }
         if (this.sessions.containsKey(name)) {
-            throw new KIllegalStateException("session already exists: cannot create session " + name);
+            throw new KlabIllegalStateException("session already exists: cannot create session " + name);
         }
 
         SessionScope ret = currentUser.runSession(name);

@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.testing.exceptions;
 
-import org.integratedmodelling.klab.api.exceptions.KException;
+import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.testing.TestCases;
 
@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.testing.TestCases;
  * @author Ferd
  *
  */
-public abstract class KlabTestCaseBuildingException extends KException {
+public abstract class KlabTestCaseBuildingException extends KlabException {
 
 	private static final long serialVersionUID = -1317044146075559015L;
 

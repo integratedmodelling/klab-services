@@ -27,7 +27,7 @@
 package org.integratedmodelling.klab.api.collections.impl;
 
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 
 
 /**
@@ -159,7 +159,7 @@ public class TripleImpl<T1, T2, T3> implements Triple<T1, T2, T3> {
         case 2:
             return third;
         }
-        throw new KIllegalArgumentException("cannot retrieve " + columnIndex + "-th element from a triple");
+        throw new KlabIllegalArgumentException("cannot retrieve " + columnIndex + "-th element from a triple");
     }
 
 

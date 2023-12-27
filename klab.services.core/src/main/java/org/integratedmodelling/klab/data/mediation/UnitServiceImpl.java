@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.data.mediation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.UnitImpl;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -73,7 +73,7 @@ public class UnitServiceImpl implements UnitService {
             } catch (Throwable e) {
                 // KLAB-156: Error getting the default unit
                 // caught in org.integratedmodelling.klab.model.Model.java:488
-                throw new KValidationException("Invalid unit: " + string);
+                throw new KlabValidationException("Invalid unit: " + string);
             }
         }
 

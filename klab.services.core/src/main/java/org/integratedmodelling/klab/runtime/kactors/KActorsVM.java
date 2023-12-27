@@ -17,10 +17,10 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Proxy;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KActorException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabActorException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
@@ -938,7 +938,7 @@ public class KActorsVM implements VM {
             } else {
                 // TODO find the actor reference and send it an internal message to set the
                 // state. Should be subject to scope and authorization
-                throw new KUnimplementedException("klab actor state setting is unimplemented");
+                throw new KlabUnimplementedException("klab actor state setting is unimplemented");
             }
         } else if (((KActorsValue) code.getValue()).getConstructor() != null) {
 
@@ -991,8 +991,8 @@ public class KActorsVM implements VM {
             break;
         case ERROR:
             throw arg.getStatedValue() instanceof Throwable
-                    ? new KActorException((Throwable) arg.getStatedValue())
-                    : new KActorException(arg.getStatedValue() == null
+                    ? new KlabActorException((Throwable) arg.getStatedValue())
+                    : new KlabActorException(arg.getStatedValue() == null
                             ? "Unspecified actor error from error value"
                             : arg.getStatedValue().toString());
 
@@ -1111,7 +1111,7 @@ public class KActorsVM implements VM {
             className = JAVA_EXTENSION_NAMESPACE + "." + className;
         } else {
             className = constructor.getClasspath() + "." + className;
-            throw new KIllegalStateException(
+            throw new KlabIllegalStateException(
                     "k.Actors: creation of Java object with explicit classpath requires a security exception, unimplemented so far.");
         }
 
@@ -1156,7 +1156,7 @@ public class KActorsVM implements VM {
                 }
 
                 if (constr == null) {
-                    throw new KValidationException(
+                    throw new KlabValidationException(
                             "k.Actors: cannot find a constructor for the arguments specified for " + className);
                 }
 
@@ -1409,7 +1409,7 @@ public class KActorsVM implements VM {
                                 method.getMethod().invoke(nativeLibraryInstances.get(library.getName()), args.toArray()));
                         return;
                     } catch (Throwable e) {
-                        throw new KActorException(e);
+                        throw new KlabActorException(e);
                     }
 
                 } else {
@@ -1739,7 +1739,7 @@ public class KActorsVM implements VM {
         }
 
         if (scope.getTestScope() == null && nErr > 0) {
-            throw new KActorException("assertion failed on '" + comparison + "' with " + nErr + " mismatches");
+            throw new KlabActorException("assertion failed on '" + comparison + "' with " + nErr + " mismatches");
         }
 
         scope.getTestScope().notifyAssertion(target, comparison, ok, assertion);

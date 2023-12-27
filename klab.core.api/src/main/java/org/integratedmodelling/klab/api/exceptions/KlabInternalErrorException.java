@@ -22,14 +22,14 @@ package org.integratedmodelling.klab.api.exceptions;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public class KInternalErrorException extends KException {
+public class KlabInternalErrorException extends KlabException {
 
     private static final long serialVersionUID = 461213337593957416L;
 
     /**
      * Instantiates a new klab internal error exception.
      */
-    public KInternalErrorException() {
+    public KlabInternalErrorException() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -39,7 +39,7 @@ public class KInternalErrorException extends KException {
      *
      * @param arg0 the arg 0
      */
-    public KInternalErrorException(String arg0) {
+    public KlabInternalErrorException(String arg0) {
         super(arg0);
         // TODO Auto-generated constructor stub
     }
@@ -49,7 +49,7 @@ public class KInternalErrorException extends KException {
      *
      * @param e the e
      */
-    public KInternalErrorException(Throwable e) {
+    public KlabInternalErrorException(Throwable e) {
         super(e);
     }
 

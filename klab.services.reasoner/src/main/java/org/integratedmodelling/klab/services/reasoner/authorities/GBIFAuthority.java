@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Codelist;
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIdentity;
@@ -107,7 +107,7 @@ public class GBIFAuthority implements Authority {
                     }
                 }
                 if (rankIndex < 0) {
-                    throw new KValidationException("GBIF authority: invalid catalog " + ranks);
+                    throw new KlabValidationException("GBIF authority: invalid catalog " + ranks);
                 }
             }
 

@@ -24,14 +24,14 @@ package org.integratedmodelling.klab.api.exceptions;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public class KIllegalStateException extends KException {
+public class KlabIllegalStateException extends KlabException {
 
 	private static final long serialVersionUID = 461213337593957416L;
 
 	/**
 	 * Instantiates a new klab illegal status exception.
 	 */
-	public KIllegalStateException() {
+	public KlabIllegalStateException() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -41,7 +41,7 @@ public class KIllegalStateException extends KException {
 	 *
 	 * @param arg0 the arg 0
 	 */
-	public KIllegalStateException(String arg0) {
+	public KlabIllegalStateException(String arg0) {
 		super(arg0);
 		// TODO Auto-generated constructor stub
 	}
@@ -51,7 +51,7 @@ public class KIllegalStateException extends KException {
 	 *
 	 * @param e the e
 	 */
-	public KIllegalStateException(Throwable e) {
+	public KlabIllegalStateException(Throwable e) {
 		super(e);
 	}
 

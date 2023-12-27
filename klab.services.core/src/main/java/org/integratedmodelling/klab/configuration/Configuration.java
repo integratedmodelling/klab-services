@@ -20,10 +20,9 @@ import javassist.Modifier;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KException;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KServiceAccessException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -344,13 +343,13 @@ public enum Configuration {
             try {
                 pFile.createNewFile();
             } catch (IOException e) {
-                throw new KIOException("cannot write to configuration directory");
+                throw new KlabIOException("cannot write to configuration directory");
             }
         }
         try (InputStream input = new FileInputStream(pFile)) {
             this.properties.load(input);
         } catch (Exception e) {
-            throw new KIOException("cannot read configuration properties");
+            throw new KlabIOException("cannot read configuration properties");
         }
 
         registerService(new UnitServiceImpl(), UnitService.class);
@@ -634,7 +633,7 @@ public enum Configuration {
         try {
             p.store(new FileOutputStream(td), null);
         } catch (Exception e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
 
     }
@@ -867,27 +866,27 @@ public enum Configuration {
         try {
             return getDataPath(servicePath == null ? "components" : (servicePath + "/" + "components")).toURI().toURL();
         } catch (MalformedURLException e) {
-            throw new KInternalErrorException(e);
+            throw new KlabInternalErrorException(e);
         }
     }
 
     /**
      * Obtain the best service available for the class and parameters. If multiple are available, choose the
      * one with the lightest load or access cost, according to implementation. If not found, throw a
-     * {@link KServiceAccessException}.
+     * {@link KlabServiceAccessException}.
      *
      * @param <T>
      * @param serviceClass
      * @param parameters   any POD or Comparable.
      * @return
-     * @throws KServiceAccessException if the requested service is not available
+     * @throws KlabServiceAccessException if the requested service is not available
      */
-    public <T extends Service> T getService(Class<T> serviceClass, Object... parameters) throws KServiceAccessException {
+    public <T extends Service> T getService(Class<T> serviceClass, Object... parameters) throws KlabServiceAccessException {
         Collection<T> results = getServices(serviceClass, parameters);
         if (results.size() > 0) {
             return results.iterator().next();
         }
-        throw new KServiceAccessException("no service of class " + serviceClass.getCanonicalName() + " was " +
+        throw new KlabServiceAccessException("no service of class " + serviceClass.getCanonicalName() + " was " +
                 "registered");
     }
 

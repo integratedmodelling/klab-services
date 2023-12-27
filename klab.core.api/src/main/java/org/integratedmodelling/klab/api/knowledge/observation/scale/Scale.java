@@ -14,7 +14,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale;
 
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -211,7 +211,7 @@ public interface Scale extends Geometry, Topology<Scale> {
     public static Scale create(Collection<Extent<?>> extents) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
         }
         return configuration.createScaleFromExtents(extents);
     }
@@ -226,7 +226,7 @@ public interface Scale extends Geometry, Topology<Scale> {
         }
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
         }
         return configuration.promoteGeometryToScale(geometry);
     }

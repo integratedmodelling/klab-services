@@ -7,8 +7,8 @@ import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
@@ -120,9 +120,9 @@ public interface Observable extends Semantics {
          * @param type
          * @param participants
          * @return the same builder this was called on, for chaining calls
-         * @throws KValidationException
+         * @throws KlabValidationException
          */
-        Builder as(UnarySemanticOperator type, Concept... participants) throws KValidationException;
+        Builder as(UnarySemanticOperator type, Concept... participants) throws KlabValidationException;
 
         /**
          * Change the description type. Due to ontological constraints, basically only useful to swap
@@ -176,18 +176,18 @@ public interface Observable extends Semantics {
          * exists, just return it.
          *
          * @return the built concept
-         * @throws KValidationException
+         * @throws KlabValidationException
          */
-        Concept buildConcept() throws KValidationException;
+        Concept buildConcept() throws KlabValidationException;
 
         /**
          * Build an observable using the observable-specific options (currency, unit, classification and detail types).
          * Use after constructing from an observable using {@link Observable#builder(Scope)}.
          *
          * @return the built concept
-         * @throws KValidationException
+         * @throws KlabValidationException
          */
-        Observable build() throws KValidationException;
+        Observable build() throws KlabValidationException;
 
         /**
          * Return any exceptions accumulated through the building process before build() is called. If build() is called
@@ -505,14 +505,6 @@ public interface Observable extends Semantics {
      */
     Collection<ResolutionException> getResolutionExceptions();
 
-    /**
-     * A generic observable expects to be resolved extensively - i.e., through its subtypes corresponding to the
-     * resolution of generic components (concepts declared with <code>any</code>, <code>all</code> or <code>no</code>,
-     * i.e. with getQualifier() != null). A generic observable is also abstract by definition.
-     *
-     * @return true if the observable has generic components.
-     */
-    boolean isGeneric();
 
     /**
      * True if the observable was declared optional. This can only happen in model dependencies and for the observables
@@ -574,7 +566,7 @@ public interface Observable extends Semantics {
     public static Observable promote(Concept concept) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to observable");
         }
         return configuration.promoteConceptToObservable(concept);
     }

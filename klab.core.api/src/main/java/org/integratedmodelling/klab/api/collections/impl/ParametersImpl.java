@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.collections.impl;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.*;
@@ -257,7 +257,7 @@ public class ParametersImpl<T> implements Parameters<T> {
         for (T key : keySet()) {
 
         }
-        throw new KUnimplementedException("ParameterImpl::rename");
+        throw new KlabUnimplementedException("ParameterImpl::rename");
     }
 
     @Override

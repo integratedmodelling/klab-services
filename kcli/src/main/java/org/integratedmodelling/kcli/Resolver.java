@@ -4,7 +4,7 @@ import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
 import org.integratedmodelling.kcli.visualization.Graphs;
 import org.integratedmodelling.klab.Version;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -24,7 +24,6 @@ import picocli.CommandLine.Spec;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.NumberFormat;
-import java.util.concurrent.ExecutionException;
 
 @Command(name = "resolver", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to access resolution services.",
@@ -200,7 +199,7 @@ public class Resolver {
                 try {
                     dumpObservationStructure(result.get(), ctx, runtime, out, 0);
                 } catch (Exception e) {
-                    throw new KIOException(e);
+                    throw new KlabIOException(e);
                 }
 
             } else {

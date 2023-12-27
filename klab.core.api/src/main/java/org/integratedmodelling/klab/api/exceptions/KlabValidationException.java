@@ -20,14 +20,14 @@ package org.integratedmodelling.klab.api.exceptions;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public class KStorageException extends KException {
+public class KlabValidationException extends KlabException {
 
     private static final long serialVersionUID = 461213337593957416L;
 
     /**
      * Instantiates a new klab validation exception.
      */
-    public KStorageException() {
+    public KlabValidationException() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -37,7 +37,7 @@ public class KStorageException extends KException {
      *
      * @param arg0 the arg 0
      */
-    public KStorageException(String arg0) {
+    public KlabValidationException(String arg0) {
         super(arg0);
         // TODO Auto-generated constructor stub
     }
@@ -47,12 +47,8 @@ public class KStorageException extends KException {
      *
      * @param e the e
      */
-    public KStorageException(Throwable e) {
+    public KlabValidationException(Throwable e) {
         super(e);
-    }
-
-    public KStorageException(Class<?> serviceClass) {
-        super("k.LAB service not accessible: " + serviceClass.getCanonicalName());
     }
 
 }

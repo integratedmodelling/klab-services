@@ -160,7 +160,12 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
     public Concept asConcept() {
         return this;
     }
-    
+
+    @Override
+    public boolean isGeneric() {
+        return false;
+    }
+
     @Override
     public String toString() {
         return this.urn;

@@ -20,14 +20,14 @@ package org.integratedmodelling.klab.api.exceptions;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public class KServiceAccessException extends KException {
+public class KlabServiceAccessException extends KlabException {
 
     private static final long serialVersionUID = 461213337593957416L;
 
     /**
      * Instantiates a new klab validation exception.
      */
-    public KServiceAccessException() {
+    public KlabServiceAccessException() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -37,7 +37,7 @@ public class KServiceAccessException extends KException {
      *
      * @param arg0 the arg 0
      */
-    public KServiceAccessException(String arg0) {
+    public KlabServiceAccessException(String arg0) {
         super(arg0);
         // TODO Auto-generated constructor stub
     }
@@ -47,11 +47,11 @@ public class KServiceAccessException extends KException {
      *
      * @param e the e
      */
-    public KServiceAccessException(Throwable e) {
+    public KlabServiceAccessException(Throwable e) {
         super(e);
     }
 
-    public KServiceAccessException(Class<?> serviceClass) {
+    public KlabServiceAccessException(Class<?> serviceClass) {
         super("k.LAB service not accessible: " + serviceClass.getCanonicalName());
     }
 

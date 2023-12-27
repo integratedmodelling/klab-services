@@ -6,13 +6,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.collections.ImmutableList;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.Observable.ResolutionException;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -319,7 +318,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
     }
 
     @Override
-    public Builder as(UnarySemanticOperator type, Concept... participants) throws KValidationException {
+    public Builder as(UnarySemanticOperator type, Concept... participants) throws KlabValidationException {
         this.operations.add(new Operation(OperationType.AS, type, participants));
         return this;
     }
@@ -357,13 +356,13 @@ public class ObservableBuildStrategy implements Observable.Builder {
     }
 
     @Override
-    public Concept buildConcept() throws KValidationException {
+    public Concept buildConcept() throws KlabValidationException {
         var reasoner = this.scope.getService(Reasoner.class);
         return reasoner.buildConcept(this);
     }
 
     @Override
-    public Observable build() throws KValidationException {
+    public Observable build() throws KlabValidationException {
         var reasoner = this.scope.getService(Reasoner.class);
         return reasoner.buildObservable(this);
     }

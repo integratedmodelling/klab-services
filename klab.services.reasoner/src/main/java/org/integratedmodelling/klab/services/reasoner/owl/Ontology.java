@@ -33,12 +33,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
@@ -267,7 +266,7 @@ public class Ontology /* implements IOntology */ {
         try {
             this.ontology.getOWLOntologyManager().saveOntology(this.ontology, owlxmlFormat, IRI.create(file.toURI()));
         } catch (OWLOntologyStorageException e) {
-            throw new KIOException(e);
+            throw new KlabIOException(e);
         }
 
         return true;
@@ -732,10 +731,10 @@ public class Ontology /* implements IOntology */ {
             ret = ((Property) cc)._owl;
 
             if (isData && ret instanceof OWLObjectProperty) {
-                throw new KValidationException(cc + " is an object property: data expected");
+                throw new KlabValidationException(cc + " is an object property: data expected");
             }
             if (!isData && ret instanceof OWLDataProperty) {
-                throw new KValidationException(cc + " is a data property: object expected");
+                throw new KlabValidationException(cc + " is a data property: object expected");
             }
 
         } else {
@@ -875,7 +874,7 @@ public class Ontology /* implements IOntology */ {
             this.ontology.getOWLOntologyManager()
                     .loadOntology(IRI.create(this.ontology.getOntologyID().getOntologyIRI().toString()));
         } catch (OWLOntologyCreationException e) {
-            throw new KInternalErrorException(e);
+            throw new KlabInternalErrorException(e);
         }
 
     }

@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
@@ -222,7 +222,7 @@ public class JacksonConfiguration {
                 }
                 return ret;
             } catch (Throwable t) {
-                throw new KInternalErrorException(t);
+                throw new KlabInternalErrorException(t);
             }
         }
     }

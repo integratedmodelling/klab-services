@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.tasks;
 
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -58,7 +58,7 @@ public class ObservationTask implements Future<Observation> {
     @Override
     public Observation get() throws InterruptedException, ExecutionException {
         if (!started.get()) {
-            throw new ExecutionException(new KIllegalStateException("get: observation task not started"));
+            throw new ExecutionException(new KlabIllegalStateException("get: observation task not started"));
         }
         while (this.result.get() == null && !canceled.get() && running.get()) {
             Thread.sleep(200);
@@ -72,7 +72,7 @@ public class ObservationTask implements Future<Observation> {
         long limit = TimeUnit.MILLISECONDS.convert(timeout, unit);
         long time = System.currentTimeMillis();
         if (!started.get()) {
-            throw new ExecutionException(new KIllegalStateException("get: observation task not started"));
+            throw new ExecutionException(new KlabIllegalStateException("get: observation task not started"));
         }
         while (this.result.get() == null && !canceled.get() && running.get()) {
             Thread.sleep(200);

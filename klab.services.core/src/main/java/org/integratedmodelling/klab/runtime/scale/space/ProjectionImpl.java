@@ -2,8 +2,8 @@ package org.integratedmodelling.klab.runtime.scale.space;
 
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.CRS.AxisOrder;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.opengis.referencing.FactoryException;
@@ -26,7 +26,7 @@ public class ProjectionImpl implements Projection {
 			this.crs = CRS.decode(definition, true);
 			this.code = getSRS(this.crs);
 		} catch (FactoryException e) {
-			throw new KValidationException(e);
+			throw new KlabValidationException(e);
 		}
 	}
 
@@ -52,7 +52,7 @@ public class ProjectionImpl implements Projection {
 		} catch (FactoryException e) {
 			
 		}
-		throw new KIllegalStateException("projection CRS cannot be understood");
+		throw new KlabIllegalStateException("projection CRS cannot be understood");
 	}
 	
 	public CoordinateReferenceSystem getCRS() {

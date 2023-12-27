@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.data.mediation.impl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -45,7 +45,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.isCompatible(this, (Unit) other);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling isCompatible() without a unit service");
+            throw new KlabInternalErrorException("calling isCompatible() without a unit service");
         }
     }
 
@@ -54,7 +54,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.convert(d, this, (Unit)scale);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling convert() without a unit service");
+            throw new KlabInternalErrorException("calling convert() without a unit service");
         }
     }
 
@@ -63,7 +63,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.convert(value, this, locator);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling convert() without a unit service");
+            throw new KlabInternalErrorException("calling convert() without a unit service");
         }
     }
 
@@ -77,7 +77,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.multiply(this, unit);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling convert() without a unit service");
+            throw new KlabInternalErrorException("calling convert() without a unit service");
         }
     }
 
@@ -86,7 +86,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.divide(this, unit);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling convert() without a unit service");
+            throw new KlabInternalErrorException("calling convert() without a unit service");
         }
     }
 
@@ -95,7 +95,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.scale(this, scale);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling convert() without a unit service");
+            throw new KlabInternalErrorException("calling convert() without a unit service");
         }
     }
 
@@ -109,7 +109,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.splitExtent(this, dimension);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling convert() without a unit service");
+            throw new KlabInternalErrorException("calling convert() without a unit service");
         }
     }
 
@@ -118,7 +118,7 @@ public class UnitImpl implements Unit {
         try {
             return unitService.contextualize(this, observable, scale);
         } catch (NullPointerException e) {
-            throw new KInternalErrorException("calling convert() without a unit service");
+            throw new KlabInternalErrorException("calling convert() without a unit service");
         }
     }
 

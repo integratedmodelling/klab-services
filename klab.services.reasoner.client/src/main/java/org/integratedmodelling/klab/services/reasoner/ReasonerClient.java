@@ -518,6 +518,26 @@ public class ReasonerClient implements Reasoner {
 	}
 
 	@Override
+	public boolean match(Semantics candidate, Semantics pattern) {
+		return false;
+	}
+
+	@Override
+	public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
+		return false;
+	}
+
+	@Override
+	public <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts) {
+		return null;
+	}
+
+	@Override
+	public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
+		return null;
+	}
+
+	@Override
 	public Collection<Concept> rolesFor(Concept observable, Concept context) {
 		// TODO Auto-generated method stub
 		return null;

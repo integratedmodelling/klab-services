@@ -13,11 +13,6 @@ public interface Concept extends Semantics {
     Set<SemanticType> getType();
 
     /**
-     * @return
-     */
-    Metadata getMetadata();
-
-    /**
      * This returns null in "normal" concepts, while a concept qualified with <code>any</code>, <code>all</code> or
      * <code>no</code> will return, respectively, {@link LogicalConnector#UNION}, {@link LogicalConnector#INTERSECTION} or ,
      * {@link LogicalConnector#EXCLUSION}.

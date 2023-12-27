@@ -5,7 +5,7 @@ import java.util.List;
 import javax.measure.UnitConverter;
 
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
-import org.integratedmodelling.klab.api.exceptions.KInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -115,7 +115,7 @@ public abstract class AbstractMediator {
         }
 
         if (ret == null) {
-            throw new KInternalErrorException("cannot find space locator when mediating over space");
+            throw new KlabInternalErrorException("cannot find space locator when mediating over space");
         }
 
         return ret;
@@ -131,7 +131,7 @@ public abstract class AbstractMediator {
         }
 
         if (ret == null) {
-            throw new KInternalErrorException("cannot find time locator when mediating over space");
+            throw new KlabInternalErrorException("cannot find time locator when mediating over space");
         }
 
         return ret;

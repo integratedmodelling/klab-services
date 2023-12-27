@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.runtime.scale.space;
 import org.geotools.referencing.GeodeticCalculator;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelope;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
@@ -23,7 +23,7 @@ public class GridImpl implements Grid {
         if (grid instanceof GridImpl grid1) {
             return grid1;
         }
-        throw new KUnimplementedException("GridImpl::promote with external grid");
+        throw new KlabUnimplementedException("GridImpl::promote with external grid");
     }
 
     /**

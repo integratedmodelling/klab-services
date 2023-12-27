@@ -36,6 +36,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
+			<artifactId>org.integratedmodelling.languages.observation</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.integratedmodelling</groupId>
 			<artifactId>klab.core.api</artifactId>
 			<version>${klab.version}</version>
 		</dependency>

@@ -11,7 +11,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.Query;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
@@ -481,7 +481,7 @@ public class SearchContext {
                 // hai voglia
                 return parser.parse("name:" + currentTerm + "*");
             } catch (ParseException e) {
-                throw new KValidationException(e);
+                throw new KlabValidationException(e);
             }
         }
 

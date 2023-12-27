@@ -27,6 +27,7 @@
 package org.integratedmodelling.klab.api.knowledge.observation.scale.space;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 
 import java.io.Serializable;
 import java.util.List;
@@ -122,7 +123,7 @@ public interface Grid extends Serializable {
      * The projection is never null, so we have a separate method, as the envelope may be null. In a grid specification
      * used as constraint, the projection specified in the grid overrides any other specification. If the envelope is
      * not null, the projection and the envelope's projection must be the same and any specification that makes them
-     * diverge must cause a {@link org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException} exception.
+     * diverge must cause a {@link KlabIllegalArgumentException} exception.
      *
      * @return
      */

@@ -15,7 +15,7 @@ package org.integratedmodelling.klab.api.knowledge.observation.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -182,7 +182,7 @@ public interface Time extends Extent<Time>, Encodeable {
                     case "millisecond":
                         return Type.MILLISECOND;
                 }
-                throw new KValidationException("invalid time unit for resolution: " + unit);
+                throw new KlabValidationException("invalid time unit for resolution: " + unit);
             }
 
         }

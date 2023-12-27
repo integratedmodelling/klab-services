@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -67,7 +67,7 @@ public class DataflowImpl implements Dataflow<Observation> {
         } else {
             Actuator actuator = findActuator(scope.getContextObservation().getId());
             if (actuator == null) {
-                throw new KIllegalArgumentException("cannot add dataflow: observation ID does not correspond to an actuator");
+                throw new KlabIllegalArgumentException("cannot add dataflow: observation ID does not correspond to an actuator");
             }
             actuator.getChildren().addAll(dataflow.getComputation());
         }

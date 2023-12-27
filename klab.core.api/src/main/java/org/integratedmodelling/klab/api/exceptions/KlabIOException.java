@@ -22,7 +22,7 @@ package org.integratedmodelling.klab.api.exceptions;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public class KIOException extends KException {
+public class KlabIOException extends KlabException {
 
     private static final long serialVersionUID = 6219417233563472839L;
 
@@ -31,7 +31,7 @@ public class KIOException extends KException {
      *
      * @param s the s
      */
-    public KIOException(String s) {
+    public KlabIOException(String s) {
         super("Input/output error: " + s);
     }
 
@@ -40,7 +40,7 @@ public class KIOException extends KException {
      *
      * @param e the e
      */
-    public KIOException(Throwable e) {
+    public KlabIOException(Throwable e) {
         super("Input/output error: " + e.getMessage());
     }
 }

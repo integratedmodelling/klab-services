@@ -19,9 +19,7 @@ import java.util.Collection;
 
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 
 /**
  * Opaque, minimal interface for a 2D geometry pertaining to a physical
@@ -172,7 +170,7 @@ public interface Shape extends Referenced, Space {
 	public static Shape create(String textSpecification, Projection projection) {
 		Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
 		if (configuration == null) {
-			throw new KIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
+			throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
 		}
 		return configuration.createShapeFromTextSpecification(textSpecification, projection);
 	}

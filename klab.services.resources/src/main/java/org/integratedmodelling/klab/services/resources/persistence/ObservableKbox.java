@@ -22,9 +22,9 @@
 package org.integratedmodelling.klab.services.resources.persistence;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.exceptions.KException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
-import org.integratedmodelling.klab.api.exceptions.KStorageException;
+import org.integratedmodelling.klab.api.exceptions.KlabException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -280,8 +280,8 @@ public abstract class ObservableKbox extends H2Kbox {
             cset.add(definition);
             conceptHash.put(cdef, coreType);
 
-        } catch (KException e) {
-            throw new KStorageException(e);
+        } catch (KlabException e) {
+            throw new KlabStorageException(e);
         }
 
         return ret;
@@ -421,7 +421,7 @@ public abstract class ObservableKbox extends H2Kbox {
         this.resourceService = scope.getService(ResourcesService.class);
 
         if (this.reasoner == null || this.resourceService == null) {
-            throw new KIllegalStateException("cannot initialize kbox without a valid reasoner or resource service");
+            throw new KlabIllegalStateException("cannot initialize kbox without a valid reasoner or resource service");
         }
 
         setSchema(Concept.class, new ObservableSchema());
@@ -430,8 +430,8 @@ public abstract class ObservableKbox extends H2Kbox {
 
         try {
             loadConcepts();
-        } catch (KException e) {
-            throw new KStorageException(e);
+        } catch (KlabException e) {
+            throw new KlabStorageException(e);
         }
     }
 
@@ -449,7 +449,7 @@ public abstract class ObservableKbox extends H2Kbox {
                     definitionHash.put(rs.getString(2), rs.getLong(1));
                     typeHash.put(rs.getLong(1), rs.getString(2));
                 } catch (SQLException e) {
-                    throw new KStorageException(e);
+                    throw new KlabStorageException(e);
                 }
             }
         });
@@ -485,7 +485,7 @@ public abstract class ObservableKbox extends H2Kbox {
                     }
 
                 } catch (SQLException e) {
-                    throw new KStorageException(e);
+                    throw new KlabStorageException(e);
                 }
             }
         }
@@ -496,7 +496,7 @@ public abstract class ObservableKbox extends H2Kbox {
         return handler.ret;
     }
 
-    protected void deleteMetadataFor(long oid) throws KException {
+    protected void deleteMetadataFor(long oid) throws KlabException {
         database.execute("DELETE FROM metadata WHERE fid = " + oid);
     }
 
@@ -520,7 +520,7 @@ public abstract class ObservableKbox extends H2Kbox {
                 prsql.setObject(1, metadata.get(s), Types.JAVA_OBJECT);
                 prsql.executeUpdate();
             } catch (Exception e) {
-                throw new KStorageException(e);
+                throw new KlabStorageException(e);
             }
         }
     }
@@ -597,7 +597,7 @@ public abstract class ObservableKbox extends H2Kbox {
      * 
      * @return result code
      */
-    public long getNamespaceTimestamp(KimNamespace namespace) throws KException {
+    public long getNamespaceTimestamp(KimNamespace namespace) throws KlabException {
 
         if (!database.hasTable("namespaces")) {
             return 0L;

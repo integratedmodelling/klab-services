@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.runtime.scale.time;
 
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.Locator;
@@ -401,12 +401,12 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     @Override
     public Time earliest() {
         // TODO Auto-generated method stub
-        throw new KUnimplementedException("Time::earliest");
+        throw new KlabUnimplementedException("Time::earliest");
     }
 
     @Override
     public Time latest() {
-        throw new KUnimplementedException("Time::latest");
+        throw new KlabUnimplementedException("Time::latest");
     }
 
     @Override

@@ -28,8 +28,8 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.exceptions.KIOException;
-import org.integratedmodelling.klab.api.exceptions.KValidationException;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.logging.Logging;
 
 /**
@@ -73,7 +73,7 @@ public abstract class GenericRAMIndexer<T> {
 			nrtReopenThread.start();
 
 		} catch (IOException e) {
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		}
 	}
 
@@ -97,7 +97,7 @@ public abstract class GenericRAMIndexer<T> {
 			this.data.put(id, resource);
 
 		} catch (IOException e) {
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		}
 	}
 
@@ -137,7 +137,7 @@ public abstract class GenericRAMIndexer<T> {
 		try {
 			this.writer.commit();
 		} catch (IOException e) {
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		}
 	}
 
@@ -165,7 +165,7 @@ public abstract class GenericRAMIndexer<T> {
 			// hai voglia
 			return parser.parse(currentTerm + "*");
 		} catch (ParseException e) {
-			throw new KValidationException(e);
+			throw new KlabValidationException(e);
 		}
 	}
 
@@ -180,7 +180,7 @@ public abstract class GenericRAMIndexer<T> {
 			searcher = searcherManager.acquire();
 		} catch (IOException e) {
 			// adorable exception management
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		}
 
 		try {
@@ -194,14 +194,14 @@ public abstract class GenericRAMIndexer<T> {
 				}
 			}
 		} catch (Exception e) {
-			throw new KIOException(e);
+			throw new KlabIOException(e);
 		} finally {
 			try {
 				searcherManager.release(searcher);
 			} catch (IOException e) {
 				// unbelievable, they want it in finally and make it throw a checked
 				// exception
-				throw new KIOException(e);
+				throw new KlabIOException(e);
 			}
 		}
 

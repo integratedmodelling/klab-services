@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.integratedmodelling.klab.api.exceptions.KStorageException;
+import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
@@ -73,7 +73,7 @@ public abstract class H2Kbox {
 					try {
 						((DeferredDeserializer<T>) deserializer).addId(rs.getLong(FIELD_PKEY));
 					} catch (SQLException e) {
-						throw new KStorageException(e);
+						throw new KlabStorageException(e);
 					}
 				} else {
 					ret.add(((DirectDeserializer<T>) deserializer).deserialize(rs));
@@ -96,7 +96,7 @@ public abstract class H2Kbox {
 			}
 		}
 		if (ret == null) {
-			throw new KStorageException("kbox: no deserializer for class " + cls.getCanonicalName());
+			throw new KlabStorageException("kbox: no deserializer for class " + cls.getCanonicalName());
 		}
 		return ret;
 	}
@@ -114,7 +114,7 @@ public abstract class H2Kbox {
 			}
 		}
 		if (ret == null) {
-			throw new KStorageException("kbox: no serializer for class " + cls.getCanonicalName());
+			throw new KlabStorageException("kbox: no serializer for class " + cls.getCanonicalName());
 		}
 		return ret;
 	}

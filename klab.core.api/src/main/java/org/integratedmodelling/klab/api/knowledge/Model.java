@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Literal;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -125,7 +125,7 @@ public interface Model extends Knowledge {
     static Builder builder(Observable observable) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to observable");
         }
         return configuration.getModelBuilder(observable);
     }
@@ -139,7 +139,7 @@ public interface Model extends Knowledge {
     static Builder builder(Artifact.Type nonSemanticType) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to observable");
         }
         return configuration.getModelBuilder(nonSemanticType);
     }
@@ -154,7 +154,7 @@ public interface Model extends Knowledge {
     static Builder builder(Resource resource) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to observable");
         }
         return configuration.getModelBuilder(resource);
     }
@@ -169,7 +169,7 @@ public interface Model extends Knowledge {
     static Builder builder(Literal value) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to observable");
         }
         return configuration.getModelBuilder(value);
     }
@@ -184,7 +184,7 @@ public interface Model extends Knowledge {
     static Builder learner(String outputResourceUrn) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to observable");
         }
         return configuration.getModelLearner(outputResourceUrn);
     }

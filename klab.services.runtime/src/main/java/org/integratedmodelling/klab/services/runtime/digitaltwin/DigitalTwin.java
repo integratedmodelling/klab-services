@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -425,7 +425,7 @@ public class DigitalTwin implements Closeable {
             case CATEGORIZATION -> new KeyedStorage(scope.getScale(), storageScope);
             case VERIFICATION -> new BooleanStorage(scope.getScale(), storageScope);
             default ->
-                    throw new KIllegalStateException("Unexpected value: " + observable.getDescriptionType());
+                    throw new KlabIllegalStateException("Unexpected value: " + observable.getDescriptionType());
         };
         this.runtimeAssets.add(storage);
         return storage;

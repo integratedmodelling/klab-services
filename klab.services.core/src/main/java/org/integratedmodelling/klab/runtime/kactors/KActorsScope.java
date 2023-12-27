@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KActorException;
+import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
@@ -487,7 +487,7 @@ public class KActorsScope implements VM.BehaviorScope {
 		if (this.sender != null) {
 			this.sender.tell(message);
 		}
-		throw new KActorException("no sender for message: " + message);
+		throw new KlabActorException("no sender for message: " + message);
 	}
 
 //    @Override

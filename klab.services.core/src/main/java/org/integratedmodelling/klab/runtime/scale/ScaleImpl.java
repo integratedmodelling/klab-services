@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.runtime.scale;
 
 import com.google.common.primitives.Longs;
-import org.integratedmodelling.klab.api.exceptions.KUnimplementedException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.geometry.*;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension.Type;
 import org.integratedmodelling.klab.api.geometry.impl.NDCursor;
@@ -190,7 +190,7 @@ public class ScaleImpl implements Scale {
                 extents.add(TimeImpl.create(dimension));
             } else if (dimension.getType() == Type.NUMEROSITY) {
                 // TODO
-                throw new KUnimplementedException("numerosity extent");
+                throw new KlabUnimplementedException("numerosity extent");
             }
         }
         define(extents);

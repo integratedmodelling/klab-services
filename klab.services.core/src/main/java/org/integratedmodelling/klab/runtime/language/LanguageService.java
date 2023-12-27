@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Expression.CompilerOption;
@@ -112,7 +112,7 @@ public class LanguageService implements Language {
                 try {
                     return (T) descriptor.constructor.newInstance(args);
                 } catch (Throwable e) {
-                    throw new KIllegalStateException(e);
+                    throw new KlabIllegalStateException(e);
                 }
             }
         }
@@ -286,7 +286,7 @@ public class LanguageService implements Language {
                     // TODO check: using the last constructor with parameters, or the empty constructor if found.
                     Class<?> cls = prototype.executorClass();
                     if (cls == null) {
-                        throw new KIllegalStateException("no declared executor class for service " + prototype.getName() + ": constructor can't be extracted");
+                        throw new KlabIllegalStateException("no declared executor class for service " + prototype.getName() + ": constructor can't be extracted");
                     }
                     Class[] ret = null;
                     for (Constructor<?> constructor : cls.getConstructors()) {
@@ -295,7 +295,7 @@ public class LanguageService implements Language {
                         }
                     }
                     if (ret == null) {
-                        throw new KIllegalStateException("no usable constructor for service " + prototype.getName() + " served by class " + cls.getCanonicalName());
+                        throw new KlabIllegalStateException("no usable constructor for service " + prototype.getName() + " served by class " + cls.getCanonicalName());
                     }
                     return ret;
 
@@ -311,7 +311,7 @@ public class LanguageService implements Language {
             case VERB:
                 break;
         }
-        throw new KIllegalArgumentException("can't assess parameter types for " + prototype.getName());
+        throw new KlabIllegalArgumentException("can't assess parameter types for " + prototype.getName());
     }
 
     private Object createGlobalClassInstance(FunctionDescriptor ret) {

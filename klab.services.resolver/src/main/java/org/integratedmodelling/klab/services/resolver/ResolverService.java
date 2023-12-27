@@ -4,7 +4,7 @@ import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -131,17 +131,17 @@ public class ResolverService extends BaseService implements Resolver {
             }
             case Model model -> model.getObservables().get(0);
             case Observable obs -> obs;
-            default -> throw new KIllegalStateException("knowledge " + knowledge + " is not resolvable");
+            default -> throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
         };
 
         if (scale == null || scale.isEmpty()) {
-            throw new KIllegalStateException("cannot resolve " + knowledge + " without a focal scale in the" +
+            throw new KlabIllegalStateException("cannot resolve " + knowledge + " without a focal scale in the" +
                     " context");
         } else if (observable == null) {
-            throw new KIllegalStateException("cannot establish an observable to resolve for " + knowledge);
+            throw new KlabIllegalStateException("cannot establish an observable to resolve for " + knowledge);
         } else if (!(knowledge instanceof Instance) && !observable.getDescriptionType().isInstantiation()
                 && scope.getContextObservation() == null) {
-            throw new KIllegalStateException(
+            throw new KlabIllegalStateException(
                     "cannot resolve the non-autonomous observable " + knowledge + " without a context " +
                             "observation");
         }
@@ -573,7 +573,7 @@ public class ResolverService extends BaseService implements Resolver {
                 } else if (ext instanceof Extent) {
                     extents.add((Extent<?>) ext);
                 } else {
-                    throw new KIllegalStateException("the call to " + call.getName() + " did not produce a " +
+                    throw new KlabIllegalStateException("the call to " + call.getName() + " did not produce a " +
                             "scale or " +
                             "an extent");
                 }
