@@ -616,7 +616,7 @@ public class ResolverService extends BaseService implements Resolver {
         model.getComputation().addAll(statement.getContextualization());
         model.setUrn(statement.getNamespace() + "." + statement.getName());
         model.setNamespace(statement.getNamespace());
-        model.getActions().addAll(statement.getBehavior().getActions());
+        model.getActions().addAll(statement.getBehavior().getStatements());
         model.setCoverage(createScaleFromBehavior(statement.getBehavior(), scope));
 
         return model;

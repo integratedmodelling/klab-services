@@ -279,7 +279,7 @@ public class OWL {
          */
         for (KimNamespace ns : this.namespaces.values()) {
             // ((Namespace) ns).setInternal(true);
-            getOntology(ns.getNamespace()).setInternal(true);
+            getOntology(ns.getUrn()).setInternal(true);
         }
 
         this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
@@ -299,7 +299,7 @@ public class OWL {
         }
 
         for (KimNamespace ns : this.namespaces.values()) {
-            registerWithReasoner(getOntology(ns.getNamespace()));
+            registerWithReasoner(getOntology(ns.getUrn()));
         }
 
     }
@@ -2620,7 +2620,7 @@ public class OWL {
     }
 
     public void registerWithReasoner(KimNamespace parsed) {
-        Ontology ontology = getOntology(parsed.getNamespace());
+        Ontology ontology = getOntology(parsed.getUrn());
         if (ontology != null) {
             registerWithReasoner(ontology);
         }

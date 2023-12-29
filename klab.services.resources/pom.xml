@@ -57,14 +57,6 @@
 			<artifactId>org.eclipse.xtext.util</artifactId>
 			<version>${xtextVersion}</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.eclipse.xtext/org.eclipse.xtext.testing
-			Used in compile scope to provide simple, reentrant parser injector for repeated
-			calls to declaration parser. -->
-		<dependency>
-			<groupId>org.eclipse.xtext</groupId>
-			<artifactId>org.eclipse.xtext.testing</artifactId>
-			<version>${xtextVersion}</version>
-		</dependency>
 
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

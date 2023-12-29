@@ -213,7 +213,7 @@ public abstract class ObservableKbox extends H2Kbox {
             String ret = null;
             if (ns != null) {
                 ret = "DELETE FROM namespaces WHERE id = '" + ns.getUrn() + "'; INSERT INTO namespaces VALUES ('"
-                        + Utils.Escape.forSQL(ns.getUrn()) + "', " + ns.getTimestamp() + ", "
+                        + Utils.Escape.forSQL(ns.getUrn()) + "', " + ns.getLastUpdateTimestamp() + ", "
                         + (ns.isScenario() ? "TRUE" : "FALSE") + ");";
             }
             return ret;
@@ -547,7 +547,7 @@ public abstract class ObservableKbox extends H2Kbox {
         }
 
         long dbTimestamp = getNamespaceTimestamp(namespace);
-        long timestamp = namespace.getTimestamp();
+        long timestamp = namespace.getLastUpdateTimestamp();
 
         /*
          * if we have stored something and we are younger than the stored ns, remove all models

@@ -229,7 +229,7 @@ public class TestScope {
 				ret.setLabel(tann.get("label", String.class));
 			}
 		}
-		ret.setSourceCode(action.getSourceCode());
+		ret.setSourceCode(action.sourceCode());
 		ret.setStart(System.currentTimeMillis());
 
 		monitor.send(Message.create(identity.getId(), Message.MessageClass.UnitTests, Message.MessageType.TestStarted, ret));
@@ -275,7 +275,7 @@ public class TestScope {
 					+ "\n\n");
 
 			buffer.append(".Source code\n");
-			buffer.append(AsciiDocBuilder.listingBlock(action.getSourceCode(), "kactors", Option.COLLAPSIBLE));
+			buffer.append(AsciiDocBuilder.listingBlock(action.sourceCode(), "kactors", Option.COLLAPSIBLE));
 
 			if (ret.actionStatistics.getAssertions().size() > 0) {
 				Table table = new Table("Description", "Outcome").title("Assertions").spans(7, 1);
@@ -406,7 +406,7 @@ public class TestScope {
 		}
 
 		if (desc.getDescriptor() == null) {
-			desc.setDescriptor(Utils.Strings.abbreviate(Utils.Strings.getFirstLine(assertion.getSourceCode()), 60));
+			desc.setDescriptor(Utils.Strings.abbreviate(Utils.Strings.getFirstLine(assertion.sourceCode()), 60));
 		}
 
 	}

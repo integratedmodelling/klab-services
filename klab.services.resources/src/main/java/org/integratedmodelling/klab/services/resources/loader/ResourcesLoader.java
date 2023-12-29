@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.languages.KimStandaloneSetup;
 import org.integratedmodelling.languages.ObservableStandaloneSetup;
 import org.integratedmodelling.languages.WorldviewStandaloneSetup;
@@ -18,7 +19,6 @@ import org.integratedmodelling.languages.validation.BasicObservableValidationSco
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.integratedmodelling.languages.worldview.Ontology;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
@@ -75,12 +75,14 @@ public class ResourcesLoader {
     }
 
     /**
-     * Read all projects in a workspace directory, populating the project list in order of dependency
+     * Read all project assets populating the asset lists in order of dependency. Ingest referenced worldview
+     * files if they are available in the workspace manager.
+     * <p>
+     * Must be reentrant as it gets called again at each workspace modification.
      *
-     * @param workspace
-     * @param projects
+     * @param workspaceManager
      */
-    public void loadWorkspace(File workspace, List<Project> projects) {
+    public boolean loadWorkspaces(WorkspaceManager workspaceManager) {
 
         /**
          * Find all projects, read the manifest and establish project order
@@ -90,6 +92,8 @@ public class ResourcesLoader {
          * Read all worldview files first. As new concepts and models are read, populate the semantic
          * catalog so that the types can be established.
          */
+
+        return false;
     }
 
 
@@ -99,14 +103,9 @@ public class ResourcesLoader {
         private IParser parser;
 
         public Parser() {
-            setupParser();
+            createInjector().injectMembers(this);
         }
-
-        private void setupParser() {
-            Injector injector = createInjector();
-            injector.injectMembers(this);
-        }
-
+        
         protected abstract Injector createInjector();
 
         /**

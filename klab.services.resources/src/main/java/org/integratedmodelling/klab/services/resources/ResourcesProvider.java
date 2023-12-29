@@ -7,6 +7,7 @@ package org.integratedmodelling.klab.services.resources;
 //import org.integratedmodelling.kim.model.Kim;
 //import org.integratedmodelling.kim.model.KimLoader;
 //import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
+
 import org.eclipse.ui.internal.WorkbenchPage;
 import org.integratedmodelling.klab.api.authentication.CRUDPermission;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -80,7 +81,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private static boolean languagesInitialized;
 
     private String url;
-//    private KimLoader kimLoader;
+    //    private KimLoader kimLoader;
     private ResourcesConfiguration configuration = new ResourcesConfiguration();
     private Authentication authenticationService;
     private Map<String, Project> localProjects = Collections.synchronizedMap(new HashMap<>());
@@ -144,7 +145,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (config.exists()) {
             configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
         }
-        this.workspaceManager = new WorkspaceManager(this.configuration);
+        this.workspaceManager = new WorkspaceManager(this.configuration, scope, (projectId) -> resolveRemoteProject(projectId) /* TODO
+         resolve through the network*/);
+    }
+
+    public Project resolveRemoteProject(String projectId) {
+        // TODO
+        System.out.println("TODO resolve external project " + projectId);
+        return null;
     }
 
     @Autowired
@@ -342,7 +350,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 //            this.localNamespaces.put(namespace.getUrn(), namespace);
 //            this.kbox.store(namespace, this.scope);
 //            for (KimStatement statement : namespace.getStatements()) {
-//                if (statement instanceof KimModel && !Utils.Notifications.hasErrors(statement.getNotifications())) {
+//                if (statement instanceof KimModel && !Utils.Notifications.hasErrors(statement
+//                .getNotifications())) {
 //                    this.kbox.store(statement, scope);
 //                }
 //            }
@@ -622,7 +631,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             }
             // remove namespaces, behaviors and resources
             for (KimNamespace namespace : project.getNamespaces()) {
-                this.localNamespaces.remove(namespace.getNamespace());
+                this.localNamespaces.remove(namespace.getUrn());
             }
             for (KActorsBehavior behavior : project.getBehaviors()) {
                 this.localBehaviors.remove(behavior.getUrn());
@@ -736,7 +745,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public KimConcept resolveConcept(String definition) {
 //        IKimObservable parsed = Kim.INSTANCE.declare(definition);
 //        if (parsed == null) {
-            return null;
+        return null;
 //        }
 //        return KimAdapter.adaptKimObservable(parsed).getSemantics();
 

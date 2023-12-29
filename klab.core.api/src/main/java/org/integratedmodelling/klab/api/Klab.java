@@ -16,137 +16,146 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import java.util.Collection;
 
 /**
- * Holds global configurations and functions that allow generic interfaces to
- * expose constructor methods that produce implementation classes that depend on
- * complex dependencies. Implements a poor-man injection pattern that needs to
- * be configured in a static block, as done in <code>klab.services.core</code>.
- * This permits complex classes like Scale or Projection to have generic
- * builders declared in the API package.
- * 
- * @author Ferd
+ * Holds global configurations and functions that allow generic interfaces to expose constructor methods that
+ * produce implementation classes that depend on complex dependencies. Implements a poor-man injection pattern
+ * that needs to be configured in a static block, as done in <code>klab.services.core</code>. This permits
+ * complex classes like Scale or Projection to have generic builders declared in the API package.
  *
+ * @author Ferd
  */
 public enum Klab {
 
-	INSTANCE;
+    INSTANCE;
 
-	/**
-	 * Names for the core functions linked to the runtime. These are the service
-	 * calls that every runtime must implement without having to resort to
-	 * components, although specially authorized components may override them.
-	 * <p>
-	 * The standard library is divided into separate parts corresponding to
-	 * sub-interfaces. Each must have a NAMESPACE field that is the namespace prefix
-	 * for all the service calls in it. The actual function names must <em>not
-	 * include</em> the namespace. Static functions produce the service calls
-	 * themselves providing a contract and type checking for the parameters.
-	 * <p>
-	 * The actual implementations must be provided in {@link Library}-annotated
-	 * classes (with the NAMESPACE as ID) with subclasses annotated with
-	 * {@link KlabFunction} providing the individual functions, corresponding
-	 * exactly to the calls generated.
-	 * 
-	 * @author Ferd
-	 *
-	 */
-	public interface StandardLibrary {
+    /**
+     * Error codes for all situations. These can (should) be passed, along with an ErrorContext, to
+     * {@link org.integratedmodelling.klab.api.services.runtime.Channel#error(Object...)} to qualify the
+     * resulting actions.
+     */
+    public enum ErrorCode {
+        UNRESOLVED_REFERENCE,
+        CIRCULAR_REFERENCES,
+        MISMATCHED_VERSION
+    }
 
-		public interface Extents {
+    public enum ErrorContext {
+        PROJECT,
+        NAMESPACE,
+        ONTOLOGY,
+        RESOURCE
+    }
 
-			public static final String NAMESPACE = Library.CORE_LIBRARY;
+    /**
+     * Names for the core functions linked to the runtime. These are the service calls that every runtime must
+     * implement without having to resort to components, although specially authorized components may override
+     * them.
+     * <p>
+     * The standard library is divided into separate parts corresponding to sub-interfaces. Each must have a
+     * NAMESPACE field that is the namespace prefix for all the service calls in it. The actual function names
+     * must <em>not include</em> the namespace. Static functions produce the service calls themselves
+     * providing a contract and type checking for the parameters.
+     * <p>
+     * The actual implementations must be provided in {@link Library}-annotated classes (with the NAMESPACE as
+     * ID) with subclasses annotated with {@link KlabFunction} providing the individual functions,
+     * corresponding exactly to the calls generated.
+     *
+     * @author Ferd
+     */
+    public interface StandardLibrary {
 
-			public static final String SPACE = "space";
+        public interface Extents {
 
-			public static final String TIME = "time";
+            public static final String NAMESPACE = Library.CORE_LIBRARY;
 
-		}
+            public static final String SPACE = "space";
 
-		/**
-		 * Calls to these functions are created directly by the resolver when
-		 * {@link Contextualizable}s of different k.IM types and/or
-		 * {@link ObservationStrategy}es from the reasoner are translated into dataflow
-		 * actuators.
-		 * 
-		 * @author Ferd
-		 *
-		 */
-		public interface KlabCore {
+            public static final String TIME = "time";
 
-			public static final String NAMESPACE = "klab.core";
+        }
 
-			public static final String URN_RESOLVER = "urn.resolver";
+        /**
+         * Calls to these functions are created directly by the resolver when {@link Contextualizable}s of
+         * different k.IM types and/or {@link ObservationStrategy}es from the reasoner are translated into
+         * dataflow actuators.
+         *
+         * @author Ferd
+         */
+        public interface KlabCore {
 
-			public static final String LUT_RESOLVER = "lut.resolver";
+            public static final String NAMESPACE = "klab.core";
 
-			public static final String URN_INSTANTIATOR = "urn.instantiator";
+            public static final String URN_RESOLVER = "urn.resolver";
 
-		}
+            public static final String LUT_RESOLVER = "lut.resolver";
 
-	}
+            public static final String URN_INSTANTIATOR = "urn.instantiator";
 
-	/**
-	 * This is implemented and configured by services so that static constructors of
-	 * classes that need complex dependencies can be provided with the correspondent
-	 * interfaces in the <code>klab.core.api</code> package. Implements a poor-man
-	 * injection pattern without the pain of actual injection.
-	 * 
-	 * @author Ferd
-	 *
-	 */
-	public interface Configuration {
+        }
 
-		Observable promoteConceptToObservable(Concept concept);
+    }
 
-		Observable.Builder getObservableBuilder(Concept observable, Scope scope);
+    /**
+     * This is implemented and configured by services so that static constructors of classes that need complex
+     * dependencies can be provided with the correspondent interfaces in the <code>klab.core.api</code>
+     * package. Implements a poor-man injection pattern without the pain of actual injection.
+     *
+     * @author Ferd
+     */
+    public interface Configuration {
 
-		Observable.Builder getObservableBuilder(Observable observable, Scope scope);
+        Observable promoteConceptToObservable(Concept concept);
 
-		Scale promoteGeometryToScale(Geometry geometry);
+        Observable.Builder getObservableBuilder(Concept observable, Scope scope);
 
-		Projection getDefaultSpatialProjection();
+        Observable.Builder getObservableBuilder(Observable observable, Scope scope);
 
-		Projection getLatLonSpatialProjection();
+        Scale promoteGeometryToScale(Geometry geometry);
 
-		Scale createScaleFromExtents(Collection<Extent<?>> extents);
+        Projection getDefaultSpatialProjection();
 
-		Shape createShapeFromTextSpecification(String shapeText, Projection projection);
+        Projection getLatLonSpatialProjection();
 
-		Projection getSpatialProjection(String string);
+        Scale createScaleFromExtents(Collection<Extent<?>> extents);
 
-		Coverage promoteScaleToCoverage(Scale geometry, double coverage);
+        Shape createShapeFromTextSpecification(String shapeText, Projection projection);
+
+        Projection getSpatialProjection(String string);
+
+        Coverage promoteScaleToCoverage(Scale geometry, double coverage);
 
         Model.Builder getModelBuilder(Observable observable);
 
-		Model.Builder getModelBuilder(Artifact.Type nonSemanticType);
+        Model.Builder getModelBuilder(Artifact.Type nonSemanticType);
 
-		Model.Builder getModelBuilder(Resource resource);
+        Model.Builder getModelBuilder(Resource resource);
 
-		Model.Builder getModelBuilder(Literal value);
+        Model.Builder getModelBuilder(Literal value);
 
-		Model.Builder getModelLearner(String outputResourceUrn);
+        Model.Builder getModelLearner(String outputResourceUrn);
 
-		/**
-		 * Deep copy of an extent - anything not immutable must be a new object.
-		 * @param extent
-		 * @return
-		 */
-		Extent<?> createExtentCopy(Extent<?> extent);
-	}
+        /**
+         * Deep copy of an extent - anything not immutable must be a new object.
+         *
+         * @param extent
+         * @return
+         */
+        Extent<?> createExtentCopy(Extent<?> extent);
+    }
 
-	private Configuration configuration;
+    private Configuration configuration;
 
-	/**
-	 * Call this in the static block of the core package configuration to ensure
-	 * that the constructors know how to do their job.
-	 * 
-	 * @param configuration
-	 */
-	public void setConfiguration(Configuration configuration) {
-		this.configuration = configuration;
-	}
+    /**
+     * Call this in the static block of the core package configuration to ensure that the constructors know
+     * how to do their job.
+     *
+     * @param configuration
+     */
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
+    }
 
-	public Configuration getConfiguration() {
-		return this.configuration;
-	}
+    public Configuration getConfiguration() {
+        return this.configuration;
+    }
 
 }

@@ -33,7 +33,7 @@ public interface ProjectStorage {
     URL getUrl();
 
     /**
-     * List all contained resources for the passed types. Use {@link #openResource(String, ResourceType)} to
+     * List all contained resources for the passed types. Use {@link URL#openStream()} to
      * access their contents.
      *
      * @param types
@@ -51,4 +51,20 @@ public interface ProjectStorage {
      * @return
      */
     URL create(String resourceId, ResourceType resourceType);
+
+    /**
+     * Read-only status may depend on the storage medium (online, protected JAR) and/or on signature or
+     * permissions.
+     *
+     * @return
+     */
+    boolean isReadOnly();
+
+    /**
+     * A filesystem-based project may be editable and all its assets must be available as files on the
+     * filesystem. All URLs returned by {@link #listResources(ResourceType...)} must have file protocol.
+     *
+     * @return
+     */
+    boolean isFilesystemBased();
 }

@@ -4,9 +4,11 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
+import org.integratedmodelling.klab.api.lang.kim.KimDocument;
 
 /**
  * A IKimBehavior is the statement of the contextualization strategy for a model or an observation,
@@ -15,7 +17,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
  * @author fvilla
  *
  */
-public class KimBehaviorImpl extends KimStatementImpl implements KimBehavior {
+public class KimBehaviorImpl extends KimDocumentImpl<Action> implements KimBehavior {
 
     @Serial
     private static final long serialVersionUID = 2701074196387350255L;
@@ -23,11 +25,6 @@ public class KimBehaviorImpl extends KimStatementImpl implements KimBehavior {
     private boolean empty;
     private boolean dynamic;
     private List<ServiceCall> extentFunctions = new ArrayList<>();
-
-    @Override
-    public List<Action> getActions() {
-        return this.actions;
-    }
 
     @Override
     public boolean isEmpty() {
@@ -60,4 +57,38 @@ public class KimBehaviorImpl extends KimStatementImpl implements KimBehavior {
         this.extentFunctions = extentFunctions;
     }
 
+    @Override
+    public String getUrn() {
+        return null;
+    }
+
+    @Override
+    public Version getVersion() {
+        return null;
+    }
+
+    @Override
+    public long getCreationTimestamp() {
+        return 0;
+    }
+
+    @Override
+    public long getLastUpdateTimestamp() {
+        return 0;
+    }
+
+    @Override
+    public boolean isInactive() {
+        return false;
+    }
+
+    @Override
+    public List<Action> getStatements() {
+        return null;
+    }
+
+    @Override
+    public String getProjectName() {
+        return null;
+    }
 }

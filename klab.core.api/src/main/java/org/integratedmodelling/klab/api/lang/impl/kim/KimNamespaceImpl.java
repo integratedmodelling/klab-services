@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -22,17 +23,14 @@ import org.integratedmodelling.klab.api.lang.kim.KimStatement;
  * @author ferdinando.villa
  *
  */
-public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
+public class KimNamespaceImpl extends KimDocumentImpl<KimStatement> implements KimNamespace {
 
+    @Serial
     private static final long serialVersionUID = 6198296119075476515L;
-    private String urn;
     private Set<String> disjointNamespaces = new HashSet<>();
-    private long timestamp;
     private List<PairImpl<String, String>> owlImports = new ArrayList<>();
     private List<PairImpl<String, List<String>>> vocabularyImports = new ArrayList<>();
-    private boolean inactive;
     private boolean scenario;
-    private KimConcept domain;
     private String scriptId;
     private String testCaseId;
     private boolean worldviewBound;
@@ -40,13 +38,6 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
     private Map<String, Object> defines = new HashMap<>();
     private List<KimStatement> statements = new ArrayList<>();
     private Map<String, List<String>> imports = new HashMap<>();
-    private String projectName;
-    private Version version;
-
-    @Override
-    public String getUrn() {
-        return this.urn;
-    }
 
     @Override
     public Collection<String> getDisjointNamespaces() {
@@ -54,33 +45,8 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
     }
 
     @Override
-    public long getTimestamp() {
-        return this.timestamp;
-    }
-
-    @Override
-    public List<PairImpl<String, String>> getOwlImports() {
-        return this.owlImports;
-    }
-
-    @Override
-    public List<PairImpl<String, List<String>>> getVocabularyImports() {
-        return this.vocabularyImports;
-    }
-
-    @Override
-    public boolean isInactive() {
-        return this.inactive;
-    }
-
-    @Override
     public boolean isScenario() {
         return this.scenario;
-    }
-
-    @Override
-    public KimConcept getDomain() {
-        return this.domain;
     }
 
     @Override
@@ -118,36 +84,12 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
         return this.imports;
     }
 
-    public void setUrn(String name) {
-        this.urn = name;
-    }
-
     public void setDisjointNamespaces(Set<String> disjointNamespaces) {
         this.disjointNamespaces = disjointNamespaces;
     }
 
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public void setOwlImports(List<PairImpl<String, String>> owlImports) {
-        this.owlImports = owlImports;
-    }
-
-    public void setVocabularyImports(List<PairImpl<String, List<String>>> vocabularyImports) {
-        this.vocabularyImports = vocabularyImports;
-    }
-
-    public void setInactive(boolean inactive) {
-        this.inactive = inactive;
-    }
-
     public void setScenario(boolean scenario) {
         this.scenario = scenario;
-    }
-
-    public void setDomain(KimConcept domain) {
-        this.domain = domain;
     }
 
     public void setScriptId(String scriptId) {
@@ -176,24 +118,6 @@ public class KimNamespaceImpl extends KimStatementImpl implements KimNamespace {
 
     public void setImports(Map<String, List<String>> imports) {
         this.imports = imports;
-    }
-
-    @Override
-    public String getProjectName() {
-        return this.projectName;
-    }
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-    @Override
-    public Version getVersion() {
-        return this.version;
-    }
-
-    public void setVersion(Version version) {
-        this.version = version;
     }
 
 }

@@ -15,18 +15,7 @@ import java.util.Map;
  * @author ferdinando.villa
  *
  */
-public interface KimNamespace extends KimStatement, KlabAsset {
-
-	/**
-	 * Roles a namespace can play within a project. Not fully integrated at the
-	 * moment, although the namespace should have a getRole() method to expose it.
-	 * 
-	 * @author Ferd
-	 *
-	 */
-	public enum Role {
-		KNOWLEDGE, SCRIPT, TESTCASE, CALIBRATION, SCENARIOalias
-	}
+public interface KimNamespace extends KimDocument<KimStatement> {
 
 	/**
 	 * Return all the namespaces that this should not be mixed with during
@@ -37,40 +26,10 @@ public interface KimNamespace extends KimStatement, KlabAsset {
 	Collection<String> getDisjointNamespaces();
 
 	/**
-	 * The timestamp of creation of the namespace object - not the underlying file
-	 * resource (see {@link #getFile()} for that).
-	 * 
-	 * @return time of creation
-	 */
-	long getTimestamp();
-
-	/**
-	 * Imports of external OWL ontologies
-	 * 
-	 * @return
-	 */
-	List<PairImpl<String, String>> getOwlImports();
-
-	/**
-	 * Import of vocabularies from resources, as resource URN -> list of
-	 * vocabularies from that resource
-	 * 
-	 * @return
-	 */
-	List<PairImpl<String, List<String>>> getVocabularyImports();
-
-	/**
 	 * 
 	 * @return
 	 */
 	Map<String, Object> getDefines();
-
-	/**
-	 * True if declared as void.
-	 * 
-	 * @return
-	 */
-	boolean isInactive();
 
 	/**
 	 * True if declared as a scenario.
@@ -78,13 +37,6 @@ public interface KimNamespace extends KimStatement, KlabAsset {
 	 * @return
 	 */
 	boolean isScenario();
-
-	/**
-	 * The domain concept, if stated.
-	 * 
-	 * @return
-	 */
-	KimConcept getDomain();
 
 	/**
 	 * If this is a script, return its ID (either specified in a run annotation or
@@ -110,13 +62,6 @@ public interface KimNamespace extends KimStatement, KlabAsset {
 	boolean isWorldviewBound();
 
 	/**
-	 * Return all the top-level statements in order of definition.
-	 * 
-	 * @return
-	 */
-	List<KimStatement> getStatements();
-
-	/**
 	 * If functions were given to constrain the namespace to a scale, return them.
 	 * 
 	 * @return
@@ -130,20 +75,5 @@ public interface KimNamespace extends KimStatement, KlabAsset {
 	 * @return
 	 */
 	Map<String, List<String>> getImports();
-
-	/**
-	 * Notifications during compilation. If any of the contained objects have
-	 * errors, there should be one overall notification that ensures errors are
-	 * visible at the namespace level.
-	 * 
-	 * @return
-	 */
-	Collection<Notification> getNotifications();
-
-	/**
-	 * 
-	 * @return
-	 */
-	String getProjectName();
 
 }

@@ -473,7 +473,7 @@ public class Resources {
 
 	public static String listApplication(String resourceUrn, boolean source, ResourcesService service) {
 		KActorsBehavior behavior = service.resolveBehavior(resourceUrn, Engine.INSTANCE.getCurrentUser());
-		return source ? behavior.getSourceCode() : Utils.Json.printAsJson(behavior);
+		return source ? behavior.sourceCode() : Utils.Json.printAsJson(behavior);
 	}
 
 	public static String listNamespace(String resourceUrn, boolean source, ResourcesService service) {
@@ -491,7 +491,7 @@ public class Resources {
 		for (KimStatement statement : namespace.getStatements()) {
 			if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance
 					&& on.equals(((KimInstance) statement).getName())) {
-				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
+				return source ? statement.sourceCode() : Utils.Json.printAsJson(statement);
 			} /*else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
 					&& resourceUrn.equals(((KimModel) statement).getName())) {
 				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);

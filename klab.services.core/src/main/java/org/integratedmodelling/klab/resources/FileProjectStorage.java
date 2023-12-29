@@ -114,4 +114,14 @@ public class FileProjectStorage implements ProjectStorage {
         }
         return null;
     }
+
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    @Override
+    public boolean isFilesystemBased() {
+        return false;
+    }
 }

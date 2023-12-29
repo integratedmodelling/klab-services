@@ -63,7 +63,7 @@ public class KActorsCodeStatementImpl implements KActorsCodeStatement 	{
     }
 
     @Override
-    public String getSourceCode() {
+    public String sourceCode() {
         return this.sourceCode;
     }
 
@@ -128,8 +128,8 @@ public class KActorsCodeStatementImpl implements KActorsCodeStatement 	{
 
     @Override
     public String toString() {
-        if (getSourceCode() != null) {
-            return getSourceCode();
+        if (sourceCode() != null) {
+            return sourceCode();
         }
         return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
     }

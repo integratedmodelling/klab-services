@@ -14,14 +14,8 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
  * @author fvilla
  *
  */
-public interface KimBehavior extends KimStatement {
+public interface KimBehavior extends KimDocument<Action> {
 
-    /**
-     * 
-     * @return
-     */
-    List<Action> getActions();
-    
     /**
      * Quick check for no-op behaviors.
      * 
