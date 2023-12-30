@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.data.MetadataConvention;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public interface Project extends Serializable {
@@ -77,6 +78,8 @@ public interface Project extends Serializable {
 	 * @return
 	 */
 	List<KimNamespace> getNamespaces();
+
+	List<KimOntology> getOntologies();
 
 	/**
 	 * 

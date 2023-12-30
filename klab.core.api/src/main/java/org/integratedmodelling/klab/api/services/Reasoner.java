@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
@@ -744,7 +745,9 @@ public interface Reasoner extends KlabService {
     Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints);
 
     /**
-     *
+     * @param observable
+     * @param scope
+     * @return all the observation strategies for this observable in this context, best first
      * @deprecated to be substituted with declarative strategy compiler from worldview
      *
      * <p>Return all the possible strategies to observe the passed observable in this context, in order of
@@ -892,10 +895,6 @@ public interface Reasoner extends KlabService {
      *     only models <code>within</code> a speciaiized inherent are found. This situation can also happen
      *     if a model
      *     that only explicitly resolves <code>within</code> a specialized context is chosen.</dd>
-     *
-     * @param observable
-     * @param scope
-     * @return all the observation strategies for this observable in this context, best first
      */
     List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope);
 
@@ -946,14 +945,13 @@ public interface Reasoner extends KlabService {
     interface Admin {
 
         /**
-         * Load all usable knowledge from the namespaces included in the passed resource set. This will read
-         * all concept definitions and semantic individual definitions in the namespaces, ignoring everything
-         * else.
+         * Load all usable knowledge from the ontologies returned by a resources server. The ontologies are
+         * assumed in correct load order, consistent and complete.
          *
          * @param resources
          * @return
          */
-        boolean loadKnowledge(ResourceSet resources, Scope scope);
+        boolean loadKnowledge(List<KimOntology> resources, Scope scope);
 
         /**
          * The "port" to ingest an individual concept definition, called by

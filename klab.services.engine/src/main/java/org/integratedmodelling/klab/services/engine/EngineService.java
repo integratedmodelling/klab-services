@@ -5,6 +5,7 @@ import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -80,22 +81,22 @@ public class EngineService {
              *
              * Logic is intricated, careful when making changes.
              */
-            ResourceSet worldview = null;
+            List<KimOntology> worldview = null;
             for (var service : new KlabService[]{defaultResourcesService, defaultReasoner, defaultResolver,
                                                  defaultRuntime}) {
                 if (service instanceof BaseService baseService) {
                     baseService.initializeService();
-                    if (service instanceof ResourcesService.Admin admin) {
-                        worldview = admin.loadWorldview();
-                    } else if (service instanceof Reasoner.Admin admin && worldview != null) {
+                    if (service instanceof ResourcesService admin) {
+                        worldview = admin.getWorldview();
+                    } else if (service instanceof Reasoner.Admin admin && !worldview.isEmpty()) {
                         admin.loadKnowledge(worldview, baseService.scope());
                     }
                 }
             }
 
-            if (defaultResourcesService instanceof BaseService && defaultResourcesService instanceof ResourcesService.Admin) {
-                ((ResourcesService.Admin) defaultResourcesService).loadWorkspaces();
-            }
+//            if (defaultResourcesService instanceof BaseService && defaultResourcesService instanceof ResourcesService.Admin) {
+//                ((ResourcesService.Admin) defaultResourcesService).loadWorkspaces();
+//            }
         }
     }
 

@@ -33,9 +33,13 @@ public enum Klab {
      * resulting actions.
      */
     public enum ErrorCode {
+        RESOURCE_VALIDATION,
         UNRESOLVED_REFERENCE,
         CIRCULAR_REFERENCES,
-        MISMATCHED_VERSION
+        MISMATCHED_VERSION,
+        READ_FAILED,
+        WRITE_FAILED
+
     }
 
     public enum ErrorContext {

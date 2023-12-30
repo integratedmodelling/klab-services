@@ -11,7 +11,7 @@ import java.util.List;
 public interface ProjectStorage {
 
     enum ResourceType {
-        WORLDVIEW_NAMESPACE,
+        ONTOLOGY,
         MODEL_NAMESPACE,
         MANIFEST,
         DOCUMENTATION_NAMESPACE,

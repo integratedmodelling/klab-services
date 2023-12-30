@@ -8,14 +8,11 @@ package org.integratedmodelling.klab.services.resources;
 //import org.integratedmodelling.kim.model.KimLoader;
 //import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 
-import org.eclipse.ui.internal.WorkbenchPage;
 import org.integratedmodelling.klab.api.authentication.CRUDPermission;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -26,7 +23,6 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimNamespaceImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -45,7 +41,6 @@ import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
-import org.integratedmodelling.klab.services.resources.assets.ProjectImpl.ManifestImpl;
 import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
@@ -87,6 +82,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private Map<String, Project> localProjects = Collections.synchronizedMap(new HashMap<>());
     private Map<String, WorkspaceImpl> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
     private Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
+    // we need to be able to serve entire, valid worldviews, so if this is filled in it may contain both
+    // local and remote ontologies. The worldview is always kept in dependency order.
+    private Map<String, KimOntology> servedOntologies = Collections.synchronizedMap(new LinkedHashMap<>());
     private Map<String, KActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
 
     private WorkspaceManager workspaceManager;
@@ -145,7 +143,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (config.exists()) {
             configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
         }
-        this.workspaceManager = new WorkspaceManager(this.configuration, scope, (projectId) -> resolveRemoteProject(projectId) /* TODO
+        this.workspaceManager = new WorkspaceManager(this.configuration, scope,
+                (projectId) -> resolveRemoteProject(projectId) /* TODO
          resolve through the network*/);
     }
 
@@ -172,6 +171,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         /*
          * TODO launch update service
          */
+
+        loadWorkspaces();
+
         scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities());
     }
@@ -182,17 +184,22 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     public ResourceSet loadWorkspaces() {
-        List<String> projects = new ArrayList<>();
-        for (String workspaceName : configuration.getWorkspaces().keySet()) {
-            Workspace workspace = getWorkspace(workspaceName);
-            for (String project : configuration.getWorkspaces().get(workspaceName)) {
-                workspace.getProjects().add(importProject(project,
-                        configuration.getProjectConfiguration().get(project)));
-                projects.add(project);
-            }
-        }
-        return projects(projects, scope);
+
+        return null;
     }
+
+//    public ResourceSet loadWorkspaces() {
+//        List<String> projects = new ArrayList<>();
+//        for (String workspaceName : configuration.getWorkspaces().keySet()) {
+//            Workspace workspace = getWorkspace(workspaceName);
+//            for (String project : configuration.getWorkspaces().get(workspaceName)) {
+//                workspace.getProjects().add(importProject(project,
+//                        configuration.getProjectConfiguration().get(project)));
+//                projects.add(project);
+//            }
+//        }
+//        return projects(projects, scope);
+//    }
 
     private WorkspaceImpl getWorkspace(String workspaceName) {
         var ret = localWorkspaces.get(workspaceName);
@@ -203,6 +210,18 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             this.localWorkspaces.put(workspaceName, ret);
         }
         return ret;
+    }
+
+    /**
+     * Return whatever worldview is defined in this service, using any other services necessary, or an empty
+     * set if none is available.
+     * <p>
+     * TODO we may support >1 worldviews at this level and pass the worldview name.
+     *
+     * @return
+     */
+    public List<KimOntology> getWorldview() {
+        return this.workspaceManager.getOntologies(true);
     }
 
     /**
@@ -363,6 +382,25 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public KimNamespace resolveNamespace(String urn, Scope scope) {
 
         KimNamespace ret = localNamespaces.get(urn);
+        if (ret != null && !(scope instanceof ServiceScope)) {
+            /*
+             * check permissions; if not allowed, log and set ret = null. If the scope is
+             * the service itself, we can access everything.
+             */
+            ProjectConfiguration pconf =
+                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
+            if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
+                scope.debug("trying to access unauthorized namespace " + urn);
+                ret = null;
+            }
+
+        }
+
+        return ret;
+    }
+
+    public KimOntology resolveOntology(String urn, Scope scope) {
+        KimOntology ret = servedOntologies.get(urn);
         if (ret != null && !(scope instanceof ServiceScope)) {
             /*
              * check permissions; if not allowed, log and set ret = null. If the scope is
@@ -605,12 +643,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public KimNamespace createOntology(String projectName, String ontologyContent) {
+    public KimOntology createOntology(String projectName, String ontologyContent) {
         return null;
     }
 
     @Override
-    public KimNamespace updateOntology(String projectName, String ontologyContent) {
+    public KimOntology updateOntology(String projectName, String ontologyContent) {
         return null;
     }
 
@@ -1072,16 +1110,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return localResources;
     }
 
-    @Override
-    public ResourceSet loadWorldview() {
-        List<String> projects = new ArrayList<>();
-        for (String project : configuration.getProjectConfiguration().keySet()) {
-            if (configuration.getProjectConfiguration().get(project).isWorldview()) {
-                projects.add(project);
-            }
-        }
-        return projects(projects, scope);
-    }
+//    @Override
+//    public ResourceSet loadWorldview() {
+//        List<String> projects = new ArrayList<>();
+//        for (String project : configuration.getProjectConfiguration().keySet()) {
+//            if (configuration.getProjectConfiguration().get(project).isWorldview()) {
+//                projects.add(project);
+//            }
+//        }
+//        return projects(projects, scope);
+//    }
 
     @Override
     public ResourceSet resolve(String urn, Scope scope) {

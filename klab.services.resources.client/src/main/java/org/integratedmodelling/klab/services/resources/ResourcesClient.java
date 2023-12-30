@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -130,6 +131,11 @@ public class ResourcesClient implements ResourcesService {
     @Override
     public KdlDataflow resolveDataflow(String urn, Scope scope) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<KimOntology> getWorldview() {
         return null;
     }
 

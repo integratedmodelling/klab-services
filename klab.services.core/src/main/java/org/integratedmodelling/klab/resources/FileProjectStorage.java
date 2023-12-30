@@ -32,7 +32,7 @@ public class FileProjectStorage implements ProjectStorage {
         List<URL> ret = new ArrayList<>();
         for (var type : types) {
             switch (type) {
-                case WORLDVIEW_NAMESPACE -> {
+                case ONTOLOGY -> {
                     collectResources("kvw", "src", true,ret);
                 }
                 case MODEL_NAMESPACE -> {

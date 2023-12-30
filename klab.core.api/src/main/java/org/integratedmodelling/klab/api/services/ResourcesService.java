@@ -122,9 +122,9 @@ public interface ResourcesService extends KlabService {
 
     /**
      * Request the namespaces containing a given model along with anything else required to run it properly.
-     * This would normally include all the project namespaces and resources, unless the scope has been analyzed
-     * and the service has determined what is necessary. Only errors on the side of caution are allowed in
-     * determining what's included in the result.
+     * This would normally include all the project namespaces and resources, unless the scope has been
+     * analyzed and the service has determined what is necessary. Only errors on the side of caution are
+     * allowed in determining what's included in the result.
      *
      * @param modelName
      * @param scope
@@ -219,6 +219,18 @@ public interface ResourcesService extends KlabService {
      */
     KdlDataflow resolveDataflow(String urn, Scope scope);
 
+    /**
+     * THe worldview is required to be whole and consistent, including a root domain. The capabilities will
+     * return the worldview ID and the projects handled by this service, which may contain projects not served
+     * by this server but resolved at initialization if a worldview is served. The worldview may not be
+     * complete, i.e. tier-n+1 compatible ontologies may still be available somewhere else.
+     * <p>
+     * TODO given this paradigm it's possible to serve multiple worldviews, which may require this function to
+     *  take an ID as parameter.
+     *
+     * @return
+     */
+    List<KimOntology> getWorldview();
 
     /**
      * Return all the namespaces that depend on the passed namespace.
@@ -305,21 +317,21 @@ public interface ResourcesService extends KlabService {
      */
     interface Admin {
 
-        /**
-         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local
-         * resources must be coordinated with a local reasoner.
-         *
-         * @return
-         */
-        ResourceSet loadWorldview();
-
-        /**
-         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local
-         * resources must be coordinated with a local reasoner.
-         *
-         * @return
-         */
-        ResourceSet loadWorkspaces();
+//        /**
+//         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local
+//         * resources must be coordinated with a local reasoner.
+//         *
+//         * @return
+//         */
+//        ResourceSet loadWorldview();
+//
+//        /**
+//         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local
+//         * resources must be coordinated with a local reasoner.
+//         *
+//         * @return
+//         */
+//        ResourceSet loadWorkspaces();
 
         /**
          * Add or update a project from an external source to the local repository.
@@ -407,7 +419,7 @@ public interface ResourcesService extends KlabService {
          * @param ontologyContent
          * @return
          */
-        KimNamespace createOntology(String projectName, String ontologyContent);
+        KimOntology createOntology(String projectName, String ontologyContent);
 
         /**
          * Ontology must exist in project. Return parsed namespace. The dependency structure may have changed
@@ -418,7 +430,7 @@ public interface ResourcesService extends KlabService {
          * @param ontologyContent
          * @return
          */
-        KimNamespace updateOntology(String projectName, String ontologyContent);
+        KimOntology updateOntology(String projectName, String ontologyContent);
 
         /**
          * Publish a project with the passed privileges. The project must have been added before this is

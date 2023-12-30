@@ -1268,26 +1268,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public boolean loadKnowledge(ResourceSet resources, Scope scope) {
+    public boolean loadKnowledge(List<KimOntology> resources, Scope scope) {
 
         boolean ret = true;
-        for (Resource namespace : resources.getNamespaces()) {
-            ResourcesService service = resources.getServices().get(namespace.getServiceId());
-            KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(), scope);
-            if (parsed != null && !Utils.Notifications.hasErrors(parsed.getNotifications())) {
-                for (KimStatement statement : parsed.getStatements()) {
-                    if (statement instanceof KimConceptStatement) {
-                        defineConcept((KimConceptStatement) statement, scope);
-                    } else if (statement instanceof KimSymbolDefinition) {
-                        // TODO RDF but only with supporting semantic info
-                    }
-                }
-                this.owl.registerWithReasoner(parsed);
-            } else {
-                ret = false;
-                break;
-            }
-        }
+//        for (Resource namespace : resources.getNamespaces()) {
+//            ResourcesService service = resources.getServices().get(namespace.getServiceId());
+//            KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(), scope);
+//            if (parsed != null && !Utils.Notifications.hasErrors(parsed.getNotifications())) {
+//                for (KimStatement statement : parsed.getStatements()) {
+//                    if (statement instanceof KimConceptStatement) {
+//                        defineConcept((KimConceptStatement) statement, scope);
+//                    } else if (statement instanceof KimSymbolDefinition) {
+//                        // TODO RDF but only with supporting semantic info
+//                    }
+//                }
+//                this.owl.registerWithReasoner(parsed);
+//            } else {
+//                ret = false;
+//                break;
+//            }
+//        }
 
         this.owl.flushReasoner();
 

@@ -167,7 +167,7 @@ class ReasonerTestSetup {
         // ensure the test worldview is there or set from git repo
         // TODO use a dedicated branch or a dedicated test worldview project
         resourcesService.importProject("worldview", "https://bitbucket.org/integratedmodelling/im.git#develop", false);
-        var worldview = resourcesService.loadWorldview();
+        var worldview = resourcesService.getWorldview();
         reasonerService.loadKnowledge(worldview, scope);
     }
 

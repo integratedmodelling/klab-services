@@ -1,34 +1,44 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.xtext.parser.IParseResult;
+import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.ImmutableList;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KlabConfigurationException;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
-import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
-import org.integratedmodelling.klab.services.resources.loader.ResourcesLoader;
+import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.languages.ObservationStrategySyntax;
+import org.integratedmodelling.languages.*;
 import org.integratedmodelling.languages.api.NamespaceSyntax;
-import org.integratedmodelling.languages.api.OntologySyntax;
+import org.integratedmodelling.languages.api.ParsedObject;
+import org.integratedmodelling.languages.kim.Model;
+import org.integratedmodelling.languages.observable.ObservableSequence;
+import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
+import org.integratedmodelling.languages.worldview.Ontology;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
-import org.springframework.security.core.parameters.P;
 
-import java.io.File;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -38,31 +48,74 @@ import java.util.function.Function;
 public class WorkspaceManager {
 
 
+    private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
+    private List<KimOntology> _ontologyOrder;
+    private List<KimOntology> _worldview;
+    private Parser<ObservableSequence> observableParser = new Parser<ObservableSequence>() {
+        @Override
+        protected Injector createInjector() {
+            return new ObservableStandaloneSetup().createInjectorAndDoEMFRegistration();
+        }
+    };
+
+    private Parser<Ontology> ontologyParser = new Parser<Ontology>() {
+        @Override
+        protected Injector createInjector() {
+            return new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration();
+        }
+    };
+
+    private Parser<Model> namespaceParser = new Parser<Model>() {
+        @Override
+        protected Injector createInjector() {
+            return new KimStandaloneSetup().createInjectorAndDoEMFRegistration();
+        }
+    };
+
     private class ProjectDescriptor {
         String name;
         String workspace;
+        // one of the next two is filled in
         ProjectStorage storage;
+        Project externalProject;
         Project.Manifest manifest;
+        // these are loaded on demand, use only through their accessors
+        private Set<String> _namespaceIds;
+        private Set<String> _ontologyIds;
         // TODO permissions
 
+
+        public Set<String> getNamespaceIds() {
+            if (_namespaceIds == null) {
+
+            }
+            return _namespaceIds;
+        }
+
+        public Set<String> getOntologyIds() {
+            if (_ontologyIds == null) {
+
+            }
+            return _ontologyIds;
+        }
     }
 
     private final Function<String, Project> externalProjectResolver;
     private Map<String, ProjectDescriptor> projects = new HashMap<>();
     // these MAY be resolved through the network via callback. If unresolved, the corresponding Project
     // will be null.
-    private Map<String, Project> externalReferences = new HashMap<>();
+//    private Map<String, Project> externalReferences = new HashMap<>();
     // all logging goes through here
-    private Channel monitor;
+    private Scope scope;
     private final ResourcesConfiguration configuration;
 
     private List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
 
-    public WorkspaceManager(ResourcesConfiguration configuration, Channel monitor,
+    public WorkspaceManager(ResourcesConfiguration configuration, Scope scope,
                             Function<String, Project> externalProjectResolver) {
         this.externalProjectResolver = externalProjectResolver;
         this.configuration = configuration;
-        this.monitor = monitor;
+        this.scope = scope;
         readConfiguration();
     }
 
@@ -70,7 +123,6 @@ public class WorkspaceManager {
 
         // clear existing caches (this must be reentrant and be callable again at any new import)
         projects.clear();
-        externalReferences.clear();
 
         // build descriptors for all locally configured projects and workspaces
 
@@ -90,11 +142,139 @@ public class WorkspaceManager {
 
                 } else {
                     // whine plaintively; the monitor will contain errors
-                    monitor.error("Project " + project + " cannot be loaded. Configuration is invalid.");
+                    scope.error("Project " + project + " cannot be loaded. Configuration is invalid.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Return all ontologies sorted in order of dependency. Automatically adapt the local ones from their
+     * syntactic form. Project dependencies will ensure the consistency of the result; if any of the
+     * ontologies is part of a missing project, return an empty list.
+     *
+     * @param worldviewOnly if true, only ontologies that are part of a project tagged as worldview will be
+     *                      returned
+     * @return the fully consistent known worldview or an empty list
+     */
+    public List<KimOntology> getOntologies(boolean worldviewOnly) {
+
+        if (_ontologyOrder == null) {
+            _worldview = new ArrayList<>();
+            _ontologyOrder = new ArrayList<>();
+            Map<String, Triple<Ontology, KimOntology, Boolean>> cache = new HashMap<>();
+            for (var pd : projects.values()) {
+                var isWorldview = pd.manifest.getDefinedWorldview() != null;
+                if (pd.externalProject != null) {
+                    for (var ontology : pd.externalProject.getOntologies()) {
+                        cache.put(ontology.getUrn(), Triple.of(null, ontology, isWorldview));
+                    }
+                } else {
+                    for (var ontologyUrl : pd.storage.listResources(ProjectStorage.ResourceType.ONTOLOGY)) {
+                        try (var input = ontologyUrl.openStream()) {
+                            var errors = new ArrayList<Notification>();
+                            var parsed = ontologyParser.parse(input, errors);
+                            if (!errors.isEmpty()) {
+                                scope.error("Ontology resource has errors: " + ontologyUrl,
+                                        Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.ONTOLOGY);
+                                return Collections.emptyList();
+                            }
+                            cache.put(parsed.getNamespace().getName(), Triple.of(parsed, null, isWorldview));
+                        } catch (IOException e) {
+                            // log error and return failure
+                            scope.error("Error loading ontology " + ontologyUrl,
+                                    Klab.ErrorCode.READ_FAILED, Klab.ErrorContext.ONTOLOGY);
+                            return Collections.emptyList();
+                        }
+                    }
+                }
+            }
+
+            // we have the ontologies and there are no errors this far: now build the order and if
+            // something is unresolved, log error and say goodbye
+            Graph<String, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+            Map<String, KimOntology> ontologies = new HashMap<>();
+            for (String ontologyId : cache.keySet()) {
+                var od = cache.get(ontologyId);
+                dependencyGraph.addVertex(ontologyId);
+                if (od.getFirst() != null) {
+                    for (var imported : od.getFirst().getNamespace().getImported()) {
+                        dependencyGraph.addVertex(imported);
+                        dependencyGraph.addEdge(imported, ontologyId);
+                    }
+                } else {
+                    for (var imported : od.getSecond().getImportedOntologies()) {
+                        dependencyGraph.addVertex(imported);
+                        dependencyGraph.addEdge(imported, ontologyId);
+                    }
+                }
+            }
+
+            CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<>(dependencyGraph);
+            if (cycleDetector.detectCycles()) {
+                scope.error("Circular dependencies in ontology graph: cannot continue",
+                        Klab.ErrorCode.CIRCULAR_REFERENCES, Klab.ErrorContext.ONTOLOGY);
+                return Collections.emptyList();
+            }
+
+            var languageValidationScope = new BasicObservableValidationScope() {
+                @Override
+                public ConceptDescriptor getConceptDescriptor(String name) {
+                    return null; // conceptDescriptors.get(name);
+                }
+
+                @Override
+                public boolean hasReasoner() {
+                    return false; // TODO
+                }
+            };
+
+            // finish building the ontologies in the given order using a new language validator
+            TopologicalOrderIterator<String, DefaultEdge> sort =
+                    new TopologicalOrderIterator<>(dependencyGraph);
+            while (sort.hasNext()) {
+                var ontologyId = sort.next();
+                var od = cache.get(ontologyId);
+                if (od == null) {
+                    scope.error("Ontology " + ontologyId + " cannot be resolved either locally or through" +
+                                    " the network",
+                            Klab.ErrorCode.UNRESOLVED_REFERENCE, Klab.ErrorContext.ONTOLOGY);
+                    return Collections.emptyList();
+                }
+                AtomicBoolean errors = new AtomicBoolean(false);
+                var ontology = od.getSecond();
+                if (ontology == null) {
+                    var syntax = new OntologySyntaxImpl(od.getFirst(), languageValidationScope) {
+
+                        @Override
+                        protected void logWarning(ParsedObject target, EObject object,
+                                                  EStructuralFeature feature, String message) {
+
+                        }
+
+                        @Override
+                        protected void logError(ParsedObject target, EObject object,
+                                                EStructuralFeature feature, String message) {
+                            errors.set(true);
+                        }
+                    };
+                    ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax);
+                }
+
+                if (errors.get()) {
+                    scope.error("Logical errors in ontology " + ontologyId + ": cannot continue",
+                            Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.ONTOLOGY);
+                    return Collections.emptyList();
+                }
+
+                this._ontologyOrder.add(ontology);
+                if (od.getThird()) {
+                    this._worldview.add(ontology);
                 }
             }
         }
 
+        return worldviewOnly ? _worldview : _ontologyOrder;
     }
 
     public ProjectStorage getProject(String projectName) {
@@ -107,24 +287,13 @@ public class WorkspaceManager {
      *
      * @return
      */
-    public List<ProjectStorage> getProjects() {
-        return null;
-    }
-
-    /**
-     * Return all known ontologies in order of dependency, ready for loading. Their requirements will only be
-     * resolved internally, i.e. some may remain unsatisfied and will need to be resolved from other resource
-     * services.
-     *
-     * @return
-     */
-    List<OntologySyntax> getOntologies() {
+    public List<ProjectStorage> getLocalProjects() {
         return null;
     }
 
     /**
      * Return all the namespaces in order of dependency. Resolution is internal like in
-     * {@link #getOntologies()}.
+     * {@link #getOntologies(boolean)}.
      *
      * @return
      */
@@ -138,7 +307,7 @@ public class WorkspaceManager {
 
     /**
      * Import a project from a URL into the given workspace and return the associated storage. Project must
-     * not exist already.
+     * not exist already. Removes any cached load order so that it can be computed again when requested.
      *
      * @param projectUrl
      * @param workspaceName
@@ -148,6 +317,8 @@ public class WorkspaceManager {
 
 //        updateLock.writeLock().lock();
         ProjectStorage ret = null;
+        this._projectLoadOrder = null;
+        this._ontologyOrder = null;
 
         try {
 
@@ -234,6 +405,13 @@ public class WorkspaceManager {
         return ret;
     }
 
+    public List<Pair<ProjectStorage, Project>> getProjectLoadOrder() {
+        if (this._projectLoadOrder == null) {
+            this._projectLoadOrder = loadWorkspace();
+        }
+        return this._projectLoadOrder;
+    }
+
     /**
      * Read, validate, resolve and sorts projects locally (all workspaces) and from the network, returning the
      * load order for all projects, including local and externally resolved ones. Check errors (reported in
@@ -268,7 +446,7 @@ public class WorkspaceManager {
         CycleDetector<Pair<String, Version>, DefaultEdge> cycleDetector =
                 new CycleDetector<>(dependencyGraph);
         if (cycleDetector.detectCycles()) {
-            monitor.error(Klab.ErrorCode.CIRCULAR_REFERENCES, Klab.ErrorContext.PROJECT, "Projects in " +
+            scope.error(Klab.ErrorCode.CIRCULAR_REFERENCES, Klab.ErrorContext.PROJECT, "Projects in " +
                     "configuration have cyclic dependencies on each other: " +
                     "will not " +
                     "proceed. Review configuration");
@@ -288,7 +466,7 @@ public class WorkspaceManager {
                     if (!pd.manifest.getVersion().compatible(proj.getSecond())) {
                         loadOrder.add(Pair.of(pd.storage, null));
                     } else {
-                        monitor.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
+                        scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
                                 "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" +
                                         " by other projects in workspace but incompatible version " + pd.manifest.getVersion()
                                         + " is available in local workspace");
@@ -299,10 +477,15 @@ public class WorkspaceManager {
                     if (externalProject != null) {
                         // check version
                         if (externalProject.getManifest().getVersion().compatible(proj.getSecond())) {
-                            externalReferences.put(proj.getFirst(), externalProject);
+                            ProjectDescriptor descriptor = new ProjectDescriptor();
+                            descriptor.externalProject = externalProject;
+                            descriptor.manifest = externalProject.getManifest();
+                            descriptor.workspace = null;
+                            descriptor.name = proj.getFirst();
+                            projects.put(proj.getFirst(), descriptor);
                             loadOrder.add(Pair.of(null, externalProject));
                         } else {
-                            monitor.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
+                            scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
                                     "Project " + proj.getFirst() + "@" + proj.getSecond() + " is " +
                                             "required by other projects in workspace but incompatible " +
                                             "version " +
@@ -311,9 +494,10 @@ public class WorkspaceManager {
                             unresolvedProjects.add(proj);
                         }
                     } else {
-                        monitor.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.UNRESOLVED_REFERENCE,
+                        scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.UNRESOLVED_REFERENCE,
                                 "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" +
-                                " by other projects in workspace but cannot be resolved from the network");
+                                        " by other projects in workspace but cannot be resolved from the " +
+                                        "network");
                         unresolvedProjects.add(proj);
                     }
                 }
@@ -344,6 +528,39 @@ public class WorkspaceManager {
 
     public List<Pair<String, Version>> getUnresolvedProjects() {
         return unresolvedProjects;
+    }
+
+
+    private abstract class Parser<T extends EObject> {
+
+        @Inject
+        private IParser parser;
+
+        public Parser() {
+            createInjector().injectMembers(this);
+        }
+
+        protected abstract Injector createInjector();
+
+        public T parse(InputStream input, List<Notification> errors) {
+            return parse(new InputStreamReader(input, StandardCharsets.UTF_8), errors);
+        }
+
+        /**
+         * Parses data provided by an input reader using Xtext and returns the root node of the resulting
+         * object tree.
+         *
+         * @param reader Input reader
+         * @return root object node
+         * @throws IOException when errors occur during the parsing process
+         */
+        public T parse(Reader reader, List<Notification> errors) {
+            IParseResult result = parser.parse(reader);
+            for (var error : result.getSyntaxErrors()) {
+
+            }
+            return (T) result.getRootASTElement();
+        }
     }
 
 }
