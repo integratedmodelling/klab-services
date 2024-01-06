@@ -170,10 +170,10 @@ public class ReasonerController {
         return direct ? reasoner.hasDirectRole(concept[0], concept[1]) : reasoner.hasRole(concept[0], concept[1]);
     }
 
-    @PostMapping(ServicesAPI.REASONER.CONTEXT)
-    public @ResponseBody Concept directContext(@RequestBody Concept concept, @RequestParam(defaultValue = "false") boolean direct) {
-        return direct ? reasoner.directContext(concept) : reasoner.context(concept);
-    }
+//    @PostMapping(ServicesAPI.REASONER.CONTEXT)
+//    public @ResponseBody Concept directContext(@RequestBody Concept concept, @RequestParam(defaultValue = "false") boolean direct) {
+//        return direct ? reasoner.directContext(concept) : reasoner.context(concept);
+//    }
 
     @PostMapping(ServicesAPI.REASONER.INHERENT)
     public @ResponseBody Concept inherent(@RequestBody Concept concept, @RequestParam(defaultValue = "false") boolean direct) {

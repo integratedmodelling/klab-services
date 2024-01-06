@@ -46,7 +46,8 @@ public enum Klab {
         PROJECT,
         NAMESPACE,
         ONTOLOGY,
-        RESOURCE
+        RESOURCE,
+        OBSERVATION_STRATEGY
     }
 
     /**
@@ -79,7 +80,7 @@ public enum Klab {
 
         /**
          * Calls to these functions are created directly by the resolver when {@link Contextualizable}s of
-         * different k.IM types and/or {@link ObservationStrategy}es from the reasoner are translated into
+         * different k.IM types and/or {@link ObservationStrategyObsolete}es from the reasoner are translated into
          * dataflow actuators.
          *
          * @author Ferd

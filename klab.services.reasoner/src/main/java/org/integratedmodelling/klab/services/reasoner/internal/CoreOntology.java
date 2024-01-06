@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -88,7 +90,7 @@ public class CoreOntology {
         public static final String HAS_REALM_PROPERTY = "odo:hasRealm";
         public static final String HAS_IDENTITY_PROPERTY = "odo:hasIdentity";
         public static final String HAS_ATTRIBUTE_PROPERTY = "odo:hasAttribute";
-        public static final String HAS_CONTEXT_PROPERTY = "odo:hasContext";
+//        public static final String HAS_CONTEXT_PROPERTY = "odo:hasContext";
         public static final String HAS_COMPRESENT_PROPERTY = "odo:hasCompresent";
         public static final String HAS_CAUSANT_PROPERTY = "odo:hasCausant";
         public static final String HAS_CAUSED_PROPERTY = "odo:hasCaused";
@@ -112,7 +114,7 @@ public class CoreOntology {
 //        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
 
         // annotation property that specifies the base SI unit for a physical property
-        public static final String SI_UNIT_PROPERTY = "observation:unit";
+        public static final String SI_UNIT_PROPERTY = "odo:unit";
 
         /*
          * Annotations affecting the ranking system. Used as keys in maps, so they don't depend on
@@ -237,6 +239,14 @@ public class CoreOntology {
         this.root = directory;
         this.owl = owl;
         Utils.Classpath.extractKnowledgeFromClasspath(this.root);
+    }
+
+    public CoreOntology(List<Pair<String, String>> ontologies, OWL owl) {
+        this.root = Configuration.INSTANCE.getDataPath("knowledge");
+        this.owl = owl;
+        for (var ontology : ontologies) {
+
+        }
     }
 
     public File getRoot() {

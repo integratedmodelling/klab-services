@@ -180,7 +180,7 @@ class ReasonerServiceTest extends ReasonerTestSetup {
             var caused = reasonerService.directCaused(observable);
             var causant = reasonerService.directCausant(observable);
             var compresent = reasonerService.directCompresent(observable);
-            var context = reasonerService.directContext(observable);
+            var context = reasonerService.directInherent(observable);
             var cooccurrent = reasonerService.directCooccurrent(observable);
             var goal = reasonerService.directGoal(observable);
             var identities = reasonerService.directIdentities(observable);

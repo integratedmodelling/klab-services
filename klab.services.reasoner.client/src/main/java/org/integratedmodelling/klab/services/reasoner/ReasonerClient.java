@@ -9,14 +9,13 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
@@ -187,17 +186,17 @@ public class ReasonerClient implements Reasoner {
 		return false;
 	}
 
-	@Override
-	public Concept directContext(Semantics concept) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+//	@Override
+//	public Concept directContext(Semantics concept) {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
 
-	@Override
-	public Concept context(Semantics concept) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+//	@Override
+//	public Concept context(Semantics concept) {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
 
 	@Override
 	public Concept directInherent(Semantics concept) {
@@ -568,7 +567,7 @@ public class ReasonerClient implements Reasoner {
 	}
 
 	@Override
-	public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
+	public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -114,13 +114,13 @@
 		<spring.version>6.1.1</spring.version>
 		<spring-security.version>6.2.0</spring-security.version>
 		<junit-version>5.6.3</junit-version>
-		<jackson-version>2.16.0</jackson-version>
+		<jackson-version>2.16.1</jackson-version>
 		<!-- <jsonld-java-version>0.13.4</jsonld-java-version> -->
 		<!-- end versions that need to be in lock-step to avoid multiple Spring
 			issues -->
 
 		<!-- <scala.version>2.13.1</scala.version> -->
-		<joda-time-version>2.3</joda-time-version>
+<!--		<joda-time-version>2.3</joda-time-version>-->
 		<javax.mail-api.version>1.5.2</javax.mail-api.version>
 		<jung.version>2.1.1</jung.version>
 

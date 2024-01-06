@@ -38,7 +38,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     // all the methods codified as an enum
     public enum OperationType {
-        OF, WITH, WITHIN, GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY_CONCEPTS, WITHOUT_ANY_TYPES, ADJACENT,
+        OF, WITH,/* WITHIN, */GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY_CONCEPTS, WITHOUT_ANY_TYPES, ADJACENT,
         COOCCURRENT,
         WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR, LINKING, NAMED,
         WITH_DISTRIBUTED_INHERENCY, WITHOUT_VALUE_OPERATORS, AS_OPTIONAL, WITHOUT_ROLES,
@@ -287,11 +287,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Builder within(Concept context) {
-        this.operations.add(new Operation(OperationType.WITHIN, context));
-        return this;
-    }
+//    @Override
+//    public Builder within(Concept context) {
+//        this.operations.add(new Operation(OperationType.WITHIN, context));
+//        return this;
+//    }
 
     @Override
     public Builder withGoal(Concept goal) {

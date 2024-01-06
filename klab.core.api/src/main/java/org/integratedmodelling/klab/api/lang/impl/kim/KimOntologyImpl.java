@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
@@ -14,8 +15,8 @@ public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implem
 
     private List<KimConceptStatement> statements = new ArrayList<>();
     private List<String> importedOntologies = new ArrayList<>();
-    private List<PairImpl<String, String>> owlImports = new ArrayList<>();
-    private List<PairImpl<String, List<String>>> vocabularyImports = new ArrayList<>();
+    private List<Pair<String, String>> owlImports = new ArrayList<>();
+    private List<Pair<String, List<String>>> vocabularyImports = new ArrayList<>();
     private KimConcept domain;
 
     @Override
@@ -29,12 +30,12 @@ public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implem
     }
 
     @Override
-    public List<PairImpl<String, String>> getOwlImports() {
+    public List<Pair<String, String>> getOwlImports() {
         return this.owlImports;
     }
 
     @Override
-    public List<PairImpl<String, List<String>>> getVocabularyImports() {
+    public List<Pair<String, List<String>>> getVocabularyImports() {
         return this.vocabularyImports;
     }
 
@@ -51,11 +52,11 @@ public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implem
         this.importedOntologies = importedOntologies;
     }
 
-    public void setOwlImports(List<PairImpl<String, String>> owlImports) {
+    public void setOwlImports(List<Pair<String, String>> owlImports) {
         this.owlImports = owlImports;
     }
 
-    public void setVocabularyImports(List<PairImpl<String, List<String>>> vocabularyImports) {
+    public void setVocabularyImports(List<Pair<String, List<String>>> vocabularyImports) {
         this.vocabularyImports = vocabularyImports;
     }
 

@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimRestriction;
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
 
     private static final long serialVersionUID = 2640057106561346868L;
-    
+
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private String authorityRequired;
     private List<KimConcept> qualitiesAffected = new ArrayList<>();
@@ -27,17 +27,22 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     private List<KimConcept> requiredIdentities = new ArrayList<>();
     private List<KimConcept> emergenceTriggers = new ArrayList<>();
     private List<KimRestriction> restrictions = new ArrayList<>();
+    private KimConcept declaredParent;
+
+    private KimConcept declaredInherent;
     private boolean alias;
     private boolean isAbstract;
+    private boolean subjective;
+    private boolean sealed;
     private String name;
-    private boolean macro;
+    //    private boolean macro;
     private List<PairImpl<KimConcept, DescriptionType>> observablesDescribed = new ArrayList<>();
     private List<ApplicableConcept> subjectsLinked = new ArrayList<>();
     private List<ApplicableConcept> appliesTo = new ArrayList<>();
     private String docstring;
     private String upperConceptDefined;
     private String authorityDefined;
-    private List<ParentConcept> parents = new ArrayList<>();
+//    private List<ParentConcept> parents = new ArrayList<>();
 
     @Override
     public Set<SemanticType> getType() {
@@ -114,10 +119,10 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
         return this.name;
     }
 
-    @Override
-    public boolean isMacro() {
-        return this.macro;
-    }
+//    @Override
+//    public boolean isMacro() {
+//        return this.macro;
+//    }
 
     @Override
     public List<PairImpl<KimConcept, DescriptionType>> getObservablesDescribed() {
@@ -199,9 +204,9 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
         this.name = name;
     }
 
-    public void setMacro(boolean macro) {
-        this.macro = macro;
-    }
+//    public void setMacro(boolean macro) {
+//        this.macro = macro;
+//    }
 
     public void setObservablesDescribed(List<PairImpl<KimConcept, DescriptionType>> observablesDescribed) {
         this.observablesDescribed = observablesDescribed;
@@ -237,13 +242,50 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
         this.authorityDefined = authorityDefined;
     }
 
+//    @Override
+//    public List<ParentConcept> getParents() {
+//        return parents;
+//    }
+//
+//    public void setParents(List<ParentConcept> parents) {
+//        this.parents = parents;
+//    }
+
     @Override
-    public List<ParentConcept> getParents() {
-        return parents;
+    public boolean isSubjective() {
+        return subjective;
     }
 
-    public void setParents(List<ParentConcept> parents) {
-        this.parents = parents;
+    public void setSubjective(boolean subjective) {
+        this.subjective = subjective;
+    }
+
+    @Override
+    public boolean isSealed() {
+        return sealed;
+    }
+
+    public void setSealed(boolean sealed) {
+        this.sealed = sealed;
+    }
+
+    @Override
+    public KimConcept getDeclaredParent() {
+        return declaredParent;
+    }
+
+    public void setDeclaredParent(KimConcept declaredParent) {
+        this.declaredParent = declaredParent;
+    }
+
+
+    @Override
+    public KimConcept getDeclaredInherent() {
+        return declaredInherent;
+    }
+
+    public void setDeclaredInherent(KimConcept declaredInherent) {
+        this.declaredInherent = declaredInherent;
     }
 
 }

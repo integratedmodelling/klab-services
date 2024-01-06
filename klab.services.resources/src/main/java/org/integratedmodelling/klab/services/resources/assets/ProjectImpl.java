@@ -5,12 +5,14 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,12 +106,12 @@ public class ProjectImpl implements Project {
         public void setDefinedWorldview(String definedWorldview) {
             this.definedWorldview = definedWorldview;
         }
-
     }
 
     private Manifest manifest;
+    private Version version;
     private Metadata metadata = Metadata.create();
-    private String name;
+    private String urn;
     private List<KimNamespace> namespaces = new ArrayList<>();
     private List<KimOntology> ontologies = new ArrayList<>();
     private List<KActorsBehavior> behaviors = new ArrayList<>();
@@ -117,6 +119,8 @@ public class ProjectImpl implements Project {
     private List<KActorsBehavior> testCases = new ArrayList<>();
     private List<Notification> notifications = new ArrayList<>();
     private List<String> resourceUrns = new ArrayList<>();
+    private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
+    private List<Annotation> annotations = new ArrayList<>();
 
     @Override
     public Manifest getManifest() {
@@ -129,8 +133,13 @@ public class ProjectImpl implements Project {
     }
 
     @Override
-    public String getName() {
-        return this.name;
+    public String getUrn() {
+        return this.urn;
+    }
+
+    @Override
+    public Version getVersion() {
+        return this.version;
     }
 
     @Override
@@ -166,8 +175,8 @@ public class ProjectImpl implements Project {
         this.metadata = metadata;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUrn(String urn) {
+        this.urn = urn;
     }
 
     public void setNamespaces(List<KimNamespace> namespaces) {
@@ -203,8 +212,24 @@ public class ProjectImpl implements Project {
         return ontologies;
     }
 
+    @Override
+    public Collection<KimObservationStrategy> getObservationStrategies() {
+        return this.observationStrategies;
+    }
+
     public void setOntologies(List<KimOntology> ontologies) {
         this.ontologies = ontologies;
     }
 
+    public void setObservationStrategies(List<KimObservationStrategy> observationStrategies) {
+        this.observationStrategies = observationStrategies;
+    }
+
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
+    }
 }

@@ -7,7 +7,6 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
@@ -244,13 +243,14 @@ public interface Reasoner extends KlabService {
      * @param concept
      * @return
      */
-    Concept directContext(Semantics concept);
+//    Concept directContext(Semantics concept);
 
-    /**
-     * @param concept
-     * @return
-     */
-    Concept context(Semantics concept);
+//    /**
+//     * Context is declared in the <code>within</code> clause in the worldview, but is no longer modifiable
+//     * @param concept
+//     * @return
+//     */
+//    Concept context(Semantics concept);
 
     /**
      * @param concept
@@ -770,7 +770,7 @@ public interface Reasoner extends KlabService {
      * priority-driven, way beyond the scope of DL reasoning. For the time being, this function is expected to
      * hard-code the majority of the resolution rules, including ¶as a minimum those summarized below. Stubs
      * exist for an experimental extension strategy based on
-     * {@link org.integratedmodelling.klab.api.knowledge.ObservationStrategyPattern} but for the time being
+     * {@link ObservationStrategy} but for the time being
      * it's not specified or used. As we're talking about reproducible science, I do NOT think that this is a
      * place for machine-learned correlative inference.</p>
      *
@@ -896,7 +896,7 @@ public interface Reasoner extends KlabService {
      *     if a model
      *     that only explicitly resolves <code>within</code> a specialized context is chosen.</dd>
      */
-    List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope);
+    List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope);
 
     /**
      * Entry point of the assisted semantic search behind interactive concept definition. If the request has a
@@ -951,7 +951,7 @@ public interface Reasoner extends KlabService {
          * @param resources
          * @return
          */
-        boolean loadKnowledge(List<KimOntology> resources, Scope scope);
+        boolean loadKnowledge(Worldview worldview, Scope scope);
 
         /**
          * The "port" to ingest an individual concept definition, called by

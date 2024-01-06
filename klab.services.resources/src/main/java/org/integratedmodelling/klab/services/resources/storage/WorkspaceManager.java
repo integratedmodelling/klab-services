@@ -7,26 +7,34 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.knowledge.WorldviewImpl;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
+import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.*;
+import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
 import org.integratedmodelling.languages.api.NamespaceSyntax;
 import org.integratedmodelling.languages.api.ParsedObject;
+import org.integratedmodelling.languages.api.SemanticSyntax;
 import org.integratedmodelling.languages.kim.Model;
 import org.integratedmodelling.languages.observable.ObservableSequence;
+import org.integratedmodelling.languages.observation.Strategies;
 import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
 import org.integratedmodelling.languages.worldview.Ontology;
 import org.jgrapht.Graph;
@@ -47,10 +55,16 @@ import java.util.function.Function;
  */
 public class WorkspaceManager {
 
+    /**
+     * Default interval to check for changes in Git (15 minutes in milliseconds)
+     */
+    private long DEFAULT_GIT_SYNC_INTERVAL = 15L * 60L * 60L * 1000L;
 
     private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
     private List<KimOntology> _ontologyOrder;
-    private List<KimOntology> _worldview;
+    private List<KimOntology> _worldviewOntologies;
+    private WorldviewImpl _worldview;
+
     private Parser<ObservableSequence> observableParser = new Parser<ObservableSequence>() {
         @Override
         protected Injector createInjector() {
@@ -62,6 +76,13 @@ public class WorkspaceManager {
         @Override
         protected Injector createInjector() {
             return new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration();
+        }
+    };
+
+    private Parser<Strategies> strategyParser = new Parser<Strategies>() {
+        @Override
+        protected Injector createInjector() {
+            return new ObservationStandaloneSetup().createInjectorAndDoEMFRegistration();
         }
     };
 
@@ -100,6 +121,7 @@ public class WorkspaceManager {
         }
     }
 
+    private Map<String, WorkspaceImpl> workspaces = new HashMap<>();
     private final Function<String, Project> externalProjectResolver;
     private Map<String, ProjectDescriptor> projects = new HashMap<>();
     // these MAY be resolved through the network via callback. If unresolved, the corresponding Project
@@ -107,19 +129,29 @@ public class WorkspaceManager {
 //    private Map<String, Project> externalReferences = new HashMap<>();
     // all logging goes through here
     private Scope scope;
-    private final ResourcesConfiguration configuration;
+    private ResourcesConfiguration configuration;
 
     private List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
 
-    public WorkspaceManager(ResourcesConfiguration configuration, Scope scope,
-                            Function<String, Project> externalProjectResolver) {
+    public WorkspaceManager(Scope scope, Function<String, Project> externalProjectResolver) {
         this.externalProjectResolver = externalProjectResolver;
-        this.configuration = configuration;
         this.scope = scope;
         readConfiguration();
     }
 
     private void readConfiguration() {
+
+        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
+        if (config.exists()) {
+            this.configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
+        } else {
+            // make an empty config
+            this.configuration = new ResourcesConfiguration();
+            this.configuration.setServicePath("resources");
+            this.configuration.setLocalResourcePath("local");
+            this.configuration.setPublicResourcePath("public");
+            saveConfiguration();
+        }
 
         // clear existing caches (this must be reentrant and be callable again at any new import)
         projects.clear();
@@ -129,7 +161,7 @@ public class WorkspaceManager {
         for (var workspace : configuration.getWorkspaces().keySet()) {
             for (var project : configuration.getWorkspaces().get(workspace)) {
                 var projectConfiguration = configuration.getProjectConfiguration().get(project);
-                ProjectStorage projectStorage = importProject(projectConfiguration.getSourceUrl(), workspace);
+                ProjectStorage projectStorage = loadProject(projectConfiguration.getSourceUrl(), workspace);
                 if (projectStorage != null) {
 
                     // create descriptor
@@ -160,8 +192,10 @@ public class WorkspaceManager {
     public List<KimOntology> getOntologies(boolean worldviewOnly) {
 
         if (_ontologyOrder == null) {
-            _worldview = new ArrayList<>();
+
+            _worldviewOntologies = new ArrayList<>();
             _ontologyOrder = new ArrayList<>();
+
             Map<String, Triple<Ontology, KimOntology, Boolean>> cache = new HashMap<>();
             for (var pd : projects.values()) {
                 var isWorldview = pd.manifest.getDefinedWorldview() != null;
@@ -218,14 +252,25 @@ public class WorkspaceManager {
             }
 
             var languageValidationScope = new BasicObservableValidationScope() {
-                @Override
-                public ConceptDescriptor getConceptDescriptor(String name) {
-                    return null; // conceptDescriptors.get(name);
-                }
 
                 @Override
                 public boolean hasReasoner() {
-                    return false; // TODO
+                    return scope.getService(Reasoner.class) != null;
+                }
+
+                @Override
+                public ConceptDescriptor createConceptDescriptor(ConceptDeclarationSyntax declaration) {
+                    // trust the "is core" to define the type for all core ontology concepts
+                    if (declaration.isCoreDeclaration()) {
+                        SemanticSyntax coreConcept = declaration.getDeclaredParent();
+                        var coreId = coreConcept.encode();
+                        var cname = coreConcept.encode().split(":");
+                        this.conceptTypes.put(coreConcept.encode(),
+                                new ConceptDescriptor(cname[0], cname[1],
+                                        declaration.getDeclaredType(), coreConcept.encode(), "Core concept "
+                                        + coreConcept.encode() + " for type " + declaration.getDeclaredType(), true));
+                    }
+                    return super.createConceptDescriptor(declaration);
                 }
             };
 
@@ -269,12 +314,12 @@ public class WorkspaceManager {
 
                 this._ontologyOrder.add(ontology);
                 if (od.getThird()) {
-                    this._worldview.add(ontology);
+                    this._worldviewOntologies.add(ontology);
                 }
             }
         }
 
-        return worldviewOnly ? _worldview : _ontologyOrder;
+        return worldviewOnly ? _worldviewOntologies : _ontologyOrder;
     }
 
     public ProjectStorage getProject(String projectName) {
@@ -316,9 +361,41 @@ public class WorkspaceManager {
     public ProjectStorage importProject(String projectUrl, String workspaceName) {
 
 //        updateLock.writeLock().lock();
+        var ret = loadProject(projectUrl, workspaceName);
+
+        if (ret != null) {
+            ResourcesConfiguration.ProjectConfiguration configuration =
+                    new ResourcesConfiguration.ProjectConfiguration();
+//            configuration.setLocalPath(new File(workspaceName + File.separator + projectName));
+            configuration.setSourceUrl(projectUrl);
+            configuration.setWorkspaceName(workspaceName);
+            // FIXME only if git
+            configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
+            /*
+             * Default privileges are exclusive to the service
+             */
+            configuration.setPrivileges(ResourcePrivileges.empty());
+            // this must happen before loadProject is called.
+            this.configuration.getProjectConfiguration().put(ret.getProjectName(), configuration);
+
+            Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
+            if (projects == null) {
+                projects = new LinkedHashSet<>();
+                this.configuration.getWorkspaces().put(workspaceName, projects);
+            }
+            configuration.setWorldview(readManifest(ret).getDefinedWorldview() != null);
+            projects.add(ret.getProjectName());
+            saveConfiguration();
+        }
+        return ret;
+    }
+
+    private ProjectStorage loadProject(String projectUrl, String workspaceName) {
+
         ProjectStorage ret = null;
         this._projectLoadOrder = null;
         this._ontologyOrder = null;
+        this._worldview = null;
 
         try {
 
@@ -329,11 +406,11 @@ public class WorkspaceManager {
                 // throw exception
             }
 
-            File workspace = Configuration.INSTANCE.getDataPath(
-                    configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
-            workspace.mkdirs();
-
             if (Utils.Git.isRemoteGitURL(projectUrl)) {
+
+                File workspace = Configuration.INSTANCE.getDataPath(
+                        configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
+                workspace.mkdirs();
 
                 try {
 
@@ -342,28 +419,8 @@ public class WorkspaceManager {
                      */
 
                     projectName = Utils.Git.clone(projectUrl, workspace, false);
-//                    ProjectConfiguration configuration = new ProjectConfiguration();
-//                    configuration.setLocalPath(new File(workspace + File.separator + projectName));
-//                    configuration.setSourceUrl(projectUrl);
-//                    configuration.setWorkspaceName(workspaceName);
-//                    configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
-//                    /*
-//                     * Default privileges are exclusive to the service
-//                     */
-//                    configuration.setPrivileges(ResourcePrivileges.empty());
-//                    // this must happen before loadProject is called.
-//                    this.configuration.getProjectConfiguration().put(projectName, configuration);
-//
-//                    Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
-//                    if (projects == null) {
-//                        projects = new LinkedHashSet<>();
-//                        this.configuration.getWorkspaces().put(workspaceName, projects);
-//                    }
-//                    projects.add(projectName);
-//                    Project project = importProject(projectName, configuration);
-//                    configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
-//                    saveConfiguration();
-//                    return true;
+
+                    ProjectStorage project = importProject(projectName, workspaceName);
                     File ws = new File(workspace + File.separator + projectName);
                     if (ws.exists()) {
                         ret = new FileProjectStorage(ws);
@@ -401,7 +458,6 @@ public class WorkspaceManager {
         } finally {
 //            updateLock.writeLock().unlock();
         }
-
         return ret;
     }
 
@@ -511,13 +567,48 @@ public class WorkspaceManager {
         return null;
     }
 
-    private boolean removeProject(String projectName) {
-        return false;
+    public boolean removeProject(String projectName) {
+        ResourcesConfiguration.ProjectConfiguration configuration =
+                this.configuration.getProjectConfiguration().get(projectName);
+        var project = this.projects.get(projectName);
+        if (project != null && project.storage != null) {
+            Workspace workspace = getWorkspace(project.workspace);
+            Utils.Files.deleteQuietly(configuration.getLocalPath());
+            if (this.configuration.getWorkspaces().get(project.workspace) != null) {
+                this.configuration.getWorkspaces().get(project.workspace).remove(projectName);
+            }
+//        // remove namespaces, behaviors and resources
+//        for (KimNamespace namespace : project.getNamespaces()) {
+//            this.localNamespaces.remove(namespace.getUrn());
+//        }
+//        for (KActorsBehavior behavior : project.getBehaviors()) {
+//            this.localBehaviors.remove(behavior.getUrn());
+//        }
+//        for (String resource : project.getResourceUrns()) {
+//            localResources.remove(resource);
+//            catalog.remove(resource);
+//        }
+//        this.localProjects.remove(projectName);
+            workspace.getProjects().remove(project);
+            saveConfiguration();
+        }
+//        db.commit();
+        return true;
     }
 
     private Project.Manifest readManifest(ProjectStorage project) {
         return Utils.Json.load(project.listResources(ProjectStorage.ResourceType.MANIFEST).getFirst(),
                 ProjectImpl.ManifestImpl.class);
+    }
+
+    public WorkspaceImpl getWorkspace(String workspaceName) {
+        WorkspaceImpl ret = this.workspaces.get(workspaceName);
+        if (ret == null) {
+            ret = new WorkspaceImpl();
+            ret.setName(workspaceName);
+            this.workspaces.put(workspaceName, ret);
+        }
+        return ret;
     }
 
     public Collection<Workspace> getWorkspaces() {
@@ -561,6 +652,69 @@ public class WorkspaceManager {
             }
             return (T) result.getRootASTElement();
         }
+    }
+
+    public Worldview getWorldview() {
+
+        if (_worldview == null) {
+
+            _worldview = new WorldviewImpl();
+            _worldview.getOntologies().addAll(getOntologies(true));
+            // basic validations: non-empty, first must be root, take the worldview name from it
+            // go back to the projects and load all observation strategies, adding project metadata
+            for (var pd : projects.values()) {
+                if (pd.manifest.getDefinedWorldview() == null) {
+                    continue;
+                }
+                if (pd.externalProject != null) {
+                    for (var strategy : pd.externalProject.getObservationStrategies()) {
+                        _worldview.getObservationStrategies().add(strategy);
+                    }
+                } else {
+                    for (var strategyUrl : pd.storage.listResources(ProjectStorage.ResourceType.STRATEGY)) {
+                        try (var input = strategyUrl.openStream()) {
+                            var errors = new ArrayList<Notification>();
+                            var parsed = strategyParser.parse(input, errors);
+                            if (!errors.isEmpty()) {
+                                scope.error("Observation strategy resource has errors: " + strategyUrl,
+                                        Klab.ErrorCode.RESOURCE_VALIDATION,
+                                        Klab.ErrorContext.OBSERVATION_STRATEGY);
+                                _worldview.setEmpty(true);
+                                return _worldview;
+                            }
+                            _worldview.getObservationStrategies().add(LanguageAdapter.INSTANCE.adaptStrategy(parsed));
+                        } catch (IOException e) {
+                            scope.error("Error loading observation strategy " + strategyUrl,
+                                    Klab.ErrorCode.READ_FAILED, Klab.ErrorContext.OBSERVATION_STRATEGY);
+                            _worldview.setEmpty(true);
+                            return _worldview;
+                        }
+                    }
+                }
+            }
+
+            /*
+            Validate the first ontology as the root ontology and set the worldview name from it
+             */
+            if (_worldview.getOntologies().size() > 0) {
+                KimOntology root = _worldview.getOntologies().get(0);
+                if (!(root.getDomain() == KimOntology.rootDomain)) {
+                    _worldview.setEmpty(true);
+                    scope.error("The first namespace in the worldview is not the root namespace: worldview is inconsistent");
+                } else {
+                    _worldview.setUrn(root.getUrn());
+                }
+            } else {
+                _worldview.setEmpty(true);
+            }
+
+        }
+        return _worldview;
+    }
+
+    private void saveConfiguration() {
+        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
+        Utils.YAML.save(this.configuration, config);
     }
 
 }

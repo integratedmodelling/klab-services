@@ -4,6 +4,7 @@ import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -81,7 +82,7 @@ public class EngineService {
              *
              * Logic is intricated, careful when making changes.
              */
-            List<KimOntology> worldview = null;
+            Worldview worldview = null;
             for (var service : new KlabService[]{defaultResourcesService, defaultReasoner, defaultResolver,
                                                  defaultRuntime}) {
                 if (service instanceof BaseService baseService) {

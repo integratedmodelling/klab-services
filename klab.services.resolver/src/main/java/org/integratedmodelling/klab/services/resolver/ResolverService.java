@@ -192,7 +192,7 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         // see what the reasoner thinks of this observable
-        for (ObservationStrategy strategy : scope.getService(Reasoner.class).inferStrategies(observable,
+        for (ObservationStrategyObsolete strategy : scope.getService(Reasoner.class).inferStrategies(observable,
                 scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
@@ -223,14 +223,14 @@ public class ResolverService extends BaseService implements Resolver {
      * @param parentModel
      * @return
      */
-    private ResolutionImpl resolveStrategy(ObservationStrategy strategy, Scale scale, ContextScope scope,
+    private ResolutionImpl resolveStrategy(ObservationStrategyObsolete strategy, Scale scale, ContextScope scope,
                                            ResolutionImpl parent,
                                            Model parentModel) {
 
         Coverage coverage = Coverage.create(scale, 0.0);
         ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope, parent);
 
-        for (Pair<ObservationStrategy.Operation, ObservationStrategy.Arguments> operation : strategy) {
+        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments> operation : strategy) {
             switch (operation.getFirst()) {
                 case RESOLVE -> {
                     for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {

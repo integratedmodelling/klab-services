@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
@@ -135,7 +136,7 @@ public class ResourcesClient implements ResourcesService {
     }
 
     @Override
-    public List<KimOntology> getWorldview() {
+    public Worldview getWorldview() {
         return null;
     }
 

@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Authority.Identity;
@@ -242,7 +243,70 @@ public class OWL {
     /**
      * Create a manager and load every OWL file under the load path.
      */
+    @Deprecated
     public void initialize() {
+
+        manager = OWLManager.createOWLOntologyManager();
+        // this.loadPath = loadPath;
+        coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"), this);
+        // coreOntology.load(monitor);
+        load(coreOntology.getRoot());
+
+        /*
+         * FIXME manual mapping until I understand what's going on with BFO, whose
+         * concepts have a IRI that does not contain the namespace.
+         */
+        iri2ns.put("http://purl.obolibrary.org/obo", "bfo");
+
+        /*
+         * TODO insert basic datatypes as well
+         */
+        this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
+        this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
+
+        // if (this.loadPath == null) {
+        // throw new KIOException("owl resources cannot be found: knowledge load
+        // directory does not
+        // exist");
+        // }
+
+        // load();
+
+        this.mergedReasonerOntology = (Ontology) requireOntology(INTERNAL_REASONER_ONTOLOGY_ID,
+                OWL.INTERNAL_ONTOLOGY_PREFIX);
+        this.mergedReasonerOntology.setInternal(true);
+
+        /*
+         * all namespaces so far are internal, and just these.
+         */
+        for (KimNamespace ns : this.namespaces.values()) {
+            // ((Namespace) ns).setInternal(true);
+            getOntology(ns.getUrn()).setInternal(true);
+        }
+
+        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
+
+        /*
+         * create an independent ontology for the non-semantic types we encounter.
+         */
+        // if (Namespaces.INSTANCE.getNamespace(ONTOLOGY_ID) == null) {
+        // Namespaces.INSTANCE.registerNamespace(new Namespace(ONTOLOGY_ID, null,
+        // overall),
+        // monitor);
+        // }
+        if (Configuration.INSTANCE.useReasoner()) {
+            this.reasoner =
+                    new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
+            reasonerActive = true;
+        }
+
+        for (KimNamespace ns : this.namespaces.values()) {
+            registerWithReasoner(getOntology(ns.getUrn()));
+        }
+
+    }
+
+    public void initialize(KimOntology rootDomain) {
 
         manager = OWLManager.createOWLOntologyManager();
         // this.loadPath = loadPath;
@@ -1455,7 +1519,7 @@ public class OWL {
         String definition = UnarySemanticOperator.CHANGE.declaration[0] + " " + concept.getUrn();
         Ontology ontology = getOntology(concept.getNamespace());
         String conceptId = ontology.getIdForDefinition(definition);
-        Concept context = reas.context(concept);
+        Concept context = reas.inherent(concept);
 
         if (conceptId == null) {
 
@@ -1487,7 +1551,7 @@ public class OWL {
              * context.
              */
             if (context != null) {
-                restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+                restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
             }
 
         }
@@ -1520,7 +1584,7 @@ public class OWL {
         String definition = UnarySemanticOperator.RATE.declaration[0] + " " + concept.getUrn();
         Ontology ontology = getOntology(concept.getNamespace());
         String conceptId = ontology.getIdForDefinition(definition);
-        Concept context = reas.context(concept);
+        Concept context = reas.inherent(concept);
 
         if (conceptId == null) {
 
@@ -1550,7 +1614,7 @@ public class OWL {
              * context.
              */
             if (context != null) {
-                restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+                restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
             }
 
         }
@@ -1583,7 +1647,7 @@ public class OWL {
         String definition = UnarySemanticOperator.CHANGED.declaration[0] + " " + concept.getUrn();
         Ontology ontology = getOntology(concept.getNamespace());
         String conceptId = ontology.getIdForDefinition(definition);
-        Concept context = reas.context(concept);
+        Concept context = reas.inherent(concept);
 
         if (conceptId == null) {
 
@@ -1610,12 +1674,10 @@ public class OWL {
             restrictSome(ret, getProperty(CoreOntology.NS.CHANGED_PROPERTY), concept, ontology);
 
             /*
-             * context of the change event is the same context as the quality it describes -
-             * FIXME this shouldn't be needed as the inherency is an alternative place to
-             * look for context.
+             * context of the change event is the same context as the quality it describes
              */
             if (context != null) {
-                restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+                restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
             }
 
         }
@@ -2279,9 +2341,9 @@ public class OWL {
             /*
              * types inherit the context from their trait
              */
-            Concept context = reas.context(classified);
+            Concept context = reas.inherent(classified);
             if (context != null) {
-                restrictSome(ret, getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+                restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
             }
         }
 
@@ -2619,7 +2681,7 @@ public class OWL {
         return reasoner.isSatisfiable(arg0);
     }
 
-    public void registerWithReasoner(KimNamespace parsed) {
+    public void registerWithReasoner(KimOntology parsed) {
         Ontology ontology = getOntology(parsed.getUrn());
         if (ontology != null) {
             registerWithReasoner(ontology);

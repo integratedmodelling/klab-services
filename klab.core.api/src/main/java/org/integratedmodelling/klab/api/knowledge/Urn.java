@@ -235,7 +235,7 @@ public class Urn {
 	}
 
 	public String getLocalUrn(String resourceId, Project project, String owner) {
-		return "local:" + owner + ":" + project.getName() + ":" + resourceId;
+		return "local:" + owner + ":" + project.getUrn() + ":" + resourceId;
 	}
 
 	/**

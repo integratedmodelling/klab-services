@@ -6,11 +6,8 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.knowledge.Model;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -220,17 +217,18 @@ public interface ResourcesService extends KlabService {
     KdlDataflow resolveDataflow(String urn, Scope scope);
 
     /**
-     * THe worldview is required to be whole and consistent, including a root domain. The capabilities will
-     * return the worldview ID and the projects handled by this service, which may contain projects not served
-     * by this server but resolved at initialization if a worldview is served. The worldview may not be
-     * complete, i.e. tier-n+1 compatible ontologies may still be available somewhere else.
+     * THe worldview is required to be whole and consistent, including and starting with a root domain. If
+     * this service provides a worldview, its capabilities will advertise the worldview ID, which may contain
+     * projects not served by this server but resolved at initialization if a worldview is served. The
+     * projects that compose the worldview are not essential here but will be listed in the worldview's
+     * metadata.
      * <p>
      * TODO given this paradigm it's possible to serve multiple worldviews, which may require this function to
      *  take an ID as parameter.
      *
      * @return
      */
-    List<KimOntology> getWorldview();
+    Worldview getWorldview();
 
     /**
      * Return all the namespaces that depend on the passed namespace.

@@ -75,11 +75,11 @@ public interface Observable extends Semantics {
          */
         Builder with(Concept compresent);
 
-        /**
-         * @param context
-         * @return the same builder this was called on, for chaining calls
-         */
-        Builder within(Concept context);
+//        /**
+//         * @param context
+//         * @return the same builder this was called on, for chaining calls
+//         */
+//        Builder within(Concept context);
 
         /**
          * @param goal

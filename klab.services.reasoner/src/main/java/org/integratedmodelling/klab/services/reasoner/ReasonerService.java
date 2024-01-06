@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept;
+//import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimStatement.KimVisitor;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -30,8 +30,6 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -81,32 +79,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     /**
      * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)}, only types that have the exact same core
-     * type will be accepted.
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, only types that have the exact same
+     * core type will be accepted.
      */
     static public final int REQUIRE_SAME_CORE_TYPE = 0x02;
 
     /**
      * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with roles that are more general of
-     * the roles in the first concept will be accepted.
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with roles that are more general
+     * of the roles in the first concept will be accepted.
      */
     static public final int USE_ROLE_PARENT_CLOSURE = 0x04;
 
     /**
      * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with traits that are more general of
-     * the traits in the first concept will be accepted.
+     * If passed to {@link #compatible(Semantics, Semantics, int)}, types with traits that are more
+     * general of the traits in the first concept will be accepted.
      */
     static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
 
     /**
      * Flag for {@link #compatible(Semantics, Semantics, int)}.
      * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits for
-     * observables.
+     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits
+     * for observables.
      */
     static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
 
@@ -165,8 +163,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * An emergence is the appearance of an observation triggered by another, under the assumptions stated in
-     * the worldview. It applies to processes and relationships and its emergent observable can be a
+     * An emergence is the appearance of an observation triggered by another, under the assumptions stated
+     * in the worldview. It applies to processes and relationships and its emergent observable can be a
      * configuration, subject or process.
      *
      * @author Ferd
@@ -247,12 +245,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Autowired
-    public ReasonerService(Authentication authenticationService, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName,messageListeners);
+    public ReasonerService(Authentication authenticationService, ServiceScope scope, String localName,
+                           BiConsumer<Scope, Message>... messageListeners) {
+        super(scope, localName, messageListeners);
         this.authenticationService = authenticationService;
         this.scope = scope;
         this.owl = new OWL(scope);
-        this.owl.initialize();
+//        this.owl.initialize();
         this.indexer = new Indexer(scope);
         this.emergence = new IntelligentMap<>(scope);
         if (scope instanceof LocalServiceScope localScope) {
@@ -263,7 +262,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public void initializeService() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities());
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+                capabilities());
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         if (config.exists()) {
@@ -276,7 +276,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         this.observationReasoner = new ObservationReasoner(this);
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities());
+        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                capabilities());
 
     }
 
@@ -519,12 +520,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * The workhorse of semantic distance computation can also consider any predicates that were abstract in
-     * the lineage of the passed concept (i.e. the concept is the result of a query with the abstract
+     * The workhorse of semantic distance computation can also consider any predicates that were abstract
+     * in the lineage of the passed concept (i.e. the concept is the result of a query with the abstract
      * predicates, which has been contextualized to incarnate them into the passed correspondence with
-     * concrete counterparts). In that case, and only in that case, the distance between a concrete candidate
-     * and one that contains its predicates in the abstract form can be positive, i.e. a concept with abstract
-     * predicates can resolve one with concrete subclasses as long as the lineage contains its resolution.
+     * concrete counterparts). In that case, and only in that case, the distance between a concrete
+     * candidate and one that contains its predicates in the abstract form can be positive, i.e. a concept
+     * with abstract predicates can resolve one with concrete subclasses as long as the lineage contains
+     * its resolution.
      *
      * @param to
      * @param context
@@ -588,21 +590,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
         }
 
-        if (context == null) {
-            context = context(to);
-        }
+//        if (context == null) {
+//            context = context(to);
+//        }
 
         int component;
 
         if (compareInherency) {
 
-            component = distance(context(from), context, true);
-
-            if (component < 0) {
-                double d = ((double) component / 10.0);
-                return -1 * (int) (d > 10 ? d : 10);
-            }
-            distance += component;
+//            component = distance(context(from), context, true);
+//
+//            if (component < 0) {
+//                double d = ((double) component / 10.0);
+//                return -1 * (int) (d > 10 ? d : 10);
+//            }
+//            distance += component;
 
             /*
              * any EXPLICIT inherency must be the same in both.
@@ -705,8 +707,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     /**
-     * Get the distance between the core described observables after factoring out all operators and ensuring
-     * they are the same. If not the same, the concepts are incompatible and the distance is negative.
+     * Get the distance between the core described observables after factoring out all operators and
+     * ensuring they are the same. If not the same, the concepts are incompatible and the distance is
+     * negative.
      *
      * @param to
      * @return
@@ -902,19 +905,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return false;
     }
 
-    @Override
-    public Concept directContext(Semantics concept) {
-        Collection<Concept> cls = this.owl.getDirectRestrictedClasses(concept.asConcept(),
-                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
-        return cls.isEmpty() ? null : cls.iterator().next();
-    }
-
-    @Override
-    public Concept context(Semantics concept) {
-        Collection<Concept> cls = this.owl.getRestrictedClasses(concept.asConcept(),
-                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
-        return cls.isEmpty() ? null : cls.iterator().next();
-    }
+//    @Override
+//    public Concept directContext(Semantics concept) {
+//        Collection<Concept> cls = this.owl.getDirectRestrictedClasses(concept.asConcept(),
+//                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
+//        return cls.isEmpty() ? null : cls.iterator().next();
+//    }
+//
+//    @Override
+//    public Concept context(Semantics concept) {
+//        Collection<Concept> cls = this.owl.getRestrictedClasses(concept.asConcept(),
+//                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
+//        return cls.isEmpty() ? null : cls.iterator().next();
+//    }
 
     @Override
     public Concept directInherent(Semantics concept) {
@@ -1268,550 +1271,524 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public boolean loadKnowledge(List<KimOntology> resources, Scope scope) {
+    public boolean loadKnowledge(Worldview worldview, Scope scope) {
 
-        boolean ret = true;
-//        for (Resource namespace : resources.getNamespaces()) {
-//            ResourcesService service = resources.getServices().get(namespace.getServiceId());
-//            KimNamespace parsed = service.resolveNamespace(namespace.getResourceUrn(), scope);
-//            if (parsed != null && !Utils.Notifications.hasErrors(parsed.getNotifications())) {
-//                for (KimStatement statement : parsed.getStatements()) {
-//                    if (statement instanceof KimConceptStatement) {
-//                        defineConcept((KimConceptStatement) statement, scope);
-//                    } else if (statement instanceof KimSymbolDefinition) {
-//                        // TODO RDF but only with supporting semantic info
-//                    }
-//                }
-//                this.owl.registerWithReasoner(parsed);
-//            } else {
-//                ret = false;
-//                break;
-//            }
-//        }
+        if (worldview.isEmpty()) {
+            return false;
+        }
 
+        this.owl.initialize(worldview.getOntologies().get(0));
+
+        for (KimOntology ontology : worldview.getOntologies()) {
+            for (var statement : ontology.getStatements()) {
+                defineConcept(statement, scope);
+            }
+            this.owl.registerWithReasoner(ontology);
+        }
         this.owl.flushReasoner();
-
-        return ret;
-    }
-
-    @Override
-    public String getUrl() {
-        return this.url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setLocalName(String localName) {
-        this.localName = localName;
-    }
-
-    @Override
-    public boolean subsumes(Semantics concept, Semantics other) {
-
-        if (concept == other || concept.equals(other)) {
-            return true;
+        for (var strategy : worldview.getObservationStrategies()) {
+            // TODO
         }
 
-        /*
-         * first use "isn't" based on the enum types to quickly cut out those that don't
-         * match. Also works with concepts in different ontologies that have the same
-         * definition.
-         */
-        if (Sets.intersection(concept.asConcept().getType(), other.asConcept().getType()).size() < concept.asConcept()
-                .getType().size()) {
-            return false;
-        }
+        // TODO set the loaded worldview as the one of reference
 
-        /*
-         * TODO this would be a good point to insert caching logics. It should also go
-         * in all remote clients.
-         */
+        return true;
+}
 
-        /*
-         * Speed up checking for logical expressions without forcing the reasoner to
-         * compute complex logics.
-         */
-        if (concept.is(SemanticType.UNION)) {
+@Override
+public String getUrl() {
+    return this.url;
+}
 
-            for (Concept c : operands(concept)) {
-                if (subsumes(c, other)) {
-                    return true;
-                }
-            }
+public void setUrl(String url) {
+    this.url = url;
+}
 
-        } else if (concept.is(SemanticType.INTERSECTION)) {
+public void setLocalName(String localName) {
+    this.localName = localName;
+}
 
-            for (Concept c : operands(concept)) {
-                if (!subsumes(c, other)) {
-                    return false;
-                }
-            }
-            return true;
+@Override
+public boolean subsumes(Semantics concept, Semantics other) {
 
-        } else {
-            /*
-             * use the semantic closure. We may want to cache this eventually.
-             */
-            Collection<Concept> collection = allParents(concept);
-            collection.add(concept.asConcept());
-            return collection.contains(other);
-        }
-        return false;
-    }
-
-    @Override
-    public Semantics domain(Semantics conceptImpl) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Concept declareConcept(KimConcept conceptDeclaration) {
-        return declare(conceptDeclaration, this.owl.requireOntology(conceptDeclaration.getNamespace()),
-                scope);
-    }
-
-    @Override
-    public Observable declareObservable(KimObservable observableDeclaration) {
-        return declare(observableDeclaration,
-                this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
-                scope);
-    }
-
-    @Override
-    public boolean compatible(Semantics o1, Semantics o2) {
-        return compatible(o1, o2, 0);
-    }
-
-    // @Override
-    public boolean compatible(Semantics o1, Semantics o2, int flags) {
-
-        if (o1 == o2 || o1.equals(o2)) {
-            return true;
-        }
-
-        boolean mustBeSameCoreType = (flags & REQUIRE_SAME_CORE_TYPE) != 0;
-        boolean useRoleParentClosure = (flags & USE_ROLE_PARENT_CLOSURE) != 0;
-        // boolean acceptRealmDifferences = (flags & ACCEPT_REALM_DIFFERENCES) != 0;
-
-        // TODO unsupported
-        boolean useTraitParentClosure = (flags & USE_TRAIT_PARENT_CLOSURE) != 0;
-
-        if ((!o1.is(SemanticType.OBSERVABLE) || !o2.is(SemanticType.OBSERVABLE))
-                && !(o1.is(SemanticType.CONFIGURATION) && o2.is(SemanticType.CONFIGURATION))) {
-            return false;
-        }
-
-        Concept core1 = coreObservable(o1);
-        Concept core2 = coreObservable(o2);
-
-        if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : subsumes(core1,
-                core2))) {
-            return false;
-        }
-
-        Concept cc1 = context(o1);
-        Concept cc2 = context(o2);
-
-        // candidate may have no context; if both have them, they must be compatible
-        if (cc1 == null && cc2 != null) {
-            return false;
-        }
-        if (cc1 != null && cc2 != null) {
-            if (!compatible(cc1, cc2, ACCEPT_REALM_DIFFERENCES)) {
-                return false;
-            }
-        }
-
-        Concept ic1 = inherent(o1);
-        Concept ic2 = inherent(o2);
-
-        // same with inherency
-        if (ic1 == null && ic2 != null) {
-            return false;
-        }
-        if (ic1 != null && ic2 != null) {
-            if (!compatible(ic1, ic2)) {
-                return false;
-            }
-        }
-
-        for (Concept t : traits(o2)) {
-            boolean ok = hasTrait(o1, t);
-            if (!ok && useTraitParentClosure) {
-                ok = hasDirectTrait(o1, t);
-            }
-            if (!ok) {
-                return false;
-            }
-        }
-
-        for (Concept t : roles(o2)) {
-            boolean ok = hasRole(o1, t);
-            if (!ok && useRoleParentClosure) {
-                ok = hasParentRole(o1, t);
-            }
-            if (!ok) {
-                return false;
-            }
-        }
-
+    if (concept == other || concept.equals(other)) {
         return true;
     }
 
-    @Override
-    public boolean hasParentRole(Semantics o1, Concept t) {
-        // TODO Auto-generated method stub
+    /*
+     * first use "isn't" based on the enum types to quickly cut out those that don't
+     * match. Also works with concepts in different ontologies that have the same
+     * definition.
+     */
+    if (Sets.intersection(concept.asConcept().getType(), other.asConcept().getType()).size() < concept.asConcept()
+            .getType().size()) {
         return false;
     }
 
-    @Override
-    public boolean contextuallyCompatible(Semantics focus, Semantics context1, Semantics context2) {
-        boolean ret = compatible(context1, context2, 0);
-        if (!ret && occurrent(context1)) {
-            ret = affectedBy(focus, context1);
-            Concept itsContext = context(context1);
-            if (!ret) {
-                if (itsContext != null) {
-                    ret = compatible(itsContext, context2);
-                }
-            }
-        }
-        return ret;
-    }
+    /*
+     * TODO this would be a good point to insert caching logics. It should also go
+     * in all remote clients.
+     */
 
-    @Override
-    public boolean occurrent(Semantics context1) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+    /*
+     * Speed up checking for logical expressions without forcing the reasoner to
+     * compute complex logics.
+     */
+    if (concept.is(SemanticType.UNION)) {
 
-    @Override
-    public Collection<Concept> affectedOrCreated(Semantics semantics) {
-        Set<Concept> ret = new HashSet<>();
-        for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
-                this.owl.getProperty(NS.AFFECTS_PROPERTY))) {
-            if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
-                ret.add(c);
-            }
-        }
-        for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
-                this.owl.getProperty(NS.CREATES_PROPERTY))) {
-            if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
-                ret.add(c);
-            }
-        }
-        return ret;
-    }
-
-    @Override
-    public Collection<Concept> affected(Semantics semantics) {
-        Set<Concept> ret = new HashSet<>();
-        for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
-                this.owl.getProperty(NS.AFFECTS_PROPERTY))) {
-            if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
-                ret.add(c);
-            }
-        }
-        return ret;
-    }
-
-    @Override
-    public Collection<Concept> created(Semantics semantics) {
-        Set<Concept> ret = new HashSet<>();
-        for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
-                this.owl.getProperty(NS.CREATES_PROPERTY))) {
-            if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
-                ret.add(c);
-            }
-        }
-        return ret;
-    }
-
-    @Override
-    public boolean match(Semantics candidate, Semantics pattern) {
-        return false;
-    }
-
-    @Override
-    public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
-        return false;
-    }
-
-    @Override
-    public <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts) {
-        return null;
-    }
-
-    @Override
-    public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
-        return null;
-    }
-
-    @Override
-    public boolean affectedBy(Semantics affected, Semantics affecting) {
-        Concept described = describedType(affected);
-        for (Concept c : affected(affecting)) {
-            if (subsumes(affected, c) || (described != null && subsumes(described, c))) {
+        for (Concept c : operands(concept)) {
+            if (subsumes(c, other)) {
                 return true;
             }
         }
+
+    } else if (concept.is(SemanticType.INTERSECTION)) {
+
+        for (Concept c : operands(concept)) {
+            if (!subsumes(c, other)) {
+                return false;
+            }
+        }
+        return true;
+
+    } else {
+        /*
+         * use the semantic closure. We may want to cache this eventually.
+         */
+        Collection<Concept> collection = allParents(concept);
+        collection.add(concept.asConcept());
+        return collection.contains(other);
+    }
+    return false;
+}
+
+@Override
+public Semantics domain(Semantics conceptImpl) {
+    // TODO Auto-generated method stub
+    return null;
+}
+
+@Override
+public Concept declareConcept(KimConcept conceptDeclaration) {
+    return declare(conceptDeclaration, this.owl.requireOntology(conceptDeclaration.getNamespace()),
+            scope);
+}
+
+@Override
+public Observable declareObservable(KimObservable observableDeclaration) {
+    return declare(observableDeclaration,
+            this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
+            scope);
+}
+
+@Override
+public boolean compatible(Semantics o1, Semantics o2) {
+    return compatible(o1, o2, 0);
+}
+
+// @Override
+public boolean compatible(Semantics o1, Semantics o2, int flags) {
+
+    if (o1 == o2 || o1.equals(o2)) {
+        return true;
+    }
+
+    boolean mustBeSameCoreType = (flags & REQUIRE_SAME_CORE_TYPE) != 0;
+    boolean useRoleParentClosure = (flags & USE_ROLE_PARENT_CLOSURE) != 0;
+    // boolean acceptRealmDifferences = (flags & ACCEPT_REALM_DIFFERENCES) != 0;
+
+    // TODO unsupported
+    boolean useTraitParentClosure = (flags & USE_TRAIT_PARENT_CLOSURE) != 0;
+
+    if ((!o1.is(SemanticType.OBSERVABLE) || !o2.is(SemanticType.OBSERVABLE))
+            && !(o1.is(SemanticType.CONFIGURATION) && o2.is(SemanticType.CONFIGURATION))) {
         return false;
     }
 
-    @Override
-    public boolean createdBy(Semantics affected, Semantics affecting) {
-        Concept described = describedType(affected);
-        if (described != null && subsumes(described, affecting)) {
+    Concept core1 = coreObservable(o1);
+    Concept core2 = coreObservable(o2);
+
+    if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : subsumes(core1,
+            core2))) {
+        return false;
+    }
+//
+//        Concept cc1 = context(o1);
+//        Concept cc2 = context(o2);
+//
+//        // candidate may have no context; if both have them, they must be compatible
+//        if (cc1 == null && cc2 != null) {
+//            return false;
+//        }
+//        if (cc1 != null && cc2 != null) {
+//            if (!compatible(cc1, cc2, ACCEPT_REALM_DIFFERENCES)) {
+//                return false;
+//            }
+//        }
+
+    Concept ic1 = inherent(o1);
+    Concept ic2 = inherent(o2);
+
+    // same with inherency
+    if (ic1 == null && ic2 != null) {
+        return false;
+    }
+    if (ic1 != null && ic2 != null) {
+        if (!compatible(ic1, ic2)) {
+            return false;
+        }
+    }
+
+    for (Concept t : traits(o2)) {
+        boolean ok = hasTrait(o1, t);
+        if (!ok && useTraitParentClosure) {
+            ok = hasDirectTrait(o1, t);
+        }
+        if (!ok) {
+            return false;
+        }
+    }
+
+    for (Concept t : roles(o2)) {
+        boolean ok = hasRole(o1, t);
+        if (!ok && useRoleParentClosure) {
+            ok = hasParentRole(o1, t);
+        }
+        if (!ok) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+@Override
+public boolean hasParentRole(Semantics o1, Concept t) {
+    // TODO Auto-generated method stub
+    return false;
+}
+
+@Override
+public boolean contextuallyCompatible(Semantics focus, Semantics context1, Semantics context2) {
+    boolean ret = compatible(context1, context2, 0);
+    if (!ret && occurrent(context1)) {
+        ret = affectedBy(focus, context1);
+        Concept itsContext = inherent(context1);
+        if (!ret) {
+            if (itsContext != null) {
+                ret = compatible(itsContext, context2);
+            }
+        }
+    }
+    return ret;
+}
+
+@Override
+public boolean occurrent(Semantics context1) {
+    // TODO Auto-generated method stub
+    return false;
+}
+
+@Override
+public Collection<Concept> affectedOrCreated(Semantics semantics) {
+    Set<Concept> ret = new HashSet<>();
+    for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
+            this.owl.getProperty(NS.AFFECTS_PROPERTY))) {
+        if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
+            ret.add(c);
+        }
+    }
+    for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
+            this.owl.getProperty(NS.CREATES_PROPERTY))) {
+        if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
+            ret.add(c);
+        }
+    }
+    return ret;
+}
+
+@Override
+public Collection<Concept> affected(Semantics semantics) {
+    Set<Concept> ret = new HashSet<>();
+    for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
+            this.owl.getProperty(NS.AFFECTS_PROPERTY))) {
+        if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
+            ret.add(c);
+        }
+    }
+    return ret;
+}
+
+@Override
+public Collection<Concept> created(Semantics semantics) {
+    Set<Concept> ret = new HashSet<>();
+    for (Concept c : this.owl.getRestrictedClasses(semantics.asConcept(),
+            this.owl.getProperty(NS.CREATES_PROPERTY))) {
+        if (!this.owl.getOntology(c.getNamespace()).isInternal()) {
+            ret.add(c);
+        }
+    }
+    return ret;
+}
+
+@Override
+public boolean match(Semantics candidate, Semantics pattern) {
+    return false;
+}
+
+@Override
+public boolean match(Semantics candidate, Semantics pattern, Map<Concept, Concept> matches) {
+    return false;
+}
+
+@Override
+public <T extends Semantics> T concretize(T pattern, Map<Concept, Concept> concreteConcepts) {
+    return null;
+}
+
+@Override
+public <T extends Semantics> T concretize(T pattern, List<Concept> concreteConcepts) {
+    return null;
+}
+
+@Override
+public boolean affectedBy(Semantics affected, Semantics affecting) {
+    Concept described = describedType(affected);
+    for (Concept c : affected(affecting)) {
+        if (subsumes(affected, c) || (described != null && subsumes(described, c))) {
             return true;
         }
-        for (Concept c : created(affecting)) {
-            if (subsumes(affected, c) || (described != null && subsumes(described, c))) {
-                return true;
+    }
+    return false;
+}
+
+@Override
+public boolean createdBy(Semantics affected, Semantics affecting) {
+    Concept described = describedType(affected);
+    if (described != null && subsumes(described, affecting)) {
+        return true;
+    }
+    for (Concept c : created(affecting)) {
+        if (subsumes(affected, c) || (described != null && subsumes(described, c))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+@Override
+public Concept baseObservable(Semantics c) {
+
+    if (c instanceof Concept concept) {
+        return concept;
+    }
+
+    Collection<Concept> traits = directTraits(c);
+    Collection<Concept> roles = directRoles(c);
+    if (traits.size() == 0 && roles.size() == 0 && derived(c)) {
+        return c.asConcept();
+    }
+
+    return baseObservable(parent(c));
+}
+
+@Override
+public Concept parent(Semantics c) {
+    Collection<Concept> parents = this.owl.getParents(c.asConcept());
+    return parents.isEmpty() ? null : parents.iterator().next();
+}
+
+@Override
+public Concept compose(Collection<Concept> concepts, LogicalConnector connector) {
+
+    if (connector == LogicalConnector.EXCLUSION || connector == LogicalConnector.DISJOINT_UNION) {
+        throw new KlabIllegalArgumentException("Reasoner::compose: connector " + connector + " not " +
+                "supported");
+    }
+    if (concepts.size() == 1) {
+        return concepts.iterator().next();
+    }
+    if (concepts.size() > 1) {
+        return connector == LogicalConnector.UNION
+               ? this.owl.getUnion(concepts,
+                this.owl.getOntology(concepts.iterator().next().getNamespace()),
+                concepts.iterator().next().getType())
+               : this.owl.getIntersection(concepts,
+                       this.owl.getOntology(concepts.iterator().next().getNamespace()),
+                       concepts.iterator().next().getType());
+    }
+    return owl.getNothing();
+}
+
+@Override
+public Concept rawObservable(Semantics observable) {
+    String def = observable.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
+    Concept ret = observable.asConcept();
+    if (def != null) {
+        ret = resolveConcept(def);
+    }
+    return ret;
+}
+
+@Override
+public Builder observableBuilder(Observable observableImpl) {
+    return ObservableBuilder.getBuilder(observableImpl, scope, owl);
+}
+
+/*
+ * --- non-API
+ */
+
+/*
+ * Record correspondence of core concept peers to worldview concepts. Called by
+ * KimValidator for later use at namespace construction.
+ */
+public void setWorldviewPeer(String coreConcept, String worldviewConcept) {
+    coreConceptPeers.put(worldviewConcept, coreConcept);
+}
+
+public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject,
+                     Scope monitor) {
+
+//        if (concept.isMacro()) {
+//            return null;
+//        }
+
+    try {
+
+        if (concept.isAlias()) {
+
+            /*
+             * can only have 'is' X or 'equals' X
+             */
+            Concept parent = null;
+            if (concept.getUpperConceptDefined() != null) {
+                parent = this.owl.getConcept(concept.getUpperConceptDefined());
+                if (parent == null) {
+                    monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown",
+                            concept);
+                } else {
+                    parent.getType().addAll(concept.getType());
+                }
+            } else if (concept.getDeclaredParent() != null) {
+                parent = declareConcept(concept.getDeclaredParent());
             }
-        }
-        return false;
-    }
 
-    @Override
-    public Concept baseObservable(Semantics c) {
+            if (parent != null) {
+                ontology.addDelegateConcept(concept.getName(), ontology.getName(), parent);
+            }
 
-        if (c instanceof Concept concept) {
-            return concept;
-        }
-
-        Collection<Concept> traits = directTraits(c);
-        Collection<Concept> roles = directRoles(c);
-        if (traits.size() == 0 && roles.size() == 0 && derived(c)) {
-            return c.asConcept();
-        }
-        
-        return baseObservable(parent(c));
-    }
-
-    @Override
-    public Concept parent(Semantics c) {
-        Collection<Concept> parents = this.owl.getParents(c.asConcept());
-        return parents.isEmpty() ? null : parents.iterator().next();
-    }
-
-    @Override
-    public Concept compose(Collection<Concept> concepts, LogicalConnector connector) {
-
-        if (connector == LogicalConnector.EXCLUSION || connector == LogicalConnector.DISJOINT_UNION) {
-            throw new KlabIllegalArgumentException("Reasoner::compose: connector " + connector + " not " +
-                    "supported");
-        }
-        if (concepts.size() == 1) {
-            return concepts.iterator().next();
-        }
-        if (concepts.size() > 1) {
-            return connector == LogicalConnector.UNION
-                   ? this.owl.getUnion(concepts,
-                    this.owl.getOntology(concepts.iterator().next().getNamespace()),
-                    concepts.iterator().next().getType())
-                   : this.owl.getIntersection(concepts,
-                           this.owl.getOntology(concepts.iterator().next().getNamespace()),
-                           concepts.iterator().next().getType());
-        }
-        return owl.getNothing();
-    }
-
-    @Override
-    public Concept rawObservable(Semantics observable) {
-        String def = observable.getMetadata().get(NS.CORE_OBSERVABLE_PROPERTY, String.class);
-        Concept ret = observable.asConcept();
-        if (def != null) {
-            ret = resolveConcept(def);
-        }
-        return ret;
-    }
-
-    @Override
-    public Builder observableBuilder(Observable observableImpl) {
-        return ObservableBuilder.getBuilder(observableImpl, scope, owl);
-    }
-
-    /*
-     * --- non-API
-     */
-
-    /*
-     * Record correspondence of core concept peers to worldview concepts. Called by
-     * KimValidator for later use at namespace construction.
-     */
-    public void setWorldviewPeer(String coreConcept, String worldviewConcept) {
-        coreConceptPeers.put(worldviewConcept, coreConcept);
-    }
-
-    public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject,
-                         Scope monitor) {
-
-        if (concept.isMacro()) {
             return null;
         }
 
-        try {
+        Concept ret = buildInternal(concept, ontology, kimObject, monitor);
 
-            if (concept.isAlias()) {
+        if (ret != null) {
 
-                /*
-                 * can only have 'is' X or 'equals' X
-                 */
+            Concept upperConceptDefined = null;
+            if (concept.getDeclaredParent() == null) {
                 Concept parent = null;
                 if (concept.getUpperConceptDefined() != null) {
-                    parent = this.owl.getConcept(concept.getUpperConceptDefined());
+                    upperConceptDefined = parent =
+                            this.owl.getConcept(concept.getUpperConceptDefined());
                     if (parent == null) {
-                        monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown",
-                                concept);
-                    } else {
-                        parent.getType().addAll(concept.getType());
+                        monitor.error("Core concept " + concept.getUpperConceptDefined() + " is " +
+                                "unknown", concept);
                     }
                 } else {
-
-                    List<Concept> concepts = new ArrayList<>();
-                    int i = 0;
-                    for (ParentConcept p : concept.getParents()) {
-
-                        if (i > 0) {
-                            monitor.error("concepts defining aliases with 'equals' cannot have more " +
-                                            "than " +
-                                            "one parent",
-                                    p);
-                        }
-
-                        for (KimConcept pdecl : p.getConcepts()) {
-                            Concept declared = declare(pdecl, ontology, monitor);
-                            if (declared == null) {
-                                monitor.error("parent declaration " + pdecl + " does not identify known" +
-                                                " " +
-                                                "concepts",
-                                        pdecl);
-                                return null;
-                            }
-                            concepts.add(declared);
-                        }
-                        i++;
-                    }
-
-                    if (concepts.size() == 1) {
-                        parent = concepts.get(0);
+                    parent = this.owl.getCoreOntology().getCoreType(concept.getType());
+                    if (coreConceptPeers.containsKey(ret.toString())) {
+                        // ensure that any non-trivial core inheritance is dealt with
+                        // appropriately
+                        parent = this.owl.getCoreOntology().alignCoreInheritance(ret);
                     }
                 }
 
                 if (parent != null) {
-                    ontology.addDelegateConcept(concept.getName(), ontology.getName(), parent);
+                    ontology.add(Axiom.SubClass(parent.getUrn(), ret.getName()));
                 }
-
-                return null;
             }
 
-            Concept ret = buildInternal(concept, ontology, kimObject, monitor);
+            createProperties(ret, ontology);
+            ontology.define();
 
-            if (ret != null) {
-
-                Concept upperConceptDefined = null;
-                if (concept.getParents().isEmpty()) {
-                    Concept parent = null;
-                    if (concept.getUpperConceptDefined() != null) {
-                        upperConceptDefined = parent =
-                                this.owl.getConcept(concept.getUpperConceptDefined());
-                        if (parent == null) {
-                            monitor.error("Core concept " + concept.getUpperConceptDefined() + " is " +
-                                    "unknown", concept);
-                        }
-                    } else {
-                        parent = this.owl.getCoreOntology().getCoreType(concept.getType());
-                        if (coreConceptPeers.containsKey(ret.toString())) {
-                            // ensure that any non-trivial core inheritance is dealt with
-                            // appropriately
-                            parent = this.owl.getCoreOntology().alignCoreInheritance(ret);
-                        }
-                    }
-
-                    if (parent != null) {
-                        ontology.add(Axiom.SubClass(parent.getUrn(), ret.getName()));
-                    }
-                }
-
-                createProperties(ret, ontology);
-                ontology.define();
-
-                if (coreConceptPeers.containsKey(ret.toString()) && upperConceptDefined != null
+            if (coreConceptPeers.containsKey(ret.toString()) && upperConceptDefined != null
                        /* && "true".equals(upperConceptDefined.getMetadata().get(NS.IS_CORE_KIM_TYPE,
                         "false")*/) {
-                    // TODO revise - use core ontology statements only
-                    this.owl.getCoreOntology().setAsCoreType(ret);
-                }
-
+                // TODO revise - use core ontology statements only
+                this.owl.getCoreOntology().setAsCoreType(ret);
             }
 
-            return ret;
-
-        } catch (Throwable e) {
-            monitor.error(e, concept);
         }
-        return null;
+
+        return ret;
+
+    } catch (Throwable e) {
+        monitor.error(e, concept);
+    }
+    return null;
+}
+
+private Concept buildInternal(final KimConceptStatement concept, Ontology ontology,
+                              KimConceptStatement kimObject,
+                              final Scope monitor) {
+
+    Concept main = null;
+    String mainId = concept.getName();
+
+    ontology.add(Axiom.ClassAssertion(mainId,
+            concept.getType().stream().map((c) -> SemanticType.valueOf(c.name())).collect(Collectors.toSet())));
+
+    // set the k.IM definition
+    ontology.add(Axiom.AnnotationAssertion(mainId, NS.CONCEPT_DEFINITION_PROPERTY,
+            ontology.getName() + ":" + concept.getName()));
+
+    // and the reference name
+    ontology.add(Axiom.AnnotationAssertion(mainId, NS.REFERENCE_NAME_PROPERTY,
+            OWL.getCleanFullId(ontology.getName(), concept.getName())));
+
+    if (concept.getDocstring() != null) {
+        ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT,
+                concept.getDocstring()));
     }
 
-    private Concept buildInternal(final KimConceptStatement concept, Ontology ontology,
-                                  KimConceptStatement kimObject,
-                                  final Scope monitor) {
+    if (kimObject == null) {
+        ontology.add(Axiom.AnnotationAssertion(mainId, NS.BASE_DECLARATION, "true"));
+    }
 
-        Concept main = null;
-        String mainId = concept.getName();
+    /*
+     * basic attributes subjective deniable internal uni/bidirectional
+     * (relationship)
+     */
+    if (concept.isAbstract()) {
+        ontology.add(Axiom.AnnotationAssertion(mainId, CoreOntology.NS.IS_ABSTRACT, "true"));
+    }
 
-        ontology.add(Axiom.ClassAssertion(mainId,
-                concept.getType().stream().map((c) -> SemanticType.valueOf(c.name())).collect(Collectors.toSet())));
+    ontology.define();
+    main = ontology.getConcept(mainId);
 
-        // set the k.IM definition
-        ontology.add(Axiom.AnnotationAssertion(mainId, NS.CONCEPT_DEFINITION_PROPERTY,
-                ontology.getName() + ":" + concept.getName()));
+    indexer.index(concept);
 
-        // and the reference name
-        ontology.add(Axiom.AnnotationAssertion(mainId, NS.REFERENCE_NAME_PROPERTY,
-                OWL.getCleanFullId(ontology.getName(), concept.getName())));
+    if (concept.getDeclaredParent() != null) {
 
-        if (concept.getDocstring() != null) {
-            ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT,
-                    concept.getDocstring()));
+//            List<Concept> concepts = new ArrayList<>();
+//            for (KimConcept pdecl : parent.getConcepts()) {
+        Concept declared = declare(concept.getDeclaredParent(), ontology, monitor);
+        if (declared == null) {
+            monitor.error("parent declaration " + concept.getDeclaredParent() + " does not identify known " +
+                            "concepts",
+                    concept.getDeclaredParent());
+            return null;
+        } else {
+            ontology.add(Axiom.SubClass(declared.getNamespace() + ":" + declared.getName(), mainId));
         }
-
-        if (kimObject == null) {
-            ontology.add(Axiom.AnnotationAssertion(mainId, NS.BASE_DECLARATION, "true"));
-        }
-
-        /*
-         * basic attributes subjective deniable internal uni/bidirectional
-         * (relationship)
-         */
-        if (concept.isAbstract()) {
-            ontology.add(Axiom.AnnotationAssertion(mainId, CoreOntology.NS.IS_ABSTRACT, "true"));
-        }
-
-        ontology.define();
-        main = ontology.getConcept(mainId);
-
-        indexer.index(concept);
-
-        for (ParentConcept parent : concept.getParents()) {
-
-            List<Concept> concepts = new ArrayList<>();
-            for (KimConcept pdecl : parent.getConcepts()) {
-                Concept declared = declare(pdecl, ontology, monitor);
-                if (declared == null) {
-                    monitor.error("parent declaration " + pdecl + " does not identify known concepts",
-                            pdecl);
-                    return null;
-                }
-                concepts.add(declared);
-            }
-
-            if (concepts.size() == 1) {
-                ontology.add(Axiom.SubClass(concepts.get(0).getNamespace() + ":" + concepts.get(0).getName(), mainId));
-            } else {
+//                concepts.add(declared);
+//            }
+//
+//            if (concepts.size() == 1) {
+//
+//            }
+            /* else {
                 Concept expr = null;
                 switch (parent.getConnector()) {
                     case INTERSECTION:
@@ -1832,474 +1809,474 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 } else {
                     ontology.add(Axiom.SubClass(expr.getNamespace() + ":" + expr.getName(), mainId));
                 }
-            }
-            ontology.define();
-        }
-
-        for (KimScope child : concept.getChildren()) {
-            if (child instanceof KimConceptStatement) {
-                try {
-                    // KimConceptStatement chobj = kimObject == null ? null : new
-                    // KimConceptStatement((IKimConceptStatement) child);
-                    Concept childConcept = buildInternal((KimConceptStatement) child, ontology, concept,
-                            /*
-                             * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
-                             * monitor).contextualize(child) :
-                             */ monitor);
-                    if (childConcept != null) {
-                        ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
-                        ontology.define();
-                    }
-                    // kimObject.getChildren().add(chobj);
-                } catch (Throwable e) {
-                    monitor.error(e, child);
-                }
-            }
-        }
-
-        for (KimConcept inherited : concept.getTraitsInherited()) {
-            Concept trait = declare(inherited, ontology, monitor);
-            if (trait == null) {
-                monitor.error("inherited " + inherited.getName() + " does not identify known concepts",
-                        inherited);
-                // return null;
-            } else {
-                this.owl.addTrait(main, trait, ontology);
-            }
-        }
-
-        // TODO all the rest: creates, ....
-        for (KimConcept affected : concept.getQualitiesAffected()) {
-            Concept quality = declare(affected, ontology, monitor);
-            if (quality == null) {
-                monitor.error("affected " + affected.getName() + " does not identify known concepts",
-                        affected);
-            } else {
-                this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY),
-                        quality
-                        , ontology);
-            }
-        }
-
-        for (KimConcept required : concept.getRequiredIdentities()) {
-            Concept quality = declare(required, ontology, monitor);
-            if (quality == null) {
-                monitor.error("required " + required.getName() + " does not identify known concepts",
-                        required);
-            } else {
-                this.owl.restrictSome(main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality,
-                        ontology);
-            }
-        }
-
-        for (KimConcept affected : concept.getObservablesCreated()) {
-            Concept quality = declare(affected, ontology, monitor);
-            if (quality == null) {
-                monitor.error("created " + affected.getName() + " does not identify known concepts",
-                        affected);
-            } else {
-                this.owl.restrictSome(main, this.owl.getProperty(NS.CREATES_PROPERTY), quality, ontology);
-            }
-        }
-
-        for (ApplicableConcept link : concept.getSubjectsLinked()) {
-            if (link.getOriginalObservable() == null && link.getSource() != null) {
-                // relationship source->target
-                this.owl.defineRelationship(main, declare(link.getSource(), ontology, monitor),
-                        declare(link.getTarget(), ontology, monitor), ontology);
-            } else {
-                // TODO
-            }
-        }
-
-        if (!concept.getEmergenceTriggers().isEmpty()) {
-            List<Concept> triggers = new ArrayList<>();
-            for (KimConcept trigger : concept.getEmergenceTriggers()) {
-                triggers.add(declare(trigger, ontology, monitor));
-            }
-            registerEmergent(main, triggers);
-        }
-
-        // if (kimObject != null) {
-        // kimObject.set(main);
-        // }
-
-        return main;
+            }*/
+        ontology.define();
     }
 
-    /**
-     * Arrange a set of concepts into the collection of the most specific members of each concept hierarchy
-     * therein.
-     * <p>
-     * TODO/FIXME not exposed, as I'm not sure this one is useful or intuitive
-     * enough.
-     *
-     * @param cc
-     * @return least general
-     */
-    public Collection<Concept> leastGeneral(Collection<Concept> cc) {
-
-        Set<Concept> ret = new HashSet<>();
-        for (Concept c : cc) {
-            List<Concept> ccs = new ArrayList<>(ret);
-            boolean set = false;
-            for (Concept kn : ccs) {
-                if (subsumes(c, kn)) {
-                    ret.remove(kn);
-                    ret.add(c);
-                    set = true;
-                } else if (subsumes(kn, c)) {
-                    set = true;
+    for (KimScope child : concept.getChildren()) {
+        if (child instanceof KimConceptStatement) {
+            try {
+                // KimConceptStatement chobj = kimObject == null ? null : new
+                // KimConceptStatement((IKimConceptStatement) child);
+                Concept childConcept = buildInternal((KimConceptStatement) child, ontology, concept,
+                        /*
+                         * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
+                         * monitor).contextualize(child) :
+                         */ monitor);
+                if (childConcept != null) {
+                    ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
+                    ontology.define();
                 }
+                // kimObject.getChildren().add(chobj);
+            } catch (Throwable e) {
+                monitor.error(e, child);
             }
-            if (!set) {
+        }
+    }
+
+    for (KimConcept inherited : concept.getTraitsInherited()) {
+        Concept trait = declare(inherited, ontology, monitor);
+        if (trait == null) {
+            monitor.error("inherited " + inherited.getName() + " does not identify known concepts",
+                    inherited);
+            // return null;
+        } else {
+            this.owl.addTrait(main, trait, ontology);
+        }
+    }
+
+    // TODO all the rest: creates, ....
+    for (KimConcept affected : concept.getQualitiesAffected()) {
+        Concept quality = declare(affected, ontology, monitor);
+        if (quality == null) {
+            monitor.error("affected " + affected.getName() + " does not identify known concepts",
+                    affected);
+        } else {
+            this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY),
+                    quality
+                    , ontology);
+        }
+    }
+
+    for (KimConcept required : concept.getRequiredIdentities()) {
+        Concept quality = declare(required, ontology, monitor);
+        if (quality == null) {
+            monitor.error("required " + required.getName() + " does not identify known concepts",
+                    required);
+        } else {
+            this.owl.restrictSome(main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality,
+                    ontology);
+        }
+    }
+
+    for (KimConcept affected : concept.getObservablesCreated()) {
+        Concept quality = declare(affected, ontology, monitor);
+        if (quality == null) {
+            monitor.error("created " + affected.getName() + " does not identify known concepts",
+                    affected);
+        } else {
+            this.owl.restrictSome(main, this.owl.getProperty(NS.CREATES_PROPERTY), quality, ontology);
+        }
+    }
+
+    for (ApplicableConcept link : concept.getSubjectsLinked()) {
+        if (link.getOriginalObservable() == null && link.getSource() != null) {
+            // relationship source->target
+            this.owl.defineRelationship(main, declare(link.getSource(), ontology, monitor),
+                    declare(link.getTarget(), ontology, monitor), ontology);
+        } else {
+            // TODO
+        }
+    }
+
+    if (!concept.getEmergenceTriggers().isEmpty()) {
+        List<Concept> triggers = new ArrayList<>();
+        for (KimConcept trigger : concept.getEmergenceTriggers()) {
+            triggers.add(declare(trigger, ontology, monitor));
+        }
+        registerEmergent(main, triggers);
+    }
+
+    // if (kimObject != null) {
+    // kimObject.set(main);
+    // }
+
+    return main;
+}
+
+/**
+ * Arrange a set of concepts into the collection of the most specific members of each concept hierarchy
+ * therein.
+ * <p>
+ * TODO/FIXME not exposed, as I'm not sure this one is useful or intuitive
+ * enough.
+ *
+ * @param cc
+ * @return least general
+ */
+public Collection<Concept> leastGeneral(Collection<Concept> cc) {
+
+    Set<Concept> ret = new HashSet<>();
+    for (Concept c : cc) {
+        List<Concept> ccs = new ArrayList<>(ret);
+        boolean set = false;
+        for (Concept kn : ccs) {
+            if (subsumes(c, kn)) {
+                ret.remove(kn);
                 ret.add(c);
+                set = true;
+            } else if (subsumes(kn, c)) {
+                set = true;
             }
         }
-        return ret;
-    }
-
-    /**
-     * Return the most specific ancestor that the concepts in the passed collection have in common, or null if
-     * none.
-     *
-     * @param cc
-     * @return
-     */
-    @Override
-    public Concept leastGeneralCommon(Collection<Concept> cc) {
-
-        Concept ret = null;
-        Iterator<Concept> ii = cc.iterator();
-
-        if (ii.hasNext()) {
-
-            ret = ii.next();
-
-            if (ret != null)
-                while (ii.hasNext()) {
-                    ret = this.owl.getLeastGeneralCommonConcept(ret, ii.next());
-                    if (ret == null)
-                        break;
-                }
+        if (!set) {
+            ret.add(c);
         }
+    }
+    return ret;
+}
 
-        return ret;
+/**
+ * Return the most specific ancestor that the concepts in the passed collection have in common, or null if
+ * none.
+ *
+ * @param cc
+ * @return
+ */
+@Override
+public Concept leastGeneralCommon(Collection<Concept> cc) {
+
+    Concept ret = null;
+    Iterator<Concept> ii = cc.iterator();
+
+    if (ii.hasNext()) {
+
+        ret = ii.next();
+
+        if (ret != null)
+            while (ii.hasNext()) {
+                ret = this.owl.getLeastGeneralCommonConcept(ret, ii.next());
+                if (ret == null)
+                    break;
+            }
     }
 
-    /*
-     * Register the triggers and each triggering concept in the emergence map.
-     */
-    public boolean registerEmergent(Concept configuration, Collection<Concept> triggers) {
+    return ret;
+}
 
-        if (!configuration.isAbstract()) {
+/*
+ * Register the triggers and each triggering concept in the emergence map.
+ */
+public boolean registerEmergent(Concept configuration, Collection<Concept> triggers) {
 
-            // DebugFile.println("CHECK for storage of " + configuration + " based on " +
-            // triggers);
+    if (!configuration.isAbstract()) {
 
-            if (this.emergent.containsKey(configuration)) {
-                return true;
-            }
+        // DebugFile.println("CHECK for storage of " + configuration + " based on " +
+        // triggers);
 
-            // DebugFile.println(" STORED " + configuration);
-
-            Emergence descriptor = new Emergence();
-            descriptor.emergentObservable = configuration;
-            descriptor.triggerObservables.addAll(triggers);
-            descriptor.namespaceId = configuration.getNamespace();
-            this.emergent.put(configuration, descriptor);
-
-            for (Concept trigger : triggers) {
-                for (Concept tr : this.owl.flattenOperands(trigger)) {
-                    Set<Emergence> es = emergence.get(tr);
-                    if (es == null) {
-                        es = new HashSet<>();
-                        emergence.put(tr, es);
-                    }
-                    es.add(descriptor);
-                }
-            }
-
+        if (this.emergent.containsKey(configuration)) {
             return true;
         }
 
-        return false;
-    }
+        // DebugFile.println(" STORED " + configuration);
 
-    private void createProperties(Concept ret, Ontology ns) {
+        Emergence descriptor = new Emergence();
+        descriptor.emergentObservable = configuration;
+        descriptor.triggerObservables.addAll(triggers);
+        descriptor.namespaceId = configuration.getNamespace();
+        this.emergent.put(configuration, descriptor);
 
-        String pName = null;
-        String pProp = null;
-        if (ret.is(SemanticType.ATTRIBUTE)) {
-            // hasX
-            pName = "has" + ret.getName();
-            pProp = NS.HAS_ATTRIBUTE_PROPERTY;
-        } else if (ret.is(SemanticType.REALM)) {
-            // inX
-            pName = "in" + ret.getName();
-            pProp = NS.HAS_REALM_PROPERTY;
-        } else if (ret.is(SemanticType.IDENTITY)) {
-            // isX
-            pName = "is" + ret.getName();
-            pProp = NS.HAS_IDENTITY_PROPERTY;
-        }
-        if (pName != null) {
-            ns.add(Axiom.ObjectPropertyAssertion(pName));
-            ns.add(Axiom.ObjectPropertyRange(pName, ret.getName()));
-            ns.add(Axiom.SubObjectProperty(pProp, pName));
-            ns.add(Axiom.AnnotationAssertion(ret.getName(), NS.TRAIT_RESTRICTING_PROPERTY, ns.getName() +
-                    ":" + pName));
-        }
-    }
-
-    private Concept declare(KimConcept concept, Ontology ontology, Scope monitor) {
-        return declareInternal(concept, ontology, monitor);
-    }
-
-    private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
-
-        Concept existing = concepts.get(concept.getUrn());
-        if (existing != null) {
-            return existing;
-        }
-
-        Concept main = null;
-
-        if (concept.getObservable() != null) {
-            main = declareInternal(concept.getObservable(), ontology, monitor);
-        } else if (concept.getName() != null) {
-            main = this.owl.getConcept(concept.getName());
-        }
-
-        if (main == null) {
-            return null;
-        }
-
-        ObservableBuilder builder =
-                new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
-
-        if (concept.getSemanticModifier() != null) {
-            Concept other = null;
-            if (concept.getComparisonConcept() != null) {
-                other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
+        for (Concept trigger : triggers) {
+            for (Concept tr : this.owl.flattenOperands(trigger)) {
+                Set<Emergence> es = emergence.get(tr);
+                if (es == null) {
+                    es = new HashSet<>();
+                    emergence.put(tr, es);
+                }
+                es.add(descriptor);
             }
-            builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null :
-                                                      new Concept[]{other});
         }
 
-        if (concept.getDistributedInherent() != null) {
-            builder.withDistributedInherency(true);
+        return true;
+    }
+
+    return false;
+}
+
+private void createProperties(Concept ret, Ontology ns) {
+
+    String pName = null;
+    String pProp = null;
+    if (ret.is(SemanticType.ATTRIBUTE)) {
+        // hasX
+        pName = "has" + ret.getName();
+        pProp = NS.HAS_ATTRIBUTE_PROPERTY;
+    } else if (ret.is(SemanticType.REALM)) {
+        // inX
+        pName = "in" + ret.getName();
+        pProp = NS.HAS_REALM_PROPERTY;
+    } else if (ret.is(SemanticType.IDENTITY)) {
+        // isX
+        pName = "is" + ret.getName();
+        pProp = NS.HAS_IDENTITY_PROPERTY;
+    }
+    if (pName != null) {
+        ns.add(Axiom.ObjectPropertyAssertion(pName));
+        ns.add(Axiom.ObjectPropertyRange(pName, ret.getName()));
+        ns.add(Axiom.SubObjectProperty(pProp, pName));
+        ns.add(Axiom.AnnotationAssertion(ret.getName(), NS.TRAIT_RESTRICTING_PROPERTY, ns.getName() +
+                ":" + pName));
+    }
+}
+
+private Concept declare(KimConcept concept, Ontology ontology, Scope monitor) {
+    return declareInternal(concept, ontology, monitor);
+}
+
+private Concept declareInternal(KimConcept concept, Ontology ontology, Scope monitor) {
+
+    Concept existing = concepts.get(concept.getUrn());
+    if (existing != null) {
+        return existing;
+    }
+
+    Concept main = null;
+
+    if (concept.getObservable() != null) {
+        main = declareInternal(concept.getObservable(), ontology, monitor);
+    } else if (concept.getName() != null) {
+        main = this.owl.getConcept(concept.getName());
+    }
+
+    if (main == null) {
+        return null;
+    }
+
+    ObservableBuilder builder =
+            new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
+
+    if (concept.getSemanticModifier() != null) {
+        Concept other = null;
+        if (concept.getComparisonConcept() != null) {
+            other = declareInternal(concept.getComparisonConcept(), ontology, monitor);
         }
+        builder.as(concept.getSemanticModifier(), other == null ? (Concept[]) null :
+                                                  new Concept[]{other});
+    }
+
+    if (concept.getDistributedInherent() != null) {
+        builder.withDistributedInherency(true);
+    }
+
+    /*
+     * transformations first
+     */
+
+    if (concept.getInherent() != null) {
+        Concept c = declareInternal(concept.getInherent(), ontology, monitor);
+        if (c != null) {
+            builder.of(c);
+        }
+    }
+//        if (concept.getContext() != null) {
+//            Concept c = declareInternal(concept.getContext(), ontology, monitor);
+//            if (c != null) {
+//                if (SemanticRole.CONTEXT.equals(concept.getDistributedInherent())) {
+//                    builder.of(c);
+//                } else {
+//                    builder.within(c);
+//                }
+//            }
+//        }
+    if (concept.getCompresent() != null) {
+        Concept c = declareInternal(concept.getCompresent(), ontology, monitor);
+        if (c != null) {
+            builder.with(c);
+        }
+    }
+    if (concept.getCausant() != null) {
+        Concept c = declareInternal(concept.getCausant(), ontology, monitor);
+        if (c != null) {
+            builder.from(c);
+        }
+    }
+    if (concept.getCaused() != null) {
+        Concept c = declareInternal(concept.getCaused(), ontology, monitor);
+        if (c != null) {
+            builder.to(c);
+        }
+    }
+    if (concept.getGoal() != null) {
+        Concept c = declareInternal(concept.getGoal(), ontology, monitor);
+        if (c != null) {
+            if (SemanticRole.GOAL.equals(concept.getDistributedInherent())) {
+                builder.of(c);
+            } else {
+                builder.withGoal(c);
+            }
+        }
+    }
+    if (concept.getCooccurrent() != null) {
+        Concept c = declareInternal(concept.getCooccurrent(), ontology, monitor);
+        if (c != null) {
+            builder.withCooccurrent(c);
+        }
+    }
+    if (concept.getAdjacent() != null) {
+        Concept c = declareInternal(concept.getAdjacent(), ontology, monitor);
+        if (c != null) {
+            builder.withAdjacent(c);
+        }
+    }
+    if (concept.getRelationshipSource() != null) {
+        Concept source = declareInternal(concept.getRelationshipSource(), ontology, monitor);
+        Concept target = declareInternal(concept.getRelationshipTarget(), ontology, monitor);
+        if (source != null && target != null) {
+            builder.linking(source, target);
+        }
+
+    }
+
+    for (KimConcept c : concept.getTraits()) {
+        Concept trait = declareInternal(c, ontology, monitor);
+        if (trait != null) {
+            builder.withTrait(trait);
+        }
+    }
+
+    for (KimConcept c : concept.getRoles()) {
+        Concept role = declareInternal(c, ontology, monitor);
+        if (role != null) {
+            builder.withRole(role);
+        }
+    }
+
+    Concept ret = null;
+    try {
+
+        ret = builder.buildConcept();
 
         /*
-         * transformations first
+         * handle unions and intersections
          */
-
-        if (concept.getInherent() != null) {
-            Concept c = declareInternal(concept.getInherent(), ontology, monitor);
-            if (c != null) {
-                builder.of(c);
+        if (concept.getOperands().size() > 0) {
+            List<Concept> concepts = new ArrayList<>();
+            concepts.add(ret);
+            for (KimConcept op : concept.getOperands()) {
+                concepts.add(declareInternal(op, ontology, monitor));
             }
-        }
-        if (concept.getContext() != null) {
-            Concept c = declareInternal(concept.getContext(), ontology, monitor);
-            if (c != null) {
-                if (SemanticRole.CONTEXT.equals(concept.getDistributedInherent())) {
-                    builder.of(c);
-                } else {
-                    builder.within(c);
-                }
-            }
-        }
-        if (concept.getCompresent() != null) {
-            Concept c = declareInternal(concept.getCompresent(), ontology, monitor);
-            if (c != null) {
-                builder.with(c);
-            }
-        }
-        if (concept.getCausant() != null) {
-            Concept c = declareInternal(concept.getCausant(), ontology, monitor);
-            if (c != null) {
-                builder.from(c);
-            }
-        }
-        if (concept.getCaused() != null) {
-            Concept c = declareInternal(concept.getCaused(), ontology, monitor);
-            if (c != null) {
-                builder.to(c);
-            }
-        }
-        if (concept.getMotivation() != null) {
-            Concept c = declareInternal(concept.getMotivation(), ontology, monitor);
-            if (c != null) {
-                if (SemanticRole.GOAL.equals(concept.getDistributedInherent())) {
-                    builder.of(c);
-                } else {
-                    builder.withGoal(c);
-                }
-            }
-        }
-        if (concept.getCooccurrent() != null) {
-            Concept c = declareInternal(concept.getCooccurrent(), ontology, monitor);
-            if (c != null) {
-                builder.withCooccurrent(c);
-            }
-        }
-        if (concept.getAdjacent() != null) {
-            Concept c = declareInternal(concept.getAdjacent(), ontology, monitor);
-            if (c != null) {
-                builder.withAdjacent(c);
-            }
-        }
-        if (concept.getRelationshipSource() != null) {
-            Concept source = declareInternal(concept.getRelationshipSource(), ontology, monitor);
-            Concept target = declareInternal(concept.getRelationshipTarget(), ontology, monitor);
-            if (source != null && target != null) {
-                builder.linking(source, target);
-            }
-
+            ret = concept.getExpressionType() == KimConcept.Expression.INTERSECTION
+                  ? this.owl.getIntersection(concepts, ontology,
+                    concept.getOperands().get(0).getType())
+                  : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
         }
 
-        for (KimConcept c : concept.getTraits()) {
-            Concept trait = declareInternal(c, ontology, monitor);
-            if (trait != null) {
-                builder.withTrait(trait);
+        // set the k.IM definition in the concept.This must only happen if the
+        // concept wasn't there - within build() and repeat if mods are made
+        if (builder.axiomsAdded()) {
+
+            this.owl.getOntology(ret.getNamespace()).define(Collections.singletonList(
+                    Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY,
+                            concept.getUrn())));
+
+            // consistency check
+            if (!satisfiable(ret)) {
+                ret.getType().add(SemanticType.NOTHING);
+                monitor.error("the definition of this concept has logical errors and is inconsistent",
+                        concept);
             }
-        }
 
-        for (KimConcept c : concept.getRoles()) {
-            Concept role = declareInternal(c, ontology, monitor);
-            if (role != null) {
-                builder.withRole(role);
-            }
-        }
-
-        Concept ret = null;
-        try {
-
-            ret = builder.buildConcept();
-
-            /*
-             * handle unions and intersections
+            /**
+             * Now that the URN is set, put away the description
              */
-            if (concept.getOperands().size() > 0) {
-                List<Concept> concepts = new ArrayList<>();
-                concepts.add(ret);
-                for (KimConcept op : concept.getOperands()) {
-                    concepts.add(declareInternal(op, ontology, monitor));
-                }
-                ret = concept.getExpressionType() == KimConcept.Expression.INTERSECTION
-                      ? this.owl.getIntersection(concepts, ontology,
-                        concept.getOperands().get(0).getType())
-                      : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
-            }
-
-            // set the k.IM definition in the concept.This must only happen if the
-            // concept wasn't there - within build() and repeat if mods are made
-            if (builder.axiomsAdded()) {
-
-                this.owl.getOntology(ret.getNamespace()).define(Collections.singletonList(
-                        Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY,
-                                concept.getUrn())));
-
-                // consistency check
-                if (!satisfiable(ret)) {
-                    ret.getType().add(SemanticType.NOTHING);
-                    monitor.error("the definition of this concept has logical errors and is inconsistent",
-                            concept);
-                }
-
-                /**
-                 * Now that the URN is set, put away the description
-                 */
-                registerConcept(ret);
-            }
-
-        } catch (Throwable e) {
-            monitor.error(e, concept);
+            registerConcept(ret);
         }
 
-        if (concept.isNegated()) {
-            ret = negated(ret);
-        }
-
-        /**
-         * TODO/CHECK Save the declaration, including the source code which could have a
-         * different order
-         */
-        if (ret != null) {
-            concepts.put(ret.getUrn(), ret);
-        }
-
-        return ret;
+    } catch (Throwable e) {
+        monitor.error(e, concept);
     }
 
-    public Observable declare(KimObservable concept, Ontology declarationOntology, Scope monitor) {
+    if (concept.isNegated()) {
+        ret = negated(ret);
+    }
 
-        if (concept.getNonSemanticType() != null) {
-            Concept nsmain = this.owl.getNonsemanticPeer(concept.getModelReference(),
-                    concept.getNonSemanticType());
-            ObservableImpl observable = ObservableImpl.promote(nsmain, scope);
+    /**
+     * TODO/CHECK Save the declaration, including the source code which could have a
+     * different order
+     */
+    if (ret != null) {
+        concepts.put(ret.getUrn(), ret);
+    }
+
+    return ret;
+}
+
+public Observable declare(KimObservable concept, Ontology declarationOntology, Scope monitor) {
+
+    if (concept.getNonSemanticType() != null) {
+        Concept nsmain = this.owl.getNonsemanticPeer(concept.getModelReference(),
+                concept.getNonSemanticType());
+        ObservableImpl observable = ObservableImpl.promote(nsmain, scope);
 //			observable.setModelReference(concept.getModelReference());
-            observable.setName(concept.getFormalName());
-            observable.setStatedName(concept.getFormalName());
-            observable.setReferenceName(concept.getFormalName());
-            return observable;
+        observable.setName(concept.getFormalName());
+        observable.setStatedName(concept.getFormalName());
+        observable.setReferenceName(concept.getFormalName());
+        return observable;
+    }
+
+    Concept main = declareInternal(concept.getSemantics(), declarationOntology, monitor);
+    if (main == null) {
+        return null;
+    }
+
+    Concept observable = main;
+
+    Observable.Builder builder = new ObservableBuilder(observable, monitor, owl);
+
+    // ret.setUrl(concept.getURI());
+    // builder.withUrl(concept.getURI());
+
+    boolean unitsSet = false;
+
+    if (concept.getUnit() != null) {
+        unitsSet = true;
+        builder = builder.withUnit(concept.getUnit());
+    }
+
+    if (concept.getCurrency() != null) {
+        unitsSet = true;
+        builder = builder.withCurrency(concept.getCurrency());
+    }
+
+    if (concept.getValue() != null) {
+        Object value = concept.getValue();
+        if (value instanceof KimConcept) {
+            value = declareConcept((KimConcept) value);
         }
+        builder = builder.withInlineValue(value);
+    }
 
-        Concept main = declareInternal(concept.getSemantics(), declarationOntology, monitor);
-        if (main == null) {
-            return null;
+    if (concept.getDefaultValue() != null) {
+        Object value = concept.getValue();
+        if (value instanceof KimConcept) {
+            value = declareConcept((KimConcept) value);
         }
+        builder = builder.withDefaultValue(value);
+    }
 
-        Concept observable = main;
+    for (var exc : concept.getResolutionExceptions()) {
+        builder = builder.withResolutionException(exc);
+    }
 
-        Observable.Builder builder = new ObservableBuilder(observable, monitor, owl);
+    if (concept.getRange() != null) {
+        builder = builder.withRange(concept.getRange());
+    }
 
-        // ret.setUrl(concept.getURI());
-        // builder.withUrl(concept.getURI());
-
-        boolean unitsSet = false;
-
-        if (concept.getUnit() != null) {
-            unitsSet = true;
-            builder = builder.withUnit(concept.getUnit());
-        }
-
-        if (concept.getCurrency() != null) {
-            unitsSet = true;
-            builder = builder.withCurrency(concept.getCurrency());
-        }
-
-        if (concept.getValue() != null) {
-            Object value = concept.getValue();
-            if (value instanceof KimConcept) {
-                value = declareConcept((KimConcept) value);
-            }
-            builder = builder.withInlineValue(value);
-        }
-
-        if (concept.getDefaultValue() != null) {
-            Object value = concept.getValue();
-            if (value instanceof KimConcept) {
-                value = declareConcept((KimConcept) value);
-            }
-            builder = builder.withDefaultValue(value);
-        }
-
-        for (var exc : concept.getResolutionExceptions()) {
-            builder = builder.withResolutionException(exc);
-        }
-
-        if (concept.getRange() != null) {
-            builder = builder.withRange(concept.getRange());
-        }
-
-        builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept
+    builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept
         .isGlobal()) */
-                .named(concept.getFormalName());
+            .named(concept.getFormalName());
 
-        // TODO gather generic concepts and abstract ones
+    // TODO gather generic concepts and abstract ones
 //        if (concept.isExclusive()) {
 //            builder = builder.withResolution(Observable.Resolution.Only);
 //        } else if (concept.isGlobal()) {
@@ -2308,366 +2285,367 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 //            builder = builder.withResolution(Observable.Resolution.Any);
 //        }
 
-        for (var operator : concept.getValueOperators()) {
-            builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());
-        }
-
-        for (var annotation : concept.getAnnotations()) {
-            builder = builder.withAnnotation(new AnnotationImpl(annotation));
-        }
-
-        // CHECK: fluidUnits = needsUnits() && !unitsSet;
-
-        return (Observable) builder.build();
+    for (var operator : concept.getValueOperators()) {
+        builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());
     }
 
-    public void registerConcept(Concept thing) {
-        this.concepts.put(thing.getUrn(), thing);
+    for (var annotation : concept.getAnnotations()) {
+        builder = builder.withAnnotation(new AnnotationImpl(annotation));
     }
 
-    @Override
-    public Collection<Concept> rolesFor(Concept observable, Concept context) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    // CHECK: fluidUnits = needsUnits() && !unitsSet;
 
-    @Override
-    public Concept impliedRole(Concept baseRole, Concept contextObservable) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    return (Observable) builder.build();
+}
 
-    @Override
-    public Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+public void registerConcept(Concept thing) {
+    this.concepts.put(thing.getUrn(), thing);
+}
 
-    /**
-     * Entry point of a semantic search. If the request has a new searchId, start a new SemanticExpression and
-     * keep it until timeout or completion.
-     *
-     * @param request
-     */
-    @Override
-    public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
+@Override
+public Collection<Concept> rolesFor(Concept observable, Concept context) {
+    // TODO Auto-generated method stub
+    return null;
+}
 
-        var response = new SemanticSearchResponse(request.getSearchId(), request.getRequestId());
+@Override
+public Concept impliedRole(Concept baseRole, Concept contextObservable) {
+    // TODO Auto-generated method stub
+    return null;
+}
 
-        if (request.isCancelSearch()) {
-            semanticExpressions.invalidate(request.getSearchId());
-        } else {
+@Override
+public Collection<Concept> impliedRoles(Concept role, boolean includeRelationshipEndpoints) {
+    // TODO Auto-generated method stub
+    return null;
+}
 
-            switch (request.getSearchMode()) {
-                case UNDO:
+/**
+ * Entry point of a semantic search. If the request has a new searchId, start a new SemanticExpression and
+ * keep it until timeout or completion.
+ *
+ * @param request
+ */
+@Override
+public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
 
-                    // client may be stupid, as mine is
-                    var expression = semanticExpressions.getIfPresent(request.getSearchId());
-                    if (expression != null) {
-                        boolean ok = true;
-                        if (!expression.undo()) {
-                            semanticExpressions.invalidate(request.getSearchId());
-                            ok = false;
-                        }
+    var response = new SemanticSearchResponse(request.getSearchId(), request.getRequestId());
 
-                        response.setSearchId(ok ? request.getSearchId() : null);
-                        if (ok) {
-                            response.getErrors().addAll(expression.getErrors());
-                            response.getCode().addAll(expression.getStyledCode());
-                            response.setCurrentType(expression.getObservableType());
-                        }
-                    } else {
-                        response.getErrors().add("Timeout during search");
+    if (request.isCancelSearch()) {
+        semanticExpressions.invalidate(request.getSearchId());
+    } else {
+
+        switch (request.getSearchMode()) {
+            case UNDO:
+
+                // client may be stupid, as mine is
+                var expression = semanticExpressions.getIfPresent(request.getSearchId());
+                if (expression != null) {
+                    boolean ok = true;
+                    if (!expression.undo()) {
+                        semanticExpressions.invalidate(request.getSearchId());
+                        ok = false;
                     }
-                    break;
 
-                case OPEN_SCOPE:
-
-                    expression = semanticExpressions.getIfPresent(response.getSearchId());
-                    if (expression != null) {
-                        expression.accept("(");
-                        response.setSearchId(request.getSearchId());
+                    response.setSearchId(ok ? request.getSearchId() : null);
+                    if (ok) {
                         response.getErrors().addAll(expression.getErrors());
                         response.getCode().addAll(expression.getStyledCode());
                         response.setCurrentType(expression.getObservableType());
-                    } else {
-                        response.getErrors().add("Timeout during search");
                     }
-
-                    break;
-
-                case CLOSE_SCOPE:
-
-                    expression = semanticExpressions.getIfPresent(response.getSearchId());
-                    if (expression != null) {
-                        expression.accept(")");
-                        response.getErrors().addAll(expression.getErrors());
-                        response.getCode().addAll(expression.getStyledCode());
-                        response.setCurrentType(expression.getObservableType());
-                    } else {
-                        response.getErrors().add("Timeout during search");
-                    }
-                    break;
-
-                case TOKEN:
-
-                    expression = semanticExpressions.getIfPresent(response.getSearchId());
-                    if (expression == null) {
-                        expression = SemanticExpression.create(scope);
-                        semanticExpressions.put(response.getSearchId(), expression);
-                    } else {
-                        response.getErrors().add("Timeout during search");
-                    }
-
-                    for (var match : indexer.query(request.getQueryString(),
-                            expression.getCurrent().getScope(),
-                            request.getMaxResults())) {
-                        response.getMatches().add(match);
-                    }
-
-                    // save the matches in the expression so that we recognize a choice
-                    expression.setData("matches", response);
-
-                    break;
-            }
-        }
-
-        response.setElapsedTimeMs(System.currentTimeMillis() - response.getElapsedTimeMs());
-        return response;
-
-    }
-
-    @Override
-    public boolean shutdown() {
-
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
-        return observationReasoner.inferStrategies(observable, scope);
-    }
-
-    @Override
-    public boolean hasDistributedInherency(Concept c) {
-        return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
-    }
-
-    @Override
-    public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
-        Set<Concept> ret = new HashSet<>();
-        KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
-        peer.visit(new DefaultVisitor() {
-            @Override
-            public void visitReference(String conceptName, Set<SemanticType> type,
-                                       KimConcept validParent) {
-                Concept cn = resolveConcept(conceptName);
-                if (cn != null && Sets.intersection(type, Utils.Collections.asSet(types)).size() == types.size()) {
-                    ret.add(cn);
+                } else {
+                    response.getErrors().add("Timeout during search");
                 }
-            }
-        });
-        return ret;
+                break;
+
+            case OPEN_SCOPE:
+
+                expression = semanticExpressions.getIfPresent(response.getSearchId());
+                if (expression != null) {
+                    expression.accept("(");
+                    response.setSearchId(request.getSearchId());
+                    response.getErrors().addAll(expression.getErrors());
+                    response.getCode().addAll(expression.getStyledCode());
+                    response.setCurrentType(expression.getObservableType());
+                } else {
+                    response.getErrors().add("Timeout during search");
+                }
+
+                break;
+
+            case CLOSE_SCOPE:
+
+                expression = semanticExpressions.getIfPresent(response.getSearchId());
+                if (expression != null) {
+                    expression.accept(")");
+                    response.getErrors().addAll(expression.getErrors());
+                    response.getCode().addAll(expression.getStyledCode());
+                    response.setCurrentType(expression.getObservableType());
+                } else {
+                    response.getErrors().add("Timeout during search");
+                }
+                break;
+
+            case TOKEN:
+
+                expression = semanticExpressions.getIfPresent(response.getSearchId());
+                if (expression == null) {
+                    expression = SemanticExpression.create(scope);
+                    semanticExpressions.put(response.getSearchId(), expression);
+                } else {
+                    response.getErrors().add("Timeout during search");
+                }
+
+                for (var match : indexer.query(request.getQueryString(),
+                        expression.getCurrent().getScope(),
+                        request.getMaxResults())) {
+                    response.getMatches().add(match);
+                }
+
+                // save the matches in the expression so that we recognize a choice
+                expression.setData("matches", response);
+
+                break;
+        }
     }
 
-    @Override
-    public Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
+    response.setElapsedTimeMs(System.currentTimeMillis() - response.getElapsedTimeMs());
+    return response;
 
-        /*
-         * TODO this is the original lexical replacement, which is risky and incomplete.
-         * This should use a specialized visitor to rebuild the concept piecewise from a
-         * modified KimConcept.
-         */
+}
 
-        if (replacements.isEmpty()) {
-            return original;
-        }
+@Override
+public boolean shutdown() {
 
-        String declaration = original.getUrn();
-        for (Concept key : replacements.keySet()) {
-            String rep = replacements.get(key).toString();
-            if (rep.contains(" ")) {
-                rep = "(" + rep + ")";
+    scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+            capabilities());
+    // TODO Auto-generated method stub
+    return false;
+}
+
+@Override
+public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
+    return observationReasoner.inferStrategies(observable, scope);
+}
+
+@Override
+public boolean hasDistributedInherency(Concept c) {
+    return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
+}
+
+@Override
+public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
+    Set<Concept> ret = new HashSet<>();
+    KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
+    peer.visit(new DefaultVisitor() {
+        @Override
+        public void visitReference(String conceptName, Set<SemanticType> type,
+                                   KimConcept validParent) {
+            Concept cn = resolveConcept(conceptName);
+            if (cn != null && Sets.intersection(type, Utils.Collections.asSet(types)).size() == types.size()) {
+                ret.add(cn);
             }
-            declaration = declaration.replace(key.getUrn(), rep);
         }
+    });
+    return ret;
+}
 
-        return declareConcept(scope.getService(ResourcesService.class).resolveConcept(declaration));
-    }
+@Override
+public Concept replaceComponent(Concept original, Map<Concept, Concept> replacements) {
 
-    /**
-     * A do-nothing KimVisitor for less painful derivations when only a few actions are needed.
-     *
-     * @author ferdinando.villa
+    /*
+     * TODO this is the original lexical replacement, which is risky and incomplete.
+     * This should use a specialized visitor to rebuild the concept piecewise from a
+     * modified KimConcept.
      */
-    public static class DefaultVisitor implements KimVisitor {
 
-        @Override
-        public void visitAuthority(String authority, String term) {
+    if (replacements.isEmpty()) {
+        return original;
+    }
+
+    String declaration = original.getUrn();
+    for (Concept key : replacements.keySet()) {
+        String rep = replacements.get(key).toString();
+        if (rep.contains(" ")) {
+            rep = "(" + rep + ")";
         }
+        declaration = declaration.replace(key.getUrn(), rep);
+    }
 
-        @Override
-        public void visitDeclaration(KimConcept declaration) {
-        }
+    return declareConcept(scope.getService(ResourcesService.class).resolveConcept(declaration));
+}
 
-        @Override
-        public void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent) {
-        }
+/**
+ * A do-nothing KimVisitor for less painful derivations when only a few actions are needed.
+ *
+ * @author ferdinando.villa
+ */
+public static class DefaultVisitor implements KimVisitor {
 
-        @Override
-        public void visitNamespace(KimNamespace kimNamespace) {
-        }
-
-        @Override
-        public void visitModel(KimModel kimNamespace) {
-        }
-
-        @Override
-        public void visitObserver(KimInstance kimNamespace) {
-        }
-
-        @Override
-        public void visitConceptStatement(KimConceptStatement kimNamespace) {
-        }
-
-        @Override
-        public void visitTemplate(org.integratedmodelling.klab.api.lang.kim.KimMacro.Field valueOf,
-                                  KimConcept validParent, boolean mandatory) {
-        }
-
+    @Override
+    public void visitAuthority(String authority, String term) {
     }
 
     @Override
-    public Concept buildConcept(ObservableBuildStrategy builder) {
-        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
-        ret = defineBuilder(builder, ret);
-        return ret.buildConcept();
+    public void visitDeclaration(KimConcept declaration) {
     }
 
     @Override
-    public Observable buildObservable(ObservableBuildStrategy builder) {
-        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
-        ret = defineBuilder(builder, ret);
-        return ret.build();
+    public void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent) {
     }
 
-    private Observable.Builder defineBuilder(ObservableBuildStrategy builder, Observable.Builder ret) {
-        for (ObservableBuildStrategy.Operation op : builder.getOperations()) {
-            switch (op.getType()) {
-                case OF -> {
-                    ret = ret.of(op.getConcepts().get(0));
-                }
-                case WITH -> {
-                    ret = ret.with(op.getConcepts().get(0));
-                }
-                case WITHIN -> {
-                    ret = ret.within(op.getConcepts().get(0));
-                }
-                case GOAL -> {
-                    ret = ret.withGoal(op.getConcepts().get(0));
-                }
-                case FROM -> {
-                    ret = ret.from(op.getConcepts().get(0));
-                }
-                case TO -> {
-                    ret = ret.to(op.getConcepts().get(0));
-                }
-                case WITH_ROLE -> {
-                    ret = ret.withRole(op.getConcepts().get(0));
-                }
-                case AS -> {
-                    ret = ret.as(op.getOperator(), op.getConcepts().toArray(new Concept[0]));
-                }
-                case WITH_TRAITS -> {
-                    ret = ret.withTrait(op.getConcepts().toArray(new Concept[0]));
-                }
-                case WITHOUT -> {
-                    ret = ret.without(op.getConcepts().toArray(new Concept[0]));
-                }
-                case WITHOUT_ANY_TYPES -> {
-                    ret = ret.withoutAny(op.getTypes().toArray(new SemanticType[0]));
-                }
-                case WITHOUT_ANY_CONCEPTS -> {
-                    ret = ret.withoutAny(op.getConcepts().toArray(new Concept[0]));
-                }
-                case ADJACENT -> {
-                    ret = ret.withAdjacent(op.getConcepts().get(0));
-                }
-                case COOCCURRENT -> {
-                    ret = ret.withCooccurrent(op.getConcepts().get(0));
-                }
-                case WITH_UNIT -> {
-                    ret = ret.withUnit(op.getUnit());
-                }
-                case WITH_CURRENCY -> {
-                    ret = ret.withCurrency(op.getCurrency());
-                }
-                case WITH_RANGE -> {
-                    ret = ret.withRange(op.getRange());
-                }
-                case WITH_VALUE_OPERATOR -> {
-                    ret = ret.withValueOperator(op.getValueOperation().getFirst(),
-                            op.getValueOperation().getSecond().get(Object.class));
-                }
-                case LINKING -> {
-                    ret = ret.linking(op.getConcepts().get(0), op.getConcepts().get(1));
-                }
-                case NAMED -> {
-                    ret = ret.named(op.getPod().get(String.class));
-                }
-                case WITH_DISTRIBUTED_INHERENCY -> {
-                    ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
-                }
-                case WITHOUT_VALUE_OPERATORS -> {
-                    ret = ret.withoutValueOperators();
-                }
-                case AS_OPTIONAL -> {
-                    ret = ret.optional(op.getPod().get(Boolean.class));
-                }
-                case WITHOUT_ROLES -> {
-                    ret = ret.without(op.getRoles().toArray(new SemanticRole[0]));
-                }
-                case WITH_TEMPORAL_INHERENT -> {
-                    ret = ret.withTemporalInherent(op.getConcepts().get(0));
-                }
-                case WITH_DEREIFIED_ATTRIBUTE -> {
-                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
-                }
-                case REFERENCE_NAMED -> {
-                    ret = ret.withReferenceName(op.getPod().get(String.class));
-                }
-                case WITH_INLINE_VALUE -> {
-                    ret = ret.withInlineValue(op.getPod().get(Object.class));
-                }
-                case WITH_DEFAULT_VALUE -> {
-                    ret = ret.withDefaultValue(op.getPod().get(Object.class));
-                }
-                case WITH_RESOLUTION_EXCEPTION -> {
-                    ret = ret.withResolutionException(op.getResolutionException());
-                }
-                case AS_GENERIC -> {
-                    ret = ret.generic(op.getPod().get(Boolean.class));
-                }
-                case WITH_ANNOTATION -> {
-                    for (Annotation annotation : op.getAnnotations()) {
-                        ret = ret.withAnnotation(annotation);
-                    }
-                }
-                case AS_DESCRIPTION_TYPE -> {
-                    ret = ret.as(op.getDescriptionType());
-                }
-                default -> throw new KlabUnimplementedException("ReasonerService::defineBuilder: unhandled " +
-                        "operation " + op.getType());
+    @Override
+    public void visitNamespace(KimNamespace kimNamespace) {
+    }
+
+    @Override
+    public void visitModel(KimModel kimNamespace) {
+    }
+
+    @Override
+    public void visitObserver(KimInstance kimNamespace) {
+    }
+
+    @Override
+    public void visitConceptStatement(KimConceptStatement kimNamespace) {
+    }
+//
+//        @Override
+//        public void visitTemplate(org.integratedmodelling.klab.api.lang.kim.KimMacro.Field valueOf,
+//                                  KimConcept validParent, boolean mandatory) {
+//        }
+
+}
+
+@Override
+public Concept buildConcept(ObservableBuildStrategy builder) {
+    Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
+    ret = defineBuilder(builder, ret);
+    return ret.buildConcept();
+}
+
+@Override
+public Observable buildObservable(ObservableBuildStrategy builder) {
+    Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
+    ret = defineBuilder(builder, ret);
+    return ret.build();
+}
+
+private Observable.Builder defineBuilder(ObservableBuildStrategy builder, Observable.Builder ret) {
+    for (ObservableBuildStrategy.Operation op : builder.getOperations()) {
+        switch (op.getType()) {
+            case OF -> {
+                ret = ret.of(op.getConcepts().get(0));
             }
+            case WITH -> {
+                ret = ret.with(op.getConcepts().get(0));
+            }
+//                case WITHIN -> {
+//                    ret = ret.within(op.getConcepts().get(0));
+//                }
+            case GOAL -> {
+                ret = ret.withGoal(op.getConcepts().get(0));
+            }
+            case FROM -> {
+                ret = ret.from(op.getConcepts().get(0));
+            }
+            case TO -> {
+                ret = ret.to(op.getConcepts().get(0));
+            }
+            case WITH_ROLE -> {
+                ret = ret.withRole(op.getConcepts().get(0));
+            }
+            case AS -> {
+                ret = ret.as(op.getOperator(), op.getConcepts().toArray(new Concept[0]));
+            }
+            case WITH_TRAITS -> {
+                ret = ret.withTrait(op.getConcepts().toArray(new Concept[0]));
+            }
+            case WITHOUT -> {
+                ret = ret.without(op.getConcepts().toArray(new Concept[0]));
+            }
+            case WITHOUT_ANY_TYPES -> {
+                ret = ret.withoutAny(op.getTypes().toArray(new SemanticType[0]));
+            }
+            case WITHOUT_ANY_CONCEPTS -> {
+                ret = ret.withoutAny(op.getConcepts().toArray(new Concept[0]));
+            }
+            case ADJACENT -> {
+                ret = ret.withAdjacent(op.getConcepts().get(0));
+            }
+            case COOCCURRENT -> {
+                ret = ret.withCooccurrent(op.getConcepts().get(0));
+            }
+            case WITH_UNIT -> {
+                ret = ret.withUnit(op.getUnit());
+            }
+            case WITH_CURRENCY -> {
+                ret = ret.withCurrency(op.getCurrency());
+            }
+            case WITH_RANGE -> {
+                ret = ret.withRange(op.getRange());
+            }
+            case WITH_VALUE_OPERATOR -> {
+                ret = ret.withValueOperator(op.getValueOperation().getFirst(),
+                        op.getValueOperation().getSecond().get(Object.class));
+            }
+            case LINKING -> {
+                ret = ret.linking(op.getConcepts().get(0), op.getConcepts().get(1));
+            }
+            case NAMED -> {
+                ret = ret.named(op.getPod().get(String.class));
+            }
+            case WITH_DISTRIBUTED_INHERENCY -> {
+                ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
+            }
+            case WITHOUT_VALUE_OPERATORS -> {
+                ret = ret.withoutValueOperators();
+            }
+            case AS_OPTIONAL -> {
+                ret = ret.optional(op.getPod().get(Boolean.class));
+            }
+            case WITHOUT_ROLES -> {
+                ret = ret.without(op.getRoles().toArray(new SemanticRole[0]));
+            }
+            case WITH_TEMPORAL_INHERENT -> {
+                ret = ret.withTemporalInherent(op.getConcepts().get(0));
+            }
+            case WITH_DEREIFIED_ATTRIBUTE -> {
+                ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
+            }
+            case REFERENCE_NAMED -> {
+                ret = ret.withReferenceName(op.getPod().get(String.class));
+            }
+            case WITH_INLINE_VALUE -> {
+                ret = ret.withInlineValue(op.getPod().get(Object.class));
+            }
+            case WITH_DEFAULT_VALUE -> {
+                ret = ret.withDefaultValue(op.getPod().get(Object.class));
+            }
+            case WITH_RESOLUTION_EXCEPTION -> {
+                ret = ret.withResolutionException(op.getResolutionException());
+            }
+            case AS_GENERIC -> {
+                ret = ret.generic(op.getPod().get(Boolean.class));
+            }
+            case WITH_ANNOTATION -> {
+                for (Annotation annotation : op.getAnnotations()) {
+                    ret = ret.withAnnotation(annotation);
+                }
+            }
+            case AS_DESCRIPTION_TYPE -> {
+                ret = ret.as(op.getDescriptionType());
+            }
+            default -> throw new KlabUnimplementedException("ReasonerService::defineBuilder: unhandled " +
+                    "operation " + op.getType());
         }
-        return ret;
     }
+    return ret;
+}
 
-    @Override
-    public boolean exportNamespace(String namespace, File directory) {
-        return this.owl.exportOntology(namespace, directory);
-    }
+@Override
+public boolean exportNamespace(String namespace, File directory) {
+    return this.owl.exportOntology(namespace, directory);
+}
 
 }

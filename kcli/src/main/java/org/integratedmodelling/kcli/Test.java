@@ -23,7 +23,7 @@ public class Test implements Runnable {
         var session = Engine.INSTANCE.getCurrentSession(true, Engine.INSTANCE.getAnonymousScope());
         var urban = session.getService(Reasoner.class).resolveConcept("distance to infrastructure:City");
         var city = session.getService(Reasoner.class).resolveConcept("infrastructure:City");
-        var obwithin = Observable.promote(urban).builder(session).within(city).build();
+        var obwithin = Observable.promote(urban).builder(session).of(city).build();
         System.out.println(obwithin.toString());
 
     }

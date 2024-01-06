@@ -17,18 +17,16 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.provenance.Plan;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resolver.Resolution;
 
 import java.io.Serializable;
 import java.util.List;
@@ -137,7 +135,7 @@ public interface Actuator extends Plan, Serializable {
      * the list should be empty: any mediations are part of the referencing actuator's computations.
      * <p>
      * An internal service call named {@link #DEFERRED_STRATEGY_CALL} should be used to specify deferred
-     * observation strategies, with the {@link ObservationStrategy} communicated by the resolver as default
+     * observation strategies, with the {@link ObservationStrategyObsolete} communicated by the resolver as default
      * {@link ServiceCall#DEFAULT_PARAMETER_NAME} parameter. The runtime will resolve the strategy once the
      * context observation has been made and insert the resulting dataflow's actuators as children of the
      * current one.
@@ -212,5 +210,5 @@ public interface Actuator extends Plan, Serializable {
      *
      * @return
      */
-    Queue<ObservationStrategy> getDeferrals();
+    Queue<ObservationStrategyObsolete> getDeferrals();
 }

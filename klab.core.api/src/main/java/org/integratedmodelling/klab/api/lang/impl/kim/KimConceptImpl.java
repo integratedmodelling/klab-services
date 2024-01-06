@@ -11,21 +11,20 @@ import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimMacro;
 
 public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     private static final long serialVersionUID = 8531431719010407385L;
 
     private SemanticRole semanticRole;
-    private boolean traitObservable;
+//    private boolean traitObservable;
     private String name;
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private KimConcept observable;
     private KimConcept parent;
     private KimConcept context;
     private KimConcept inherent;
-    private KimConcept motivation;
+    private KimConcept goal;
     private KimConcept causant;
     private KimConcept caused;
     private KimConcept compresent;
@@ -37,7 +36,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private KimConcept relationshipTarget;
     private List<KimConcept> traits = new ArrayList<>();
     private List<KimConcept> roles = new ArrayList<>();
-    private boolean template;
+    //    private boolean template;
     private boolean negated;
     private String urn;
     private List<KimConcept> operands = new ArrayList<>();
@@ -49,6 +48,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private KimConcept temporalInherent;
     private SemanticRole distributedInherent;
     private Version version;
+    private boolean collective;
 
     @Override
     public SemanticRole getDistributedInherent() {
@@ -74,14 +74,14 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
     private KimConceptImpl(KimConceptImpl other) {
         this.semanticRole = other.semanticRole;
-        this.traitObservable = other.traitObservable;
+//        this.traitObservable = other.traitObservable;
         this.name = other.name;
         this.type = EnumSet.copyOf(other.type);
         this.observable = other.observable;
         this.parent = other.parent;
         this.context = other.context;
         this.inherent = other.inherent;
-        this.motivation = other.motivation;
+        this.goal = other.goal;
         this.causant = other.causant;
         this.caused = other.caused;
         this.compresent = other.compresent;
@@ -89,11 +89,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.authorityTerm = other.authority;
         this.authority = other.authority;
         this.semanticModifier = other.semanticModifier;
+        this.collective = other.collective;
         this.relationshipSource = other.relationshipSource;
         this.relationshipTarget = other.relationshipTarget;
         this.traits.addAll(other.traits);
         this.roles.addAll(other.roles);
-        this.template = other.template;
+//        this.template = other.template;
         this.negated = other.negated;
         this.urn = other.urn;
         this.operands.addAll(other.operands);
@@ -122,10 +123,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         return this.observable;
     }
 
-    @Override
-    public KimConcept getContext() {
-        return this.context;
-    }
+//    @Override
+//    public KimConcept getContext() {
+//        return this.context;
+//    }
 
     @Override
     public KimConcept getInherent() {
@@ -133,8 +134,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     }
 
     @Override
-    public KimConcept getMotivation() {
-        return this.motivation;
+    public KimConcept getGoal() {
+        return this.goal;
     }
 
     @Override
@@ -192,10 +193,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         return this.roles;
     }
 
-    @Override
-    public boolean isTemplate() {
-        return this.template;
-    }
+//    @Override
+//    public boolean isTemplate() {
+//        return this.template;
+//    }
 
     @Override
     public boolean isNegated() {
@@ -247,10 +248,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         return this.semanticRole;
     }
 
-    @Override
-    public boolean isTraitObservable() {
-        return this.traitObservable;
-    }
+//    @Override
+//    public boolean isTraitObservable() {
+//        return this.traitObservable;
+//    }
 
     @Override
     public KimConcept getTemporalInherent() {
@@ -261,9 +262,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.semanticRole = semanticRole;
     }
 
-    public void setTraitObservable(boolean traitObservable) {
-        this.traitObservable = traitObservable;
-    }
+//    public void setTraitObservable(boolean traitObservable) {
+//        this.traitObservable = traitObservable;
+//    }
 
     public void setName(String name) {
         this.name = name;
@@ -285,8 +286,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.inherent = inherent;
     }
 
-    public void setMotivation(KimConcept motivation) {
-        this.motivation = motivation;
+    public void setGoal(KimConcept motivation) {
+        this.goal = motivation;
     }
 
     public void setCausant(KimConcept causant) {
@@ -333,9 +334,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.roles = roles;
     }
 
-    public void setTemplate(boolean template) {
-        this.template = template;
-    }
+//    public void setTemplate(boolean template) {
+//        this.template = template;
+//    }
 
     public void setNegated(boolean negated) {
         this.negated = negated;
@@ -429,7 +430,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
                     ret.cooccurrent = null;
                     break;
                 case GOAL:
-                    ret.motivation = null;
+                    ret.goal = null;
                     break;
                 case INHERENT:
                     ret.inherent = null;
@@ -485,7 +486,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
                     ret.cooccurrent = null;
                     break;
                 case GOAL:
-                    ret.motivation = null;
+                    ret.goal = null;
                     break;
                 case INHERENT:
                     ret.inherent = null;
@@ -610,8 +611,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             complex = true;
         }
 
-        if (motivation != null) {
-            ret += " for " + ((KimConceptImpl) motivation).computeUrn();
+        if (goal != null) {
+            ret += " for " + ((KimConceptImpl) goal).computeUrn();
             complex = true;
         }
 
@@ -741,8 +742,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             temporalInherent.visit(visitor);
         }
 
-        if (motivation != null) {
-            motivation.visit(visitor);
+        if (goal != null) {
+            goal.visit(visitor);
         }
 
         if (relationshipSource != null) {
@@ -758,12 +759,12 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         }
 
         if (name != null) {
-            if (template) {
-                visitor.visitTemplate(KimMacro.Field.valueOf(name.substring(1).toUpperCase()), parent,
-                        name.startsWith("$"));
-            } else {
-                visitor.visitReference(name, type, parent);
-            }
+//            if (template) {
+//                visitor.visitTemplate(KimMacro.Field.valueOf(name.substring(1).toUpperCase()), parent,
+//                        name.startsWith("$"));
+//            } else {
+            visitor.visitReference(name, type, parent);
+//            }
         } else if (observable != null) {
             visitor.visitDeclaration(observable);
         }
@@ -771,6 +772,15 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         if (observable != null) {
             observable.visit(visitor);
         }
+    }
+
+    @Override
+    public boolean isCollective() {
+        return collective;
+    }
+
+    public void setCollective(boolean collective) {
+        this.collective = collective;
     }
 
     @Override

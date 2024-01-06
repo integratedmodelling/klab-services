@@ -41,7 +41,7 @@ public class ObservableBuilder implements Observable.Builder {
     private String mainId;
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private Concept inherent;
-    private Concept context;
+//    private Concept context;
     private Concept compresent;
     private Concept causant;
     private Concept caused;
@@ -139,7 +139,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.scope = scope;
         this.type = this.main.getType();
         this.ontology = owl.getOntology(observable.getSemantics().getNamespace());
-        this.context = owl.reasoner().directContext(observable.getSemantics());
+//        this.context = owl.reasoner().directContext(observable.getSemantics());
         this.adjacent = owl.reasoner().directAdjacent(observable.getSemantics());
         this.inherent = owl.reasoner().directInherent(observable.getSemantics());
         this.causant = owl.reasoner().directCausant(observable.getSemantics());
@@ -165,7 +165,7 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         this.isTrivial =
-                this.context == null && this.adjacent == null && this.inherent == null && this.causant == null
+                /*this.context == null && */this.adjacent == null && this.inherent == null && this.causant == null
                         && this.caused == null && this.cooccurrent == null && this.goal == null && this.compresent == null
                         && this.roles.isEmpty() && this.traits.isEmpty();
 
@@ -188,7 +188,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.caused = other.caused;
         this.comparison = other.comparison;
         this.compresent = other.compresent;
-        this.context = other.context;
+//        this.context = other.context;
         this.inherent = other.inherent;
         this.cooccurrent = other.cooccurrent;
         this.goal = other.goal;
@@ -237,15 +237,15 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Observable.Builder within(Concept concept) {
-        this.context = concept;
-        if (this.declaration != null) {
-            ((KimConceptImpl) this.declaration).setContext(getDeclaration(concept));
-        }
-        isTrivial = false;
-        return this;
-    }
+//    @Override
+//    public Observable.Builder within(Concept concept) {
+//        this.context = concept;
+//        if (this.declaration != null) {
+//            ((KimConceptImpl) this.declaration).setContext(getDeclaration(concept));
+//        }
+//        isTrivial = false;
+//        return this;
+//    }
 
     @Override
     public Observable.Builder withTemporalInherent(Concept concept) {
@@ -301,7 +301,7 @@ public class ObservableBuilder implements Observable.Builder {
     public Observable.Builder withGoal(Concept goal) {
         this.goal = goal;
         if (!declarationIsComplete) {
-            ((KimConceptImpl) this.declaration).setMotivation(getDeclaration(goal));
+            ((KimConceptImpl) this.declaration).setGoal(getDeclaration(goal));
         }
         isTrivial = false;
         return this;
@@ -456,7 +456,7 @@ public class ObservableBuilder implements Observable.Builder {
         unit = null;
         currency = null;
         hasUnaryOp = true;
-        comparison = context = inherent = /* classifier = downTo = */ caused = compresent = inherent = null;
+        comparison = /*context =*/ inherent = /* classifier = downTo = */ caused = compresent = inherent = null;
         isTrivial = true;
     }
 
@@ -528,11 +528,11 @@ public class ObservableBuilder implements Observable.Builder {
             for (int i = 0; i < rdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.ROLE);
             }
-            if (ret.context != null && ret.context.equals(concept)) {
-                ret.context = null;
-                ret.removed.add(concept);
-                removedRoles.add(SemanticRole.CONTEXT);
-            }
+//            if (ret.context != null && ret.context.equals(concept)) {
+//                ret.context = null;
+//                ret.removed.add(concept);
+//                removedRoles.add(SemanticRole.CONTEXT);
+//            }
             if (ret.inherent != null && ret.inherent.equals(concept)) {
                 ret.inherent = null;
                 ret.removed.add(concept);
@@ -605,11 +605,11 @@ public class ObservableBuilder implements Observable.Builder {
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.ROLE);
             }
-            if (ret.context != null && ret.context.is(concept)) {
-                ret.removed.add(ret.context);
-                ret.context = null;
-                removedRoles.add(SemanticRole.CONTEXT);
-            }
+//            if (ret.context != null && ret.context.is(concept)) {
+//                ret.removed.add(ret.context);
+//                ret.context = null;
+//                removedRoles.add(SemanticRole.CONTEXT);
+//            }
             if (ret.inherent != null && ret.inherent.is(concept)) {
                 ret.removed.add(ret.inherent);
                 ret.inherent = null;
@@ -683,11 +683,11 @@ public class ObservableBuilder implements Observable.Builder {
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.ROLE);
             }
-            if (ret.context != null && owl.reasoner().subsumes(ret.context, concept)) {
-                ret.context = null;
-                ret.removed.add(concept);
-                removedRoles.add(SemanticRole.CONTEXT);
-            }
+//            if (ret.context != null && owl.reasoner().subsumes(ret.context, concept)) {
+//                ret.context = null;
+//                ret.removed.add(concept);
+//                removedRoles.add(SemanticRole.CONTEXT);
+//            }
             if (ret.inherent != null && owl.reasoner().subsumes(ret.inherent, concept)) {
                 ret.inherent = null;
                 ret.removed.add(concept);
@@ -745,7 +745,7 @@ public class ObservableBuilder implements Observable.Builder {
 
     void checkTrivial() {
         this.isTrivial = causant == null && adjacent == null && caused == null && comparison == null
-                && compresent == null && context == null && inherent == null && cooccurrent == null & goal == null
+                && compresent == null /*&& context == null*/ && inherent == null && cooccurrent == null & goal == null
                 && traits.isEmpty() && roles.isEmpty() && deferredTarget == null;
     }
 
@@ -974,22 +974,22 @@ public class ObservableBuilder implements Observable.Builder {
             rId += (distributedInherency ? "_of_each_" : "_of_") + inherent.getReferenceName();
         }
 
-        if (context != null) {
-            Concept other = owl.reasoner().context(main);
-            // use the version of isCompatible that allows for observations that are
-            // compatible with
-            // the context's context if the context is an occurrent (e.g. Precipitation of
-            // Storm)
-            if (other != null && !owl.reasoner().contextuallyCompatible(main, context, other)) {
-                scope.error("cannot set the context type of " + main.displayName() + " to " + context.displayName()
-                        + " as it already has an incompatible context: " + other.displayName(), declaration);
-            }
-            cleanId = getCleanId(context);
-            cId += "In" + cleanId;
-            cDs += "In" + cleanId;
-            rId += "_within_" + context.getReferenceName();
-            // uId += "In" + cleanId;
-        }
+//        if (context != null) {
+//            Concept other = owl.reasoner().context(main);
+//            // use the version of isCompatible that allows for observations that are
+//            // compatible with
+//            // the context's context if the context is an occurrent (e.g. Precipitation of
+//            // Storm)
+//            if (other != null && !owl.reasoner().contextuallyCompatible(main, context, other)) {
+//                scope.error("cannot set the context type of " + main.displayName() + " to " + context.displayName()
+//                        + " as it already has an incompatible context: " + other.displayName(), declaration);
+//            }
+//            cleanId = getCleanId(context);
+//            cId += "In" + cleanId;
+//            cDs += "In" + cleanId;
+//            rId += "_within_" + context.getReferenceName();
+//            // uId += "In" + cleanId;
+//        }
 
         if (compresent != null) {
             Concept other = owl.reasoner().compresent(main);
@@ -1204,9 +1204,9 @@ public class ObservableBuilder implements Observable.Builder {
         if (inherent != null) {
             owl.restrictSome(ret, owl.getProperty(NS.IS_INHERENT_TO_PROPERTY), inherent, ontology);
         }
-        if (context != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
-        }
+//        if (context != null) {
+//            owl.restrictSome(ret, owl.getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+//        }
         if (caused != null) {
             owl.restrictSome(ret, owl.getProperty(NS.HAS_CAUSED_PROPERTY), caused, ontology);
         }
@@ -1280,7 +1280,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     private Ontology getTargetOntology() {
-        return owl.getTargetOntology(ontology, main, traits, roles, inherent, context, caused, causant,
+        return owl.getTargetOntology(ontology, main, traits, roles, inherent, /*context,*/ caused, causant,
                 compresent,
                 goal, cooccurrent, adjacent);
     }

@@ -13,9 +13,16 @@ import java.util.List;
 public class FileProjectStorage implements ProjectStorage {
 
     File rootFolder;
+    String projectName;
 
     public FileProjectStorage(File rootFolder) {
         this.rootFolder = rootFolder;
+        this.projectName = Utils.Files.getFileBaseName(rootFolder);
+    }
+
+    @Override
+    public String getProjectName() {
+        return projectName;
     }
 
     @Override
@@ -33,34 +40,34 @@ public class FileProjectStorage implements ProjectStorage {
         for (var type : types) {
             switch (type) {
                 case ONTOLOGY -> {
-                    collectResources("kvw", "src", true,ret);
+                    collectResources(".kwv", "src", true,ret);
                 }
                 case MODEL_NAMESPACE -> {
-                    collectResources("kim", "src", true, ret);
+                    collectResources(".kim", "src", true, ret);
                 }
                 case MANIFEST -> {
                     collectResources("manifest.json", "META-INF", false, ret);
                 }
                 case DOCUMENTATION_NAMESPACE -> {
-                    collectResources("json", "docs", false, ret);
+                    collectResources(".json", "docs", false, ret);
                 }
                 case STRATEGY -> {
-                    collectResources("obs", "strategies", false, ret);
+                    collectResources(".obs", "strategies", false, ret);
                 }
                 case BEHAVIOR -> {
-                    collectResources("kactors", "src", false, ret);
+                    collectResources(".kactors", "src", false, ret);
                 }
                 case APPLICATION -> {
-                    collectResources("kactors", "apps", false, ret);
+                    collectResources(".kactors", "apps", false, ret);
                 }
                 case SCRIPT -> {
-                    collectResources("kactors", "scripts", false, ret);
+                    collectResources(".kactors", "scripts", false, ret);
                 }
                 case TESTCASE -> {
-                    collectResources("kactors", "tests", false, ret);
+                    collectResources(".kactors", "tests", false, ret);
                 }
                 case BEHAVIOR_COMPONENT -> {
-                    collectResources("kactors", "components", false, ret);
+                    collectResources(".kactors", "components", false, ret);
                 }
                 case RESOURCE -> {
                     collectResources("resource.json", "resources", false, ret);
@@ -95,7 +102,7 @@ public class FileProjectStorage implements ProjectStorage {
             for (var file : files) {
                 if (file.isDirectory() && recurse) {
                     scanDirectory(file, extension, true, resultUrls);
-                } else if (extension.equals("*") || extension.equals(Utils.Files.getFileExtension(file))) {
+                } else if (extension.equals("*") || file.toString().endsWith(extension)) {
                     try {
                         resultUrls.add(file.toURI().toURL());
                     } catch (MalformedURLException e) {
@@ -122,6 +129,6 @@ public class FileProjectStorage implements ProjectStorage {
 
     @Override
     public boolean isFilesystemBased() {
-        return false;
+        return true;
     }
 }

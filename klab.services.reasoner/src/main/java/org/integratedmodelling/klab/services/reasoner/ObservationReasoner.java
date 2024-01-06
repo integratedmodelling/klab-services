@@ -20,16 +20,16 @@ import java.util.*;
  */
 public class ObservationReasoner {
     private Reasoner reasoner;
-    private Collection<ObservationStrategyPattern> observationStrategyPatterns = new ArrayList<>();
+    private Collection<ObservationStrategy> observationStrategies = new ArrayList<>();
 
     public ObservationReasoner(ReasonerService reasonerService) {
         this.reasoner = reasonerService;
     }
 
 
-    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
+    public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
 
-        List<ObservationStrategy> ret = new ArrayList<>();
+        List<ObservationStrategyObsolete> ret = new ArrayList<>();
 
         /*
          * If observable is abstract due to abstract traits, strategy is to find a model
@@ -58,21 +58,21 @@ public class ObservationReasoner {
 
         // TODO deferred strategies for unary operators that have built-in dereifiers
         //  defer to the argument(s), add distance computation
-        ObservationStrategy opDeferred = null;
+        ObservationStrategyObsolete opDeferred = null;
         if (observable.is(SemanticType.DISTANCE)) {
-            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
                     .withCost(rank++)
-                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
                     .build();
         } else if (observable.is(SemanticType.NUMEROSITY)) {
-            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
                     .withCost(rank++)
-                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
                     .build();
         } else if (observable.is(SemanticType.PRESENCE)) {
-            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
+            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
                     .withCost(rank++)
-                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
+                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
                     .build();
         } else if (observable.is(SemanticType.PERCENTAGE) || observable.is(SemanticType.PROPORTION)) {
 //            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
@@ -87,7 +87,7 @@ public class ObservationReasoner {
         }
 
         if (opDeferred != null) {
-            ret.add(ObservationStrategy.builder(observable).withStrategy(ObservationStrategy.Operation.DEFER, opDeferred).withCost(rank).build());
+            ret.add(ObservationStrategyObsolete.builder(observable).withStrategy(ObservationStrategyObsolete.Operation.DEFER, opDeferred).withCost(rank).build());
         }
 
         if (!traits.isEmpty()) {
@@ -121,15 +121,15 @@ public class ObservationReasoner {
 
     }
 
-    private List<ObservationStrategy> insertSpecializedDeferralStrategies(List<ObservationStrategy> ret,
-                                                                          Observable observable,
-                                                                          ContextScope scope, int rank) {
+    private List<ObservationStrategyObsolete> insertSpecializedDeferralStrategies(List<ObservationStrategyObsolete> ret,
+                                                                                  Observable observable,
+                                                                                  ContextScope scope, int rank) {
         // TODO
         return ret;
     }
 
-    private List<ObservationStrategy> addValueOperatorStrategies(List<ObservationStrategy> ret,
-                                                                 List<Pair<ValueOperator, Literal>> observable, int rank) {
+    private List<ObservationStrategyObsolete> addValueOperatorStrategies(List<ObservationStrategyObsolete> ret,
+                                                                         List<Pair<ValueOperator, Literal>> observable, int rank) {
         // TODO add new strategies to the previous one; increment their rank by 1
         return ret;
     }
@@ -144,8 +144,8 @@ public class ObservationReasoner {
      * @param rank
      * @return
      */
-    private List<ObservationStrategy> getInherencyStrategies(Observable observable, ContextScope scope,
-                                                             int rank) {
+    private List<ObservationStrategyObsolete> getInherencyStrategies(Observable observable, ContextScope scope,
+                                                                     int rank) {
         // TODO
         return Collections.emptyList();
     }
@@ -179,24 +179,24 @@ public class ObservationReasoner {
      * @param rank
      * @return
      */
-    private List<ObservationStrategy> getTraitConcreteStrategies(Observable observable,
-                                                                 Collection<Concept> traits, Scope scope,
-                                                                 int rank) {
-        List<ObservationStrategy> ret = new ArrayList<>();
+    private List<ObservationStrategyObsolete> getTraitConcreteStrategies(Observable observable,
+                                                                         Collection<Concept> traits, Scope scope,
+                                                                         int rank) {
+        List<ObservationStrategyObsolete> ret = new ArrayList<>();
         Concept toResolve = traits.iterator().next();
 
         var nakedObservable = observable.builder(scope).without(toResolve).build();
-        var builder = ObservationStrategy.builder(observable).withCost(rank);
+        var builder = ObservationStrategyObsolete.builder(observable).withCost(rank);
 
         // TODO this is the strategy for instances, not for qualities
 
-        var deferred = ObservationStrategy.builder(nakedObservable).withCost(rank);
+        var deferred = ObservationStrategyObsolete.builder(nakedObservable).withCost(rank);
         var baseTrait = reasoner.baseParentTrait(toResolve);
         if (baseTrait == null) {
             throw new KlabInternalErrorException("no base trait for " + toResolve);
         }
         deferred
-                .withOperation(ObservationStrategy.Operation.RESOLVE,
+                .withOperation(ObservationStrategyObsolete.Operation.RESOLVE,
                         Observable.promote(baseTrait).builder(scope).of(nakedObservable.getSemantics()).build());
 
         if (observable.is(SemanticType.QUALITY)) {
@@ -218,49 +218,49 @@ public class ObservationReasoner {
         } else {
             deferred
                     // filter the instances to set the ones with the trait in context
-                    .withOperation(ObservationStrategy.Operation.APPLY,
+                    .withOperation(ObservationStrategyObsolete.Operation.APPLY,
                             // FIXME this must be the FILTER call to filter instances with toSolve as
                             //  arguments
                             (ServiceCall) null)
                     // Explain the instantiated classification, deferring the resolution of the attributed
                     // trait within the instances
-                    .withStrategy(ObservationStrategy.Operation.DEFER,
-                            ObservationStrategy.builder(
+                    .withStrategy(ObservationStrategyObsolete.Operation.DEFER,
+                            ObservationStrategyObsolete.builder(
                                             Observable.promote(toResolve).builder(scope)
-                                                    .within(nakedObservable.getSemantics())
+                                                    .of(nakedObservable.getSemantics())
                                                     .optional(true).build())
                                     .withCost(rank)
                                     .build());
         }
 
-        builder.withStrategy(ObservationStrategy.Operation.DEFER, deferred.build());
+        builder.withStrategy(ObservationStrategyObsolete.Operation.DEFER, deferred.build());
 
         ret.add(builder.build());
 
         return ret;
     }
 
-    private List<ObservationStrategy> getGenericConcreteStrategies(List<ObservationStrategy> strategies,
-                                                                   Observable observable,
-                                                                   Collection<Concept> generics, int rank) {
-        List<ObservationStrategy> ret = new ArrayList<>();
+    private List<ObservationStrategyObsolete> getGenericConcreteStrategies(List<ObservationStrategyObsolete> strategies,
+                                                                           Observable observable,
+                                                                           Collection<Concept> generics, int rank) {
+        List<ObservationStrategyObsolete> ret = new ArrayList<>();
         return ret;
     }
 
     /**
      * Direct strategies have rank 0
      */
-    private Collection<? extends ObservationStrategy> getDirectConcreteStrategies(Observable observable,
-                                                                                  Scope scope, int rank) {
+    private Collection<? extends ObservationStrategyObsolete> getDirectConcreteStrategies(Observable observable,
+                                                                                          Scope scope, int rank) {
 
-        List<ObservationStrategy> ret = new ArrayList<>();
+        List<ObservationStrategyObsolete> ret = new ArrayList<>();
 
         /*
          * first course of action for concrete observables is always direct observation (finding a model and
          * contextualizing it)
          */
         var builder =
-                ObservationStrategy.builder(observable)
+                ObservationStrategyObsolete.builder(observable)
                         .withCost(rank);
 
         /**
@@ -268,17 +268,17 @@ public class ObservationReasoner {
          */
         if (observable.is(SemanticType.RELATIONSHIP)) {
             for (var target : reasoner.relationshipTargets(observable)) {
-                builder.withOperation(ObservationStrategy.Operation.RESOLVE, Observable.promote(target));
+                builder.withOperation(ObservationStrategyObsolete.Operation.RESOLVE, Observable.promote(target));
             }
         }
 
         // main target
-        builder.withOperation(ObservationStrategy.Operation.RESOLVE, observable);
+        builder.withOperation(ObservationStrategyObsolete.Operation.RESOLVE, observable);
 
         // defer resolution of the instances
         if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
-            builder.withStrategy(ObservationStrategy.Operation.DEFER,
-                    ObservationStrategy.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT)
+            builder.withStrategy(ObservationStrategyObsolete.Operation.DEFER,
+                    ObservationStrategyObsolete.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT)
                                     .optional(true).build())
                             .withCost(rank)
                             .build());

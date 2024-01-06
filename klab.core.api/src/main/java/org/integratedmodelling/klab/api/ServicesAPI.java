@@ -68,7 +68,7 @@ public interface ServicesAPI {
 
 		public static String HAS_ROLE = REASONER_BASE + "/has-role";
 
-		public static String CONTEXT = REASONER_BASE + "/context";
+//		public static String CONTEXT = REASONER_BASE + "/context";
 
 		public static String INHERENT = REASONER_BASE + "/inherent";
 

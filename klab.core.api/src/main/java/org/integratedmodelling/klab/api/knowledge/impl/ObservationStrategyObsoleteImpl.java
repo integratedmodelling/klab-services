@@ -4,7 +4,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ObservationStrategyImpl implements ObservationStrategy {
+public class ObservationStrategyObsoleteImpl implements ObservationStrategyObsolete {
 
     private Observable originalObservable;
     private List<Pair<Operation, Arguments>> body = new ArrayList<>();
@@ -57,7 +57,7 @@ public class ObservationStrategyImpl implements ObservationStrategy {
         return toString(this, 0);
     }
 
-    private String toString(ObservationStrategy strategy, int spaces) {
+    private String toString(ObservationStrategyObsolete strategy, int spaces) {
         StringBuffer ret = new StringBuffer(512);
         String spacer = Utils.Strings.spaces(spaces);
         for (var op : strategy) {
@@ -92,7 +92,7 @@ public class ObservationStrategyImpl implements ObservationStrategy {
         return null;
     }
 
-    public static class Builder implements ObservationStrategy.Builder {
+    public static class Builder implements ObservationStrategyObsolete.Builder {
 
         private int rank;
 
@@ -116,26 +116,26 @@ public class ObservationStrategyImpl implements ObservationStrategy {
         }
 
         @Override
-        public ObservationStrategy.Builder withOperation(Operation operation, Observable target) {
+        public ObservationStrategyObsolete.Builder withOperation(Operation operation, Observable target) {
             this.operations.add(Pair.of(operation, new Arguments(target, null, null)));
             return this;
         }
 
         @Override
-        public ObservationStrategy.Builder withOperation(Operation operation, ServiceCall target) {
+        public ObservationStrategyObsolete.Builder withOperation(Operation operation, ServiceCall target) {
             this.operations.add(Pair.of(operation, new Arguments(null, target, null)));
             return this;
         }
 
         @Override
-        public ObservationStrategy.Builder withStrategy(Operation operation, ObservationStrategy strategy) {
+        public ObservationStrategyObsolete.Builder withStrategy(Operation operation, ObservationStrategyObsolete strategy) {
             this.operations.add(Pair.of(operation, new Arguments(null, null, strategy)));
             return this;
         }
 
         @Override
-        public ObservationStrategy build() {
-            ObservationStrategyImpl ret = new ObservationStrategyImpl();
+        public ObservationStrategyObsolete build() {
+            ObservationStrategyObsoleteImpl ret = new ObservationStrategyObsoleteImpl();
             ret.setOriginalObservable(this.originalObservable);
             ret.setCost(this.rank);
             ret.body.addAll(operations);

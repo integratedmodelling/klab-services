@@ -25,6 +25,8 @@ public interface ProjectStorage {
         RESOURCE_ASSET
     }
 
+    String getProjectName();
+
     /**
      * URL for the content root.
      *

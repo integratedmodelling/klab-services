@@ -14,11 +14,9 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -36,19 +34,16 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.resources.FileProjectStorage;
-//import org.integratedmodelling.klab.rest.ResourceReference;
+import org.integratedmodelling.klab.knowledge.WorldviewImpl;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
-import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utilities.Utils.Git;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -76,8 +71,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private static boolean languagesInitialized;
 
     private String url;
-    //    private KimLoader kimLoader;
-    private ResourcesConfiguration configuration = new ResourcesConfiguration();
     private Authentication authenticationService;
     private Map<String, Project> localProjects = Collections.synchronizedMap(new HashMap<>());
     private Map<String, WorkspaceImpl> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
@@ -115,10 +108,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      */
     private ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
 
-    /**
-     * Default interval to check for changes in Git (15 minutes in milliseconds)
-     */
-    private long DEFAULT_GIT_SYNC_INTERVAL = 15L * 60L * 60L * 1000L;
 
     /**
      * If this is used, {@link #loadWorkspaces()} must be called explicitly after the service scope is set.
@@ -139,13 +128,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         this.catalog =
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
 
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        if (config.exists()) {
-            configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
-        }
-        this.workspaceManager = new WorkspaceManager(this.configuration, scope,
-                (projectId) -> resolveRemoteProject(projectId) /* TODO
-         resolve through the network*/);
+        this.workspaceManager = new WorkspaceManager(scope, (projectId) -> resolveRemoteProject(projectId));
     }
 
     public Project resolveRemoteProject(String projectId) {
@@ -164,10 +147,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public void initializeService() {
+
         scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities());
         this.kbox = ModelKbox.create(localName, this.scope);
-        updateProjects();
+
         /*
          * TODO launch update service
          */
@@ -178,14 +162,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 capabilities());
     }
 
-    private void saveConfiguration() {
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        Utils.YAML.save(this.configuration, config);
-    }
-
-    public ResourceSet loadWorkspaces() {
-
-        return null;
+    /**
+     * Load projects in the order established by the workspace manager. We may be reloading after a change.
+     * The resolver callback for external projects may have been called already by the workspace manager to
+     * resolve project dependencies.
+     */
+    private boolean loadWorkspaces() {
+        // TODO
+        for (var project : this.workspaceManager.getProjectLoadOrder()) {
+            if (project.getFirst() != null) {
+                System.out.println("Loading local project " + project.getFirst().getProjectName());
+            } else {
+                System.out.println("Registering remote project " + project.getSecond().getUrn());
+            }
+        }
+        return true;
     }
 
 //    public ResourceSet loadWorkspaces() {
@@ -201,16 +192,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 //        return projects(projects, scope);
 //    }
 
-    private WorkspaceImpl getWorkspace(String workspaceName) {
-        var ret = localWorkspaces.get(workspaceName);
-        if (ret == null) {
-            ret = new WorkspaceImpl();
-            ((WorkspaceImpl) ret).setName(workspaceName);
-            // ((WorkspaceImpl)ret).setUrl(this.url + "/workspaces/" + workspaceName);
-            this.localWorkspaces.put(workspaceName, ret);
-        }
-        return ret;
-    }
+//    private WorkspaceImpl getWorkspace(String workspaceName) {
+//        var ret = localWorkspaces.get(workspaceName);
+//        if (ret == null) {
+//            ret = new WorkspaceImpl();
+//            ((WorkspaceImpl) ret).setName(workspaceName);
+//            // ((WorkspaceImpl)ret).setUrl(this.url + "/workspaces/" + workspaceName);
+//            this.localWorkspaces.put(workspaceName, ret);
+//        }
+//        return ret;
+//    }
 
     /**
      * Return whatever worldview is defined in this service, using any other services necessary, or an empty
@@ -220,8 +211,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      *
      * @return
      */
-    public List<KimOntology> getWorldview() {
-        return this.workspaceManager.getOntologies(true);
+    public Worldview getWorldview() {
+        return this.workspaceManager.getWorldview();
     }
 
     /**
@@ -230,60 +221,60 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * <p>
      * Projects with update frequency == 0 do not get updated.
      */
-    private void updateProjects() {
-        for (String projectName : configuration.getProjectConfiguration().keySet()) {
-            ProjectConfiguration project = configuration.getProjectConfiguration().get(projectName);
-            Long lastUpdate = this.lastUpdate.get(projectName);
-            if (Git.isRemoteGitURL(project.getSourceUrl())) {
-                if (lastUpdate == null || (lastUpdate > 0
-                        && (System.currentTimeMillis() - lastUpdate) >= project.getSyncIntervalMs())) {
-                    Git.pull(project.getLocalPath());
-                    this.lastUpdate.put(projectName, System.currentTimeMillis());
-                }
-            }
+//    private void updateProjects() {
+//        for (String projectName : configuration.getProjectConfiguration().keySet()) {
+//            ProjectConfiguration project = configuration.getProjectConfiguration().get(projectName);
+//            Long lastUpdate = this.lastUpdate.get(projectName);
+//            if (Git.isRemoteGitURL(project.getSourceUrl())) {
+//                if (lastUpdate == null || (lastUpdate > 0
+//                        && (System.currentTimeMillis() - lastUpdate) >= project.getSyncIntervalMs())) {
+//                    Git.pull(project.getLocalPath());
+//                    this.lastUpdate.put(projectName, System.currentTimeMillis());
+//                }
+//            }
+//
+//        }
+//    }
 
-        }
-    }
-
-    /**
-     * TODO this must load to a staging area and commit the project after approval.
-     *
-     * @param projectName
-     * @param projectConfiguration
-     * @return
-     */
-    private synchronized Project importProject(String projectName,
-                                               final ProjectConfiguration projectConfiguration) {
-
-        /*
-         * this automatically loads namespaces and behaviors through callbacks.
-         */
-        ProjectImpl project = new ProjectImpl();
-        project.setName(projectName);
-        // project.setUrl(this.url + "/projects/" + kimProject.getName());
-        localProjects.put(projectName, project);
-//        IKimProject kimProject = kimLoader.loadProject(projectConfiguration.getLocalPath());
-//        File resourceDir = new File(kimProject.getRoot() + File.separator + "resources");
-//        loadResources(resourceDir, project, 0, true);
-//        project.setManifest(readManifest(kimProject));
-//		project.getMetadata().putAll(readMetadata(kimProject, project.getManifest()));
-
-        /*
-         * TODO check notifications in namespaces and behaviors and ensure the project
-         * reports errors in its components. Resources are managed indepenendently of
-         * the projects they belong to. FIXME probably the resource permissions could be
-         * intersected, but it's probably confusing although restrictions in projects
-         * should be the default for resources..
-         */
-        /*
-         * TODO add a ResourceStatus record for the project
-         */
-
-        db.commit();
-
-        return project;
-
-    }
+//    /**
+//     * TODO this must load to a staging area and commit the project after approval.
+//     *
+//     * @param projectName
+//     * @param projectConfiguration
+//     * @return
+//     */
+//    private synchronized Project importProject(String projectName,
+//                                               final ProjectConfiguration projectConfiguration) {
+//
+//        /*
+//         * this automatically loads namespaces and behaviors through callbacks.
+//         */
+//        ProjectImpl project = new ProjectImpl();
+//        project.setName(projectName);
+//        // project.setUrl(this.url + "/projects/" + kimProject.getName());
+//        localProjects.put(projectName, project);
+////        IKimProject kimProject = kimLoader.loadProject(projectConfiguration.getLocalPath());
+////        File resourceDir = new File(kimProject.getRoot() + File.separator + "resources");
+////        loadResources(resourceDir, project, 0, true);
+////        project.setManifest(readManifest(kimProject));
+////		project.getMetadata().putAll(readMetadata(kimProject, project.getManifest()));
+//
+//        /*
+//         * TODO check notifications in namespaces and behaviors and ensure the project
+//         * reports errors in its components. Resources are managed indepenendently of
+//         * the projects they belong to. FIXME probably the resource permissions could be
+//         * intersected, but it's probably confusing although restrictions in projects
+//         * should be the default for resources..
+//         */
+//        /*
+//         * TODO add a ResourceStatus record for the project
+//         */
+//
+//        db.commit();
+//
+//        return project;
+//
+//    }
 
 //    @SuppressWarnings("unchecked")
 //    private Map<String, Object> readMetadata(IKimProject kimProject, Manifest manifest) {
@@ -301,7 +292,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 //        }
 //        return ret;
 //    }
-
     private void loadResources(File resourceDir, ProjectImpl project, int level, boolean legacy) {
 
         /*
@@ -387,8 +377,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
              * check permissions; if not allowed, log and set ret = null. If the scope is
              * the service itself, we can access everything.
              */
-            ProjectConfiguration pconf =
-                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
+            ProjectConfiguration pconf = null; // TODO
+//                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
             if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
                 scope.debug("trying to access unauthorized namespace " + urn);
                 ret = null;
@@ -406,8 +396,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
              * check permissions; if not allowed, log and set ret = null. If the scope is
              * the service itself, we can access everything.
              */
-            ProjectConfiguration pconf =
-                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
+            ProjectConfiguration pconf = null; // TODO
+//                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
             if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
                 scope.debug("trying to access unauthorized namespace " + urn);
                 ret = null;
@@ -424,8 +414,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         KActorsBehavior ret = localBehaviors.get(urn);
         if (ret != null && !(scope instanceof ServiceScope)) {
             if (ret.getProjectId() != null) {
-                ProjectConfiguration pconf =
-                        this.configuration.getProjectConfiguration().get(ret.getProjectId());
+                ProjectConfiguration pconf = null; // TODO
+//                        this.configuration.getProjectConfiguration().get(ret.getProjectId());
                 if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
                     // scope.info("");
                     ret = null;
@@ -480,137 +470,138 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public List<KimNamespace> precursors(String namespaceId) {
         return null;
     }
-
-    public ProjectStorage importProjectStorage(String projectUrl, String workspaceName,
-                                               boolean overwriteIfExisting) {
-
-        updateLock.writeLock().lock();
-        ProjectStorage ret = null;
-
-        try {
-
-            String projectName = Utils.URLs.getURLBaseName(projectUrl);
-            ProjectConfiguration config = this.configuration.getProjectConfiguration().get(projectName);
-            if (config != null) {
-                if (overwriteIfExisting) {
-                    removeProject(projectName);
-                }
-            }
-
-            File workspace = Configuration.INSTANCE.getDataPath(
-                    configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
-            workspace.mkdirs();
-
-            if (Utils.Git.isRemoteGitURL(projectUrl)) {
-
-                try {
-
-                    /**
-                     * This should be the main use of project resources. TODO handle credentials
-                     */
-
-                    projectName = Git.clone(projectUrl, workspace, false);
-//                    ProjectConfiguration configuration = new ProjectConfiguration();
-//                    configuration.setLocalPath(new File(workspace + File.separator + projectName));
-//                    configuration.setSourceUrl(projectUrl);
-//                    configuration.setWorkspaceName(workspaceName);
-//                    configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
-//                    /*
-//                     * Default privileges are exclusive to the service
-//                     */
-//                    configuration.setPrivileges(ResourcePrivileges.empty());
-//                    // this must happen before loadProject is called.
-//                    this.configuration.getProjectConfiguration().put(projectName, configuration);
 //
-//                    Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
-//                    if (projects == null) {
-//                        projects = new LinkedHashSet<>();
-//                        this.configuration.getWorkspaces().put(workspaceName, projects);
+//    public ProjectStorage importProjectStorage(String projectUrl, String workspaceName,
+//                                               boolean overwriteIfExisting) {
+//
+//        updateLock.writeLock().lock();
+//        ProjectStorage ret = null;
+//
+//        try {
+//
+//            String projectName = Utils.URLs.getURLBaseName(projectUrl);
+//            ProjectConfiguration config = this.configuration.getProjectConfiguration().get(projectName);
+//            if (config != null) {
+//                if (overwriteIfExisting) {
+//                    removeProject(projectName);
+//                }
+//            }
+//
+//            File workspace = Configuration.INSTANCE.getDataPath(
+//                    configuration.getServicePath() + File.separator + "workspaces" + File.separator +
+//                    workspaceName);
+//            workspace.mkdirs();
+//
+//            if (Utils.Git.isRemoteGitURL(projectUrl)) {
+//
+//                try {
+//
+//                    /**
+//                     * This should be the main use of project resources. TODO handle credentials
+//                     */
+//
+//                    projectName = Git.clone(projectUrl, workspace, false);
+////                    ProjectConfiguration configuration = new ProjectConfiguration();
+////                    configuration.setLocalPath(new File(workspace + File.separator + projectName));
+////                    configuration.setSourceUrl(projectUrl);
+////                    configuration.setWorkspaceName(workspaceName);
+////                    configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
+////                    /*
+////                     * Default privileges are exclusive to the service
+////                     */
+////                    configuration.setPrivileges(ResourcePrivileges.empty());
+////                    // this must happen before loadProject is called.
+////                    this.configuration.getProjectConfiguration().put(projectName, configuration);
+////
+////                    Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
+////                    if (projects == null) {
+////                        projects = new LinkedHashSet<>();
+////                        this.configuration.getWorkspaces().put(workspaceName, projects);
+////                    }
+////                    projects.add(projectName);
+////                    Project project = importProject(projectName, configuration);
+////                    configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
+////                    saveConfiguration();
+////                    return true;
+//                    File ws = new File(workspace + File.separator + projectName);
+//                    if (ws.exists()) {
+//                        ret = new FileProjectStorage(ws);
 //                    }
-//                    projects.add(projectName);
-//                    Project project = importProject(projectName, configuration);
-//                    configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
-//                    saveConfiguration();
-//                    return true;
-                    File ws = new File(workspace + File.separator + projectName);
-                    if (ws.exists()) {
-                        ret = new FileProjectStorage(ws);
-                    }
-
-                } catch (Throwable t) {
-                    // just make the return value null
-                    File ws = new File(workspace + File.separator + projectName);
-                    if (ws.exists()) {
-                        Utils.Files.deleteQuietly(ws);
-                    }
-                }
-
-            } else if (projectUrl.startsWith("http")) {
-
-                /*
-                 * TODO
-                 *
-                 * Load from another service. These projects may be served as mirrors or just
-                 * kept to meet dependencies, according to the 'served' bit in the
-                 * configuration. The source of truth should remain the source code, hosted in a
-                 * single place (the remote service); mechanisms should be in place to store the
-                 * original server and check for changes and new versions.
-                 */
-
-            } else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
-
-                var file = Utils.URLs.getFileForURL(projectUrl);
-                if (file.isDirectory()) {
-                    ret = new FileProjectStorage(file);
-                } else if (Utils.Files.JAVA_ARCHIVE_EXTENSIONS.contains(Utils.Files.getFileExtension(file))) {
-                    // TODO ret = read from archive
-                }
-            }
-        } finally {
-            updateLock.writeLock().unlock();
-        }
-
-        return ret;
-    }
+//
+//                } catch (Throwable t) {
+//                    // just make the return value null
+//                    File ws = new File(workspace + File.separator + projectName);
+//                    if (ws.exists()) {
+//                        Utils.Files.deleteQuietly(ws);
+//                    }
+//                }
+//
+//            } else if (projectUrl.startsWith("http")) {
+//
+//                /*
+//                 * TODO
+//                 *
+//                 * Load from another service. These projects may be served as mirrors or just
+//                 * kept to meet dependencies, according to the 'served' bit in the
+//                 * configuration. The source of truth should remain the source code, hosted in a
+//                 * single place (the remote service); mechanisms should be in place to store the
+//                 * original server and check for changes and new versions.
+//                 */
+//
+//            } else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
+//
+//                var file = Utils.URLs.getFileForURL(projectUrl);
+//                if (file.isDirectory()) {
+//                    ret = new FileProjectStorage(file);
+//                } else if (Utils.Files.JAVA_ARCHIVE_EXTENSIONS.contains(Utils.Files.getFileExtension
+//                (file))) {
+//                    // TODO ret = read from archive
+//                }
+//            }
+//        } finally {
+//            updateLock.writeLock().unlock();
+//        }
+//
+//        return ret;
+//    }
 
     /**
      * TODO improve logics: the main function should return the appropriate ProjectStorage for the URL in
      * all cases. Then call importProject (storage) when all the different storages are implemented.
      *
      * @param workspaceName
-     * @param projectUrl          can be a file (zip or existing folder), a git URL (with a potential branch
-     *                            name after a # sign) or a http URL from another resource manager.
+     * @param projectUrl          can be a file (zip, jar, existing folder, or anything supported by
+     *                            extensions), a git URL (with a potential branch name after a # sign) or a
+     *                            http URL from another resource manager. Could also be a service URL for
+     *                            mirroring.
      * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
      * @return
      */
     @Override
     public synchronized boolean importProject(String workspaceName, String projectUrl,
                                               boolean overwriteIfExisting) {
-        var storage = importProjectStorage(projectUrl, workspaceName, overwriteIfExisting);
-        var workspace = getWorkspace(workspaceName);
-        if (storage != null) {
-            return importProject(storage, workspace);
-        }
-        return false;
+        var storage = workspaceManager.importProject(projectUrl, workspaceName);
+        return storage != null && loadWorkspaces();
     }
 
-    /**
-     * Read, validate and resolve dependencies for all namespaces and other assets into the workspace
-     * descriptors, resolving any missing required projects from the network (if not resolved, log an error
-     * and don't load the project). Do not load anything yet: the workspaces are loaded as a unit, starting
-     * with any that has a root worldview, then any with any worldview, then the others.
-     *
-     * @param storage
-     * @return
-     */
-    private boolean importProject(ProjectStorage storage, WorkspaceImpl workspace) {
-
-        /*
-        Start with the worldview files. Ensure that the entire
-         */
-
-        return false;
-    }
+//    /**
+//     * Read, validate and resolve dependencies for all namespaces and other assets into the workspace
+//     * descriptors, resolving any missing required projects from the network (if not resolved, log an error
+//     * and don't load the project). Do not load anything yet: the workspaces are loaded as a unit, starting
+//     * with any that has a root worldview, then any with any worldview, then the others.
+//     *
+//     * @param storage
+//     * @return
+//     */
+//    private boolean importProject(ProjectStorage storage, Workspace workspace) {
+//
+//        /*
+//        Start with the worldview files. Ensure that the entire content of the project is resolved. Add
+//        errors and warnings as appropriate for the modeler.
+//         */
+//
+//        return true;
+//    }
 
     @Override
     public Project createProject(String workspaceName, String projectName) {
@@ -658,49 +649,46 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         updateLock.writeLock().lock();
 
         try {
-            ProjectConfiguration configuration =
-                    this.configuration.getProjectConfiguration().get(projectName);
-            Project project = this.localProjects.get(projectName);
-            String workspaceName = getWorkspace(project);
-            Workspace workspace = this.localWorkspaces.get(workspaceName);
-            Utils.Files.deleteQuietly(configuration.getLocalPath());
-            if (this.configuration.getWorkspaces().get(workspaceName) != null) {
-                this.configuration.getWorkspaces().get(workspaceName).remove(projectName);
-            }
             // remove namespaces, behaviors and resources
-            for (KimNamespace namespace : project.getNamespaces()) {
-                this.localNamespaces.remove(namespace.getUrn());
+            var project = localProjects.get(projectName);
+            if (project != null) {
+                for (var namespace : project.getNamespaces()) {
+                    this.localNamespaces.remove(namespace.getUrn());
+                }
+                for (var ontology : project.getOntologies()) {
+                    this.servedOntologies.remove(ontology.getUrn());
+                }
+                for (KActorsBehavior behavior : project.getBehaviors()) {
+                    this.localBehaviors.remove(behavior.getUrn());
+                }
+                for (String resource : project.getResourceUrns()) {
+                    localResources.remove(resource);
+                    catalog.remove(resource);
+                }
+                this.localProjects.remove(projectName);
             }
-            for (KActorsBehavior behavior : project.getBehaviors()) {
-                this.localBehaviors.remove(behavior.getUrn());
-            }
-            for (String resource : project.getResourceUrns()) {
-                localResources.remove(resource);
-                catalog.remove(resource);
-            }
-            this.localProjects.remove(projectName);
-            workspace.getProjects().remove(project);
-            saveConfiguration();
+            workspaceManager.removeProject(projectName);
             db.commit();
+
         } finally {
             updateLock.writeLock().unlock();
         }
     }
 
-    private String getWorkspace(Project project) {
-        for (String ret : this.configuration.getWorkspaces().keySet()) {
-            if (this.configuration.getWorkspaces().get(ret).contains(project.getName())) {
-                return ret;
-            }
-        }
-        return null;
-    }
+//    private String getWorkspace(Project project) {
+//        for (String ret : this.configuration.getWorkspaces().keySet()) {
+//            if (this.configuration.getWorkspaces().get(ret).contains(project.getName())) {
+//                return ret;
+//            }
+//        }
+//        return null;
+//    }
 
     @Override
     public void removeWorkspace(String workspaceName) {
         Workspace workspace = this.localWorkspaces.get(workspaceName);
         for (Project project : workspace.getProjects()) {
-            removeProject(project.getName());
+            removeProject(project.getUrn());
         }
         try {
             updateLock.writeLock().lock();
@@ -794,14 +782,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         ResourceSet ret = new ResourceSet();
 
-        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
-            if (projects.contains(projectName)) {
-                if (!localProjects.containsKey(projectName)) {
-                    importProject(projectName, this.configuration.getProjectConfiguration().get(projectName));
-                }
-                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
-            }
-        }
+        // TODO
+//        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
+//            if (projects.contains(projectName)) {
+////                if (!localProjects.containsKey(projectName)) {
+////                    importProject(projectName, this.configuration.getProjectConfiguration().get
+// (projectName));
+////                }
+//                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
+//            }
+//        }
 
         return sort(ret, scope);
     }
