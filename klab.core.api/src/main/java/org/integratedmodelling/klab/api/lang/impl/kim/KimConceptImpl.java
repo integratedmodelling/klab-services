@@ -73,8 +73,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     transient private Set<SemanticType> argumentType = EnumSet.noneOf(SemanticType.class);
 
     private KimConceptImpl(KimConceptImpl other) {
+        super(other);
         this.semanticRole = other.semanticRole;
-//        this.traitObservable = other.traitObservable;
         this.name = other.name;
         this.type = EnumSet.copyOf(other.type);
         this.observable = other.observable;
@@ -94,7 +94,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.relationshipTarget = other.relationshipTarget;
         this.traits.addAll(other.traits);
         this.roles.addAll(other.roles);
-//        this.template = other.template;
         this.negated = other.negated;
         this.urn = other.urn;
         this.operands.addAll(other.operands);

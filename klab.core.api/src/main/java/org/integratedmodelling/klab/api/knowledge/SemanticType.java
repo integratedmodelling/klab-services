@@ -42,11 +42,11 @@ public enum SemanticType {
     /**
      * 
      */
-    EXTENSIVE_PROPERTY,
+    EXTENSIVE,
     /**
      * 
      */
-    INTENSIVE_PROPERTY,
+    INTENSIVE,
     /**
      * 
      */
@@ -339,7 +339,7 @@ public enum SemanticType {
     }
 
     public boolean admitsUnits() {
-        return this == EXTENSIVE_PROPERTY || this == INTENSIVE_PROPERTY || this == NUMEROSITY;
+        return this == EXTENSIVE || this == INTENSIVE || this == NUMEROSITY;
     }
 
     public boolean admitsCurrency() {

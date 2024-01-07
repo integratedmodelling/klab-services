@@ -27,30 +27,20 @@ public interface Statement extends Serializable {
     }
 
     /**
-     * @return the first line number
-     * @deprecated use offset in document and length; add transient document() to retrieve the object it's
-     * part of
+     * If this comes from a document, return the offset in the source code. Otherwise return -1. The way to
+     * access the containing document is not specified in the API and is up to the implementation.
+     *
+     * @return
      */
-    @Deprecated
-    int getFirstLine();
+    int getOffsetInDocument();
 
     /**
-     * @return the last line number
+     * If {@link #getOffsetInDocument()} returns >= 0, this must return a valid length of the textual
+     * specification starting at the offset.
+     *
+     * @return
      */
-    @Deprecated
-    int getLastLine();
-
-    /**
-     * @return the start offset in the document
-     */
-    @Deprecated
-    int getFirstCharOffset();
-
-    /**
-     * @return the last offset in the document
-     */
-    @Deprecated
-    int getLastCharOffset();
+    int getLength();
 
     /**
      * @return the annotations

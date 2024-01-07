@@ -3,8 +3,6 @@ package org.integratedmodelling.klab.services.resources.lang;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
@@ -115,13 +113,17 @@ public enum LanguageAdapter {
 
         ret.setUrn(ret.computeUrn());
 
+        if (!ret.getUrn().contains(":")) {
+            System.out.println("PORODIO");
+        }
+
         return ret;
     }
 
     private KimConcept adaptSemantics(SemanticSyntax.ConceptData observable) {
         KimConceptImpl ret = new KimConceptImpl();
-        ret.setUrn(observable.concept().conceptName());
-        ret.setName(observable.concept().conceptName());
+        ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
+        ret.setName(ret.getUrn());
         ret.setType(adaptSemanticType(observable.concept().mainType()));
         ret.computeUrn();
         return ret;
@@ -136,17 +138,14 @@ public enum LanguageAdapter {
             case AMOUNT ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.AMOUNT);
-            case ANGLE ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
-                            SemanticType.ANGLE);
-            case AREA ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
-                            SemanticType.AREA);
+            case ANGLE -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                    SemanticType.ANGLE);
+            case AREA -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                    SemanticType.AREA);
             case ATTRIBUTE -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.TRAIT);
-            case BOND ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
-                            SemanticType.DIRECT_OBSERVABLE, SemanticType.RELATIONSHIP,
-                            SemanticType.BIDIRECTIONAL);
+            case BOND -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
+                    SemanticType.DIRECT_OBSERVABLE, SemanticType.RELATIONSHIP,
+                    SemanticType.BIDIRECTIONAL);
             case CHARGE ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.CHARGE);
@@ -167,23 +166,20 @@ public enum LanguageAdapter {
                             SemanticType.ENTROPY);
             case EVENT -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE, SemanticType.EVENT);
             case EXTENT -> EnumSet.of(SemanticType.EXTENT, SemanticType.QUALITY);
-            case FUNCTIONAL_RELATIONSHIP ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
-                            SemanticType.DIRECT_OBSERVABLE, SemanticType.RELATIONSHIP,
-                            SemanticType.FUNCTIONAL);
+            case FUNCTIONAL_RELATIONSHIP -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
+                    SemanticType.DIRECT_OBSERVABLE, SemanticType.RELATIONSHIP,
+                    SemanticType.FUNCTIONAL);
             case GENERIC_QUALITY ->
-                // this only happens with core im:Quality
+                // this only happens with core im:Quality. It's deprecated and should not get here.
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUALITY);
             case IDENTITY -> EnumSet.of(SemanticType.PREDICATE, SemanticType.IDENTITY, SemanticType.TRAIT);
             case LENGTH ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.LENGTH);
-            case MASS ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
-                            SemanticType.MASS);
-            case MONEY ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
-                            SemanticType.MONEY);
+            case MASS -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                    SemanticType.MASS);
+            case MONEY -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                    SemanticType.MONEY);
             case ORDERING ->
                     EnumSet.of(SemanticType.PREDICATE, SemanticType.ORDERING, SemanticType.TRAIT); // TODO
             // attribute?
@@ -197,9 +193,8 @@ public enum LanguageAdapter {
             case QUANTITY ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.QUANTITY);
-            case AGENT ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
-                            SemanticType.DIRECT_OBSERVABLE, SemanticType.AGENT);
+            case AGENT -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
+                    SemanticType.DIRECT_OBSERVABLE, SemanticType.AGENT);
             case REALM -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ATTRIBUTE, SemanticType.TRAIT);
             case RESISTANCE ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
@@ -208,13 +203,11 @@ public enum LanguageAdapter {
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.RESISTIVITY);
             case ROLE -> EnumSet.of(SemanticType.PREDICATE, SemanticType.ROLE);
-            case STRUCTURAL_RELATIONSHIP ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
-                            SemanticType.DIRECT_OBSERVABLE, SemanticType.RELATIONSHIP,
-                            SemanticType.STRUCTURAL);
-            case SUBJECT ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
-                            SemanticType.DIRECT_OBSERVABLE, SemanticType.SUBJECT);
+            case STRUCTURAL_RELATIONSHIP -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
+                    SemanticType.DIRECT_OBSERVABLE, SemanticType.RELATIONSHIP,
+                    SemanticType.STRUCTURAL);
+            case SUBJECT -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.COUNTABLE,
+                    SemanticType.DIRECT_OBSERVABLE, SemanticType.SUBJECT);
             case TEMPERATURE ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.TEMPERATURE);
@@ -224,6 +217,7 @@ public enum LanguageAdapter {
             case VISCOSITY ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.VISCOSITY);
+            case MONETARY_VALUE -> null;
             case VOLUME ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.VOLUME);
@@ -233,32 +227,38 @@ public enum LanguageAdapter {
             case PROBABILITY ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.PROBABILITY);
+            case OCCURRENCE ->
+                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                            SemanticType.OCCURRENCE);
             case PERCENTAGE ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.PERCENTAGE);
-            case RATIO ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
-                            SemanticType.RATIO);
+            case RATIO -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                    SemanticType.RATIO);
             case UNCERTAINTY ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.UNCERTAINTY);
-            case VALUE ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
-                            SemanticType.VALUE);
+            case VALUE -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                    SemanticType.VALUE);
             case PROPORTION ->
                     EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
                             SemanticType.PROPORTION);
-            case RATE ->
-                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
-                            SemanticType.RATE);
+            case RATE -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                    SemanticType.RATE);
             case PRESENCE -> EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUALITY, SemanticType.PRESENCE);
+            case MAGNITUDE ->
+                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                            SemanticType.MAGNITUDE);
+            case NUMEROSITY ->
+                    EnumSet.of(SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE, SemanticType.QUALITY,
+                            SemanticType.NUMEROSITY);
         };
 
         // single source of truth for intensive/extensive nature
         if (type.is(SemanticSyntax.TypeCategory.INTENSIVE)) {
-            ret.add(SemanticType.INTENSIVE_PROPERTY);
+            ret.add(SemanticType.INTENSIVE);
         } else if (type.is(SemanticSyntax.TypeCategory.EXTENSIVE)) {
-            ret.add(SemanticType.EXTENSIVE_PROPERTY);
+            ret.add(SemanticType.EXTENSIVE);
         }
         return ret;
     }

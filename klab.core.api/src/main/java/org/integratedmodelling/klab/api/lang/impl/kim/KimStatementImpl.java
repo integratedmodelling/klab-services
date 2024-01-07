@@ -18,14 +18,12 @@ import org.integratedmodelling.klab.api.utils.Utils;
 public abstract class KimStatementImpl extends KimScopeImpl implements KimStatement {
 
     private static final long serialVersionUID = -7273214821906819558L;
-    private int firstLine;
-    private int lastLine;
-    private int firstCharOffset;
-    private int lastCharOffset;
+    private int offsetInDocument;
+    private int length;
     private List<Annotation> annotations = new ArrayList<>();
     private String deprecation;
     private boolean deprecated;
-    private String sourceCode;
+//    private String sourceCode;
 //    private boolean errors;
 //    private boolean warnings;
     private Metadata metadata;
@@ -33,30 +31,21 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
     private String namespace;
     private Scope scope;
     private List<Notification> notifications = new ArrayList<>();
-//    private String kimStatementClass;
-    
-//    public KimStatement() {
-//        this.kimStatementClass = Utils.Paths.getLast(this.getClass().getCanonicalName(), '.');
-//    }
-    
-    @Override
-    public int getFirstLine() {
-        return this.firstLine;
-    }
 
-    @Override
-    public int getLastLine() {
-        return this.lastLine;
-    }
+    public KimStatementImpl() {
 
-    @Override
-    public int getFirstCharOffset() {
-        return this.firstCharOffset;
     }
-
-    @Override
-    public int getLastCharOffset() {
-        return this.lastCharOffset;
+    protected KimStatementImpl(KimStatementImpl other) {
+        this.offsetInDocument = other.offsetInDocument;
+        this.length = other.length;
+        this.annotations.addAll(other.annotations);
+        this.deprecated = other.deprecated;
+        this.deprecation = other.deprecation;
+        this.metadata = other.metadata;
+        this.documentationMetadata = other.documentationMetadata;
+        this.namespace = other.namespace;
+        this.scope = other.scope;
+        this.notifications.addAll(other.notifications);
     }
 
     @Override
@@ -76,19 +65,8 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
 
     @Override
     public String sourceCode() {
-        return this.sourceCode;
+        return "DIOCAN IMPLEMENTAMI";
     }
-//
-//    @Override
-//    public boolean isErrors() {
-//        return this.errors;
-//    }
-//
-//    @Override
-//    public boolean isWarnings() {
-//        return this.warnings;
-//    }
-
     @Override
     public Metadata getMetadata() {
         return this.metadata;
@@ -115,22 +93,6 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
         return this.scope;
     }
 
-    public void setFirstLine(int firstLine) {
-        this.firstLine = firstLine;
-    }
-
-    public void setLastLine(int lastLine) {
-        this.lastLine = lastLine;
-    }
-
-    public void setFirstCharOffset(int firstCharOffset) {
-        this.firstCharOffset = firstCharOffset;
-    }
-
-    public void setLastCharOffset(int lastCharOffset) {
-        this.lastCharOffset = lastCharOffset;
-    }
-
     public void setAnnotations(List<Annotation> annotations) {
         this.annotations = annotations;
     }
@@ -141,10 +103,6 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
 
     public void setDeprecated(boolean deprecated) {
         this.deprecated = deprecated;
-    }
-
-    public void setSourceCode(String sourceCode) {
-        this.sourceCode = sourceCode;
     }
 
 //    public void setErrors(boolean errors) {
@@ -195,5 +153,22 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
     public void setNotifications(List<Notification> notifications) {
         this.notifications = notifications;
     }
-    
+
+    @Override
+    public int getOffsetInDocument() {
+        return offsetInDocument;
+    }
+
+    public void setOffsetInDocument(int offsetInDocument) {
+        this.offsetInDocument = offsetInDocument;
+    }
+
+    @Override
+    public int getLength() {
+        return length;
+    }
+
+    public void setLength(int length) {
+        this.length = length;
+    }
 }

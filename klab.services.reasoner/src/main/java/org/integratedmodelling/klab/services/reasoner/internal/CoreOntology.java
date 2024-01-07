@@ -12,18 +12,24 @@ import java.io.File;
 import java.util.*;
 
 /**
- * The core workspace only contains OWL ontologies and is read from the classpath.
- * 
- * @author ferdinando.villa
+ * The core workspace only contains OWL ontologies and is currently read from the classpath.
+ * <p>
+ * TODO switch to loading the core ontology from the worldview; this requires ALL fundamental types to be
+ *  specified, including those created by unary operators (currently impossible) and the annotation properties
+ *  moved to the klab: namespace, which could be read from OWL or even created here to keep one source of
+ *  truth (as we need to reference the properties from Java). The ODO properties remain a bit unclear: they
+ *  may be moved to klab: unless the core semantics depends on them for validation.
  *
+ * @author ferdinando.villa
  */
 public class CoreOntology {
 
     private File root;
     private Map<SemanticType, Concept> worldviewCoreConcepts = Collections.synchronizedMap(new HashMap<>());
-	private OWL owl;
+    private OWL owl;
     private static Map<SemanticType, String> coreConceptIds = Collections.synchronizedMap(new HashMap<>());
 
+    // TODO this should be read from the core namespace
     public static final String CORE_ONTOLOGY_NAME = "odo";
 
     static {
@@ -33,8 +39,8 @@ public class CoreOntology {
         coreConceptIds.put(SemanticType.FUNCTIONAL, NS.CORE_FUNCTIONAL_RELATIONSHIP);
         coreConceptIds.put(SemanticType.STRUCTURAL, NS.CORE_STRUCTURAL_RELATIONSHIP);
         coreConceptIds.put(SemanticType.RELATIONSHIP, NS.CORE_RELATIONSHIP);
-        coreConceptIds.put(SemanticType.EXTENSIVE_PROPERTY, NS.CORE_EXTENSIVE_PHYSICAL_PROPERTY);
-        coreConceptIds.put(SemanticType.INTENSIVE_PROPERTY, NS.CORE_INTENSIVE_PHYSICAL_PROPERTY);
+        coreConceptIds.put(SemanticType.EXTENSIVE, NS.CORE_EXTENSIVE_PHYSICAL_PROPERTY);
+        coreConceptIds.put(SemanticType.INTENSIVE, NS.CORE_INTENSIVE_PHYSICAL_PROPERTY);
         coreConceptIds.put(SemanticType.IDENTITY, NS.CORE_IDENTITY);
         coreConceptIds.put(SemanticType.ATTRIBUTE, NS.CORE_ATTRIBUTE);
         coreConceptIds.put(SemanticType.REALM, NS.CORE_REALM);
@@ -82,7 +88,7 @@ public class CoreOntology {
     }
 
     public static interface NS {
-        
+
         // core properties
         public static final String IS_ABSTRACT = "odo:isAbstract";
         public static final String BASE_DECLARATION = "klab:baseDeclaration";
@@ -90,7 +96,7 @@ public class CoreOntology {
         public static final String HAS_REALM_PROPERTY = "odo:hasRealm";
         public static final String HAS_IDENTITY_PROPERTY = "odo:hasIdentity";
         public static final String HAS_ATTRIBUTE_PROPERTY = "odo:hasAttribute";
-//        public static final String HAS_CONTEXT_PROPERTY = "odo:hasContext";
+        //        public static final String HAS_CONTEXT_PROPERTY = "odo:hasContext";
         public static final String HAS_COMPRESENT_PROPERTY = "odo:hasCompresent";
         public static final String HAS_CAUSANT_PROPERTY = "odo:hasCausant";
         public static final String HAS_CAUSED_PROPERTY = "odo:hasCaused";
@@ -110,7 +116,10 @@ public class CoreOntology {
         public static final String REQUIRES_IDENTITY_PROPERTY = "odo:requiresIdentity";
         public static final String IS_TYPE_DELEGATE = "odo:isTypeDelegate";
         public static final String IS_NEGATION_OF = "odo:isNegationOf";
+
+        @Deprecated
         public static final String INHERENCY_IS_DISTRIBUTED = "odo:inherencyIsDistributed";
+//        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
 //        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
 
         // annotation property that specifies the base SI unit for a physical property
@@ -150,6 +159,7 @@ public class CoreOntology {
 
         /*
          * annotation properties supporting k.LAB functions
+         * TODO these (the whole klab: ontology) should be created, not loaded
          */
         public static final String CORE_OBSERVABLE_PROPERTY = "klab:coreObservable";
         public static final String CONCEPT_DEFINITION_PROPERTY = "klab:conceptDefinition";
@@ -228,7 +238,7 @@ public class CoreOntology {
         public static final String CORE_OCCURRENCE = "odo:Occurrence";
         public static final String CORE_VALUE = "odo:Value";
         public static final String CORE_DISTANCE = "odo:Distance";
-//        public static final String CORE_REACTIVE_AGENT = "observation:ReactiveAgent";
+        //        public static final String CORE_REACTIVE_AGENT = "observation:ReactiveAgent";
 //        public static final String CORE_DELIBERATIVE_AGENT = "observation:DeliberativeAgent";
 //        public static final String CORE_INTERACTIVE_AGENT = "observation:InteractiveAgent";
         public static final String CORE_UNCERTAINTY = "odo:Uncertainty";
@@ -329,97 +339,97 @@ public class CoreOntology {
         } else if (type.contains(SemanticType.RELATIONSHIP)) {
             ret = SemanticType.RELATIONSHIP;
         } else /* if (SemanticType.contains(SemanticType.TRAIT)) { */
-        if (type.contains(SemanticType.IDENTITY)) {
-            ret = SemanticType.IDENTITY;
-        } else if (type.contains(SemanticType.ATTRIBUTE)) {
-            ret = SemanticType.ATTRIBUTE;
-        } else if (type.contains(SemanticType.REALM)) {
-            ret = SemanticType.REALM;
-        } else if (type.contains(SemanticType.ORDERING)) {
-            ret = SemanticType.ORDERING;
-        } else if (type.contains(SemanticType.ROLE)) {
-            ret = SemanticType.ROLE;
-        } else if (type.contains(SemanticType.CONFIGURATION)) {
-            ret = SemanticType.CONFIGURATION;
-        } else if (type.contains(SemanticType.CLASS)) {
-            ret = SemanticType.CLASS;
-        } else if (type.contains(SemanticType.QUANTITY)) {
-            ret = SemanticType.QUANTITY;
-        } else if (type.contains(SemanticType.DOMAIN)) {
-            ret = SemanticType.DOMAIN;
-        } else if (type.contains(SemanticType.ENERGY)) {
-            ret = SemanticType.ENERGY;
-        } else if (type.contains(SemanticType.ENTROPY)) {
-            ret = SemanticType.ENTROPY;
-        } else if (type.contains(SemanticType.LENGTH)) {
-            ret = SemanticType.LENGTH;
-        } else if (type.contains(SemanticType.MASS)) {
-            ret = SemanticType.LENGTH;
-        } else if (type.contains(SemanticType.VOLUME)) {
-            ret = SemanticType.VOLUME;
-        } else if (type.contains(SemanticType.WEIGHT)) {
-            ret = SemanticType.WEIGHT;
-        } else if (type.contains(SemanticType.MONEY)) {
-            ret = SemanticType.MONEY;
-        } else if (type.contains(SemanticType.DURATION)) {
-            ret = SemanticType.DURATION;
-        } else if (type.contains(SemanticType.AREA)) {
-            ret = SemanticType.AREA;
-        } else if (type.contains(SemanticType.ACCELERATION)) {
-            ret = SemanticType.ACCELERATION;
-        } else if (type.contains(SemanticType.PRIORITY)) {
-            ret = SemanticType.PRIORITY;
-        } else if (type.contains(SemanticType.ELECTRIC_POTENTIAL)) {
-            ret = SemanticType.ELECTRIC_POTENTIAL;
-        } else if (type.contains(SemanticType.CHARGE)) {
-            ret = SemanticType.CHARGE;
-        } else if (type.contains(SemanticType.RESISTANCE)) {
-            ret = SemanticType.RESISTANCE;
-        } else if (type.contains(SemanticType.RESISTIVITY)) {
-            ret = SemanticType.RESISTIVITY;
-        } else if (type.contains(SemanticType.PRESSURE)) {
-            ret = SemanticType.PRESSURE;
-        } else if (type.contains(SemanticType.ANGLE)) {
-            ret = SemanticType.ANGLE;
-        } else if (type.contains(SemanticType.VELOCITY)) {
-            ret = SemanticType.VELOCITY;
-        } else if (type.contains(SemanticType.TEMPERATURE)) {
-            ret = SemanticType.TEMPERATURE;
-        } else if (type.contains(SemanticType.VISCOSITY)) {
-            ret = SemanticType.VISCOSITY;
-        } else if (type.contains(SemanticType.AGENT)) {
-            ret = SemanticType.AGENT;
-        } else if (type.contains(SemanticType.UNCERTAINTY)) {
-            ret = SemanticType.UNCERTAINTY;
-        } else if (type.contains(SemanticType.PROBABILITY)) {
-            ret = SemanticType.PROBABILITY;
-        } else if (type.contains(SemanticType.PROPORTION)) {
-            ret = SemanticType.PROPORTION;
-        } else if (type.contains(SemanticType.NUMEROSITY)) {
-            ret = SemanticType.NUMEROSITY;
-        } else if (type.contains(SemanticType.DISTANCE)) {
-            ret = SemanticType.DISTANCE;
-        } else if (type.contains(SemanticType.RATIO)) {
-            ret = SemanticType.RATIO;
-        } else if (type.contains(SemanticType.VALUE)) {
-            ret = SemanticType.VALUE;
-        } else if (type.contains(SemanticType.MONETARY_VALUE)) {
-            ret = SemanticType.MONETARY_VALUE;
-        } else if (type.contains(SemanticType.OCCURRENCE)) {
-            ret = SemanticType.OCCURRENCE;
-        } else if (type.contains(SemanticType.PRESENCE)) {
-            ret = SemanticType.PRESENCE;
-        } else if (type.contains(SemanticType.EXTENT)) {
-            ret = SemanticType.EXTENT;
-        }
-        // THESE COME AFTER ALL THE POSSIBLE SUBCLASSES
-        else if (type.contains(SemanticType.EXTENSIVE_PROPERTY)) {
-            ret = SemanticType.EXTENSIVE_PROPERTY;
-        } else if (type.contains(SemanticType.INTENSIVE_PROPERTY)) {
-            ret = SemanticType.INTENSIVE_PROPERTY;
-        } /*
-           * else if (type.contains(Type.ASSESSMENT)) { ret = Type.ASSESSMENT; }
-           */
+            if (type.contains(SemanticType.IDENTITY)) {
+                ret = SemanticType.IDENTITY;
+            } else if (type.contains(SemanticType.ATTRIBUTE)) {
+                ret = SemanticType.ATTRIBUTE;
+            } else if (type.contains(SemanticType.REALM)) {
+                ret = SemanticType.REALM;
+            } else if (type.contains(SemanticType.ORDERING)) {
+                ret = SemanticType.ORDERING;
+            } else if (type.contains(SemanticType.ROLE)) {
+                ret = SemanticType.ROLE;
+            } else if (type.contains(SemanticType.CONFIGURATION)) {
+                ret = SemanticType.CONFIGURATION;
+            } else if (type.contains(SemanticType.CLASS)) {
+                ret = SemanticType.CLASS;
+            } else if (type.contains(SemanticType.QUANTITY)) {
+                ret = SemanticType.QUANTITY;
+            } else if (type.contains(SemanticType.DOMAIN)) {
+                ret = SemanticType.DOMAIN;
+            } else if (type.contains(SemanticType.ENERGY)) {
+                ret = SemanticType.ENERGY;
+            } else if (type.contains(SemanticType.ENTROPY)) {
+                ret = SemanticType.ENTROPY;
+            } else if (type.contains(SemanticType.LENGTH)) {
+                ret = SemanticType.LENGTH;
+            } else if (type.contains(SemanticType.MASS)) {
+                ret = SemanticType.LENGTH;
+            } else if (type.contains(SemanticType.VOLUME)) {
+                ret = SemanticType.VOLUME;
+            } else if (type.contains(SemanticType.WEIGHT)) {
+                ret = SemanticType.WEIGHT;
+            } else if (type.contains(SemanticType.MONEY)) {
+                ret = SemanticType.MONEY;
+            } else if (type.contains(SemanticType.DURATION)) {
+                ret = SemanticType.DURATION;
+            } else if (type.contains(SemanticType.AREA)) {
+                ret = SemanticType.AREA;
+            } else if (type.contains(SemanticType.ACCELERATION)) {
+                ret = SemanticType.ACCELERATION;
+            } else if (type.contains(SemanticType.PRIORITY)) {
+                ret = SemanticType.PRIORITY;
+            } else if (type.contains(SemanticType.ELECTRIC_POTENTIAL)) {
+                ret = SemanticType.ELECTRIC_POTENTIAL;
+            } else if (type.contains(SemanticType.CHARGE)) {
+                ret = SemanticType.CHARGE;
+            } else if (type.contains(SemanticType.RESISTANCE)) {
+                ret = SemanticType.RESISTANCE;
+            } else if (type.contains(SemanticType.RESISTIVITY)) {
+                ret = SemanticType.RESISTIVITY;
+            } else if (type.contains(SemanticType.PRESSURE)) {
+                ret = SemanticType.PRESSURE;
+            } else if (type.contains(SemanticType.ANGLE)) {
+                ret = SemanticType.ANGLE;
+            } else if (type.contains(SemanticType.VELOCITY)) {
+                ret = SemanticType.VELOCITY;
+            } else if (type.contains(SemanticType.TEMPERATURE)) {
+                ret = SemanticType.TEMPERATURE;
+            } else if (type.contains(SemanticType.VISCOSITY)) {
+                ret = SemanticType.VISCOSITY;
+            } else if (type.contains(SemanticType.AGENT)) {
+                ret = SemanticType.AGENT;
+            } else if (type.contains(SemanticType.UNCERTAINTY)) {
+                ret = SemanticType.UNCERTAINTY;
+            } else if (type.contains(SemanticType.PROBABILITY)) {
+                ret = SemanticType.PROBABILITY;
+            } else if (type.contains(SemanticType.PROPORTION)) {
+                ret = SemanticType.PROPORTION;
+            } else if (type.contains(SemanticType.NUMEROSITY)) {
+                ret = SemanticType.NUMEROSITY;
+            } else if (type.contains(SemanticType.DISTANCE)) {
+                ret = SemanticType.DISTANCE;
+            } else if (type.contains(SemanticType.RATIO)) {
+                ret = SemanticType.RATIO;
+            } else if (type.contains(SemanticType.VALUE)) {
+                ret = SemanticType.VALUE;
+            } else if (type.contains(SemanticType.MONETARY_VALUE)) {
+                ret = SemanticType.MONETARY_VALUE;
+            } else if (type.contains(SemanticType.OCCURRENCE)) {
+                ret = SemanticType.OCCURRENCE;
+            } else if (type.contains(SemanticType.PRESENCE)) {
+                ret = SemanticType.PRESENCE;
+            } else if (type.contains(SemanticType.EXTENT)) {
+                ret = SemanticType.EXTENT;
+            }
+            // THESE COME AFTER ALL THE POSSIBLE SUBCLASSES
+            else if (type.contains(SemanticType.EXTENSIVE)) {
+                ret = SemanticType.EXTENSIVE;
+            } else if (type.contains(SemanticType.INTENSIVE)) {
+                ret = SemanticType.INTENSIVE;
+            } /*
+             * else if (type.contains(Type.ASSESSMENT)) { ret = Type.ASSESSMENT; }
+             */
 
         return ret;
     }

@@ -214,7 +214,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
          * 
          * @return
          */
-        Scope getScope();
+        Scope getAssignmentScope();
     }
 
     public interface FireValue extends KActorsStatement {

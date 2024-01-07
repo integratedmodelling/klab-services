@@ -521,8 +521,8 @@ public class SearchContext {
                     ret.modifiers.add(SemanticLexicalElement.MINUS);
                     ret.modifiers.add(SemanticLexicalElement.OVER);
 
-                    if (semantics.contains(SemanticType.EXTENSIVE_PROPERTY)
-                            || semantics.contains(SemanticType.INTENSIVE_PROPERTY)) {
+                    if (semantics.contains(SemanticType.EXTENSIVE)
+                            || semantics.contains(SemanticType.INTENSIVE)) {
                         ret.modifiers.add(SemanticLexicalElement.IN);
                     }
 

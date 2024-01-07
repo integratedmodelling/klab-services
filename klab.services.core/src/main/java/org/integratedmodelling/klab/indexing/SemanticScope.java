@@ -152,7 +152,7 @@ public class SemanticScope {
 				 */
 				if (concept.is(SemanticType.MONETARY_VALUE)) {
 					ret.lexicalRealm.add(SemanticRole.CURRENCY);
-				} else if (concept.is(SemanticType.EXTENSIVE_PROPERTY) || concept.is(SemanticType.INTENSIVE_PROPERTY)) {
+				} else if (concept.is(SemanticType.EXTENSIVE) || concept.is(SemanticType.INTENSIVE)) {
 					Unit baseUnit = Configuration.INSTANCE.getService(UnitService.class).getDefaultUnitFor(concept);
 					if (baseUnit != null) {
 						ret.lexicalRealm.add(SemanticRole.UNIT);

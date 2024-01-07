@@ -217,22 +217,22 @@ public enum UnarySemanticOperator {
             case "domain":
                 return EnumSet.of(SemanticType.DOMAIN, SemanticType.PREDICATE);
             case "energy":
-                return EnumSet.of(SemanticType.ENERGY, SemanticType.QUALITY, SemanticType.EXTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.ENERGY, SemanticType.QUALITY, SemanticType.EXTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "entropy":
-                return EnumSet.of(SemanticType.ENTROPY, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.ENTROPY, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "length":
-                return EnumSet.of(SemanticType.LENGTH, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.LENGTH, SemanticType.QUALITY, SemanticType.INTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "mass":
-                return EnumSet.of(SemanticType.MASS, SemanticType.QUALITY, SemanticType.EXTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.MASS, SemanticType.QUALITY, SemanticType.EXTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "volume":
-                return EnumSet.of(SemanticType.VOLUME, SemanticType.QUALITY, SemanticType.EXTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.VOLUME, SemanticType.QUALITY, SemanticType.EXTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "weight":
-                return EnumSet.of(SemanticType.WEIGHT, SemanticType.QUALITY, SemanticType.EXTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.WEIGHT, SemanticType.QUALITY, SemanticType.EXTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "magnitude":
                 return EnumSet.of(SemanticType.MAGNITUDE, SemanticType.QUALITY, SemanticType.OBSERVABLE, SemanticType.SUBJECTIVE,
@@ -243,10 +243,10 @@ public enum UnarySemanticOperator {
             case "money":
                 return EnumSet.of(SemanticType.MONEY, SemanticType.QUALITY, SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "duration":
-                return EnumSet.of(SemanticType.DURATION, SemanticType.QUALITY, SemanticType.EXTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.DURATION, SemanticType.QUALITY, SemanticType.EXTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "area":
-                return EnumSet.of(SemanticType.AREA, SemanticType.QUALITY, SemanticType.EXTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.AREA, SemanticType.QUALITY, SemanticType.EXTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "presence":
                 return EnumSet.of(SemanticType.PRESENCE, SemanticType.QUALITY, SemanticType.OBSERVABLE);
@@ -259,12 +259,12 @@ public enum UnarySemanticOperator {
             case "rate":
                 EnumSet<SemanticType> ret = EnumSet.of(SemanticType.RATE, SemanticType.QUALITY, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
-                if (original.contains(SemanticType.EXTENSIVE_PROPERTY) || original.contains(SemanticType.INTENSIVE_PROPERTY)) {
-                    ret.add(SemanticType.INTENSIVE_PROPERTY);
+                if (original.contains(SemanticType.EXTENSIVE) || original.contains(SemanticType.INTENSIVE)) {
+                    ret.add(SemanticType.INTENSIVE);
                 }
                 return ret;
             case "acceleration":
-                return EnumSet.of(SemanticType.ACCELERATION, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.ACCELERATION, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "priority":
                 return EnumSet.of(SemanticType.PRIORITY, SemanticType.QUALITY, SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
@@ -275,41 +275,41 @@ public enum UnarySemanticOperator {
             case "count":
                 return EnumSet.of(SemanticType.NUMEROSITY, SemanticType.QUALITY, SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "electric-potential":
-                return EnumSet.of(SemanticType.ELECTRIC_POTENTIAL, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.ELECTRIC_POTENTIAL, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "charge":
-                return EnumSet.of(SemanticType.CHARGE, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.CHARGE, SemanticType.QUALITY, SemanticType.INTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "resistance":
-                return EnumSet.of(SemanticType.RESISTANCE, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.RESISTANCE, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "amount":
-                return EnumSet.of(SemanticType.AMOUNT, SemanticType.QUALITY, SemanticType.EXTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.AMOUNT, SemanticType.QUALITY, SemanticType.EXTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "resistivity":
-                return EnumSet.of(SemanticType.RESISTIVITY, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.RESISTIVITY, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "occurrence":
                 return EnumSet.of(SemanticType.OCCURRENCE, SemanticType.QUALITY, SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "probability":
                 return EnumSet.of(SemanticType.PROBABILITY, SemanticType.QUALITY, SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "pressure":
-                return EnumSet.of(SemanticType.PRESSURE, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.PRESSURE, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "angle":
-                return EnumSet.of(SemanticType.ANGLE, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY, SemanticType.OBSERVABLE,
+                return EnumSet.of(SemanticType.ANGLE, SemanticType.QUALITY, SemanticType.INTENSIVE, SemanticType.OBSERVABLE,
                         SemanticType.QUANTIFIABLE);
             case "velocity":
-                return EnumSet.of(SemanticType.VELOCITY, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.VELOCITY, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "temperature":
-                return EnumSet.of(SemanticType.TEMPERATURE, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.TEMPERATURE, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "viscosity":
-                return EnumSet.of(SemanticType.VISCOSITY, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.VISCOSITY, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "distance":
-                return EnumSet.of(SemanticType.DISTANCE, SemanticType.QUALITY, SemanticType.INTENSIVE_PROPERTY,
+                return EnumSet.of(SemanticType.DISTANCE, SemanticType.QUALITY, SemanticType.INTENSIVE,
                         SemanticType.OBSERVABLE, SemanticType.QUANTIFIABLE);
             case "process":
                 return EnumSet.of(SemanticType.PROCESS, SemanticType.DIRECT_OBSERVABLE, SemanticType.OBSERVABLE);

@@ -967,6 +967,7 @@ public class ObservableBuilder implements Observable.Builder {
                 scope.error("cannot set the inherent type of " + main.displayName() + " to " + inherent.displayName()
                                 + " as it already has an incompatible inherency: " + other.displayName(),
                         declaration);
+                var removeme = owl.reasoner().compatible(inherent, other);
             }
             cleanId = getCleanId(inherent);
             cId += (distributedInherency ? "OfEach" : "Of") + cleanId;

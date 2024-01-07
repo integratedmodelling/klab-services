@@ -210,7 +210,8 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
         private String recipient;
         private String variable;
         private KActorsValue value;
-        private Scope scope;
+
+        private Assignment.Scope scope;
 
         @Override
         public Type getType() {
@@ -233,7 +234,7 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
         }
 
         @Override
-        public Scope getScope() {
+        public Assignment.Scope getAssignmentScope() {
             return this.scope;
         }
 
@@ -253,7 +254,7 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
             this.value = value;
         }
 
-        public void setScope(Scope scope) {
+        public void setScope(Assignment.Scope scope) {
             this.scope = scope;
         }
 

@@ -74,11 +74,11 @@ class ReasonerServiceTest extends ReasonerTestSetup {
      * TODO add the expected types and inheritance
      */
     private static ConceptData[] testConcepts = new ConceptData[]{
-            new ConceptData("geography:Elevation", EnumSet.of(SemanticType.LENGTH, SemanticType.INTENSIVE_PROPERTY)),
+            new ConceptData("geography:Elevation", EnumSet.of(SemanticType.LENGTH, SemanticType.INTENSIVE)),
             new ConceptData("infrastructure:City", EnumSet.of(SemanticType.SUBJECT)),
             new ConceptData("landcover:Urban", EnumSet.of(SemanticType.PREDICATE)),
             new ConceptData("type of landcover:LandCover", EnumSet.of(SemanticType.CLASS)),
-            new ConceptData("im:Height", EnumSet.of(SemanticType.LENGTH, SemanticType.INTENSIVE_PROPERTY)),
+            new ConceptData("im:Height", EnumSet.of(SemanticType.LENGTH, SemanticType.INTENSIVE)),
             new ConceptData("hydrology:Watershed", EnumSet.of(SemanticType.SUBJECT))
     };
 

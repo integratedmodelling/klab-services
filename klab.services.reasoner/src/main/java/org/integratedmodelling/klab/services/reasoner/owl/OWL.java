@@ -2211,9 +2211,9 @@ public class OWL {
             ax.add(Axiom.AnnotationAssertion(conceptId, NS.CONCEPT_DEFINITION_PROPERTY, definition));
 
             // unit for ratios of physical properties
-            if ((concept.is(SemanticType.EXTENSIVE_PROPERTY) || concept.is(SemanticType.INTENSIVE_PROPERTY))
-                    && (comparison.is(SemanticType.EXTENSIVE_PROPERTY)
-                    || comparison.is(SemanticType.INTENSIVE_PROPERTY))) {
+            if ((concept.is(SemanticType.EXTENSIVE) || concept.is(SemanticType.INTENSIVE))
+                    && (comparison.is(SemanticType.EXTENSIVE)
+                    || comparison.is(SemanticType.INTENSIVE))) {
                 Object unit1 = concept.getMetadata().get(NS.SI_UNIT_PROPERTY);
                 Object unit2 = comparison.getMetadata().get(NS.SI_UNIT_PROPERTY);
                 if (unit1 != null && unit2 != null) {

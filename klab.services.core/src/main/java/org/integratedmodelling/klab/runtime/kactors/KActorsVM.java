@@ -944,7 +944,7 @@ public class KActorsVM implements VM {
 
             Object o = evaluateInScope((KActorsValue) code.getValue(), scope); // false
             this.javaReactors.put(code.getVariable(), o);
-            switch(code.getScope()) {
+            switch(code.getAssignmentScope()) {
             case ACTION:
                 scope.getSymbolTable().put(code.getVariable(), o);
                 break;
@@ -957,7 +957,7 @@ public class KActorsVM implements VM {
             }
         } else {
             Object o = evaluateInScope((KActorsValue) code.getValue(), scope); // false
-            switch(code.getScope()) {
+            switch(code.getAssignmentScope()) {
             case ACTION:
                 scope.getSymbolTable().put(code.getVariable(), o);
                 break;
@@ -1538,8 +1538,9 @@ public class KActorsVM implements VM {
          * if the scope was not synchronous, or there were no actions after a fire, this does
          * nothing. TODO In case of errors causing no fire, though, it will wait forever, so there
          * should be a way to break the wait.
+         * FIXME why the offset parameter? Probably wrong
          */
-        scope.waitForGreen(code.getFirstLine());
+        scope.waitForGreen(code.getOffsetInDocument());
 
     }
 
