@@ -28,9 +28,5 @@ public abstract class KimScopeImpl implements KimScope {
 	public void setLocationDescriptor(String locationDescriptor) {
 		this.locationDescriptor = locationDescriptor;
 	}
-//
-//	public void setUri(String uri) {
-//		this.uri = uri;
-//	}
 
 }

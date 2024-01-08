@@ -243,68 +243,62 @@ public class OWL {
     /**
      * Create a manager and load every OWL file under the load path.
      */
-    @Deprecated
-    public void initialize() {
-
-        manager = OWLManager.createOWLOntologyManager();
-        // this.loadPath = loadPath;
-        coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"), this);
-        // coreOntology.load(monitor);
-        load(coreOntology.getRoot());
-
-        /*
-         * FIXME manual mapping until I understand what's going on with BFO, whose
-         * concepts have a IRI that does not contain the namespace.
-         */
-        iri2ns.put("http://purl.obolibrary.org/obo", "bfo");
-
-        /*
-         * TODO insert basic datatypes as well
-         */
-        this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
-        this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
-
-        // if (this.loadPath == null) {
-        // throw new KIOException("owl resources cannot be found: knowledge load
-        // directory does not
-        // exist");
-        // }
-
-        // load();
-
-        this.mergedReasonerOntology = (Ontology) requireOntology(INTERNAL_REASONER_ONTOLOGY_ID,
-                OWL.INTERNAL_ONTOLOGY_PREFIX);
-        this.mergedReasonerOntology.setInternal(true);
-
-        /*
-         * all namespaces so far are internal, and just these.
-         */
-        for (KimNamespace ns : this.namespaces.values()) {
-            // ((Namespace) ns).setInternal(true);
-            getOntology(ns.getUrn()).setInternal(true);
-        }
-
-        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
-
-        /*
-         * create an independent ontology for the non-semantic types we encounter.
-         */
-        // if (Namespaces.INSTANCE.getNamespace(ONTOLOGY_ID) == null) {
-        // Namespaces.INSTANCE.registerNamespace(new Namespace(ONTOLOGY_ID, null,
-        // overall),
-        // monitor);
-        // }
-        if (Configuration.INSTANCE.useReasoner()) {
-            this.reasoner =
-                    new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
-            reasonerActive = true;
-        }
-
-        for (KimNamespace ns : this.namespaces.values()) {
-            registerWithReasoner(getOntology(ns.getUrn()));
-        }
-
-    }
+//    @Deprecated
+//    public void initialize() {
+//
+//        manager = OWLManager.createOWLOntologyManager();
+//        // this.loadPath = loadPath;
+//        coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"), this);
+//        // coreOntology.load(monitor);
+//        load(coreOntology.getRoot());
+//
+//        /*
+//         * TODO insert basic datatypes as well
+//         */
+//        this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
+//        this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
+//
+//        // if (this.loadPath == null) {
+//        // throw new KIOException("owl resources cannot be found: knowledge load
+//        // directory does not
+//        // exist");
+//        // }
+//
+//        // load();
+//
+//        this.mergedReasonerOntology = (Ontology) requireOntology(INTERNAL_REASONER_ONTOLOGY_ID,
+//                OWL.INTERNAL_ONTOLOGY_PREFIX);
+//        this.mergedReasonerOntology.setInternal(true);
+//
+//        /*
+//         * all namespaces so far are internal, and just these.
+//         */
+//        for (KimNamespace ns : this.namespaces.values()) {
+//            // ((Namespace) ns).setInternal(true);
+//            getOntology(ns.getUrn()).setInternal(true);
+//        }
+//
+//        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
+//
+//        /*
+//         * create an independent ontology for the non-semantic types we encounter.
+//         */
+//        // if (Namespaces.INSTANCE.getNamespace(ONTOLOGY_ID) == null) {
+//        // Namespaces.INSTANCE.registerNamespace(new Namespace(ONTOLOGY_ID, null,
+//        // overall),
+//        // monitor);
+//        // }
+//        if (Configuration.INSTANCE.useReasoner()) {
+//            this.reasoner =
+//                    new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
+//            reasonerActive = true;
+//        }
+//
+//        for (KimNamespace ns : this.namespaces.values()) {
+//            registerWithReasoner(getOntology(ns.getUrn()));
+//        }
+//
+//    }
 
     public void initialize(KimOntology rootDomain) {
 
@@ -326,13 +320,7 @@ public class OWL {
         this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
         this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
 
-        // if (this.loadPath == null) {
-        // throw new KIOException("owl resources cannot be found: knowledge load
-        // directory does not
-        // exist");
-        // }
-
-        // load();
+        coreOntology.validateRootDomain(rootDomain, scope);
 
         this.mergedReasonerOntology = (Ontology) requireOntology(INTERNAL_REASONER_ONTOLOGY_ID,
                 OWL.INTERNAL_ONTOLOGY_PREFIX);

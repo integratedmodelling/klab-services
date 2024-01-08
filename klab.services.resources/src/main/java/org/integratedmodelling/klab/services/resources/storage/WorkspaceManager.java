@@ -172,7 +172,7 @@ public class WorkspaceManager {
             return null;
         }
 
-    };
+    }
 
     private ObservableParser observableParser = new ObservableParser();
 
@@ -772,7 +772,7 @@ public class WorkspaceManager {
                                 _worldview.setEmpty(true);
                                 return _worldview;
                             }
-                            _worldview.getObservationStrategies().add(LanguageAdapter.INSTANCE.adaptStrategy(parsed));
+                            _worldview.getObservationStrategies().addAll(LanguageAdapter.INSTANCE.adaptStrategy(parsed).getStatements());
                         } catch (IOException e) {
                             scope.error("Error loading observation strategy " + strategyUrl,
                                     Klab.ErrorCode.READ_FAILED, Klab.ErrorContext.OBSERVATION_STRATEGY);

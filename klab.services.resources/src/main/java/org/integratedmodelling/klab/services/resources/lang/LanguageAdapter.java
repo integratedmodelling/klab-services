@@ -5,10 +5,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptStatementImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimObservableImpl;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimOntologyImpl;
+import org.integratedmodelling.klab.api.lang.impl.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
 import org.integratedmodelling.languages.api.ObservableSyntax;
@@ -263,8 +260,9 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public KimObservationStrategy adaptStrategy(Strategies definition) {
-        return null;
+    public KimObservationStrategies adaptStrategy(Strategies definition) {
+        KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
+        return ret;
     }
 
     public KimOntology adaptOntology(OntologySyntax ontology) {

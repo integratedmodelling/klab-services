@@ -110,13 +110,6 @@ public class Ontology /* implements IOntology */ {
         this.ontology = ontology;
         this.prefix = ontology.getOntologyID().getOntologyIRI().toString();
 
-        /**
-         * FIXME can't spend a week figuring this out, but this is NOT nice.
-         */
-        if (this.prefix.equals("http://purl.obolibrary.org/obo/bfo.owl")) {
-            this.prefix = "http://purl.obolibrary.org/obo";
-        }
-
         scan();
     }
 

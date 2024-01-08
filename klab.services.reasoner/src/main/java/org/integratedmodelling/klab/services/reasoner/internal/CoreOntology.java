@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
+import com.google.common.collect.Sets;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
@@ -19,6 +22,8 @@ import java.util.*;
  *  moved to the klab: namespace, which could be read from OWL or even created here to keep one source of
  *  truth (as we need to reference the properties from Java). The ODO properties remain a bit unclear: they
  *  may be moved to klab: unless the core semantics depends on them for validation.
+ * <p>
+ * TODO this should become a map of fundamental type -> Concept and binary operator -> property
  *
  * @author ferdinando.villa
  */
@@ -29,7 +34,8 @@ public class CoreOntology {
     private OWL owl;
     private static Map<SemanticType, String> coreConceptIds = Collections.synchronizedMap(new HashMap<>());
 
-    // TODO this should be read from the core namespace
+    // TODO this should be read from the core namespace; having them all defined through the worldview must be
+    //  validated, including the results of unary operators
     public static final String CORE_ONTOLOGY_NAME = "odo";
 
     static {
@@ -71,9 +77,6 @@ public class CoreOntology {
         coreConceptIds.put(SemanticType.TEMPERATURE, NS.CORE_TEMPERATURE);
         coreConceptIds.put(SemanticType.VISCOSITY, NS.CORE_VISCOSITY);
         coreConceptIds.put(SemanticType.AGENT, NS.CORE_AGENT);
-//        coreConceptIds.put(SemanticType.DELIBERATIVE, NS.CORE_DELIBERATIVE_AGENT);
-//        coreConceptIds.put(SemanticType.INTERACTIVE, NS.CORE_INTERACTIVE_AGENT);
-//        coreConceptIds.put(SemanticType.REACTIVE, NS.CORE_REACTIVE_AGENT);
         coreConceptIds.put(SemanticType.UNCERTAINTY, NS.CORE_UNCERTAINTY);
         coreConceptIds.put(SemanticType.PROBABILITY, NS.CORE_PROBABILITY);
         coreConceptIds.put(SemanticType.PROPORTION, NS.CORE_PROPORTION);
@@ -87,9 +90,51 @@ public class CoreOntology {
         coreConceptIds.put(SemanticType.EXTENT, NS.CORE_EXTENT);
     }
 
+    /**
+     * Check that all fundamental concepts are mapped to the root ontology. For now just give a warning and do
+     * not check that they're actually available in the core ontologies mentioned, which we must do
+     * eventually.
+     * <p>
+     * TODO implement the logic in the class javadocs
+     *
+     * @param rootDomain
+     * @param scope
+     */
+    public void validateRootDomain(KimOntology rootDomain, Scope scope) {
+        Map<SemanticType, String> coreConcepts = new HashMap<>();
+        for (var concept : rootDomain.getStatements()) {
+            if (concept.getUpperConceptDefined() != null) {
+                var implemented = Sets.intersection(concept.getType(), SemanticType.DECLARABLE_TYPES);
+                if (implemented.size() > 1) {
+                    scope.warn("Inconsistent worldview: the fundamental type for core concept " + concept.getNamespace() + ":" + concept.getName() + " is ambiguous: " + implemented);
+                } else if (implemented.size() == 0) {
+                    scope.warn("Inconsistent worldview: can't establish the fundamental type for core " +
+                            "concept " + concept.getNamespace() + ":" + concept.getName() + " (" + concept.getUpperConceptDefined() + ")");
+                } else {
+                    var type = implemented.iterator().next();
+                    if (coreConcepts.containsKey(type)) {
+                        // should be an error
+                        scope.warn("Inconsistent worldview: fundamental type " + type + ", assigned to " +
+                                "core" + " concept " + coreConcepts.get(type) + ", is being reassigned to " + concept.getNamespace() + ":" + concept.getName());
+                    } else {
+                        coreConcepts.put(type, concept.getNamespace() + ":" + concept.getName());
+                    }
+                }
+            }
+        }
+
+        for (SemanticType type : SemanticType.DECLARABLE_TYPES) {
+            if (!coreConcepts.containsKey(type)) {
+                scope.warn("Inconsistent worldview: fundamental type " + type + " is not assigned to a " +
+                        "worldview concept");
+            }
+        }
+
+    }
+
     public static interface NS {
 
-        // core properties
+        // core properties. TODO: these could be created in the root worldview namespace
         public static final String IS_ABSTRACT = "odo:isAbstract";
         public static final String BASE_DECLARATION = "klab:baseDeclaration";
         public static final String ORDER_PROPERTY = "klab:orderingRank";
@@ -185,7 +230,13 @@ public class CoreOntology {
         public static final String CHANGED_PROPERTY = "odo:changed";
 
         /**
-         * Core observables
+         * Core observables.
+         * TODO the root domain
+         *  of the worldview should define ALL the core types or cause an error, so that we can
+         *  just use the root ontology in the worldview and not have to load the foundational
+         *  ontology.
+         * <p>
+         *  TODO this should become a map of fundamental type -> Concept and binary operator -> property
          */
         public static final String CORE_DOMAIN = "odo:Domain";
         public static final String CORE_PROCESS = "odo:Process";
@@ -238,9 +289,6 @@ public class CoreOntology {
         public static final String CORE_OCCURRENCE = "odo:Occurrence";
         public static final String CORE_VALUE = "odo:Value";
         public static final String CORE_DISTANCE = "odo:Distance";
-        //        public static final String CORE_REACTIVE_AGENT = "observation:ReactiveAgent";
-//        public static final String CORE_DELIBERATIVE_AGENT = "observation:DeliberativeAgent";
-//        public static final String CORE_INTERACTIVE_AGENT = "observation:InteractiveAgent";
         public static final String CORE_UNCERTAINTY = "odo:Uncertainty";
         public static final String CORE_EXTENT = "odo:Extent";
     }
@@ -269,36 +317,8 @@ public class CoreOntology {
          * too. E.g. when the AGENT handler is received, it should create and install all the agent
          * types in the same ontology.
          */
+        System.out.println("PIROGA");
     }
-
-    // public IKimLoader load(IKimLoader loader, IMonitor monitor) {
-    // load(monitor);
-    // return loader;
-    // }
-
-    // @Override
-    // public /* IKimLoader */ void load(Channel monitor) {
-    //
-    // /**
-    // * This test is unlikely to fail, but its purpose is primarily to preload the core ontology
-    // * catalogues, so that the k.IM validator will not cause delays when checking core concepts,
-    // * which makes the validator stop silently (by horrendous XText design) and ignore
-    // * everything beyond the first delay.
-    // *
-    // * DO NOT REMOVE this test. Removing it will cause seemingly completely unrelated bugs that
-    // * will take a very long time to figure out.
-    // */
-    // Concept dummy = OWL.INSTANCE.getConcept(NS.OBSERVATION);
-    // if (dummy == null) {
-    // throw new KIOException("core knowledge: can't find known concepts, ontologies are probably
-    // corrupted");
-    // }
-    //
-    // Logging.INSTANCE.info(OWL.INSTANCE.getOntologies(true).size() + " ontologies read from
-    // classpath");
-    //
-    // // return ret;
-    // }
 
     public Concept getCoreType(Set<SemanticType> type) {
 
@@ -460,58 +480,58 @@ public class CoreOntology {
         return concept;
     }
 
-    // /**
-    // * Return the spatial nature, if any, of the passed concept, which should be a countable, or
-    // * null.
-    // *
-    // * @param concept
-    // * @return
-    // */
-    // public ExtentDimension getSpatialNature(KConcept concept) {
-    // for (KConcept identity : reasoner.identities(concept)) {
-    // if (identity.is(OWL.INSTANCE.getConcept(NS.SPATIAL_IDENTITY))) {
-    // if (identity.is(OWL.INSTANCE.getConcept(NS.AREAL_IDENTITY))) {
-    // return ExtentDimension.AREAL;
-    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.PUNTAL_IDENTITY))) {
-    // return ExtentDimension.PUNTAL;
-    // }
-    // if (identity.is(OWL.INSTANCE.getConcept(NS.LINEAL_IDENTITY))) {
-    // return ExtentDimension.LINEAL;
-    // }
-    // if (identity.is(OWL.INSTANCE.getConcept(NS.VOLUMETRIC_IDENTITY))) {
-    // return ExtentDimension.VOLUMETRIC;
-    // }
-    // }
-    // }
-    // return null;
-    // }
+// /**
+// * Return the spatial nature, if any, of the passed concept, which should be a countable, or
+// * null.
+// *
+// * @param concept
+// * @return
+// */
+// public ExtentDimension getSpatialNature(KConcept concept) {
+// for (KConcept identity : reasoner.identities(concept)) {
+// if (identity.is(OWL.INSTANCE.getConcept(NS.SPATIAL_IDENTITY))) {
+// if (identity.is(OWL.INSTANCE.getConcept(NS.AREAL_IDENTITY))) {
+// return ExtentDimension.AREAL;
+// } else if (identity.is(OWL.INSTANCE.getConcept(NS.PUNTAL_IDENTITY))) {
+// return ExtentDimension.PUNTAL;
+// }
+// if (identity.is(OWL.INSTANCE.getConcept(NS.LINEAL_IDENTITY))) {
+// return ExtentDimension.LINEAL;
+// }
+// if (identity.is(OWL.INSTANCE.getConcept(NS.VOLUMETRIC_IDENTITY))) {
+// return ExtentDimension.VOLUMETRIC;
+// }
+// }
+// }
+// return null;
+// }
 
-    // /**
-    // * Return the temporal resolution implied in the passed concept, which should be an event, or
-    // * null.
-    // *
-    // * TODO add the multiplier from (TBI) data properties associated with the identity.
-    // *
-    // * @param concept
-    // * @return
-    // */
-    // public KTime.Resolution getTemporalNature(KConcept concept) {
-    // for (KConcept identity : reasoner.identities(concept)) {
-    // if (identity.is(OWL.INSTANCE.getConcept(NS.TEMPORAL_IDENTITY))) {
-    // if (identity.is(OWL.INSTANCE.getConcept(NS.YEARLY_IDENTITY))) {
-    // return Time.resolution(1, KTime.Resolution.Type.YEAR);
-    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.HOURLY_IDENTITY))) {
-    // return Time.resolution(1, KTime.Resolution.Type.HOUR);
-    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.WEEKLY_IDENTITY))) {
-    // return Time.resolution(1, KTime.Resolution.Type.WEEK);
-    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.MONTHLY_IDENTITY))) {
-    // return Time.resolution(1, KTime.Resolution.Type.MONTH);
-    // } else if (identity.is(OWL.INSTANCE.getConcept(NS.DAILY_IDENTITY))) {
-    // return Time.resolution(1, KTime.Resolution.Type.DAY);
-    // }
-    // }
-    // }
-    // return null;
-    // }
+// /**
+// * Return the temporal resolution implied in the passed concept, which should be an event, or
+// * null.
+// *
+// * TODO add the multiplier from (TBI) data properties associated with the identity.
+// *
+// * @param concept
+// * @return
+// */
+// public KTime.Resolution getTemporalNature(KConcept concept) {
+// for (KConcept identity : reasoner.identities(concept)) {
+// if (identity.is(OWL.INSTANCE.getConcept(NS.TEMPORAL_IDENTITY))) {
+// if (identity.is(OWL.INSTANCE.getConcept(NS.YEARLY_IDENTITY))) {
+// return Time.resolution(1, KTime.Resolution.Type.YEAR);
+// } else if (identity.is(OWL.INSTANCE.getConcept(NS.HOURLY_IDENTITY))) {
+// return Time.resolution(1, KTime.Resolution.Type.HOUR);
+// } else if (identity.is(OWL.INSTANCE.getConcept(NS.WEEKLY_IDENTITY))) {
+// return Time.resolution(1, KTime.Resolution.Type.WEEK);
+// } else if (identity.is(OWL.INSTANCE.getConcept(NS.MONTHLY_IDENTITY))) {
+// return Time.resolution(1, KTime.Resolution.Type.MONTH);
+// } else if (identity.is(OWL.INSTANCE.getConcept(NS.DAILY_IDENTITY))) {
+// return Time.resolution(1, KTime.Resolution.Type.DAY);
+// }
+// }
+// }
+// return null;
+// }
 
 }
