@@ -1119,7 +1119,7 @@ public class Utils {
          */
         public static final double EPSILON = 5.96e-08;
         public static final Pattern DOUBLE_PATTERN = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+" +
-         "([eE][-+]?[0-9]+)?");
+                "([eE][-+]?[0-9]+)?");
         public static final Pattern INTEGER_PATTERN = Pattern.compile("^-?\\d+$");
 
         public static boolean encodesDouble(String s) {
@@ -1521,7 +1521,7 @@ public class Utils {
 
         private static int[] decimal = new int[]{1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
         private static String[] roman = new String[]{"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX",
- "V", "IV"
+                                                     "V", "IV"
                 , "I"};
 
         public static String toRoman(int num) {
@@ -1624,6 +1624,18 @@ public class Utils {
     }
 
     public static class Strings {
+
+        /**
+         * If the string has a fragment with a separating last #, return the fragment, otherwise return the
+         * string itself.
+         *
+         * @param uri
+         * @return
+         */
+        public static String getFragment(String uri) {
+            int pound = uri.lastIndexOf("#");
+            return pound >= 0 && (pound < uri.length() - 1) ? uri.substring(pound + 1) : uri;
+        }
 
         /**
          * <p>
@@ -2828,7 +2840,7 @@ public class Utils {
 
             if (maxWidth < minAbbrevWidth) {
                 throw new IllegalArgumentException(String.format("Minimum abbreviation width is %d",
-                 minAbbrevWidth));
+                        minAbbrevWidth));
             }
             final int strLen = str.length();
             if (strLen <= maxWidth) {
@@ -2849,7 +2861,7 @@ public class Utils {
             }
             if (offset + maxWidth - abbrevMarkerLength < strLen) {
                 return abbrevMarker + abbreviate(str.substring(offset), abbrevMarker,
-                 maxWidth - abbrevMarkerLength);
+                        maxWidth - abbrevMarkerLength);
             }
             return abbrevMarker + str.substring(strLen - (maxWidth - abbrevMarkerLength));
         }
@@ -3757,7 +3769,7 @@ public class Utils {
                 } else if (Boolean.class.isAssignableFrom(cls)) {
                     if (cls.equals(Boolean.class)) {
                         return (T) (Numbers.equal(((Number) ret).doubleValue(), 0) ? Boolean.FALSE :
-                         Boolean.TRUE);
+                                    Boolean.TRUE);
                     }
                 }
             } else if (ret instanceof Boolean) {

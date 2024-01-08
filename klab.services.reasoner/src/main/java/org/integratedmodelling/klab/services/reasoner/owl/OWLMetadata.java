@@ -25,6 +25,7 @@ import java.util.HashMap;
 
 import org.integratedmodelling.klab.api.collections.impl.MetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.owlapi.model.IRI;
@@ -53,11 +54,11 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
         metadataVocabulary.put(OWLRDFVocabulary.RDFS_COMMENT.getIRI().toString(), Vocabulary.RDFS_COMMENT);
         metadataVocabulary.put("http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl#label", Vocabulary.RDFS_LABEL);
         metadataVocabulary.put("http://protege.stanford.edu/plugins/owl/dc/protege-dc.owl#comment", Vocabulary.RDFS_COMMENT);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#baseDeclaration", CoreOntology.NS.BASE_DECLARATION);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#isAbstract", NS.IS_ABSTRACT);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#unit", NS.SI_UNIT_PROPERTY);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#isDeniable", NS.DENIABILITY_PROPERTY);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#orderingRank", NS.ORDER_PROPERTY);
+        metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#baseDeclaration", CoreOntology.NS.BASE_DECLARATION);
+        metadataVocabulary.put("http://integratedmodelling.org/odo#isAbstract", NS.IS_ABSTRACT);
+        metadataVocabulary.put("http://integratedmodelling.org/odo#unit", NS.SI_UNIT_PROPERTY);
+        metadataVocabulary.put("http://integratedmodelling.org/odo#isDeniable", NS.DENIABILITY_PROPERTY);
+        metadataVocabulary.put("http://integratedmodelling.org/ks/odo#orderingRank", NS.ORDER_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#conceptDefinition", NS.CONCEPT_DEFINITION_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#coreObservable", NS.CORE_OBSERVABLE_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#displayLabel", NS.DISPLAY_LABEL_PROPERTY);
@@ -66,11 +67,11 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#referenceName", NS.REFERENCE_NAME_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#authorityId", NS.AUTHORITY_ID_PROPERTY);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#restrictingProperty", NS.TRAIT_RESTRICTING_PROPERTY);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#isTypeDelegate", NS.IS_TYPE_DELEGATE);
+        metadataVocabulary.put("http://integratedmodelling.org/ks/odo#isTypeDelegate", NS.IS_TYPE_DELEGATE);
         metadataVocabulary.put("http://integratedmodelling.org/ks/klab.owl#untransformedConceptId",
                 NS.UNTRANSFORMED_CONCEPT_PROPERTY);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#isSubjectiveTrait", NS.IS_SUBJECTIVE);
-        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#inherencyIsDistributed",
+        metadataVocabulary.put("http://integratedmodelling.org/odo#isSubjectiveTrait", NS.IS_SUBJECTIVE);
+        metadataVocabulary.put("http://integratedmodelling.org/odo#inherencyIsDistributed",
                 NS.INHERENCY_IS_DISTRIBUTED);
 //        metadataVocabulary.put("http://integratedmodelling.org/ks/observation.owl#isCoreKimType", NS.IS_CORE_KIM_TYPE);
     }
@@ -87,7 +88,7 @@ public class OWLMetadata extends MetadataImpl implements Metadata {
     }
 
     public static String translate(String iri) {
-        return metadataVocabulary.containsKey(iri) ? metadataVocabulary.get(iri) : iri;
+        return metadataVocabulary.containsKey(iri) ? metadataVocabulary.get(iri) : Utils.Strings.getFragment(iri);
     }
     
     /*

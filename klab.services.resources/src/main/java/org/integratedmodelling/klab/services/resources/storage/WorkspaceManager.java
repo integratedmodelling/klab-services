@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -28,14 +29,15 @@ import org.integratedmodelling.klab.services.resources.configuration.ResourcesCo
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.*;
-import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
-import org.integratedmodelling.languages.api.NamespaceSyntax;
-import org.integratedmodelling.languages.api.ParsedObject;
-import org.integratedmodelling.languages.api.SemanticSyntax;
+import org.integratedmodelling.languages.api.*;
 import org.integratedmodelling.languages.kim.Model;
+import org.integratedmodelling.languages.observable.ConceptExpression;
+import org.integratedmodelling.languages.observable.ObservableSemantics;
 import org.integratedmodelling.languages.observable.ObservableSequence;
 import org.integratedmodelling.languages.observation.Strategies;
+import org.integratedmodelling.languages.services.ObservableGrammarAccess;
 import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
+import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.integratedmodelling.languages.worldview.Ontology;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.cycle.CycleDetector;
@@ -65,12 +67,114 @@ public class WorkspaceManager {
     private List<KimOntology> _worldviewOntologies;
     private WorldviewImpl _worldview;
 
-    private Parser<ObservableSequence> observableParser = new Parser<ObservableSequence>() {
+    private LanguageValidationScope languageValidationScope = new BasicObservableValidationScope() {
+
+        @Override
+        public boolean hasReasoner() {
+            return scope.getService(Reasoner.class) != null;
+        }
+
+        @Override
+        public ConceptDescriptor createConceptDescriptor(ConceptDeclarationSyntax declaration) {
+            // trust the "is core" to define the type for all core ontology concepts
+            if (declaration.isCoreDeclaration()) {
+                SemanticSyntax coreConcept = declaration.getDeclaredParent();
+                var coreId = coreConcept.encode();
+                var cname = coreConcept.encode().split(":");
+                this.conceptTypes.put(coreConcept.encode(),
+                        new ConceptDescriptor(cname[0], cname[1],
+                                declaration.getDeclaredType(), coreConcept.encode(), "Core concept "
+                                + coreConcept.encode() + " for type " + declaration.getDeclaredType(), true));
+            }
+            return super.createConceptDescriptor(declaration);
+        }
+    };
+
+    class ObservableParser extends Parser<ObservableSequence> {
+
+        @Inject
+        ObservableGrammarAccess grammarAccess;
+
         @Override
         protected Injector createInjector() {
             return new ObservableStandaloneSetup().createInjectorAndDoEMFRegistration();
         }
+
+        /**
+         * Parse a concept definition into its syntactic peer, which should be inspected for errors before
+         * turning into semantics.
+         *
+         * @param conceptDefinition
+         * @return the parsed semantic expression, or null if the parser cannot make sense of it.
+         */
+        public SemanticSyntax parseConcept(String conceptDefinition) {
+            var result = parser.parse(grammarAccess.getConceptExpressionRule(),
+                    new StringReader(conceptDefinition));
+            var ret = result.getRootASTElement();
+            if (ret instanceof ConceptExpression) {
+                return new SemanticSyntaxImpl((ConceptExpression) ret, languageValidationScope) {
+
+                    List<String> errors = new ArrayList<>();
+
+                    @Override
+                    protected void logWarning(ParsedObject target, EObject object,
+                                              EStructuralFeature feature, String message) {
+                        getNotifications().add(new Notification(object,
+                                new LanguageValidationScope.ValidationMessage(message, -1,
+                                        LanguageValidationScope.Level.WARNING)));
+                    }
+
+                    @Override
+                    protected void logError(ParsedObject target, EObject object, EStructuralFeature feature
+                            , String message) {
+                        getNotifications().add(new Notification(object,
+                                new LanguageValidationScope.ValidationMessage(message, -1,
+                                        LanguageValidationScope.Level.ERROR)));
+                    }
+                };
+            }
+            return null;
+        }
+
+        /**
+         * Parse an observable definition into its syntactic peer, which should be inspected for errors before
+         * turning into semantics.
+         *
+         * @param observableDefinition
+         * @return the parsed semantic expression, or null if the parser cannot make sense of it.
+         */
+        public ObservableSyntax parseObservable(String observableDefinition) {
+            var result = parser.parse(grammarAccess.getObservableSemanticsRule(),
+                    new StringReader(observableDefinition));
+            var ret = result.getRootASTElement();
+            if (ret instanceof ObservableSemantics) {
+                return new ObservableSyntaxImpl((ObservableSemantics) ret, languageValidationScope) {
+
+                    List<String> errors = new ArrayList<>();
+
+                    @Override
+                    protected void logWarning(ParsedObject target, EObject object,
+                                              EStructuralFeature feature, String message) {
+                        getNotifications().add(new Notification(object,
+                                new LanguageValidationScope.ValidationMessage(message, -1,
+                                        LanguageValidationScope.Level.WARNING)));
+                    }
+
+                    @Override
+                    protected void logError(ParsedObject target, EObject object, EStructuralFeature feature
+                            , String message) {
+                        getNotifications().add(new Notification(object,
+                                new LanguageValidationScope.ValidationMessage(message, -1,
+                                        LanguageValidationScope.Level.ERROR)));
+                    }
+                };
+            }
+            return null;
+        }
+
     };
+
+    private ObservableParser observableParser = new ObservableParser();
 
     private Parser<Ontology> ontologyParser = new Parser<Ontology>() {
         @Override
@@ -251,28 +355,6 @@ public class WorkspaceManager {
                 return Collections.emptyList();
             }
 
-            var languageValidationScope = new BasicObservableValidationScope() {
-
-                @Override
-                public boolean hasReasoner() {
-                    return scope.getService(Reasoner.class) != null;
-                }
-
-                @Override
-                public ConceptDescriptor createConceptDescriptor(ConceptDeclarationSyntax declaration) {
-                    // trust the "is core" to define the type for all core ontology concepts
-                    if (declaration.isCoreDeclaration()) {
-                        SemanticSyntax coreConcept = declaration.getDeclaredParent();
-                        var coreId = coreConcept.encode();
-                        var cname = coreConcept.encode().split(":");
-                        this.conceptTypes.put(coreConcept.encode(),
-                                new ConceptDescriptor(cname[0], cname[1],
-                                        declaration.getDeclaredType(), coreConcept.encode(), "Core concept "
-                                        + coreConcept.encode() + " for type " + declaration.getDeclaredType(), true));
-                    }
-                    return super.createConceptDescriptor(declaration);
-                }
-            };
 
             // finish building the ontologies in the given order using a new language validator
             TopologicalOrderIterator<String, DefaultEdge> sort =
@@ -567,6 +649,14 @@ public class WorkspaceManager {
         return null;
     }
 
+    public SemanticSyntax resolveConcept(String conceptDefinition) {
+        return this.observableParser.parseConcept(conceptDefinition);
+    }
+
+    public ObservableSyntax resolveObservable(String observableDefinition) {
+        return this.observableParser.parseObservable(observableDefinition);
+    }
+
     public boolean removeProject(String projectName) {
         ResourcesConfiguration.ProjectConfiguration configuration =
                 this.configuration.getProjectConfiguration().get(projectName);
@@ -625,7 +715,7 @@ public class WorkspaceManager {
     private abstract class Parser<T extends EObject> {
 
         @Inject
-        private IParser parser;
+        protected IParser parser;
 
         public Parser() {
             createInjector().injectMembers(this);
@@ -700,7 +790,8 @@ public class WorkspaceManager {
                 KimOntology root = _worldview.getOntologies().get(0);
                 if (!(root.getDomain() == KimOntology.rootDomain)) {
                     _worldview.setEmpty(true);
-                    scope.error("The first namespace in the worldview is not the root namespace: worldview is inconsistent");
+                    scope.error("The first namespace in the worldview is not the root namespace: worldview " +
+                            "is inconsistent");
                 } else {
                     _worldview.setUrn(root.getUrn());
                 }

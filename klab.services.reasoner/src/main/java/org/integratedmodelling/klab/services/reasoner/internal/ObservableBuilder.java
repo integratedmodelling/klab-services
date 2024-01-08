@@ -41,7 +41,7 @@ public class ObservableBuilder implements Observable.Builder {
     private String mainId;
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private Concept inherent;
-//    private Concept context;
+    //    private Concept context;
     private Concept compresent;
     private Concept causant;
     private Concept caused;
@@ -165,9 +165,10 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         this.isTrivial =
-                /*this.context == null && */this.adjacent == null && this.inherent == null && this.causant == null
-                        && this.caused == null && this.cooccurrent == null && this.goal == null && this.compresent == null
-                        && this.roles.isEmpty() && this.traits.isEmpty();
+                /*this.context == null &&
+                 * */this.adjacent == null && this.inherent == null && this.causant == null
+                && this.caused == null && this.cooccurrent == null && this.goal == null && this.compresent == null
+                && this.roles.isEmpty() && this.traits.isEmpty();
 
         // these are only used if buildObservable() is called
         this.unit = observable.getUnit();
@@ -456,7 +457,8 @@ public class ObservableBuilder implements Observable.Builder {
         unit = null;
         currency = null;
         hasUnaryOp = true;
-        comparison = /*context =*/ inherent = /* classifier = downTo = */ caused = compresent = inherent = null;
+        comparison = /*context =*/ inherent = /* classifier = downTo = */ caused = compresent = inherent =
+                null;
         isTrivial = true;
     }
 
@@ -745,7 +747,8 @@ public class ObservableBuilder implements Observable.Builder {
 
     void checkTrivial() {
         this.isTrivial = causant == null && adjacent == null && caused == null && comparison == null
-                && compresent == null /*&& context == null*/ && inherent == null && cooccurrent == null & goal == null
+                && compresent == null /*&& context ==
+                null*/ && inherent == null && cooccurrent == null & goal == null
                 && traits.isEmpty() && roles.isEmpty() && deferredTarget == null;
     }
 
@@ -916,17 +919,17 @@ public class ObservableBuilder implements Observable.Builder {
 
                 if (base == null) {
                     scope.error("base declaration for trait " + t + " could not be found", declaration);
-                }
-
-                if (!baseTraits.add(base)) {
-                    scope.error("cannot add trait " + t.displayName() + " to concept " + main
-                            + " as it already adopts a trait of type " + base.displayName(), declaration);
-                }
-
-                if (t.isAbstract()) {
-                    abstractTraitBases.add(base);
                 } else {
-                    abstractTraitBases.remove(base);
+                    if (!baseTraits.add(base)) {
+                        scope.error("cannot add trait " + t.displayName() + " to concept " + main
+                                + " as it already adopts a trait of type " + base.displayName(), declaration);
+                    } else {
+                        if (t.isAbstract()) {
+                            abstractTraitBases.add(base);
+                        } else {
+                            abstractTraitBases.remove(base);
+                        }
+                    }
                 }
 
                 tids.add(getCleanId(t));
@@ -982,8 +985,10 @@ public class ObservableBuilder implements Observable.Builder {
 //            // the context's context if the context is an occurrent (e.g. Precipitation of
 //            // Storm)
 //            if (other != null && !owl.reasoner().contextuallyCompatible(main, context, other)) {
-//                scope.error("cannot set the context type of " + main.displayName() + " to " + context.displayName()
-//                        + " as it already has an incompatible context: " + other.displayName(), declaration);
+//                scope.error("cannot set the context type of " + main.displayName() + " to " + context
+//                .displayName()
+//                        + " as it already has an incompatible context: " + other.displayName(),
+//                        declaration);
 //            }
 //            cleanId = getCleanId(context);
 //            cId += "In" + cleanId;

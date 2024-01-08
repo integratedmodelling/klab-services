@@ -1673,10 +1673,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Concept build(KimConceptStatement concept, Ontology ontology, KimConceptStatement kimObject,
                          Scope monitor) {
 
-//        if (concept.isMacro()) {
-//            return null;
-//        }
-
         try {
 
             if (concept.isAlias()) {
@@ -1728,7 +1724,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     }
 
                     if (parent != null) {
-                        ontology.add(Axiom.SubClass(parent.getUrn(), ret.getName()));
+                        ontology.add(Axiom.SubClass(parent.getNamespace() + ":" + parent.getName(), ret.getName()));
                     }
                 }
 

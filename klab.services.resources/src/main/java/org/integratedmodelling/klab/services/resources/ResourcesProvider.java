@@ -40,10 +40,12 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
+import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -762,19 +764,38 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public KimObservable resolveObservable(String definition) {
-//        IKimObservable parsed = Kim.INSTANCE.declare(definition);
-//        return parsed == null ? null : KimAdapter.adaptKimObservable(parsed);
+        var parsed = this.workspaceManager.resolveObservable(definition);
+        if (parsed != null) {
+            boolean errors = false;
+            for (var notification : parsed.getNotifications()) {
+                if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
+                    errors = true;
+                    scope.error(notification.message().message());
+                } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
+                    scope.error(notification.message().message());
+                }
+            }
+            return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed);
+        }
         return null;
     }
 
     @Override
     public KimConcept resolveConcept(String definition) {
-//        IKimObservable parsed = Kim.INSTANCE.declare(definition);
-//        if (parsed == null) {
+        var parsed = this.workspaceManager.resolveConcept(definition);
+        if (parsed != null) {
+            boolean errors = false;
+            for (var notification : parsed.getNotifications()) {
+                if (notification.message().level() == LanguageValidationScope.Level.ERROR) {
+                    errors = true;
+                    scope.error(notification.message().message());
+                } else if (notification.message().level() == LanguageValidationScope.Level.WARNING) {
+                    scope.error(notification.message().message());
+                }
+            }
+            return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed);
+        }
         return null;
-//        }
-//        return KimAdapter.adaptKimObservable(parsed).getSemantics();
-
     }
 
     @Override

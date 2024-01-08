@@ -778,7 +778,7 @@ public class Ontology /* implements IOntology */ {
                     return (OWLAnnotationProperty) e;
             } else {
                 QualifiedName ct = new QualifiedName(c);
-                Ontology ontology = owl.getOntology(ct.getName());
+                Ontology ontology = owl.getOntology(ct.getNamespace());
                 // FIXME check
                 // if (ontology == null) {
                 // KKimNamespace ns = Namespaces.INSTANCE.getNamespace(ct.getName());

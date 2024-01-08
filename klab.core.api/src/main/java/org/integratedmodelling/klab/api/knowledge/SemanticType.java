@@ -324,6 +324,10 @@ public enum SemanticType {
      */
     CHANGED,
     /**
+     * A supertype with sealed closure
+     */
+    SEALED,
+    /**
      * Concept that have the syntax of authority references (with the uppercase namespace) get this
      * type even if not recognized by an online authority (in which case they won't have the
      * IDENTITY type but will still have this, so that the syntactic validation won't fail).

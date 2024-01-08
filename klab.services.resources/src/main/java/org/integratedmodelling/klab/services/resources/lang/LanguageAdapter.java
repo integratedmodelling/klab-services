@@ -295,6 +295,7 @@ public enum LanguageAdapter {
 
     private KimConceptStatement adaptConceptDefinition(ConceptDeclarationSyntax definition,
                                                        String namespace) {
+
         KimConceptStatementImpl ret = new KimConceptStatementImpl();
         ret.setName(definition.getName());
         ret.setNamespace(namespace);
@@ -303,12 +304,30 @@ public enum LanguageAdapter {
         ret.setSubjective(definition.isSubjective());
         ret.setDocstring(definition.getDescription());
         ret.setAlias(definition.isAlias());
+
         ret.setType(adaptSemanticType(definition.getDeclaredType()));
+        if (definition.isDeniable()) {
+            ret.getType().add(SemanticType.DENIABLE);
+        }
+        if (definition.isAbstract()) {
+            ret.getType().add(SemanticType.ABSTRACT);
+        }
+        if (definition.isSealed()) {
+            ret.getType().add(SemanticType.SEALED);
+        }
+        if (definition.isSubjective()) {
+            ret.getType().add(SemanticType.SUBJECTIVE);
+        }
+
         if (definition.isCoreDeclaration()) {
             ret.setUpperConceptDefined(definition.getDeclaredParent().encode());
         } else {
             ret.setDeclaredParent(definition.getDeclaredParent() == null ? null :
                                   adaptSemantics(definition.getDeclaredParent()));
+            if (ret.getDeclaredParent() != null && definition.isGenericQuality()) {
+                ret.getType().clear();
+                ret.getType().addAll(ret.getDeclaredParent().getType());
+            }
         }
         for (var child : definition.getChildren()) {
             ret.getChildren().add(adaptConceptDefinition(child, namespace));

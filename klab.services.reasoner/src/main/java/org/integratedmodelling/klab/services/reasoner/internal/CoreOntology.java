@@ -101,7 +101,7 @@ public class CoreOntology {
         public static final String HAS_CAUSANT_PROPERTY = "odo:hasCausant";
         public static final String HAS_CAUSED_PROPERTY = "odo:hasCaused";
         public static final String HAS_PURPOSE_PROPERTY = "odo:hasPurpose";
-        public static final String OCCURS_DURING_PROPERTY = "odo:occursDuring";
+        public static final String OCCURS_DURING_PROPERTY = "odo:observedDuring";
         public static final String IS_ADJACENT_TO_PROPERTY = "odo:isAdjacentTo";
         public static final String HAS_SUBJECTIVE_TRAIT_PROPERTY = "odo:hasSubjectiveTrait";
         public static final String IS_SUBJECTIVE = "odo:isSubjectiveTrait";

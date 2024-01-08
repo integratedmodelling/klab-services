@@ -176,5 +176,4 @@ public class QualifiedName implements Serializable {
         QualifiedName other = (QualifiedName) obj;
         return Objects.equals(conceptSpace, other.conceptSpace) && Objects.equals(localName, other.localName);
     }
-
 }
