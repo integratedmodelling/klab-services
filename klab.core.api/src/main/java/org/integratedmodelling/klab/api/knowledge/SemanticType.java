@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import java.awt.*;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
@@ -501,6 +502,43 @@ public enum SemanticType {
         EnumSet<SemanticType> set = EnumSet.copyOf(semantics);
         set.retainAll(CONTINUOUS_QUALITY_TYPES);
         return !set.isEmpty();
+    }
+
+    static Color CONCEPT_COLOR_UNKNOWN = new Color(220, 0, 0);
+    static Color CONCEPT_COLOR_VOID = new Color(60, 60, 100);
+    static Color CONCEPT_COLOR_QUALITY = new Color(0, 204, 0);
+    static Color CONCEPT_COLOR_SUBJECT = new Color(153, 76, 0);
+    static Color CONCEPT_COLOR_EVENT = new Color(153, 153, 0);
+    static Color CONCEPT_COLOR_PROCESS = new Color(0, 204, 0);
+    static Color CONCEPT_COLOR_RELATIONSHIP = new Color(210, 170, 0);
+    static Color CONCEPT_COLOR_TRAIT = new Color(0, 102, 204);
+    static Color CONCEPT_COLOR_ROLE = new Color(0, 86, 163);
+    static Color CONCEPT_COLOR_EXTENT = new Color(0, 153, 153);
+
+    /**
+     * Source of truth for the UI color corresponding to different semantic categories.
+     *
+     * @param semantics
+     * @return
+     */
+    public static Color getColor(Set<SemanticType> semantics) {
+        Set<SemanticType> fundamental = EnumSet.copyOf(semantics);
+        fundamental.retainAll(MODELABLE_TYPES);
+        Color ret = null;
+        if (fundamental.size() == 1) {
+            ret = switch (fundamental.iterator().next()) {
+                case SUBJECT, AGENT -> CONCEPT_COLOR_SUBJECT;
+                case EVENT -> CONCEPT_COLOR_EVENT;
+                case RELATIONSHIP -> CONCEPT_COLOR_RELATIONSHIP;
+                case PROCESS -> CONCEPT_COLOR_PROCESS;
+                case QUALITY -> CONCEPT_COLOR_QUALITY;
+                case ROLE -> CONCEPT_COLOR_ROLE;
+                case TRAIT -> CONCEPT_COLOR_TRAIT;
+                case EXTENT -> CONCEPT_COLOR_EXTENT;
+                default -> null;
+            };
+        }
+        return ret == null ? CONCEPT_COLOR_UNKNOWN : ret;
     }
 
 }
