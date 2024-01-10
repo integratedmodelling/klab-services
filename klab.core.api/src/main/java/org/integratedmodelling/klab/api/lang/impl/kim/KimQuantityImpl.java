@@ -2,8 +2,11 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 
-public class KimQuantityImpl extends KimStatementImpl implements KimQuantity {
+import java.io.Serial;
 
+public class KimQuantityImpl /*extends KimStatementImpl*/ implements KimQuantity {
+
+    @Serial
     private static final long serialVersionUID = -8532532479815240609L;
 
     private Number value;

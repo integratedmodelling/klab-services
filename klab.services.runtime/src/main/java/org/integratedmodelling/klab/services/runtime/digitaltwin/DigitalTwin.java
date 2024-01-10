@@ -138,7 +138,7 @@ public class DigitalTwin implements Closeable {
 
         return switch (functor) {
             case null ->
-                    throw new KlabInternalErrorException("function call " + computation.getName() + " " +
+                    throw new KlabInternalErrorException("function call " + computation.getUrn() + " " +
                             "produced a null" +
                             " result");
             case Instantiator instantiator ->

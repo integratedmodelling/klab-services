@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 import java.util.Set;
 
-import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Statement;
 
@@ -11,13 +11,13 @@ import org.integratedmodelling.klab.api.lang.Statement;
  * @author Ferd
  *
  */
-public interface KimStatement extends Statement, KimScope {
+public interface KlabStatement extends Statement, KlabAsset {
 
 	/**
 	 * Visitor allows traversing all concept declarations and references.
 	 * 
 	 */
-	public static interface KimVisitor extends Visitor {
+	interface KimVisitor extends Visitor {
 
 		void visitAuthority(String authority, String term);
 
@@ -33,8 +33,6 @@ public interface KimStatement extends Statement, KimScope {
 
 		void visitConceptStatement(KimConceptStatement kimNamespace);
 
-//        void visitTemplate(Field valueOf, KimConcept validParent, boolean mandatory);
-
 	}
 
 	/**
@@ -44,7 +42,7 @@ public interface KimStatement extends Statement, KimScope {
 	 * @author Ferd
 	 *
 	 */
-	public enum Scope {
+	enum Scope {
 
 		PUBLIC, PRIVATE, PROJECT_PRIVATE;
 
@@ -61,13 +59,13 @@ public interface KimStatement extends Statement, KimScope {
 		}
 	}
 
-	/**
-	 * Documentation metadata is the content of the @documentation annotation if
-	 * present.
-	 * 
-	 * @return the documentation
-	 */
-	Parameters<String> getDocumentationMetadata();
+//	/**
+//	 * Documentation metadata is the content of the @documentation annotation if
+//	 * present.
+//	 *
+//	 * @return the documentation
+//	 */
+//	Parameters<String> getDocumentationMetadata();
 
 	/**
 	 * The namespace ID for this object. For a KimNamespace it's also the official

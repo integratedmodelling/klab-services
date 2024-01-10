@@ -119,12 +119,6 @@ public class ConceptImpl extends GroovyObjectSupport implements Concept {
     }
 
     @Override
-    public Version getVersion() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public String codeName() {
         return Utils.CamelCase.toLowerCase(displayName(), '_');
     }

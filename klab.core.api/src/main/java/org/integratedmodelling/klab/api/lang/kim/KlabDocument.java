@@ -1,13 +1,12 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * A KimDocument is a k.LAB asset that originates as an individual document edited by a contributor and may be
@@ -19,7 +18,7 @@ import java.util.Map;
  *
  * @author ferdinando.villa
  */
-public abstract interface KimDocument<T extends KimStatement> extends KlabAsset {
+public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
 
     /**
      * The timestamp of creation of the namespace object, set at creation and immutable after that.
@@ -34,6 +33,13 @@ public abstract interface KimDocument<T extends KimStatement> extends KlabAsset 
      * @return
      */
     long getLastUpdateTimestamp();
+
+    /**
+     * This should never be null.
+     *
+     * @return
+     */
+    Version getVersion();
 
     /**
      * True if declared as void through any means of the underlying specs or after unsuccessful validation.

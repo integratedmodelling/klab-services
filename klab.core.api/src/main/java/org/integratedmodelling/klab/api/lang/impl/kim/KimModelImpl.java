@@ -23,7 +23,7 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 	private boolean learningModel;
 	private boolean interpreter;
 	private boolean instantiator;
-	private String name;
+	private String urn;
 	private Literal inlineValue;
 	private List<Contextualizable> contextualization = new ArrayList<>();
 	private String docstring;
@@ -70,8 +70,8 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 	}
 
 	@Override
-	public String getName() {
-		return this.name;
+	public String getUrn() {
+		return this.urn;
 	}
 
 	@Override
@@ -126,8 +126,8 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 		this.instantiator = instantiator;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setUrn(String urn) {
+		this.urn = urn;
 	}
 
 	public void setInlineValue(Literal inlineValue) {

@@ -5,9 +5,8 @@ import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.lang.BinarySemanticOperator;
 
-public interface KimConceptStatement extends KimStatement {
+public interface KimConceptStatement extends KlabStatement {
 
     /**
      * Types of descriptional relationships to other concepts
@@ -50,6 +49,8 @@ public interface KimConceptStatement extends KimStatement {
         KimConcept getTarget();
     }
 
+    List<KimConceptStatement> getChildren();
+
     Set<SemanticType> getType();
 
     String getUpperConceptDefined();
@@ -85,7 +86,7 @@ public interface KimConceptStatement extends KimStatement {
      */
     KimConcept getDeclaredInherent();
 
-    List<KimRestriction> getRestrictions();
+//    List<KimRestriction> getRestrictions();
 
     boolean isAlias();
 
@@ -93,7 +94,7 @@ public interface KimConceptStatement extends KimStatement {
 
     String getNamespace();
 
-    String getName();
+    String getUrn();
 
 //    boolean isMacro();
 

@@ -28,7 +28,6 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     private static final long serialVersionUID = 6188649888474774359L;
 
     private Concept semantics;
-    private Version version;
     private DirectObservation observer;
     private DescriptionType descriptionType;
     private Artifact.Type artifactType;
@@ -85,7 +84,6 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
     private ObservableImpl(ObservableImpl other) {
         this.semantics = other.semantics;
-        this.version = other.version;
         this.observer = other.observer;
         this.descriptionType = other.descriptionType;
         this.artifactType = other.artifactType;
@@ -163,15 +161,6 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
     @Override
     public String getReferenceName() {
         return referenceName;
-    }
-
-    @Override
-    public Version getVersion() {
-        return version;
-    }
-
-    public void setVersion(Version version) {
-        this.version = version;
     }
 
     @Override

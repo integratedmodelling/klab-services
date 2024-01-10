@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsCodeStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
-public class KActorsCodeStatementImpl extends KimStatementImpl implements KActorsCodeStatement 	{
+public abstract class KActorsCodeStatementImpl extends KimStatementImpl implements KActorsCodeStatement 	{
 
 	private static final long serialVersionUID = -3317041109502570786L;
 

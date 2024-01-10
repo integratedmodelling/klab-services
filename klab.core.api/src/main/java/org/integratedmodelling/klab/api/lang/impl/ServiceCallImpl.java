@@ -30,7 +30,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 
 	private static final long serialVersionUID = 8447771460330621498L;
 
-	protected String name;
+	protected String urn;
 	protected ParametersImpl<String> parameters = new ParametersImpl<>();
 	protected Set<String> interactiveParameterIds = new HashSet<>();
 
@@ -43,7 +43,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 
 	@SuppressWarnings("unchecked")
 	public ServiceCallImpl(String name, Object[] parameters) {
-		this.name = name;
+		this.urn = name;
 		if (parameters != null && parameters.length == 1 && parameters[0] instanceof Parameters) {
 			this.parameters.putAll((Parameters<String>) (parameters[0]));
 		} else if (parameters != null) {
@@ -56,7 +56,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	}
 
 	public ServiceCallImpl(String name, Map<String, Object> parameters) {
-		this.name = name;
+		this.urn = name;
 		this.parameters.putAll(parameters);
 	}
 
@@ -64,7 +64,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	public String encode(String language) {
 
 		if (super.sourceCode() == null || super.sourceCode().trim().isEmpty()) {
-			String ret = name + "(";
+			String ret = urn + "(";
 			int i = 0;
 			for (String key : parameters.keySet()) {
 
@@ -133,8 +133,8 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	}
 
 	@Override
-	public String getName() {
-		return name;
+	public String getUrn() {
+		return urn;
 	}
 
 	@Override
@@ -142,8 +142,8 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 		return parameters;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setUrn(String urn) {
+		this.urn = urn;
 	}
 
 	public void setParameters(ParametersImpl<String> parameters) {
@@ -156,7 +156,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	}
 
 	public ServiceCall copy() {
-		return ServiceCall.create(this.name, this.parameters);
+		return ServiceCall.create(this.urn, this.parameters);
 	}
 
 	@Override

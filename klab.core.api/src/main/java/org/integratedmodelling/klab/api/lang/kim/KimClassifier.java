@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
@@ -12,7 +13,7 @@ import org.integratedmodelling.klab.api.lang.ExpressionCode;
  * @author ferdinando.villa
  *
  */
-public interface KimClassifier extends KimStatement {
+public interface KimClassifier extends Serializable {
 
     boolean isCatchAll();
 

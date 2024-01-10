@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -15,8 +15,9 @@ import org.integratedmodelling.klab.api.utils.Utils;
  * @author Ferd
  *
  */
-public abstract class KimStatementImpl extends KimScopeImpl implements KimStatement {
+public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabStatement {
 
+    @Serial
     private static final long serialVersionUID = -7273214821906819558L;
     private int offsetInDocument;
     private int length;
@@ -27,7 +28,7 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
 //    private boolean errors;
 //    private boolean warnings;
     private Metadata metadata;
-    private Parameters<String> documentationMetadata;
+//    private Parameters<String> documentationMetadata;
     private String namespace;
     private Scope scope;
     private List<Notification> notifications = new ArrayList<>();
@@ -42,7 +43,7 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
         this.deprecated = other.deprecated;
         this.deprecation = other.deprecation;
         this.metadata = other.metadata;
-        this.documentationMetadata = other.documentationMetadata;
+//        this.documentationMetadata = other.documentationMetadata;
         this.namespace = other.namespace;
         this.scope = other.scope;
         this.notifications.addAll(other.notifications);
@@ -77,11 +78,11 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
         // TODO Auto-generated method stub
 
     }
-
-    @Override
-    public Parameters<String> getDocumentationMetadata() {
-        return this.documentationMetadata;
-    }
+//
+//    @Override
+//    public Parameters<String> getDocumentationMetadata() {
+//        return this.documentationMetadata;
+//    }
 
     @Override
     public String getNamespace() {
@@ -116,10 +117,10 @@ public abstract class KimStatementImpl extends KimScopeImpl implements KimStatem
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
-
-    public void setDocumentationMetadata(Parameters<String> documentationMetadata) {
-        this.documentationMetadata = documentationMetadata;
-    }
+//
+//    public void setDocumentationMetadata(Parameters<String> documentationMetadata) {
+//        this.documentationMetadata = documentationMetadata;
+//    }
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;

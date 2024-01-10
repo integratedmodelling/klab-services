@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimRestriction;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
 
@@ -26,15 +25,15 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     private List<KimConcept> requiredAttributes = new ArrayList<>();
     private List<KimConcept> requiredIdentities = new ArrayList<>();
     private List<KimConcept> emergenceTriggers = new ArrayList<>();
-    private List<KimRestriction> restrictions = new ArrayList<>();
+//    private List<KimRestriction> restrictions = new ArrayList<>();
     private KimConcept declaredParent;
-
+    private List<KimConceptStatement> children = new ArrayList<>();
     private KimConcept declaredInherent;
     private boolean alias;
     private boolean isAbstract;
     private boolean subjective;
     private boolean sealed;
-    private String name;
+    private String urn;
     //    private boolean macro;
     private List<PairImpl<KimConcept, DescriptionType>> observablesDescribed = new ArrayList<>();
     private List<ApplicableConcept> subjectsLinked = new ArrayList<>();
@@ -99,10 +98,10 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
         return this.emergenceTriggers;
     }
 
-    @Override
-    public List<KimRestriction> getRestrictions() {
-        return this.restrictions;
-    }
+//    @Override
+//    public List<KimRestriction> getRestrictions() {
+//        return this.restrictions;
+//    }
 
     @Override
     public boolean isAlias() {
@@ -115,8 +114,8 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     }
 
     @Override
-    public String getName() {
-        return this.name;
+    public String getUrn() {
+        return this.urn;
     }
 
 //    @Override
@@ -188,9 +187,9 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
         this.emergenceTriggers = emergenceTriggers;
     }
 
-    public void setRestrictions(List<KimRestriction> restrictions) {
-        this.restrictions = restrictions;
-    }
+//    public void setRestrictions(List<KimRestriction> restrictions) {
+//        this.restrictions = restrictions;
+//    }
 
     public void setAlias(boolean alias) {
         this.alias = alias;
@@ -200,8 +199,8 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
         this.isAbstract = isAbstract;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUrn(String urn) {
+        this.urn = urn;
     }
 
 //    public void setMacro(boolean macro) {
@@ -288,4 +287,12 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
         this.declaredInherent = declaredInherent;
     }
 
+    @Override
+    public List<KimConceptStatement> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<KimConceptStatement> children) {
+        this.children = children;
+    }
 }

@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimClassifier;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 
-public class KimClassificationImpl extends KimStatementImpl implements KimClassification {
+public class KimClassificationImpl /*extends KimStatementImpl*/ implements KimClassification {
 
     private static final long serialVersionUID = 2314681226321826507L;
     

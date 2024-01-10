@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,7 +81,7 @@ public class ModelReference {
 	private String serverId;
 	private String projectUrn;
 	private String projectId;
-	private KimStatement.Scope scope;
+	private KlabStatement.Scope scope;
 	private String namespaceId;
 	private boolean inScenario;
 	private boolean reification;
@@ -794,11 +794,11 @@ public class ModelReference {
 		this.priority = priority;
 	}
 
-	public KimStatement.Scope getScope() {
+	public KlabStatement.Scope getScope() {
 		return scope;
 	}
 
-	public void setScope(KimStatement.Scope scope) {
+	public void setScope(KlabStatement.Scope scope) {
 		this.scope = scope;
 	}
 

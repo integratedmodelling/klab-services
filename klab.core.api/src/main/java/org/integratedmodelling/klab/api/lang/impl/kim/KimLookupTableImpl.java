@@ -20,6 +20,8 @@ public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTab
     private List<KimClassifier> columnClassifiers = new ArrayList<>();
     private int lookupColumnIndex;
 
+    private String urn;
+
     @Override
     public Type getLookupType() {
         return lookupType;
@@ -81,6 +83,15 @@ public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTab
 
     public void setLookupColumnIndex(int lookupColumnIndex) {
         this.lookupColumnIndex = lookupColumnIndex;
+    }
+
+    @Override
+    public String getUrn() {
+        return urn;
+    }
+
+    public void setUrn(String urn) {
+        this.urn = urn;
     }
 
 }

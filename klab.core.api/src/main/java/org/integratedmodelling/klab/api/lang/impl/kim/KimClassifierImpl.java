@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
  * @author ferdinando.villa
  *
  */
-public class KimClassifierImpl extends KimStatementImpl implements KimClassifier {
+public class KimClassifierImpl /*extends KimStatementImpl*/ implements KimClassifier {
 
     private static final long serialVersionUID = 8284840092691497201L;
     private boolean catchAll;

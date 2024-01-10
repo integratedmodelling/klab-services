@@ -15,7 +15,7 @@ public interface KActorsAction extends KActorsCodeStatement {
 	 * 
 	 * @return
 	 */
-	String getName();
+	String getUrn();
 
 	/**
 	 * The code that constitutes the action, normally a ConcurrentGroup at the top

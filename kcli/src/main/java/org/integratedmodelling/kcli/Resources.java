@@ -13,7 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
@@ -317,7 +317,7 @@ public class Resources {
                 var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
                     for (var workspace : ((ResourcesService.Admin) service).listWorkspaces()) {
-                        System.out.println("   " + workspace.getName());
+                        System.out.println("   " + workspace.getUrn());
                         if (verbose) {
                             for (var project : workspace.getProjects()) {
                                 System.out.println("      " + project.getUrn());
@@ -495,7 +495,7 @@ public class Resources {
 
     public static String listApplication(String resourceUrn, boolean source, ResourcesService service) {
         KActorsBehavior behavior = service.resolveBehavior(resourceUrn, Engine.INSTANCE.getCurrentUser());
-        return source ? behavior.sourceCode() : Utils.Json.printAsJson(behavior);
+        return source ? behavior.getSourceCode() : Utils.Json.printAsJson(behavior);
     }
 
     public static String listNamespace(String resourceUrn, boolean source, ResourcesService service) {
@@ -510,7 +510,7 @@ public class Resources {
         String on = Utils.Paths.getLast(resourceUrn, '.');
 
         KimNamespace namespace = service.resolveNamespace(ns, Engine.INSTANCE.getCurrentUser());
-        for (KimStatement statement : namespace.getStatements()) {
+        for (KlabStatement statement : namespace.getStatements()) {
             if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance
                     && on.equals(((KimInstance) statement).getName())) {
                 return source ? statement.sourceCode() : Utils.Json.printAsJson(statement);

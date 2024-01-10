@@ -18,7 +18,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -495,7 +495,7 @@ public class ModelKbox extends ObservableKbox {
                     ret.setNamespaceId(srs.getString(5));
                     ret.setProjectId(nullify(srs.getString(6)));
 
-                    ret.setScope(KimStatement.Scope.valueOf(srs.getString(9)));
+                    ret.setScope(KlabStatement.Scope.valueOf(srs.getString(9)));
                     ret.setResolved(srs.getBoolean(10));
                     ret.setReification(srs.getBoolean(11));
                     ret.setInScenario(srs.getBoolean(12));
@@ -645,7 +645,7 @@ public class ModelKbox extends ObservableKbox {
 
         if (o instanceof KimModel) {
 
-            resourceService.scope().debug("storing model " + ((KimModel) o).getName());
+            resourceService.scope().debug("storing model " + ((KimModel) o).getUrn());
 
             for (ModelReference data : inferModels((KimModel) o, monitor)) {
                 toStore.add(data);
@@ -736,7 +736,7 @@ public class ModelKbox extends ObservableKbox {
     private Collection<ModelReference> getModelDescriptors(KimModel model, Scope monitor) {
 
         List<ModelReference> ret = new ArrayList<>();
-        Coverage scale = resourceService.modelGeometry(model.getName());
+        Coverage scale = resourceService.modelGeometry(model.getUrn());
 
         Shape spaceExtent = null;
         Time timeExtent = null;
@@ -815,7 +815,7 @@ public class ModelKbox extends ObservableKbox {
 
                 ModelReference m = new ModelReference();
 
-                m.setName(model.getName());
+                m.setName(model.getUrn());
                 m.setNamespaceId(model.getNamespace());
                 // if (model.getNamespace().getProject() != null) {
                 m.setProjectId(model.getProjectName());

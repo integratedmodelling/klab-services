@@ -15,6 +15,7 @@ public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstan
     private KimObservable observable;
     private List<KimObservable> states = new ArrayList<>();
     private String docstring;
+    private List<KimInstance> children = new ArrayList<>();
 
     @Override
     public String getUrn() {
@@ -61,4 +62,12 @@ public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstan
         this.docstring = docstring;
     }
 
+    @Override
+    public List<KimInstance> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<KimInstance> children) {
+        this.children = children;
+    }
 }

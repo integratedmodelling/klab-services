@@ -10,14 +10,14 @@ public class KActorsActionImpl extends KActorsCodeStatementImpl implements KActo
 
 	private static final long serialVersionUID = 5202922350235994909L;
 	
-	private String name;
+	private String urn;
 	private KActorsStatement code;
 	private List<String> argumentNames = new ArrayList<>();
 	private boolean function;
 
 	@Override
-	public String getName() {
-		return this.name;
+	public String getUrn() {
+		return this.urn;
 	}
 
 	@Override
@@ -35,8 +35,8 @@ public class KActorsActionImpl extends KActorsCodeStatementImpl implements KActo
 		return this.function;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setUrn(String urn) {
+		this.urn = urn;
 	}
 
 	public void setCode(KActorsStatement code) {

@@ -1,9 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,7 +12,7 @@ import java.util.Map;
  * @author ferdinando.villa
  *
  */
-public interface KimNamespace extends KimDocument<KimStatement> {
+public interface KimNamespace extends KlabDocument<KlabStatement> {
 
 	/**
 	 * Return all the namespaces that this should not be mixed with during

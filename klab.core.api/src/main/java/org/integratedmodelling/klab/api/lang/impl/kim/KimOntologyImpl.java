@@ -1,10 +1,8 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 
 import java.util.ArrayList;

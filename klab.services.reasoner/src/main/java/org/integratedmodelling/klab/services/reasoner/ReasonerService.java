@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.lang.impl.kim.KimObservableImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 //import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement.KimVisitor;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement.KimVisitor;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -1694,7 +1694,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 }
 
                 if (parent != null) {
-                    ontology.addDelegateConcept(concept.getName(), ontology.getName(), parent);
+                    ontology.addDelegateConcept(concept.getUrn(), ontology.getName(), parent);
                 }
 
                 return null;
@@ -1724,7 +1724,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     }
 
                     if (parent != null) {
-                        ontology.add(Axiom.SubClass(parent.getNamespace() + ":" + parent.getName(), ret.getName()));
+                        ontology.add(Axiom.SubClass(parent.getNamespace() + ":" + parent.getName(),
+                                ret.getName()));
                     }
                 }
 
@@ -1753,18 +1754,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                                   final Scope monitor) {
 
         Concept main = null;
-        String mainId = concept.getName();
+        String mainId = concept.getUrn();
 
         ontology.add(Axiom.ClassAssertion(mainId,
                 concept.getType().stream().map((c) -> SemanticType.valueOf(c.name())).collect(Collectors.toSet())));
 
         // set the k.IM definition
         ontology.add(Axiom.AnnotationAssertion(mainId, NS.CONCEPT_DEFINITION_PROPERTY,
-                ontology.getName() + ":" + concept.getName()));
+                ontology.getName() + ":" + concept.getUrn()));
 
         // and the reference name
         ontology.add(Axiom.AnnotationAssertion(mainId, NS.REFERENCE_NAME_PROPERTY,
-                OWL.getCleanFullId(ontology.getName(), concept.getName())));
+                OWL.getCleanFullId(ontology.getName(), concept.getUrn())));
 
         if (concept.getDocstring() != null) {
             ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT,
@@ -1833,24 +1834,22 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             ontology.define();
         }
 
-        for (KimScope child : concept.getChildren()) {
-            if (child instanceof KimConceptStatement) {
-                try {
-                    // KimConceptStatement chobj = kimObject == null ? null : new
-                    // KimConceptStatement((IKimConceptStatement) child);
-                    Concept childConcept = buildInternal((KimConceptStatement) child, ontology, concept,
-                            /*
-                             * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
-                             * monitor).contextualize(child) :
-                             */ monitor);
-                    if (childConcept != null) {
-                        ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
-                        ontology.define();
-                    }
-                    // kimObject.getChildren().add(chobj);
-                } catch (Throwable e) {
-                    monitor.error(e, child);
+        for (var child : concept.getChildren()) {
+            try {
+                // KimConceptStatement chobj = kimObject == null ? null : new
+                // KimConceptStatement((IKimConceptStatement) child);
+                Concept childConcept = buildInternal((KimConceptStatement) child, ontology, concept,
+                        /*
+                         * monitor instanceof ErrorNotifyingMonitor ? ((ErrorNotifyingMonitor)
+                         * monitor).contextualize(child) :
+                         */ monitor);
+                if (childConcept != null) {
+                    ontology.add(Axiom.SubClass(mainId, childConcept.getName()));
+                    ontology.define();
                 }
+                // kimObject.getChildren().add(chobj);
+            } catch (Throwable e) {
+                monitor.error(e, child);
             }
         }
 

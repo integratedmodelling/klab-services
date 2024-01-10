@@ -269,12 +269,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         private static void collectAnnotations(KlabAsset object, Map<String, Annotation> collection) {
 
-            for (Annotation annotation : object.getAnnotations()) {
-                if (!collection.containsKey(annotation.getName())) {
-                    Annotation a = new AnnotationImpl(annotation);
-                    collection.put(a.getName(), a);
-                }
-            }
+//            for (Annotation annotation : object.getAnnotations()) {
+//                if (!collection.containsKey(annotation.getName())) {
+//                    Annotation a = new AnnotationImpl(annotation);
+//                    collection.put(a.getName(), a);
+//                }
+//            }
 
             if (object instanceof KimObservable) {
 
@@ -837,7 +837,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param directory the directory
          * @param removeIfExisting the remove if existing
          * @return the string
-         * @throws KlabException the klab exception
          */
         public static String clone(String gitUrl, File directory, boolean removeIfExisting) {
 
@@ -890,7 +889,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * Pull local repository in passed directory.
          *
          * @param localRepository main directory (containing .git/)
-         * @throws KlabException the klab exception
          */
         public static void pull(File localRepository) {
 
@@ -922,7 +920,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param gitUrl the git url
          * @param gitDirectory the git directory
          * @return the string
-         * @throws KlabException the klab exception
          */
         public static String requireUpdatedRepository(String gitUrl, File gitDirectory) {
 

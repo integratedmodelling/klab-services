@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kactors;
 
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -17,7 +17,7 @@ import java.util.Map;
  *
  * @author Ferd
  */
-public interface KActorsBehavior extends KActorsCodeStatement, KlabAsset {
+public interface KActorsBehavior extends KlabDocument<KActorsAction> {
 
     enum Type {
         /**
@@ -134,7 +134,7 @@ public interface KActorsBehavior extends KActorsCodeStatement, KlabAsset {
      *
      * @author Ferd
      */
-    interface KActorsVisitor extends Visitor {
+    interface KActorsVisitor {
 
         void visitPreamble(String variable, Object value);
 
@@ -185,12 +185,12 @@ public interface KActorsBehavior extends KActorsCodeStatement, KlabAsset {
      */
     List<String> getImports();
 
-    /**
-     * All the actions declared in this behavior (not in the imported ones)
-     *
-     * @return
-     */
-    List<KActorsAction> getActions();
+//    /**
+//     * All the actions declared in this behavior (not in the imported ones)
+//     *
+//     * @return
+//     */
+//    List<KActorsAction> getActions();
 
     /**
      * If a style is specified in the preamble, return it here.

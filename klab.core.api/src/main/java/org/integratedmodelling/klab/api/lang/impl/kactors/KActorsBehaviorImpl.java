@@ -6,10 +6,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimDocumentImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
-public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KActorsBehavior {
+public class KActorsBehaviorImpl extends KimDocumentImpl<KActorsAction> implements KActorsBehavior {
 
 	private static final long serialVersionUID = 6651874316547941092L;
 
@@ -18,7 +19,7 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 	private Platform platform;
 	private String output;
 	private List<String> imports = new ArrayList<>();
-	private List<KActorsAction> actions = new ArrayList<>();
+	private List<KActorsAction> statements = new ArrayList<>();
 	private String style;
 	private List<String> locales = new ArrayList<>();
 	private String label;
@@ -54,10 +55,10 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 		return this.imports;
 	}
 
-	@Override
-	public List<KActorsAction> getActions() {
-		return this.actions;
-	}
+//	@Override
+//	public List<KActorsAction> getActions() {
+//		return this.actions;
+//	}
 
 	@Override
 	public String getStyle() {
@@ -119,9 +120,9 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 		this.imports = imports;
 	}
 
-	public void setActions(List<KActorsAction> actions) {
-		this.actions = actions;
-	}
+//	public void setActions(List<KActorsAction> actions) {
+//		this.actions = actions;
+//	}
 
 	public void setStyle(String style) {
 		this.style = style;
@@ -155,16 +156,20 @@ public class KActorsBehaviorImpl extends KActorsCodeStatementImpl implements KAc
 		this.isPublic = isPublic;
 	}
 
-	@Override
-	public void visit(Visitor visitor) {
-	}
-
 	public Version getVersion() {
 		return version;
+	}
+
+	@Override
+	public List<KActorsAction> getStatements() {
+		return this.statements;
 	}
 
 	public void setVersion(Version version) {
 		this.version = version;
 	}
 
+	public void setStatements(List<KActorsAction> statements) {
+		this.statements = statements;
+	}
 }

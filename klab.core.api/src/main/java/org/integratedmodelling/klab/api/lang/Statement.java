@@ -71,11 +71,6 @@ public interface Statement extends Serializable {
     Collection<Notification> getNotifications();
 
     /**
-     * @return the metadata
-     */
-    Metadata getMetadata();
-
-    /**
      * To be specialized downstream.
      *
      * @param visitor

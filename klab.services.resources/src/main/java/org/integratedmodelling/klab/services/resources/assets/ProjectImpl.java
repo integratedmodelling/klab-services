@@ -109,7 +109,6 @@ public class ProjectImpl implements Project {
     }
 
     private Manifest manifest;
-    private Version version;
     private Metadata metadata = Metadata.create();
     private String urn;
     private List<KimNamespace> namespaces = new ArrayList<>();
@@ -135,11 +134,6 @@ public class ProjectImpl implements Project {
     @Override
     public String getUrn() {
         return this.urn;
-    }
-
-    @Override
-    public Version getVersion() {
-        return this.version;
     }
 
     @Override

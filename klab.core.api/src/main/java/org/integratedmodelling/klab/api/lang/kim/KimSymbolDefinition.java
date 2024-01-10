@@ -8,14 +8,14 @@ import org.integratedmodelling.klab.api.collections.Literal;
  * @author ferdinando.villa
  *
  */
-public interface KimSymbolDefinition extends KimStatement {
+public interface KimSymbolDefinition extends KlabStatement {
 
 	/**
 	 * The name of the symbol. Can only be uppercase with underscores as separator.
 	 * 
 	 * @return the symbol name
 	 */
-	String getName();
+	String getUrn();
 
 	/**
 	 * If a class is specified, return it here.

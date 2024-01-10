@@ -14,9 +14,7 @@ import java.util.List;
 
 public class WorldviewImpl implements Worldview {
     private String urn;
-    private Version version;
     private Metadata metadata = Metadata.create();
-    private List<Annotation> annotations = new ArrayList<>();
     private List<KimOntology> ontologies = new ArrayList<>();
     private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
     private boolean empty;
@@ -26,19 +24,10 @@ public class WorldviewImpl implements Worldview {
         return this.urn;
     }
 
-    @Override
-    public Version getVersion() {
-        return this.version;
-    }
 
     @Override
     public Metadata getMetadata() {
         return this.metadata;
-    }
-
-    @Override
-    public List<Annotation> getAnnotations() {
-        return this.annotations;
     }
 
     @Override
@@ -60,16 +49,8 @@ public class WorldviewImpl implements Worldview {
         this.urn = urn;
     }
 
-    public void setVersion(Version version) {
-        this.version = version;
-    }
-
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
-    }
-
-    public void setAnnotations(List<Annotation> annotations) {
-        this.annotations = annotations;
     }
 
     public void setOntologies(List<KimOntology> ontologies) {

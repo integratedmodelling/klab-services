@@ -216,7 +216,7 @@ public class TestScope {
 	public ActionStatistics newAction(TestStatistics test, KActorsAction action) {
 
 		ActionStatistics ret = new ActionStatistics();
-		ret.setPath(action.getName());
+		ret.setPath(action.getUrn());
 		ret.setName(Utils.Paths.getLast(ret.getPath(), '.'));
 		ret.setLabel(ret.getName());
 		ret.setTestCaseName(test.getName());
@@ -257,7 +257,7 @@ public class TestScope {
 	public TestScope getChild(KActorsAction action) {
 
 		TestScope ret = new TestScope(this);
-		ret.docSection = this.docSection.getChild("anchor:" + action.getName() + "[]" + "Test:  " + action.getName());
+		ret.docSection = this.docSection.getChild("anchor:" + action.getUrn() + "[]" + "Test:  " + action.getUrn());
 		ret.action = action;
 		ret.parent = this;
 		ret.actionStatistics = newAction(ret.testStatistics, action);

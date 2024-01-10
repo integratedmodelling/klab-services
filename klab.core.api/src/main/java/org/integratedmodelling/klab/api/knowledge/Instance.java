@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.knowledge;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 /**
  * The operational peer of KimKnowledge (formerly IAcknowledgement), i.e. an instance specified
@@ -12,7 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  * @author Ferd
  *
  */
-public interface Instance extends Knowledge {
+public interface Instance extends Knowledge, KlabStatement {
 
     /**
      * Models are in namespaces, which are relevant to organization and scoping.

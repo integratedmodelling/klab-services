@@ -48,8 +48,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimScope;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
@@ -125,7 +124,7 @@ public class Indexer {
         }
     }
 
-    public SemanticMatch index(KimStatement object) {
+    public SemanticMatch index(KlabStatement object) {
 
         SemanticMatch ret = null;
         Set<SemanticType> semanticType = null;
@@ -134,31 +133,29 @@ public class Indexer {
             return null;
         }
 
-        if (object instanceof KimConceptStatement) {
+        if (object instanceof KimConceptStatement conceptStatement) {
 
             /*
              * TODO the educational "nothings" in the ontologies are probably useful,
              * although certainly not as suggestions. They could be indexed to provide
              * "negative" suggestions for a smarter bar.
              */
-            if (!((KimConceptStatement) object).getType().contains(SemanticType.NOTHING)) {
+            if (!conceptStatement.getType().contains(SemanticType.NOTHING)) {
 
-                ret = new SemanticMatch(SemanticMatch.Type.CONCEPT, ((KimConceptStatement) object).getType());
-                ret.setDescription(((KimConceptStatement) object).getDocstring());
-                ret.setId(object.getNamespace() + ":" + ((KimConceptStatement) object).getName());
-                ret.setName(((KimConceptStatement) object).getName());
+                ret = new SemanticMatch(SemanticMatch.Type.CONCEPT, conceptStatement.getType());
+                ret.setDescription(conceptStatement.getDocstring());
+                ret.setId(object.getNamespace() + ":" + conceptStatement.getUrn());
+                ret.setName(conceptStatement.getUrn());
 
-                semanticType = (((KimConceptStatement) object).getType());
+                semanticType = conceptStatement.getType();
 
                 /*
                  * TODO a concept that 'equals' something should index its definition with high
                  * weight; a concept that 'is' something should index its parent's definition
                  * with lower weight
                  */
-                for (KimScope child : object.getChildren()) {
-                    if (child instanceof KimConceptStatement) {
-                        index((KimConceptStatement) child);
-                    }
+                for (var child : conceptStatement.getChildren()) {
+                    index(child);
                 }
             }
 
@@ -167,8 +164,8 @@ public class Indexer {
             ret = new SemanticMatch(SemanticMatch.Type.MODEL,
                     ((KimModel) object).getObservables().get(0).getSemantics().getType());
             ret.setDescription(((KimModel) object).getDocstring());
-            ret.setName(((KimModel) object).getName());
-            ret.setId(((KimModel) object).getName());
+            ret.setName(((KimModel) object).getUrn());
+            ret.setId(((KimModel) object).getUrn());
             semanticType = (((KimModel) object).getObservables().get(0).getSemantics().getType());
 
         } else if (object instanceof KimInstance) {
@@ -244,8 +241,8 @@ public class Indexer {
                 try {
                     writer.deleteDocuments(new TermQuery(new Term("namespace", namespace.getUrn())));
                     writer.commit();
-                    for (KimStatement statement : namespace.getStatements()) {
-                        index((KimStatement) statement);
+                    for (KlabStatement statement : namespace.getStatements()) {
+                        index((KlabStatement) statement);
                     }
                     writer.commit();
                 } catch (Exception e) {

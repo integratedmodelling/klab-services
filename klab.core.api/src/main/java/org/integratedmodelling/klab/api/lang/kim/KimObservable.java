@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import java.util.Collection;
 import java.util.List;
 
-public interface KimObservable extends KimStatement, KlabAsset {
+public interface KimObservable extends KlabStatement, KlabAsset {
 
     /**
      * @return the main concept

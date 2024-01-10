@@ -24,7 +24,7 @@ public interface ServiceCall extends Encodeable {
      * 
      * @return the function name
      */
-    String getName();
+    String getUrn();
 
     /**
      * Parameters passed to the call. If a function call was passed, it is invoked before this is

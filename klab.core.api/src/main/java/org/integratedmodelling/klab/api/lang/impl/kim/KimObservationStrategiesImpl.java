@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import org.integratedmodelling.klab.api.lang.kim.KimDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategies;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 

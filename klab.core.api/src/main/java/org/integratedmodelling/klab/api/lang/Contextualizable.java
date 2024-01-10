@@ -10,11 +10,10 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 /**
  * A contextualizable is the declaration of a resource that can be compiled into
@@ -40,7 +39,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimStatement;
  * @author Ferd
  *
  */
-public interface Contextualizable extends KimStatement {
+public interface Contextualizable extends KlabStatement {
 
 	public static enum Type {
 		CLASSIFICATION, SERVICE, LOOKUP_TABLE, RESOURCE, EXPRESSION, CONVERSION, LITERAL,

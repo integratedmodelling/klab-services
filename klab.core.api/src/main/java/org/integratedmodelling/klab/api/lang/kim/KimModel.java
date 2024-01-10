@@ -32,7 +32,7 @@ public interface KimModel extends KimActiveStatement {
 
     boolean isInstantiator();
 
-    String getName();
+    String getUrn();
 
     Literal getInlineValue();
 

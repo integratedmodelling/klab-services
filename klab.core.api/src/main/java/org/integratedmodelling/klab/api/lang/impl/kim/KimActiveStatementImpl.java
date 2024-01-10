@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
  * @author ferdinando.villa
  *
  */
-public class KimActiveStatementImpl extends KimStatementImpl implements KimActiveStatement {
+public abstract class KimActiveStatementImpl extends KimStatementImpl implements KimActiveStatement {
 
     private static final long serialVersionUID = -8237389232551882921L;
     

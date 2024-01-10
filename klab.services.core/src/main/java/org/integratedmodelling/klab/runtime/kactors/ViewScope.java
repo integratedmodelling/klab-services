@@ -134,7 +134,7 @@ public class ViewScope {
     public ViewPanel createPanel(KActorsAction action, KActorsBehavior behavior, KActorsScope scope) {
 
         ViewPanel panel = null;
-        boolean hasView = behavior.getType() == KActorsBehavior.Type.COMPONENT && "main".equals(action.getName());
+        boolean hasView = behavior.getType() == KActorsBehavior.Type.COMPONENT && "main".equals(action.getUrn());
         if (!hasView) {
             // scan annotations
             for (Annotation annotation : action.getAnnotations()) {
@@ -144,7 +144,7 @@ public class ViewScope {
                 if (panelLocation != null) {
 
                     panel = new ViewPanel(
-                            annotation.containsKey("id") ? scope.localize(annotation.get("id", String.class)) : action.getName(),
+                            annotation.containsKey("id") ? scope.localize(annotation.get("id", String.class)) : action.getUrn(),
                             annotation.get("style", String.class));
                     panel.getAttributes().putAll(getMetadata(annotation, scope));
 
@@ -226,11 +226,11 @@ public class ViewScope {
         ret.setLogo(behavior.getLogo());
         ret.setProjectId(behavior.getProjectId());
 
-        for (KActorsAction action : behavior.getActions()) {
+        for (var action : behavior.getStatements()) {
             Annotation menu = Utils.Annotations.getAnnotation(action, "menu");
             if (menu != null) {
                 Layout.MenuItem menuItem = new Layout.MenuItem();
-                menuItem.setId("menu." + action.getName());
+                menuItem.setId("menu." + action.getUrn());
                 menuItem.setText(menu.containsKey("title") ? scope.localize(menu.get("title").toString()) : "Unnamed menu");
                 ret.getMenu().add(menuItem);
             }

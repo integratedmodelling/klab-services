@@ -47,7 +47,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private String codeName;
     private KimConcept temporalInherent;
     private SemanticRole distributedInherent;
-    private Version version;
+//    private Version version;
     private boolean collective;
 
     @Override
@@ -682,15 +682,15 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         // TODO should escape any internal double quotes, unlikely
         return ws ? ("\"" + term + "\"") : term;
     }
-
-    @Override
-    public Version getVersion() {
-        return this.version;
-    }
-
-    public void setVersion(Version version) {
-        this.version = version;
-    }
+//
+//    @Override
+//    public Version getVersion() {
+//        return this.version;
+//    }
+//
+//    public void setVersion(Version version) {
+//        this.version = version;
+//    }
 
     @Override
     public void visit(Visitor kimVisitor) {

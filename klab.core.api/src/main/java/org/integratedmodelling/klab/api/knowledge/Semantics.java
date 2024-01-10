@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import org.integratedmodelling.klab.api.lang.Annotation;
+
+import java.util.List;
+
 /**
  * Semantics is any knowledge that holds computable meaning.
  *
@@ -39,6 +43,13 @@ public interface Semantics extends Knowledge {
      * @return
      */
     String getNamespace();
+
+    /**
+     * Semantics can carry annotations from its definition or reference.
+     *
+     * @return
+     */
+    List<Annotation> getAnnotations();
 
     /**
      * Logical, fast check for basic semantic type, no reasoning is performed.

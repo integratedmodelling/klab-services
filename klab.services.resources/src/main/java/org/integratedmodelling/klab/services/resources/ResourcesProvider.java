@@ -19,7 +19,6 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
-import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
@@ -34,7 +33,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.knowledge.WorldviewImpl;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
@@ -1166,8 +1164,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
              * TODO check permissions!
              */
             if (namespace != null) {
-                for (KimStatement statement : namespace.getStatements()) {
-                    if (statement instanceof KimModel && urn.equals(((KimModel) statement).getName())) {
+                for (KlabStatement statement : namespace.getStatements()) {
+                    if (statement instanceof KimModel && urn.equals(((KimModel) statement).getUrn())) {
                         ret.getResults().add(
                                 new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(),
                                         KnowledgeClass.MODEL));

@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 import java.util.List;
 
-public interface KimTable extends KimStatement {
+public interface KimTable extends KlabStatement {
 	/**
 	 * The headers for the table, or null if not specified. Also null if the table is
 	 * two-ways.

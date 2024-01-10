@@ -184,12 +184,12 @@ public class ObservationImpl implements Observation {
         // TODO Auto-generated method stub
         return null;
     }
-
-    @Override
-    public Version getVersion() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+//
+//    @Override
+//    public Version getVersion() {
+//        // TODO Auto-generated method stub
+//        return null;
+//    }
 
     @Override
     public List<Annotation> getAnnotations() {

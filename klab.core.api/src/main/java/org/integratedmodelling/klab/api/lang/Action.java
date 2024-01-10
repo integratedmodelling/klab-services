@@ -2,9 +2,9 @@ package org.integratedmodelling.klab.api.lang;
 
 import java.util.List;
 
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
-public interface Action extends KimStatement {
+public interface Action extends KlabStatement {
 
 	enum Type {
 		SET, INTEGRATE, DO, MOVE, DESTROY

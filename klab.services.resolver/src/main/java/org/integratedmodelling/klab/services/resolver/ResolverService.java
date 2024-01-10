@@ -522,7 +522,7 @@ public class ResolverService extends BaseService implements Resolver {
         var resources = scope.getService(ResourcesService.class);
         var namespace = resources.resolveNamespace(namespaceResource.getResourceUrn(), scope);
         if (namespace != null) {
-            for (KimStatement statement : namespace.getStatements()) {
+            for (KlabStatement statement : namespace.getStatements()) {
                 if (statement instanceof KimModel) {
                     Model model = loadModel((KimModel) statement, scope);
                     models.put(model.getUrn(), model);
@@ -550,8 +550,8 @@ public class ResolverService extends BaseService implements Resolver {
         for (KimObservable state : statement.getStates()) {
             instance.getStates().add(reasoner.declareObservable(state));
         }
-        for (KimScope child : statement.getChildren()) {
-            instance.getChildren().add(loadInstance((KimInstance) child, scope));
+        for (var child : statement.getChildren()) {
+            instance.getChildren().add(loadInstance( child, scope));
         }
 
         return instance;
@@ -573,7 +573,7 @@ public class ResolverService extends BaseService implements Resolver {
                 } else if (ext instanceof Extent) {
                     extents.add((Extent<?>) ext);
                 } else {
-                    throw new KlabIllegalStateException("the call to " + call.getName() + " did not produce a " +
+                    throw new KlabIllegalStateException("the call to " + call.getUrn() + " did not produce a " +
                             "scale or " +
                             "an extent");
                 }
@@ -611,10 +611,10 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         // TODO learners etc.
-        model.setUrn(statement.getNamespace() + "." + statement.getName());
+        model.setUrn(statement.getNamespace() + "." + statement.getUrn());
         model.setMetadata(statement.getMetadata());
         model.getComputation().addAll(statement.getContextualization());
-        model.setUrn(statement.getNamespace() + "." + statement.getName());
+        model.setUrn(statement.getNamespace() + "." + statement.getUrn());
         model.setNamespace(statement.getNamespace());
         model.getActions().addAll(statement.getBehavior().getStatements());
         model.setCoverage(createScaleFromBehavior(statement.getBehavior(), scope));

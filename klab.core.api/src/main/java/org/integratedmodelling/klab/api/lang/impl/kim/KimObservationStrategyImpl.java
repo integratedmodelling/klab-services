@@ -3,36 +3,40 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
-import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.*;
 
 public class KimObservationStrategyImpl implements KimObservationStrategy {
-    //    private String urn;
-//    private Version version;
+
     private Metadata metadata = Metadata.create();
     private List<Annotation> annotations = new ArrayList<>();
-    private long creationTimestamp;
     private int length;
     private int offsetInDocument;
     private String deprecation;
     private boolean deprecated;
     private Collection<Notification> notifications = new ArrayList<>();
-    private String name;
+    private String urn;
     private String description;
     private Scope scope = Scope.PUBLIC;
+
     private String namespace;
-    private Parameters<String> documentationMetadata = Parameters.create();
-    private String locationDescriptor;
     private List<Operation> operations = new ArrayList<>();
     private Map<Literal, Filter> macroVariables = new LinkedHashMap<>();
     private List<Filter> filters = new ArrayList<>();
     private int rank;
+
+    private String sourceCode;
+
+    public KimObservationStrategyImpl() {}
+
+    public KimObservationStrategyImpl(String sourceCode) {
+        this.sourceCode = sourceCode;
+    }
 
     @Override
     public Metadata getMetadata() {
@@ -42,6 +46,10 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     @Override
     public void visit(Visitor visitor) {
 
+    }
+
+    public String toString() {
+        return sourceCode;
     }
 
     @Override
@@ -71,7 +79,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     @Override
     public String sourceCode() {
-        return null;
+        return sourceCode;
     }
 
     @Override
@@ -80,8 +88,8 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     }
 
     @Override
-    public String getName() {
-        return this.name;
+    public String getUrn() {
+        return this.urn;
     }
 
     @Override
@@ -109,31 +117,6 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         return this.operations;
     }
 
-    @Override
-    public List<KimScope> getChildren() {
-        return null;
-    }
-
-    @Override
-    public String getLocationDescriptor() {
-        return this.locationDescriptor;
-    }
-
-    @Override
-    public Parameters<String> getDocumentationMetadata() {
-        return this.documentationMetadata;
-    }
-
-    @Override
-    public String getNamespace() {
-        return this.namespace;
-    }
-
-    @Override
-    public Scope getScope() {
-        return this.scope;
-    }
-
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
@@ -141,11 +124,6 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     public void setAnnotations(List<Annotation> annotations) {
         this.annotations = annotations;
     }
-
-    public void setCreationTimestamp(long creationTimestamp) {
-        this.creationTimestamp = creationTimestamp;
-    }
-
     public void setLength(int length) {
         this.length = length;
     }
@@ -166,8 +144,8 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         this.notifications = notifications;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUrn(String urn) {
+        this.urn = urn;
     }
 
     public void setDescription(String description) {
@@ -181,15 +159,6 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-
-    public void setDocumentationMetadata(Parameters<String> documentationMetadata) {
-        this.documentationMetadata = documentationMetadata;
-    }
-
-    public void setLocationDescriptor(String locationDescriptor) {
-        this.locationDescriptor = locationDescriptor;
-    }
-
     public void setOperations(List<Operation> operations) {
         this.operations = operations;
     }
@@ -204,5 +173,104 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     public void setRank(int rank) {
         this.rank = rank;
+    }
+
+    @Override
+    public Scope getScope() {
+        return scope;
+    }
+
+    @Override
+    public String getNamespace() {
+        return namespace;
+    }
+
+
+    public static class FilterImpl implements Filter {
+
+        private boolean negated;
+        private KimObservable match;
+        private ServiceCall function;
+        private Literal literal;
+
+        @Override
+        public boolean isNegated() {
+            return this.negated;
+        }
+
+        @Override
+        public KimObservable getMatch() {
+            return this.match;
+        }
+
+        @Override
+        public ServiceCall getFunction() {
+            return this.function;
+        }
+
+        @Override
+        public Literal getLiteral() {
+            return this.literal;
+        }
+
+        public void setNegated(boolean negated) {
+            this.negated = negated;
+        }
+
+        public void setMatch(KimObservable match) {
+            this.match = match;
+        }
+
+        public void setFunction(ServiceCall function) {
+            this.function = function;
+        }
+
+        public void setLiteral(Literal literal) {
+            this.literal = literal;
+        }
+    }
+
+    public static class OperationImpl implements Operation {
+
+        private Type type;
+        private KimObservable observable;
+        private List<ServiceCall> functions = new ArrayList<>();
+        private List<KimObservationStrategy> deferredStrategies = new ArrayList<>();
+
+        @Override
+        public Type getType() {
+            return this.type;
+        }
+
+        @Override
+        public KimObservable getObservable() {
+            return this.observable;
+        }
+
+        @Override
+        public List<ServiceCall> getFunctions() {
+            return this.functions;
+        }
+
+        @Override
+        public List<KimObservationStrategy> getDeferredStrategies() {
+            return this.deferredStrategies;
+        }
+
+        public void setType(Type type) {
+            this.type = type;
+        }
+
+        public void setObservable(KimObservable observable) {
+            this.observable = observable;
+        }
+
+        public void setFunctions(List<ServiceCall> functions) {
+            this.functions = functions;
+        }
+
+        public void setDeferredStrategies(List<KimObservationStrategy> deferredStrategies) {
+            this.deferredStrategies = deferredStrategies;
+        }
     }
 }

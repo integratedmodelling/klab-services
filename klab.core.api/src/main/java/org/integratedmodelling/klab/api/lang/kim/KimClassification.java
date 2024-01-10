@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 
-public interface KimClassification extends KimStatement {
+public interface KimClassification /*extends KimStatement*/ {
 
     /**
      * Get the classifiers paired with the concept each represents. Matching should be done

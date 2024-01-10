@@ -47,4 +47,6 @@ public interface KimInstance extends KimActiveStatement {
      */
     String getDocstring();
 
+    List<KimInstance> getChildren();
+
 }

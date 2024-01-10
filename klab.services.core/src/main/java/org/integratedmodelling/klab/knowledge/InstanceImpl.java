@@ -10,39 +10,23 @@ import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 
-public class InstanceImpl implements Instance {
+public class InstanceImpl extends KimStatementImpl implements Instance {
 
 	private static final long serialVersionUID = 3290903165179045061L;
 
 	private String urn;
 	private String namespace;
-	private Version version;
-	private Metadata metadata = Metadata.create();
-	private List<Annotation> annotations = new ArrayList<>();
 	private Observable observable;
 	private List<Instance> children = new ArrayList<>();
 	private List<Observable> states = new ArrayList<>();
 	private Scale scale;
+	private Scope scope;
 
 	@Override
 	public String getUrn() {
 		return this.urn;
-	}
-
-	@Override
-	public Version getVersion() {
-		return this.version;
-	}
-
-	@Override
-	public Metadata getMetadata() {
-		return this.metadata;
-	}
-
-	@Override
-	public List<Annotation> getAnnotations() {
-		return this.annotations;
 	}
 
 	@Override
@@ -67,18 +51,6 @@ public class InstanceImpl implements Instance {
 
 	public void setUrn(String urn) {
 		this.urn = urn;
-	}
-
-	public void setVersion(Version version) {
-		this.version = version;
-	}
-
-	public void setMetadata(Metadata metadata) {
-		this.metadata = metadata;
-	}
-
-	public void setAnnotations(List<Annotation> annotations) {
-		this.annotations = annotations;
 	}
 
 	public void setObservable(Observable observable) {
@@ -128,4 +100,12 @@ public class InstanceImpl implements Instance {
 		return Objects.equals(urn, other.urn);
 	}
 
+	@Override
+	public Scope getScope() {
+		return scope;
+	}
+
+	public void setScope(Scope scope) {
+		this.scope = scope;
+	}
 }

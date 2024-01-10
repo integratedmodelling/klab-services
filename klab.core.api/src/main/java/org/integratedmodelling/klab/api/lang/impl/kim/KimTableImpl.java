@@ -16,6 +16,7 @@ public class KimTableImpl extends KimStatementImpl implements KimTable {
     private int rowCount;
     private int columnCount;
     private List<KimClassifier> rowClassifiers = new ArrayList<>();
+    private String urn;
 
     @Override
     public List<String> getHeaders() {
@@ -81,4 +82,12 @@ public class KimTableImpl extends KimStatementImpl implements KimTable {
         this.rowClassifiers = rowClassifiers;
     }
 
+    @Override
+    public String getUrn() {
+        return urn;
+    }
+
+    public void setUrn(String urn) {
+        this.urn = urn;
+    }
 }

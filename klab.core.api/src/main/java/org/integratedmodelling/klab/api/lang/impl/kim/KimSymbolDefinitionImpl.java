@@ -13,13 +13,13 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
 
     private static final long serialVersionUID = -3605295215543099841L;
 
-    private String name;
+    private String urn;
     private String defineClass;
     private Literal value;
 
     @Override
-    public String getName() {
-        return name;
+    public String getUrn() {
+        return urn;
     }
 
     @Override
@@ -32,8 +32,8 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
         return value;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUrn(String urn) {
+        this.urn = urn;
     }
 
     public void setDefineClass(String defineClass) {

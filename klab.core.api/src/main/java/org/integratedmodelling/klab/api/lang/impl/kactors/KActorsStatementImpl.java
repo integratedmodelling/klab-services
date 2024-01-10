@@ -18,6 +18,7 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
     private static final long serialVersionUID = -2182769468866983874L;
 
     private Type type;
+    private String urn;
 
     public void setType(Type type) {
         this.type = type;
@@ -26,6 +27,15 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
     @Override
     public Type getType() {
         return type;
+    }
+
+    @Override
+    public String getUrn() {
+        return urn;
+    }
+
+    public void setUrn(String urn) {
+        this.urn = urn;
     }
 
     public static class CallImpl extends KActorsStatementImpl implements KActorsStatement.Call {

@@ -7,7 +7,7 @@ package org.integratedmodelling.klab.api.lang.kim;
  * @author ferdinando.villa
  *
  */
-public interface KimActiveStatement extends KimStatement {
+public interface KimActiveStatement extends KlabStatement {
 
     /**
      * Return the behavior specified in k.IM, possibly empty.

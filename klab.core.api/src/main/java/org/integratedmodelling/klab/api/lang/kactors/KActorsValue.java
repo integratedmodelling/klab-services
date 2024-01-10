@@ -28,7 +28,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
  * @author Ferd
  *
  */
-public interface KActorsValue extends KActorsCodeStatement {
+public interface KActorsValue extends Serializable {
 
     /**
      * Only used in cast expression (value as <type>)

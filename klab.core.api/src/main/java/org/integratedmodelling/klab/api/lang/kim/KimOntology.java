@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 
 import java.util.Collection;
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.List;
  *
  * @author ferdinando.villa
  */
-public interface KimOntology extends KimDocument<KimConceptStatement> {
+public interface KimOntology extends KlabDocument<KimConceptStatement> {
 
     /**
      * Use ONLY to compare with getDomain() to check if this is the one and only worldview root.

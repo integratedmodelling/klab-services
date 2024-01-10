@@ -11,8 +11,8 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -189,7 +189,9 @@ public class Utils {
                     ResourceSet.Resource descriptor = new ResourceSet.Resource();
                     descriptor.setResourceUrn(resource.getUrn());
                     descriptor.setServiceId(service.getLocalName());
-                    descriptor.setResourceVersion(resource.getVersion());
+                    if (resource instanceof KlabDocument document) {
+                        descriptor.setResourceVersion(document.getVersion());
+                    }
                     if (resource instanceof KimNamespace) {
                         ret.getNamespaces().add(descriptor);
                     } else if (resource instanceof KActorsBehavior) {
@@ -447,9 +449,9 @@ public class Utils {
                     ret.append((ret.length() == 0 ? "" : " ") + o);
                 } else if (o instanceof Throwable) {
                     ret.append((ret.length() == 0 ? "" : " ") + ((Throwable) o).getLocalizedMessage());
-                } else if (o instanceof KimScope) {
+                }/* else if (o instanceof KimScope) {
                     ret.insert(0, ((KimScope) o).getLocationDescriptor() + ": ");
-                } else if (o instanceof Notification.Type) {
+                }*/ else if (o instanceof Notification.Type) {
                     ntype = (Notification.Type) o;
                 } else if (o instanceof Notification) {
                     ntype = ((Notification) o).getType();

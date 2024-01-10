@@ -21,7 +21,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.logging.Logging;
 
@@ -54,7 +54,7 @@ public class JacksonConfiguration {
 
         @Override
         public boolean useForType(JavaType t) {
-            if (KimStatement.class.isAssignableFrom(t.getRawClass()) || Geometry.class.isAssignableFrom(t.getRawClass())
+            if (KlabStatement.class.isAssignableFrom(t.getRawClass()) || Geometry.class.isAssignableFrom(t.getRawClass())
                     || Pair.class.isAssignableFrom(t.getRawClass()) || Triple.class.isAssignableFrom(t.getRawClass())
                     || Unit.class.isAssignableFrom(t.getRawClass()) || Currency.class.isAssignableFrom(t.getRawClass())
                     || NumericRange.class.isAssignableFrom(t.getRawClass())

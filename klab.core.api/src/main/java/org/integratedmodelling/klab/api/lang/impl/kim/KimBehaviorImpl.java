@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KimDocument;
 
 /**
  * A IKimBehavior is the statement of the contextualization strategy for a model or an observation,

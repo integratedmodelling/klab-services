@@ -345,7 +345,7 @@ public class KActorsVM implements VM {
                             // ((Session) scope.getIdentity()).notifyTestCaseStart(behavior,
                             // scope.getTestScope().getTestStatistics());
 
-                            scope.send(new ScriptEvent(action.getName(), ScriptEvent.Type.TEST_START,
+                            scope.send(new ScriptEvent(action.getUrn(), ScriptEvent.Type.TEST_START,
                                     scope.getTestScope().getTestStatistics()));
 
                             // }
@@ -355,14 +355,14 @@ public class KActorsVM implements VM {
                                 KActorsScope testScope = scope.forTest(action);
                                 testScope.setMetadata(Parameters.create(scope.getMetadata()));
                                 testScope.setLocalizedSymbols(getLocalization(behavior));
-                                testScope.info(behavior.getUrn() + ": running test " + action.getName());
+                                testScope.info(behavior.getUrn() + ": running test " + action.getUrn());
 
                                 KActorsVM.this.run(action, behavior, testScope);
 
                                 // if (identity instanceof Session) {
                                 // ((Session) identity).resetAfterTest(action);
                                 // }
-                                scope.send(new ScriptEvent(action.getName(), ScriptEvent.Type.TEST_END));
+                                scope.send(new ScriptEvent(action.getUrn(), ScriptEvent.Type.TEST_END));
                                 testScope.getTestScope().finalizeTest(action, testScope.getValueScope());
                             }
 
@@ -431,7 +431,7 @@ public class KActorsVM implements VM {
 
     protected Collection<KActorsAction> getActions(KActorsBehavior behavior, String... match) {
         List<KActorsAction> ret = new ArrayList<>();
-        for (KActorsAction action : behavior.getActions()) {
+        for (var action : behavior.getStatements()) {
             if (match == null || match.length == 0) {
                 ret.add(action);
                 continue;
@@ -441,7 +441,7 @@ public class KActorsVM implements VM {
                 if (!ok && m.startsWith("@")) {
                     ok = Utils.Annotations.hasAnnotation(action, m.substring(1));
                 } else if (!ok) {
-                    ok = m.equals(action.getName());
+                    ok = m.equals(action.getUrn());
                 }
                 if (ok) {
                     break;
@@ -456,8 +456,8 @@ public class KActorsVM implements VM {
 
     protected KActorsAction getAction(KActorsBehavior behavior, String match) {
         if (match != null) {
-            for (KActorsAction action : behavior.getActions()) {
-                if (match.equals(action.getName())) {
+            for (var action : behavior.getStatements()) {
+                if (match.equals(action.getUrn())) {
                     return action;
                 }
             }
@@ -473,7 +473,7 @@ public class KActorsVM implements VM {
         }
 
         if (wspecs != null) {
-            scope = ((KActorsScope) scope).forWindow(wspecs, action.getName());
+            scope = ((KActorsScope) scope).forWindow(wspecs, action.getUrn());
         }
 
         if (action.isFunction()) {
@@ -486,7 +486,7 @@ public class KActorsVM implements VM {
 
         } catch (Throwable t) {
 
-            scope.onException(t, "action " + behavior + " " + action.getName());
+            scope.onException(t, "action " + behavior + " " + action.getUrn());
 
             if (scope.getSender() != null) {
                 scope.send(new Fire(scope));

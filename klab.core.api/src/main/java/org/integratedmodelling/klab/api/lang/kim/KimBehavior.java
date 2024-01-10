@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.lang.Action;
@@ -14,7 +13,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
  * @author fvilla
  *
  */
-public interface KimBehavior extends KimDocument<Action> {
+public interface KimBehavior extends KlabDocument<Action> {
 
     /**
      * Quick check for no-op behaviors.

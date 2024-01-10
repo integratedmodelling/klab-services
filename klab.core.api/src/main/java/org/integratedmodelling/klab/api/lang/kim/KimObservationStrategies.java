@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-public interface KimObservationStrategies extends KimDocument<KimObservationStrategy> {
+/**
+ * No scoping or other namespace considerations here so far, so this is for now a simple container for
+ * transport; all available strategies are lumped together and sorted by rank in the reasoner.
+ */
+public interface KimObservationStrategies extends KlabDocument<KimObservationStrategy> {
 
 }

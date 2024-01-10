@@ -78,17 +78,7 @@ public class ObservationStrategyObsoleteImpl implements ObservationStrategyObsol
     }
 
     @Override
-    public Version getVersion() {
-        return null;
-    }
-
-    @Override
     public Metadata getMetadata() {
-        return null;
-    }
-
-    @Override
-    public List<Annotation> getAnnotations() {
         return null;
     }
 

@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 
-public class KActorsValueImpl extends KActorsCodeStatementImpl implements KActorsValue {
+public class KActorsValueImpl /*extends KActorsCodeStatementImpl*/ implements KActorsValue {
 
 	private static final long serialVersionUID = 8055708952216648277L;
 

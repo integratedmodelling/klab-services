@@ -1,17 +1,15 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.impl.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
-import org.integratedmodelling.languages.api.ObservableSyntax;
-import org.integratedmodelling.languages.api.OntologySyntax;
-import org.integratedmodelling.languages.api.SemanticSyntax;
-import org.integratedmodelling.languages.observation.Strategies;
+import org.integratedmodelling.languages.api.*;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -260,8 +258,43 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public KimObservationStrategies adaptStrategy(Strategies definition) {
+    public KimObservationStrategies adaptStrategies(ObservationStrategiesSyntax definition) {
+
         KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
+        // we don't add source code here as each strategy has its own
+        for (var strategy : definition.getStrategies()) {
+            ret.getStatements().add(adaptStrategy(strategy));
+        }
+        return ret;
+    }
+
+    private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy) {
+
+        var ret = new KimObservationStrategyImpl(strategy.encode());
+
+        ret.setUrn(strategy.getName());
+        ret.setDescription(strategy.getDescription());
+        ret.setOffsetInDocument(strategy.getCodeOffset());
+        ret.setLength(strategy.getCodeLength());
+
+        for (var filter : strategy.getFilters()) {
+            var f = new KimObservationStrategyImpl.FilterImpl();
+            ret.getFilters().add(f);
+        }
+        for (var operation : strategy.getOperations()) {
+            var o = new KimObservationStrategyImpl.OperationImpl();
+            ret.getOperations().add(o);
+        }
+        for (var let : strategy.getMacroVariables().keySet()) {
+            var f = new KimObservationStrategyImpl.FilterImpl();
+            // TODO
+            ret.getMacroVariables().put(adaptLiteral(let), f);
+        }
+        return ret;
+    }
+
+    private Literal adaptLiteral(ParsedLiteral let) {
+        var ret = new LiteralImpl();
         return ret;
     }
 
@@ -295,7 +328,7 @@ public enum LanguageAdapter {
                                                        String namespace) {
 
         KimConceptStatementImpl ret = new KimConceptStatementImpl();
-        ret.setName(definition.getName());
+        ret.setUrn(definition.getName());
         ret.setNamespace(namespace);
         ret.setAbstract(definition.isAbstract());
         ret.setSealed(definition.isSealed());

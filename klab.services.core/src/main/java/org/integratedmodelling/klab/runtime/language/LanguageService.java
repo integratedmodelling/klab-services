@@ -85,16 +85,16 @@ public class LanguageService implements Language {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T execute(ServiceCall call, Scope scope, Class<T> resultClass) {
-        FunctionDescriptor descriptor = this.functions.get(call.getName());
+        FunctionDescriptor descriptor = this.functions.get(call.getUrn());
         if (descriptor == null) {
             /*
             check the resource service in the scope to see if we can find a component that supports this call
              */
-            ResourceSet resourceSet = scope.getService(ResourcesService.class).resolveServiceCall(call.getName(),
+            ResourceSet resourceSet = scope.getService(ResourcesService.class).resolveServiceCall(call.getUrn(),
                     scope);
             if (!resourceSet.isEmpty()) {
                 loadComponent(resourceSet, scope);
-                descriptor = this.functions.get(call.getName());
+                descriptor = this.functions.get(call.getUrn());
             }
         }
         if (descriptor != null && !descriptor.error) {
@@ -104,7 +104,7 @@ public class LanguageService implements Language {
                     return (T) descriptor.method.invoke(descriptor.staticMethod ? null : descriptor.mainClassInstance,
                             getParameters(descriptor, call, scope, false));
                 } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                    scope.error("runtime error when invoking function " + call.getName());
+                    scope.error("runtime error when invoking function " + call.getUrn());
                     return null;
                 }
             } else if (descriptor.constructor != null) {

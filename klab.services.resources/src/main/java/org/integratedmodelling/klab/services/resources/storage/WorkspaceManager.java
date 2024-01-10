@@ -11,7 +11,6 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -46,6 +45,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
 import java.io.*;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -89,6 +89,65 @@ public class WorkspaceManager {
             return super.createConceptDescriptor(declaration);
         }
     };
+
+    class StrategyParser extends Parser<Strategies> {
+
+        @Override
+        protected Injector createInjector() {
+            return new ObservationStandaloneSetup().createInjectorAndDoEMFRegistration();
+        }
+
+        /**
+         * Parse a concept definition into its syntactic peer, which should be inspected for errors before
+         * turning into semantics.
+         *
+         * @param strategyUrl
+         * @return the parsed semantic expression, or null if the parser cannot make sense of it.
+         */
+        public ObservationStrategiesSyntax parseStrategies(URL strategyUrl) {
+
+            List<Notification> errors = new ArrayList<>();
+
+            try (var input = strategyUrl.openStream()) {
+                var result = parse(input, errors);
+
+                if (!errors.isEmpty()) {
+                    for (var error : errors) {
+                        scope.error("Observation strategy resource has errors: " + strategyUrl,
+                                Klab.ErrorCode.RESOURCE_VALIDATION,
+                                Klab.ErrorContext.OBSERVATION_STRATEGY);
+                    }
+                    return null;
+                }
+
+                if (result instanceof Strategies) {
+                    return new ObservationStrategiesSyntaxImpl((Strategies) result, languageValidationScope) {
+
+                        @Override
+                        protected void logWarning(ParsedObject target, EObject object,
+                                                  EStructuralFeature feature, String message) {
+                            getNotifications().add(new Notification(object,
+                                    new LanguageValidationScope.ValidationMessage(message, -1,
+                                            LanguageValidationScope.Level.WARNING)));
+                        }
+
+                        @Override
+                        protected void logError(ParsedObject target, EObject object,
+                                                EStructuralFeature feature
+                                , String message) {
+                            getNotifications().add(new Notification(object,
+                                    new LanguageValidationScope.ValidationMessage(message, -1,
+                                            LanguageValidationScope.Level.ERROR)));
+                        }
+                    };
+                }
+            } catch (IOException e) {
+                scope.error("Error loading observation strategy " + strategyUrl,
+                        Klab.ErrorCode.READ_FAILED, Klab.ErrorContext.OBSERVATION_STRATEGY);
+            }
+            return null;
+        }
+    }
 
     class ObservableParser extends Parser<ObservableSequence> {
 
@@ -137,8 +196,8 @@ public class WorkspaceManager {
         }
 
         /**
-         * Parse an observable definition into its syntactic peer, which should be inspected for errors before
-         * turning into semantics.
+         * Parse an observable definition into its syntactic peer, which should be inspected for errors
+         * before turning into semantics.
          *
          * @param observableDefinition
          * @return the parsed semantic expression, or null if the parser cannot make sense of it.
@@ -175,18 +234,12 @@ public class WorkspaceManager {
     }
 
     private ObservableParser observableParser = new ObservableParser();
+    private StrategyParser strategyParser = new StrategyParser();
 
     private Parser<Ontology> ontologyParser = new Parser<Ontology>() {
         @Override
         protected Injector createInjector() {
             return new WorldviewStandaloneSetup().createInjectorAndDoEMFRegistration();
-        }
-    };
-
-    private Parser<Strategies> strategyParser = new Parser<Strategies>() {
-        @Override
-        protected Injector createInjector() {
-            return new ObservationStandaloneSetup().createInjectorAndDoEMFRegistration();
         }
     };
 
@@ -289,8 +342,8 @@ public class WorkspaceManager {
      * syntactic form. Project dependencies will ensure the consistency of the result; if any of the
      * ontologies is part of a missing project, return an empty list.
      *
-     * @param worldviewOnly if true, only ontologies that are part of a project tagged as worldview will be
-     *                      returned
+     * @param worldviewOnly if true, only ontologies that are part of a project tagged as worldview will
+     *                      be returned
      * @return the fully consistent known worldview or an empty list
      */
     public List<KimOntology> getOntologies(boolean worldviewOnly) {
@@ -409,8 +462,8 @@ public class WorkspaceManager {
     }
 
     /**
-     * Return all the projects in all workspaces in order of dependency. If projects refer to others that are
-     * unavailable locally, those dependencies remain unresolved.
+     * Return all the projects in all workspaces in order of dependency. If projects refer to others that
+     * are unavailable locally, those dependencies remain unresolved.
      *
      * @return
      */
@@ -433,8 +486,9 @@ public class WorkspaceManager {
     }
 
     /**
-     * Import a project from a URL into the given workspace and return the associated storage. Project must
-     * not exist already. Removes any cached load order so that it can be computed again when requested.
+     * Import a project from a URL into the given workspace and return the associated storage. Project
+     * must not exist already. Removes any cached load order so that it can be computed again when
+     * requested.
      *
      * @param projectUrl
      * @param workspaceName
@@ -551,18 +605,19 @@ public class WorkspaceManager {
     }
 
     /**
-     * Read, validate, resolve and sorts projects locally (all workspaces) and from the network, returning the
-     * load order for all projects, including local and externally resolved ones. Check errors (reported in
-     * the configured monitor) and unresolved projects after calling. Does not throw exceptions.
+     * Read, validate, resolve and sorts projects locally (all workspaces) and from the network, returning
+     * the load order for all projects, including local and externally resolved ones. Check errors
+     * (reported in the configured monitor) and unresolved projects after calling. Does not throw
+     * exceptions.
      * <p>
-     * While loading the workspaces, (re)build the workspace list so that {@link #getWorkspaces()} can work.
-     * The workspaces are also listed in order of first-contact dependency although circular deps between
-     * workspaces are permitted.
+     * While loading the workspaces, (re)build the workspace list so that {@link #getWorkspaces()} can
+     * work. The workspaces are also listed in order of first-contact dependency although circular deps
+     * between workspaces are permitted.
      *
-     * @return the load order or an empty collection in case of circular dependencies or no configuration. If
-     * errors happened they will be notified through the monitor and {@link #getUnresolvedProjects()} will
-     * return the list of projects that have not resolved properly (including resource not found and version
-     * mismatch errors). Only one of the elements in each returned pair will be non-null.
+     * @return the load order or an empty collection in case of circular dependencies or no configuration.
+     * If errors happened they will be notified through the monitor and {@link #getUnresolvedProjects()}
+     * will return the list of projects that have not resolved properly (including resource not found and
+     * version mismatch errors). Only one of the elements in each returned pair will be non-null.
      */
     public List<Pair<ProjectStorage, Project>> loadWorkspace() {
 
@@ -695,7 +750,7 @@ public class WorkspaceManager {
         WorkspaceImpl ret = this.workspaces.get(workspaceName);
         if (ret == null) {
             ret = new WorkspaceImpl();
-            ret.setName(workspaceName);
+            ret.setUrn(workspaceName);
             this.workspaces.put(workspaceName, ret);
         }
         return ret;
@@ -762,50 +817,39 @@ public class WorkspaceManager {
                     }
                 } else {
                     for (var strategyUrl : pd.storage.listResources(ProjectStorage.ResourceType.STRATEGY)) {
-                        try (var input = strategyUrl.openStream()) {
-                            var errors = new ArrayList<Notification>();
-                            var parsed = strategyParser.parse(input, errors);
-                            if (!errors.isEmpty()) {
-                                scope.error("Observation strategy resource has errors: " + strategyUrl,
-                                        Klab.ErrorCode.RESOURCE_VALIDATION,
-                                        Klab.ErrorContext.OBSERVATION_STRATEGY);
-                                _worldview.setEmpty(true);
-                                return _worldview;
-                            }
-                            _worldview.getObservationStrategies().addAll(LanguageAdapter.INSTANCE.adaptStrategy(parsed).getStatements());
-                        } catch (IOException e) {
-                            scope.error("Error loading observation strategy " + strategyUrl,
-                                    Klab.ErrorCode.READ_FAILED, Klab.ErrorContext.OBSERVATION_STRATEGY);
+                        var parsed = strategyParser.parseStrategies(strategyUrl);
+                        if (parsed == null) {
                             _worldview.setEmpty(true);
                             return _worldview;
                         }
+                        _worldview.getObservationStrategies().addAll(LanguageAdapter.INSTANCE.adaptStrategies(parsed).getStatements());
                     }
                 }
             }
+        }
 
             /*
             Validate the first ontology as the root ontology and set the worldview name from it
              */
-            if (_worldview.getOntologies().size() > 0) {
-                KimOntology root = _worldview.getOntologies().get(0);
-                if (!(root.getDomain() == KimOntology.rootDomain)) {
-                    _worldview.setEmpty(true);
-                    scope.error("The first namespace in the worldview is not the root namespace: worldview " +
-                            "is inconsistent");
-                } else {
-                    _worldview.setUrn(root.getUrn());
-                }
-            } else {
+        if (_worldview.getOntologies().size() > 0) {
+            KimOntology root = _worldview.getOntologies().get(0);
+            if (!(root.getDomain() == KimOntology.rootDomain)) {
                 _worldview.setEmpty(true);
+                scope.error("The first namespace in the worldview is not the root namespace: worldview " +
+                        "is inconsistent");
+            } else {
+                _worldview.setUrn(root.getUrn());
             }
-
+        } else {
+            _worldview.setEmpty(true);
         }
-        return _worldview;
-    }
 
-    private void saveConfiguration() {
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        Utils.YAML.save(this.configuration, config);
-    }
+        return _worldview;
+}
+
+private void saveConfiguration() {
+    File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
+    Utils.YAML.save(this.configuration, config);
+}
 
 }

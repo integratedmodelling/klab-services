@@ -10,11 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimStatement;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 /**
  * The syntactic peer of a k.LAB namespace. To be renamed when we rename the interfaces and the
@@ -23,7 +21,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimStatement;
  * @author ferdinando.villa
  *
  */
-public class KimNamespaceImpl extends KimDocumentImpl<KimStatement> implements KimNamespace {
+public class KimNamespaceImpl extends KimDocumentImpl<KlabStatement> implements KimNamespace {
 
     @Serial
     private static final long serialVersionUID = 6198296119075476515L;
@@ -36,7 +34,7 @@ public class KimNamespaceImpl extends KimDocumentImpl<KimStatement> implements K
     private boolean worldviewBound;
     private List<ServiceCall> extents = new ArrayList<>();
     private Map<String, Object> defines = new HashMap<>();
-    private List<KimStatement> statements = new ArrayList<>();
+    private List<KlabStatement> statements = new ArrayList<>();
     private Map<String, List<String>> imports = new HashMap<>();
 
     @Override
@@ -75,7 +73,7 @@ public class KimNamespaceImpl extends KimDocumentImpl<KimStatement> implements K
     }
 
     @Override
-    public List<KimStatement> getStatements() {
+    public List<KlabStatement> getStatements() {
         return this.statements;
     }
 
@@ -112,7 +110,7 @@ public class KimNamespaceImpl extends KimDocumentImpl<KimStatement> implements K
         this.defines = defines;
     }
 
-    public void setStatements(List<KimStatement> statements) {
+    public void setStatements(List<KlabStatement> statements) {
         this.statements = statements;
     }
 

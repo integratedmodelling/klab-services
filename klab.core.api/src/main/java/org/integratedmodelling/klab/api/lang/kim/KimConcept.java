@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
  *
  * @author ferdinando.villa
  */
-public interface KimConcept extends KimStatement, KlabAsset {
+public interface KimConcept extends KlabStatement, KlabAsset {
 
     enum Expression {
         SINGLETON, UNION, INTERSECTION

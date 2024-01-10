@@ -19,7 +19,6 @@ public class ModelImpl implements Model {
 
 	private static final long serialVersionUID = -303420101007056751L;
 	private String urn;
-	private Version version;
 	private Metadata metadata = Metadata.create();
 	private List<Annotation> annotations = new ArrayList<>();
 	private String namespace;
@@ -35,11 +34,6 @@ public class ModelImpl implements Model {
 	@Override
 	public String getUrn() {
 		return this.urn;
-	}
-
-	@Override
-	public Version getVersion() {
-		return this.version;
 	}
 
 	@Override
@@ -79,10 +73,6 @@ public class ModelImpl implements Model {
 
 	public void setUrn(String urn) {
 		this.urn = urn;
-	}
-
-	public void setVersion(Version version) {
-		this.version = version;
 	}
 
 	public void setMetadata(Metadata metadata) {

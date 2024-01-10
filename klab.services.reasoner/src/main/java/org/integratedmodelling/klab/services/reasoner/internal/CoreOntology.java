@@ -106,18 +106,18 @@ public class CoreOntology {
             if (concept.getUpperConceptDefined() != null) {
                 var implemented = Sets.intersection(concept.getType(), SemanticType.DECLARABLE_TYPES);
                 if (implemented.size() > 1) {
-                    scope.warn("Inconsistent worldview: the fundamental type for core concept " + concept.getNamespace() + ":" + concept.getName() + " is ambiguous: " + implemented);
+                    scope.warn("Inconsistent worldview: the fundamental type for core concept " + concept.getNamespace() + ":" + concept.getUrn() + " is ambiguous: " + implemented);
                 } else if (implemented.size() == 0) {
                     scope.warn("Inconsistent worldview: can't establish the fundamental type for core " +
-                            "concept " + concept.getNamespace() + ":" + concept.getName() + " (" + concept.getUpperConceptDefined() + ")");
+                            "concept " + concept.getNamespace() + ":" + concept.getUrn() + " (" + concept.getUpperConceptDefined() + ")");
                 } else {
                     var type = implemented.iterator().next();
                     if (coreConcepts.containsKey(type)) {
                         // should be an error
                         scope.warn("Inconsistent worldview: fundamental type " + type + ", assigned to " +
-                                "core" + " concept " + coreConcepts.get(type) + ", is being reassigned to " + concept.getNamespace() + ":" + concept.getName());
+                                "core" + " concept " + coreConcepts.get(type) + ", is being reassigned to " + concept.getNamespace() + ":" + concept.getUrn());
                     } else {
-                        coreConcepts.put(type, concept.getNamespace() + ":" + concept.getName());
+                        coreConcepts.put(type, concept.getNamespace() + ":" + concept.getUrn());
                     }
                 }
             }
