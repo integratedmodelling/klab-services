@@ -298,7 +298,7 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public KimOntology adaptOntology(OntologySyntax ontology) {
+    public KimOntology adaptOntology(OntologySyntax ontology, String projectName) {
 
         KimOntologyImpl ret = new KimOntologyImpl();
 
@@ -307,6 +307,8 @@ public enum LanguageAdapter {
         ret.setSourceCode(ontology.getSourceCode());
         ret.getMetadata().put(Metadata.DC_COMMENT, ontology.getDescription());
         ret.setVersion(Version.create(ontology.getVersion()));
+        ret.setProjectName(projectName);
+
         if (ontology.getDomain() == OntologySyntax.rootDomain) {
             ret.setDomain(KimOntology.rootDomain);
             for (var owlImport : ontology.getImportedCoreOntologies().keySet()) {

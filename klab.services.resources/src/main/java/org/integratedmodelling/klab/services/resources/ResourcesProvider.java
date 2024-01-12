@@ -36,7 +36,6 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
-import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
@@ -72,8 +71,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     private String url;
     private Authentication authenticationService;
-    private Map<String, Project> localProjects = Collections.synchronizedMap(new HashMap<>());
-    private Map<String, WorkspaceImpl> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
+
+    /**
+     * The projects are pre-sorted in order of dependency
+     */
+//    private Map<String, Project> localProjects = Collections.synchronizedMap(new LinkedHashMap<>());
+//    private Map<String, WorkspaceImpl> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
     private Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
     // we need to be able to serve entire, valid worldviews, so if this is filled in it may contain both
     // local and remote ontologies. The worldview is always kept in dependency order.
@@ -108,10 +111,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      */
     private ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
 
-
-    /**
-     * If this is used, {@link #loadWorkspaces()} must be called explicitly after the service scope is set.
-     */
     @SuppressWarnings("unchecked")
     public ResourcesProvider(ServiceScope scope, String localName,
                              BiConsumer<Scope, Message>... messageListeners) {
@@ -151,13 +150,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities());
         this.kbox = ModelKbox.create(localName, this.scope);
-
+        this.workspaceManager.loadWorkspace();
         /*
          * TODO launch update service
          */
-
-        loadWorkspaces();
-
         scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities());
     }
@@ -167,17 +163,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * The resolver callback for external projects may have been called already by the workspace manager to
      * resolve project dependencies.
      */
-    private boolean loadWorkspaces() {
-        // TODO
-        for (var project : this.workspaceManager.getProjectLoadOrder()) {
-            if (project.getFirst() != null) {
-                System.out.println("Loading local project " + project.getFirst().getProjectName());
-            } else {
-                System.out.println("Registering remote project " + project.getSecond().getUrn());
-            }
-        }
-        return true;
-    }
+//    private boolean loadWorkspaces() {
+//        localProjects.clear();
+//        for (var project : this.workspaceManager.getWorkspaces()) {
+//            localProjects.put(projectData.getUrn(), projectData);
+//        }
+//        return true;
+//    }
+
 
 //    public ResourceSet loadWorkspaces() {
 //        List<String> projects = new ArrayList<>();
@@ -581,27 +574,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public synchronized boolean importProject(String workspaceName, String projectUrl,
                                               boolean overwriteIfExisting) {
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
-        return storage != null && loadWorkspaces();
+        return storage != null/* && loadWorkspaces()*/;
     }
-
-//    /**
-//     * Read, validate and resolve dependencies for all namespaces and other assets into the workspace
-//     * descriptors, resolving any missing required projects from the network (if not resolved, log an error
-//     * and don't load the project). Do not load anything yet: the workspaces are loaded as a unit, starting
-//     * with any that has a root worldview, then any with any worldview, then the others.
-//     *
-//     * @param storage
-//     * @return
-//     */
-//    private boolean importProject(ProjectStorage storage, Workspace workspace) {
-//
-//        /*
-//        Start with the worldview files. Ensure that the entire content of the project is resolved. Add
-//        errors and warnings as appropriate for the modeler.
-//         */
-//
-//        return true;
-//    }
 
     @Override
     public Project createProject(String workspaceName, String projectName) {
@@ -647,32 +621,32 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public void removeProject(String projectName) {
 
         updateLock.writeLock().lock();
+//
+//        try {
+//            // remove namespaces, behaviors and resources
+//            var project = localProjects.get(projectName);
+//            if (project != null) {
+//                for (var namespace : project.getNamespaces()) {
+//                    this.localNamespaces.remove(namespace.getUrn());
+//                }
+//                for (var ontology : project.getOntologies()) {
+//                    this.servedOntologies.remove(ontology.getUrn());
+//                }
+//                for (KActorsBehavior behavior : project.getBehaviors()) {
+//                    this.localBehaviors.remove(behavior.getUrn());
+//                }
+//                for (String resource : project.getResourceUrns()) {
+//                    localResources.remove(resource);
+//                    catalog.remove(resource);
+//                }
+//                this.localProjects.remove(projectName);
+//            }
+        workspaceManager.removeProject(projectName);
+        db.commit();
 
-        try {
-            // remove namespaces, behaviors and resources
-            var project = localProjects.get(projectName);
-            if (project != null) {
-                for (var namespace : project.getNamespaces()) {
-                    this.localNamespaces.remove(namespace.getUrn());
-                }
-                for (var ontology : project.getOntologies()) {
-                    this.servedOntologies.remove(ontology.getUrn());
-                }
-                for (KActorsBehavior behavior : project.getBehaviors()) {
-                    this.localBehaviors.remove(behavior.getUrn());
-                }
-                for (String resource : project.getResourceUrns()) {
-                    localResources.remove(resource);
-                    catalog.remove(resource);
-                }
-                this.localProjects.remove(projectName);
-            }
-            workspaceManager.removeProject(projectName);
-            db.commit();
-
-        } finally {
-            updateLock.writeLock().unlock();
-        }
+//        }/* finally {*/
+        updateLock.writeLock().unlock();
+        /*}*/
     }
 
 //    private String getWorkspace(Project project) {
@@ -686,16 +660,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public void removeWorkspace(String workspaceName) {
-        Workspace workspace = this.localWorkspaces.get(workspaceName);
+        Workspace workspace = workspaceManager.getWorkspace(workspaceName);
         for (Project project : workspace.getProjects()) {
             removeProject(project.getUrn());
         }
-        try {
-            updateLock.writeLock().lock();
-            this.localWorkspaces.remove(workspaceName);
-        } finally {
-            updateLock.writeLock().unlock();
-        }
+//        try {
+//            updateLock.writeLock().lock();
+////            this.localWorkspaces.remove(workspaceName);
+//        } finally {
+//            updateLock.writeLock().unlock();
+//        }
     }
 
     @Override
@@ -1111,7 +1085,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public Collection<Project> listProjects() {
-        return localProjects.values();
+        return workspaceManager.getProjects();
     }
 
     @Override
@@ -1136,11 +1110,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ResourceSet ret = new ResourceSet();
 
         /*
-         * Check if it's a project
+         * TODO Check if it's a project
          */
-        if (localProjects.containsKey(urn)) {
+        /*if (workspaceManager.getLocalProjectURNs().contains(urn)) {
 
-        } else if (localNamespaces.containsKey(urn)) {
+        } else */if (localNamespaces.containsKey(urn)) {
 
             /*
              * If not, check for namespace

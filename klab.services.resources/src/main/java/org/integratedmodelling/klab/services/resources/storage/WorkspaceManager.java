@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -64,6 +65,7 @@ public class WorkspaceManager {
 
     private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
     private List<KimOntology> _ontologyOrder;
+    private List<KimNamespace> _namespaceOrder;
     private List<KimOntology> _worldviewOntologies;
     private WorldviewImpl _worldview;
 
@@ -89,6 +91,15 @@ public class WorkspaceManager {
             return super.createConceptDescriptor(declaration);
         }
     };
+
+    /**
+     * This includes the non-local projects, in load order
+     *
+     * @return
+     */
+    public List<Project> getProjects() {
+        return new ArrayList<>(projects.values());
+    }
 
     class StrategyParser extends Parser<Strategies> {
 
@@ -196,8 +207,8 @@ public class WorkspaceManager {
         }
 
         /**
-         * Parse an observable definition into its syntactic peer, which should be inspected for errors
-         * before turning into semantics.
+         * Parse an observable definition into its syntactic peer, which should be inspected for errors before
+         * turning into semantics.
          *
          * @param observableDefinition
          * @return the parsed semantic expression, or null if the parser cannot make sense of it.
@@ -257,33 +268,31 @@ public class WorkspaceManager {
         ProjectStorage storage;
         Project externalProject;
         Project.Manifest manifest;
-        // these are loaded on demand, use only through their accessors
-        private Set<String> _namespaceIds;
-        private Set<String> _ontologyIds;
+//        // these are loaded on demand, use only through their accessors
+//        private Set<String> _namespaceIds;
+//        private Set<String> _ontologyIds;
         // TODO permissions
 
-
-        public Set<String> getNamespaceIds() {
-            if (_namespaceIds == null) {
-
-            }
-            return _namespaceIds;
-        }
-
-        public Set<String> getOntologyIds() {
-            if (_ontologyIds == null) {
-
-            }
-            return _ontologyIds;
-        }
+//
+//        public Set<String> getNamespaceIds() {
+//            if (_namespaceIds == null) {
+//
+//            }
+//            return _namespaceIds;
+//        }
+//
+//        public Set<String> getOntologyIds() {
+//            if (_ontologyIds == null) {
+//
+//            }
+//            return _ontologyIds;
+//        }
     }
 
-    private Map<String, WorkspaceImpl> workspaces = new HashMap<>();
+    private Map<String, WorkspaceImpl> workspaces = new LinkedHashMap<>();
     private final Function<String, Project> externalProjectResolver;
-    private Map<String, ProjectDescriptor> projects = new HashMap<>();
-    // these MAY be resolved through the network via callback. If unresolved, the corresponding Project
-    // will be null.
-//    private Map<String, Project> externalReferences = new HashMap<>();
+    private Map<String, ProjectDescriptor> projectDescriptors = new HashMap<>();
+    private Map<String, Project> projects = new LinkedHashMap<>();
     // all logging goes through here
     private Scope scope;
     private ResourcesConfiguration configuration;
@@ -311,11 +320,15 @@ public class WorkspaceManager {
         }
 
         // clear existing caches (this must be reentrant and be callable again at any new import)
-        projects.clear();
+        projectDescriptors.clear();
 
         // build descriptors for all locally configured projects and workspaces
 
         for (var workspace : configuration.getWorkspaces().keySet()) {
+
+            // ensure existing
+            getWorkspace(workspace);
+
             for (var project : configuration.getWorkspaces().get(workspace)) {
                 var projectConfiguration = configuration.getProjectConfiguration().get(project);
                 ProjectStorage projectStorage = loadProject(projectConfiguration.getSourceUrl(), workspace);
@@ -327,7 +340,8 @@ public class WorkspaceManager {
                     descriptor.manifest = readManifest(projectStorage);
                     descriptor.workspace = workspace;
                     descriptor.name = project;
-                    projects.put(project, descriptor);
+                    projectDescriptors.put(project, descriptor);
+
 
                 } else {
                     // whine plaintively; the monitor will contain errors
@@ -342,8 +356,8 @@ public class WorkspaceManager {
      * syntactic form. Project dependencies will ensure the consistency of the result; if any of the
      * ontologies is part of a missing project, return an empty list.
      *
-     * @param worldviewOnly if true, only ontologies that are part of a project tagged as worldview will
-     *                      be returned
+     * @param worldviewOnly if true, only ontologies that are part of a project tagged as worldview will be
+     *                      returned
      * @return the fully consistent known worldview or an empty list
      */
     public List<KimOntology> getOntologies(boolean worldviewOnly) {
@@ -353,12 +367,14 @@ public class WorkspaceManager {
             _worldviewOntologies = new ArrayList<>();
             _ontologyOrder = new ArrayList<>();
 
+            Map<String, String> ontologyProjects = new HashMap<>();
             Map<String, Triple<Ontology, KimOntology, Boolean>> cache = new HashMap<>();
-            for (var pd : projects.values()) {
+            for (var pd : projectDescriptors.values()) {
                 var isWorldview = pd.manifest.getDefinedWorldview() != null;
                 if (pd.externalProject != null) {
                     for (var ontology : pd.externalProject.getOntologies()) {
                         cache.put(ontology.getUrn(), Triple.of(null, ontology, isWorldview));
+                        // TODO add metadata to the ontology to signify it's remote, probably a URL
                     }
                 } else {
                     for (var ontologyUrl : pd.storage.listResources(ProjectStorage.ResourceType.ONTOLOGY)) {
@@ -370,6 +386,7 @@ public class WorkspaceManager {
                                         Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.ONTOLOGY);
                                 return Collections.emptyList();
                             }
+                            ontologyProjects.put(parsed.getNamespace().getName(), pd.name);
                             cache.put(parsed.getNamespace().getName(), Triple.of(parsed, null, isWorldview));
                         } catch (IOException e) {
                             // log error and return failure
@@ -438,7 +455,8 @@ public class WorkspaceManager {
                             errors.set(true);
                         }
                     };
-                    ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax);
+                    ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax, ontologyProjects.get(syntax.getName()));
+                    // TODO add ontology local URL to metadata based on service URL
                 }
 
                 if (errors.get()) {
@@ -462,23 +480,71 @@ public class WorkspaceManager {
     }
 
     /**
-     * Return all the projects in all workspaces in order of dependency. If projects refer to others that
-     * are unavailable locally, those dependencies remain unresolved.
-     *
-     * @return
-     */
-    public List<ProjectStorage> getLocalProjects() {
-        return null;
-    }
-
-    /**
      * Return all the namespaces in order of dependency. Resolution is internal like in
      * {@link #getOntologies(boolean)}.
      *
      * @return
      */
-    List<NamespaceSyntax> getNamespaces() {
-        return null;
+    List<KimNamespace> getNamespaces() {
+        if (_namespaceOrder == null) {
+            _namespaceOrder = new ArrayList<>();
+            // TODO load them from all projects in dependency order, same as ontologies
+        }
+        return _namespaceOrder;
+    }
+
+    public List<String> getWorkspaceURNs() {
+        return new ArrayList<>(workspaces.keySet());
+    }
+
+//    public List<String> getLocalProjectURNs(String workspace) {
+//        var ret = new ArrayList<String>();
+//        for (var pd : getProjectLoadOrder()) {
+//            if (pd.getFirst() != null) {
+//                var pdesc = projectDescriptors.get(pd.getFirst().getProjectName());
+//                if (pdesc != null /* shouldn't happen */ && pdesc.workspace.equals(workspace)) {
+//                    ret.add(pdesc.name);
+//                }
+//            }
+//        }
+//        return ret;
+//    }
+
+    /**
+     * Create the project implementation with every namespace and manifest filled in. CAUTION this can be a
+     * large object. The project must exist in a local workspace; if not, null will be returned without
+     * error.
+     *
+     * @param projectId
+     * @return the filled in project or null
+     */
+    public Project createProjectData(String projectId) {
+
+        ProjectImpl ret = null;
+        var pdesc = projectDescriptors.get(projectId);
+        if (pdesc != null && pdesc.storage != null) {
+
+            ret = new ProjectImpl();
+            ret.setUrn(projectId);
+
+            // TODO improve metadata with service IDs, load time, stats, any info etc.
+            ret.getMetadata().put("storage.url", pdesc.storage.getUrl());
+            ret.setManifest(pdesc.manifest);
+
+            for (KimOntology ontology : getOntologies(false)) {
+                if (projectId.equals(ontology.getProjectName())) {
+                    ret.getOntologies().add(ontology);
+                }
+            }
+
+            for (KimNamespace namespace : getNamespaces()) {
+                if (projectId.equals(namespace.getProjectName())) {
+                    ret.getNamespaces().add(namespace);
+                }
+            }
+
+        }
+        return ret;
     }
 
     List<ObservationStrategySyntax> getStrategies() {
@@ -486,9 +552,8 @@ public class WorkspaceManager {
     }
 
     /**
-     * Import a project from a URL into the given workspace and return the associated storage. Project
-     * must not exist already. Removes any cached load order so that it can be computed again when
-     * requested.
+     * Import a project from a URL into the given workspace and return the associated storage. Project must
+     * not exist already. Removes any cached load order so that it can be computed again when requested.
      *
      * @param projectUrl
      * @param workspaceName
@@ -531,6 +596,7 @@ public class WorkspaceManager {
         ProjectStorage ret = null;
         this._projectLoadOrder = null;
         this._ontologyOrder = null;
+        this._namespaceOrder = null;
         this._worldview = null;
 
         try {
@@ -598,38 +664,36 @@ public class WorkspaceManager {
     }
 
     public List<Pair<ProjectStorage, Project>> getProjectLoadOrder() {
-        if (this._projectLoadOrder == null) {
-            this._projectLoadOrder = loadWorkspace();
-        }
         return this._projectLoadOrder;
     }
 
     /**
-     * Read, validate, resolve and sorts projects locally (all workspaces) and from the network, returning
-     * the load order for all projects, including local and externally resolved ones. Check errors
-     * (reported in the configured monitor) and unresolved projects after calling. Does not throw
-     * exceptions.
+     * Read, validate, resolve and sorts projects locally (all workspaces) and from the network, returning the
+     * load order for all projects, including local and externally resolved ones. Check errors (reported in
+     * the configured monitor) and unresolved projects after calling. Does not throw exceptions.
      * <p>
-     * While loading the workspaces, (re)build the workspace list so that {@link #getWorkspaces()} can
-     * work. The workspaces are also listed in order of first-contact dependency although circular deps
-     * between workspaces are permitted.
+     * While loading the workspaces, (re)build the workspace list so that {@link #getWorkspaces()} can work.
+     * The workspaces are also listed in order of first-contact dependency although circular deps between
+     * workspaces are permitted.
      *
-     * @return the load order or an empty collection in case of circular dependencies or no configuration.
-     * If errors happened they will be notified through the monitor and {@link #getUnresolvedProjects()}
-     * will return the list of projects that have not resolved properly (including resource not found and
-     * version mismatch errors). Only one of the elements in each returned pair will be non-null.
+     * @return the load order or an empty collection in case of circular dependencies or no configuration. If
+     * errors happened they will be notified through the monitor and {@link #getUnresolvedProjects()} will
+     * return the list of projects that have not resolved properly (including resource not found and version
+     * mismatch errors). Only one of the elements in each returned pair will be non-null.
      */
-    public List<Pair<ProjectStorage, Project>> loadWorkspace() {
+    public boolean loadWorkspace() {
 
-        List<Pair<ProjectStorage, Project>> loadOrder = new ArrayList<>();
+        this._projectLoadOrder = new ArrayList<>();
+
+        projects.clear();
 
         // build a version-aware dependency tree
         Graph<Pair<String, Version>, DefaultEdge> dependencyGraph =
                 new DefaultDirectedGraph<>(DefaultEdge.class);
-        for (String s : projects.keySet()) {
-            var snode = Pair.of(s, projects.get(s).manifest.getVersion());
+        for (String s : projectDescriptors.keySet()) {
+            var snode = Pair.of(s, projectDescriptors.get(s).manifest.getVersion());
             dependencyGraph.addVertex(snode);
-            for (var dep : projects.get(s).manifest.getPrerequisiteProjects()) {
+            for (var dep : projectDescriptors.get(s).manifest.getPrerequisiteProjects()) {
                 var pnode = Pair.of(dep.getFirst(), dep.getSecond());
                 dependencyGraph.addVertex(pnode);
                 dependencyGraph.addEdge(pnode, snode);
@@ -643,7 +707,7 @@ public class WorkspaceManager {
                     "configuration have cyclic dependencies on each other: " +
                     "will not " +
                     "proceed. Review configuration");
-            return Collections.emptyList();
+            return false;
         } else {
 
             // establish load order: a list of either ProjectStorage or external Project
@@ -653,11 +717,11 @@ public class WorkspaceManager {
             while (sort.hasNext()) {
                 var proj = sort.next();
                 // verify availability
-                if (projects.get(proj.getFirst()) != null) {
+                if (projectDescriptors.get(proj.getFirst()) != null) {
                     // local dependency: check version
-                    var pd = projects.get(proj.getFirst());
-                    if (!pd.manifest.getVersion().compatible(proj.getSecond())) {
-                        loadOrder.add(Pair.of(pd.storage, null));
+                    var pd = projectDescriptors.get(proj.getFirst());
+                    if (pd.manifest.getVersion().compatible(proj.getSecond())) {
+                        this._projectLoadOrder.add(Pair.of(pd.storage, null));
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
                                 "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" +
@@ -675,8 +739,8 @@ public class WorkspaceManager {
                             descriptor.manifest = externalProject.getManifest();
                             descriptor.workspace = null;
                             descriptor.name = proj.getFirst();
-                            projects.put(proj.getFirst(), descriptor);
-                            loadOrder.add(Pair.of(null, externalProject));
+                            projectDescriptors.put(proj.getFirst(), descriptor);
+                            this._projectLoadOrder.add(Pair.of(null, externalProject));
                         } else {
                             scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
                                     "Project " + proj.getFirst() + "@" + proj.getSecond() + " is " +
@@ -697,7 +761,26 @@ public class WorkspaceManager {
             }
         }
 
-        return loadOrder;
+        /*
+        we have workspaces and project descriptors; load ontologies and namespaces
+         */
+
+        getOntologies(false);
+        getNamespaces();
+
+        // build project descriptors and attribute all namespaces
+        for (var workspace : workspaces.keySet()) {
+            for (var proj : this._projectLoadOrder) {
+                if (proj.getFirst() != null) {
+                    var pdesc = projectDescriptors.get(proj.getFirst().getProjectName());
+                    if (pdesc != null && pdesc.storage != null && workspace.equals(pdesc.workspace)) {
+                        this.projects.put(pdesc.name, createProjectData(pdesc.name));
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     private ProjectStorage newProject(String projectName, String workspaceName) {
@@ -715,7 +798,7 @@ public class WorkspaceManager {
     public boolean removeProject(String projectName) {
         ResourcesConfiguration.ProjectConfiguration configuration =
                 this.configuration.getProjectConfiguration().get(projectName);
-        var project = this.projects.get(projectName);
+        var project = this.projectDescriptors.get(projectName);
         if (project != null && project.storage != null) {
             Workspace workspace = getWorkspace(project.workspace);
             Utils.Files.deleteQuietly(configuration.getLocalPath());
@@ -752,13 +835,24 @@ public class WorkspaceManager {
             ret = new WorkspaceImpl();
             ret.setUrn(workspaceName);
             this.workspaces.put(workspaceName, ret);
+//            for (var projectId : this.configuration.getWorkspaces().get(workspaceName)) {
+//                for (var project : this.getProjectLoadOrder()) {
+//                    if (project.getFirst() != null && project.getFirst().getProjectName().equals
+//                    (projectId)) {
+//
+//                    }
+//                }
+//            }
         }
         return ret;
     }
 
     public Collection<Workspace> getWorkspaces() {
         List<Workspace> ret = new ArrayList<>();
-        // TODO
+        for (var wsId : configuration.getWorkspaces().keySet()) {
+            var workspace = getWorkspace(wsId);
+            ret.add(workspace);
+        }
         return ret;
     }
 
@@ -807,7 +901,7 @@ public class WorkspaceManager {
             _worldview.getOntologies().addAll(getOntologies(true));
             // basic validations: non-empty, first must be root, take the worldview name from it
             // go back to the projects and load all observation strategies, adding project metadata
-            for (var pd : projects.values()) {
+            for (var pd : projectDescriptors.values()) {
                 if (pd.manifest.getDefinedWorldview() == null) {
                     continue;
                 }
@@ -845,11 +939,11 @@ public class WorkspaceManager {
         }
 
         return _worldview;
-}
+    }
 
-private void saveConfiguration() {
-    File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-    Utils.YAML.save(this.configuration, config);
-}
+    private void saveConfiguration() {
+        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
+        Utils.YAML.save(this.configuration, config);
+    }
 
 }

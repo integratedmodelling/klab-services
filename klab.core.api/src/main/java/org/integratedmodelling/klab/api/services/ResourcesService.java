@@ -147,6 +147,14 @@ public interface ResourcesService extends KlabService {
     KimNamespace resolveNamespace(String urn, Scope scope);
 
     /**
+     * Return a list of all the workspaces available with their contents, filtering according to the
+     * requesting identity.
+     *
+     * @return
+     */
+    Collection<Workspace> listWorkspaces();
+
+    /**
      * Return the parsed contents of a behavior. This only be called after a request that returned a
      * ResourceSet to ensure correct dependency handling.
      *
@@ -495,14 +503,6 @@ public interface ResourcesService extends KlabService {
          * @param workspaceName
          */
         void removeWorkspace(String workspaceName);
-
-        /**
-         * Return a list of all the workspaces available with their contents. Bound to produce a large
-         * payload.
-         *
-         * @return
-         */
-        Collection<Workspace> listWorkspaces();
 
         /**
          * Return a list of all the projects available with their contents. Bound to produce a large payload.

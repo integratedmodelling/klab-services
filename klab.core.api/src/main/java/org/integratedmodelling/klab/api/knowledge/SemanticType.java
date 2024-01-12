@@ -279,10 +279,7 @@ public enum SemanticType {
      *
      */
     AMOUNT,
-//    /**
-//     *
-//     */
-//    OBSERVABILITY,
+
     /**
      * Only for concept peers of non-semantic types: this should never appear in a declared concept
      */
@@ -372,7 +369,7 @@ public enum SemanticType {
 
     public static final EnumSet<SemanticType> MODELABLE_TYPES = EnumSet.of(SemanticType.QUALITY,
             SemanticType.SUBJECT, SemanticType.AGENT, SemanticType.EVENT, SemanticType.CONFIGURATION,
-            SemanticType.RELATIONSHIP, SemanticType.PROCESS);
+            SemanticType.RELATIONSHIP, SemanticType.PROCESS, SemanticType.TRAIT, SemanticType.ROLE);
 
     /**
      * These need to be represented in the root domain of the ontology using core derivations
@@ -504,12 +501,12 @@ public enum SemanticType {
         return !set.isEmpty();
     }
 
-    static Color CONCEPT_COLOR_UNKNOWN = new Color(220, 0, 0);
+    static Color CONCEPT_COLOR_UNKNOWN = new Color(255, 0, 0);
     static Color CONCEPT_COLOR_VOID = new Color(60, 60, 100);
     static Color CONCEPT_COLOR_QUALITY = new Color(0, 204, 0);
     static Color CONCEPT_COLOR_SUBJECT = new Color(153, 76, 0);
     static Color CONCEPT_COLOR_EVENT = new Color(153, 153, 0);
-    static Color CONCEPT_COLOR_PROCESS = new Color(0, 204, 0);
+    static Color CONCEPT_COLOR_PROCESS = new Color(180, 0, 0);
     static Color CONCEPT_COLOR_RELATIONSHIP = new Color(210, 170, 0);
     static Color CONCEPT_COLOR_TRAIT = new Color(0, 102, 204);
     static Color CONCEPT_COLOR_ROLE = new Color(0, 86, 163);

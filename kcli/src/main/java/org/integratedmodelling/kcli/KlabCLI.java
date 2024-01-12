@@ -38,12 +38,13 @@ import java.util.function.Supplier;
 /**
  * Command line for the next k.LAB. No longer tied to an engine.
  * <p>
- * Commands can be bare Runnables or the specialized FunctionalCommand, which manages a stack of values that the command
- * execution can push. Any pushed values are matched into a global stack, and they can be referred as $ (equivalent to
- * $0) or $n (n = depth into stack) by commands that are prepared to receive them. Commands that push variables into the
- * stack should notify that to the user.
+ * Commands can be bare Runnables or the specialized FunctionalCommand, which manages a stack of values that
+ * the command execution can push. Any pushed values are matched into a global stack, and they can be referred
+ * as $ (equivalent to $0) or $n (n = depth into stack) by commands that are prepared to receive them.
+ * Commands that push variables into the stack should notify that to the user.
  * <p>
- * TESTING SETUP ==============================================================================================
+ * TESTING SETUP
+ * ==============================================================================================
  * <p>
  * Run in terminal from the project dir after "mvn install" as <code> java -cp
  * "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*" org.integratedmodelling.kcli.KlabCLI
@@ -52,7 +53,8 @@ import java.util.function.Supplier;
  * A useful alias for bash is
  *
  * <code> alias klab="java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*"
- * -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 org.integratedmodelling.kcli.KlabCLI"
+ * -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
+ * org.integratedmodelling.kcli.KlabCLI"
  */
 public class KlabCLI {
 
@@ -62,11 +64,14 @@ public class KlabCLI {
     @Command(name = "", description = {
             "k.LAB interactive shell with completion and autosuggestions. "
                     + "Hit @|magenta <TAB>|@ to see available commands.",
-            "Hit @|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"", "Press Ctrl-D to exit."}, subcommands = {
-            Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class, Resources.class,
-            Services.class, Run.class, PicocliCommands.ClearScreen.class, CommandLine.HelpCommand.class,
-            Session.class, Context.class, Components.class, Stack.class, Test.class, Run.Alias.class,
-            Run.Unalias.class})
+            "Hit @|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"", "Press Ctrl-D to exit."},
+             subcommands = {
+                     Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class,
+                     Resources.class,
+                     Services.class, Run.class, PicocliCommands.ClearScreen.class,
+                     CommandLine.HelpCommand.class,
+                     Session.class, Context.class, Components.class, Stack.class, Test.class, Run.Alias.class,
+                     Run.Unalias.class})
     static class CliCommands implements Runnable {
 
         PrintWriter out;
@@ -80,9 +85,13 @@ public class KlabCLI {
         }
     }
 
-    @Command(name = "run", mixinStandardHelpOptions = true, description = {"Run scripts, test cases and applications.",
-            "Uses autocompletion for behavior and test case names.",
-            ""}, subcommands = {Run.List.class, Run.Purge.class})
+    @Command(name = "run", mixinStandardHelpOptions = true, description = {"Run scripts, test cases and " +
+                                                                                   "applications.",
+                                                                           "Uses autocompletion for " +
+                                                                                   "behavior and test case " +
+                                                                                   "names.",
+                                                                           ""}, subcommands =
+                     {Run.List.class, Run.Purge.class})
     static class Run /* extends Monitor */ implements Runnable {
 
         Set<SessionScope> running = new LinkedHashSet<>();
@@ -93,12 +102,13 @@ public class KlabCLI {
         CommandSpec commandSpec;
 
         @Option(names = {"-s", "--synchronous"}, defaultValue = "false", description = {
-                "Run in synchronous mode, returning to the prompt when the script has finished running."}, required =
+                "Run in synchronous mode, returning to the prompt when the script has finished running."},
+                required =
                         false)
         boolean synchronous;
 
         @Parameters(description = {"The full name of one or more script, test case or application.",
-                "If not present locally, resolve through the k.LAB network."})
+                                   "If not present locally, resolve through the k.LAB network."})
         java.util.List<String> scriptNames = new ArrayList<>();
 
         public Run() {
@@ -106,7 +116,8 @@ public class KlabCLI {
 
         public static void loadAliases() {
             File aliasFile =
-                    new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator + "kcli" + File.separator + "aliases.txt");
+                    new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator +
+                            "kcli" + File.separator + "aliases.txt");
             if (!aliasFile.exists()) {
                 Utils.Files.touch(aliasFile);
             }
@@ -123,7 +134,8 @@ public class KlabCLI {
 
         public static void storeAliases() {
             File aliasFile =
-                    new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator + "kcli" + File.separator + "aliases.txt");
+                    new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator +
+                            "kcli" + File.separator + "aliases.txt");
             try (OutputStream output = new FileOutputStream(aliasFile)) {
                 Properties properties = new Properties();
                 for (String key : Run.aliases.keySet()) {
@@ -151,7 +163,8 @@ public class KlabCLI {
                             .resolveBehavior(scriptName, Engine.INSTANCE.getCurrentUser());
 
                     if (behavior == null) {
-                        out.println(Ansi.AUTO.string("Behavior @|red " + scriptName + "|@ unknown or not available"));
+                        out.println(Ansi.AUTO.string("Behavior @|red " + scriptName + "|@ unknown or not " +
+                                "available"));
                     } else {
                         out.println(Ansi.AUTO.string("Running @|green " + scriptName + "|@..."));
                         running.add(Engine.INSTANCE.getCurrentUser().run(scriptName, behavior.getType()));
@@ -170,7 +183,8 @@ public class KlabCLI {
 
         }
 
-        @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all running behaviors."})
+        @Command(name = "list", mixinStandardHelpOptions = true, description = {"List all running behaviors" +
+                                                                                        "."})
         static class List implements Runnable {
 
             @ParentCommand
@@ -183,8 +197,9 @@ public class KlabCLI {
 
         }
 
-        @Command(name = "alias", mixinStandardHelpOptions = true, description = {"Define an alias for a command.",
-                "Use @x to store option -x"},
+        @Command(name = "alias", mixinStandardHelpOptions = true, description = {"Define an alias for a " +
+                                                                                         "command.",
+                                                                                 "Use @x to store option -x"},
                  subcommands = {Alias.List.class, Alias.Clear.class})
         static class Alias implements Runnable {
 
@@ -196,7 +211,8 @@ public class KlabCLI {
                 @Override
                 public void run() {
                     for (String alias : Run.aliases.keySet()) {
-                        commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias + "|@: " +
+                        commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias +
+                                "|@: " +
                                 "@|green " + Run.aliases.get(alias) + "|@"));
                     }
                 }
@@ -226,7 +242,8 @@ public class KlabCLI {
 
                 if (arguments == null || arguments.size() == 0) {
                     for (String alias : Run.aliases.keySet()) {
-                        commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias + "|@: " +
+                        commandSpec.commandLine().getOut().println(Ansi.AUTO.string("@|bold " + alias +
+                                "|@: " +
                                 "@|green " + Run.aliases.get(alias) + "|@"));
                     }
                     return;
@@ -266,7 +283,8 @@ public class KlabCLI {
         static class Purge implements Runnable {
 
             @Parameters(description = {
-                    "The numeric ID of the scripts we want to purge. No argument removes all that have finished.",
+                    "The numeric ID of the scripts we want to purge. No argument removes all that have " +
+                            "finished.",
                     "Run \"run list\" to know the IDs."})
             java.util.List<Integer> appIds = new ArrayList<>();
 
@@ -301,7 +319,8 @@ public class KlabCLI {
         AnsiConsole.systemInstall();
         try {
             Supplier<Path> workDir = () -> Paths
-                    .get(System.getProperty("user.home") + File.separator + ".klab" + File.separator + "kcli");
+                    .get(System.getProperty("user.home") + File.separator + ".klab" + File.separator +
+                            "kcli");
 
             // jline built-in commands
             workDir.get().toFile().mkdirs();
@@ -316,7 +335,8 @@ public class KlabCLI {
             PicocliCommandsFactory factory = new PicocliCommandsFactory();
             CommandLine cmd = new CommandLine(commands, factory);
             PicocliCommands picocliCommands = new PicocliCommands(cmd);
-            File historyFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "kcli.history");
+            File historyFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "kcli" +
+                    ".history");
             Parser parser = new DefaultParser();
             try (Terminal terminal = TerminalBuilder.builder().build()) {
 
@@ -325,9 +345,10 @@ public class KlabCLI {
                 systemRegistry.register("help", picocliCommands);
                 KlabCompleter completer = new KlabCompleter(systemRegistry.completer());
                 History history = new DefaultHistory();
-                LineReader reader = LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser)
-                        .variable(LineReader.LIST_MAX, 50) // candidates
-                        .history(history).build();
+                LineReader reader =
+                        LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser)
+                                .variable(LineReader.LIST_MAX, 50) // candidates
+                                .history(history).build();
 
                 builtins.setLineReader(reader);
                 commands.setReader(reader);
@@ -371,13 +392,34 @@ public class KlabCLI {
                         systemRegistry.cleanUp();
                         line = reader.readLine(prompt, rightPrompt, (MaskingCallback) null, null);
                         completer.resetSemanticSearch();
+                        boolean aliased = false;
 
-                        if (Run.aliases.containsKey(line.trim())) {
+                        if (line.trim().startsWith("-")) {
+                            if (line.trim().equals("-") && history.size() > 0) {
+                                line = history.get(history.last()-1);
+                                aliased = true;
+                            } else if (org.integratedmodelling.klab.api.utils.Utils.Numbers.encodesInteger(line.trim().substring(1))) {
+                                int n = Integer.parseInt(line.trim().substring(1));
+                                if (history.size() > n) {
+                                    line = history.get(history.last() - n);
+                                    aliased = true;
+                                }
+                            }
+                        } else if (Run.aliases.containsKey(line.trim())) {
                             line = Run.aliases.get(line.trim());
                         }
 
+                        if (aliased) {
+                            // print the actual line in grey + italic
+                            cmd.getOut().println(Ansi.AUTO.string("@|gray" + line
+                                    + "|@"));
+                        }
+
                         systemRegistry.execute(line);
-                        history.write(historyFile.toPath(), false);
+
+                        if (!aliased) {
+                            history.write(historyFile.toPath(), false);
+                        }
 
                     } catch (UserInterruptException e) {
                         // TODO send interrupt signal to running tasks

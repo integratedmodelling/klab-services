@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
@@ -84,6 +85,11 @@ public class ResourcesClient implements ResourcesService {
     @Override
     public KimNamespace resolveNamespace(String urn, Scope scope) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Collection<Workspace> listWorkspaces() {
         return null;
     }
 

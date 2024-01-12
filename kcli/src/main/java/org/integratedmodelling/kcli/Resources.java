@@ -316,7 +316,7 @@ public class Resources {
             public void run() {
                 var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
-                    for (var workspace : ((ResourcesService.Admin) service).listWorkspaces()) {
+                    for (var workspace : service.listWorkspaces()) {
                         System.out.println("   " + workspace.getUrn());
                         if (verbose) {
                             for (var project : workspace.getProjects()) {
