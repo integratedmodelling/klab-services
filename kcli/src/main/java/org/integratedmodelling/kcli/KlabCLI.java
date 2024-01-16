@@ -396,7 +396,7 @@ public class KlabCLI {
 
                         if (line.trim().startsWith("-")) {
                             if (line.trim().equals("-") && history.size() > 0) {
-                                line = history.get(history.last()-1);
+                                line = history.get(history.last() - 1);
                                 aliased = true;
                             } else if (org.integratedmodelling.klab.api.utils.Utils.Numbers.encodesInteger(line.trim().substring(1))) {
                                 int n = Integer.parseInt(line.trim().substring(1));

@@ -92,7 +92,7 @@
 
 		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>utf-8</project.reporting.outputEncoding>
-		<java.version>11</java.version>
+		<java.version>21</java.version>
 		<!-- Careful here: geotools must be right for hortonmachine to work; JTS
 			should be the same one that geotools and HM needs. -->
 		<geotools.version>28.0</geotools.version>
@@ -110,11 +110,11 @@
 		<!-- the five below go together. Never change one without checking the
 			others. Spring security latest is currently requiring 5.0.4, implying boot
 			2.0.0 -->
-		<spring-boot.version>3.2.0</spring-boot.version>
+		<spring-boot.version>3.2.1</spring-boot.version>
 		<spring.version>6.1.1</spring.version>
 		<spring-security.version>6.2.0</spring-security.version>
 		<junit-version>5.6.3</junit-version>
-		<jackson-version>2.16.1</jackson-version>
+		<jackson-version>2.15.3</jackson-version>
 		<!-- <jsonld-java-version>0.13.4</jsonld-java-version> -->
 		<!-- end versions that need to be in lock-step to avoid multiple Spring
 			issues -->
@@ -123,6 +123,7 @@
 <!--		<joda-time-version>2.3</joda-time-version>-->
 		<javax.mail-api.version>1.5.2</javax.mail-api.version>
 		<jung.version>2.1.1</jung.version>
+		<maven-compiler-plugin-version>3.7.0</maven-compiler-plugin-version>
 
 	</properties>
 
@@ -132,7 +133,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.7.0</version>
+					<version>${maven-compiler-plugin-version}</version>
 					<configuration>
 						<source>${maven.compiler.source}</source>
 						<target>${maven.compiler.target}</target>

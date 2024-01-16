@@ -308,7 +308,7 @@ public class WorkspaceManager {
     private void readConfiguration() {
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        if (config.exists()) {
+        if (config.exists() && config.length() > 0) {
             this.configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
         } else {
             // make an empty config

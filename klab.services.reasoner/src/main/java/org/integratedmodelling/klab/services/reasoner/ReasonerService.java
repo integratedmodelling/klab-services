@@ -103,13 +103,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      */
     static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
 
-    /**
-     * Flag for {@link #compatible(Semantics, Semantics, int)}.
-     * <p>
-     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits for
-     * observables.
-     */
-    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
+//    /**
+//     * Flag for {@link #compatible(Semantics, Semantics, int)}.
+//     * <p>
+//     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits for
+//     * observables.
+//     */
+//    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
 
     private String url;
     private ReasonerConfiguration configuration = new ReasonerConfiguration();
