@@ -106,7 +106,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 //    /**
 //     * Flag for {@link #compatible(Semantics, Semantics, int)}.
 //     * <p>
-//     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits for
+//     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits
+//     for
 //     * observables.
 //     */
 //    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
@@ -1470,6 +1471,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return true;
     }
 
+    /**
+     * True if the concept comes from a loaded worldview. The alternative is that it comes from a core
+     * imported ontology, and possibly (in the future) from a conceptual extent ontology.
+     *
+     * @param semantics
+     * @return
+     */
     private boolean inWorldview(Semantics... semantics) {
         for (Object o : semantics) {
             if (switch (o) {

@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -455,7 +456,8 @@ public class WorkspaceManager {
                             errors.set(true);
                         }
                     };
-                    ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax, ontologyProjects.get(syntax.getName()));
+                    ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax,
+                            ontologyProjects.get(syntax.getName()));
                     // TODO add ontology local URL to metadata based on service URL
                 }
 
@@ -528,7 +530,8 @@ public class WorkspaceManager {
             ret.setUrn(projectId);
 
             // TODO improve metadata with service IDs, load time, stats, any info etc.
-            ret.getMetadata().put("storage.url", pdesc.storage.getUrl());
+            // TODO should only add a file:/ URL if the project is local to the requester (check scope)
+            ret.getMetadata().put(Metadata.RESOURCES_STORAGE_URL, pdesc.storage.getUrl());
             ret.setManifest(pdesc.manifest);
 
             for (KimOntology ontology : getOntologies(false)) {
@@ -684,8 +687,8 @@ public class WorkspaceManager {
     public boolean loadWorkspace() {
 
         this._projectLoadOrder = new ArrayList<>();
-
-        projects.clear();
+        this.workspaces.clear();
+        this.projects.clear();
 
         // build a version-aware dependency tree
         Graph<Pair<String, Version>, DefaultEdge> dependencyGraph =
@@ -768,13 +771,24 @@ public class WorkspaceManager {
         getOntologies(false);
         getNamespaces();
 
-        // build project descriptors and attribute all namespaces
-        for (var workspace : workspaces.keySet()) {
-            for (var proj : this._projectLoadOrder) {
-                if (proj.getFirst() != null) {
-                    var pdesc = projectDescriptors.get(proj.getFirst().getProjectName());
-                    if (pdesc != null && pdesc.storage != null && workspace.equals(pdesc.workspace)) {
-                        this.projects.put(pdesc.name, createProjectData(pdesc.name));
+        // build workspace and project descriptors and attribute all namespaces
+        for (var proj : this._projectLoadOrder) {
+            if (proj.getFirst() != null) {
+                var pdesc = projectDescriptors.get(proj.getFirst().getProjectName());
+                if (pdesc != null && pdesc.storage != null) {
+                    WorkspaceImpl ws = null;
+                    if (pdesc.workspace != null) {
+                        ws = this.workspaces.get(pdesc.workspace);
+                        if (ws == null) {
+                            ws = new WorkspaceImpl();
+                            ws.setUrn(pdesc.workspace);
+                            this.workspaces.put(pdesc.workspace, ws);
+                        }
+                    }
+                    var project = createProjectData(pdesc.name);
+                    this.projects.put(pdesc.name, project);
+                    if (ws != null) {
+                        ws.getProjects().add(project);
                     }
                 }
             }
@@ -830,21 +844,7 @@ public class WorkspaceManager {
     }
 
     public WorkspaceImpl getWorkspace(String workspaceName) {
-        WorkspaceImpl ret = this.workspaces.get(workspaceName);
-        if (ret == null) {
-            ret = new WorkspaceImpl();
-            ret.setUrn(workspaceName);
-            this.workspaces.put(workspaceName, ret);
-//            for (var projectId : this.configuration.getWorkspaces().get(workspaceName)) {
-//                for (var project : this.getProjectLoadOrder()) {
-//                    if (project.getFirst() != null && project.getFirst().getProjectName().equals
-//                    (projectId)) {
-//
-//                    }
-//                }
-//            }
-        }
-        return ret;
+        return this.workspaces.get(workspaceName);
     }
 
     public Collection<Workspace> getWorkspaces() {
