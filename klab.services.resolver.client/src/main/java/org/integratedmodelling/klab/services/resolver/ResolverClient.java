@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.services.resolver;
 
-import java.util.List;
-
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -13,6 +11,9 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.utilities.Utils;
+
+import java.util.List;
 
 public class ResolverClient implements Resolver {
 
@@ -43,7 +44,11 @@ public class ResolverClient implements Resolver {
         // TODO Auto-generated method stub
         return false;
     }
-
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
+    }
     @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub

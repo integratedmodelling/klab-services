@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.services.resources;
 
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -17,7 +13,6 @@ import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -25,6 +20,11 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.utilities.Utils;
+
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
 
 public class ResourcesClient implements ResourcesService {
 
@@ -50,6 +50,12 @@ public class ResourcesClient implements ResourcesService {
     public ServiceScope scope() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOURCES_" + serverId));
     }
 
     @Override

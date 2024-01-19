@@ -1,14 +1,14 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
@@ -24,13 +24,9 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
     private List<Annotation> annotations = new ArrayList<>();
     private String deprecation;
     private boolean deprecated;
-//    private String sourceCode;
-//    private boolean errors;
-//    private boolean warnings;
-    private Metadata metadata;
-//    private Parameters<String> documentationMetadata;
+    private Metadata metadata = Metadata.create();
     private String namespace;
-    private Scope scope;
+    private Scope scope = Scope.PUBLIC;
     private List<Notification> notifications = new ArrayList<>();
 
     public KimStatementImpl() {

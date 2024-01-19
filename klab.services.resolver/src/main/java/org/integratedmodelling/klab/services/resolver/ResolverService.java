@@ -63,6 +63,7 @@ public class ResolverService extends BaseService implements Resolver {
     Map<String, Model> models = Collections.synchronizedMap(new HashMap<>());
     Map<String, Instance> instances = Collections.synchronizedMap(new HashMap<>());
     Parameters<String> defines = Parameters.createSynchronized();
+    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
 
     @Autowired
     public ResolverService(Authentication authentication, ServiceScope scope, String localName,
@@ -71,6 +72,13 @@ public class ResolverService extends BaseService implements Resolver {
         if (scope instanceof LocalServiceScope localScope) {
             localScope.setService(this);
         }
+    }
+
+    @Override
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
     }
 
     @Override
@@ -107,6 +115,12 @@ public class ResolverService extends BaseService implements Resolver {
             public String getServiceName() {
                 return "Resolver";
             }
+
+            @Override
+            public String getServerId() {
+                return hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature);
+            }
+
         };
     }
 

@@ -1,14 +1,14 @@
 package org.integratedmodelling.klab.services.runtime;
 
-import java.util.Collection;
-import java.util.concurrent.Future;
-
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.utilities.Utils;
+
+import java.util.Collection;
+import java.util.concurrent.Future;
 
 public class RuntimeClient implements RuntimeService {
 
@@ -26,6 +26,13 @@ public class RuntimeClient implements RuntimeService {
     public String getLocalName() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("RUNTIME_" + serverId));
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
-import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.Serializable;
 
@@ -364,7 +363,7 @@ public interface Message extends Serializable {
         /*
          * --- EngineLifecycle ---
          */
-        EngineUp, EngineDown,
+        EngineStarting, EngineUp, EngineDown,
 
         /*
          * --- Run-class types

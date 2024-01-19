@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Sets;
+import com.google.common.hash.Hashing;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.LsRemoteCommand;
@@ -24,7 +25,6 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.Statement;
-import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.data.encoding.JacksonConfiguration;
@@ -45,13 +45,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     public static class Collections extends org.apache.commons.collections.CollectionUtils {
 
-        public static <T1, T2> List<T1> sortMatching(List<T1> toSort, List<T2> toMatch, Comparator<T2> comparator) {
+        public static <T1, T2> List<T1> sortMatching(List<T1> toSort, List<T2> toMatch,
+                                                     Comparator<T2> comparator) {
             MatchedSorter<T1, T2> sorter = new MatchedSorter<>(toSort, toMatch, comparator);
             return sorter.getSortedValues();
         }
 
         public static <T1, T2> List<Pair<T1, T2>> sortMatchingPairs(List<T1> toSort, List<T2> toMatch,
-                Comparator<T2> comparator) {
+                                                                    Comparator<T2> comparator) {
             MatchedSorter<T1, T2> sorter = new MatchedSorter<>(toSort, toMatch, comparator);
             List<Pair<T1, T2>> ret = new ArrayList<>();
             for (int i = 0; i < sorter.getSortedCriteria().size(); i++) {
@@ -81,9 +82,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Pack the arguments into a collection; if any argument is a collection, add its elements
-         * but do not unpack below the first level.
-         * 
+         * Pack the arguments into a collection; if any argument is a collection, add its elements but do not
+         * unpack below the first level.
+         *
          * @param objects
          * @return
          */
@@ -101,9 +102,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Pack the arguments into a collection; if any argument is a collection, unpack its
-         * elements recursively so that no collections remain.
-         * 
+         * Pack the arguments into a collection; if any argument is a collection, unpack its elements
+         * recursively so that no collections remain.
+         *
          * @param objects
          * @return
          */
@@ -142,6 +143,24 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             return new HashSet<>(items);
+        }
+    }
+
+    public static class Strings extends org.integratedmodelling.klab.api.utils.Utils.Strings {
+
+        /**
+         * Sha256 hash of the passed input
+         *
+         * @param input
+         * @return the hashed string, or null if the input is null
+         */
+        public static String hash(String input) {
+            if (input == null) {
+                return null;
+            }
+            return Hashing.sha256()
+                    .hashString(input, StandardCharsets.UTF_8)
+                    .toString();
         }
     }
 
@@ -184,9 +203,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Shorthand to check whether the default parameter (list or individual value) of an
-         * annotation contains the passed string.
-         * 
+         * Shorthand to check whether the default parameter (list or individual value) of an annotation
+         * contains the passed string.
+         *
          * @param string
          * @return
          */
@@ -201,7 +220,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Simple methods that are messy to keep writing explicitly
-         * 
+         *
          * @param annotations
          * @param id
          * @return
@@ -228,10 +247,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Collect the annotations from an k.IM object and its semantic lineage, ensuring that
-         * downstream annotations of the same name override those upstream. Any string parameter
-         * filters the annotations collected.
-         * 
+         * Collect the annotations from an k.IM object and its semantic lineage, ensuring that downstream
+         * annotations of the same name override those upstream. Any string parameter filters the annotations
+         * collected.
+         *
          * @param objects
          * @return all annotations from upstream
          */
@@ -255,9 +274,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Collect the annotations from anything semantic lineage, ensuring that downstream
-         * annotations of the same name override those upstream.
-         * 
+         * Collect the annotations from anything semantic lineage, ensuring that downstream annotations of the
+         * same name override those upstream.
+         *
          * @param object
          * @return all annotations from upstream
          */
@@ -398,7 +417,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Extract the OWL assets in the classpath (under /knowledge/**) to the specified filesystem
          * directory.
-         * 
+         *
          * @param destinationDirectory
          * @throws IOException
          */
@@ -442,7 +461,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Only works for a flat hierarchy!
-         * 
+         *
          * @param resourcePattern
          * @param destinationDirectory
          */
@@ -484,7 +503,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Load an object from an input stream.
-         * 
+         *
          * @param url the input stream
          * @param cls the class
          * @return the object
@@ -500,7 +519,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Load an object from a file.
-         * 
+         *
          * @param file
          * @param cls
          * @return the object
@@ -516,7 +535,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Load an object from a URL.
-         * 
+         *
          * @param url
          * @param cls
          * @return the object
@@ -532,7 +551,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Serialize an object to a file.
-         * 
+         *
          * @param object
          * @param outFile
          * @throws KlabIOException
@@ -598,9 +617,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Default conversion, use within custom deserializers to "normally" deserialize an object.
          *
-         * @param <T> the generic type
+         * @param <T>  the generic type
          * @param node the node
-         * @param cls the cls
+         * @param cls  the cls
          * @return the t
          */
         public static <T> T as(JsonNode node, Class<T> cls) {
@@ -610,18 +629,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Convert node to list of type T.
          *
-         * @param <T> the generic type
+         * @param <T>  the generic type
          * @param node the node
-         * @param cls the cls
+         * @param cls  the cls
          * @return the list
          */
         public static <T> List<T> asList(JsonNode node, Class<T> cls) {
-            return defaultMapper.convertValue(node, new TypeReference<List<T>>(){
+            return defaultMapper.convertValue(node, new TypeReference<List<T>>() {
             });
         }
 
         public static <T> List<T> asList(JsonNode node, Class<T> cls, ObjectMapper mapper) {
-            return mapper.convertValue(node, new TypeReference<List<T>>(){
+            return mapper.convertValue(node, new TypeReference<List<T>>() {
             });
         }
 
@@ -637,13 +656,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Convert node to list of type T.
          *
-         * @param <T> the generic type
+         * @param <T>  the generic type
          * @param node the node
-         * @param cls the cls
+         * @param cls  the cls
          * @return the sets the
          */
         public static <T> Set<T> asSet(JsonNode node, Class<T> cls) {
-            return defaultMapper.convertValue(node, new TypeReference<Set<T>>(){
+            return defaultMapper.convertValue(node, new TypeReference<Set<T>>() {
             });
         }
 
@@ -654,7 +673,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Load an object from an input stream.
-         * 
+         *
          * @param url the input stream
          * @param cls the class
          * @return the object
@@ -670,7 +689,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Load an object from a file.
-         * 
+         *
          * @param file
          * @param cls
          * @return the object
@@ -686,7 +705,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Load an object from a URL.
-         * 
+         *
          * @param url
          * @param cls
          * @return the object
@@ -702,7 +721,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Serialize an object to a file.
-         * 
+         *
          * @param object
          * @param outFile
          * @throws KlabIOException
@@ -767,9 +786,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Convert a map resulting from parsing generic JSON (or any other source) to the passed
-         * type.
-         * 
+         * Convert a map resulting from parsing generic JSON (or any other source) to the passed type.
+         *
          * @param payload
          * @param cls
          * @return the converted object
@@ -833,8 +851,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Clone.
          *
-         * @param gitUrl the git url
-         * @param directory the directory
+         * @param gitUrl           the git url
+         * @param directory        the directory
          * @param removeIfExisting the remove if existing
          * @return the string
          */
@@ -866,8 +884,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
-            try (org.eclipse.jgit.api.Git result = org.eclipse.jgit.api.Git.cloneRepository().setURI(url).setBranch(branch)
-                    .setDirectory(pdir).call()) {
+            try (org.eclipse.jgit.api.Git result =
+                         org.eclipse.jgit.api.Git.cloneRepository().setURI(url).setBranch(branch)
+                                 .setDirectory(pdir).call()) {
 
                 Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 
@@ -911,13 +930,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * If a Git repository with the repository name corresponding to the URL exists in
-         * gitDirectory, pull it from origin; otherwise clone it from the passed Git URL.
-         * 
+         * If a Git repository with the repository name corresponding to the URL exists in gitDirectory, pull
+         * it from origin; otherwise clone it from the passed Git URL.
+         * <p>
          * TODO: Assumes branch is already set correctly if repo is pulled. Should check branch and
          * checkout if necessary.
          *
-         * @param gitUrl the git url
+         * @param gitUrl       the git url
          * @param gitDirectory the git directory
          * @return the string
          */
@@ -957,7 +976,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Check if remote branch exists
-         * 
+         *
          * @param gitUrl the remote repository
          * @param branch the branch (without refs/heads/)
          * @return true if branch exists
@@ -977,17 +996,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     public static class Maps {
 
         /**
-         *
          * @param originalMap
          * @param translationTable
-         * @return
          * @param <K>
          * @param <V>
+         * @return
          */
-        public static  <K,V> Map<K, V> translateKeys(Map<K, V> originalMap, Map<K, K> translationTable) {
-            Map<K,V> ret = new HashMap<>();
+        public static <K, V> Map<K, V> translateKeys(Map<K, V> originalMap, Map<K, K> translationTable) {
+            Map<K, V> ret = new HashMap<>();
             for (K key : originalMap.keySet()) {
-                ret.put(translationTable.containsKey(key) ? translationTable.get(key) : key, originalMap.get(key));
+                ret.put(translationTable.containsKey(key) ? translationTable.get(key) : key,
+                        originalMap.get(key));
             }
             return ret;
         }
@@ -996,10 +1015,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     public static class Templates extends org.integratedmodelling.klab.api.utils.Utils.Templates {
 
         /**
-         * Return all the substituted templates after substituting the passed variables. The
-         * substitution for each variable can be null, a single POD, a {@link RangeImpl} or a collection
-         * of objects.
-         * 
+         * Return all the substituted templates after substituting the passed variables. The substitution for
+         * each variable can be null, a single POD, a {@link RangeImpl} or a collection of objects.
+         *
          * @param template
          * @param vars
          * @return
@@ -1053,14 +1071,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Like {@link #expandMatches(String, Map)} but also returns the specific matches for each
-         * expanded template as a map.
-         * 
+         * Like {@link #expandMatches(String, Map)} but also returns the specific matches for each expanded
+         * template as a map.
+         *
          * @param template
          * @param vars
          * @return
          */
-        public static List<Pair<String, Map<String, Object>>> getExpansion(String template, Map<String, Object> vars) {
+        public static List<Pair<String, Map<String, Object>>> getExpansion(String template, Map<String,
+                Object> vars) {
 
             /*
              * extract the variables
@@ -1143,7 +1162,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         public static void main(String[] argv) {
 
-            String url = "https://disc2.gesdisc.eosdis.nasa.gov:443/opendap/TRMM_L3/TRMM_3B42_Daily.7/{year}/{month}/3B42_Daily.{year}{month}{day}.7.nc4";
+            String url = "https://disc2.gesdisc.eosdis.nasa.gov:443/opendap/TRMM_L3/TRMM_3B42_Daily" +
+                    ".7/{year}/{month}/3B42_Daily.{year}{month}{day}.7.nc4";
 
             Map<String, Object> vars = new HashMap<>();
 
@@ -1163,7 +1183,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Check for matching of simple wildcard patterns using * and ? as per conventions.
          *
-         * @param string the string
+         * @param string  the string
          * @param pattern the pattern
          * @return a boolean.
          */
@@ -1227,8 +1247,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Call with "-" as a parameter to get the typical MAC address string. Otherwise use another
-         * string to get a unique machine identifier that can be customized.
+         * Call with "-" as a parameter to get the typical MAC address string. Otherwise use another string to
+         * get a unique machine identifier that can be customized.
          *
          * @param sep the sep
          * @return MAC address
@@ -1258,13 +1278,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
 
     /**
-     * Sorts an array according to the sort order of a matched other using a given comparator. Makes
-     * up for the lovely matched sort available in C# and missing in Java collections.
+     * Sorts an array according to the sort order of a matched other using a given comparator. Makes up for
+     * the lovely matched sort available in C# and missing in Java collections.
      *
-     * @author Ferd
-     * @version $Id: $Id
      * @param <T1> the generic type
      * @param <T2> the generic type
+     * @author Ferd
+     * @version $Id: $Id
      */
     private static class MatchedSorter<T1, T2> {
 
@@ -1275,8 +1295,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         /**
          * Instantiates a new matched sorter.
          *
-         * @param a the a
-         * @param criteria the criteria
+         * @param a          the a
+         * @param criteria   the criteria
          * @param comparator the comparator
          */
         public MatchedSorter(List<T1> a, List<T2> criteria, Comparator<T2> comparator) {
@@ -1325,15 +1345,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             T2 pivot = _criteria.get(low + (high - low) / 2);
 
             // Divide into two lists
-            while(i <= j) {
+            while (i <= j) {
                 // If the current value from the left list is smaller then the pivot
                 // element then get the next element from the left list
-                while(_comparator.compare(_criteria.get(i), pivot) < 0) {
+                while (_comparator.compare(_criteria.get(i), pivot) < 0) {
                     i++;
                 }
                 // If the current value from the right list is larger then the pivot
                 // element then get the next element from the right list
-                while(_comparator.compare(_criteria.get(j), pivot) > 0) {
+                while (_comparator.compare(_criteria.get(j), pivot) > 0) {
                     j--;
                 }
 
@@ -1359,8 +1379,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     }
 
     /**
-     * This class is a utility for finding the String based upon the wild card pattern. For example
-     * if the actual String "John" and your wild card pattern is "J*", it will return true.
+     * This class is a utility for finding the String based upon the wild card pattern. For example if the
+     * actual String "John" and your wild card pattern is "J*", it will return true.
      *
      * @author Debadatta Mishra(PIKU)
      */
@@ -1402,10 +1422,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * This is the public method which will be called to match a String with the wild card
-         * pattern.
+         * This is the public method which will be called to match a String with the wild card pattern.
          *
-         * @param actualString of type String indicating the String to be matched
+         * @param actualString   of type String indicating the String to be matched
          * @param wildCardString of type String indicating the wild card String
          * @return true if matches
          */
@@ -1430,23 +1449,23 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             Vector temp = new Vector();
             int pos = 0;
             StringBuffer buf = new StringBuffer();
-            while(pos < wildCardPatternLength) {
+            while (pos < wildCardPatternLength) {
                 char c = wildCardPatternString.charAt(pos++);
-                switch(c) {
-                case 42: // It refers to *
-                    if (buf.length() > 0) {
-                        temp.addElement(buf.toString());
-                        charBound += buf.length();
-                        buf.setLength(0);
-                    }
-                    break;
-                case 63: // It refers to ?
-                    buf.append('\0');
-                    break;
+                switch (c) {
+                    case 42: // It refers to *
+                        if (buf.length() > 0) {
+                            temp.addElement(buf.toString());
+                            charBound += buf.length();
+                            buf.setLength(0);
+                        }
+                        break;
+                    case 63: // It refers to ?
+                        buf.append('\0');
+                        break;
 
-                default:
-                    buf.append(c);
-                    break;
+                    default:
+                        buf.append(c);
+                        break;
                 }
             }
             if (buf.length() > 0) {
@@ -1459,10 +1478,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * This is the actual method which makes comparison with the wild card pattern.
-         * 
-         * @param text of type String indicating the actual String
+         *
+         * @param text       of type String indicating the actual String
          * @param startPoint of type int indicating the start index of the String
-         * @param endPoint of type int indicating the end index of the String
+         * @param endPoint   of type int indicating the end index of the String
          * @return true if matches.
          */
         private boolean doesMatch(String text, int startPoint, int endPoint) {
@@ -1473,7 +1492,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
             if (ignoreWildCards) {
                 return endPoint - startPoint == wildCardPatternLength
-                        && wildCardPatternString.regionMatches(false, 0, text, startPoint, wildCardPatternLength);
+                        && wildCardPatternString.regionMatches(false, 0, text, startPoint,
+                        wildCardPatternLength);
             }
             int charCount = charSegments.length;
             if (charCount == 0 && (hasLeadingStar || hasTrailingStar)) {
@@ -1529,13 +1549,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * This method finds the position of the String based upon the wild card pattern. It also
-         * considers some special case like *.* and ???.? and their combination.
-         * 
+         * This method finds the position of the String based upon the wild card pattern. It also considers
+         * some special case like *.* and ???.? and their combination.
+         *
          * @param textString of type String indicating the String
-         * @param start of type int indicating the start index of the String
-         * @param end of type int indicating the end index of the String
-         * @param posString of type indicating the position after wild card
+         * @param start      of type int indicating the start index of the String
+         * @param end        of type int indicating the end index of the String
+         * @param posString  of type indicating the position after wild card
          * @return the position of the String
          */
         private int getTextPosition(String textString, int start, int end, String posString) {
@@ -1561,19 +1581,19 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * This method is used to match the wild card with the String based upon the start and end
-         * index.
-         * 
-         * @param textString of type String indicating the String
-         * @param stringStartIndex of type int indicating the start index of the String.
-         * @param patternString of type String indicating the pattern
+         * This method is used to match the wild card with the String based upon the start and end index.
+         *
+         * @param textString        of type String indicating the String
+         * @param stringStartIndex  of type int indicating the start index of the String.
+         * @param patternString     of type String indicating the pattern
          * @param patternStartIndex of type int indicating the start index
-         * @param length of type int indicating the length of pattern
+         * @param length            of type int indicating the length of pattern
          * @return true if matches otherwise false
          */
-        private boolean isExpressionMatching(String textString, int stringStartIndex, String patternString, int patternStartIndex,
-                int length) {
-            while(length-- > 0) {
+        private boolean isExpressionMatching(String textString, int stringStartIndex, String patternString,
+                                             int patternStartIndex,
+                                             int length) {
+            while (length-- > 0) {
                 char textChar = textString.charAt(stringStartIndex++);
                 char patternChar = patternString.charAt(patternStartIndex++);
                 if ((ignoreWildCards || patternChar != 0) && patternChar != textChar

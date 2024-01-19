@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.services.authentication.impl.LocalServiceSco
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
+import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.IOException;
 import java.util.*;
@@ -33,6 +34,7 @@ public class RuntimeService extends BaseService
      * the runtime when they go out of scope.
      */
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
+    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
 
     public RuntimeService(Authentication testAuthentication, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
         // TODO Auto-generated constructor stub
@@ -41,6 +43,14 @@ public class RuntimeService extends BaseService
             localScope.setService(this);
         }
     }
+
+    @Override
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("RUNTIME_" + serverId));
+    }
+
 
     @Override
     public void initializeService() {
@@ -89,6 +99,7 @@ public class RuntimeService extends BaseService
     @Override
     public Capabilities capabilities() {
         return new Capabilities() {
+
             @Override
             public Type getType() {
                 return Type.RUNTIME;
@@ -102,6 +113,11 @@ public class RuntimeService extends BaseService
             @Override
             public String getServiceName() {
                 return "Runtime";
+            }
+
+            @Override
+            public String getServerId() {
+                return hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature);
             }
         };
     }

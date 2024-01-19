@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.community;
 
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Community;
+import org.integratedmodelling.klab.utilities.Utils;
 
 public class CommunityService implements Community {
 
@@ -23,6 +24,13 @@ public class CommunityService implements Community {
     public String getLocalName() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("COMMUNITY_" + serverId));
     }
 
     @Override

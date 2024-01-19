@@ -497,6 +497,29 @@ public class Utils {
             return this == WIN ? ";" : ":";
         }
 
+        /**
+         * Read and return the MAC address of a machine. Can be added to capabilities (ideally in encrypted
+         * form) and used to establish if server and client are on the same machine.
+         *
+         * @return a MAC address in string form, or null if it cannot be established
+         */
+        public static String getMACAddress() {
+
+            try {
+                for (NetworkInterface ni : java.util.Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                    byte[] adr = ni.getHardwareAddress();
+                    if (adr == null || adr.length != 6)
+                        continue;
+                    String mac = String.format("%02X:%02X:%02X:%02X:%02X:%02X",
+                            adr[0], adr[1], adr[2], adr[3], adr[4], adr[5]);
+                    return mac;
+                }
+            } catch (SocketException e) {
+                return null;
+            }
+            return null;
+        }
+
     }
 
     public static class Escape {

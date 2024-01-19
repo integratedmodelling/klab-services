@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.List;
 
@@ -45,6 +46,11 @@ public class ResolverService implements Resolver, Resolver.Admin {
     public boolean loadKnowledge(ResourceSet resources) {
         // TODO Auto-generated method stub
         return false;
+    }
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
     }
 
     @Override

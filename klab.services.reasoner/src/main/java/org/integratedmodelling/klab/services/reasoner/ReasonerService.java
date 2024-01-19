@@ -159,6 +159,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private Authentication authenticationService;
 
     private OWL owl;
+    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+
+    @Override
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("REASONER_" + serverId));
+    }
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
 
@@ -1106,6 +1114,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             public String getServiceName() {
                 return "Reasoner";
             }
+
+            @Override
+            public String getServerId() {
+                return hardwareSignature == null ? null : ("REASONER_" + hardwareSignature);
+            }
+
         };
     }
 

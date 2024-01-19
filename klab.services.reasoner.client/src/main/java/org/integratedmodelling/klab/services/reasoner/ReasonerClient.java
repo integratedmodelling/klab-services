@@ -1,17 +1,8 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.ObservableBuildStrategy;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
@@ -20,6 +11,11 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.utilities.Utils;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class ReasonerClient implements Reasoner {
 
@@ -55,6 +51,12 @@ public class ReasonerClient implements Reasoner {
 		return null;
 	}
 
+	@Override
+	public boolean isLocal() {
+		String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+		return (capabilities().getServerId() == null && serverId == null) ||
+				(capabilities().getServerId() != null && capabilities().getServerId().equals("REASONER_" + serverId));
+	}
 	@Override
 	public Concept resolveConcept(String definition) {
 		// TODO Auto-generated method stub

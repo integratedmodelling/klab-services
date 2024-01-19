@@ -43,6 +43,13 @@ public interface KlabService extends Service {
         String getLocalName();
 
         String getServiceName();
+
+        /**
+         * A unique server ID implemented as a hash based on the hardware.
+         *
+         * @return
+         */
+        String getServerId();
     }
 
     ServiceCapabilities capabilities();
@@ -65,6 +72,14 @@ public interface KlabService extends Service {
      * @return
      */
     String getLocalName();
+
+    /**
+     * A local service runs on the local machine. This is checked by controlling that the hardware signature
+     * of the service matches the machine making the request.
+     *
+     * @return
+     */
+    boolean isLocal();
 
     /**
      * Each service operates under a root scope that is used to report issues, talk to clients and derive

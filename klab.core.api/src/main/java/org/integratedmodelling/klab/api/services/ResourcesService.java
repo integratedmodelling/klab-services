@@ -228,13 +228,14 @@ public interface ResourcesService extends KlabService {
      * THe worldview is required to be whole and consistent, including and starting with a root domain. If
      * this service provides a worldview, its capabilities will advertise the worldview ID, which may contain
      * projects not served by this server but resolved at initialization if a worldview is served. The
-     * projects that compose the worldview are not essential here but will be listed in the worldview's
-     * metadata.
+     * projects that compose the worldview are listed in the worldview's metadata. The projects' versions must
+     * be internally consistent and the worldview's version will be the merge of the composing projects'
+     * versions.
      * <p>
      * TODO given this paradigm it's possible to serve multiple worldviews, which may require this function to
      *  take an ID as parameter.
      *
-     * @return
+     * @return the served worldview, possibly empty
      */
     Worldview getWorldview();
 

@@ -71,6 +71,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     private String url;
     private Authentication authenticationService;
+    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+
+    @Override
+    public boolean isLocal() {
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        return (capabilities().getServerId() == null && serverId == null) ||
+                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOURCES_" + serverId));
+    }
 
     /**
      * The projects are pre-sorted in order of dependency
@@ -702,18 +710,17 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             @Override
             public boolean isWorldviewProvider() {
                 // TODO
-                return false;
+                return !getWorldview().isEmpty();
             }
 
             @Override
             public String getAdoptedWorldview() {
-                // TODO
-                return null;
+                return getWorldview().isEmpty() ? null : getWorldview().getUrn();
             }
 
             @Override
             public Set<CRUDPermission> getPermissions() {
-                // TODO
+                // TODO depends on who asks and from where - check user scope
                 return EnumSet.noneOf(CRUDPermission.class);
             }
 
@@ -730,6 +737,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             @Override
             public String getServiceName() {
                 return "Resources";
+            }
+
+            @Override
+            public String getServerId() {
+                return hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature);
             }
         };
     }
