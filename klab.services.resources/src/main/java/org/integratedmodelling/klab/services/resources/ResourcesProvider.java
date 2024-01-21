@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Authentication;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -720,8 +721,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
             @Override
             public Set<CRUDPermission> getPermissions() {
-                // TODO depends on who asks and from where - check user scope
-                return EnumSet.noneOf(CRUDPermission.class);
+
+                var ret = EnumSet.noneOf(CRUDPermission.class);
+                if (isLocal()) {
+                    // capabilities are being asked from same machine as the one that runs the server
+                    if (ResourcesProvider.this instanceof ResourcesService.Admin) {
+                        ret.add(CRUDPermission.CREATE);
+                        ret.add(CRUDPermission.DELETE);
+                        ret.add(CRUDPermission.UPDATE);
+                    }
+                } else {
+                    // TODO check permissions of current userscope vs. configuration
+                }
+                return ret;
             }
 
             @Override

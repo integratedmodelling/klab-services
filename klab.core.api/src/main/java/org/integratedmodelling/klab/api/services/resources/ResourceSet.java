@@ -107,6 +107,8 @@ public class ResourceSet implements Serializable {
 
 	private Map<String, ResourcesService> services = new HashMap<>();
 	private List<Resource> namespaces = new ArrayList<>();
+
+	private List<Resource> ontologies = new ArrayList<>();
 	private List<Resource> behaviors = new ArrayList<>();
 	private List<Resource> resources = new ArrayList<>();
 	private Set<Resource> results = new HashSet<>();
@@ -176,4 +178,11 @@ public class ResourceSet implements Serializable {
 		this.notifications = notifications;
 	}
 
+	public List<Resource> getOntologies() {
+		return ontologies;
+	}
+
+	public void setOntologies(List<Resource> ontologies) {
+		this.ontologies = ontologies;
+	}
 }
