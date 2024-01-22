@@ -6,12 +6,10 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
@@ -212,20 +210,6 @@ public class EngineService {
         this.defaultRuntime.shutdown();
         return true;
     }
-
-    /**
-     * Return the named service of the passed class. If not found or not active, return null.
-     *
-     * @param class1
-     * @param localName
-     * @param <T>
-     * @return
-     */
-    public <T extends KlabService> T getService(Class<T> class1, String localName) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
 
     public ServiceScope newServiceScope(Class<? extends KlabService> cls) {
 
