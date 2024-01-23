@@ -1534,9 +1534,8 @@ public class OWL {
             restrictSome(ret, getProperty(CoreOntology.NS.CHANGES_PROPERTY), concept, ontology);
 
             /*
-             * context of the change is the same context as the quality it describes - FIXME
-             * this shouldn't be needed as the inherency is an alternative place to look for
-             * context.
+             * inherency of the change is the context of the quality it describes, as the change is in the
+             * independent and the quality change is a consequence of it.
              */
             if (context != null) {
                 restrictSome(ret, getProperty(NS.IS_INHERENT_TO_PROPERTY), context, ontology);
