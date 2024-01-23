@@ -78,7 +78,7 @@ public class EngineService {
              * remote except in test situations. The worldview must be loaded in the reasoner before
              * the resource workspaces are read.
              *
-             * Logic is intricated, careful when making changes.
+             * Order matters and logic is intricate, careful when making changes.
              */
             Worldview worldview = null;
             for (var service : new KlabService[]{defaultResourcesService, defaultReasoner, defaultResolver,

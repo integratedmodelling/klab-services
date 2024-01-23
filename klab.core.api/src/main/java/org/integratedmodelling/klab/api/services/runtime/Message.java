@@ -138,6 +138,11 @@ public interface Message extends Serializable {
          */
         ServiceInitializing, ServiceAvailable, ServiceUnavailable,
 
+        /**
+         * UI selections
+         */
+        WorkspaceSelected,
+
         /*
          * UserContextChange-class types.
          */
