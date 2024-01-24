@@ -141,7 +141,7 @@ public interface Message extends Serializable {
         /**
          * UI selections
          */
-        WorkspaceSelected,
+        WorkspaceSelected, WorkspaceChanged,
 
         /*
          * UserContextChange-class types.

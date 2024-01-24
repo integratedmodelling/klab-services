@@ -15,8 +15,8 @@ import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -27,7 +27,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Authentication;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -602,7 +601,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public KimNamespace updateNamespace(String projectName, String namespaceContent) {
+    public ResourceSet updateNamespace(String projectName, String namespaceContent) {
         return null;
     }
 
@@ -612,7 +611,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public KActorsBehavior updateBehavior(String projectName, String behaviorContent) {
+    public ResourceSet updateBehavior(String projectName, String behaviorContent) {
         return null;
     }
 
@@ -622,7 +621,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public KimOntology updateOntology(String projectName, String ontologyContent) {
+    public ResourceSet updateOntology(String projectName, String ontologyContent) {
+        System.out.println("ZIO PERA update ontology + ontologyContent");
         return null;
     }
 

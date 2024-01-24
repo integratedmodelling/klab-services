@@ -1,14 +1,11 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import java.io.Serializable;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+
+import java.io.Serializable;
 
 /**
  * All k.LAB assets have a URN, a version, metadata and possibly annotations. They are
@@ -25,7 +22,7 @@ public interface KlabAsset extends Serializable {
 
     public enum KnowledgeClass {
         CONCEPT, OBSERVABLE, MODEL, DEFINITION, INSTANCE, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE,
-        APPLICATION,
+        APPLICATION, ONTOLOGY,
         COMPONENT, PROJECT, WORLDVIEW
     }
 
@@ -44,7 +41,4 @@ public interface KlabAsset extends Serializable {
      * @return
      */
     Metadata getMetadata();
-
-
-
 }

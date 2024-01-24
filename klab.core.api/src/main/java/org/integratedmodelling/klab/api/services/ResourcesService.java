@@ -385,15 +385,16 @@ public interface ResourcesService extends KlabService {
         KimNamespace createNamespace(String projectName, String namespaceContent);
 
         /**
-         * Namespace must exist in project. Return parsed namespace. The dependency structure may have changed
-         * and should be reloaded if dependencies are of interest.  Errors are reported with the namespace
-         * itself; fatal errors will cause an unparseable namespace * exception (TODO).
+         * Namespace must exist in project. Return any resources affected, including the changed namespace.
+         * The dependency structure may have changed and should be reloaded if dependencies are of interest.
+         * Errors are reported with the namespace itself; fatal errors will cause an unparseable namespace *
+         * exception (TODO).
          *
          * @param projectName
          * @param namespaceContent
          * @return
          */
-        KimNamespace updateNamespace(String projectName, String namespaceContent);
+        ResourceSet updateNamespace(String projectName, String namespaceContent);
 
         /**
          * Project must exist; behavior must not (throws TODO). Namespace content is parsed and the results
@@ -407,15 +408,16 @@ public interface ResourcesService extends KlabService {
         KActorsBehavior createBehavior(String projectName, String behaviorContent);
 
         /**
-         * Behavior must exist in project. Return parsed namespace. The dependency structure may have changed
-         * and should be reloaded if dependencies are of interest.  Errors are reported with the namespace
-         * itself; fatal errors will cause an unparseable namespace * exception (TODO).
+         * Behavior must exist in project. Return any resources affected, including the changed namespace. The
+         * dependency structure may have changed and should be reloaded if dependencies are of interest.
+         * Errors are reported with the namespace itself; fatal errors will cause an unparseable namespace *
+         * exception (TODO).
          *
          * @param projectName
          * @param behaviorContent
          * @return
          */
-        KActorsBehavior updateBehavior(String projectName, String behaviorContent);
+        ResourceSet updateBehavior(String projectName, String behaviorContent);
 
         /**
          * Project must exist; ontology must not (throws TODO). Namespace content is parsed and the results
@@ -429,15 +431,16 @@ public interface ResourcesService extends KlabService {
         KimOntology createOntology(String projectName, String ontologyContent);
 
         /**
-         * Ontology must exist in project. Return parsed namespace. The dependency structure may have changed
-         * and should be reloaded if dependencies are of interest.  Errors are reported with the namespace
-         * itself; fatal errors will cause an unparseable namespace * exception (TODO).
+         * Ontology must exist in project. Return any resources affected, including the changed namespace.The
+         * dependency structure may have changed and should be reloaded if dependencies are of interest.
+         * Errors are reported with the namespace itself; fatal errors will cause an unparseable namespace *
+         * exception (TODO).
          *
          * @param projectName
          * @param ontologyContent
          * @return
          */
-        KimOntology updateOntology(String projectName, String ontologyContent);
+        ResourceSet updateOntology(String projectName, String ontologyContent);
 
         /**
          * Publish a project with the passed privileges. The project must have been added before this is

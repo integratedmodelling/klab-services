@@ -337,6 +337,8 @@ public enum LanguageAdapter {
         ret.setSubjective(definition.isSubjective());
         ret.setDocstring(definition.getDescription());
         ret.setAlias(definition.isAlias());
+        ret.setOffsetInDocument(definition.getCodeOffset());
+        ret.setLength(definition.getCodeLength());
 
         ret.setType(adaptSemanticType(definition.getDeclaredType()));
         if (definition.isDeniable()) {
