@@ -219,7 +219,7 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy</artifactId>
             <!-- <version>2.5.0-beta-2</version> -->
-            <version>3.0.7</version>
+            <version>3.0.20</version>
             <!-- <classifier>indy</classifier> -->
         </dependency>
         <dependency>
