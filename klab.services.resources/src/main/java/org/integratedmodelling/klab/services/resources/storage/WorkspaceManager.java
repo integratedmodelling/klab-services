@@ -709,7 +709,10 @@ public class WorkspaceManager {
             if (newAsset != null) {
 
                 /*
-                establish what needs to be reloaded and which workspaces are affected
+                establish what needs to be reloaded and which workspaces are affected: dry run across
+                ontologies (if the asset is an ontology), then strategies, namespaces and behaviors. First
+                establish the affected ones and compile the result sets per workspace. Then send those and\
+                start the loading based on the collected metadata in the sets.
                 */
 
                 this.loading.set(true);
@@ -721,7 +724,11 @@ public class WorkspaceManager {
                 */
 
                 /*
-                make the actual changes (involving the semantic validator)
+                make the actual changes (involving the semantic validator). For each modification: if
+                it's the modified object, reset the corresponding concept descriptors in the language
+                validator (if an ontology) or the kbox for the namespace. Then reload and substitute in the
+                ontology, worldview and namespace arrays for the modified and the affected in the order
+                specified by the resourcesets.
                  */
 
                 this.loading.set(false);
