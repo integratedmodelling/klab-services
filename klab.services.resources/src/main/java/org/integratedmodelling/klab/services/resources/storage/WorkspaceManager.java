@@ -7,20 +7,26 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.WorldviewImpl;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
@@ -64,6 +70,7 @@ public class WorkspaceManager {
      */
     private long DEFAULT_GIT_SYNC_INTERVAL = 15L * 60L * 60L * 1000L;
 
+    private AtomicBoolean loading = new AtomicBoolean(false);
     private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
     private List<KimOntology> _ontologyOrder;
     private List<KimNamespace> _namespaceOrder;
@@ -84,10 +91,9 @@ public class WorkspaceManager {
                 SemanticSyntax coreConcept = declaration.getDeclaredParent();
                 var coreId = coreConcept.encode();
                 var cname = coreConcept.encode().split(":");
-                this.conceptTypes.put(coreConcept.encode(),
-                        new ConceptDescriptor(cname[0], cname[1],
-                                declaration.getDeclaredType(), coreConcept.encode(), "Core concept "
-                                + coreConcept.encode() + " for type " + declaration.getDeclaredType(), true));
+                this.conceptTypes.put(coreConcept.encode(), new ConceptDescriptor(cname[0], cname[1],
+                        declaration.getDeclaredType(), coreConcept.encode(),
+                        "Core concept " + coreConcept.encode() + " for type " + declaration.getDeclaredType(), true));
             }
             return super.createConceptDescriptor(declaration);
         }
@@ -101,6 +107,7 @@ public class WorkspaceManager {
     public List<Project> getProjects() {
         return new ArrayList<>(projects.values());
     }
+
 
     class StrategyParser extends Parser<Strategies> {
 
@@ -126,8 +133,7 @@ public class WorkspaceManager {
                 if (!errors.isEmpty()) {
                     for (var error : errors) {
                         scope.error("Observation strategy resource has errors: " + strategyUrl,
-                                Klab.ErrorCode.RESOURCE_VALIDATION,
-                                Klab.ErrorContext.OBSERVATION_STRATEGY);
+                                Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.OBSERVATION_STRATEGY);
                     }
                     return null;
                 }
@@ -145,8 +151,7 @@ public class WorkspaceManager {
 
                         @Override
                         protected void logError(ParsedObject target, EObject object,
-                                                EStructuralFeature feature
-                                , String message) {
+                                                EStructuralFeature feature, String message) {
                             getNotifications().add(new Notification(object,
                                     new LanguageValidationScope.ValidationMessage(message, -1,
                                             LanguageValidationScope.Level.ERROR)));
@@ -154,8 +159,8 @@ public class WorkspaceManager {
                     };
                 }
             } catch (IOException e) {
-                scope.error("Error loading observation strategy " + strategyUrl,
-                        Klab.ErrorCode.READ_FAILED, Klab.ErrorContext.OBSERVATION_STRATEGY);
+                scope.error("Error loading observation strategy " + strategyUrl, Klab.ErrorCode.READ_FAILED
+                        , Klab.ErrorContext.OBSERVATION_STRATEGY);
             }
             return null;
         }
@@ -269,25 +274,25 @@ public class WorkspaceManager {
         ProjectStorage storage;
         Project externalProject;
         Project.Manifest manifest;
-//        // these are loaded on demand, use only through their accessors
-//        private Set<String> _namespaceIds;
-//        private Set<String> _ontologyIds;
+        //        // these are loaded on demand, use only through their accessors
+        //        private Set<String> _namespaceIds;
+        //        private Set<String> _ontologyIds;
         // TODO permissions
 
-//
-//        public Set<String> getNamespaceIds() {
-//            if (_namespaceIds == null) {
-//
-//            }
-//            return _namespaceIds;
-//        }
-//
-//        public Set<String> getOntologyIds() {
-//            if (_ontologyIds == null) {
-//
-//            }
-//            return _ontologyIds;
-//        }
+        //
+        //        public Set<String> getNamespaceIds() {
+        //            if (_namespaceIds == null) {
+        //
+        //            }
+        //            return _namespaceIds;
+        //        }
+        //
+        //        public Set<String> getOntologyIds() {
+        //            if (_ontologyIds == null) {
+        //
+        //            }
+        //            return _ontologyIds;
+        //        }
     }
 
     private Map<String, WorkspaceImpl> workspaces = new LinkedHashMap<>();
@@ -342,8 +347,6 @@ public class WorkspaceManager {
                     descriptor.workspace = workspace;
                     descriptor.name = project;
                     projectDescriptors.put(project, descriptor);
-
-
                 } else {
                     // whine plaintively; the monitor will contain errors
                     scope.error("Project " + project + " cannot be loaded. Configuration is invalid.");
@@ -391,8 +394,8 @@ public class WorkspaceManager {
                             cache.put(parsed.getNamespace().getName(), Triple.of(parsed, null, isWorldview));
                         } catch (IOException e) {
                             // log error and return failure
-                            scope.error("Error loading ontology " + ontologyUrl,
-                                    Klab.ErrorCode.READ_FAILED, Klab.ErrorContext.ONTOLOGY);
+                            scope.error("Error loading ontology " + ontologyUrl, Klab.ErrorCode.READ_FAILED
+                                    , Klab.ErrorContext.ONTOLOGY);
                             return Collections.emptyList();
                         }
                     }
@@ -434,12 +437,11 @@ public class WorkspaceManager {
                 var ontologyId = sort.next();
                 var od = cache.get(ontologyId);
                 if (od == null) {
-                    scope.error("Ontology " + ontologyId + " cannot be resolved either locally or through" +
-                                    " the network",
-                            Klab.ErrorCode.UNRESOLVED_REFERENCE, Klab.ErrorContext.ONTOLOGY);
+                    scope.error("Ontology " + ontologyId + " cannot be resolved either locally or through" + " the network", Klab.ErrorCode.UNRESOLVED_REFERENCE, Klab.ErrorContext.ONTOLOGY);
                     return Collections.emptyList();
                 }
                 AtomicBoolean errors = new AtomicBoolean(false);
+                List<Notification> notifications = new ArrayList<>();
                 var ontology = od.getSecond();
                 if (ontology == null) {
                     var syntax = new OntologySyntaxImpl(od.getFirst(), languageValidationScope) {
@@ -447,17 +449,21 @@ public class WorkspaceManager {
                         @Override
                         protected void logWarning(ParsedObject target, EObject object,
                                                   EStructuralFeature feature, String message) {
+                            notifications.add(makeNotification(target, object, feature, message,
+                                    org.integratedmodelling.klab.api.services.runtime.Notification.Level.Warning));
 
                         }
 
                         @Override
                         protected void logError(ParsedObject target, EObject object,
                                                 EStructuralFeature feature, String message) {
+                            notifications.add(makeNotification(target, object, feature, message,
+                                    org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
                             errors.set(true);
                         }
                     };
                     ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax,
-                            ontologyProjects.get(syntax.getName()));
+                            ontologyProjects.get(syntax.getName()), notifications);
                     // TODO add ontology local URL to metadata based on service URL
                 }
 
@@ -499,18 +505,18 @@ public class WorkspaceManager {
         return new ArrayList<>(workspaces.keySet());
     }
 
-//    public List<String> getLocalProjectURNs(String workspace) {
-//        var ret = new ArrayList<String>();
-//        for (var pd : getProjectLoadOrder()) {
-//            if (pd.getFirst() != null) {
-//                var pdesc = projectDescriptors.get(pd.getFirst().getProjectName());
-//                if (pdesc != null /* shouldn't happen */ && pdesc.workspace.equals(workspace)) {
-//                    ret.add(pdesc.name);
-//                }
-//            }
-//        }
-//        return ret;
-//    }
+    //    public List<String> getLocalProjectURNs(String workspace) {
+    //        var ret = new ArrayList<String>();
+    //        for (var pd : getProjectLoadOrder()) {
+    //            if (pd.getFirst() != null) {
+    //                var pdesc = projectDescriptors.get(pd.getFirst().getProjectName());
+    //                if (pdesc != null /* shouldn't happen */ && pdesc.workspace.equals(workspace)) {
+    //                    ret.add(pdesc.name);
+    //                }
+    //            }
+    //        }
+    //        return ret;
+    //    }
 
     /**
      * Create the project implementation with every namespace and manifest filled in. CAUTION this can be a
@@ -564,13 +570,13 @@ public class WorkspaceManager {
      */
     public ProjectStorage importProject(String projectUrl, String workspaceName) {
 
-//        updateLock.writeLock().lock();
+        //        updateLock.writeLock().lock();
         var ret = loadProject(projectUrl, workspaceName);
 
         if (ret != null) {
             ResourcesConfiguration.ProjectConfiguration configuration =
                     new ResourcesConfiguration.ProjectConfiguration();
-//            configuration.setLocalPath(new File(workspaceName + File.separator + projectName));
+            //            configuration.setLocalPath(new File(workspaceName + File.separator + projectName));
             configuration.setSourceUrl(projectUrl);
             configuration.setWorkspaceName(workspaceName);
             // FIXME only if git
@@ -613,8 +619,8 @@ public class WorkspaceManager {
 
             if (Utils.Git.isRemoteGitURL(projectUrl)) {
 
-                File workspace = Configuration.INSTANCE.getDataPath(
-                        configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
+                File workspace =
+                        Configuration.INSTANCE.getDataPath(configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
                 workspace.mkdirs();
 
                 try {
@@ -628,7 +634,9 @@ public class WorkspaceManager {
                     ProjectStorage project = importProject(projectName, workspaceName);
                     File ws = new File(workspace + File.separator + projectName);
                     if (ws.exists()) {
-                        ret = new FileProjectStorage(ws);
+                        ret = new FileProjectStorage(ws, (proj, type, change, url) -> {
+                            handleFileChange(proj, type, change, url);
+                        });
                     }
 
                 } catch (Throwable t) {
@@ -655,14 +663,170 @@ public class WorkspaceManager {
 
                 var file = Utils.URLs.getFileForURL(projectUrl);
                 if (file.isDirectory()) {
-                    ret = new FileProjectStorage(file);
+                    ret = new FileProjectStorage(file, (project, type, change, url) -> {
+                        handleFileChange(project, type, change, url);
+                    });
                 } else if (Utils.Files.JAVA_ARCHIVE_EXTENSIONS.contains(Utils.Files.getFileExtension(file))) {
                     // TODO ret = read from archive
                 }
             }
         } finally {
-//            updateLock.writeLock().unlock();
+            //            updateLock.writeLock().unlock();
         }
+        return ret;
+    }
+
+    private void handleFileChange(String project, ProjectStorage.ResourceType type, CRUDOperation change,
+                                  URL url) {
+
+        if (loading.get()) {
+            return;
+        }
+
+        /*
+        populate the resource set changes in order of workspace affected
+         */
+        Map<String, ResourceSet> result = new LinkedHashMap<>();
+
+        if (change == CRUDOperation.DELETE) {
+            // TODO
+        } else if (change == CRUDOperation.DELETE) {
+            // TODO
+        } else {
+
+            var projectDescriptor = projectDescriptors.get(project);
+
+            /*
+            figure out which asset is affected and load it
+             */
+            KlabDocument<?> newAsset = switch (type) {
+                case ONTOLOGY -> loadOntology(url, project);
+                case MODEL_NAMESPACE -> loadNamespace(url, project);
+                case BEHAVIOR -> loadBehavior(url, project);
+                default -> null;
+            };
+
+            if (newAsset != null) {
+
+                /*
+                establish what needs to be reloaded and which workspaces are affected
+                */
+
+                this.loading.set(true);
+
+                /*
+                 we can already compile and report a ResourceSet per workspace affected. The listening
+                 end(s) will have to request the contents, and that won't respond until the changes are
+                 made anyway.
+                */
+
+                /*
+                make the actual changes (involving the semantic validator)
+                 */
+
+                this.loading.set(false);
+
+            } else {
+                // TODO report failure notification
+            }
+
+            System.out.println("DIO PORCO file has changed: " + type + " " + url + " " + change + " in " + project);
+        }
+    }
+
+    private KimOntology loadOntology(URL url, String project) {
+        try (var input = url.openStream()) {
+            List<Notification> notifications = new ArrayList<>();
+            var parsed = ontologyParser.parse(input, notifications);
+            var syntax = new OntologySyntaxImpl(parsed, languageValidationScope) {
+
+                @Override
+                protected void logWarning(ParsedObject target, EObject object, EStructuralFeature feature,
+                                          String message) {
+                    notifications.add(makeNotification(target, object, feature, message,
+                            org.integratedmodelling.klab.api.services.runtime.Notification.Level.Warning));
+                }
+
+                @Override
+                protected void logError(ParsedObject target, EObject object, EStructuralFeature feature,
+                                        String message) {
+                    notifications.add(makeNotification(target, object, feature, message,
+                            org.integratedmodelling.klab.api.services.runtime.Notification.Level.Error));
+                }
+            };
+            return LanguageAdapter.INSTANCE.adaptOntology(syntax, project, notifications);
+        } catch (IOException e) {
+            scope.error(e);
+            return null;
+        }
+    }
+
+    private KimNamespace loadNamespace(URL url, String project) {
+        //        try (var input = url.openStream()) {
+        //            List<Notification> notifications = new ArrayList<>();
+        //            var parsed = namespaceParser.parse(input, notifications);
+        //            var syntax = new NamespaceSyntaxImpl(parsed, languageValidationScope) {
+        //
+        //                @Override
+        //                protected void logWarning(ParsedObject target, EObject object, EStructuralFeature
+        //                feature,
+        //                                          String message) {
+        //                    notifications.add(makeNotification(target, object, feature, message,
+        //                            org.integratedmodelling.klab.api.services.runtime.Notification.Level
+        //                            .Warning));
+        //                }
+        //
+        //                @Override
+        //                protected void logError(ParsedObject target, EObject object, EStructuralFeature
+        //                feature,
+        //                                        String message) {
+        //                    notifications.add(makeNotification(target, object, feature, message,
+        //                            org.integratedmodelling.klab.api.services.runtime.Notification.Level
+        //                            .Error));
+        //                }
+        //            };
+        //            return LanguageAdapter.INSTANCE.adaptNamespace(syntax, project, notifications);
+        //        } catch (IOException e) {
+        //            scope.error(e);
+        return null;
+        //        }
+    }
+
+    private KActorsBehavior loadBehavior(URL url, String project) {
+        //        try (var input = url.openStream()) {
+        //            List<Notification> notifications = new ArrayList<>();
+        //            var parsed = behaviorParser.parse(input, notifications);
+        //            var syntax = new KActorsBehaviorImpl(parsed, languageValidationScope) {
+        //
+        //                @Override
+        //                protected void logWarning(ParsedObject target, EObject object, EStructuralFeature
+        //                feature,
+        //                                          String message) {
+        //                    notifications.add(makeNotification(target, object, feature, message,
+        //                            org.integratedmodelling.klab.api.services.runtime.Notification.Level
+        //                            .Warning));
+        //                }
+        //
+        //                @Override
+        //                protected void logError(ParsedObject target, EObject object, EStructuralFeature
+        //                feature,
+        //                                        String message) {
+        //                    notifications.add(makeNotification(target, object, feature, message,
+        //                            org.integratedmodelling.klab.api.services.runtime.Notification.Level
+        //                            .Error));
+        //                }
+        //            };
+        //            return LanguageAdapter.INSTANCE.adaptBehavior(syntax, project, notifications);
+        //        } catch (IOException e) {
+        //            scope.error(e);
+        return null;
+        //        }
+    }
+
+    private Notification makeNotification(ParsedObject target, EObject object,
+                                          EStructuralFeature feature, String message,
+                                          Notification.Level level) {
+        var ret = new NotificationImpl();
         return ret;
     }
 
@@ -684,7 +848,27 @@ public class WorkspaceManager {
      * return the list of projects that have not resolved properly (including resource not found and version
      * mismatch errors). Only one of the elements in each returned pair will be non-null.
      */
-    public boolean loadWorkspace() {
+    public synchronized boolean loadWorkspace() {
+
+        /*
+        TODO wait until this.loading.get() is false! Could be straight in here or we could just use this
+         from an operation queue. API admin ops and retrievals should also ensure that they only return
+         when not loading.
+
+         Use this pattern
+
+        if(lock.compareAndSet(false, true)){
+        try {
+            //do
+           } catch(Exception e){
+            //error handling
+           } finally {
+             lock.set(false);
+          }
+        }
+         */
+
+        this.loading.set(true);
 
         this._projectLoadOrder = new ArrayList<>();
         this.workspaces.clear();
@@ -707,9 +891,9 @@ public class WorkspaceManager {
                 new CycleDetector<>(dependencyGraph);
         if (cycleDetector.detectCycles()) {
             scope.error(Klab.ErrorCode.CIRCULAR_REFERENCES, Klab.ErrorContext.PROJECT, "Projects in " +
-                    "configuration have cyclic dependencies on each other: " +
-                    "will not " +
-                    "proceed. Review configuration");
+                    "configuration have cyclic dependencies on each other: " + "will not " + "proceed. " +
+                    "Review configuration");
+            this.loading.set(false);
             return false;
         } else {
 
@@ -726,10 +910,9 @@ public class WorkspaceManager {
                     if (pd.manifest.getVersion().compatible(proj.getSecond())) {
                         this._projectLoadOrder.add(Pair.of(pd.storage, null));
                     } else {
-                        scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
-                                "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" +
-                                        " by other projects in workspace but incompatible version " + pd.manifest.getVersion()
-                                        + " is available in local workspace");
+                        scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION, "Project "
+                                + proj.getFirst() + "@" + proj.getSecond() + " is required" + " by other " +
+                                "projects in workspace but incompatible version " + pd.manifest.getVersion() + " is available in local workspace");
                         unresolvedProjects.add(proj);
                     }
                 } else {
@@ -748,16 +931,14 @@ public class WorkspaceManager {
                             scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
                                     "Project " + proj.getFirst() + "@" + proj.getSecond() + " is " +
                                             "required by other projects in workspace but incompatible " +
-                                            "version " +
-                                            externalProject.getManifest().getVersion() + " is available " +
-                                            "externally");
+                                            "version " + externalProject.getManifest().getVersion() + " is " +
+                                            "available " + "externally");
                             unresolvedProjects.add(proj);
                         }
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.UNRESOLVED_REFERENCE,
-                                "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" +
-                                        " by other projects in workspace but cannot be resolved from the " +
-                                        "network");
+                                "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" + " " +
+                                        "by other projects in workspace but cannot be resolved from the " + "network");
                         unresolvedProjects.add(proj);
                     }
                 }
@@ -794,6 +975,8 @@ public class WorkspaceManager {
             }
         }
 
+        this.loading.set(false);
+
         return true;
     }
 
@@ -819,22 +1002,22 @@ public class WorkspaceManager {
             if (this.configuration.getWorkspaces().get(project.workspace) != null) {
                 this.configuration.getWorkspaces().get(project.workspace).remove(projectName);
             }
-//        // remove namespaces, behaviors and resources
-//        for (KimNamespace namespace : project.getNamespaces()) {
-//            this.localNamespaces.remove(namespace.getUrn());
-//        }
-//        for (KActorsBehavior behavior : project.getBehaviors()) {
-//            this.localBehaviors.remove(behavior.getUrn());
-//        }
-//        for (String resource : project.getResourceUrns()) {
-//            localResources.remove(resource);
-//            catalog.remove(resource);
-//        }
-//        this.localProjects.remove(projectName);
+            //        // remove namespaces, behaviors and resources
+            //        for (KimNamespace namespace : project.getNamespaces()) {
+            //            this.localNamespaces.remove(namespace.getUrn());
+            //        }
+            //        for (KActorsBehavior behavior : project.getBehaviors()) {
+            //            this.localBehaviors.remove(behavior.getUrn());
+            //        }
+            //        for (String resource : project.getResourceUrns()) {
+            //            localResources.remove(resource);
+            //            catalog.remove(resource);
+            //        }
+            //        this.localProjects.remove(projectName);
             workspace.getProjects().remove(project);
             saveConfiguration();
         }
-//        db.commit();
+        //        db.commit();
         return true;
     }
 
@@ -944,6 +1127,64 @@ public class WorkspaceManager {
     private void saveConfiguration() {
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
         Utils.YAML.save(this.configuration, config);
+    }
+
+
+    public void updateOntology(String projectName, String ontologyContent) {
+
+        var pd = projectDescriptors.get(projectName);
+        if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
+            throw new KlabIllegalStateException("Cannot update an ontology that is not stored on the " +
+                    "service's filesystem");
+        }
+        /*
+        file storage: modify as specified
+         */
+        List<Notification> notifications = new ArrayList<>();
+        var parsed = ontologyParser.parse(new StringReader(ontologyContent), notifications);
+
+        // do the update in the stored project and screw it
+        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.ONTOLOGY,
+                parsed.getNamespace().getName(), ontologyContent);
+
+    }
+
+    public void updateNamespace(String projectName, String ontologyContent) {
+
+        var pd = projectDescriptors.get(projectName);
+        if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
+            throw new KlabIllegalStateException("Cannot update an ontology that is not stored on the " +
+                    "service's filesystem");
+        }
+        /*
+        file storage: modify as specified
+         */
+        List<Notification> notifications = new ArrayList<>();
+        var parsed = namespaceParser.parse(new StringReader(ontologyContent), notifications);
+
+        // do the update in the stored project and screw it
+        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.MODEL_NAMESPACE,
+                parsed.getNamespace().getName(), ontologyContent);
+
+    }
+
+    public void updateBehavior(String projectName, String ontologyContent) {
+
+        var pd = projectDescriptors.get(projectName);
+        if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
+            throw new KlabIllegalStateException("Cannot update an ontology that is not stored on the " +
+                    "service's filesystem");
+        }
+        /*
+        file storage: modify as specified
+         */
+        List<Notification> notifications = new ArrayList<>();
+        //        var parsed = behaviorParser.parse(new StringReader(ontologyContent), notifications);
+        //
+        //        // do the update in the stored project and screw it
+        //        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.BEHAVIOR,
+        //                parsed.getNamespace().getName(), ontologyContent);
+
     }
 
 }

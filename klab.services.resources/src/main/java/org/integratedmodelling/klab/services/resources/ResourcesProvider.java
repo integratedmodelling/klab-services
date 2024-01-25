@@ -8,7 +8,7 @@ package org.integratedmodelling.klab.services.resources;
 //import org.integratedmodelling.kim.model.KimLoader;
 //import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 
-import org.integratedmodelling.klab.api.authentication.CRUDPermission;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
@@ -601,8 +601,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet updateNamespace(String projectName, String namespaceContent) {
-        return null;
+    public void updateNamespace(String projectName, String namespaceContent) {
+
     }
 
     @Override
@@ -611,8 +611,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet updateBehavior(String projectName, String behaviorContent) {
-        return null;
+    public void updateBehavior(String projectName, String behaviorContent) {
     }
 
     @Override
@@ -621,9 +620,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet updateOntology(String projectName, String ontologyContent) {
-        System.out.println("ZIO PERA update ontology + ontologyContent");
-        return null;
+    public void updateOntology(String projectName, String ontologyContent) {
+        this.workspaceManager.updateOntology(projectName, ontologyContent);
     }
 
     @Override
@@ -720,15 +718,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             }
 
             @Override
-            public Set<CRUDPermission> getPermissions() {
+            public Set<CRUDOperation> getPermissions() {
 
-                var ret = EnumSet.noneOf(CRUDPermission.class);
+                var ret = EnumSet.noneOf(CRUDOperation.class);
                 if (isLocal()) {
                     // capabilities are being asked from same machine as the one that runs the server
                     if (ResourcesProvider.this instanceof ResourcesService.Admin) {
-                        ret.add(CRUDPermission.CREATE);
-                        ret.add(CRUDPermission.DELETE);
-                        ret.add(CRUDPermission.UPDATE);
+                        ret.add(CRUDOperation.CREATE);
+                        ret.add(CRUDOperation.DELETE);
+                        ret.add(CRUDOperation.UPDATE);
                     }
                 } else {
                     // TODO check permissions of current userscope vs. configuration

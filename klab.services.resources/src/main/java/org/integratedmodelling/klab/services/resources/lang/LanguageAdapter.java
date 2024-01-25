@@ -9,8 +9,10 @@ import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.impl.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.languages.api.*;
 
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -37,8 +39,8 @@ public enum LanguageAdapter {
         KimConceptImpl ret = new KimConceptImpl();
 
         // NAH these should be done internally after generation
-//        ret.setUrn(semantics.encode());
-//        ret.setCodeName(semantics.codeName());
+        //        ret.setUrn(semantics.encode());
+        //        ret.setCodeName(semantics.codeName());
 
         ret.setType(adaptSemanticType(semantics.getType()));
         ret.setNegated(semantics.isNegated());
@@ -298,7 +300,8 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public KimOntology adaptOntology(OntologySyntax ontology, String projectName) {
+    public KimOntology adaptOntology(OntologySyntax ontology, String projectName,
+                                     Collection<Notification> notifications) {
 
         KimOntologyImpl ret = new KimOntologyImpl();
 
@@ -322,6 +325,8 @@ public enum LanguageAdapter {
         for (var definition : ontology.getConceptDeclarations()) {
             ret.getStatements().add(adaptConceptDefinition(definition, ontology.getName()));
         }
+
+        ret.getNotifications().addAll(notifications);
 
         return ret;
     }

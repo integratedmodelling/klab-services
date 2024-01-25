@@ -1,23 +1,66 @@
 package org.integratedmodelling.klab.resources;
 
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 public class FileProjectStorage implements ProjectStorage {
 
-    File rootFolder;
-    String projectName;
+    @FunctionalInterface
+    public interface ChangeNotifier {
+        void apply(String projectName, ProjectStorage.ResourceType resourceType, CRUDOperation changeType,
+                   URL newContent);
+    }
 
-    public FileProjectStorage(File rootFolder) {
+    private FileWatcher watcher;
+    private File rootFolder;
+    private String projectName;
+
+    public FileProjectStorage(File rootFolder, ChangeNotifier notifier) {
         this.rootFolder = rootFolder;
         this.projectName = Utils.Files.getFileBaseName(rootFolder);
+        // install file monitor
+        if (notifier != null) {
+            this.watcher = new FileWatcher(this.rootFolder, (changedFile, action) -> {
+                var extension = Utils.Files.getFileExtension(changedFile);
+                ResourceType type = switch (extension) {
+                    case "kwv" -> ResourceType.ONTOLOGY;
+                    case "kim" -> ResourceType.MODEL_NAMESPACE;
+                    case "kactors" -> ResourceType.BEHAVIOR;
+                    case "obs" -> ResourceType.STRATEGY;
+                    // TODO handle all other files, whose role depends on location
+                    default -> null;
+                };
+                CRUDOperation operation = null;
+                if (action == StandardWatchEventKinds.ENTRY_MODIFY) {
+                    operation = CRUDOperation.UPDATE;
+                } else if (action == StandardWatchEventKinds.ENTRY_CREATE) {
+                    operation = CRUDOperation.CREATE;
+                } else if (action == StandardWatchEventKinds.ENTRY_DELETE) {
+                    operation = CRUDOperation.DELETE;
+                }
+
+                if (operation != null && type != null) {
+                    try {
+                        notifier.apply(projectName, type, operation, changedFile.toURI().toURL());
+                    } catch (MalformedURLException e) {
+                        throw new KlabIOException(e);
+                    }
+                }
+            });
+            this.watcher.start();
+        }
     }
 
     @Override
@@ -40,7 +83,7 @@ public class FileProjectStorage implements ProjectStorage {
         for (var type : types) {
             switch (type) {
                 case ONTOLOGY -> {
-                    collectResources(".kwv", "src", true,ret);
+                    collectResources(".kwv", "src", true, ret);
                 }
                 case MODEL_NAMESPACE -> {
                     collectResources(".kim", "src", true, ret);
@@ -83,12 +126,13 @@ public class FileProjectStorage implements ProjectStorage {
     /**
      * Redefine to implement different storage strategies.
      *
-     * @param extension extension w/o dot, or * for all files
+     * @param extension    extension w/o dot, or * for all files
      * @param sourceFolder will be recursed into unless recurse is false
      * @param recurse
      * @param resultUrls
      */
-    protected void collectResources(String extension, String sourceFolder, boolean recurse, List<URL> resultUrls) {
+    protected void collectResources(String extension, String sourceFolder, boolean recurse,
+                                    List<URL> resultUrls) {
 
         File root = new File(this.rootFolder + File.separator + sourceFolder.replaceAll("/", File.separator));
         if (root.isDirectory()) {
@@ -130,5 +174,97 @@ public class FileProjectStorage implements ProjectStorage {
     @Override
     public boolean isFilesystemBased() {
         return true;
+    }
+
+    public void update(ResourceType resourceType, String namespace, String ontologyContent) {
+        // TODO overwrite the file. The file monitor does the rest
+    }
+
+    public class FileWatcher extends Thread {
+        private final File rootDirectory;
+        private final BiConsumer<File, WatchEvent.Kind<?>> action;
+        private AtomicBoolean stop = new AtomicBoolean(false);
+        private static Map<WatchKey, Path> keyPathMap = new HashMap<>();
+
+        public FileWatcher(File rootDirectory, BiConsumer<File, WatchEvent.Kind<?>> actionOnChange) {
+            this.rootDirectory = rootDirectory;
+            this.action = actionOnChange;
+        }
+
+        public boolean isStopped() {
+            return stop.get();
+        }
+
+        public void stopThread() {
+            stop.set(true);
+        }
+
+        Set<File> timestamp = new HashSet<>();
+
+        @Override
+        public void run() {
+            try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
+                Path path = rootDirectory.toPath();
+                registerDirectory(watcher, path);
+                while (!isStopped()) {
+
+                    // intercepts double events within same cycle
+                    Set<Pair<File, WatchEvent.Kind<?>>> events = new HashSet<>();
+
+                    WatchKey key = watcher.take();
+                    for (WatchEvent<?> event : key.pollEvents()) {
+
+                        WatchEvent.Kind<?> kind = event.kind();
+
+                        @SuppressWarnings("unchecked")
+                        WatchEvent<Path> ev = (WatchEvent<Path>) event;
+                        Path filename = ev.context();
+
+                        if (kind == StandardWatchEventKinds.OVERFLOW) {
+                            Thread.yield();
+                            continue;
+                        } else {
+                            var file = filename.toFile();
+                            // modification affect both content and timestamp, so we ignore the first
+                            if (kind != StandardWatchEventKinds.ENTRY_MODIFY || timestamp.contains(file)) {
+                                events.add(Pair.of(file, kind));
+                                timestamp.remove(file);
+                            } else {
+                                timestamp.add(file);
+                            }
+                        }
+                        boolean valid = key.reset();
+                        if (!valid) {
+                            break;
+                        }
+                    }
+                    Thread.sleep(250);
+
+                    for (var event : events) {
+                        action.accept(event.getFirst(), event.getSecond());
+                    }
+                }
+            } catch (Throwable e) {
+                // Log or rethrow the error
+                throw new KlabIOException(e);
+            }
+        }
+
+        private void registerDirectory(WatchService watcher, Path path) throws IOException {
+
+            if (!Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+                return;
+            }
+            WatchKey key = path.register(watcher,
+                    StandardWatchEventKinds.ENTRY_CREATE,
+                    StandardWatchEventKinds.ENTRY_MODIFY,
+                    StandardWatchEventKinds.ENTRY_DELETE);
+            keyPathMap.put(key, path);
+
+
+            for (File f : path.toFile().listFiles()) {
+                registerDirectory(watcher, f.toPath());
+            }
+        }
     }
 }

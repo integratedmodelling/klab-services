@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.authentication;
 
-public enum CRUDPermission {
+public enum CRUDOperation {
 
     CREATE, DELETE, UPDATE
 

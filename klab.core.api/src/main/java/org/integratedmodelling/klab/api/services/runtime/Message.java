@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
 import java.io.Serializable;
@@ -20,7 +21,7 @@ public interface Message extends Serializable {
 
     /**
      * Message class. Ugly type name makes life easier.
-     *
+     * TODO add enumset of all acceptable messageTypes and validate messages
      * @author ferdinando.villa
      */
     enum MessageClass {
@@ -117,6 +118,7 @@ public interface Message extends Serializable {
      */
     enum MessageType {
 
+
         /**
          * Only used as a default for the MessageClass annotation.
          */
@@ -141,7 +143,13 @@ public interface Message extends Serializable {
         /**
          * UI selections
          */
-        WorkspaceSelected, WorkspaceChanged,
+        WorkspaceSelected(String.class),
+
+        /**
+         * Sent whenever a file modification (external or through the API) implies a change in a workspace.
+         * Accompanied by a ResourceSet that details all the assets affected and their order of loading.
+         */
+        WorkspaceChanged(ResourceSet.class),
 
         /*
          * UserContextChange-class types.
@@ -196,44 +204,44 @@ public interface Message extends Serializable {
          */
         UserProjectOpened, UserProjectModified, UserProjectDeleted,
 
-        /**
-         * Class UserInterface: User input requests and responses: request is B->F, response is F->B. Use
-         * beans {@link UserInputRequested} and {@link UserInputProvided} respectively.
-         */
-        UserInputRequested, UserInputProvided,
+//        /**
+//         * Class UserInterface: User input requests and responses: request is B->F, response is F->B. Use
+//         * beans {@link UserInputRequested} and {@link UserInputProvided} respectively.
+//         */
+//        UserInputRequested, UserInputProvided,
 
         UserAuthorized, UserDisconnected,
 
-        /**
-         * Class UserInterface: B->F when a new documentation item becomes available for display at context
-         * level or at the dataflow actuator level. Uses bean {@link RuntimeDocumentation}.
-         */
+//        /**
+//         * Class UserInterface: B->F when a new documentation item becomes available for display at context
+//         * level or at the dataflow actuator level. Uses bean {@link RuntimeDocumentation}.
+//         */
         RuntimeDocumentation, DataflowDocumentation, TicketRequest, TicketResponse, AuthorityDocumentation,
 
-        /**
-         * Class UserInterface: request addition of action to either context menu or global menu. Use bean
-         * {@link GlobalActionRequest}.
-         */
-        AddGlobalAction,
+//        /**
+//         * Class UserInterface: request addition of action to either context menu or global menu. Use bean
+//         * {@link GlobalActionRequest}.
+//         */
+//        AddGlobalAction,
 
-        /**
-         * Class UserInterface: handling of drop events in UI
-         * <p>
-         * {@link #DropInitiated}: F->B communicate content type, name and size (bean {@link DropRequest}
-         * {@link #DropPermission}: B->F accept/reject drop (bean {@link DropPermission} {@link #DropData}:
-         * F->B execute drop upload and communicate on finish (bean {@link DropData}
-         */
-        DropInitiated, DropPermission, DropData,
+//        /**
+//         * Class UserInterface: handling of drop events in UI
+//         * <p>
+//         * {@link #DropInitiated}: F->B communicate content type, name and size (bean {@link DropRequest}
+//         * {@link #DropPermission}: B->F accept/reject drop (bean {@link DropPermission} {@link #DropData}:
+//         * F->B execute drop upload and communicate on finish (bean {@link DropData}
+//         */
+//        DropInitiated, DropPermission, DropData,
 
-        /**
-         * Class UserInterface: request change in setting communicating through bean
-         * {@link SettingChangeRequest}. F->B
-         */
-        ChangeSetting,
-        /*
-         * B->F, modify fixed explorer view settings
-         */
-        ViewSetting,
+//        /**
+//         * Class UserInterface: request change in setting communicating through bean
+//         * {@link SettingChangeRequest}. F->B
+//         */
+//        ChangeSetting,
+//        /*
+//         * B->F, modify fixed explorer view settings
+//         */
+//        ViewSetting,
 
         /*
          * F->B: ask engine to modify or delete projects or project assets
@@ -301,10 +309,10 @@ public interface Message extends Serializable {
          */
         AuthorityQuery, AuthoritySearchResults,
 
-        /**
-         * F->B: Start or stop watching an observation, i.e. receive messages about anything that changes
-         * related to it. Linked to a {@link WatchRequest} message payload.
-         */
+//        /**
+//         * F->B: Start or stop watching an observation, i.e. receive messages about anything that changes
+//         * related to it. Linked to a {@link WatchRequest} message payload.
+//         */
         WatchObservation,
 
         /**
@@ -406,9 +414,21 @@ public interface Message extends Serializable {
         /*
          * Sent B->F when one or more documentation views have incorporated a new element
          */
-        DocumentationChanged, AgentResponse
+        DocumentationChanged, AgentResponse;
 
-    }
+        // TODO add this to the message type so that we can validate the message payload against it. Use Void.class
+        // as the default
+        Class<?> payloadClass;
+
+        private MessageType() {
+            this(Void.class);
+        }
+
+        private MessageType(Class<?> payloadClass) {
+            this.payloadClass = payloadClass;
+        }
+
+        }
 
     Repeatability getRepeatability();
 

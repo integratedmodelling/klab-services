@@ -1,28 +1,61 @@
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
-import java.io.Serializable;
-
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+import java.io.Serializable;
+import java.net.URL;
+
 /**
- * Trivial bean for notifications, so these can be sent outside of the validator and processed in
- * it. The constructors are messy and nasty but cleaning this is low priority.
- * 
- * @author ferdinando.villa
+ * Trivial bean for notifications, so these can be sent outside of the validator and processed in it. The
+ * constructors are messy and nasty but cleaning this is low priority.
  *
+ * @author ferdinando.villa
  */
 public class NotificationImpl implements Notification, Serializable {
 
     private static final long serialVersionUID = -5812547783872203517L;
 
-    String message;
-    Level level;
-    Type type = Type.None;
-    long timestamp = System.currentTimeMillis();
+    private String message;
+    private Level level;
+    private Type type = Type.None;
+    private long timestamp = System.currentTimeMillis();
     // this will be null when parsed, identities are in the runtime
-    String identity;
+    private String identity;
+    private DocumentContext documentContext;
+
+    public static class DocumentContextImpl implements DocumentContext {
+        private URL url;
+        private int offsetInDocument;
+        private int length;
+
+        @Override
+        public URL getUrl() {
+            return url;
+        }
+
+        public void setUrl(URL url) {
+            this.url = url;
+        }
+
+        @Override
+        public int getOffsetInDocument() {
+            return offsetInDocument;
+        }
+
+        public void setOffsetInDocument(int offsetInDocument) {
+            this.offsetInDocument = offsetInDocument;
+        }
+
+        @Override
+        public int getLength() {
+            return length;
+        }
+
+        public void setLength(int length) {
+            this.length = length;
+        }
+    }
 
     public NotificationImpl() {
     }
@@ -80,4 +113,24 @@ public class NotificationImpl implements Notification, Serializable {
         return identity;
     }
 
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public void setIdentity(String identity) {
+        this.identity = identity;
+    }
+
+    @Override
+    public DocumentContext getDocumentContext() {
+        return documentContext;
+    }
+
+    public void setDocumentContext(DocumentContext documentContext) {
+        this.documentContext = documentContext;
+    }
 }

@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
-import org.integratedmodelling.klab.api.authentication.CRUDPermission;
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
@@ -89,7 +89,7 @@ public interface ResourcesService extends KlabService {
          *
          * @return
          */
-        Set<CRUDPermission> getPermissions();
+        Set<CRUDOperation> getPermissions();
     }
 
     default String getServiceName() {
@@ -324,22 +324,6 @@ public interface ResourcesService extends KlabService {
      */
     interface Admin {
 
-//        /**
-//         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local
-//         * resources must be coordinated with a local reasoner.
-//         *
-//         * @return
-//         */
-//        ResourceSet loadWorldview();
-//
-//        /**
-//         * Separate and explicit loading of the worldviews and any other workspaces is necessary if local
-//         * resources must be coordinated with a local reasoner.
-//         *
-//         * @return
-//         */
-//        ResourceSet loadWorkspaces();
-
         /**
          * Add or update a project from an external source to the local repository.
          *
@@ -385,16 +369,15 @@ public interface ResourcesService extends KlabService {
         KimNamespace createNamespace(String projectName, String namespaceContent);
 
         /**
-         * Namespace must exist in project. Return any resources affected, including the changed namespace.
-         * The dependency structure may have changed and should be reloaded if dependencies are of interest.
-         * Errors are reported with the namespace itself; fatal errors will cause an unparseable namespace *
-         * exception (TODO).
+         * Resource must exist in project and be part of a file-based project. This operation makes the change
+         * in the filesystem: the service will react by readjusting the knowledge and sending any changes
+         * through the listening scopes. If a file is modified by an external process, the method will not
+         * need to be called as the adjustment is consequent to the change, not the API call.
          *
          * @param projectName
          * @param namespaceContent
-         * @return
          */
-        ResourceSet updateNamespace(String projectName, String namespaceContent);
+        void updateNamespace(String projectName, String namespaceContent);
 
         /**
          * Project must exist; behavior must not (throws TODO). Namespace content is parsed and the results
@@ -408,16 +391,16 @@ public interface ResourcesService extends KlabService {
         KActorsBehavior createBehavior(String projectName, String behaviorContent);
 
         /**
-         * Behavior must exist in project. Return any resources affected, including the changed namespace. The
-         * dependency structure may have changed and should be reloaded if dependencies are of interest.
-         * Errors are reported with the namespace itself; fatal errors will cause an unparseable namespace *
-         * exception (TODO).
+         * Resource must exist in project and be part of a file-based project. This operation makes the change
+         * in the filesystem: the service will react by readjusting the knowledge and sending any changes
+         * through the listening scopes.  If a file is modified by an external process, the method will not *
+         * need to be called as the adjustment is consequent to the change, not the API call.
          *
          * @param projectName
          * @param behaviorContent
          * @return
          */
-        ResourceSet updateBehavior(String projectName, String behaviorContent);
+        void updateBehavior(String projectName, String behaviorContent);
 
         /**
          * Project must exist; ontology must not (throws TODO). Namespace content is parsed and the results
@@ -431,16 +414,15 @@ public interface ResourcesService extends KlabService {
         KimOntology createOntology(String projectName, String ontologyContent);
 
         /**
-         * Ontology must exist in project. Return any resources affected, including the changed namespace.The
-         * dependency structure may have changed and should be reloaded if dependencies are of interest.
-         * Errors are reported with the namespace itself; fatal errors will cause an unparseable namespace *
-         * exception (TODO).
+         * Resource must exist in project and be part of a file-based project. This operation makes the change
+         * in the filesystem; the service will react by readjusting the knowledge and sending any changes
+         * through the listening scopes. If a file is modified by an external process, the method will not *
+         * need to be called as the adjustment is consequent to the change, not the API call.
          *
          * @param projectName
          * @param ontologyContent
-         * @return
          */
-        ResourceSet updateOntology(String projectName, String ontologyContent);
+        void updateOntology(String projectName, String ontologyContent);
 
         /**
          * Publish a project with the passed privileges. The project must have been added before this is
