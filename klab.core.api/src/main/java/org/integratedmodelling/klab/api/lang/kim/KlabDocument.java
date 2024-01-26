@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A KimDocument is a k.LAB asset that originates as an individual document edited by a contributor and may be
@@ -19,6 +20,23 @@ import java.util.List;
  * @author ferdinando.villa
  */
 public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
+
+    interface DocumentVisitor<T extends Statement> extends KlabStatement.KlabStatementVisitor {
+
+        /**
+         * Visit the preamble of the document (not the statements, handled separately).
+         *
+         * @param document
+         */
+        void visitDocument(KlabDocument<T> document);
+
+        /**
+         * Visit an individual statement.
+         *
+         * @param statement
+         */
+        void visitStatement(T statement);
+    }
 
     /**
      * The timestamp of creation of the namespace object, set at creation and immutable after that.
@@ -77,4 +95,18 @@ public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
      */
     String getSourceCode();
 
+    /**
+     * Visit the document and return all the imported namespace URNs, either explicit (like in ontologies) or
+     * implicit (like in namespaces, strategies or behaviors using concept expressions).
+     *
+     * @return
+     */
+    Set<String> importedNamespaces();
+
+    /**
+     * Visit the document and each statement.
+     *
+     * @param visitor
+     */
+    void visit(DocumentVisitor<T> visitor);
 }

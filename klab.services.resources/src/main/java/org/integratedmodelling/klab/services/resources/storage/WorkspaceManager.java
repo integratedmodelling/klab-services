@@ -19,12 +19,11 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -73,8 +72,12 @@ public class WorkspaceManager {
     private AtomicBoolean loading = new AtomicBoolean(false);
     private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
     private List<KimOntology> _ontologyOrder;
+    private Map<String, KimOntology> _ontologyMap;
     private List<KimNamespace> _namespaceOrder;
+    private Map<String, KimNamespace> _namespaceMap;
+    private List<KActorsBehavior> _behaviorOrder;
     private List<KimOntology> _worldviewOntologies;
+    private List<KimObservationStrategy> _observationStrategies;
     private WorldviewImpl _worldview;
 
     private LanguageValidationScope languageValidationScope = new BasicObservableValidationScope() {
@@ -370,6 +373,7 @@ public class WorkspaceManager {
 
             _worldviewOntologies = new ArrayList<>();
             _ontologyOrder = new ArrayList<>();
+            _ontologyMap = new HashMap<>();
 
             Map<String, String> ontologyProjects = new HashMap<>();
             Map<String, Triple<Ontology, KimOntology, Boolean>> cache = new HashMap<>();
@@ -474,6 +478,7 @@ public class WorkspaceManager {
                 }
 
                 this._ontologyOrder.add(ontology);
+                this._ontologyMap.put(ontology.getUrn(), ontology);
                 if (od.getThird()) {
                     this._worldviewOntologies.add(ontology);
                 }
@@ -496,6 +501,7 @@ public class WorkspaceManager {
     List<KimNamespace> getNamespaces() {
         if (_namespaceOrder == null) {
             _namespaceOrder = new ArrayList<>();
+            _namespaceMap = new HashMap<>();
             // TODO load them from all projects in dependency order, same as ontologies
         }
         return _namespaceOrder;
@@ -605,6 +611,8 @@ public class WorkspaceManager {
         ProjectStorage ret = null;
         this._projectLoadOrder = null;
         this._ontologyOrder = null;
+        this._ontologyMap = null;
+        this._namespaceMap = null;
         this._namespaceOrder = null;
         this._worldview = null;
 
@@ -703,10 +711,31 @@ public class WorkspaceManager {
                 case ONTOLOGY -> loadOntology(url, project);
                 case MODEL_NAMESPACE -> loadNamespace(url, project);
                 case BEHAVIOR -> loadBehavior(url, project);
+                case STRATEGY -> loadStrategy(url, project);
                 default -> null;
             };
 
+
             if (newAsset != null) {
+
+                KlabDocument<?> oldAsset = switch (newAsset) {
+                    case KimOntology ontology -> getOntology(ontology.getUrn());
+                    case KimNamespace namespace -> getNamespace(namespace.getUrn());
+                    case KActorsBehavior behavior -> getBehavior(behavior.getUrn());
+                    case KimObservationStrategies strategy -> getStrategyDocument(strategy.getUrn());
+                    default -> null;
+                };
+
+                if (oldAsset == null) {
+                    scope.error("Internal: cannot update a non-existing document: " + url);
+                    return;
+                }
+
+                /*
+                if the implicit or explicit import statements have changed, the full order of loading must be
+                recomputed.
+                 */
+                var mustRecomputeOrder = newAsset.importedNamespaces().equals(oldAsset.importedNamespaces());
 
                 /*
                 establish what needs to be reloaded and which workspaces are affected: dry run across
@@ -721,7 +750,21 @@ public class WorkspaceManager {
                  we can already compile and report a ResourceSet per workspace affected. The listening
                  end(s) will have to request the contents, and that won't respond until the changes are
                  made anyway.
+
+                 What needs to be recomputed is anything that DEPENDED on the OLD version or any of its
+                 dependents.
+
+                 If dependency statements have changed in the modified file, a NEW order of everything must be
+                 computed. The result set must contain all the affected files IN THE NEW ORDER. The order
+                 can stay the same if the dependency statements haven't changed between the old and the new
+                 version.
+
                 */
+
+                for (var resourceSet : result.values()) {
+                    scope.send(Message.MessageClass.ResourceLifecycle, Message.MessageType.WorkspaceChanged
+                            , resourceSet);
+                }
 
                 /*
                 make the actual changes (involving the semantic validator). For each modification: if
@@ -739,6 +782,32 @@ public class WorkspaceManager {
 
             System.out.println("DIO PORCO file has changed: " + type + " " + url + " " + change + " in " + project);
         }
+    }
+
+    private Set<String> importedNamespaces(KlabDocument<?> document) {
+        return switch (document) {
+            case KimOntology ontology -> null;
+            case KimNamespace ontology -> null;
+            case KActorsBehavior ontology -> null;
+            case KimObservationStrategies ontology -> null;
+            default -> Collections.emptySet();
+        };
+    }
+
+    public KimOntology getOntology(String urn) {
+        return _ontologyMap.get(urn);
+    }
+
+    public KimNamespace getNamespace(String urn) {
+        return _namespaceMap.get(urn);
+    }
+
+    public KActorsBehavior getBehavior(String urn) {
+        return null; // TODO _ontologyMap.get(urn);
+    }
+
+    public KimObservationStrategies getStrategyDocument(String urn) {
+        return null; // _ontologyMap.get(urn);
     }
 
     private KimOntology loadOntology(URL url, String project) {
@@ -830,9 +899,40 @@ public class WorkspaceManager {
         //        }
     }
 
-    private Notification makeNotification(ParsedObject target, EObject object,
-                                          EStructuralFeature feature, String message,
-                                          Notification.Level level) {
+
+    private KimObservationStrategies loadStrategy(URL url, String project) {
+        //        try (var input = url.openStream()) {
+        //            List<Notification> notifications = new ArrayList<>();
+        //            var parsed = behaviorParser.parse(input, notifications);
+        //            var syntax = new KActorsBehaviorImpl(parsed, languageValidationScope) {
+        //
+        //                @Override
+        //                protected void logWarning(ParsedObject target, EObject object, EStructuralFeature
+        //                feature,
+        //                                          String message) {
+        //                    notifications.add(makeNotification(target, object, feature, message,
+        //                            org.integratedmodelling.klab.api.services.runtime.Notification.Level
+        //                            .Warning));
+        //                }
+        //
+        //                @Override
+        //                protected void logError(ParsedObject target, EObject object, EStructuralFeature
+        //                feature,
+        //                                        String message) {
+        //                    notifications.add(makeNotification(target, object, feature, message,
+        //                            org.integratedmodelling.klab.api.services.runtime.Notification.Level
+        //                            .Error));
+        //                }
+        //            };
+        //            return LanguageAdapter.INSTANCE.adaptBehavior(syntax, project, notifications);
+        //        } catch (IOException e) {
+        //            scope.error(e);
+        return null;
+        //        }
+    }
+
+    private Notification makeNotification(ParsedObject target, EObject object, EStructuralFeature feature,
+                                          String message, Notification.Level level) {
         var ret = new NotificationImpl();
         return ret;
     }
@@ -918,8 +1018,7 @@ public class WorkspaceManager {
                         this._projectLoadOrder.add(Pair.of(pd.storage, null));
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION, "Project "
-                                + proj.getFirst() + "@" + proj.getSecond() + " is required" + " by other " +
-                                "projects in workspace but incompatible version " + pd.manifest.getVersion() + " is available in local workspace");
+                                + proj.getFirst() + "@" + proj.getSecond() + " is required" + " by other " + "projects in workspace but incompatible version " + pd.manifest.getVersion() + " is available in local workspace");
                         unresolvedProjects.add(proj);
                     }
                 } else {
@@ -938,14 +1037,14 @@ public class WorkspaceManager {
                             scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION,
                                     "Project " + proj.getFirst() + "@" + proj.getSecond() + " is " +
                                             "required by other projects in workspace but incompatible " +
-                                            "version " + externalProject.getManifest().getVersion() + " is " +
-                                            "available " + "externally");
+                                            "version " + externalProject.getManifest().getVersion() + " is "
+                                            + "available " + "externally");
                             unresolvedProjects.add(proj);
                         }
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.UNRESOLVED_REFERENCE,
-                                "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" + " " +
-                                        "by other projects in workspace but cannot be resolved from the " + "network");
+                                "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" + " "
+                                        + "by other projects in workspace but cannot be resolved from the " + "network");
                         unresolvedProjects.add(proj);
                     }
                 }

@@ -5,9 +5,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implements KimOntology {
 
@@ -20,6 +18,16 @@ public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implem
     @Override
     public List<KimConceptStatement> getStatements() {
         return this.statements;
+    }
+
+    @Override
+    public Set<String> importedNamespaces() {
+        // no visiting necessary; any non-referenced imported ontologies are a syntax error
+        return new HashSet<>(importedOntologies);
+    }
+
+    @Override
+    public void visit(DocumentVisitor<KimConceptStatement> visitor) {
     }
 
     @Override

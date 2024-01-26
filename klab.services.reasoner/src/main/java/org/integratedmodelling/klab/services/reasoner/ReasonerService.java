@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.impl.DefaultKimVisitor;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -19,10 +20,11 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimObservableImpl;
-import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
-//import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ParentConcept;
-import org.integratedmodelling.klab.api.lang.kim.KlabStatement.KimVisitor;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -2478,7 +2480,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
         Set<Concept> ret = new HashSet<>();
         KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
-        peer.visit(new DefaultVisitor() {
+        peer.visit(new DefaultKimVisitor() {
             @Override
             public void visitReference(String conceptName, Set<SemanticType> type,
                                        KimConcept validParent) {
@@ -2516,47 +2518,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return declareConcept(scope.getService(ResourcesService.class).resolveConcept(declaration));
     }
 
-    /**
-     * A do-nothing KimVisitor for less painful derivations when only a few actions are needed.
-     *
-     * @author ferdinando.villa
-     */
-    public static class DefaultVisitor implements KimVisitor {
-
-        @Override
-        public void visitAuthority(String authority, String term) {
-        }
-
-        @Override
-        public void visitDeclaration(KimConcept declaration) {
-        }
-
-        @Override
-        public void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent) {
-        }
-
-        @Override
-        public void visitNamespace(KimNamespace kimNamespace) {
-        }
-
-        @Override
-        public void visitModel(KimModel kimNamespace) {
-        }
-
-        @Override
-        public void visitObserver(KimInstance kimNamespace) {
-        }
-
-        @Override
-        public void visitConceptStatement(KimConceptStatement kimNamespace) {
-        }
-//
-//        @Override
-//        public void visitTemplate(org.integratedmodelling.klab.api.lang.kim.KimMacro.Field valueOf,
-//                                  KimConcept validParent, boolean mandatory) {
-//        }
-
-    }
 
     @Override
     public Concept buildConcept(ObservableBuildStrategy builder) {

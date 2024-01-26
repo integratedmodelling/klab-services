@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.lang.impl.kactors;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KActorsActionImpl extends KActorsCodeStatementImpl implements KActorsAction {
 
@@ -51,4 +51,8 @@ public class KActorsActionImpl extends KActorsCodeStatementImpl implements KActo
 		this.function = function;
 	}
 
+	@Override
+	public void visit(KlabStatementVisitor visitor) {
+
+	}
 }

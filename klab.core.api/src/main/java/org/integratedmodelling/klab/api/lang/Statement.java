@@ -1,11 +1,10 @@
 package org.integratedmodelling.klab.api.lang;
 
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
-
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
  * All statements in k.LAB-supported languages are serializables. The resource service maintains the catalog
@@ -16,15 +15,15 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  */
 public interface Statement extends Serializable {
 
-    /**
-     * Each main type of statement exposes a visit() method that takes a specialized visitor descending from
-     * this tag interface.
-     *
-     * @author Ferd
-     */
-    abstract interface Visitor {
-
-    }
+//    /**
+//     * Each main type of statement exposes a visit() method that takes a specialized visitor descending from
+//     * this tag interface.
+//     *
+//     * @author Ferd
+//     */
+//    abstract interface Visitor {
+//
+//    }
 
     /**
      * If this comes from a document, return the offset in the source code. Otherwise return -1. The way to
@@ -70,10 +69,10 @@ public interface Statement extends Serializable {
      */
     Collection<Notification> getNotifications();
 
-    /**
-     * To be specialized downstream.
-     *
-     * @param visitor
-     */
-    public void visit(Visitor visitor);
+//    /**
+//     * To be specialized downstream.
+//     *
+//     * @param visitor
+//     */
+//    public void visit(Visitor visitor);
 }

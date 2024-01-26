@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import java.util.List;
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * A KimConcept is the declaration of a concept, i.e. a semantic expression built out of known concepts and
@@ -92,8 +92,6 @@ public interface KimConcept extends KlabStatement, KlabAsset {
     /**
      * @param visitor
      */
-    void visit(Visitor visitor);
-
     /**
      * If {@link #getExpressionType()} returns anything other than {@link Expression#SINGLETON}, the operands
      * are other declarations this is part of a union or intersection with.

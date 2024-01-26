@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ActionImpl extends KimStatementImpl implements Action {
 
@@ -59,5 +59,10 @@ public class ActionImpl extends KimStatementImpl implements Action {
 
     public void setUrn(String urn) {
         this.urn = urn;
+    }
+
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
     }
 }

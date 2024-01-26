@@ -1,15 +1,11 @@
 package org.integratedmodelling.klab.api.lang.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -17,6 +13,9 @@ import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class ContextualizableImpl extends KimStatementImpl implements Contextualizable {
 
@@ -243,4 +242,8 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         this.empty = empty;
     }
 
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
+    }
 }

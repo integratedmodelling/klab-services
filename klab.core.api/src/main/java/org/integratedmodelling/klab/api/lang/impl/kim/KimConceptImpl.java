@@ -1,16 +1,11 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+
+import java.util.*;
 
 public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
@@ -693,9 +688,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 //    }
 
     @Override
-    public void visit(Visitor kimVisitor) {
+    public void visit(KlabStatementVisitor visitor) {
 
-        KimVisitor visitor = (KimVisitor) kimVisitor;
 
         if (authority != null) {
             visitor.visitAuthority(authority, authorityTerm);
@@ -807,4 +801,5 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     public void finalizeDefinition() {
         this.urn = computeUrn();
     }
+
 }

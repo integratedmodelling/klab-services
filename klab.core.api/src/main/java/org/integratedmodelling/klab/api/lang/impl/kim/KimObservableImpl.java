@@ -11,10 +11,7 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class KimObservableImpl extends KimStatementImpl implements KimObservable {
 
@@ -124,6 +121,12 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 		return this.exclusive;
 	}
 
+	@Override
+	public Set<String> namespaces() {
+		var ret = new HashSet<String>();
+		return ret;
+	}
+
 	public void setSemantics(KimConcept semantics) {
 		this.semantics = semantics;
 	}
@@ -230,4 +233,8 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 		return Objects.equals(urn, other.urn);
 	}
 
+	@Override
+	public void visit(KlabStatementVisitor visitor) {
+
+	}
 }

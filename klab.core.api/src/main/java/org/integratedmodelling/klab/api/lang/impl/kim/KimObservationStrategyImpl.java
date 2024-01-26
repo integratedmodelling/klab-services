@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.collections.Literal;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -44,7 +43,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     }
 
     @Override
-    public void visit(Visitor visitor) {
+    public void visit(KlabStatementVisitor visitor) {
 
     }
 

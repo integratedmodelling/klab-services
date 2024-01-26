@@ -1,14 +1,14 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
 
@@ -294,5 +294,10 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
 
     public void setChildren(List<KimConceptStatement> children) {
         this.children = children;
+    }
+
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
     }
 }

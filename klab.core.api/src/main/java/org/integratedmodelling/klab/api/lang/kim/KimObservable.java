@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public interface KimObservable extends KlabStatement, KlabAsset {
 
@@ -136,5 +137,12 @@ public interface KimObservable extends KlabStatement, KlabAsset {
      * @return
      */
     boolean isExclusive();
+
+    /**
+     * Visit the expression and extract all the ontology namespaces used in it.
+     *
+     * @return
+     */
+    Set<String> namespaces();
 
 }

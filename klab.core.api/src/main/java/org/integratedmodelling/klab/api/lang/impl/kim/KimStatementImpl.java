@@ -69,11 +69,11 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
         return this.metadata;
     }
 
-    @Override
-    public void visit(Visitor visitor) {
-        // TODO Auto-generated method stub
-
-    }
+////    @Override
+////    public void visit(Visitor visitor) {
+////        // TODO Auto-generated method stub
+////
+//    }
 //
 //    @Override
 //    public Parameters<String> getDocumentationMetadata() {

@@ -1,14 +1,7 @@
 package org.integratedmodelling.klab.api.lang.impl.kactors;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsCodeStatement;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 public abstract class KActorsCodeStatementImpl extends KimStatementImpl implements KActorsCodeStatement 	{
@@ -34,9 +27,9 @@ public abstract class KActorsCodeStatementImpl extends KimStatementImpl implemen
 		this.tag = tag;
 	}
 
-	@Override
-	public void visit(Visitor visitor) {
-		// TODO Auto-generated method stub
-		
-	}
+//	@Override
+//	public void visit(Visitor visitor) {
+//		// TODO Auto-generated method stub
+//
+//	}
 }

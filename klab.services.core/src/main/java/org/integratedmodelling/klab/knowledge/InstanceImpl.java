@@ -1,16 +1,13 @@
 package org.integratedmodelling.klab.knowledge;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class InstanceImpl extends KimStatementImpl implements Instance {
 
@@ -103,6 +100,11 @@ public class InstanceImpl extends KimStatementImpl implements Instance {
 	@Override
 	public Scope getScope() {
 		return scope;
+	}
+
+	@Override
+	public void visit(KlabStatementVisitor visitor) {
+
 	}
 
 	public void setScope(Scope scope) {

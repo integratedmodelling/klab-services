@@ -1,17 +1,15 @@
 package org.integratedmodelling.klab.api.lang.impl.kactors;
 
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 
 public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KActorsStatement {
 
@@ -36,6 +34,11 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
 
     public void setUrn(String urn) {
         this.urn = urn;
+    }
+
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
     }
 
     public static class CallImpl extends KActorsStatementImpl implements KActorsStatement.Call {

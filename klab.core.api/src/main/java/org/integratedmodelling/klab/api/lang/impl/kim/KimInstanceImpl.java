@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstance {
 
@@ -69,5 +69,10 @@ public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstan
 
     public void setChildren(List<KimInstance> children) {
         this.children = children;
+    }
+
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
     }
 }

@@ -44,4 +44,8 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
         this.value = value;
     }
 
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
+    }
 }

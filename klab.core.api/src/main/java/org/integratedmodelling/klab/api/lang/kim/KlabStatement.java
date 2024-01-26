@@ -1,10 +1,10 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Statement;
+
+import java.util.Set;
 
 /**
  * 
@@ -17,7 +17,7 @@ public interface KlabStatement extends Statement, KlabAsset {
 	 * Visitor allows traversing all concept declarations and references.
 	 * 
 	 */
-	interface KimVisitor extends Visitor {
+	interface KlabStatementVisitor {
 
 		void visitAuthority(String authority, String term);
 
@@ -59,14 +59,6 @@ public interface KlabStatement extends Statement, KlabAsset {
 		}
 	}
 
-//	/**
-//	 * Documentation metadata is the content of the @documentation annotation if
-//	 * present.
-//	 *
-//	 * @return the documentation
-//	 */
-//	Parameters<String> getDocumentationMetadata();
-
 	/**
 	 * The namespace ID for this object. For a KimNamespace it's also the official
 	 * name (there is no getName()).
@@ -83,5 +75,11 @@ public interface KlabStatement extends Statement, KlabAsset {
 	 * @return
 	 */
 	Scope getScope();
+
+	/**
+	 *
+	 * @param visitor
+	 */
+	void visit(KlabStatementVisitor visitor);
 
 }

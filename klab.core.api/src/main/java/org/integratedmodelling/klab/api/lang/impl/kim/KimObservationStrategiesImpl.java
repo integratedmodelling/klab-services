@@ -4,7 +4,9 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategies;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class KimObservationStrategiesImpl extends KimDocumentImpl<KimObservationStrategy> implements KimObservationStrategies {
 
@@ -17,5 +19,16 @@ public class KimObservationStrategiesImpl extends KimDocumentImpl<KimObservation
 
     public void setStatements(List<KimObservationStrategy> statements) {
         this.statements = statements;
+    }
+
+    @Override
+    public Set<String> importedNamespaces() {
+        Set<String> ret = new HashSet<>();
+        return ret;
+    }
+
+    @Override
+    public void visit(DocumentVisitor<KimObservationStrategy> visitor) {
+
     }
 }

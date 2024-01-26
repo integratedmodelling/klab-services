@@ -1,18 +1,12 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+
+import java.io.Serial;
+import java.util.*;
 
 /**
  * The syntactic peer of a k.LAB namespace. To be renamed when we rename the interfaces and the
@@ -118,4 +112,14 @@ public class KimNamespaceImpl extends KimDocumentImpl<KlabStatement> implements 
         this.imports = imports;
     }
 
+    @Override
+    public Set<String> importedNamespaces() {
+        Set<String> ret = new HashSet<>();
+        return ret;
+    }
+
+    @Override
+    public void visit(DocumentVisitor<KlabStatement> visitor) {
+
+    }
 }

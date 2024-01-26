@@ -1,13 +1,15 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimBehavior;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A IKimBehavior is the statement of the contextualization strategy for a model or an observation,
@@ -89,5 +91,16 @@ public class KimBehaviorImpl extends KimDocumentImpl<Action> implements KimBehav
     @Override
     public String getProjectName() {
         return null;
+    }
+
+    @Override
+    public Set<String> importedNamespaces() {
+        Set<String> ret = new HashSet<>();
+        return ret;
+    }
+
+    @Override
+    public void visit(DocumentVisitor<Action> visitor) {
+
     }
 }

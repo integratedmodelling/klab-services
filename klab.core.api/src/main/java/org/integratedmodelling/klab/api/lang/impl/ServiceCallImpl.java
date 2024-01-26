@@ -1,11 +1,5 @@
 package org.integratedmodelling.klab.api.lang.impl;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.ParametersImpl;
@@ -25,6 +19,8 @@ import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.util.*;
 
 public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 
@@ -83,11 +79,6 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 		}
 
 		return sourceCode();
-	}
-
-	@Override
-	public void visit(Visitor visitor) {
-		// TODO must visit concept declarations in maps
 	}
 
 	@Override
@@ -178,4 +169,8 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 		return null; // exts == null ? null : exts.getPrototype(name);
 	}
 
+	@Override
+	public void visit(KlabStatementVisitor visitor) {
+
+	}
 }

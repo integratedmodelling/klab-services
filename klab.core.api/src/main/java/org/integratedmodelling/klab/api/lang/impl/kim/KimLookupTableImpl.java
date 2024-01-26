@@ -1,12 +1,12 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.kim.KimClassifier;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimTable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTable {
 
@@ -94,4 +94,8 @@ public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTab
         this.urn = urn;
     }
 
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
+    }
 }

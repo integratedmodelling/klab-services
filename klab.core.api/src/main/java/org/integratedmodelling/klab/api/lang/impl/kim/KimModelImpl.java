@@ -1,8 +1,5 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
@@ -10,6 +7,9 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 
@@ -160,4 +160,8 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 		this.projectName = projectName;
 	}
 
+	@Override
+	public void visit(KlabStatementVisitor visitor) {
+
+	}
 }
