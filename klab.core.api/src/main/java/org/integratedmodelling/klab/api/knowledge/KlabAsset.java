@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -22,8 +25,26 @@ public interface KlabAsset extends Serializable {
 
     public enum KnowledgeClass {
         CONCEPT, OBSERVABLE, MODEL, DEFINITION, INSTANCE, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE,
-        APPLICATION, ONTOLOGY,
+        APPLICATION, ONTOLOGY, OBSERVATION_STRATEGY, OBSERVATION_STRATEGY_DOCUMENT,
         COMPONENT, PROJECT, WORLDVIEW
+    }
+
+    public static KnowledgeClass classify(KlabAsset document) {
+        return switch(document) {
+            case KimConcept c -> KnowledgeClass.CONCEPT;
+            case KimObservable c -> KnowledgeClass.OBSERVABLE;
+            case KimOntology o -> KnowledgeClass.ONTOLOGY;
+            case KimObservationStrategies s -> KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
+            case KimNamespace n -> KnowledgeClass.NAMESPACE;
+            case KActorsBehavior behavior -> switch(behavior.getType()) {
+                case BEHAVIOR, TASK, USER, TRAITS -> KnowledgeClass.BEHAVIOR;
+                case APP -> KnowledgeClass.APPLICATION;
+                case UNITTEST -> KnowledgeClass.TESTCASE;
+                case COMPONENT -> KnowledgeClass.COMPONENT;
+                case SCRIPT -> KnowledgeClass.SCRIPT;
+            };
+            default -> throw new KlabUnimplementedException("Classification of asset " + document);
+        };
     }
 
     /**

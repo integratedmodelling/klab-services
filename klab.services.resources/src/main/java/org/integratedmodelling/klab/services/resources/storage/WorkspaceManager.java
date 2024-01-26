@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resources.storage;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.eclipse.emf.ecore.EObject;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -76,8 +78,11 @@ public class WorkspaceManager {
     private List<KimNamespace> _namespaceOrder;
     private Map<String, KimNamespace> _namespaceMap;
     private List<KActorsBehavior> _behaviorOrder;
+    private Map<String, KActorsBehavior> _behaviorMap;
     private List<KimOntology> _worldviewOntologies;
     private List<KimObservationStrategy> _observationStrategies;
+    private List<KimObservationStrategies> _observationStrategyDocuments;
+    private Map<String, KimObservationStrategies> _observationStrategyDocumentMap;
     private WorldviewImpl _worldview;
 
     private LanguageValidationScope languageValidationScope = new BasicObservableValidationScope() {
@@ -507,6 +512,24 @@ public class WorkspaceManager {
         return _namespaceOrder;
     }
 
+    List<KActorsBehavior> getBehaviors() {
+        if (_behaviorOrder == null) {
+            _behaviorOrder = new ArrayList<>();
+            _behaviorMap = new HashMap<>();
+            // TODO load them from all projects in dependency order, same as ontologies
+        }
+        return _behaviorOrder;
+    }
+
+    List<KimObservationStrategies> getStrategyDocuments() {
+        if (_observationStrategyDocuments == null) {
+            _observationStrategyDocuments = new ArrayList<>();
+            _observationStrategyDocumentMap = new HashMap<>();
+            // TODO load them from all projects in dependency order, same as ontologies
+        }
+        return _observationStrategyDocuments;
+    }
+
     public List<String> getWorkspaceURNs() {
         return new ArrayList<>(workspaces.keySet());
     }
@@ -735,16 +758,84 @@ public class WorkspaceManager {
                 if the implicit or explicit import statements have changed, the full order of loading must be
                 recomputed.
                  */
-                var mustRecomputeOrder = newAsset.importedNamespaces().equals(oldAsset.importedNamespaces());
+                var mustRecomputeOrder = !newAsset.importedNamespaces().equals(oldAsset.importedNamespaces());
 
                 /*
                 establish what needs to be reloaded and which workspaces are affected: dry run across
                 ontologies (if the asset is an ontology), then strategies, namespaces and behaviors. First
-                establish the affected ones and compile the result sets per workspace. Then send those and\
+                establish the affected ones and compile the result sets per workspace. Then send those and
                 start the loading based on the collected metadata in the sets.
                 */
+                Set<String> affectedOntologies = new HashSet<>();
+                affectedOntologies.add(oldAsset.getUrn());
+                for (var ontology : getOntologies(false)) {
+                    if (Sets.intersection(affectedOntologies, ontology.importedNamespaces()).size() > 0) {
+                        affectedOntologies.add(ontology.getUrn());
+                    }
+                }
+
+                Set<String> affectedNamespaces = new HashSet<>(affectedOntologies);
+                for (var namespace : getNamespaces()) {
+                    if (Sets.intersection(affectedNamespaces, namespace.importedNamespaces()).size() > 0) {
+                        affectedOntologies.add(namespace.getUrn());
+                    }
+                }
+                affectedNamespaces.removeAll(affectedOntologies);
+
+                // same for strategies and behaviors
+                Set<String> affectedBehaviors = new HashSet<>(affectedOntologies);
+                for (var behavior : getBehaviors()) {
+                    if (Sets.intersection(affectedBehaviors, behavior.importedNamespaces()).size() > 0) {
+                        affectedBehaviors.add(behavior.getUrn());
+                    }
+                }
+                affectedBehaviors.removeAll(affectedOntologies);
+
+                Set<String> affectedStrategies = new HashSet<>(affectedOntologies);
+                for (var strategies : getStrategyDocuments()) {
+                    if (Sets.intersection(affectedStrategies, strategies.importedNamespaces()).size() > 0) {
+                        affectedStrategies.add(strategies.getUrn());
+                    }
+                }
+                affectedStrategies.removeAll(affectedOntologies);
 
                 this.loading.set(true);
+
+                /*
+                    SUBSTITUTE THE DOCUMENT with the new one. This includes the worldview if there are no
+                    error
+                    notifications.
+                 */
+                substituteAsset(newAsset);
+
+                if (mustRecomputeOrder) {
+                    computeLoadOrder();
+                }
+
+                /*
+                compile the ResourceSets based on the (possibly new) order
+                 */
+                for (var ontology : getOntologies(false)) {
+                    if (affectedOntologies.contains(ontology.getUrn())) {
+                        addToResultSet(ontology, Workspace.EXTERNAL_WORKSPACE_URN, result);
+                    }
+                }
+                for (var namespace : getNamespaces()) {
+                    if (affectedNamespaces.contains(namespace.getUrn())) {
+                        addToResultSet(namespace, Workspace.EXTERNAL_WORKSPACE_URN, result);
+                    }
+                }
+                for (var behavior : getBehaviors()) {
+                    if (affectedBehaviors.contains(behavior.getUrn())) {
+                        addToResultSet(behavior, Workspace.EXTERNAL_WORKSPACE_URN, result);
+                    }
+                }
+                for (var strategies : getStrategyDocuments()) {
+                    if (affectedStrategies.contains(strategies.getUrn())) {
+                        addToResultSet(strategies, Workspace.EXTERNAL_WORKSPACE_URN, result);
+                    }
+                }
+
 
                 /*
                  we can already compile and report a ResourceSet per workspace affected. The listening
@@ -784,14 +875,87 @@ public class WorkspaceManager {
         }
     }
 
-    private Set<String> importedNamespaces(KlabDocument<?> document) {
-        return switch (document) {
-            case KimOntology ontology -> null;
-            case KimNamespace ontology -> null;
-            case KActorsBehavior ontology -> null;
-            case KimObservationStrategies ontology -> null;
-            default -> Collections.emptySet();
-        };
+    private void substituteAsset(KlabDocument<?> newAsset) {
+
+        /*
+        TODO Substitute the document in the respective lists and containers. If this is an ontology and the
+        worldview contains it, substitute it in the worldview only if there are no errors, otherwise remove
+         it. In all other cases it goes in with any errors it may contain.
+
+         TODO If the document is an ontology, recompute all concept descriptors in the language validator.
+
+         */
+
+        System.out.println("CAZ SUBSTITUTE " + newAsset + " AND ADJOURN LANGUAGE VALIDATOR");
+
+    }
+
+    /**
+     * Add the document info to the result set that corresponds to the passed workspace in the passed result
+     * map, creating whatever is needed. If the external workspace name is given, use that for an external
+     * document, otherwise skip it.
+     *
+     * @param ontology
+     * @param result
+     */
+    private void addToResultSet(KlabDocument<?> ontology, String externalWorkspaceId, Map<String,
+            ResourceSet> result) {
+
+        String workspace = getWorkspaceForProject(ontology.getProjectName());
+        if (workspace == null) workspace = externalWorkspaceId;
+
+        if (workspace != null) {
+
+            ResourceSet resourceSet = result.get(workspace);
+            if (resourceSet == null) {
+                resourceSet = new ResourceSet();
+                resourceSet.setWorkspace(workspace);
+                result.put(workspace, resourceSet);
+            }
+
+            ResourceSet.Resource resource = new ResourceSet.Resource();
+            resource.setResourceUrn(ontology.getUrn());
+            resource.setResourceVersion(ontology.getVersion());
+            resource.setServiceId(configuration.getServicePath());
+            resource.setKnowledgeClass(KlabAsset.classify(ontology));
+
+            switch (resource.getKnowledgeClass()) {
+                case RESOURCE -> {
+                    // TODO
+                }
+                case NAMESPACE -> {
+                    resourceSet.getNamespaces().add(resource);
+                }
+                case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION -> {
+                    resourceSet.getBehaviors().add(resource);
+                }
+                case ONTOLOGY -> {
+                    resourceSet.getOntologies().add(resource);
+                }
+                case OBSERVATION_STRATEGY_DOCUMENT -> {
+                    resourceSet.getObservationStrategies().add(resource);
+                }
+            }
+        }
+    }
+
+    /**
+     * Recompute from scratch the order of all known ontologies, namespaces, behaviors, strategies and
+     * projects
+     */
+    private void computeLoadOrder() {
+        System.out.println("ZIO PERA RICALCOLA L'ORDINE DI TUTTO OSTIA");
+    }
+
+    /**
+     * Return the nzme of the local workspace that hosts the passed project, or null.
+     *
+     * @param projectName
+     * @return
+     */
+    public String getWorkspaceForProject(String projectName) {
+        var pd = projectDescriptors.get(projectName);
+        return pd == null ? null : pd.workspace;
     }
 
     public KimOntology getOntology(String urn) {

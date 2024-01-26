@@ -114,6 +114,7 @@ public class ResourceSet implements Serializable {
     private List<Resource> ontologies = new ArrayList<>();
     private List<Resource> behaviors = new ArrayList<>();
     private List<Resource> resources = new ArrayList<>();
+    private List<Resource> observationStrategies = new ArrayList<>();
     private Set<Resource> results = new HashSet<>();
     private List<Notification> notifications = new ArrayList<>();
 
@@ -202,4 +203,14 @@ public class ResourceSet implements Serializable {
     public void setWorkspace(String workspace) {
         this.workspace = workspace;
     }
+
+
+    public List<Resource> getObservationStrategies() {
+        return observationStrategies;
+    }
+
+    public void setObservationStrategies(List<Resource> observationStrategies) {
+        this.observationStrategies = observationStrategies;
+    }
+
 }

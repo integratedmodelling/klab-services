@@ -1,9 +1,12 @@
 package org.integratedmodelling.klab.api.knowledge.impl;
 
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.*;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -39,5 +42,15 @@ public class DefaultKimVisitor implements KlabStatement.KlabStatementVisitor {
 
     @Override
     public void visitConceptStatement(KimConceptStatement kimNamespace) {
+    }
+
+    @Override
+    public void visitMetadata(Metadata metadata) {
+
+    }
+
+    @Override
+    public void visitAnnotations(List<Annotation> annotations) {
+
     }
 }

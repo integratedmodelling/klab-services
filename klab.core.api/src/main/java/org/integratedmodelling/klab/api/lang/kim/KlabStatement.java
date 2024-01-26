@@ -1,9 +1,12 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Statement;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -32,6 +35,10 @@ public interface KlabStatement extends Statement, KlabAsset {
 		void visitObserver(KimInstance kimNamespace);
 
 		void visitConceptStatement(KimConceptStatement kimNamespace);
+
+		void visitMetadata(Metadata metadata);
+
+		void visitAnnotations(List<Annotation> annotations);
 
 	}
 

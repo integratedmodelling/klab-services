@@ -224,7 +224,7 @@ public class FileProjectStorage implements ProjectStorage {
                             Thread.yield();
                             continue;
                         } else {
-                            var file = filename.toFile();
+                            var file = new File(keyPathMap.get(key) + File.separator + filename.toFile());
                             // modification affect both content and timestamp, so we ignore the first
                             if (kind != StandardWatchEventKinds.ENTRY_MODIFY || timestamp.contains(file)) {
                                 events.add(Pair.of(file, kind));
@@ -252,6 +252,7 @@ public class FileProjectStorage implements ProjectStorage {
 
         private void registerDirectory(WatchService watcher, Path path) throws IOException {
 
+            // TODO remove aux directories like .git
             if (!Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
                 return;
             }
