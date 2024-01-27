@@ -802,15 +802,29 @@ public class WorkspaceManager {
                 this.loading.set(true);
 
                 /*
-                    SUBSTITUTE THE DOCUMENT with the new one. This includes the worldview if there are no
-                    error
-                    notifications.
+                make the actual change. For each modification: if
+                it's the modified object, reset the corresponding concept descriptors in the language
+                validator (if an ontology) or the kbox for the namespace. Then reload and substitute in the
+                ontology, worldview and namespace arrays for the modified and the affected in the order
+                specified by the resourcesets.
                  */
-                substituteAsset(newAsset);
+                var worldviewChange = substituteAsset(newAsset);
+                if (worldviewChange != null) {
+                    // worldview has changed, potentially destroyed
+                    scope.send(Message.MessageClass.ResourceLifecycle, Message.MessageType.WorkspaceChanged
+                            , worldviewChange);
+                }
 
+                /*
+                 If dependency statements have changed in the modified file, a NEW order of everything is
+                 computed. The result set contains all the affected files IN THE NEW ORDER. The order
+                 can stay the same if the dependency statements haven't changed between the old and the new
+                 version.
+                 */
                 if (mustRecomputeOrder) {
                     computeLoadOrder();
                 }
+
 
                 /*
                 compile the ResourceSets based on the (possibly new) order
@@ -838,18 +852,10 @@ public class WorkspaceManager {
 
 
                 /*
-                 we can already compile and report a ResourceSet per workspace affected. The listening
-                 end(s) will have to request the contents, and that won't respond until the changes are
-                 made anyway.
-
-                 What needs to be recomputed is anything that DEPENDED on the OLD version or any of its
-                 dependents.
-
-                 If dependency statements have changed in the modified file, a NEW order of everything must be
-                 computed. The result set must contain all the affected files IN THE NEW ORDER. The order
-                 can stay the same if the dependency statements haven't changed between the old and the new
-                 version.
-
+                 Report a ResourceSet per workspace affected. The listening end(s) will have to request the
+                 contents. What needs to be recomputed is anything that DEPENDED on the OLD version or any
+                 of its dependents. When sending, the actual reloading hasn't happened yet - it will be
+                 requested if needed and blocked until the loading is finished.
                 */
 
                 for (var resourceSet : result.values()) {
@@ -858,11 +864,8 @@ public class WorkspaceManager {
                 }
 
                 /*
-                make the actual changes (involving the semantic validator). For each modification: if
-                it's the modified object, reset the corresponding concept descriptors in the language
-                validator (if an ontology) or the kbox for the namespace. Then reload and substitute in the
-                ontology, worldview and namespace arrays for the modified and the affected in the order
-                specified by the resourcesets.
+                TODO reload all the affected namespaces from their source, including the language validator and kbox, using the
+                 possibly new order. External namespaces that depend on anything that has changed should probably cause a warning.
                  */
 
                 this.loading.set(false);
@@ -875,7 +878,7 @@ public class WorkspaceManager {
         }
     }
 
-    private void substituteAsset(KlabDocument<?> newAsset) {
+    private ResourceSet substituteAsset(KlabDocument<?> newAsset) {
 
         /*
         TODO Substitute the document in the respective lists and containers. If this is an ontology and the
@@ -884,10 +887,17 @@ public class WorkspaceManager {
 
          TODO If the document is an ontology, recompute all concept descriptors in the language validator.
 
+         TODO if it's an ontology and it's part of the worldview, the worldview must become empty if it has
+          errors. In all situations the worldview resource must be in the ResourceSet to message that it must
+          be reloaded.
          */
 
         System.out.println("CAZ SUBSTITUTE " + newAsset + " AND ADJOURN LANGUAGE VALIDATOR");
 
+
+        // if any changes to the worldview happened, create a resource descriptor to ensure it's reloaded. Add
+        // any notifications or empty status to the worldview resource.
+        return null;
     }
 
     /**
