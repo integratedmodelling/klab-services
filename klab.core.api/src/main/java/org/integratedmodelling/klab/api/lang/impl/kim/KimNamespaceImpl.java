@@ -113,7 +113,7 @@ public class KimNamespaceImpl extends KimDocumentImpl<KlabStatement> implements 
     }
 
     @Override
-    public Set<String> importedNamespaces() {
+    public Set<String> importedNamespaces(boolean withinType) {
         Set<String> ret = new HashSet<>();
         return ret;
     }

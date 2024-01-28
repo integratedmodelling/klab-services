@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resources.storage;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import org.checkerframework.checker.units.qual.A;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.parser.IParseResult;
@@ -83,7 +84,12 @@ public class WorkspaceManager {
     private List<KimObservationStrategy> _observationStrategies;
     private List<KimObservationStrategies> _observationStrategyDocuments;
     private Map<String, KimObservationStrategies> _observationStrategyDocumentMap;
+    // all docs that have been loaded through a URL remember the URL keyed by the document URN. No
+    // guarantee that all URLs correspond to a document in the current catalogs.
+    private Map<String, URL> documentURLs = new HashMap<>();
     private WorldviewImpl _worldview;
+
+    private AtomicBoolean consistent = new AtomicBoolean(true);
 
     private LanguageValidationScope languageValidationScope = new BasicObservableValidationScope() {
 
@@ -534,19 +540,6 @@ public class WorkspaceManager {
         return new ArrayList<>(workspaces.keySet());
     }
 
-    //    public List<String> getLocalProjectURNs(String workspace) {
-    //        var ret = new ArrayList<String>();
-    //        for (var pd : getProjectLoadOrder()) {
-    //            if (pd.getFirst() != null) {
-    //                var pdesc = projectDescriptors.get(pd.getFirst().getProjectName());
-    //                if (pdesc != null /* shouldn't happen */ && pdesc.workspace.equals(workspace)) {
-    //                    ret.add(pdesc.name);
-    //                }
-    //            }
-    //        }
-    //        return ret;
-    //    }
-
     /**
      * Create the project implementation with every namespace and manifest filled in. CAUTION this can be a
      * large object. The project must exist in a local workspace; if not, null will be returned without
@@ -665,9 +658,7 @@ public class WorkspaceManager {
                     ProjectStorage project = importProject(projectName, workspaceName);
                     File ws = new File(workspace + File.separator + projectName);
                     if (ws.exists()) {
-                        ret = new FileProjectStorage(ws, (proj, type, change, url) -> {
-                            handleFileChange(proj, type, change, url);
-                        });
+                        ret = new FileProjectStorage(ws, this::handleFileChange);
                     }
 
                 } catch (Throwable t) {
@@ -694,9 +685,7 @@ public class WorkspaceManager {
 
                 var file = Utils.URLs.getFileForURL(projectUrl);
                 if (file.isDirectory()) {
-                    ret = new FileProjectStorage(file, (project, type, change, url) -> {
-                        handleFileChange(project, type, change, url);
-                    });
+                    ret = new FileProjectStorage(file, this::handleFileChange);
                 } else if (Utils.Files.JAVA_ARCHIVE_EXTENSIONS.contains(Utils.Files.getFileExtension(file))) {
                     // TODO ret = read from archive
                 }
@@ -721,7 +710,7 @@ public class WorkspaceManager {
 
         if (change == CRUDOperation.DELETE) {
             // TODO
-        } else if (change == CRUDOperation.DELETE) {
+        } else if (change == CRUDOperation.CREATE) {
             // TODO
         } else {
 
@@ -758,7 +747,8 @@ public class WorkspaceManager {
                 if the implicit or explicit import statements have changed, the full order of loading must be
                 recomputed.
                  */
-                var mustRecomputeOrder = !newAsset.importedNamespaces().equals(oldAsset.importedNamespaces());
+                var mustRecomputeOrder =
+                        !newAsset.importedNamespaces(false).equals(oldAsset.importedNamespaces(false));
 
                 /*
                 establish what needs to be reloaded and which workspaces are affected: dry run across
@@ -769,14 +759,14 @@ public class WorkspaceManager {
                 Set<String> affectedOntologies = new HashSet<>();
                 affectedOntologies.add(oldAsset.getUrn());
                 for (var ontology : getOntologies(false)) {
-                    if (Sets.intersection(affectedOntologies, ontology.importedNamespaces()).size() > 0) {
+                    if (Sets.intersection(affectedOntologies, ontology.importedNamespaces(false)).size() > 0) {
                         affectedOntologies.add(ontology.getUrn());
                     }
                 }
 
                 Set<String> affectedNamespaces = new HashSet<>(affectedOntologies);
                 for (var namespace : getNamespaces()) {
-                    if (Sets.intersection(affectedNamespaces, namespace.importedNamespaces()).size() > 0) {
+                    if (Sets.intersection(affectedNamespaces, namespace.importedNamespaces(false)).size() > 0) {
                         affectedOntologies.add(namespace.getUrn());
                     }
                 }
@@ -785,7 +775,7 @@ public class WorkspaceManager {
                 // same for strategies and behaviors
                 Set<String> affectedBehaviors = new HashSet<>(affectedOntologies);
                 for (var behavior : getBehaviors()) {
-                    if (Sets.intersection(affectedBehaviors, behavior.importedNamespaces()).size() > 0) {
+                    if (Sets.intersection(affectedBehaviors, behavior.importedNamespaces(false)).size() > 0) {
                         affectedBehaviors.add(behavior.getUrn());
                     }
                 }
@@ -793,7 +783,7 @@ public class WorkspaceManager {
 
                 Set<String> affectedStrategies = new HashSet<>(affectedOntologies);
                 for (var strategies : getStrategyDocuments()) {
-                    if (Sets.intersection(affectedStrategies, strategies.importedNamespaces()).size() > 0) {
+                    if (Sets.intersection(affectedStrategies, strategies.importedNamespaces(false)).size() > 0) {
                         affectedStrategies.add(strategies.getUrn());
                     }
                 }
@@ -864,9 +854,16 @@ public class WorkspaceManager {
                 }
 
                 /*
-                TODO reload all the affected namespaces from their source, including the language validator and kbox, using the
-                 possibly new order. External namespaces that depend on anything that has changed should probably cause a warning.
+                TODO reload all the affected namespaces from their source, including the language validator
+                  and kbox, using the
+                 possibly new order. External namespaces that depend on anything that has changed should
+                 probably cause a warning.
                  */
+                for (KimOntology ontology : _ontologyOrder) {
+                    if (affectedOntologies.contains(ontology.getUrn())) {
+
+                    }
+                }
 
                 this.loading.set(false);
 
@@ -954,7 +951,39 @@ public class WorkspaceManager {
      * projects
      */
     private void computeLoadOrder() {
-        System.out.println("ZIO PERA RICALCOLA L'ORDINE DI TUTTO OSTIA");
+        sortDocuments(_ontologyOrder, Klab.ErrorContext.ONTOLOGY);
+        sortDocuments(_namespaceOrder, Klab.ErrorContext.NAMESPACE);
+        sortDocuments(_behaviorOrder, Klab.ErrorContext.BEHAVIOR);
+    }
+
+    private <T extends KlabDocument<?>> void sortDocuments(List<T> documents,
+                                                           Klab.ErrorContext errorContext) {
+
+        Graph<String, DefaultEdge> dependencyGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        Map<String, T> documentMap = new HashMap<>();
+        for (var document : documents) {
+            documentMap.put(document.getUrn(), document);
+            dependencyGraph.addVertex(document.getUrn());
+            for (var imported : document.importedNamespaces(true)) {
+                dependencyGraph.addVertex(imported);
+                dependencyGraph.addEdge(imported, document.getUrn());
+            }
+        }
+
+        CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<>(dependencyGraph);
+        if (cycleDetector.detectCycles()) {
+            scope.error("Circular dependencies in workspace: cannot continue. Cyclic dependencies affect " + cycleDetector.findCycles(),
+                    Klab.ErrorCode.CIRCULAR_REFERENCES, errorContext);
+            return;
+        }
+
+        // finish building the ontologies in the given order using a new language validator
+        documents.clear();
+        TopologicalOrderIterator<String, DefaultEdge> sort =
+                new TopologicalOrderIterator<>(dependencyGraph);
+        while (sort.hasNext()) {
+            documents.add(documentMap.get(sort.next()));
+        }
     }
 
     /**
@@ -1466,5 +1495,20 @@ public class WorkspaceManager {
         //                parsed.getNamespace().getName(), ontologyContent);
 
     }
+
+    /**
+     * Consistent status means that the contents can be trusted 100%. For now, this means that:
+     * <p>
+     * 1. Changes happened in the workspace did not affect namespaces that the workspace has no control on,
+     * like externally imported namespaces.
+     * <p>
+     * (list will expand)
+     *
+     * @return
+     */
+    public boolean isConsistent() {
+        return consistent.get();
+    }
+
 
 }

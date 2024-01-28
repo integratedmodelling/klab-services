@@ -47,7 +47,8 @@ public enum Klab {
         NAMESPACE,
         ONTOLOGY,
         RESOURCE,
-        OBSERVATION_STRATEGY
+        OBSERVATION_STRATEGY,
+        BEHAVIOR
     }
 
     /**

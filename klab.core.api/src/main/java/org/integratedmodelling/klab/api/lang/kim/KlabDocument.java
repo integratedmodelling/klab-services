@@ -99,9 +99,12 @@ public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
      * Visit the document and return all the imported namespace URNs, either explicit (like in ontologies) or
      * implicit (like in namespaces, strategies or behaviors using concept expressions).
      *
+     * @param withinType if true, limit the dependency analysis to the imported documents of the same type.
+     *                   Otherwise, add all dependencies including the ontologies from any concepts
+     *                   mentioned.
      * @return
      */
-    Set<String> importedNamespaces();
+    Set<String> importedNamespaces(boolean withinType);
 
     /**
      * Visit the document and each statement.

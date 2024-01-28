@@ -57,7 +57,7 @@ public class KActorsBehaviorImpl extends KimDocumentImpl<KActorsAction> implemen
     //		return this.actions;
     //	}
     @Override
-    public Set<String> importedNamespaces() {
+    public Set<String> importedNamespaces(boolean withinType) {
         Set<String> ret = new HashSet<>();
         return ret;
     }

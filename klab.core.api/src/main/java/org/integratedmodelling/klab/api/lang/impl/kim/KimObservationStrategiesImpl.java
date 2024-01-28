@@ -22,7 +22,7 @@ public class KimObservationStrategiesImpl extends KimDocumentImpl<KimObservation
     }
 
     @Override
-    public Set<String> importedNamespaces() {
+    public Set<String> importedNamespaces(boolean withinType) {
         Set<String> ret = new HashSet<>();
         return ret;
     }

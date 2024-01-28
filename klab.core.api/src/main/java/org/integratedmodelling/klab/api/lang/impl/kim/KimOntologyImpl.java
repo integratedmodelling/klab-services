@@ -21,7 +21,7 @@ public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implem
     }
 
     @Override
-    public Set<String> importedNamespaces() {
+    public Set<String> importedNamespaces(boolean withinType) {
         // no visiting necessary; any non-referenced imported ontologies are a syntax error
         return new HashSet<>(importedOntologies);
     }
