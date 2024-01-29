@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.services.resources.storage;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import org.checkerframework.checker.units.qual.A;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.xtext.parser.IParseResult;
@@ -24,7 +23,6 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -45,7 +43,6 @@ import org.integratedmodelling.languages.observable.ObservableSemantics;
 import org.integratedmodelling.languages.observable.ObservableSequence;
 import org.integratedmodelling.languages.observation.Strategies;
 import org.integratedmodelling.languages.services.ObservableGrammarAccess;
-import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.integratedmodelling.languages.worldview.Ontology;
 import org.jgrapht.Graph;
@@ -60,6 +57,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Singleton that separates out all the logics in managing workspaces up to and not including the loading of
@@ -88,30 +87,11 @@ public class WorkspaceManager {
     // guarantee that all URLs correspond to a document in the current catalogs.
     private Map<String, URL> documentURLs = new HashMap<>();
     private WorldviewImpl _worldview;
-
+    //
     private AtomicBoolean consistent = new AtomicBoolean(true);
 
-    private LanguageValidationScope languageValidationScope = new BasicObservableValidationScope() {
-
-        @Override
-        public boolean hasReasoner() {
-            return scope.getService(Reasoner.class) != null;
-        }
-
-        @Override
-        public ConceptDescriptor createConceptDescriptor(ConceptDeclarationSyntax declaration) {
-            // trust the "is core" to define the type for all core ontology concepts
-            if (declaration.isCoreDeclaration()) {
-                SemanticSyntax coreConcept = declaration.getDeclaredParent();
-                var coreId = coreConcept.encode();
-                var cname = coreConcept.encode().split(":");
-                this.conceptTypes.put(coreConcept.encode(), new ConceptDescriptor(cname[0], cname[1],
-                        declaration.getDeclaredType(), coreConcept.encode(),
-                        "Core concept " + coreConcept.encode() + " for type " + declaration.getDeclaredType(), true));
-            }
-            return super.createConceptDescriptor(declaration);
-        }
-    };
+    // filled in at boot and maintained when changes happen
+    private WorldviewValidationScope languageValidationScope;
 
     /**
      * This includes the non-local projects, in load order
@@ -386,8 +366,11 @@ public class WorkspaceManager {
             _ontologyOrder = new ArrayList<>();
             _ontologyMap = new HashMap<>();
 
+            this.languageValidationScope = new WorldviewValidationScope();
+
             Map<String, String> ontologyProjects = new HashMap<>();
             Map<String, Triple<Ontology, KimOntology, Boolean>> cache = new HashMap<>();
+            Map<String, URL> urlCache = new HashMap<>();
             for (var pd : projectDescriptors.values()) {
                 var isWorldview = pd.manifest.getDefinedWorldview() != null;
                 if (pd.externalProject != null) {
@@ -403,15 +386,16 @@ public class WorkspaceManager {
                             if (!errors.isEmpty()) {
                                 scope.error("Ontology resource has errors: " + ontologyUrl,
                                         Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.ONTOLOGY);
-                                return Collections.emptyList();
+//                                return Collections.emptyList();
                             }
+                            urlCache.put(parsed.getNamespace().getName(), ontologyUrl);
                             ontologyProjects.put(parsed.getNamespace().getName(), pd.name);
                             cache.put(parsed.getNamespace().getName(), Triple.of(parsed, null, isWorldview));
                         } catch (IOException e) {
                             // log error and return failure
                             scope.error("Error loading ontology " + ontologyUrl, Klab.ErrorCode.READ_FAILED
                                     , Klab.ErrorContext.ONTOLOGY);
-                            return Collections.emptyList();
+//                            return Collections.emptyList();
                         }
                     }
                 }
@@ -479,14 +463,16 @@ public class WorkspaceManager {
                     };
                     ontology = LanguageAdapter.INSTANCE.adaptOntology(syntax,
                             ontologyProjects.get(syntax.getName()), notifications);
-                    // TODO add ontology local URL to metadata based on service URL
+                    documentURLs.put(ontology.getUrn(), urlCache.get(ontology.getUrn()));
                 }
 
                 if (errors.get()) {
                     scope.error("Logical errors in ontology " + ontologyId + ": cannot continue",
                             Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.ONTOLOGY);
-                    return Collections.emptyList();
+//                    return Collections.emptyList();
                 }
+
+                languageValidationScope.addNamespace(ontology);
 
                 this._ontologyOrder.add(ontology);
                 this._ontologyMap.put(ontology.getUrn(), ontology);
@@ -513,7 +499,8 @@ public class WorkspaceManager {
         if (_namespaceOrder == null) {
             _namespaceOrder = new ArrayList<>();
             _namespaceMap = new HashMap<>();
-            // TODO load them from all projects in dependency order, same as ontologies
+            // TODO load them from all projects in dependency order, same as ontologies; fill in the URL
+            //  cache and everything
         }
         return _namespaceOrder;
     }
@@ -522,7 +509,8 @@ public class WorkspaceManager {
         if (_behaviorOrder == null) {
             _behaviorOrder = new ArrayList<>();
             _behaviorMap = new HashMap<>();
-            // TODO load them from all projects in dependency order, same as ontologies
+            // TODO load them from all projects in dependency order, same as ontologies; fill in the URL
+            //  cache and everything
         }
         return _behaviorOrder;
     }
@@ -531,7 +519,8 @@ public class WorkspaceManager {
         if (_observationStrategyDocuments == null) {
             _observationStrategyDocuments = new ArrayList<>();
             _observationStrategyDocumentMap = new HashMap<>();
-            // TODO load them from all projects in dependency order, same as ontologies
+            // TODO load them from all projects in dependency order, same as ontologies; fill in the URL
+            //  cache and everything
         }
         return _observationStrategyDocuments;
     }
@@ -783,7 +772,7 @@ public class WorkspaceManager {
 
                 Set<String> affectedStrategies = new HashSet<>(affectedOntologies);
                 for (var strategies : getStrategyDocuments()) {
-                    if (Sets.intersection(affectedStrategies, strategies.importedNamespaces(false)).size() > 0) {
+                    if (!Sets.intersection(affectedStrategies, strategies.importedNamespaces(false)).isEmpty()) {
                         affectedStrategies.add(strategies.getUrn());
                     }
                 }
@@ -798,7 +787,7 @@ public class WorkspaceManager {
                 ontology, worldview and namespace arrays for the modified and the affected in the order
                 specified by the resourcesets.
                  */
-                var worldviewChange = substituteAsset(newAsset);
+                var worldviewChange = checkForWorldviewChanges(newAsset, type);
                 if (worldviewChange != null) {
                     // worldview has changed, potentially destroyed
                     scope.send(Message.MessageClass.ResourceLifecycle, Message.MessageType.WorkspaceChanged
@@ -859,9 +848,78 @@ public class WorkspaceManager {
                  possibly new order. External namespaces that depend on anything that has changed should
                  probably cause a warning.
                  */
-                for (KimOntology ontology : _ontologyOrder) {
-                    if (affectedOntologies.contains(ontology.getUrn())) {
+                List<KlabDocument<?>> newDocuments = new ArrayList<>();
 
+                for (KimOntology oldOntology : _ontologyOrder) {
+                    if (affectedOntologies.contains(oldOntology.getUrn())) {
+
+                        boolean isWorldview =
+                                _worldviewOntologies.stream().anyMatch(o -> newAsset.getUrn().equals(o.getUrn()));
+
+                        this.languageValidationScope.clearNamespace(newAsset.getUrn());
+                        var newOntology = oldOntology.getUrn().equals(newAsset.getUrn()) ? newAsset :
+                                          loadOntology(documentURLs.get(oldOntology.getUrn()),
+                                                  oldOntology.getProjectName());
+                        this.languageValidationScope.addNamespace((KimOntology) newAsset);
+                        newDocuments.add(newOntology);
+                    }
+                }
+                for (var oldNamespace : _namespaceOrder) {
+                    if (affectedNamespaces.contains(oldNamespace.getUrn())) {
+                        newDocuments.add(oldNamespace.getUrn().equals(newAsset.getUrn()) ? newAsset :
+                                         loadNamespace(documentURLs.get(oldNamespace.getUrn()),
+                                                 oldNamespace.getProjectName()));
+                    }
+                }
+                for (var oldBehavior : _behaviorOrder) {
+                    if (affectedBehaviors.contains(oldBehavior.getUrn())) {
+                        newDocuments.add(oldBehavior.getUrn().equals(newAsset.getUrn()) ? newAsset :
+                                         loadBehavior(documentURLs.get(oldBehavior.getUrn()),
+                                                 oldBehavior.getProjectName()));
+                    }
+                }
+                for (var oldStrategy : _observationStrategyDocuments) {
+                    if (affectedStrategies.contains(oldStrategy.getUrn())) {
+                        newDocuments.add(oldStrategy.getUrn().equals(newAsset.getUrn()) ? newAsset :
+                                         loadStrategy(documentURLs.get(oldStrategy.getUrn()),
+                                                 oldStrategy.getProjectName()));
+                    }
+                }
+
+                for (var document : newDocuments) {
+                    switch (document) {
+                        case KimOntology ontology -> {
+                            if (_worldviewOntologies.stream().anyMatch(o -> newAsset.getUrn().equals(o.getUrn()))) {
+                                _worldviewOntologies =
+                                        _worldviewOntologies.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                                                               ontology : o).collect(toList());
+                            }
+                            _ontologyOrder =
+                                    _ontologyOrder.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                                                     ontology : o).collect(toList());
+                            _ontologyMap.put(ontology.getUrn(), ontology);
+
+                        }
+                        case KimNamespace namespace -> {
+                            _namespaceOrder =
+                                    _namespaceOrder.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                                                      namespace : o).collect(toList());
+                            _namespaceMap.put(namespace.getUrn(), namespace);
+                        }
+                        case KActorsBehavior behavior -> {
+                            _behaviorOrder =
+                                    _behaviorOrder.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                                                     behavior : o).collect(toList());
+                            _behaviorMap.put(behavior.getUrn(), behavior);
+                        }
+                        case KimObservationStrategies strategies -> {
+                            _observationStrategyDocuments =
+                                    _observationStrategyDocuments.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                                                                    strategies :
+                                                                                    o).collect(toList());
+                            _observationStrategyDocumentMap.put(strategies.getUrn(), strategies);
+                        }
+                        default -> throw new KlabIllegalStateException("can't deal with " + document);
                     }
                 }
 
@@ -875,26 +933,40 @@ public class WorkspaceManager {
         }
     }
 
-    private ResourceSet substituteAsset(KlabDocument<?> newAsset) {
+    /**
+     * Substitute the document in the respective lists and containers. If this is an ontology and the
+     * worldview contains it, substitute it in the worldview only if there are no errors, otherwise remove it.
+     * In all other cases it goes in with any errors it may contain.
+     * <p>
+     * If the document is an ontology, recompute all concept descriptors in the language validator.
+     * <p>
+     * if it's an ontology and it's part of the worldview, the worldview must become empty if it has errors.
+     * In all situations the worldview resource must be in the ResourceSet to message that it must be
+     * reloaded.
+     *
+     * @param newAsset
+     * @param type
+     * @return
+     */
+    private ResourceSet checkForWorldviewChanges(KlabDocument<?> newAsset, ProjectStorage.ResourceType type) {
 
-        /*
-        TODO Substitute the document in the respective lists and containers. If this is an ontology and the
-        worldview contains it, substitute it in the worldview only if there are no errors, otherwise remove
-         it. In all other cases it goes in with any errors it may contain.
+        ResourceSet ret = null;
 
-         TODO If the document is an ontology, recompute all concept descriptors in the language validator.
+        boolean isWorldview = type == ProjectStorage.ResourceType.ONTOLOGY &&
+                _worldviewOntologies.stream().anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
 
-         TODO if it's an ontology and it's part of the worldview, the worldview must become empty if it has
-          errors. In all situations the worldview resource must be in the ResourceSet to message that it must
-          be reloaded.
-         */
+        if (isWorldview) {
+            ret = new ResourceSet();
+            var resource = new ResourceSet.Resource();
+            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
+            ret.getResources().add(resource);
+            if (Utils.Notifications.hasErrors(newAsset.getNotifications())) {
+                ret.setEmpty(true);
+                ret.getNotifications().addAll(newAsset.getNotifications());
+            }
+        }
 
-        System.out.println("CAZ SUBSTITUTE " + newAsset + " AND ADJOURN LANGUAGE VALIDATOR");
-
-
-        // if any changes to the worldview happened, create a resource descriptor to ensure it's reloaded. Add
-        // any notifications or empty status to the worldview resource.
-        return null;
+        return ret;
     }
 
     /**
@@ -1221,7 +1293,9 @@ public class WorkspaceManager {
                         this._projectLoadOrder.add(Pair.of(pd.storage, null));
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION, "Project "
-                                + proj.getFirst() + "@" + proj.getSecond() + " is required" + " by other " + "projects in workspace but incompatible version " + pd.manifest.getVersion() + " is available in local workspace");
+                                + proj.getFirst() + "@" + proj.getSecond() + " is required" + " by other " +
+                                "projects in workspace but incompatible version " + pd.manifest.getVersion() +
+                                " is available in local workspace");
                         unresolvedProjects.add(proj);
                     }
                 } else {
@@ -1247,7 +1321,8 @@ public class WorkspaceManager {
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.UNRESOLVED_REFERENCE,
                                 "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" + " "
-                                        + "by other projects in workspace but cannot be resolved from the " + "network");
+                                        + "by other projects in workspace but cannot be resolved from the " +
+                                        "network");
                         unresolvedProjects.add(proj);
                     }
                 }
@@ -1418,6 +1493,15 @@ public class WorkspaceManager {
             Validate the first ontology as the root ontology and set the worldview name from it
              */
         if (_worldview.getOntologies().size() > 0) {
+
+            for (var ontology : _worldview.getOntologies()) {
+                if (Utils.Notifications.hasErrors(ontology.getNotifications())) {
+                    _worldview.setEmpty(true);
+                    scope.error("Namespace " + ontology.getUrn() + " has fatal errors: worldview " +
+                            "is inconsistent");
+                }
+            }
+
             KimOntology root = _worldview.getOntologies().get(0);
             if (!(root.getDomain() == KimOntology.rootDomain)) {
                 _worldview.setEmpty(true);

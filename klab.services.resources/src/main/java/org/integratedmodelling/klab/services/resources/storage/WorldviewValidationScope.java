@@ -1,13 +1,16 @@
-package org.integratedmodelling.klab.services.resources.lang;
+package org.integratedmodelling.klab.services.resources.storage;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.languages.api.ConceptDeclarationSyntax;
 import org.integratedmodelling.languages.api.SemanticSyntax;
 import org.integratedmodelling.languages.validation.BasicObservableValidationScope;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -15,12 +18,51 @@ import java.util.Set;
  */
 public class WorldviewValidationScope extends BasicObservableValidationScope {
 
+    public WorldviewValidationScope() {
+    }
+
     public WorldviewValidationScope(Worldview worldview) {
         for (var ontology : worldview.getOntologies()) {
             for (var statement : ontology.getStatements()) {
                 loadConcepts(statement, ontology.getUrn());
             }
         }
+    }
+
+    public void clearNamespace(String namespace) {
+        Set<String> keys = new HashSet<>();
+        String ns = namespace + ":";
+        for (var concept : conceptTypes.keySet()) {
+            if (concept.startsWith(ns)) {
+                keys.add(concept);
+            }
+        }
+        synchronized (conceptTypes) {
+            keys.forEach(key -> conceptTypes.remove(key));
+        }
+    }
+
+    public void addNamespace(KimOntology ontology) {
+        for (var statement : ontology.getStatements()) {
+            loadConcepts(statement, ontology.getUrn());
+        }
+    }
+
+    @Override
+    public ConceptDescriptor createConceptDescriptor(ConceptDeclarationSyntax declaration) {
+        // trust the "is core" to define the type for all core ontology concepts
+
+        if (declaration.isCoreDeclaration()) {
+            SemanticSyntax coreConcept = declaration.getDeclaredParent();
+            var coreId = coreConcept.encode();
+            var cname = coreConcept.encode().split(":");
+
+            this.conceptTypes.put(coreConcept.encode(), new ConceptDescriptor(cname[0], cname[1],
+                    declaration.getDeclaredType(), coreConcept.encode(),
+                    "Core concept " + coreConcept.encode() + " for type " + declaration.getDeclaredType(),
+                    true));
+        }
+        return super.createConceptDescriptor(declaration);
     }
 
     private void loadConcepts(KimConceptStatement statement, String namespace) {
@@ -43,13 +85,15 @@ public class WorldviewValidationScope extends BasicObservableValidationScope {
      * @return
      */
     public static SemanticSyntax.Type getMainType(Set<SemanticType> type) {
-        type = EnumSet.copyOf(type);
-        type.retainAll(SemanticType.DECLARABLE_TYPES);
-        if (type.size() == 1) {
-            return switch (type.iterator().next()) {
+        Set<SemanticType> strippedType = EnumSet.copyOf(type);
+        strippedType.retainAll(SemanticType.DECLARABLE_TYPES);
+        if (strippedType.isEmpty() && type.contains(SemanticType.QUALITY)) {
+            return SemanticSyntax.Type.GENERIC_QUALITY;
+        } else if (strippedType.size() == 1) {
+            return switch (strippedType.iterator().next()) {
                 case PROPORTION -> SemanticSyntax.Type.PROPORTION;
                 case PROBABILITY -> SemanticSyntax.Type.PROBABILITY;
-                case DISTANCE -> SemanticSyntax.Type.LENGTH;
+                case DISTANCE, LENGTH -> SemanticSyntax.Type.LENGTH;
                 case VALUE -> SemanticSyntax.Type.VALUE;
                 case OCCURRENCE -> SemanticSyntax.Type.OCCURRENCE;
                 case PRESENCE -> SemanticSyntax.Type.PRESENCE;
@@ -60,7 +104,10 @@ public class WorldviewValidationScope extends BasicObservableValidationScope {
                 case QUANTITY -> SemanticSyntax.Type.QUANTITY;
                 case ENERGY -> SemanticSyntax.Type.ENERGY;
                 case ENTROPY -> SemanticSyntax.Type.ENTROPY;
-                case LENGTH -> SemanticSyntax.Type.LENGTH;
+                case ROLE -> SemanticSyntax.Type.ROLE;
+                case EXTENT -> SemanticSyntax.Type.EXTENT;
+                case MONETARY_VALUE -> SemanticSyntax.Type.MONETARY_VALUE;
+                case DOMAIN -> SemanticSyntax.Type.DOMAIN;
                 case MASS -> SemanticSyntax.Type.MASS;
                 case VOLUME -> SemanticSyntax.Type.VOLUME;
                 case WEIGHT -> SemanticSyntax.Type.WEIGHT;

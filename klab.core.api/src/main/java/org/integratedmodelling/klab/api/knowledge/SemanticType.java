@@ -381,10 +381,11 @@ public enum SemanticType {
             SemanticType.LENGTH, SemanticType.MASS, SemanticType.VOLUME, SemanticType.WEIGHT,
             SemanticType.MONEY, SemanticType.DURATION, SemanticType.AREA, SemanticType.ACCELERATION,
             SemanticType.PRIORITY, SemanticType.ELECTRIC_POTENTIAL, SemanticType.CHARGE,
+            SemanticType.IDENTITY,
             SemanticType.RESISTANCE, SemanticType.RESISTIVITY, SemanticType.PRESSURE, SemanticType.ANGLE,
             SemanticType.VELOCITY, SemanticType.TEMPERATURE, SemanticType.VISCOSITY, SemanticType.RATIO,
             SemanticType.AMOUNT, SemanticType.SUBJECT, SemanticType.AGENT, SemanticType.EVENT,
-            SemanticType.RELATIONSHIP, SemanticType.PROCESS, SemanticType.CONFIGURATION,
+            SemanticType.RELATIONSHIP, SemanticType.PROCESS, SemanticType.CONFIGURATION, SemanticType.ROLE,
             SemanticType.ATTRIBUTE, SemanticType.REALM, SemanticType.IDENTITY, SemanticType.ORDERING);
 
     /**
