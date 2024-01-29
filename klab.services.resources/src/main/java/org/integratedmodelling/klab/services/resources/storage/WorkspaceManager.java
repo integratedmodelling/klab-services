@@ -386,7 +386,7 @@ public class WorkspaceManager {
                             if (!errors.isEmpty()) {
                                 scope.error("Ontology resource has errors: " + ontologyUrl,
                                         Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.ONTOLOGY);
-//                                return Collections.emptyList();
+                                //                                return Collections.emptyList();
                             }
                             urlCache.put(parsed.getNamespace().getName(), ontologyUrl);
                             ontologyProjects.put(parsed.getNamespace().getName(), pd.name);
@@ -395,7 +395,7 @@ public class WorkspaceManager {
                             // log error and return failure
                             scope.error("Error loading ontology " + ontologyUrl, Klab.ErrorCode.READ_FAILED
                                     , Klab.ErrorContext.ONTOLOGY);
-//                            return Collections.emptyList();
+                            //                            return Collections.emptyList();
                         }
                     }
                 }
@@ -469,7 +469,7 @@ public class WorkspaceManager {
                 if (errors.get()) {
                     scope.error("Logical errors in ontology " + ontologyId + ": cannot continue",
                             Klab.ErrorCode.RESOURCE_VALIDATION, Klab.ErrorContext.ONTOLOGY);
-//                    return Collections.emptyList();
+                    //                    return Collections.emptyList();
                 }
 
                 languageValidationScope.addNamespace(ontology);
@@ -789,9 +789,7 @@ public class WorkspaceManager {
                  */
                 var worldviewChange = checkForWorldviewChanges(newAsset, type);
                 if (worldviewChange != null) {
-                    // worldview has changed, potentially destroyed
-                    scope.send(Message.MessageClass.ResourceLifecycle, Message.MessageType.WorkspaceChanged
-                            , worldviewChange);
+                    result.put("Worldview", worldviewChange);
                 }
 
                 /*
@@ -827,19 +825,6 @@ public class WorkspaceManager {
                     if (affectedStrategies.contains(strategies.getUrn())) {
                         addToResultSet(strategies, Workspace.EXTERNAL_WORKSPACE_URN, result);
                     }
-                }
-
-
-                /*
-                 Report a ResourceSet per workspace affected. The listening end(s) will have to request the
-                 contents. What needs to be recomputed is anything that DEPENDED on the OLD version or any
-                 of its dependents. When sending, the actual reloading hasn't happened yet - it will be
-                 requested if needed and blocked until the loading is finished.
-                */
-
-                for (var resourceSet : result.values()) {
-                    scope.send(Message.MessageClass.ResourceLifecycle, Message.MessageType.WorkspaceChanged
-                            , resourceSet);
                 }
 
                 /*
@@ -929,7 +914,15 @@ public class WorkspaceManager {
                 // TODO report failure notification
             }
 
-            System.out.println("DIO PORCO file has changed: " + type + " " + url + " " + change + " in " + project);
+            /**
+             Report a ResourceSet per workspace affected. The listening end(s) will have to request the
+             contents.
+             */
+            for (var resourceSet : result.values()) {
+                scope.send(Message.MessageClass.ResourceLifecycle, Message.MessageType.WorkspaceChanged
+                        , resourceSet);
+            }
+
         }
     }
 
@@ -957,6 +950,7 @@ public class WorkspaceManager {
 
         if (isWorldview) {
             ret = new ResourceSet();
+            ret.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
             var resource = new ResourceSet.Resource();
             resource.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
             ret.getResources().add(resource);
@@ -1015,6 +1009,9 @@ public class WorkspaceManager {
                     resourceSet.getObservationStrategies().add(resource);
                 }
             }
+
+            resourceSet.getResources().add(resource);
+
         }
     }
 

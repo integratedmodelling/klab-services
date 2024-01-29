@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 
@@ -21,6 +20,12 @@ import java.util.List;
  * loaded worldview.
  */
 public interface Worldview extends KlabAsset {
+
+    /**
+     * Internal "workspace" identifier used for ResourceSet when communicating a change that affects the
+     * worldview.
+     */
+    public static final String WORLDVIEW_WORKSPACE_IDENTIFIER = "__WORLDVIEW__";
 
     /**
      * The ontologies are in the right order for loading and the first in the list is always the root
