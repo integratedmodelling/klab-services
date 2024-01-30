@@ -198,6 +198,15 @@ public interface ResourcesService extends KlabService {
     KimObservable resolveObservable(String definition);
 
     /**
+     * Produce the descriptor for the passed concept URN if known.
+     *
+     * @param conceptUrn a fully specified concept URN, such as "namespace:Concept". Not usable with concept
+     *                   expressions.
+     * @return a valid descriptor or null.
+     */
+    KimConcept.Descriptor describeConcept(String conceptUrn);
+
+    /**
      * @param definition
      * @return
      */

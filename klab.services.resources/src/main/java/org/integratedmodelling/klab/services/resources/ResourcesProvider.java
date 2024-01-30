@@ -775,6 +775,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
+    public KimConcept.Descriptor describeConcept(String conceptUrn) {
+        return workspaceManager.describeConcept(conceptUrn);
+    }
+
+    @Override
     public KimConcept resolveConcept(String definition) {
         var parsed = this.workspaceManager.resolveConcept(definition);
         if (parsed != null) {

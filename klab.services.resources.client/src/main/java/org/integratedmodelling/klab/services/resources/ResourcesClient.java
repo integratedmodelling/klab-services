@@ -124,6 +124,11 @@ public class ResourcesClient implements ResourcesService {
     }
 
     @Override
+    public KimConcept.Descriptor describeConcept(String conceptUrn) {
+        return null;
+    }
+
+    @Override
     public KimConcept resolveConcept(String definition) {
         // TODO Auto-generated method stub
         return null;

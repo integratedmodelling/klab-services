@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -34,6 +35,7 @@ import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
+import org.integratedmodelling.klab.services.resources.lang.WorldviewValidationScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.*;
 import org.integratedmodelling.languages.api.*;
@@ -100,6 +102,47 @@ public class WorkspaceManager {
      */
     public List<Project> getProjects() {
         return new ArrayList<>(projects.values());
+    }
+
+    public KimConcept.Descriptor describeConcept(String conceptUrn) {
+        try {
+            String[] split = conceptUrn.split(":");
+            var ontology = getOntology(split[0]);
+            if (ontology != null) {
+                // we don't cache the concept map, so this is a potentially expensive operation and its
+                // results should be cached.
+                var declaration = conceptMap(ontology).get(split[1]);
+                if (declaration != null) {
+                    var type = EnumSet.copyOf(declaration.getType());
+                    type.retainAll(SemanticType.DECLARABLE_TYPES);
+                    return new KimConcept.Descriptor(declaration.getNamespace(), declaration.getUrn(),
+                            type.size() == 1 ? type.iterator().next() : SemanticType.NOTHING,
+                            declaration.getMetadata().get(Metadata.DC_COMMENT, "No description provided"),
+                            declaration.getMetadata().get(Metadata.DC_LABEL,
+                                    ontology.getUrn() + ":" + declaration.getUrn()),
+                            declaration.isAbstract());
+                }
+            }
+        } catch (Throwable throwable) {
+            // just return null
+            scope.error(throwable);
+        }
+        return null;
+    }
+
+    private Map<String, KimConceptStatement> conceptMap(KimOntology ontology) {
+        Map<String, KimConceptStatement> ret = new HashMap<>();
+        for (var conceptStatement : ontology.getStatements()) {
+            collectConcepts(conceptStatement, ret);
+        }
+        return ret;
+    }
+
+    private void collectConcepts(KimConceptStatement conceptStatement, Map<String, KimConceptStatement> ret) {
+        ret.put(conceptStatement.getUrn(), conceptStatement);
+        for (var child : conceptStatement.getChildren()) {
+            collectConcepts(child, ret);
+        }
     }
 
 

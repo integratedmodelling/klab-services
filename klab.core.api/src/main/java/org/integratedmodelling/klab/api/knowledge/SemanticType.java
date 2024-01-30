@@ -372,7 +372,8 @@ public enum SemanticType {
             SemanticType.RELATIONSHIP, SemanticType.PROCESS, SemanticType.TRAIT, SemanticType.ROLE);
 
     /**
-     * These need to be represented in the root domain of the ontology using core derivations
+     * These need to be represented in the root domain of the ontology using core derivations. They are all
+     * disjoint and concrete. TODO at the moment the OPERATOR_TYPES are not directly linked to core types.
      */
     public static final Set<SemanticType> DECLARABLE_TYPES = EnumSet.of(SemanticType.PROPORTION,
             SemanticType.PROBABILITY, SemanticType.DISTANCE, SemanticType.VALUE, SemanticType.OCCURRENCE,
@@ -386,7 +387,7 @@ public enum SemanticType {
             SemanticType.VELOCITY, SemanticType.TEMPERATURE, SemanticType.VISCOSITY, SemanticType.RATIO,
             SemanticType.AMOUNT, SemanticType.SUBJECT, SemanticType.AGENT, SemanticType.EVENT,
             SemanticType.RELATIONSHIP, SemanticType.PROCESS, SemanticType.CONFIGURATION, SemanticType.ROLE,
-            SemanticType.ATTRIBUTE, SemanticType.REALM, SemanticType.IDENTITY, SemanticType.ORDERING);
+            SemanticType.ATTRIBUTE, SemanticType.REALM, SemanticType.ORDERING);
 
     /**
      * Qualities that are naturally inherent and should not be allowed to have explicit inherency but just

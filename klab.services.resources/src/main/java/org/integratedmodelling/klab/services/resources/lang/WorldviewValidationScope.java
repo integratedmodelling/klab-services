@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.resources.storage;
+package org.integratedmodelling.klab.services.resources.lang;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -88,60 +88,65 @@ public class WorldviewValidationScope extends BasicObservableValidationScope {
         Set<SemanticType> strippedType = EnumSet.copyOf(type);
         strippedType.retainAll(SemanticType.DECLARABLE_TYPES);
         if (strippedType.isEmpty() && type.contains(SemanticType.QUALITY)) {
+            // shouldn't happen in KimDeclarations
             return SemanticSyntax.Type.GENERIC_QUALITY;
         } else if (strippedType.size() == 1) {
-            return switch (strippedType.iterator().next()) {
-                case PROPORTION -> SemanticSyntax.Type.PROPORTION;
-                case PROBABILITY -> SemanticSyntax.Type.PROBABILITY;
-                case DISTANCE, LENGTH -> SemanticSyntax.Type.LENGTH;
-                case VALUE -> SemanticSyntax.Type.VALUE;
-                case OCCURRENCE -> SemanticSyntax.Type.OCCURRENCE;
-                case PRESENCE -> SemanticSyntax.Type.PRESENCE;
-                case UNCERTAINTY -> SemanticSyntax.Type.UNCERTAINTY;
-                case NUMEROSITY -> SemanticSyntax.Type.NUMEROSITY;
-                case RATE -> SemanticSyntax.Type.RATE;
-                case CLASS -> SemanticSyntax.Type.CLASS;
-                case QUANTITY -> SemanticSyntax.Type.QUANTITY;
-                case ENERGY -> SemanticSyntax.Type.ENERGY;
-                case ENTROPY -> SemanticSyntax.Type.ENTROPY;
-                case ROLE -> SemanticSyntax.Type.ROLE;
-                case EXTENT -> SemanticSyntax.Type.EXTENT;
-                case MONETARY_VALUE -> SemanticSyntax.Type.MONETARY_VALUE;
-                case DOMAIN -> SemanticSyntax.Type.DOMAIN;
-                case MASS -> SemanticSyntax.Type.MASS;
-                case VOLUME -> SemanticSyntax.Type.VOLUME;
-                case WEIGHT -> SemanticSyntax.Type.WEIGHT;
-                case MONEY -> SemanticSyntax.Type.MONEY;
-                case DURATION -> SemanticSyntax.Type.DURATION;
-                case AREA -> SemanticSyntax.Type.AREA;
-                case ACCELERATION -> SemanticSyntax.Type.ACCELERATION;
-                case PRIORITY -> SemanticSyntax.Type.PRIORITY;
-                case ELECTRIC_POTENTIAL -> SemanticSyntax.Type.ELECTRIC_POTENTIAL;
-                case CHARGE -> SemanticSyntax.Type.CHARGE;
-                case RESISTANCE -> SemanticSyntax.Type.RESISTANCE;
-                case RESISTIVITY -> SemanticSyntax.Type.RESISTIVITY;
-                case PRESSURE -> SemanticSyntax.Type.PRESSURE;
-                case ANGLE -> SemanticSyntax.Type.ANGLE;
-                case VELOCITY -> SemanticSyntax.Type.VELOCITY;
-                case TEMPERATURE -> SemanticSyntax.Type.TEMPERATURE;
-                case VISCOSITY -> SemanticSyntax.Type.VISCOSITY;
-                case RATIO -> SemanticSyntax.Type.RATIO;
-                case AMOUNT -> SemanticSyntax.Type.AMOUNT;
-                case SUBJECT -> SemanticSyntax.Type.SUBJECT;
-                case AGENT -> SemanticSyntax.Type.AGENT;
-                case EVENT -> SemanticSyntax.Type.EVENT;
-                case RELATIONSHIP -> SemanticSyntax.Type.FUNCTIONAL_RELATIONSHIP;
-                case PROCESS -> SemanticSyntax.Type.PROCESS;
-                case CONFIGURATION -> SemanticSyntax.Type.CONFIGURATION;
-                case ATTRIBUTE -> SemanticSyntax.Type.ATTRIBUTE;
-                case REALM -> SemanticSyntax.Type.REALM;
-                case IDENTITY -> SemanticSyntax.Type.IDENTITY;
-                case ORDERING -> SemanticSyntax.Type.ORDERING;
-                default -> SemanticSyntax.Type.NOTHING;
-            };
+            return getMainType(strippedType.iterator().next());
         }
         // No VOID admitted if we have a worldview
         return SemanticSyntax.Type.NOTHING;
+    }
+
+    public static SemanticSyntax.Type getMainType(SemanticType type) {
+        return switch (type) {
+            case PROPORTION -> SemanticSyntax.Type.PROPORTION;
+            case PROBABILITY -> SemanticSyntax.Type.PROBABILITY;
+            case DISTANCE, LENGTH -> SemanticSyntax.Type.LENGTH;
+            case VALUE -> SemanticSyntax.Type.VALUE;
+            case OCCURRENCE -> SemanticSyntax.Type.OCCURRENCE;
+            case PRESENCE -> SemanticSyntax.Type.PRESENCE;
+            case UNCERTAINTY -> SemanticSyntax.Type.UNCERTAINTY;
+            case NUMEROSITY -> SemanticSyntax.Type.NUMEROSITY;
+            case RATE -> SemanticSyntax.Type.RATE;
+            case CLASS -> SemanticSyntax.Type.CLASS;
+            case QUANTITY -> SemanticSyntax.Type.QUANTITY;
+            case ENERGY -> SemanticSyntax.Type.ENERGY;
+            case ENTROPY -> SemanticSyntax.Type.ENTROPY;
+            case ROLE -> SemanticSyntax.Type.ROLE;
+            case EXTENT -> SemanticSyntax.Type.EXTENT;
+            case MONETARY_VALUE -> SemanticSyntax.Type.MONETARY_VALUE;
+            case DOMAIN -> SemanticSyntax.Type.DOMAIN;
+            case MASS -> SemanticSyntax.Type.MASS;
+            case VOLUME -> SemanticSyntax.Type.VOLUME;
+            case WEIGHT -> SemanticSyntax.Type.WEIGHT;
+            case MONEY -> SemanticSyntax.Type.MONEY;
+            case DURATION -> SemanticSyntax.Type.DURATION;
+            case AREA -> SemanticSyntax.Type.AREA;
+            case ACCELERATION -> SemanticSyntax.Type.ACCELERATION;
+            case PRIORITY -> SemanticSyntax.Type.PRIORITY;
+            case ELECTRIC_POTENTIAL -> SemanticSyntax.Type.ELECTRIC_POTENTIAL;
+            case CHARGE -> SemanticSyntax.Type.CHARGE;
+            case RESISTANCE -> SemanticSyntax.Type.RESISTANCE;
+            case RESISTIVITY -> SemanticSyntax.Type.RESISTIVITY;
+            case PRESSURE -> SemanticSyntax.Type.PRESSURE;
+            case ANGLE -> SemanticSyntax.Type.ANGLE;
+            case VELOCITY -> SemanticSyntax.Type.VELOCITY;
+            case TEMPERATURE -> SemanticSyntax.Type.TEMPERATURE;
+            case VISCOSITY -> SemanticSyntax.Type.VISCOSITY;
+            case RATIO -> SemanticSyntax.Type.RATIO;
+            case AMOUNT -> SemanticSyntax.Type.AMOUNT;
+            case SUBJECT -> SemanticSyntax.Type.SUBJECT;
+            case AGENT -> SemanticSyntax.Type.AGENT;
+            case EVENT -> SemanticSyntax.Type.EVENT;
+            case RELATIONSHIP -> SemanticSyntax.Type.FUNCTIONAL_RELATIONSHIP;
+            case PROCESS -> SemanticSyntax.Type.PROCESS;
+            case CONFIGURATION -> SemanticSyntax.Type.CONFIGURATION;
+            case ATTRIBUTE -> SemanticSyntax.Type.ATTRIBUTE;
+            case REALM -> SemanticSyntax.Type.REALM;
+            case IDENTITY -> SemanticSyntax.Type.IDENTITY;
+            case ORDERING -> SemanticSyntax.Type.ORDERING;
+            default -> SemanticSyntax.Type.NOTHING;
+        };
     }
 
 }

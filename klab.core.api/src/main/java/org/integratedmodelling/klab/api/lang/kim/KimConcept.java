@@ -23,6 +23,26 @@ public interface KimConcept extends KlabStatement, KlabAsset {
     }
 
     /**
+     * A simple data structure containing the essential info about a basic concept that can be output by any
+     * resource service that distributes or serves the worldview.
+     *
+     * @param namespace
+     * @param conceptName
+     * @param mainDeclaredType
+     * @param label
+     * @param description
+     * @param isAbstract
+     */
+    public record Descriptor(String namespace, String conceptName, SemanticType mainDeclaredType,
+                             String label,
+                             String description, boolean isAbstract) {
+        @Override
+        public String toString() {
+            return (isAbstract ? "abstract " : "") + mainDeclaredType.name().toLowerCase() + " " + namespace + ":" + conceptName;
+        }
+    }
+
+    /**
      * A leaf declaration contains a name (e.g. 'elevation:Geography'); all others do not. When the name is
      * not null, there still may be a negation or a semantic operator.
      *
@@ -45,8 +65,6 @@ public interface KimConcept extends KlabStatement, KlabAsset {
      * @return the main observable
      */
     KimConcept getObservable();
-
-//    KimConcept getContext();
 
     KimConcept getInherent();
 
@@ -73,8 +91,6 @@ public interface KimConcept extends KlabStatement, KlabAsset {
     List<KimConcept> getTraits();
 
     List<KimConcept> getRoles();
-
-//	boolean isTemplate();
 
     boolean isNegated();
 
@@ -139,7 +155,7 @@ public interface KimConcept extends KlabStatement, KlabAsset {
 
     SemanticRole getSemanticRole();
 
-//    boolean isTraitObservable();
+    //    boolean isTraitObservable();
 
     /**
      * Declared parent concept, if any.
