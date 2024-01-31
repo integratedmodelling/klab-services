@@ -919,30 +919,30 @@ public class WorkspaceManager {
                         case KimOntology ontology -> {
                             if (_worldviewOntologies.stream().anyMatch(o -> newAsset.getUrn().equals(o.getUrn()))) {
                                 _worldviewOntologies =
-                                        _worldviewOntologies.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                        _worldviewOntologies.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
                                                                                ontology : o).collect(toList());
                             }
                             _ontologyOrder =
-                                    _ontologyOrder.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                    _ontologyOrder.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
                                                                      ontology : o).collect(toList());
                             _ontologyMap.put(ontology.getUrn(), ontology);
 
                         }
                         case KimNamespace namespace -> {
                             _namespaceOrder =
-                                    _namespaceOrder.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                    _namespaceOrder.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
                                                                       namespace : o).collect(toList());
                             _namespaceMap.put(namespace.getUrn(), namespace);
                         }
                         case KActorsBehavior behavior -> {
                             _behaviorOrder =
-                                    _behaviorOrder.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                    _behaviorOrder.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
                                                                      behavior : o).collect(toList());
                             _behaviorMap.put(behavior.getUrn(), behavior);
                         }
                         case KimObservationStrategies strategies -> {
                             _observationStrategyDocuments =
-                                    _observationStrategyDocuments.stream().map(o -> o.getUrn().equals(newAsset.getUrn()) ?
+                                    _observationStrategyDocuments.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
                                                                                     strategies :
                                                                                     o).collect(toList());
                             _observationStrategyDocumentMap.put(strategies.getUrn(), strategies);

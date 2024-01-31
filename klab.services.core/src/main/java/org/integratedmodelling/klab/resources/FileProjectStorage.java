@@ -24,8 +24,8 @@ public class FileProjectStorage implements ProjectStorage {
     }
 
     private FileWatcher watcher;
-    private File rootFolder;
-    private String projectName;
+    private final File rootFolder;
+    private final String projectName;
 
     public FileProjectStorage(File rootFolder, ChangeNotifier notifier) {
         this.rootFolder = rootFolder;
