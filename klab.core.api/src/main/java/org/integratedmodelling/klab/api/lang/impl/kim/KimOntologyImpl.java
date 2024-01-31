@@ -69,4 +69,5 @@ public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implem
     public void setDomain(KimConcept domain) {
         this.domain = domain;
     }
+
 }

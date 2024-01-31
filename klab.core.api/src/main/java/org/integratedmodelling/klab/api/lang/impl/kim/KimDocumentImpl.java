@@ -2,9 +2,11 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +16,7 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     private String urn;
     private Version version;
     private Metadata metadata = Metadata.create();
-//    private List<Annotation> annotations = new ArrayList<>();
+    //    private List<Annotation> annotations = new ArrayList<>();
     private long creationTimestamp;
     private long lastUpdateTimestamp;
     private boolean inactive;
@@ -36,11 +38,11 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     public Metadata getMetadata() {
         return this.metadata;
     }
-//
-//    @Override
-//    public List<Annotation> getAnnotations() {
-//        return this.annotations;
-//    }
+    //
+    //    @Override
+    //    public List<Annotation> getAnnotations() {
+    //        return this.annotations;
+    //    }
 
     @Override
     public long getCreationTimestamp() {
@@ -56,6 +58,7 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     public boolean isInactive() {
         return this.inactive;
     }
+
     @Override
     public Collection<Notification> getNotifications() {
         return this.notifications;
@@ -82,10 +85,10 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
-//
-//    public void setAnnotations(List<Annotation> annotations) {
-//        this.annotations = annotations;
-//    }
+    //
+    //    public void setAnnotations(List<Annotation> annotations) {
+    //        this.annotations = annotations;
+    //    }
 
     public void setCreationTimestamp(long creationTimestamp) {
         this.creationTimestamp = creationTimestamp;
@@ -109,5 +112,9 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
 
     public void setSourceCode(String sourceCode) {
         this.sourceCode = sourceCode;
+    }
+
+    public String toString() {
+        return "<" + Utils.Strings.capitalize(KlabAsset.classify(this).name()) + " " + projectName + ":" + urn + ">";
     }
 }

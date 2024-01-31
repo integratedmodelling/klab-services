@@ -230,6 +230,8 @@ public class FileProjectStorage implements ProjectStorage {
                                 events.add(Pair.of(file, kind));
                                 timestamp.remove(file);
                             } else {
+                                // somehow this gives it enough time to intercept the second event every time
+                                Thread.sleep(50);
                                 timestamp.add(file);
                             }
                         }
