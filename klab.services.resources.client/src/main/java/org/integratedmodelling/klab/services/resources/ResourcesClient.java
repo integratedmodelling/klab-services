@@ -10,9 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -91,6 +89,16 @@ public class ResourcesClient implements ResourcesService {
     @Override
     public KimNamespace resolveNamespace(String urn, Scope scope) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public KimOntology resolveOntology(String urn, Scope scope) {
+        return null;
+    }
+
+    @Override
+    public KimObservationStrategyDocument resolveObservationStrategyDocument(String urn, Scope scope) {
         return null;
     }
 

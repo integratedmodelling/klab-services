@@ -34,7 +34,7 @@ public interface KlabAsset extends Serializable {
             case KimConcept c -> KnowledgeClass.CONCEPT;
             case KimObservable c -> KnowledgeClass.OBSERVABLE;
             case KimOntology o -> KnowledgeClass.ONTOLOGY;
-            case KimObservationStrategies s -> KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
+            case KimObservationStrategyDocument s -> KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
             case KimNamespace n -> KnowledgeClass.NAMESPACE;
             case KActorsBehavior behavior -> switch(behavior.getType()) {
                 case BEHAVIOR, TASK, USER, TRAITS -> KnowledgeClass.BEHAVIOR;

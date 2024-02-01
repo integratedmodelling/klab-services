@@ -83,8 +83,8 @@ public class WorkspaceManager {
     private Map<String, KActorsBehavior> _behaviorMap;
     private List<KimOntology> _worldviewOntologies;
     private List<KimObservationStrategy> _observationStrategies;
-    private List<KimObservationStrategies> _observationStrategyDocuments;
-    private Map<String, KimObservationStrategies> _observationStrategyDocumentMap;
+    private List<KimObservationStrategyDocument> _observationStrategyDocuments;
+    private Map<String, KimObservationStrategyDocument> _observationStrategyDocumentMap;
     // all docs that have been loaded through a URL remember the URL keyed by the document URN. No
     // guarantee that all URLs correspond to a document in the current catalogs.
     private Map<String, URL> documentURLs = new HashMap<>();
@@ -145,6 +145,14 @@ public class WorkspaceManager {
         }
     }
 
+    public Collection<String> getNamespaceUrns() {
+        return _behaviorMap.keySet();
+    }
+
+    public Collection<String> getBehaviorUrns() {
+        return _namespaceMap.keySet();
+    }
+
 
     class StrategyParser extends Parser<Strategies> {
 
@@ -160,7 +168,7 @@ public class WorkspaceManager {
          * @param strategyUrl
          * @return the parsed semantic expression, or null if the parser cannot make sense of it.
          */
-        public ObservationStrategiesSyntax parseStrategies(URL strategyUrl) {
+        public ObservationStrategiesSyntax parseStrategies(URL strategyUrl, String projectName) {
 
             List<Notification> errors = new ArrayList<>();
 
@@ -175,8 +183,9 @@ public class WorkspaceManager {
                     return null;
                 }
 
-                if (result instanceof Strategies) {
-                    return new ObservationStrategiesSyntaxImpl((Strategies) result, languageValidationScope) {
+                if (result instanceof Strategies strategies) {
+                    String strategyUrn = projectName + "." + Utils.URLs.getURLBaseName(strategyUrl) + ".strategies";
+                    return new ObservationStrategiesSyntaxImpl(strategyUrn, strategies, languageValidationScope) {
 
                         @Override
                         protected void logWarning(ParsedObject target, EObject object,
@@ -558,7 +567,7 @@ public class WorkspaceManager {
         return _behaviorOrder;
     }
 
-    List<KimObservationStrategies> getStrategyDocuments() {
+    List<KimObservationStrategyDocument> getStrategyDocuments() {
         if (_observationStrategyDocuments == null) {
             _observationStrategyDocuments = new ArrayList<>();
             _observationStrategyDocumentMap = new HashMap<>();
@@ -766,7 +775,7 @@ public class WorkspaceManager {
                     case KimOntology ontology -> getOntology(ontology.getUrn());
                     case KimNamespace namespace -> getNamespace(namespace.getUrn());
                     case KActorsBehavior behavior -> getBehavior(behavior.getUrn());
-                    case KimObservationStrategies strategy -> getStrategyDocument(strategy.getUrn());
+                    case KimObservationStrategyDocument strategy -> getStrategyDocument(strategy.getUrn());
                     default -> null;
                 };
 
@@ -921,6 +930,7 @@ public class WorkspaceManager {
                                 _worldviewOntologies =
                                         _worldviewOntologies.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
                                                                                ontology : o).collect(toList());
+                                _worldview.setOntologies(_worldviewOntologies);
                             }
                             _ontologyOrder =
                                     _ontologyOrder.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
@@ -940,12 +950,13 @@ public class WorkspaceManager {
                                                                      behavior : o).collect(toList());
                             _behaviorMap.put(behavior.getUrn(), behavior);
                         }
-                        case KimObservationStrategies strategies -> {
+                        case KimObservationStrategyDocument strategies -> {
                             _observationStrategyDocuments =
                                     _observationStrategyDocuments.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
                                                                                     strategies :
                                                                                     o).collect(toList());
                             _observationStrategyDocumentMap.put(strategies.getUrn(), strategies);
+                            _worldview.setObservationStrategies(_observationStrategyDocuments);
                         }
                         default -> throw new KlabIllegalStateException("can't deal with " + document);
                     }
@@ -1121,7 +1132,7 @@ public class WorkspaceManager {
         return null; // TODO _ontologyMap.get(urn);
     }
 
-    public KimObservationStrategies getStrategyDocument(String urn) {
+    public KimObservationStrategyDocument getStrategyDocument(String urn) {
         return null; // _ontologyMap.get(urn);
     }
 
@@ -1215,7 +1226,7 @@ public class WorkspaceManager {
     }
 
 
-    private KimObservationStrategies loadStrategy(URL url, String project) {
+    private KimObservationStrategyDocument loadStrategy(URL url, String project) {
         //        try (var input = url.openStream()) {
         //            List<Notification> notifications = new ArrayList<>();
         //            var parsed = behaviorParser.parse(input, notifications);
@@ -1518,12 +1529,12 @@ public class WorkspaceManager {
                     }
                 } else {
                     for (var strategyUrl : pd.storage.listResources(ProjectStorage.ResourceType.STRATEGY)) {
-                        var parsed = strategyParser.parseStrategies(strategyUrl);
+                        var parsed = strategyParser.parseStrategies(strategyUrl, pd.name);
                         if (parsed == null) {
                             _worldview.setEmpty(true);
                             return _worldview;
                         }
-                        _worldview.getObservationStrategies().addAll(LanguageAdapter.INSTANCE.adaptStrategies(parsed).getStatements());
+                        _worldview.getObservationStrategies().add(LanguageAdapter.INSTANCE.adaptStrategies(parsed));
                     }
                 }
             }

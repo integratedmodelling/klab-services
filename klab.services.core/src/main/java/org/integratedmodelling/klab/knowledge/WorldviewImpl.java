@@ -1,11 +1,8 @@
 package org.integratedmodelling.klab.knowledge;
 
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.lang.Annotation;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 
 import java.util.ArrayList;
@@ -16,7 +13,7 @@ public class WorldviewImpl implements Worldview {
     private String urn;
     private Metadata metadata = Metadata.create();
     private List<KimOntology> ontologies = new ArrayList<>();
-    private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
+    private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
     private boolean empty;
 
     @Override
@@ -36,7 +33,7 @@ public class WorldviewImpl implements Worldview {
     }
 
     @Override
-    public Collection<KimObservationStrategy> getObservationStrategies() {
+    public Collection<KimObservationStrategyDocument> getObservationStrategies() {
         return this.observationStrategies;
     }
 
@@ -57,7 +54,7 @@ public class WorldviewImpl implements Worldview {
         this.ontologies = ontologies;
     }
 
-    public void setObservationStrategies(List<KimObservationStrategy> observationStrategies) {
+    public void setObservationStrategies(List<KimObservationStrategyDocument> observationStrategies) {
         this.observationStrategies = observationStrategies;
     }
 

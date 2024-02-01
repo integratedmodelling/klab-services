@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategies;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 
 import java.util.ArrayList;
@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class KimObservationStrategiesImpl extends KimDocumentImpl<KimObservationStrategy> implements KimObservationStrategies {
+public class KimObservationStrategiesImpl extends KimDocumentImpl<KimObservationStrategy> implements KimObservationStrategyDocument {
 
     private List<KimObservationStrategy> statements = new ArrayList<>();
 

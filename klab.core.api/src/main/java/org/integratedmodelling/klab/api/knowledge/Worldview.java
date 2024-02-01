@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 
 import java.util.Collection;
@@ -42,7 +42,7 @@ public interface Worldview extends KlabAsset {
      *
      * @return
      */
-    Collection<KimObservationStrategy> getObservationStrategies();
+    Collection<KimObservationStrategyDocument> getObservationStrategies();
 
     /**
      * An empty worldview results from errors or inconsistencies and, like other k.LAB containers, may not be

@@ -36,7 +36,6 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
-import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration.ProjectConfiguration;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
@@ -76,20 +75,20 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public boolean isLocal() {
         String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOURCES_" + serverId));
+        return (capabilities().getServerId() == null && serverId == null) || (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOURCES_" + serverId));
     }
 
     /**
      * The projects are pre-sorted in order of dependency
      */
-//    private Map<String, Project> localProjects = Collections.synchronizedMap(new LinkedHashMap<>());
-//    private Map<String, WorkspaceImpl> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
-    private Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
-    // we need to be able to serve entire, valid worldviews, so if this is filled in it may contain both
-    // local and remote ontologies. The worldview is always kept in dependency order.
-    private Map<String, KimOntology> servedOntologies = Collections.synchronizedMap(new LinkedHashMap<>());
-    private Map<String, KActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
+    //    private Map<String, Project> localProjects = Collections.synchronizedMap(new LinkedHashMap<>());
+    //    private Map<String, WorkspaceImpl> localWorkspaces = Collections.synchronizedMap(new HashMap<>());
+    //    private Map<String, KimNamespace> localNamespaces = Collections.synchronizedMap(new HashMap<>());
+    //    // we need to be able to serve entire, valid worldviews, so if this is filled in it may contain both
+    //    // local and remote ontologies. The worldview is always kept in dependency order.
+    //    private Map<String, KimOntology> servedOntologies = Collections.synchronizedMap(new
+    //    LinkedHashMap<>());
+    //    private Map<String, KActorsBehavior> localBehaviors = Collections.synchronizedMap(new HashMap<>());
 
     private WorkspaceManager workspaceManager;
     /**
@@ -126,12 +125,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (scope instanceof LocalServiceScope localScope) {
             localScope.setService(this);
         }
-//        initializeLanguageServices();
+        //        initializeLanguageServices();
 
-        this.db = DBMaker
-                .fileDB(Configuration.INSTANCE.getDataPath("resources/catalog") + File.separator +
-                        "gbif_ids.db")
-                .transactionEnable().closeOnJvmShutdown().make();
+        this.db =
+                DBMaker.fileDB(Configuration.INSTANCE.getDataPath("resources/catalog") + File.separator +
+                        "gbif_ids.db").transactionEnable().closeOnJvmShutdown().make();
         this.catalog =
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
 
@@ -146,8 +144,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Autowired
     public ResourcesProvider(Authentication authenticationService, ServiceScope scope, String localName,
-                             BiConsumer<Scope,
-                                     Message>... messageListeners) {
+                             BiConsumer<Scope, Message>... messageListeners) {
         this(scope, localName, messageListeners);
         this.authenticationService = authenticationService;
     }
@@ -171,38 +168,38 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * The resolver callback for external projects may have been called already by the workspace manager to
      * resolve project dependencies.
      */
-//    private boolean loadWorkspaces() {
-//        localProjects.clear();
-//        for (var project : this.workspaceManager.getWorkspaces()) {
-//            localProjects.put(projectData.getUrn(), projectData);
-//        }
-//        return true;
-//    }
+    //    private boolean loadWorkspaces() {
+    //        localProjects.clear();
+    //        for (var project : this.workspaceManager.getWorkspaces()) {
+    //            localProjects.put(projectData.getUrn(), projectData);
+    //        }
+    //        return true;
+    //    }
 
 
-//    public ResourceSet loadWorkspaces() {
-//        List<String> projects = new ArrayList<>();
-//        for (String workspaceName : configuration.getWorkspaces().keySet()) {
-//            Workspace workspace = getWorkspace(workspaceName);
-//            for (String project : configuration.getWorkspaces().get(workspaceName)) {
-//                workspace.getProjects().add(importProject(project,
-//                        configuration.getProjectConfiguration().get(project)));
-//                projects.add(project);
-//            }
-//        }
-//        return projects(projects, scope);
-//    }
+    //    public ResourceSet loadWorkspaces() {
+    //        List<String> projects = new ArrayList<>();
+    //        for (String workspaceName : configuration.getWorkspaces().keySet()) {
+    //            Workspace workspace = getWorkspace(workspaceName);
+    //            for (String project : configuration.getWorkspaces().get(workspaceName)) {
+    //                workspace.getProjects().add(importProject(project,
+    //                        configuration.getProjectConfiguration().get(project)));
+    //                projects.add(project);
+    //            }
+    //        }
+    //        return projects(projects, scope);
+    //    }
 
-//    private WorkspaceImpl getWorkspace(String workspaceName) {
-//        var ret = localWorkspaces.get(workspaceName);
-//        if (ret == null) {
-//            ret = new WorkspaceImpl();
-//            ((WorkspaceImpl) ret).setName(workspaceName);
-//            // ((WorkspaceImpl)ret).setUrl(this.url + "/workspaces/" + workspaceName);
-//            this.localWorkspaces.put(workspaceName, ret);
-//        }
-//        return ret;
-//    }
+    //    private WorkspaceImpl getWorkspace(String workspaceName) {
+    //        var ret = localWorkspaces.get(workspaceName);
+    //        if (ret == null) {
+    //            ret = new WorkspaceImpl();
+    //            ((WorkspaceImpl) ret).setName(workspaceName);
+    //            // ((WorkspaceImpl)ret).setUrl(this.url + "/workspaces/" + workspaceName);
+    //            this.localWorkspaces.put(workspaceName, ret);
+    //        }
+    //        return ret;
+    //    }
 
     /**
      * Return whatever worldview is defined in this service, using any other services necessary, or an empty
@@ -222,77 +219,77 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * <p>
      * Projects with update frequency == 0 do not get updated.
      */
-//    private void updateProjects() {
-//        for (String projectName : configuration.getProjectConfiguration().keySet()) {
-//            ProjectConfiguration project = configuration.getProjectConfiguration().get(projectName);
-//            Long lastUpdate = this.lastUpdate.get(projectName);
-//            if (Git.isRemoteGitURL(project.getSourceUrl())) {
-//                if (lastUpdate == null || (lastUpdate > 0
-//                        && (System.currentTimeMillis() - lastUpdate) >= project.getSyncIntervalMs())) {
-//                    Git.pull(project.getLocalPath());
-//                    this.lastUpdate.put(projectName, System.currentTimeMillis());
-//                }
-//            }
-//
-//        }
-//    }
+    //    private void updateProjects() {
+    //        for (String projectName : configuration.getProjectConfiguration().keySet()) {
+    //            ProjectConfiguration project = configuration.getProjectConfiguration().get(projectName);
+    //            Long lastUpdate = this.lastUpdate.get(projectName);
+    //            if (Git.isRemoteGitURL(project.getSourceUrl())) {
+    //                if (lastUpdate == null || (lastUpdate > 0
+    //                        && (System.currentTimeMillis() - lastUpdate) >= project.getSyncIntervalMs())) {
+    //                    Git.pull(project.getLocalPath());
+    //                    this.lastUpdate.put(projectName, System.currentTimeMillis());
+    //                }
+    //            }
+    //
+    //        }
+    //    }
 
-//    /**
-//     * TODO this must load to a staging area and commit the project after approval.
-//     *
-//     * @param projectName
-//     * @param projectConfiguration
-//     * @return
-//     */
-//    private synchronized Project importProject(String projectName,
-//                                               final ProjectConfiguration projectConfiguration) {
-//
-//        /*
-//         * this automatically loads namespaces and behaviors through callbacks.
-//         */
-//        ProjectImpl project = new ProjectImpl();
-//        project.setName(projectName);
-//        // project.setUrl(this.url + "/projects/" + kimProject.getName());
-//        localProjects.put(projectName, project);
-////        IKimProject kimProject = kimLoader.loadProject(projectConfiguration.getLocalPath());
-////        File resourceDir = new File(kimProject.getRoot() + File.separator + "resources");
-////        loadResources(resourceDir, project, 0, true);
-////        project.setManifest(readManifest(kimProject));
-////		project.getMetadata().putAll(readMetadata(kimProject, project.getManifest()));
-//
-//        /*
-//         * TODO check notifications in namespaces and behaviors and ensure the project
-//         * reports errors in its components. Resources are managed indepenendently of
-//         * the projects they belong to. FIXME probably the resource permissions could be
-//         * intersected, but it's probably confusing although restrictions in projects
-//         * should be the default for resources..
-//         */
-//        /*
-//         * TODO add a ResourceStatus record for the project
-//         */
-//
-//        db.commit();
-//
-//        return project;
-//
-//    }
+    //    /**
+    //     * TODO this must load to a staging area and commit the project after approval.
+    //     *
+    //     * @param projectName
+    //     * @param projectConfiguration
+    //     * @return
+    //     */
+    //    private synchronized Project importProject(String projectName,
+    //                                               final ProjectConfiguration projectConfiguration) {
+    //
+    //        /*
+    //         * this automatically loads namespaces and behaviors through callbacks.
+    //         */
+    //        ProjectImpl project = new ProjectImpl();
+    //        project.setName(projectName);
+    //        // project.setUrl(this.url + "/projects/" + kimProject.getName());
+    //        localProjects.put(projectName, project);
+    ////        IKimProject kimProject = kimLoader.loadProject(projectConfiguration.getLocalPath());
+    ////        File resourceDir = new File(kimProject.getRoot() + File.separator + "resources");
+    ////        loadResources(resourceDir, project, 0, true);
+    ////        project.setManifest(readManifest(kimProject));
+    ////		project.getMetadata().putAll(readMetadata(kimProject, project.getManifest()));
+    //
+    //        /*
+    //         * TODO check notifications in namespaces and behaviors and ensure the project
+    //         * reports errors in its components. Resources are managed indepenendently of
+    //         * the projects they belong to. FIXME probably the resource permissions could be
+    //         * intersected, but it's probably confusing although restrictions in projects
+    //         * should be the default for resources..
+    //         */
+    //        /*
+    //         * TODO add a ResourceStatus record for the project
+    //         */
+    //
+    //        db.commit();
+    //
+    //        return project;
+    //
+    //    }
 
-//    @SuppressWarnings("unchecked")
-//    private Map<String, Object> readMetadata(IKimProject kimProject, Manifest manifest) {
-//        File manifestFile = new File(
-//                kimProject.getRoot() + File.separator + "META-INF" + File.separator + "metadata.json");
-//        if (manifestFile.exists()) {
-//            return Utils.Json.load(manifestFile, Map.class);
-//        }
-//        Map<String, Object> ret = new LinkedHashMap<>();
-//        for (Object key : kimProject.getProperties().keySet()) {
-//            ret.put(key.toString(), kimProject.getProperties().getProperty(key.toString()));
-//        }
-//        if (!ret.containsKey(Metadata.DC_COMMENT)) {
-//            ret.put(Metadata.DC_COMMENT, manifest.getDescription());
-//        }
-//        return ret;
-//    }
+    //    @SuppressWarnings("unchecked")
+    //    private Map<String, Object> readMetadata(IKimProject kimProject, Manifest manifest) {
+    //        File manifestFile = new File(
+    //                kimProject.getRoot() + File.separator + "META-INF" + File.separator + "metadata.json");
+    //        if (manifestFile.exists()) {
+    //            return Utils.Json.load(manifestFile, Map.class);
+    //        }
+    //        Map<String, Object> ret = new LinkedHashMap<>();
+    //        for (Object key : kimProject.getProperties().keySet()) {
+    //            ret.put(key.toString(), kimProject.getProperties().getProperty(key.toString()));
+    //        }
+    //        if (!ret.containsKey(Metadata.DC_COMMENT)) {
+    //            ret.put(Metadata.DC_COMMENT, manifest.getDescription());
+    //        }
+    //        return ret;
+    //    }
     private void loadResources(File resourceDir, ProjectImpl project, int level, boolean legacy) {
 
         /*
@@ -313,10 +310,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 } else if ("staging".equals(Utils.Files.getFileBaseName(subdir))) {
                     loadResources(subdir, project, 1, false);
                 } else {
-// CHUPA CHUPA
-//                    resource = KimAdapter.adaptResource(Utils.Json
-//                            .load(new File(subdir + File.separator + "resource.json"),
-//                                    ResourceReference.class));
+                    // CHUPA CHUPA
+                    //                    resource = KimAdapter.adaptResource(Utils.Json
+                    //                            .load(new File(subdir + File.separator + "resource.json"),
+                    //                                    ResourceReference.class));
                 }
                 if (resource != null) {
                     localResources.add(resource.getUrn());
@@ -326,8 +323,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                         status.setReviewStatus(level);
                         status.setFileLocation(subdir);
                         status.setType(Utils.Notifications.hasErrors(resource.getNotifications()) ?
-                                       ResourceStatus.Type.OFFLINE :
-                                       ResourceStatus.Type.AVAILABLE);
+                                       ResourceStatus.Type.OFFLINE : ResourceStatus.Type.AVAILABLE);
                         status.setLegacy(legacy);
                         status.setKnowledgeClass(KnowledgeClass.RESOURCE);
                         // TODO fill in the rest
@@ -339,93 +335,57 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
 
-//    private void loadBehaviors(List<File> behaviors) {
-//        for (File behaviorFile : behaviors) {
-//            // projectLoader.execute(() -> {
-//            KActorsBehavior behavior = KActorsAdapter.INSTANCE.readBehavior(behaviorFile);
-//            if (behavior.getProjectId() != null) {
-//                localProjects.get(behavior.getProjectId()).getBehaviors().add(behavior);
-//            }
-//            this.localBehaviors.put(behavior.getUrn(), behavior);
-//            // });
-//        }
-//    }
-//
-//    private void loadNamespaces(List<NamespaceDescriptor> namespaces) {
-//        for (NamespaceDescriptor ns : namespaces) {
-//            // projectLoader.execute(() -> {
-//            KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
-//            Project project = localProjects.get(namespace.getProjectName());
-//            project.getNamespaces().add(namespace);
-//            this.localNamespaces.put(namespace.getUrn(), namespace);
-//            this.kbox.store(namespace, this.scope);
-//            for (KimStatement statement : namespace.getStatements()) {
-//                if (statement instanceof KimModel && !Utils.Notifications.hasErrors(statement
-//                .getNotifications())) {
-//                    this.kbox.store(statement, scope);
-//                }
-//            }
-//            // });
-//        }
-//    }
+    //    private void loadBehaviors(List<File> behaviors) {
+    //        for (File behaviorFile : behaviors) {
+    //            // projectLoader.execute(() -> {
+    //            KActorsBehavior behavior = KActorsAdapter.INSTANCE.readBehavior(behaviorFile);
+    //            if (behavior.getProjectId() != null) {
+    //                localProjects.get(behavior.getProjectId()).getBehaviors().add(behavior);
+    //            }
+    //            this.localBehaviors.put(behavior.getUrn(), behavior);
+    //            // });
+    //        }
+    //    }
+    //
+    //    private void loadNamespaces(List<NamespaceDescriptor> namespaces) {
+    //        for (NamespaceDescriptor ns : namespaces) {
+    //            // projectLoader.execute(() -> {
+    //            KimNamespaceImpl namespace = KimAdapter.adaptKimNamespace(ns);
+    //            Project project = localProjects.get(namespace.getProjectName());
+    //            project.getNamespaces().add(namespace);
+    //            this.localNamespaces.put(namespace.getUrn(), namespace);
+    //            this.kbox.store(namespace, this.scope);
+    //            for (KimStatement statement : namespace.getStatements()) {
+    //                if (statement instanceof KimModel && !Utils.Notifications.hasErrors(statement
+    //                .getNotifications())) {
+    //                    this.kbox.store(statement, scope);
+    //                }
+    //            }
+    //            // });
+    //        }
+    //    }
 
     @Override
     public KimNamespace resolveNamespace(String urn, Scope scope) {
-
-        KimNamespace ret = localNamespaces.get(urn);
-        if (ret != null && !(scope instanceof ServiceScope)) {
-            /*
-             * check permissions; if not allowed, log and set ret = null. If the scope is
-             * the service itself, we can access everything.
-             */
-            ProjectConfiguration pconf = null; // TODO
-//                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
-            if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
-                scope.debug("trying to access unauthorized namespace " + urn);
-                ret = null;
-            }
-
-        }
-
-        return ret;
+        return this.workspaceManager.getNamespace(urn);
+        // TODO check scope for authorization
     }
 
+    @Override
     public KimOntology resolveOntology(String urn, Scope scope) {
-        KimOntology ret = servedOntologies.get(urn);
-        if (ret != null && !(scope instanceof ServiceScope)) {
-            /*
-             * check permissions; if not allowed, log and set ret = null. If the scope is
-             * the service itself, we can access everything.
-             */
-            ProjectConfiguration pconf = null; // TODO
-//                    this.configuration.getProjectConfiguration().get(ret.getProjectName());
-            if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
-                scope.debug("trying to access unauthorized namespace " + urn);
-                ret = null;
-            }
-
-        }
-
-        return ret;
+        return this.workspaceManager.getOntology(urn);
+        // TODO check scope for authorization
     }
 
     @Override
     public KActorsBehavior resolveBehavior(String urn, Scope scope) {
+        return this.workspaceManager.getBehavior(urn);
+        // TODO check scope for authorization
+    }
 
-        KActorsBehavior ret = localBehaviors.get(urn);
-        if (ret != null && !(scope instanceof ServiceScope)) {
-            if (ret.getProjectId() != null) {
-                ProjectConfiguration pconf = null; // TODO
-//                        this.configuration.getProjectConfiguration().get(ret.getProjectId());
-                if (pconf == null || !authenticationService.checkPermissions(pconf.getPrivileges(), scope)) {
-                    // scope.info("");
-                    ret = null;
-                }
-            }
-            return ret;
-        }
-
-        return null;
+    public KimObservationStrategyDocument resolveObservationStrategyDocument(String urn, Scope scope) {
+        return this.workspaceManager.getStrategyDocument(urn);
+        // TODO check scope for authorization
     }
 
     @Override
@@ -471,100 +431,100 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public List<KimNamespace> precursors(String namespaceId) {
         return null;
     }
-//
-//    public ProjectStorage importProjectStorage(String projectUrl, String workspaceName,
-//                                               boolean overwriteIfExisting) {
-//
-//        updateLock.writeLock().lock();
-//        ProjectStorage ret = null;
-//
-//        try {
-//
-//            String projectName = Utils.URLs.getURLBaseName(projectUrl);
-//            ProjectConfiguration config = this.configuration.getProjectConfiguration().get(projectName);
-//            if (config != null) {
-//                if (overwriteIfExisting) {
-//                    removeProject(projectName);
-//                }
-//            }
-//
-//            File workspace = Configuration.INSTANCE.getDataPath(
-//                    configuration.getServicePath() + File.separator + "workspaces" + File.separator +
-//                    workspaceName);
-//            workspace.mkdirs();
-//
-//            if (Utils.Git.isRemoteGitURL(projectUrl)) {
-//
-//                try {
-//
-//                    /**
-//                     * This should be the main use of project resources. TODO handle credentials
-//                     */
-//
-//                    projectName = Git.clone(projectUrl, workspace, false);
-////                    ProjectConfiguration configuration = new ProjectConfiguration();
-////                    configuration.setLocalPath(new File(workspace + File.separator + projectName));
-////                    configuration.setSourceUrl(projectUrl);
-////                    configuration.setWorkspaceName(workspaceName);
-////                    configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
-////                    /*
-////                     * Default privileges are exclusive to the service
-////                     */
-////                    configuration.setPrivileges(ResourcePrivileges.empty());
-////                    // this must happen before loadProject is called.
-////                    this.configuration.getProjectConfiguration().put(projectName, configuration);
-////
-////                    Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
-////                    if (projects == null) {
-////                        projects = new LinkedHashSet<>();
-////                        this.configuration.getWorkspaces().put(workspaceName, projects);
-////                    }
-////                    projects.add(projectName);
-////                    Project project = importProject(projectName, configuration);
-////                    configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
-////                    saveConfiguration();
-////                    return true;
-//                    File ws = new File(workspace + File.separator + projectName);
-//                    if (ws.exists()) {
-//                        ret = new FileProjectStorage(ws);
-//                    }
-//
-//                } catch (Throwable t) {
-//                    // just make the return value null
-//                    File ws = new File(workspace + File.separator + projectName);
-//                    if (ws.exists()) {
-//                        Utils.Files.deleteQuietly(ws);
-//                    }
-//                }
-//
-//            } else if (projectUrl.startsWith("http")) {
-//
-//                /*
-//                 * TODO
-//                 *
-//                 * Load from another service. These projects may be served as mirrors or just
-//                 * kept to meet dependencies, according to the 'served' bit in the
-//                 * configuration. The source of truth should remain the source code, hosted in a
-//                 * single place (the remote service); mechanisms should be in place to store the
-//                 * original server and check for changes and new versions.
-//                 */
-//
-//            } else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
-//
-//                var file = Utils.URLs.getFileForURL(projectUrl);
-//                if (file.isDirectory()) {
-//                    ret = new FileProjectStorage(file);
-//                } else if (Utils.Files.JAVA_ARCHIVE_EXTENSIONS.contains(Utils.Files.getFileExtension
-//                (file))) {
-//                    // TODO ret = read from archive
-//                }
-//            }
-//        } finally {
-//            updateLock.writeLock().unlock();
-//        }
-//
-//        return ret;
-//    }
+    //
+    //    public ProjectStorage importProjectStorage(String projectUrl, String workspaceName,
+    //                                               boolean overwriteIfExisting) {
+    //
+    //        updateLock.writeLock().lock();
+    //        ProjectStorage ret = null;
+    //
+    //        try {
+    //
+    //            String projectName = Utils.URLs.getURLBaseName(projectUrl);
+    //            ProjectConfiguration config = this.configuration.getProjectConfiguration().get(projectName);
+    //            if (config != null) {
+    //                if (overwriteIfExisting) {
+    //                    removeProject(projectName);
+    //                }
+    //            }
+    //
+    //            File workspace = Configuration.INSTANCE.getDataPath(
+    //                    configuration.getServicePath() + File.separator + "workspaces" + File.separator +
+    //                    workspaceName);
+    //            workspace.mkdirs();
+    //
+    //            if (Utils.Git.isRemoteGitURL(projectUrl)) {
+    //
+    //                try {
+    //
+    //                    /**
+    //                     * This should be the main use of project resources. TODO handle credentials
+    //                     */
+    //
+    //                    projectName = Git.clone(projectUrl, workspace, false);
+    ////                    ProjectConfiguration configuration = new ProjectConfiguration();
+    ////                    configuration.setLocalPath(new File(workspace + File.separator + projectName));
+    ////                    configuration.setSourceUrl(projectUrl);
+    ////                    configuration.setWorkspaceName(workspaceName);
+    ////                    configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
+    ////                    /*
+    ////                     * Default privileges are exclusive to the service
+    ////                     */
+    ////                    configuration.setPrivileges(ResourcePrivileges.empty());
+    ////                    // this must happen before loadProject is called.
+    ////                    this.configuration.getProjectConfiguration().put(projectName, configuration);
+    ////
+    ////                    Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
+    ////                    if (projects == null) {
+    ////                        projects = new LinkedHashSet<>();
+    ////                        this.configuration.getWorkspaces().put(workspaceName, projects);
+    ////                    }
+    ////                    projects.add(projectName);
+    ////                    Project project = importProject(projectName, configuration);
+    ////                    configuration.setWorldview(project.getManifest().getDefinedWorldview() != null);
+    ////                    saveConfiguration();
+    ////                    return true;
+    //                    File ws = new File(workspace + File.separator + projectName);
+    //                    if (ws.exists()) {
+    //                        ret = new FileProjectStorage(ws);
+    //                    }
+    //
+    //                } catch (Throwable t) {
+    //                    // just make the return value null
+    //                    File ws = new File(workspace + File.separator + projectName);
+    //                    if (ws.exists()) {
+    //                        Utils.Files.deleteQuietly(ws);
+    //                    }
+    //                }
+    //
+    //            } else if (projectUrl.startsWith("http")) {
+    //
+    //                /*
+    //                 * TODO
+    //                 *
+    //                 * Load from another service. These projects may be served as mirrors or just
+    //                 * kept to meet dependencies, according to the 'served' bit in the
+    //                 * configuration. The source of truth should remain the source code, hosted in a
+    //                 * single place (the remote service); mechanisms should be in place to store the
+    //                 * original server and check for changes and new versions.
+    //                 */
+    //
+    //            } else if (projectUrl.startsWith("file:") || new File(projectUrl).isFile()) {
+    //
+    //                var file = Utils.URLs.getFileForURL(projectUrl);
+    //                if (file.isDirectory()) {
+    //                    ret = new FileProjectStorage(file);
+    //                } else if (Utils.Files.JAVA_ARCHIVE_EXTENSIONS.contains(Utils.Files.getFileExtension
+    //                (file))) {
+    //                    // TODO ret = read from archive
+    //                }
+    //            }
+    //        } finally {
+    //            updateLock.writeLock().unlock();
+    //        }
+    //
+    //        return ret;
+    //    }
 
     /**
      * TODO improve logics: the main function should return the appropriate ProjectStorage for the URL in
@@ -628,42 +588,42 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public void removeProject(String projectName) {
 
         updateLock.writeLock().lock();
-//
-//        try {
-//            // remove namespaces, behaviors and resources
-//            var project = localProjects.get(projectName);
-//            if (project != null) {
-//                for (var namespace : project.getNamespaces()) {
-//                    this.localNamespaces.remove(namespace.getUrn());
-//                }
-//                for (var ontology : project.getOntologies()) {
-//                    this.servedOntologies.remove(ontology.getUrn());
-//                }
-//                for (KActorsBehavior behavior : project.getBehaviors()) {
-//                    this.localBehaviors.remove(behavior.getUrn());
-//                }
-//                for (String resource : project.getResourceUrns()) {
-//                    localResources.remove(resource);
-//                    catalog.remove(resource);
-//                }
-//                this.localProjects.remove(projectName);
-//            }
+        //
+        //        try {
+        //            // remove namespaces, behaviors and resources
+        //            var project = localProjects.get(projectName);
+        //            if (project != null) {
+        //                for (var namespace : project.getNamespaces()) {
+        //                    this.localNamespaces.remove(namespace.getUrn());
+        //                }
+        //                for (var ontology : project.getOntologies()) {
+        //                    this.servedOntologies.remove(ontology.getUrn());
+        //                }
+        //                for (KActorsBehavior behavior : project.getBehaviors()) {
+        //                    this.localBehaviors.remove(behavior.getUrn());
+        //                }
+        //                for (String resource : project.getResourceUrns()) {
+        //                    localResources.remove(resource);
+        //                    catalog.remove(resource);
+        //                }
+        //                this.localProjects.remove(projectName);
+        //            }
         workspaceManager.removeProject(projectName);
         db.commit();
 
-//        }/* finally {*/
+        //        }/* finally {*/
         updateLock.writeLock().unlock();
         /*}*/
     }
 
-//    private String getWorkspace(Project project) {
-//        for (String ret : this.configuration.getWorkspaces().keySet()) {
-//            if (this.configuration.getWorkspaces().get(ret).contains(project.getName())) {
-//                return ret;
-//            }
-//        }
-//        return null;
-//    }
+    //    private String getWorkspace(Project project) {
+    //        for (String ret : this.configuration.getWorkspaces().keySet()) {
+    //            if (this.configuration.getWorkspaces().get(ret).contains(project.getName())) {
+    //                return ret;
+    //            }
+    //        }
+    //        return null;
+    //    }
 
     @Override
     public void removeWorkspace(String workspaceName) {
@@ -671,12 +631,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         for (Project project : workspace.getProjects()) {
             removeProject(project.getUrn());
         }
-//        try {
-//            updateLock.writeLock().lock();
-////            this.localWorkspaces.remove(workspaceName);
-//        } finally {
-//            updateLock.writeLock().unlock();
-//        }
+        //        try {
+        //            updateLock.writeLock().lock();
+        ////            this.localWorkspaces.remove(workspaceName);
+        //        } finally {
+        //            updateLock.writeLock().unlock();
+        //        }
     }
 
     @Override
@@ -715,6 +675,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             @Override
             public String getAdoptedWorldview() {
                 return getWorldview().isEmpty() ? null : getWorldview().getUrn();
+            }
+
+            @Override
+            public List<String> getWorkspaceNames() {
+                // TODO filter by requesting scope
+                return workspaceManager.getWorkspaceURNs();
             }
 
             @Override
@@ -803,15 +769,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ResourceSet ret = new ResourceSet();
 
         // TODO
-//        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
-//            if (projects.contains(projectName)) {
-////                if (!localProjects.containsKey(projectName)) {
-////                    importProject(projectName, this.configuration.getProjectConfiguration().get
-// (projectName));
-////                }
-//                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
-//            }
-//        }
+        //        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
+        //            if (projects.contains(projectName)) {
+        ////                if (!localProjects.containsKey(projectName)) {
+        ////                    importProject(projectName, this.configuration.getProjectConfiguration().get
+        // (projectName));
+        ////                }
+        //                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
+        //            }
+        //        }
 
         return sort(ret, scope);
     }
@@ -867,14 +833,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      */
     private ResourceSet collectProject(String projectName, Scope scope) {
         List<KimNamespace> namespaces = new ArrayList<>();
-        for (String namespace : this.localNamespaces.keySet()) {
-            KimNamespace ns = this.localNamespaces.get(namespace);
+        for (String namespace : this.workspaceManager.getNamespaceUrns()) {
+            KimNamespace ns = resolveNamespace(namespace, scope);
             if (projectName.equals(ns.getProjectName())) {
                 namespaces.add(ns);
             }
         }
         List<KActorsBehavior> behaviors = new ArrayList<>();
-        for (KActorsBehavior behavior : localBehaviors.values()) {
+        for (String behaviorUrn : this.workspaceManager.getBehaviorUrns()) {
+            KActorsBehavior behavior = resolveBehavior(behaviorUrn, scope);
             if (projectName.equals(behavior.getProjectId())) {
                 behaviors.add(behavior);
             }
@@ -964,8 +931,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ResourceSet results = new ResourceSet();
         for (ModelReference model : this.kbox.query(observable, scope)) {
             results.getResults().add(new ResourceSet.Resource(this.url,
-                    model.getNamespaceId() + "." + model.getName(),
-                    model.getVersion(), KnowledgeClass.MODEL));
+                    model.getNamespaceId() + "." + model.getName(), model.getVersion(),
+                    KnowledgeClass.MODEL));
         }
 
         addDependencies(results, scope);
@@ -1008,7 +975,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             return true;
         }
 
-        KimNamespace namespace = this.localNamespaces.get(ns);
+        KimNamespace namespace = resolveNamespace(ns, scope);
         if (namespace == null) {
             // TODO use services in scope
             return false;
@@ -1107,7 +1074,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public KActorsBehavior readBehavior(URL url) {
         return null;
-//        return KActorsAdapter.INSTANCE.readBehavior(url);
+        //        return KActorsAdapter.INSTANCE.readBehavior(url);
     }
 
     @Override
@@ -1120,16 +1087,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return localResources;
     }
 
-//    @Override
-//    public ResourceSet loadWorldview() {
-//        List<String> projects = new ArrayList<>();
-//        for (String project : configuration.getProjectConfiguration().keySet()) {
-//            if (configuration.getProjectConfiguration().get(project).isWorldview()) {
-//                projects.add(project);
-//            }
-//        }
-//        return projects(projects, scope);
-//    }
+    //    @Override
+    //    public ResourceSet loadWorldview() {
+    //        List<String> projects = new ArrayList<>();
+    //        for (String project : configuration.getProjectConfiguration().keySet()) {
+    //            if (configuration.getProjectConfiguration().get(project).isWorldview()) {
+    //                projects.add(project);
+    //            }
+    //        }
+    //        return projects(projects, scope);
+    //    }
 
     @Override
     public ResourceSet resolve(String urn, Scope scope) {
@@ -1141,38 +1108,38 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          */
         /*if (workspaceManager.getLocalProjectURNs().contains(urn)) {
 
-        } else */if (localNamespaces.containsKey(urn)) {
+        } else *//*if (localNamespaces.containsKey(urn)) {
 
-            /*
-             * If not, check for namespace
-             */
+         *//*
+         * If not, check for namespace
+         *//*
 
         } else if (localBehaviors.containsKey(urn)) {
 
-            /*
-             * If not, check for behavior
-             */
+            *//*
+         * If not, check for behavior
+         *//*
 
-        } else if (urn.contains(".")) {
+        } else */
+        if (urn.contains(".")) {
 
             /*
              * if not, extract namespace and check for that.
              */
             String ns = Utils.Paths.getLeading(urn, '.');
             String nm = Utils.Paths.getLast(urn, '.');
-            KimNamespace namespace = localNamespaces.get(ns);
+            KimNamespace namespace = resolveNamespace(urn, scope);
             /*
              * TODO check permissions!
              */
             if (namespace != null) {
                 for (KlabStatement statement : namespace.getStatements()) {
                     if (statement instanceof KimModel && urn.equals(((KimModel) statement).getUrn())) {
-                        ret.getResults().add(
-                                new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(),
-                                        KnowledgeClass.MODEL));
+                        ret.getResults().add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion()
+                                , KnowledgeClass.MODEL));
                     } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion(),
-                                KnowledgeClass.INSTANCE));
+                        ret.getResults().add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion()
+                                , KnowledgeClass.INSTANCE));
                     }
                 }
 
@@ -1199,9 +1166,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             if (Urn.classify(result.getResourceUrn()) == Urn.Type.KIM_OBJECT) {
                 if (result.getKnowledgeClass() == KnowledgeClass.NAMESPACE) {
                     namespaces.add(result.getResourceUrn());
-                } else if (result.getKnowledgeClass() == KnowledgeClass.MODEL
-                        || result.getKnowledgeClass() == KnowledgeClass.INSTANCE
-                        || result.getKnowledgeClass() == KnowledgeClass.DEFINITION) {
+                } else if (result.getKnowledgeClass() == KnowledgeClass.MODEL || result.getKnowledgeClass() == KnowledgeClass.INSTANCE || result.getKnowledgeClass() == KnowledgeClass.DEFINITION) {
                     namespaces.add(Utils.Paths.getLeading(result.getResourceUrn(), '.'));
                 }
             }

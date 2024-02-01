@@ -506,7 +506,8 @@ public class Utils {
         public static String getMACAddress() {
 
             try {
-                for (NetworkInterface ni : java.util.Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                for (NetworkInterface ni :
+                        java.util.Collections.list(NetworkInterface.getNetworkInterfaces())) {
                     byte[] adr = ni.getHardwareAddress();
                     if (adr == null || adr.length != 6)
                         continue;
@@ -4327,6 +4328,11 @@ public class Utils {
                 }
             }
         }
+
+        public static String getURLBaseName(URL url) {
+            return getURLBaseName(url.toString());
+        }
+
 
         /**
          * Return URL base name with no path or extension. Just like getFileBaseName but uses / instead of

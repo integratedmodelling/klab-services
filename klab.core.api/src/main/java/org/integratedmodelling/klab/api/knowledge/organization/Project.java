@@ -1,21 +1,19 @@
 package org.integratedmodelling.klab.api.knowledge.organization;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
 
 public interface Project extends KlabAsset {
 
@@ -63,7 +61,7 @@ public interface Project extends KlabAsset {
 
     List<KimOntology> getOntologies();
 
-    Collection<KimObservationStrategy> getObservationStrategies();
+    List<KimObservationStrategyDocument> getObservationStrategies();
 
     /**
      * @return

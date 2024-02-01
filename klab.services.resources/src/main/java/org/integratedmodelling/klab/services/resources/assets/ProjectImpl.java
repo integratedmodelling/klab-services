@@ -5,12 +5,11 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -118,7 +117,7 @@ public class ProjectImpl implements Project {
     private List<KActorsBehavior> testCases = new ArrayList<>();
     private List<Notification> notifications = new ArrayList<>();
     private List<String> resourceUrns = new ArrayList<>();
-    private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
+    private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
     private List<Annotation> annotations = new ArrayList<>();
 
     @Override
@@ -207,7 +206,7 @@ public class ProjectImpl implements Project {
     }
 
     @Override
-    public Collection<KimObservationStrategy> getObservationStrategies() {
+    public List<KimObservationStrategyDocument> getObservationStrategies() {
         return this.observationStrategies;
     }
 
@@ -215,7 +214,7 @@ public class ProjectImpl implements Project {
         this.ontologies = ontologies;
     }
 
-    public void setObservationStrategies(List<KimObservationStrategy> observationStrategies) {
+    public void setObservationStrategies(List<KimObservationStrategyDocument> observationStrategies) {
         this.observationStrategies = observationStrategies;
     }
 

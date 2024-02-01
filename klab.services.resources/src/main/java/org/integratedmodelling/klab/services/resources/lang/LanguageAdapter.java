@@ -260,9 +260,10 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public KimObservationStrategies adaptStrategies(ObservationStrategiesSyntax definition) {
+    public KimObservationStrategyDocument adaptStrategies(ObservationStrategiesSyntax definition) {
 
         KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
+        ret.setUrn(definition.getUrn());
         // we don't add source code here as each strategy has its own
         for (var strategy : definition.getStrategies()) {
             ret.getStatements().add(adaptStrategy(strategy));

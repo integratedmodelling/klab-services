@@ -84,6 +84,14 @@ public interface ResourcesService extends KlabService {
         String getAdoptedWorldview();
 
         /**
+         * Return the workspace IDs handled by this service and accessible to the requesting scope. All
+         * workspaces should be editable according to the permissions.
+         *
+         * @return
+         */
+        List<String> getWorkspaceNames();
+
+        /**
          * Return the current CRUD permissions for the authenticated user. None of these should be returned if
          * the service does not implement ResourceService.Admin.
          *
@@ -145,6 +153,10 @@ public interface ResourcesService extends KlabService {
      * @return
      */
     KimNamespace resolveNamespace(String urn, Scope scope);
+
+    KimOntology resolveOntology(String urn, Scope scope);
+
+    KimObservationStrategyDocument resolveObservationStrategyDocument(String urn, Scope scope);
 
     /**
      * Return a list of all the workspaces available with their contents, filtering according to the
