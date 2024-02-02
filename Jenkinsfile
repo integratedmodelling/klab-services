@@ -10,7 +10,7 @@ pipeline {
                 sh 'mvn -ntp -B -U clean package'
                 sh 'mvn -ntp -B --projects klab.core.api javadoc:javadoc'
                 withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-im-communication', keyFileVariable: 'identity')]) {
-                    sh "export RSH='ssh -i ${identity} -o StrictHostKeyChecking=no'; rsync --archive --progress --delete --rsh=$RSH klab.core.api/target/site/apidocs/ ubuntu@192.168.250.200:repos/documents.production.compose/javadocs/"
+                    sh 'rsync --archive --progress --delete --rsh="ssh -i ${identity} -o StrictHostKeyChecking=no" klab.core.api/target/site/apidocs/ ubuntu@192.168.250.200:repos/documents.production.compose/javadocs/'
                 }
             }
         }
