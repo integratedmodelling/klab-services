@@ -530,7 +530,9 @@ public enum Configuration {
             Logging.INSTANCE.debug("No available plugins found");
         }
 
-        componentManager.loadPlugins();
+        // Disable temporarily - creates issues in modeler
+        //
+//        componentManager.loadPlugins();
 
         return ret;
 
@@ -549,7 +551,7 @@ public enum Configuration {
     public List<Pair<Annotation, Class<?>>> scanPackage(String packageId,
                                                         Map<Class<? extends Annotation>,
                                                                 BiConsumer<Annotation,
-                                                                Class<?>>> annotationHandlers) {
+                                                                        Class<?>>> annotationHandlers) {
 
         List<Pair<Annotation, Class<?>>> ret = new ArrayList<>();
         try (ScanResult scanResult =
@@ -574,29 +576,29 @@ public enum Configuration {
             }
         }
 
-// Spring-based, uses ASM which is not yet compatible with Java 21
-//        ClassPathScanningCandidateComponentProvider provider = new
-//        ClassPathScanningCandidateComponentProvider(false);
-//        for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
-//            provider.addIncludeFilter(new AnnotationTypeFilter(ah));
-//        }
-//
-//        Set<BeanDefinition> beans = provider.findCandidateComponents(packageId);
-//        for (BeanDefinition bd : beans) {
-//            for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
-//                try {
-//                    Class<?> cls = Class.forName(bd.getBeanClassName());
-//                    Annotation annotation = cls.getAnnotation(ah);
-//                    if (annotation != null) {
-//                        annotationHandlers.get(ah).accept(annotation, cls);
-//                        ret.add(Pair.of(annotation, cls));
-//                    }
-//                } catch (ClassNotFoundException e) {
-//                    Logging.INSTANCE.error(e);
-//                    continue;
-//                }
-//            }
-//        }
+        // Spring-based, uses ASM which is not yet compatible with Java 21
+        //        ClassPathScanningCandidateComponentProvider provider = new
+        //        ClassPathScanningCandidateComponentProvider(false);
+        //        for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
+        //            provider.addIncludeFilter(new AnnotationTypeFilter(ah));
+        //        }
+        //
+        //        Set<BeanDefinition> beans = provider.findCandidateComponents(packageId);
+        //        for (BeanDefinition bd : beans) {
+        //            for (Class<? extends Annotation> ah : annotationHandlers.keySet()) {
+        //                try {
+        //                    Class<?> cls = Class.forName(bd.getBeanClassName());
+        //                    Annotation annotation = cls.getAnnotation(ah);
+        //                    if (annotation != null) {
+        //                        annotationHandlers.get(ah).accept(annotation, cls);
+        //                        ret.add(Pair.of(annotation, cls));
+        //                    }
+        //                } catch (ClassNotFoundException e) {
+        //                    Logging.INSTANCE.error(e);
+        //                    continue;
+        //                }
+        //            }
+        //        }
 
         return ret;
     }
@@ -802,6 +804,31 @@ public enum Configuration {
         return new File(export);
     }
 
+    /**
+     * Retrieve the file with the passed relative path, creating subdirs as required. Must use forward slash
+     * as separator. File is created empty if not existing.
+     *
+     * @param relativeFilePath
+     * @return
+     */
+    public File getFile(String relativeFilePath) {
+        File directory = getDataPath();
+        String[] path = relativeFilePath.split("\\/");
+        for (int i = 0; i < path.length - 1; i++) {
+            directory = new File(directory + File.separator + path[i]);
+            directory.mkdirs();
+        }
+        directory = new File(directory + File.separator + path[path.length - 1]);
+        if (!directory.exists()) {
+            try {
+                directory.createNewFile();
+            } catch (IOException e) {
+                throw new KlabIOException(e);
+            }
+        }
+        return directory;
+    }
+
     public boolean forceResourcesOnline() {
         return System.getProperty("forceResourcesOnline") != null;
     }
@@ -886,7 +913,8 @@ public enum Configuration {
         if (results.size() > 0) {
             return results.iterator().next();
         }
-        throw new KlabServiceAccessException("no service of class " + serviceClass.getCanonicalName() + " was " +
+        throw new KlabServiceAccessException("no service of class " + serviceClass.getCanonicalName() + " " +
+                "was " +
                 "registered");
     }
 

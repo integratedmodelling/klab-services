@@ -70,7 +70,7 @@ public class ResourcesConfiguration implements Serializable {
         private ResourcePrivileges privileges;
         private boolean locallyManaged;
         private boolean authoritative;
-        private long syncIntervalMs;
+        private int syncIntervalMinutes;
         private File localPath;
         private String workspaceName;
 
@@ -110,11 +110,11 @@ public class ResourcesConfiguration implements Serializable {
         public void setAuthoritative(boolean authoritative) {
             this.authoritative = authoritative;
         }
-        public long getSyncIntervalMs() {
-            return syncIntervalMs;
+        public int getSyncIntervalMinutes() {
+            return syncIntervalMinutes;
         }
-        public void setSyncIntervalMs(long syncIntervalMs) {
-            this.syncIntervalMs = syncIntervalMs;
+        public void setSyncIntervalMinutes(int syncIntervalMinutes) {
+            this.syncIntervalMinutes = syncIntervalMinutes;
         }
 
         /**

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Statement;
@@ -37,6 +38,15 @@ public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
          */
         void visitStatement(T statement);
     }
+
+    /**
+     * Repository metadata should never be null even if there is no repository connected. The metadata of
+     * assets contained in this project should automatically synchronize with this.
+     *
+     * @return
+     */
+    RepositoryMetadata getRepositoryMetadata();
+
 
     /**
      * The timestamp of creation of the namespace object, set at creation and immutable after that.

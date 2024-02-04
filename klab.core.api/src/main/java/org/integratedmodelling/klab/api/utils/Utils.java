@@ -3076,6 +3076,20 @@ public class Utils {
     public static class Files {
 
         /**
+         * Return the path of a file relative to another
+         *
+         * @param path
+         * @param directory
+         * @return
+         */
+        public static String getRelativePath(File path, File directory) {
+            URI path1 = path.toURI();
+            URI path2 = directory.toURI();
+            URI relativePath = path2.relativize(path1);
+            return relativePath.getPath();
+        }
+
+        /**
          * Return the path leading to file without the file itself.
          *
          * @param lf the lf

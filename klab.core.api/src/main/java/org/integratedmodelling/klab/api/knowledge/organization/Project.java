@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.knowledge.organization;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
+import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -54,6 +55,15 @@ public interface Project extends KlabAsset {
     }
 
     Manifest getManifest();
+
+    /**
+     * Repository metadata should never be null even if there is no repository connected. The metadata of
+     * assets contained in this project should automatically synchronize with this.
+     *
+     * @return
+     */
+    RepositoryMetadata getRepositoryMetadata();
+
     /**
      * @return
      */

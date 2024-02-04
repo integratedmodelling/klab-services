@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import org.integratedmodelling.klab.api.collections.impl.RepositoryMetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Statement;
@@ -23,6 +25,7 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     private List<Notification> notifications = new ArrayList<>();
     private String projectName;
     private String sourceCode;
+    private RepositoryMetadata repositoryMetadata = new RepositoryMetadataImpl();
 
     @Override
     public String getUrn() {
@@ -38,11 +41,6 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     public Metadata getMetadata() {
         return this.metadata;
     }
-    //
-    //    @Override
-    //    public List<Annotation> getAnnotations() {
-    //        return this.annotations;
-    //    }
 
     @Override
     public long getCreationTimestamp() {
@@ -116,5 +114,14 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
 
     public String toString() {
         return "<" + Utils.Strings.capitalize(KlabAsset.classify(this).name()) + " " + projectName + ":" + urn + ">";
+    }
+
+    @Override
+    public RepositoryMetadata getRepositoryMetadata() {
+        return repositoryMetadata;
+    }
+
+    public void setRepositoryMetadata(RepositoryMetadata repositoryMetadata) {
+        this.repositoryMetadata = repositoryMetadata;
     }
 }

@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
@@ -57,6 +59,9 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -71,7 +76,7 @@ public class WorkspaceManager {
     /**
      * Default interval to check for changes in Git (15 minutes in milliseconds)
      */
-    private long DEFAULT_GIT_SYNC_INTERVAL = 15L * 60L * 60L * 1000L;
+    private int DEFAULT_GIT_SYNC_INTERVAL_MINUTES = 15;
 
     private AtomicBoolean loading = new AtomicBoolean(false);
     private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
@@ -94,6 +99,8 @@ public class WorkspaceManager {
 
     // filled in at boot and maintained when changes happen
     private WorldviewValidationScope languageValidationScope;
+
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * This includes the non-local projects, in load order
@@ -184,8 +191,10 @@ public class WorkspaceManager {
                 }
 
                 if (result instanceof Strategies strategies) {
-                    String strategyUrn = projectName + "." + Utils.URLs.getURLBaseName(strategyUrl) + ".strategies";
-                    return new ObservationStrategiesSyntaxImpl(strategyUrn, strategies, languageValidationScope) {
+                    String strategyUrn = projectName + "." + Utils.URLs.getURLBaseName(strategyUrl) +
+                            ".strategies";
+                    return new ObservationStrategiesSyntaxImpl(strategyUrn, strategies,
+                            languageValidationScope) {
 
                         @Override
                         protected void logWarning(ParsedObject target, EObject object,
@@ -320,25 +329,12 @@ public class WorkspaceManager {
         ProjectStorage storage;
         Project externalProject;
         Project.Manifest manifest;
-        //        // these are loaded on demand, use only through their accessors
-        //        private Set<String> _namespaceIds;
-        //        private Set<String> _ontologyIds;
+        // if not external, this will be not null iif the project is a git repository
+        Git repository;
+        // Update interval in minutes, from configuration
+        int updateInterval;
         // TODO permissions
 
-        //
-        //        public Set<String> getNamespaceIds() {
-        //            if (_namespaceIds == null) {
-        //
-        //            }
-        //            return _namespaceIds;
-        //        }
-        //
-        //        public Set<String> getOntologyIds() {
-        //            if (_ontologyIds == null) {
-        //
-        //            }
-        //            return _ontologyIds;
-        //        }
     }
 
     private Map<String, WorkspaceImpl> workspaces = new LinkedHashMap<>();
@@ -348,16 +344,41 @@ public class WorkspaceManager {
     // all logging goes through here
     private Scope scope;
     private ResourcesConfiguration configuration;
-
+    private Map<String, Long> lastProjectUpdates = new HashMap<>();
     private List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
 
     public WorkspaceManager(Scope scope, Function<String, Project> externalProjectResolver) {
         this.externalProjectResolver = externalProjectResolver;
         this.scope = scope;
         readConfiguration();
+        scheduler.scheduleAtFixedRate(() -> checkForProjectUpdates(), 1, 1, TimeUnit.MINUTES);
     }
 
-    private void readConfiguration() {
+    private void checkForProjectUpdates() {
+
+        synchronized (projectDescriptors) {
+            for (var pd : projectDescriptors.values()) {
+                // configured interval == 0 disables update
+                if (pd.repository != null && pd.updateInterval > 0) {
+                    var now = System.currentTimeMillis();
+                    var timeToUpdate = lastProjectUpdates.containsKey(pd.name) ?
+                                       lastProjectUpdates.get(pd.name) + (pd.updateInterval * 1000 * 60) :
+                                       now;
+                    if (timeToUpdate <= now) {
+                        Thread.ofVirtual().start(()->checkForProjectUpdates(pd));
+                        lastProjectUpdates.put(pd.name, now);
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkForProjectUpdates(ProjectDescriptor projectDescriptor) {
+        // TODO fetch changes and react as configured; if anything must be reloaded, lock the workspace
+        scope.info("Checking for updates in " + projectDescriptor.name + ", scheduled each " + projectDescriptor.updateInterval + " minutes");
+    }
+
+        private void readConfiguration() {
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
         if (config.exists() && config.length() > 0) {
@@ -392,7 +413,15 @@ public class WorkspaceManager {
                     descriptor.manifest = readManifest(projectStorage);
                     descriptor.workspace = workspace;
                     descriptor.name = project;
+                    descriptor.updateInterval = projectConfiguration.getSyncIntervalMinutes();
+                    if (projectStorage instanceof FileProjectStorage fileProjectStorage) {
+                        var repository = fileProjectStorage.getRepository();
+                        if (repository != null) {
+                            descriptor.repository = new Git(repository);
+                        }
+                    }
                     projectDescriptors.put(project, descriptor);
+
                 } else {
                     // whine plaintively; the monitor will contain errors
                     scope.error("Project " + project + " cannot be loaded. Configuration is invalid.");
@@ -642,8 +671,7 @@ public class WorkspaceManager {
             //            configuration.setLocalPath(new File(workspaceName + File.separator + projectName));
             configuration.setSourceUrl(projectUrl);
             configuration.setWorkspaceName(workspaceName);
-            // FIXME only if git
-            configuration.setSyncIntervalMs(DEFAULT_GIT_SYNC_INTERVAL);
+            configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
             /*
              * Default privileges are exclusive to the service
              */
@@ -966,6 +994,21 @@ public class WorkspaceManager {
 
             } else {
                 // TODO report failure notification
+            }
+
+            /**
+             * Report any changes in the project repository if there is one
+             */
+            var pd = projectDescriptors.get(project);
+            if (pd != null && pd.repository != null) {
+                try {
+                    var status = pd.repository.status().call();
+                    for (var changed : status.getModified()) {
+                        System.out.println("Modified " + changed);
+                    }
+                } catch (GitAPIException e) {
+                    scope.error(e);
+                }
             }
 
             /**

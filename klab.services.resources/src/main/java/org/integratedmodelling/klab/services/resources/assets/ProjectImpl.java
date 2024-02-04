@@ -2,8 +2,10 @@ package org.integratedmodelling.klab.services.resources.assets;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.RepositoryMetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
+import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -21,6 +23,7 @@ import java.util.List;
 public class ProjectImpl implements Project {
 
     private static final long serialVersionUID = 7618524077068234748L;
+    private RepositoryMetadata repositoryMetadata = new RepositoryMetadataImpl();
 
     public static class ManifestImpl implements Manifest {
 
@@ -224,5 +227,13 @@ public class ProjectImpl implements Project {
 
     public void setAnnotations(List<Annotation> annotations) {
         this.annotations = annotations;
+    }
+
+    public RepositoryMetadata getRepositoryMetadata() {
+        return repositoryMetadata;
+    }
+
+    public void setRepositoryMetadata(RepositoryMetadata repositoryMetadata) {
+        this.repositoryMetadata = repositoryMetadata;
     }
 }

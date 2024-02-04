@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.resources;
 
+import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.Repository;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -76,6 +78,19 @@ public class FileProjectStorage implements ProjectStorage {
             throw new KlabIOException(e);
         }
     }
+
+    public Repository getRepository() {
+        var gitDir = new File(rootFolder + File.separator + ".git");
+        if (gitDir.isDirectory()) {
+            try {
+                return new FileRepository(gitDir);
+            } catch (IOException e) {
+                //
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public List<URL> listResources(ResourceType... types) {
