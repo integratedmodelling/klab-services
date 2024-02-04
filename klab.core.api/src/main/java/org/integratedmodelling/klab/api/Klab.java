@@ -38,7 +38,8 @@ public enum Klab {
         CIRCULAR_REFERENCES,
         MISMATCHED_VERSION,
         READ_FAILED,
-        WRITE_FAILED
+        WRITE_FAILED,
+        INTERNAL_ERROR
 
     }
 
@@ -48,7 +49,8 @@ public enum Klab {
         ONTOLOGY,
         RESOURCE,
         OBSERVATION_STRATEGY,
-        BEHAVIOR
+        BEHAVIOR,
+        RESOURCES_SERVICE
     }
 
     /**

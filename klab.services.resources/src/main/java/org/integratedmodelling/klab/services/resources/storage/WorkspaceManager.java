@@ -152,6 +152,21 @@ public class WorkspaceManager {
         }
     }
 
+    /**
+     * Execute the passed operation as an atomic unit, handling any issue. All workspace-modifying operations
+     * called after initialization should be wrapped in this.
+     *
+     * @param runnable
+     */
+    private synchronized void atomicOperation(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Throwable throwable) {
+            scope.error(throwable, Klab.ErrorContext.RESOURCES_SERVICE, Klab.ErrorCode.INTERNAL_ERROR);
+        }
+    }
+
+
     public Collection<String> getNamespaceUrns() {
         return _behaviorMap.keySet();
     }
@@ -365,7 +380,7 @@ public class WorkspaceManager {
                                        lastProjectUpdates.get(pd.name) + (pd.updateInterval * 1000 * 60) :
                                        now;
                     if (timeToUpdate <= now) {
-                        Thread.ofVirtual().start(()->checkForProjectUpdates(pd));
+                        Thread.ofVirtual().start(() -> checkForProjectUpdates(pd));
                         lastProjectUpdates.put(pd.name, now);
                     }
                 }
@@ -378,7 +393,7 @@ public class WorkspaceManager {
         scope.info("Checking for updates in " + projectDescriptor.name + ", scheduled each " + projectDescriptor.updateInterval + " minutes");
     }
 
-        private void readConfiguration() {
+    private void readConfiguration() {
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
         if (config.exists() && config.length() > 0) {
