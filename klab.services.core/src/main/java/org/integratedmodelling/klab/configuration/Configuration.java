@@ -86,7 +86,7 @@ public enum Configuration {
 
     INSTANCE;
 
-    PluginManager componentManager = new DefaultPluginManager();
+    final PluginManager componentManager = new DefaultPluginManager();
     UpdateManager componentUpdateManager;
     private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
     private Map<String, Authority> authorities = new HashMap<>();
@@ -532,7 +532,7 @@ public enum Configuration {
 
         // Disable temporarily - creates issues in modeler
         //
-//        componentManager.loadPlugins();
+                componentManager.loadPlugins();
 
         return ret;
 
@@ -825,6 +825,27 @@ public enum Configuration {
             } catch (IOException e) {
                 throw new KlabIOException(e);
             }
+        }
+        return directory;
+    }
+
+    /**
+     * Same as {@link #getFile(String)} but if the file does not exist, create it with the content specified
+     * in the second argument.
+     *
+     * @param relativeFilePath
+     * @return
+     */
+    public File getFileWithTemplate(String relativeFilePath, String template) {
+        File directory = getDataPath();
+        String[] path = relativeFilePath.split("\\/");
+        for (int i = 0; i < path.length - 1; i++) {
+            directory = new File(directory + File.separator + path[i]);
+            directory.mkdirs();
+        }
+        directory = new File(directory + File.separator + path[path.length - 1]);
+        if (!directory.exists()) {
+            Utils.Files.writeStringToFile(template, directory);
         }
         return directory;
     }

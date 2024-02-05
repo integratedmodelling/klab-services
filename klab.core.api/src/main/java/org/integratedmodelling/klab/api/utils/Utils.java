@@ -11,8 +11,8 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -3237,6 +3237,13 @@ public class Utils {
             return !path.isAbsolute();
         }
 
+        public static void writeStringToFile(String template, File file) {
+            try {
+                java.nio.file.Files.writeString(file.toPath(), template);
+            } catch (IOException e) {
+                throw new KlabIOException(e);
+            }
+        }
     }
 
     public static class Templates {

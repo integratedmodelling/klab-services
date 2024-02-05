@@ -503,16 +503,17 @@ public enum SemanticType {
         return !set.isEmpty();
     }
 
-    static Color CONCEPT_COLOR_UNKNOWN = new Color(255, 0, 0);
-    static Color CONCEPT_COLOR_VOID = new Color(60, 60, 100);
-    static Color CONCEPT_COLOR_QUALITY = new Color(0, 204, 0);
-    static Color CONCEPT_COLOR_SUBJECT = new Color(153, 76, 0);
-    static Color CONCEPT_COLOR_EVENT = new Color(153, 153, 0);
-    static Color CONCEPT_COLOR_PROCESS = new Color(180, 0, 0);
-    static Color CONCEPT_COLOR_RELATIONSHIP = new Color(210, 170, 0);
-    static Color CONCEPT_COLOR_TRAIT = new Color(0, 102, 204);
-    static Color CONCEPT_COLOR_ROLE = new Color(0, 86, 163);
-    static Color CONCEPT_COLOR_EXTENT = new Color(0, 153, 153);
+    static final Color CONCEPT_COLOR_UNKNOWN = new Color(255, 0, 0);
+    static final Color CONCEPT_COLOR_VOID = new Color(60, 60, 100);
+    static final Color CONCEPT_COLOR_QUALITY = new Color(0, 204, 0);
+    static final Color CONCEPT_COLOR_CONFIGURATION = new Color(0, 100, 100);
+    static final Color CONCEPT_COLOR_SUBJECT = new Color(153, 76, 0);
+    static final Color CONCEPT_COLOR_EVENT = new Color(153, 153, 0);
+    static final Color CONCEPT_COLOR_PROCESS = new Color(180, 0, 0);
+    static final Color CONCEPT_COLOR_RELATIONSHIP = new Color(210, 170, 0);
+    static final Color CONCEPT_COLOR_TRAIT = new Color(0, 102, 204);
+    static final Color CONCEPT_COLOR_ROLE = new Color(0, 86, 163);
+    static final Color CONCEPT_COLOR_EXTENT = new Color(0, 153, 153);
 
     /**
      * Source of truth for the UI color corresponding to different semantic categories.
@@ -532,6 +533,7 @@ public enum SemanticType {
                 case PROCESS -> CONCEPT_COLOR_PROCESS;
                 case QUALITY -> CONCEPT_COLOR_QUALITY;
                 case ROLE -> CONCEPT_COLOR_ROLE;
+                case CONFIGURATION -> CONCEPT_COLOR_CONFIGURATION;
                 case TRAIT -> CONCEPT_COLOR_TRAIT;
                 case EXTENT -> CONCEPT_COLOR_EXTENT;
                 default -> null;

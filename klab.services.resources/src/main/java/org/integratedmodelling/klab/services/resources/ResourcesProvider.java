@@ -471,6 +471,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             }
 
             @Override
+            public String getServiceId() {
+                return workspaceManager.getConfiguration().getServiceId();
+            }
+
+            @Override
             public String getServerId() {
                 return hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature);
             }

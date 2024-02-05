@@ -35,6 +35,8 @@ public class RuntimeService extends BaseService
      */
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
     private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+    // TODO connect to runtime.yaml configuration
+    private String serviceId;
 
     public RuntimeService(Authentication testAuthentication, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
         // TODO Auto-generated constructor stub
@@ -113,6 +115,11 @@ public class RuntimeService extends BaseService
             @Override
             public String getServiceName() {
                 return "Runtime";
+            }
+
+            @Override
+            public String getServiceId() {
+                return serviceId;
             }
 
             @Override

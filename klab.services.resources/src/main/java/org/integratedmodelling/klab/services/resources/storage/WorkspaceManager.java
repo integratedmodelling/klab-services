@@ -404,6 +404,7 @@ public class WorkspaceManager {
             this.configuration.setServicePath("resources");
             this.configuration.setLocalResourcePath("local");
             this.configuration.setPublicResourcePath("public");
+            this.configuration.setServiceId(UUID.randomUUID().toString());
             saveConfiguration();
         }
 
@@ -599,6 +600,10 @@ public class WorkspaceManager {
             //  cache and everything
         }
         return _namespaceOrder;
+    }
+
+    public ResourcesConfiguration getConfiguration() {
+        return this.configuration;
     }
 
     List<KActorsBehavior> getBehaviors() {

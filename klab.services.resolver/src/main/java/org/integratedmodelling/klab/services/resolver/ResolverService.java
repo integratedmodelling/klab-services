@@ -64,6 +64,8 @@ public class ResolverService extends BaseService implements Resolver {
     Map<String, Instance> instances = Collections.synchronizedMap(new HashMap<>());
     Parameters<String> defines = Parameters.createSynchronized();
     private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+    // TODO link to configuration
+    private String serviceId;
 
     @Autowired
     public ResolverService(Authentication authentication, ServiceScope scope, String localName,
@@ -114,6 +116,11 @@ public class ResolverService extends BaseService implements Resolver {
             @Override
             public String getServiceName() {
                 return "Resolver";
+            }
+
+            @Override
+            public String getServiceId() {
+                return serviceId;
             }
 
             @Override

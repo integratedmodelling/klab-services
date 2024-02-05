@@ -1118,6 +1118,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
 
             @Override
+            public String getServiceId() {
+                return configuration.getServiceId();
+            }
+
+            @Override
             public String getServerId() {
                 return hardwareSignature == null ? null : ("REASONER_" + hardwareSignature);
             }

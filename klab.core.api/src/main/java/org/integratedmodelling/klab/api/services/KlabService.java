@@ -45,7 +45,16 @@ public interface KlabService extends Service {
         String getServiceName();
 
         /**
-         * A unique server ID implemented as a hash based on the hardware.
+         * The service ID should be unique and generated at the first service boot, then persisted in
+         * configuration so it never changes for as long as the service exists.
+         *
+         * @return
+         */
+        String getServiceId();
+
+        /**
+         * A unique server ID implemented as a hash based on the hardware and persisted in configuration so it
+         * never changes.
          *
          * @return
          */
