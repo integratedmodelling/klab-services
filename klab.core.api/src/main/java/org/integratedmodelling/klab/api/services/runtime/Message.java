@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
@@ -150,6 +151,8 @@ public interface Message extends Serializable {
          * Accompanied by a ResourceSet that details all the assets affected and their order of loading.
          */
         WorkspaceChanged(ResourceSet.class),
+
+        DocumentSelected(KlabDocument.class),
 
         /*
          * UserContextChange-class types.
