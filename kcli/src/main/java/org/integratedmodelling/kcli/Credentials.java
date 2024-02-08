@@ -1,7 +1,6 @@
 package org.integratedmodelling.kcli;
 
-import org.integratedmodelling.klab.Version;
-
+import org.integratedmodelling.klab.api.data.Version;
 import picocli.CommandLine.Command;
 
 @Command(name = "credentials", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {

@@ -1,18 +1,17 @@
 package org.integratedmodelling.kcli;
 
-import java.io.PrintWriter;
-
 import org.integratedmodelling.kcli.engine.Engine;
-import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.utils.NameGenerator;
-
+import org.integratedmodelling.klab.utilities.Utils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
+
+import java.io.PrintWriter;
 
 @Command(name = "session", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
 		"Commands to find, access and manipulate resources.",
@@ -39,7 +38,7 @@ public class Session {
 			PrintWriter out = commandSpec.commandLine().getOut();
 
 			if (name == null) {
-				name = NameGenerator.shortUUID();
+				name = Utils.Names.shortUUID();
 			}
 
 			if (Engine.INSTANCE.getSession(name) != null) {

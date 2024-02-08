@@ -1,8 +1,7 @@
 package org.integratedmodelling.kcli;
 
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
-import org.integratedmodelling.klab.Version;
-
+import org.integratedmodelling.klab.api.data.Version;
 import picocli.CommandLine.Command;
 
 @Command(name = "stack", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {

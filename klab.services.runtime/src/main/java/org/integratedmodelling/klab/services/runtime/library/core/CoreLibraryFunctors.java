@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.services.runtime.library.core;
 
 import io.micrometer.common.annotation.ValueResolver;
-import org.integratedmodelling.klab.Version;
 import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;

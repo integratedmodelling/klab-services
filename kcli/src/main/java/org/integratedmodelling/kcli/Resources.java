@@ -1,13 +1,7 @@
 package org.integratedmodelling.kcli;
 
-import java.io.File;
-import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import org.integratedmodelling.kcli.engine.Engine;
-//import org.integratedmodelling.kim.model.KimModel;
-import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -18,11 +12,15 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.utilities.Utils;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 @Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, list, access and manipulate resources.", ""}, subcommands = {Resources.List.class,

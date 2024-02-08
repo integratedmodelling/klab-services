@@ -20,15 +20,9 @@
 		</dependency>
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
-			<artifactId>klab.authentication</artifactId>
+			<artifactId>klab.services.authentication</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.services.authentication</artifactId>
-            <version>0.11.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

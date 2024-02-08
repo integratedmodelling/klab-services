@@ -3,7 +3,7 @@ package org.integratedmodelling.kcli;
 import groovyjarjarpicocli.CommandLine.Help.Ansi;
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
-import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;

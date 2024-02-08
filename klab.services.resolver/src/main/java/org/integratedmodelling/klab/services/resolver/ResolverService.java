@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resolver;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -37,7 +38,6 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.Parameters;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;

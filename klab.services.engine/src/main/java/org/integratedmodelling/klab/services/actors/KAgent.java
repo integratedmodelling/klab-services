@@ -1,11 +1,12 @@
 package org.integratedmodelling.klab.services.actors;
 
-import java.io.File;
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-
+import io.reacted.core.config.reactors.ReActorConfig;
+import io.reacted.core.messages.reactors.ReActorInit;
+import io.reacted.core.messages.reactors.ReActorStop;
+import io.reacted.core.reactors.ReActions;
+import io.reacted.core.reactors.ReActor;
+import io.reacted.core.reactorsystem.ReActorContext;
+import io.reacted.core.reactorsystem.ReActorRef;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
@@ -16,15 +17,12 @@ import org.integratedmodelling.klab.runtime.kactors.KActorsVM;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.SetState;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.NameGenerator;
 
-import io.reacted.core.config.reactors.ReActorConfig;
-import io.reacted.core.messages.reactors.ReActorInit;
-import io.reacted.core.messages.reactors.ReActorStop;
-import io.reacted.core.reactors.ReActions;
-import io.reacted.core.reactors.ReActor;
-import io.reacted.core.reactorsystem.ReActorContext;
-import io.reacted.core.reactorsystem.ReActorRef;
+import java.io.File;
+import java.io.Serializable;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The basic k.LAB agent is created in a k.LAB scope, has a "global" state hash,
@@ -58,7 +56,7 @@ public abstract class KAgent implements ReActor {
 	private File scratchPath;
 
 	public KAgent(String name, Scope scope) {
-		this.name = name + "." + NameGenerator.shortUUID();
+		this.name = name + "." + Utils.Names.shortUUID();
 		this.scope = scope;
 	}
 

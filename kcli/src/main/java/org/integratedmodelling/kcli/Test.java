@@ -1,7 +1,7 @@
 package org.integratedmodelling.kcli;
 
 import org.integratedmodelling.kcli.engine.Engine;
-import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import picocli.CommandLine;

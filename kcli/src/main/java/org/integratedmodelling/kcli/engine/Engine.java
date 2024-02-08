@@ -1,6 +1,7 @@
 package org.integratedmodelling.kcli.engine;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -20,8 +21,6 @@ import org.integratedmodelling.klab.services.resources.ResourcesClient;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.utils.NameGenerator;
-import org.integratedmodelling.klab.utils.Parameters;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -168,7 +167,7 @@ public enum Engine implements Authentication {
      */
     public SessionScope getCurrentSession(boolean createIfNull, Channel channel) {
         if (currentSession == null) {
-            currentSession = createSession(NameGenerator.shortUUID(), true);
+            currentSession = createSession(Utils.Names.shortUUID(), true);
         }
         return currentSession;
     }
@@ -186,9 +185,9 @@ public enum Engine implements Authentication {
 
         if (currentContext == null) {
             if (currentSession == null) {
-                createSession(NameGenerator.shortUUID(), true);
+                createSession(Utils.Names.shortUUID(), true);
             }
-            currentContext = currentSession.createContext(NameGenerator.shortUUID(), Geometry.EMPTY);
+            currentContext = currentSession.createContext(Utils.Names.shortUUID(), Geometry.EMPTY);
         }
 
         return currentContext;

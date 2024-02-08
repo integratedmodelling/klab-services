@@ -1,19 +1,16 @@
 package org.integratedmodelling.kcli.visualization;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-
+import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.view.mxGraph;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.services.resolver.ResolutionImpl;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 
-import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
-import com.mxgraph.swing.mxGraphComponent;
-import com.mxgraph.view.mxGraph;
+import javax.swing.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * TODO Move to JUNGraphT-Visualization (maintained):
@@ -28,12 +25,12 @@ public class Graphs {
 		HIERARCHICAL, RADIALTREE, SIMPLE, SPRING
 	}
 
-	public static <E> void show(org.integratedmodelling.contrib.jgrapht.Graph<?, E> graph, String title,
+	public static <E> void show(Graph<?, E> graph, String title,
 			Class<? extends E> edgeClass) {
 		show(adaptContribGraph(graph, edgeClass), title, Layout.SPRING);
 	}
 
-	public static <E> void show(org.integratedmodelling.contrib.jgrapht.Graph<?, E> graph, String title, Layout layout,
+	public static <E> void show(Graph<?, E> graph, String title, Layout layout,
 			Class<? extends E> edgeClass) {
 		show(adaptContribGraph(graph, edgeClass), title, layout);
 	}
@@ -57,7 +54,7 @@ public class Graphs {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static <E> Graph<?, ?> adaptContribGraph(org.integratedmodelling.contrib.jgrapht.Graph<?, E> graph,
+	private static <E> Graph<?, ?> adaptContribGraph(Graph<?, E> graph,
 			Class<? extends E> edgeClass) {
 
 		DefaultDirectedGraph<Object, E> ret = new DefaultDirectedGraph<Object, E>(edgeClass);

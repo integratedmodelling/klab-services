@@ -3,7 +3,7 @@ package org.integratedmodelling.kcli;
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
 import org.integratedmodelling.kcli.visualization.Graphs;
-import org.integratedmodelling.klab.Version;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
