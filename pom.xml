@@ -30,6 +30,7 @@
         <module>klab.services.resolver</module>
         <module>kcli</module>
         <module>p2</module>
+        <module>klab.engine</module>
     </modules>
 
     <licenses>

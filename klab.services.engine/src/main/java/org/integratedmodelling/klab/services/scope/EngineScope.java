@@ -300,4 +300,8 @@ public abstract class EngineScope implements UserScope {
 		setStatus(Status.EMPTY);
 	}
 
+	@Override
+	public void switchService(KlabService service) {
+		// TODO, or just avoid in this implementation.
+	}
 }

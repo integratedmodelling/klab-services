@@ -106,6 +106,11 @@ class ReasonerTestSetup {
             public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
                 throw new KlabIllegalStateException("Session access in reasoner test");
             }
+
+            @Override
+            public void switchService(KlabService service) {
+
+            }
         }
 
         @Override

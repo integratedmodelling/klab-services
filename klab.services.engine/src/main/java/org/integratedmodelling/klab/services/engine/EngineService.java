@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.engine;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
@@ -25,12 +26,12 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
- * Reference implementation for the new modular engine. Should eventually allow substituting external RPC
- * services for the default ones, based on configuration and a dedicated API.
+ * Reference implementation for a modular, multi-user engine implementation that uses actors to support every
+ * scope.
  *
  * @author Ferd
  */
-public class EngineService {
+public class EngineService implements Engine {
 
     private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
     private ReActorSystem actorSystem;
@@ -57,6 +58,13 @@ public class EngineService {
                         .initReActorSystem();
     }
 
+    @Override
+    public void addEventListener(BiConsumer<Scope, Message>... eventListeners) {
+        for (var listener : eventListeners) {
+            this.eventListeners.add(listener);
+        }
+    }
+
     /**
      * The boot process creates the servicontexce scope for all services and calls initialization on all
      * services that are a BaseService. When called, the services must be all defined.
@@ -68,7 +76,8 @@ public class EngineService {
             booted = true;
 
             if (defaultReasoner == null || defaultResourcesService == null || defaultResolver == null || defaultRuntime == null) {
-                throw new KlabIllegalStateException("one or more services are not available: cannot boot the " +
+                throw new KlabIllegalStateException("one or more services are not available: cannot boot " +
+                        "the " +
                         "engine");
             }
 
@@ -93,9 +102,10 @@ public class EngineService {
                 }
             }
 
-//            if (defaultResourcesService instanceof BaseService && defaultResourcesService instanceof ResourcesService.Admin) {
-//                ((ResourcesService.Admin) defaultResourcesService).loadWorkspaces();
-//            }
+            //            if (defaultResourcesService instanceof BaseService && defaultResourcesService
+            //            instanceof ResourcesService.Admin) {
+            //                ((ResourcesService.Admin) defaultResourcesService).loadWorkspaces();
+            //            }
         }
     }
 
@@ -105,6 +115,11 @@ public class EngineService {
         if (ret == null) {
 
             ret = new EngineScope(user) {
+
+                @Override
+                public void switchService(KlabService service) {
+                    // TODO
+                }
 
                 @SuppressWarnings("unchecked")
                 @Override
@@ -203,12 +218,11 @@ public class EngineService {
         this.defaultResolver = resolver;
     }
 
-    public boolean shutdown() {
+    public void shutdown() {
         this.defaultReasoner.shutdown();
         this.defaultResourcesService.shutdown();
         this.defaultReasoner.shutdown();
         this.defaultRuntime.shutdown();
-        return true;
     }
 
     public ServiceScope newServiceScope(Class<? extends KlabService> cls) {
