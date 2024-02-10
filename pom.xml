@@ -32,6 +32,8 @@
         <module>p2</module>
         <module>klab.engine</module>
         <module>klab.cli</module>
+        <module>klab.engine.client</module>
+        <module>klab.modeler</module>
     </modules>
 
     <licenses>

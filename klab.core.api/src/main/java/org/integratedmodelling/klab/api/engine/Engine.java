@@ -5,21 +5,46 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
+import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
  * The k.LAB engine is a service orchestrator that has "current" and "available" services for all categories.
- * It has methods to switch services and a messaging system that reacts to events from all services.
+ * It handles one or more users and contains a messaging system that enables listening to events from all
+ * services.
  * <p>
- * The engine always operates within an authenticated (possibly anonymous) user scope, which gives access to
- * the services selected in the engine through its {@link UserScope#getService(Class)} and
- * {@link UserScope#getServices(Class)} methods.
+ * The engine instantiates user scopes upon authentication (or anonymously), enabling them to access the
+ * services handled by the engine through its {@link UserScope#getService(Class)} and
+ * {@link UserScope#getServices(Class)} methods. In this interface there is no API related to authentication
+ * of user scopes, which can be implemented as needed downstream.
  * <p>
  * Methods are exposed for booting and shutting down the engine, for situations when implementations need to
- * control these phases. The engine should not boot automatically upon creation.
+ * control these phases. The engine should not boot automatically upon creation; the {@link #isAvailable()}
+ * and {@link #isOnline()} can be used to monitor status, and the messaging system must report all
+ * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#EngineLifecycle} events.
  */
 public interface Engine {
 
+    /**
+     * The engine is available to boot.
+     *
+     * @return
+     */
+    boolean isAvailable();
+
+    /**
+     * The engine has booted successfully and it's available for use.
+     *
+     * @return
+     */
+    boolean isOnline();
+
+    /**
+     * Return all the user scopes currently connected to the engine.
+     *
+     * @return
+     */
+    List<UserScope> getUsers();
 
     /**
      * Event listeners can be added to react to anything happening and must be propagated to the services.

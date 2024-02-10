@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EventListener;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -40,6 +39,7 @@ public abstract class AbstractAuthenticatedEngine implements Engine {
         return this.users.size() > 0 ? users.get(0) : null;
     }
 
+    @Override
     public List<UserScope> getUsers() {
         return users;
     }

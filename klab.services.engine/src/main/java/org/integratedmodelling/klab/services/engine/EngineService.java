@@ -59,6 +59,21 @@ public class EngineService implements Engine {
     }
 
     @Override
+    public boolean isAvailable() {
+        return false;
+    }
+
+    @Override
+    public boolean isOnline() {
+        return false;
+    }
+
+    @Override
+    public List<UserScope> getUsers() {
+        return null;
+    }
+
+    @Override
     public void addEventListener(BiConsumer<Scope, Message>... eventListeners) {
         for (var listener : eventListeners) {
             this.eventListeners.add(listener);
