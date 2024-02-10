@@ -31,7 +31,7 @@
                             <featureDefinitions>
                                 <feature> <!-- Generate a feature including artifacts that are listed below inside the feature element-->
                                     <id>org.integratedmodelling.klab.api.feature</id>
-                                    <version>4.3.11</version>
+                                    <version>1.0.0</version>
                                     <label>k.LAB core API</label>
                                     <providerName>Integrated Modelling Partnershipt</providerName>
                                     <description>${project.description}</description>
@@ -45,16 +45,16 @@
                                 </feature>
                             </featureDefinitions>
                             <artifacts>
-                                <!-- specify your depencies here -->
-                                <!-- groupId:artifactId:version -->
+                                <!-- specify your depencies here
+                                 groupId:artifactId:version
                                 <artifact>
-                                    <id>com.google.guava:guava:jar:23.0</id> <!-- Artifact with existing OSGi-Manifest-->
-                                    <!--<transitive>false</transitive>-->
-                                    <!--<source>true</source>-->
+                                    <id>com.google.guava:guava:jar:23.0</id>  Artifact with existing OSGi-Manifest
+                                     <transitive>false</transitive>
+                                     <source>true</source>
                                 </artifact>
                                 <artifact>
-                                    <id>commons-io:commons-io:1.3</id> <!-- Artifact without existing OSGi-Manifest-->
-                                </artifact>
+                                    <id>commons-io:commons-io:1.3</id>  Artifact without existing OSGi-Manifest
+                                </artifact> -->
                             </artifacts>
                         </configuration>
                     </execution>

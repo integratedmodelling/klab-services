@@ -31,6 +31,7 @@
         <module>kcli</module>
         <module>p2</module>
         <module>klab.engine</module>
+        <module>klab.cli</module>
     </modules>
 
     <licenses>
