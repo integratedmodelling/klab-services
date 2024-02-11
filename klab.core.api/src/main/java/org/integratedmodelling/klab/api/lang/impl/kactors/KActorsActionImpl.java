@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KActorsActionImpl extends KActorsCodeStatementImpl implements KActorsAction {
+public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAction {
 
 	private static final long serialVersionUID = 5202922350235994909L;
 	

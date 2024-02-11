@@ -7,6 +7,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 
 public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements Worldview {
 
@@ -43,8 +44,8 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements
 	}
 
 	@Override
-	public Object[] children() {
-		return delegate.getOntologies().stream().map(ontology -> new NavigableKimOntology(ontology, this)).toArray();
+	public List<? extends NavigableAsset> children() {
+		return delegate.getOntologies().stream().map(ontology -> new NavigableKimOntology(ontology, this)).toList();
 	}
 
 	public NavigableKimOntology findOntology(String documentUrn) {

@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 //import org.eclipse.core.resources.IContainer;
@@ -17,6 +19,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.modeler.navigation.NavigableContainer;
 //import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 //import org.integratedmodelling.klab.ide.Activator;
 //import org.integratedmodelling.klab.ide.KlabAdapterFactory;
@@ -34,7 +37,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements /*IAdap
 	private static final long serialVersionUID = -2326835089185461220L;
 
 	protected T delegate;
-	protected NavigableKlabAsset<?> parent;
+	protected NavigableAsset parent;
 //	protected IResource resource;
 	protected String path;
 
@@ -62,19 +65,19 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements /*IAdap
 		return delegate.getUrn();
 	}
 
-	public Object[] children() {
-		return new Object[] {};
+	public List<? extends NavigableAsset> children() {
+		return Collections.emptyList();
 	}
 
-	public NavigableKlabAsset<?> rootAsset() {
-		NavigableKlabAsset<?> ret = this;
-		while (ret.parent != null) {
-			ret = ret.parent;
+	public NavigableContainer root() {
+		NavigableAsset ret = this;
+		while (((NavigableKlabAsset)ret).parent != null) {
+			ret = ((NavigableKlabAsset)ret).parent;
 		}
-		return ret;
+		return (NavigableContainer)ret;
 	}
 	
-	public Object parent() {
+	public NavigableAsset parent() {
 		return parent;
 	}
 

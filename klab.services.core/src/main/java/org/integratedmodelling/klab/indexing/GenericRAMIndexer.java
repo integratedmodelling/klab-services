@@ -30,7 +30,7 @@ import org.apache.lucene.store.Directory;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
-import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.common.logging.Logging;
 
 /**
  * Generic indexer that holds both the index AND the objects themselves in

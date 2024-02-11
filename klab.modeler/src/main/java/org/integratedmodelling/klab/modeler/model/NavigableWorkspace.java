@@ -2,14 +2,14 @@ package org.integratedmodelling.klab.modeler.model;
 
 import java.io.Serial;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 
 //import org.eclipse.core.resources.IFile;
 //import org.eclipse.core.resources.IWorkspace;
 //import org.eclipse.core.resources.IWorkspaceRoot;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 
 //import com.google.common.collect.BiMap;
 //import com.google.common.collect.HashBiMap;
@@ -51,11 +51,11 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
 	}
 
 	@Override
-	public Object[] children() {
+	public List<? extends NavigableAsset> children() {
 		return getProjects().stream()
 				.map(p -> new NavigableProject(p, this/*,
 						this.resource instanceof IWorkspaceRoot wsroot ? wsroot.getProject(p.getUrn()) : null*/))
-				.toArray();
+				.toList();
 	}
 
 	/**

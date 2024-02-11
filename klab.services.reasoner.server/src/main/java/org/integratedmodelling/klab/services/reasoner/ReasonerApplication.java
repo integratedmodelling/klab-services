@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.data.encoding.JacksonConfiguration;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;

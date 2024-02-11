@@ -8,7 +8,9 @@
     </parent>
     <artifactId>klab.services.core</artifactId>
     <name>k.LAB services core</name>
-    <description>Core functionalities needed by all engine services</description>
+    <description>Core functionalities needed by all engine services, including Spring boot, geotools and embedded
+        databases. Embeds the klab.core.common project and extends it.
+    </description>
 
     <properties>
         <avro.version>1.11.3</avro.version>
@@ -76,6 +78,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.core.common</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
             <version>${avro.version}</version>
@@ -86,25 +94,6 @@
             <version>${avro.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>io.github.classgraph</groupId>
-            <artifactId>classgraph</artifactId>
-            <version>4.8.162</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/tech.units/indriya -->
-        <dependency>
-            <groupId>tech.units</groupId>
-            <artifactId>indriya</artifactId>
-            <version>2.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.29.2-GA</version>
-            <type>jar</type>
-        </dependency>
 
         <!-- plugin management for extension components -->
         <dependency>
@@ -133,14 +122,9 @@
             <version>3.2.2</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
-        </dependency>
 
         <!-- Unirest, while redundant with Spring templates, removes a lot of pain
-            when doing quick REST interactions -->
+            when doing quick REST interactions. DEPRECATED - use Java HttpClient instead -->
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
@@ -166,12 +150,6 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-core</artifactId>
-            <version>1.5.2</version>
-        </dependency>
-
         <!-- Lucene for indexing -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
@@ -190,23 +168,6 @@
             <version>9.7.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.11.0</version>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
@@ -214,7 +175,7 @@
             <version>6.4.0.202211300538-r</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
+        <!-- DEPRECATED switch to Avro: https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -226,11 +187,6 @@
             <!-- <version>2.5.0-beta-2</version> -->
             <version>3.0.7</version>
             <!-- <classifier>indy</classifier> -->
-        </dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.core.api</artifactId>
-            <version>${klab.version}</version>
         </dependency>
 
         <!-- swagger for API docs -->

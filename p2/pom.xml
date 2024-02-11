@@ -15,6 +15,7 @@
 
     <modules>
         <module>org.integratedmodelling.klab.api</module>
+        <module>org.integratedmodelling.klab.modeler</module>
     </modules>
 
     <properties>

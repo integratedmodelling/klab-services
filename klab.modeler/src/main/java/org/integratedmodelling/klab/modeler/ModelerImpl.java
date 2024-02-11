@@ -22,16 +22,22 @@ public class ModelerImpl implements Modeler {
 
     @Override
     public void dispatch(UIReactor.UIEvent event, Object payload) {
-
+        /*
+        TODO the dispatcher uses the action graph to dispatch events according to the wiring detected
+         */
     }
 
     @Override
     public void register(Object reactor) {
-
+        /*
+        TODO update the action graph
+         */
     }
 
     @Override
     public void unregister(Object reactor) {
-
+        /*
+        TODO update the action graph
+         */
     }
 }

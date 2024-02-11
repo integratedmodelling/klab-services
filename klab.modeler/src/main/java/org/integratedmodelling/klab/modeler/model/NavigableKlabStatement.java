@@ -1,11 +1,13 @@
 package org.integratedmodelling.klab.modeler.model;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> implements KlabStatement {
@@ -71,11 +73,11 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 	}
 
 	@Override
-	public Object[] children() {
+	public List<NavigableKlabStatement> children() {
 		if (delegate instanceof KimConceptStatement concept) {
-			return concept.getChildren().stream().map(c -> new NavigableKlabStatement(c, this)).toArray();
+			return concept.getChildren().stream().map(c -> new NavigableKlabStatement(c, this)).toList();
 		}
-		return super.children();
+		return Collections.emptyList();
 	}
 
 	@Override

@@ -30,7 +30,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
-import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.common.logging.Logging;
 
 public class ResourceIndexer {
 

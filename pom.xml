@@ -34,6 +34,7 @@
         <module>klab.cli</module>
         <module>klab.engine.client</module>
         <module>klab.modeler</module>
+        <module>klab.core.common</module>
     </modules>
 
     <licenses>

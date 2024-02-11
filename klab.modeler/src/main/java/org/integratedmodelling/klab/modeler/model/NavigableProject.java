@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
@@ -78,9 +79,9 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	}
 
 	@Override
-	public Object[] children() {
+	public List<? extends NavigableAsset> children() {
 		// TODO add everything else, including intermediate containers
-		return getOntologies().stream().map(p -> new NavigableKimOntology(p, this)).toArray();
+		return getOntologies().stream().map(p -> new NavigableKimOntology(p, this)).toList();
 	}
 
 	@Override

@@ -8,7 +8,7 @@ import java.util.List;
  * @author Ferd
  *
  */
-public interface KActorsAction extends KActorsCodeStatement {
+public interface KActorsAction extends KActorsStatement {
 
 	/**
 	 * Action name as declared in the code.

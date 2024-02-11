@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.data.encoding;
+package org.integratedmodelling.common.data.jackson;
 
 import java.io.IOException;
 import java.util.Currency;
@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.common.logging.Logging;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -225,6 +225,12 @@ public class JacksonConfiguration {
                 throw new KlabInternalErrorException(t);
             }
         }
+    }
+
+    public static ObjectMapper newObjectMapper() {
+        var mapper = new ObjectMapper();
+        configureObjectMapperForKlabTypes(mapper);
+        return mapper;
     }
 
     @SuppressWarnings({"unchecked"})

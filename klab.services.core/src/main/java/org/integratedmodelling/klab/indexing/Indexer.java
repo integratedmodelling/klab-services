@@ -53,7 +53,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticMatch;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.common.logging.Logging;
 import org.springframework.stereotype.Service;
 
 @Service

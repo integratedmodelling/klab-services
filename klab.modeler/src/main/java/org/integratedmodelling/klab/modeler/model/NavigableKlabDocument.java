@@ -9,10 +9,8 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>
@@ -118,8 +116,8 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 	}
 
 	@Override
-	public Object[] children() {
-		return getStatements().toArray();
+	public List<? extends NavigableKlabStatement> children() {
+		return (List<? extends NavigableKlabStatement>) getStatements();
 	}
 
 	public NavigableProject project() {

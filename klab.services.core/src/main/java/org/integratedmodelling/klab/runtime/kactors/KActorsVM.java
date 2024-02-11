@@ -67,7 +67,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.api.services.runtime.kactors.WidgetActionExecutor;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library.CallDescriptor;
 import org.integratedmodelling.klab.runtime.kactors.messages.core.Fire;
@@ -77,28 +77,27 @@ import org.integratedmodelling.klab.runtime.kactors.messages.core.ViewLayout;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /**
- * The basic k.Actors VM. Eventually to be used in place of the same code within KlabActor. Each
- * actor should own a VM but components will be routines, not actors, thereby saving the whole mess
- * of forward IDs. The VM must be fully reentrant w.r.t. behaviors, actions and state.
+ * The basic k.Actors virtual machine (VM). Each actor should own a VM but components will be routines, not
+ * actors, thereby saving the whole mess of forward IDs. The VM must be fully reentrant w.r.t. behaviors,
+ * actions and state.
  * <p>
- * VMs should be usable without an actor as long as no actor-specific calls are made. These should
- * be aware that the actor can be null and terminate gracefully or warn and move on. Communication
- * with the actor is handled by scope.send(), which in agent-enabled scopes should filter
- * VM.AgentMessage messages and tell() them to the agent Ref.
+ * VMs should be usable without an actor as long as no actor-specific calls are made. These should be aware
+ * that the actor can be null and terminate gracefully or warn and move on. Communication with the actor is
+ * handled by scope.send(), which in agent-enabled scopes must filter messages that implement VM.AgentMessage
+ * and tell() them to the agent Ref instead of sending them along the normal route.
  * <p>
  * All deprecated state should either be eliminated or moved to the scope.
- * 
- * @author Ferd
  *
+ * @author Ferd
  */
 public class KActorsVM implements VM {
 
-    public static final String JAVA_EXTENSION_NAMESPACE = "org.integratedmodelling.klab.components.runtime.actors.extensions";
+    public static final String JAVA_EXTENSION_NAMESPACE = "org.integratedmodelling.klab.components.runtime" +
+            ".actors.extensions";
 
     /**
-     * Descriptor for actions to be taken when a firing is recorded with the ID used as key in
-     * matchActions.
-     * 
+     * Descriptor for actions to be taken when a firing is recorded with the ID used as key in matchActions.
+     *
      * @author Ferd
      */
     protected class MatchActions {
@@ -203,11 +202,12 @@ public class KActorsVM implements VM {
      * actions that were created from system actions rather than actual actors, here so we can talk
      * to them from k.Actors
      */
-    private Map<String, ActionExecutor.Actor> localActionExecutors = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, ActionExecutor.Actor> localActionExecutors =
+            Collections.synchronizedMap(new HashMap<>());
 
     /**
      * Top-level. TODO pass arguments and whatever else needs to be defined in the root scope.
-     * 
+     *
      * @param behavior
      */
     @Override
@@ -219,14 +219,15 @@ public class KActorsVM implements VM {
 
         // this.globalState = scope.getGlobalSymbols();
 
-        new Thread(){
+        new Thread() {
 
             @Override
             public void run() {
 
                 try {
 
-                    boolean rootView = scope.getViewScope() == null ? false : (scope.getViewScope().getLayout() == null);
+                    boolean rootView = scope.getViewScope() == null ? false :
+                                       (scope.getViewScope().getLayout() == null);
 
                     /*
                      * preload system actors. We don't add "self" which should be factored out by
@@ -277,8 +278,8 @@ public class KActorsVM implements VM {
                             || behavior.getType() == KActorsBehavior.Type.SCRIPT) {
                         scope.send(new ScriptEvent(behavior.getUrn(),
                                 behavior.getType() == KActorsBehavior.Type.UNITTEST
-                                        ? ScriptEvent.Type.CASE_START
-                                        : ScriptEvent.Type.SCRIPT_START));
+                                ? ScriptEvent.Type.CASE_START
+                                : ScriptEvent.Type.SCRIPT_START));
                     }
 
                     /*
@@ -383,9 +384,9 @@ public class KActorsVM implements VM {
                         // Message.Type.SetupInterface,
                         // scope.getViewScope().getLayout());
                     } /*
-                       * TODO else if we have been spawned by a new component inside a group, we
-                       * should send the group update message
-                       */
+                     * TODO else if we have been spawned by a new component inside a group, we
+                     * should send the group update message
+                     */
                     /*
                      * move on, you waiters FIXME where are these? for components?
                      */
@@ -413,8 +414,8 @@ public class KActorsVM implements VM {
                     // ((Session) scope.getIdentity()).notifyScriptEnd(KActorsVM.this.appId);
                     scope.send(new ScriptEvent(behavior.getUrn(),
                             behavior.getType() == KActorsBehavior.Type.UNITTEST
-                                    ? ScriptEvent.Type.CASE_END
-                                    : ScriptEvent.Type.SCRIPT_END));
+                            ? ScriptEvent.Type.CASE_END
+                            : ScriptEvent.Type.SCRIPT_END));
                     // }
                     // }
                 }
@@ -491,18 +492,18 @@ public class KActorsVM implements VM {
             if (scope.getSender() != null) {
                 scope.send(new Fire(scope));
             } /*
-               * else if (parentActor != null) {
-               * 
-               * 
-               * No sender = the fire is not coming from an internal action but goes out to the
-               * world, which in this case is the parent actor. Let our parent know we've fired with
-               * a message carrying the name it knows us by, so that the value can be matched to
-               * what is caught after the 'new' verb. Listener ID is the actor's name.
-               * 
-               * // parentActor.tell(new ComponentFire(receiver.path().name(), t, receiver));
-               * 
-               * }
-               */else {
+             * else if (parentActor != null) {
+             *
+             *
+             * No sender = the fire is not coming from an internal action but goes out to the
+             * world, which in this case is the parent actor. Let our parent know we've fired with
+             * a message carrying the name it knows us by, so that the value can be matched to
+             * what is caught after the 'new' verb. Listener ID is the actor's name.
+             *
+             * // parentActor.tell(new ComponentFire(receiver.path().name(), t, receiver));
+             *
+             * }
+             */ else {
 
                 /*
                  * Fart in space: nothing is listening from the behavior being executed. TODO - an
@@ -519,7 +520,8 @@ public class KActorsVM implements VM {
             // }
             // scope.getIdentity().setView(new ViewImpl(scope.getViewScope().getLayout()));
             scope.send(Message.MessageClass.UserInterface,
-                    "modal".equals(wspecs.getName()) ? Message.MessageType.CreateModalWindow : Message.MessageType.CreateWindow,
+                    "modal".equals(wspecs.getName()) ? Message.MessageType.CreateModalWindow :
+                    Message.MessageType.CreateWindow,
                     scope.getViewScope().getLayout());
         }
     }
@@ -531,51 +533,51 @@ public class KActorsVM implements VM {
         }
 
         try {
-            switch(code.getType()) {
-            case ACTION_CALL:
-                executeCall((KActorsStatement.Call) code, behavior, scope);
-                break;
-            case ASSIGNMENT:
-                executeAssignment((KActorsStatement.Assignment) code, scope);
-                break;
-            case DO_STATEMENT:
-                executeDo((KActorsStatement.Do) code, scope);
-                break;
-            case FIRE_VALUE:
-                return executeFire((KActorsStatement.FireValue) code, scope);
-            case FOR_STATEMENT:
-                executeFor((KActorsStatement.For) code, behavior, scope);
-                break;
-            case IF_STATEMENT:
-                executeIf((KActorsStatement.If) code, behavior, scope);
-                break;
-            case CONCURRENT_GROUP:
-                executeGroup((KActorsStatement.ConcurrentGroup) code, behavior, scope);
-                break;
-            case SEQUENCE:
-                executeSequence((KActorsStatement.Sequence) code, behavior, scope);
-                break;
-            case TEXT_BLOCK:
-                executeText((KActorsStatement.TextBlock) code, behavior, scope);
-                break;
-            case WHILE_STATEMENT:
-                executeWhile((KActorsStatement.While) code, scope);
-                break;
-            case INSTANTIATION:
-                executeInstantiation((KActorsStatement.Instantiation) code, behavior, scope);
-                break;
-            case ASSERT_STATEMENT:
-                executeAssert((KActorsStatement.Assert) code, behavior, scope);
-                break;
-            case FAIL_STATEMENT:
-                if (scope.getTestScope() != null) {
-                    scope.getTestScope().fail((Fail) code);
-                }
-                // fall through
-            case BREAK_STATEMENT:
-                return false;
-            default:
-                break;
+            switch (code.getType()) {
+                case ACTION_CALL:
+                    executeCall((KActorsStatement.Call) code, behavior, scope);
+                    break;
+                case ASSIGNMENT:
+                    executeAssignment((KActorsStatement.Assignment) code, scope);
+                    break;
+                case DO_STATEMENT:
+                    executeDo((KActorsStatement.Do) code, scope);
+                    break;
+                case FIRE_VALUE:
+                    return executeFire((KActorsStatement.FireValue) code, scope);
+                case FOR_STATEMENT:
+                    executeFor((KActorsStatement.For) code, behavior, scope);
+                    break;
+                case IF_STATEMENT:
+                    executeIf((KActorsStatement.If) code, behavior, scope);
+                    break;
+                case CONCURRENT_GROUP:
+                    executeGroup((KActorsStatement.ConcurrentGroup) code, behavior, scope);
+                    break;
+                case SEQUENCE:
+                    executeSequence((KActorsStatement.Sequence) code, behavior, scope);
+                    break;
+                case TEXT_BLOCK:
+                    executeText((KActorsStatement.TextBlock) code, behavior, scope);
+                    break;
+                case WHILE_STATEMENT:
+                    executeWhile((KActorsStatement.While) code, scope);
+                    break;
+                case INSTANTIATION:
+                    executeInstantiation((KActorsStatement.Instantiation) code, behavior, scope);
+                    break;
+                case ASSERT_STATEMENT:
+                    executeAssert((KActorsStatement.Assert) code, behavior, scope);
+                    break;
+                case FAIL_STATEMENT:
+                    if (scope.getTestScope() != null) {
+                        scope.getTestScope().fail((Fail) code);
+                    }
+                    // fall through
+                case BREAK_STATEMENT:
+                    return false;
+                default:
+                    break;
             }
         } catch (Throwable t) {
             if (scope.getTestScope() != null) {
@@ -621,7 +623,8 @@ public class KActorsVM implements VM {
 
             MatchActions actions = new MatchActions(behavior, scope);
             for (Triple<KActorsValue, KActorsStatement, String> adesc : code.getActions()) {
-                actions.matches.add(Pair.of(new Match(adesc.getFirst(), adesc.getThird()), adesc.getSecond()));
+                actions.matches.add(Pair.of(new Match(adesc.getFirst(), adesc.getThird()),
+                        adesc.getSecond()));
             }
             this.componentFireListeners.put(actorName, actions);
         }
@@ -634,9 +637,10 @@ public class KActorsVM implements VM {
              * TODO match the arguments to the correspondent names for the declaration of main()
              */
             KActorsBehavior childBehavior = scope.getMainScope().getService(ResourcesService.class)
-                    .resolveBehavior(code.getBehavior(), scope.getMainScope());
+                                                 .resolveBehavior(code.getBehavior(), scope.getMainScope());
             if (childBehavior == null) {
-                scope.error("unreferenced child behavior: " + code.getBehavior() + " when execute instantiation");
+                scope.error("unreferenced child behavior: " + code.getBehavior() + " when execute " +
+                        "instantiation");
                 return;
             }
             KActorsAction main = getAction(childBehavior, "main");
@@ -662,7 +666,7 @@ public class KActorsVM implements VM {
         }
 
         KActorsBehavior actorBehavior = scope.getMainScope().getService(ResourcesService.class)
-                .resolveBehavior(code.getBehavior(), scope.getMainScope());
+                                             .resolveBehavior(code.getBehavior(), scope.getMainScope());
         if (actorBehavior != null) {
 
             /*
@@ -706,7 +710,7 @@ public class KActorsVM implements VM {
 
     private void waitForGreen(Semaphore semaphore) {
 
-        while(!Semaphore.expired(semaphore)) {
+        while (!Semaphore.expired(semaphore)) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -805,20 +809,23 @@ public class KActorsVM implements VM {
             executeCallChain(assertion.getCalls(), behavior, scope);
             if (assertion.getValue() != null || assertion.getExpression() != null) {
                 // target is the match if we come from a trigger, or the value scope.
-                evaluateAssertion(scope.getMatchValue() == null ? scope.getValueScope() : scope.getMatchValue(), assertion, scope,
+                evaluateAssertion(scope.getMatchValue() == null ? scope.getValueScope() :
+                                  scope.getMatchValue(), assertion, scope,
                         code.getArguments());
             }
         }
     }
 
-    private static Object executeFunctionChain(List<Call> functions, KActorsBehavior behavior, KActorsScope scope) {
+    private static Object executeFunctionChain(List<Call> functions, KActorsBehavior behavior,
+                                               KActorsScope scope) {
         Object contextReceiver = null;
         for (int i = 0; i < functions.size(); i++) {
             if (scope.isInterrupted()) {
                 break;
             }
             boolean last = (i == functions.size() - 1);
-            KActorsScope fscope = last ? scope.withReceiver(contextReceiver) : scope.functional(contextReceiver);
+            KActorsScope fscope = last ? scope.withReceiver(contextReceiver) :
+                                  scope.functional(contextReceiver);
             callFunctionOrMethod(functions.get(i), fscope);
             contextReceiver = fscope.getValueScope();
         }
@@ -826,9 +833,9 @@ public class KActorsVM implements VM {
     }
 
     /**
-     * If the call is a known function, call it and leave the value in the scope. Otherwise check if
-     * it's a method of the valueScope receiver if we have it.
-     * 
+     * If the call is a known function, call it and leave the value in the scope. Otherwise check if it's a
+     * method of the valueScope receiver if we have it.
+     *
      * @param call
      * @param fscope
      */
@@ -838,11 +845,10 @@ public class KActorsVM implements VM {
     }
 
     /**
-     * A call sequence is a one or more calls to be executed in sequence. The last call is a
-     * standard message call which will either fire or return according to the scope; the ones
-     * preceding it, if any, are necessarily functional and the return value of the first provides
-     * the execution context for the next.
-     * 
+     * A call sequence is a one or more calls to be executed in sequence. The last call is a standard message
+     * call which will either fire or return according to the scope; the ones preceding it, if any, are
+     * necessarily functional and the return value of the first provides the execution context for the next.
+     *
      * @param calls
      * @param scope
      */
@@ -854,7 +860,8 @@ public class KActorsVM implements VM {
             if (scope.isInterrupted()) {
                 break;
             }
-            KActorsScope fscope = last ? scope.withReceiver(contextReceiver) : scope.functional(contextReceiver);
+            KActorsScope fscope = last ? scope.withReceiver(contextReceiver) :
+                                  scope.functional(contextReceiver);
             executeCall(calls.get(i), behavior, fscope);
             contextReceiver = fscope.getValueScope();
         }
@@ -863,7 +870,7 @@ public class KActorsVM implements VM {
 
     /**
      * TODO add handling of test cases - all fires (including exceptions) should be intercepted
-     * 
+     *
      * @param code
      * @param scope\
      * @return false if the scope is functional and execution should stop.
@@ -898,19 +905,19 @@ public class KActorsVM implements VM {
             // scope.getAppId(), scope.getSemaphore(), scope.getSymbols(this.identity)));
 
         } /*
-           * else if (parentActor != null) {
-           * 
-           * 
-           * No sender = the fire is not coming from an internal action but goes out to the world,
-           * which in this case is the parent actor. Let our parent know we've fired with a message
-           * carrying the name it knows us by, so that the value can be matched to what is caught
-           * after the 'new' verb. Listener ID is the actor's name.
-           * 
-           * // parentActor // .tell(new ComponentFire(receiver.path().name(), //
-           * code.getValue().evaluate(scope, // identity, false), receiver));
-           * 
-           * }
-           */else {
+         * else if (parentActor != null) {
+         *
+         *
+         * No sender = the fire is not coming from an internal action but goes out to the world,
+         * which in this case is the parent actor. Let our parent know we've fired with a message
+         * carrying the name it knows us by, so that the value can be matched to what is caught
+         * after the 'new' verb. Listener ID is the actor's name.
+         *
+         * // parentActor // .tell(new ComponentFire(receiver.path().name(), //
+         * code.getValue().evaluate(scope, // identity, false), receiver));
+         *
+         * }
+         */ else {
 
             /*
              * Fart in space: nothing is listening from the behavior being executed. TODO - an actor
@@ -944,29 +951,29 @@ public class KActorsVM implements VM {
 
             Object o = evaluateInScope((KActorsValue) code.getValue(), scope); // false
             this.javaReactors.put(code.getVariable(), o);
-            switch(code.getAssignmentScope()) {
-            case ACTION:
-                scope.getSymbolTable().put(code.getVariable(), o);
-                break;
-            case ACTOR:
-                scope.getGlobalSymbols().put(code.getVariable(), o);
-                break;
-            case FRAME:
-                scope.getFrameSymbols().put(code.getVariable(), o);
-                break;
+            switch (code.getAssignmentScope()) {
+                case ACTION:
+                    scope.getSymbolTable().put(code.getVariable(), o);
+                    break;
+                case ACTOR:
+                    scope.getGlobalSymbols().put(code.getVariable(), o);
+                    break;
+                case FRAME:
+                    scope.getFrameSymbols().put(code.getVariable(), o);
+                    break;
             }
         } else {
             Object o = evaluateInScope((KActorsValue) code.getValue(), scope); // false
-            switch(code.getAssignmentScope()) {
-            case ACTION:
-                scope.getSymbolTable().put(code.getVariable(), o);
-                break;
-            case ACTOR:
-                scope.getGlobalSymbols().put(code.getVariable(), o);
-                break;
-            case FRAME:
-                scope.getFrameSymbols().put(code.getVariable(), o);
-                break;
+            switch (code.getAssignmentScope()) {
+                case ACTION:
+                    scope.getSymbolTable().put(code.getVariable(), o);
+                    break;
+                case ACTOR:
+                    scope.getGlobalSymbols().put(code.getVariable(), o);
+                    break;
+                case FRAME:
+                    scope.getFrameSymbols().put(code.getVariable(), o);
+                    break;
             }
         }
     }
@@ -976,111 +983,112 @@ public class KActorsVM implements VM {
 
         Object ret = null;
 
-        switch(arg.getType()) {
-        case OBJECT:
-            ret = createJavaObject(arg.getConstructor(), scope);
-            break;
-        case COMPONENT:
-            ret = arg.getConstructor();
-            break;
-        case QUANTITY:
-            ret = arg.getStatedValue().get(Quantity.class);
-            break;
-        case OBSERVABLE:
-            ret = arg.getStatedValue().get(Observable.class);
-            break;
-        case ERROR:
-            throw arg.getStatedValue() instanceof Throwable
-                    ? new KlabActorException((Throwable) arg.getStatedValue())
-                    : new KlabActorException(arg.getStatedValue() == null
-                            ? "Unspecified actor error from error value"
-                            : arg.getStatedValue().toString());
+        switch (arg.getType()) {
+            case OBJECT:
+                ret = createJavaObject(arg.getConstructor(), scope);
+                break;
+            case COMPONENT:
+                ret = arg.getConstructor();
+                break;
+            case QUANTITY:
+                ret = arg.getStatedValue().get(Quantity.class);
+                break;
+            case OBSERVABLE:
+                ret = arg.getStatedValue().get(Observable.class);
+                break;
+            case ERROR:
+                throw arg.getStatedValue() instanceof Throwable
+                      ? new KlabActorException((Throwable) arg.getStatedValue())
+                      : new KlabActorException(arg.getStatedValue() == null
+                                               ? "Unspecified actor error from error value"
+                                               : arg.getStatedValue().toString());
 
-        case NUMBERED_PATTERN:
-            if (!"$".equals(arg.getStatedValue().toString())) {
+            case NUMBERED_PATTERN:
+                if (!"$".equals(arg.getStatedValue().toString())) {
+                    // TODO
+                } /* else fall through to IDENTIFIER */
+
+            case IDENTIFIER:
+
+                // TODO check for recipient in ID
+                if (scope.hasValue(arg.getStatedValue().toString())) {
+                    ret = scope.getValue(arg.getStatedValue().toString());
+                } else {
+                    ret = arg.getStatedValue().toString();
+                }
+                break;
+
+            case EXPRESSION:
+
+                // if (arg.getData() == null) {
+                //
+                // Object val = arg.getStatedValue();
+                // if (val instanceof String) {
+                // val = Extensions.INSTANCE.parse((String) val);
+                // }
+                //
+                // arg.setData(new ObjectExpression((IKimExpression) val, (IRuntimeScope)
+                // scope.getRuntimeScope()));
+                // }
+
+                try {
+                    /*
+                     * 'metadata' is bound to the actor metadata map, initialized in the call
+                     */
+                    // ret = ((ObjectExpression) arg.getData()).eval((IRuntimeScope)
+                    // scope.getRuntimeScope(), scope.getIdentity(),
+                    // Parameters.create(scope.getSymbols(identity), "metadata",
+                    // scope.getMetadata(),
+                    // "self", identity));
+                } catch (Throwable t) {
+                    scope.error(t);
+                    return null;
+                }
+
+                break;
+
+            case OBSERVATION:
                 // TODO
-            } /* else fall through to IDENTIFIER */
+                break;
+            case SET:
+                // TODO eval all args
+                break;
+            case LIST:
+                ret = new ArrayList<Object>();
+                for (Object o : arg.getStatedValue().get(Collection.class)) {
+                    ((List<Object>) ret).add(o instanceof KActorsValue ? evaluateInScope((KActorsValue) o,
+                            scope) : o);
+                }
+                break;
+            case TREE:
+                // TODO eval all args
+                break;
+            case MAP:
+                // TODO eval all args
+                break;
+            case TABLE:
+                // TODO eval all args
+                break;
+            case URN:
+                ret = new Urn(arg.getStatedValue().get(String.class));
+                break;
+            case CALLCHAIN:
+                ret = executeFunctionChain(arg.getCallChain(), scope.getBehavior(), scope);
+                break;
+            case LOCALIZED_KEY:
 
-        case IDENTIFIER:
-
-            // TODO check for recipient in ID
-            if (scope.hasValue(arg.getStatedValue().toString())) {
-                ret = scope.getValue(arg.getStatedValue().toString());
-            } else {
-                ret = arg.getStatedValue().toString();
-            }
-            break;
-
-        case EXPRESSION:
-
-            // if (arg.getData() == null) {
-            //
-            // Object val = arg.getStatedValue();
-            // if (val instanceof String) {
-            // val = Extensions.INSTANCE.parse((String) val);
-            // }
-            //
-            // arg.setData(new ObjectExpression((IKimExpression) val, (IRuntimeScope)
-            // scope.getRuntimeScope()));
-            // }
-
-            try {
-                /*
-                 * 'metadata' is bound to the actor metadata map, initialized in the call
-                 */
-                // ret = ((ObjectExpression) arg.getData()).eval((IRuntimeScope)
-                // scope.getRuntimeScope(), scope.getIdentity(),
-                // Parameters.create(scope.getSymbols(identity), "metadata",
-                // scope.getMetadata(),
-                // "self", identity));
-            } catch (Throwable t) {
-                scope.error(t);
-                return null;
-            }
-
-            break;
-
-        case OBSERVATION:
-            // TODO
-            break;
-        case SET:
-            // TODO eval all args
-            break;
-        case LIST:
-            ret = new ArrayList<Object>();
-            for (Object o : arg.getStatedValue().get(Collection.class)) {
-                ((List<Object>) ret).add(o instanceof KActorsValue ? evaluateInScope((KActorsValue) o, scope) : o);
-            }
-            break;
-        case TREE:
-            // TODO eval all args
-            break;
-        case MAP:
-            // TODO eval all args
-            break;
-        case TABLE:
-            // TODO eval all args
-            break;
-        case URN:
-            ret = new Urn(arg.getStatedValue().get(String.class));
-            break;
-        case CALLCHAIN:
-            ret = executeFunctionChain(arg.getCallChain(), scope.getBehavior(), scope);
-            break;
-        case LOCALIZED_KEY:
-
-            if (scope.getLocalizedSymbols() != null) {
-                ret = scope.getLocalizedSymbols().get(arg.getStatedValue().get(String.class));
-            }
-            if (ret == null) {
-                // ensure invariance in copies of the behavior
-                ret = "#" + arg.getStatedValue().get(Object.class);
-                // .capitalize(arg.getStatedValue().toString().toLowerCase().replace("__",
-                // ":").replace("_", " "));
-            }
-            break;
-        default:
-            ret = arg.getStatedValue().get(Object.class);
+                if (scope.getLocalizedSymbols() != null) {
+                    ret = scope.getLocalizedSymbols().get(arg.getStatedValue().get(String.class));
+                }
+                if (ret == null) {
+                    // ensure invariance in copies of the behavior
+                    ret = "#" + arg.getStatedValue().get(Object.class);
+                    // .capitalize(arg.getStatedValue().toString().toLowerCase().replace("__",
+                    // ":").replace("_", " "));
+                }
+                break;
+            default:
+                ret = arg.getStatedValue().get(Object.class);
         }
 
         if (arg.getExpressionType() == ExpressionType.TERNARY_OPERATOR) {
@@ -1096,7 +1104,7 @@ public class KActorsVM implements VM {
 
     /**
      * Build a Java object through reflection when invoked by a k.Actors constructor
-     * 
+     *
      * @param constructor
      * @param scope
      * @return
@@ -1112,7 +1120,8 @@ public class KActorsVM implements VM {
         } else {
             className = constructor.getClasspath() + "." + className;
             throw new KlabIllegalStateException(
-                    "k.Actors: creation of Java object with explicit classpath requires a security exception, unimplemented so far.");
+                    "k.Actors: creation of Java object with explicit classpath requires a security " +
+                            "exception, unimplemented so far.");
         }
 
         try {
@@ -1139,7 +1148,8 @@ public class KActorsVM implements VM {
                         continue;
                     }
                     Object arg = constructor.getArguments().get(key);
-                    settings.put(key, arg instanceof KActorsValue ? evaluateInScope((KActorsValue) arg, scope) : arg);
+                    settings.put(key, arg instanceof KActorsValue ? evaluateInScope((KActorsValue) arg,
+                            scope) : arg);
                 }
 
                 java.lang.reflect.Constructor<?> constr = null;
@@ -1165,11 +1175,13 @@ public class KActorsVM implements VM {
                 // shouldn't happen w/o exception
                 if (ret != null) {
                     for (String setting : settings.keySet()) {
-                        String methodName = setting.startsWith("set") ? setting : ("set" + Utils.Strings.capitalize(setting));
+                        String methodName = setting.startsWith("set") ? setting :
+                                            ("set" + Utils.Strings.capitalize(setting));
                         Object argument = settings.get(setting);
                         Method method = null;
                         try {
-                            method = cls.getMethod(methodName, argument == null ? Object.class : argument.getClass());
+                            method = cls.getMethod(methodName, argument == null ? Object.class :
+                                                               argument.getClass());
                         } catch (NoSuchMethodException e) {
                             // ok, we dont'have it.
                         }
@@ -1190,10 +1202,12 @@ public class KActorsVM implements VM {
                             }
                         } else {
                             if (scope != null) {
-                                scope.warn("k.Actors: cannot find a " + methodName + " method to invoke on constructed object");
+                                scope.warn("k.Actors: cannot find a " + methodName + " method to invoke on " +
+                                        "constructed object");
                             } else {
                                 Logging.INSTANCE.warn(
-                                        "k.Actors: cannot find a " + methodName + " method to invoke on constructed object");
+                                        "k.Actors: cannot find a " + methodName + " method to invoke on " +
+                                                "constructed object");
                             }
                         }
                     }
@@ -1255,7 +1269,8 @@ public class KActorsVM implements VM {
             notifyId = nextId.incrementAndGet();
             MatchActions actions = new MatchActions(behavior, scope);
             for (Triple<KActorsValue, KActorsStatement, String> adesc : code.getActions()) {
-                actions.matches.add(Pair.of(new Match(adesc.getFirst(), adesc.getThird()), adesc.getSecond()));
+                actions.matches.add(Pair.of(new Match(adesc.getFirst(), adesc.getThird()),
+                        adesc.getSecond()));
             }
             this.listeners.put(notifyId, actions);
         }
@@ -1281,11 +1296,11 @@ public class KActorsVM implements VM {
              */
             if (this.javaReactors.containsKey(receiverName)
                     || scope.getFrameSymbols().containsKey(receiverName)
-                            && !Utils.Data.isPOD(scope.getSymbolTable().get(receiverName))
+                    && !Utils.Data.isPOD(scope.getSymbolTable().get(receiverName))
                     || scope.getSymbolTable().containsKey(receiverName)
-                            && !Utils.Data.isPOD(scope.getSymbolTable().get(receiverName))
+                    && !Utils.Data.isPOD(scope.getSymbolTable().get(receiverName))
                     || scope.getGlobalSymbols().containsKey(receiverName)
-                            && !Utils.Data.isPOD(scope.getGlobalSymbols().get(receiverName))) {
+                    && !Utils.Data.isPOD(scope.getGlobalSymbols().get(receiverName))) {
 
                 Object reactor = this.javaReactors.get(receiverName);
                 if (reactor == null) {
@@ -1388,8 +1403,9 @@ public class KActorsVM implements VM {
                          * must be compatible with the same argument of the method; otherwise we
                          * continue on to receiver call.
                          */
-                        boolean ok = method.getMethod().getParameterCount() > 0 && scope.getValueScope().getClass()
-                                .isAssignableFrom(method.getMethod().getParameters()[0].getType());
+                        boolean ok =
+                                method.getMethod().getParameterCount() > 0 && scope.getValueScope().getClass()
+                                                                                   .isAssignableFrom(method.getMethod().getParameters()[0].getType());
 
                         if (!ok) {
                             continue;
@@ -1402,11 +1418,13 @@ public class KActorsVM implements VM {
                      */
                     List<Object> args = new ArrayList<>();
                     for (Object arg : code.getArguments().getUnnamedArguments()) {
-                        args.add(arg instanceof KActorsValue ? evaluateInScope((KActorsValue) arg, scope) : arg);
+                        args.add(arg instanceof KActorsValue ? evaluateInScope((KActorsValue) arg, scope) :
+                                 arg);
                     }
                     try {
                         ((KActorsScope) scope).setValueScope(
-                                method.getMethod().invoke(nativeLibraryInstances.get(library.getName()), args.toArray()));
+                                method.getMethod().invoke(nativeLibraryInstances.get(library.getName()),
+                                        args.toArray()));
                         return;
                     } catch (Throwable e) {
                         throw new KlabActorException(e);
@@ -1426,7 +1444,8 @@ public class KActorsVM implements VM {
          * at this point if we have a valueScope, we are calling a method on it.
          */
         if (scope.getValueScope() != null) {
-            scope.setValueScope(invokeReactorMethod(scope.getValueScope(), messageName, code.getArguments(), scope));
+            scope.setValueScope(invokeReactorMethod(scope.getValueScope(), messageName, code.getArguments()
+                    , scope));
             return;
         }
 
@@ -1434,7 +1453,7 @@ public class KActorsVM implements VM {
          * If we get here, the message is directed to self and it may specify an executor or a
          * k.Actors behavior action. A coded action takes preference over a system behavior
          * executor.
-         * 
+         *
          * Now we're in the appropriate scope for synchronous execution if we have actions after
          * fire.
          */
@@ -1454,7 +1473,8 @@ public class KActorsVM implements VM {
             return;
         }
 
-        String executorId = /* (this.childActorPath == null ? "" : (this.childActorPath + "_")) + */ code.getCallId();
+        String executorId = /* (this.childActorPath == null ? "" : (this.childActorPath + "_")) +
+         */ code.getCallId();
 
         /*
          * Remaining option is a code action executor installed through a system behavior. The
@@ -1523,7 +1543,7 @@ public class KActorsVM implements VM {
                 viewComponent.setIdentity(scope.getIdentity().getId());
                 // viewComponent.setApplicationId(this.appId);
                 viewComponent.setParentId(code.getCallId()); // check - seems
-                                                             // wrong
+                // wrong
                 viewComponent.setId(executorId);
                 // viewComponent.setActorPath(this.childActorPath);
                 ((WidgetActionExecutor) executor).setInitializedComponent(viewComponent);
@@ -1546,74 +1566,75 @@ public class KActorsVM implements VM {
 
     @SuppressWarnings("unchecked")
     public Iterable<Object> getIterable(KActorsValue iterable, KActorsScope scope) {
-        switch(iterable.getType()) {
-        case ANYTHING:
-            break;
-        case ANYTRUE:
-            break;
-        case ANYVALUE:
-            break;
-        case EMPTY:
-            break;
-        case CONSTANT:
-        case DATE:
-        case CLASS:
-        case BOOLEAN:
-        case ERROR:
-        case EXPRESSION:
-        case NUMBER:
-        case OBSERVABLE:
-        case OBJECT:
-        case IDENTIFIER:
-        case LIST:
-        case SET:
-            Object o = evaluateInScope((KActorsValue) iterable, scope);
-            if (o instanceof Iterable) {
-                return (Iterable<Object>) o;
-            } else if (o instanceof String && Utils.Urns.isUrn(o.toString())) {
-                return iterateResource(o.toString());
-            }
-            return Collections.singletonList(o);
-        case STRING:
-            if (Utils.Urns.isUrn(iterable.getStatedValue().toString())) {
+        switch (iterable.getType()) {
+            case ANYTHING:
+                break;
+            case ANYTRUE:
+                break;
+            case ANYVALUE:
+                break;
+            case EMPTY:
+                break;
+            case CONSTANT:
+            case DATE:
+            case CLASS:
+            case BOOLEAN:
+            case ERROR:
+            case EXPRESSION:
+            case NUMBER:
+            case OBSERVABLE:
+            case OBJECT:
+            case IDENTIFIER:
+            case LIST:
+            case SET:
+                Object o = evaluateInScope((KActorsValue) iterable, scope);
+                if (o instanceof Iterable) {
+                    return (Iterable<Object>) o;
+                } else if (o instanceof String && Utils.Urns.isUrn(o.toString())) {
+                    return iterateResource(o.toString());
+                }
+                return Collections.singletonList(o);
+            case STRING:
+                if (Utils.Urns.isUrn(iterable.getStatedValue().toString())) {
+                    return iterateResource(iterable.getStatedValue().toString());
+                }
+                return Collections.singletonList(evaluateInScope((KActorsValue) iterable, scope));
+            case MAP:
+                break;
+            case NODATA:
+                return Collections.singletonList(null);
+            case NUMBERED_PATTERN:
+                break;
+            case OBSERVATION:
+                return (Iterable<Object>) evaluateInScope((KActorsValue) iterable, scope);
+            case RANGE:
+                // TODO iterate the range
+                break;
+            case TABLE:
+                break;
+            case TREE:
+                break;
+            case TYPE:
+                break;
+            case URN:
                 return iterateResource(iterable.getStatedValue().toString());
-            }
-            return Collections.singletonList(evaluateInScope((KActorsValue) iterable, scope));
-        case MAP:
-            break;
-        case NODATA:
-            return Collections.singletonList(null);
-        case NUMBERED_PATTERN:
-            break;
-        case OBSERVATION:
-            return (Iterable<Object>) evaluateInScope((KActorsValue) iterable, scope);
-        case RANGE:
-            // TODO iterate the range
-            break;
-        case TABLE:
-            break;
-        case TREE:
-            break;
-        case TYPE:
-            break;
-        case URN:
-            return iterateResource(iterable.getStatedValue().toString());
-        default:
-            break;
+            default:
+                break;
         }
         return new ArrayList<>();
     }
 
     /**
-     * Used within KlabActor to compare a returned value with an expected one in a test scope. If
-     * we're not in test scope, send an exception to the monitor on lack of match.
+     * Used within KlabActor to compare a returned value with an expected one in a test scope. If we're not in
+     * test scope, send an exception to the monitor on lack of match.
      *
      * @param target
      * @param assertion
      * @param scope
      * @param arguments
      */
-    public void evaluateAssertion(Object target, Assertion assertion, KActorsScope scope, Parameters<String> arguments) {
+    public void evaluateAssertion(Object target, Assertion assertion, KActorsScope scope,
+                                  Parameters<String> arguments) {
 
         if (target instanceof KActorsValue) {
             target = evaluateInScope((KActorsValue) target, scope);
@@ -1656,8 +1677,10 @@ public class KActorsVM implements VM {
             if (comparison.getType() == ValueType.EXPRESSION) {
 
                 ExpressionCode expr = comparison.as(ExpressionCode.class);
-                compareDescriptor = languageService.describe(expr.getCode(), expr.getLanguage(), scope.getMainScope())
-                        .scalar(expr.isForcedScalar() ? Forcing.Always : Forcing.AsNeeded);
+                compareDescriptor = languageService.describe(expr.getCode(), expr.getLanguage(),
+                                                           scope.getMainScope())
+                                                   .scalar(expr.isForcedScalar() ? Forcing.Always :
+                                                           Forcing.AsNeeded);
                 compareExpression = compareDescriptor.compile();
                 for (String input : compareDescriptor.getIdentifiers()) {
                     // if (compareDescriptor.isScalar(input) && runtimeScope.getArtifact(input,
@@ -1740,7 +1763,8 @@ public class KActorsVM implements VM {
         }
 
         if (scope.getTestScope() == null && nErr > 0) {
-            throw new KlabActorException("assertion failed on '" + comparison + "' with " + nErr + " mismatches");
+            throw new KlabActorException("assertion failed on '" + comparison + "' with " + nErr + " " +
+                    "mismatches");
         }
 
         scope.getTestScope().notifyAssertion(target, comparison, ok, assertion);
@@ -1748,115 +1772,116 @@ public class KActorsVM implements VM {
 
     public boolean matches(KActorsValue kvalue, Object value, KActorsScope scope) {
 
-        switch(kvalue.getType()) {
+        switch (kvalue.getType()) {
 
-        case ANNOTATION:
-            for (Annotation annotation : Utils.Annotations.collectAnnotations(value)) {
-                if (annotation.getName().equals(kvalue.getStatedValue().get(String.class))) {
-                    scope.getSymbolTable().put(annotation.getName(), annotation);
+            case ANNOTATION:
+                for (Annotation annotation : Utils.Annotations.collectAnnotations(value)) {
+                    if (annotation.getName().equals(kvalue.getStatedValue().get(String.class))) {
+                        scope.getSymbolTable().put(annotation.getName(), annotation);
+                        return true;
+                    }
+                }
+                break;
+            case ANYTHING:
+                return true;
+            case ANYVALUE:
+                return value != null && !(value instanceof Throwable);
+            case ANYTRUE:
+                boolean ret =
+                        value != null && !(value instanceof Throwable) && !(value instanceof Boolean && !((Boolean) value));
+                // if (ret) {
+                // scope.symbolTable.put("$", value);
+                // if (value instanceof Collection) {
+                // int n = 1;
+                // for (Object v : ((Collection<?>)value)) {
+                // scope.symbolTable.put("$" + (n++), v);
+                // }
+                // }
+                // }
+                return ret;
+            case BOOLEAN:
+                return value instanceof Boolean && value.equals(kvalue.getStatedValue());
+            case CLASS:
+                break;
+            case DATE:
+                break;
+            case EXPRESSION:
+                System.out.println("ACH AN EXPRESSION");
+                break;
+            case IDENTIFIER:
+                if (scope.getSymbolTable().containsKey(kvalue.getStatedValue().get(String.class))) {
+                    return kvalue.getStatedValue().get(String.class).equals(scope.getSymbolTable().get(value));
+                }
+                if (!notMatch(value)) {
+                    // NO - if defined in scope, match to its value, else just return true.
+                    // scope.symbolTable.put(kvalue.getValue().toString(), value);
                     return true;
                 }
-            }
-            break;
-        case ANYTHING:
-            return true;
-        case ANYVALUE:
-            return value != null && !(value instanceof Throwable);
-        case ANYTRUE:
-            boolean ret = value != null && !(value instanceof Throwable) && !(value instanceof Boolean && !((Boolean) value));
-            // if (ret) {
-            // scope.symbolTable.put("$", value);
-            // if (value instanceof Collection) {
-            // int n = 1;
-            // for (Object v : ((Collection<?>)value)) {
-            // scope.symbolTable.put("$" + (n++), v);
-            // }
-            // }
-            // }
-            return ret;
-        case BOOLEAN:
-            return value instanceof Boolean && value.equals(kvalue.getStatedValue());
-        case CLASS:
-            break;
-        case DATE:
-            break;
-        case EXPRESSION:
-            System.out.println("ACH AN EXPRESSION");
-            break;
-        case IDENTIFIER:
-            if (scope.getSymbolTable().containsKey(kvalue.getStatedValue().get(String.class))) {
-                return kvalue.getStatedValue().get(String.class).equals(scope.getSymbolTable().get(value));
-            }
-            if (!notMatch(value)) {
-                // NO - if defined in scope, match to its value, else just return true.
-                // scope.symbolTable.put(kvalue.getValue().toString(), value);
-                return true;
-            }
-            break;
-        case SET:
-            // TODO OR match for values in list
-            break;
-        case LIST:
-            // TODO multi-identifier match
-            break;
-        case MAP:
-            break;
-        case NODATA:
-            return value == null || value instanceof Number && Double.isNaN(((Number) value).doubleValue());
-        case NUMBER:
-            return value instanceof Number && value.equals(kvalue.getStatedValue().get(Number.class));
-        case NUMBERED_PATTERN:
-            break;
-        case OBSERVABLE:
-            Object obj = evaluateInScope(kvalue, scope);
-            if (obj instanceof Observable) {
-                if (value instanceof Observation) {
-                    return scope.getMainScope().getService(Reasoner.class).resolves(((Observation) value).getObservable(),
-                            (Observable) obj, null);
-                    // return ((Observation) value).getObservable().resolves((Observable) obj,
-                    // null);
+                break;
+            case SET:
+                // TODO OR match for values in list
+                break;
+            case LIST:
+                // TODO multi-identifier match
+                break;
+            case MAP:
+                break;
+            case NODATA:
+                return value == null || value instanceof Number && Double.isNaN(((Number) value).doubleValue());
+            case NUMBER:
+                return value instanceof Number && value.equals(kvalue.getStatedValue().get(Number.class));
+            case NUMBERED_PATTERN:
+                break;
+            case OBSERVABLE:
+                Object obj = evaluateInScope(kvalue, scope);
+                if (obj instanceof Observable) {
+                    if (value instanceof Observation) {
+                        return scope.getMainScope().getService(Reasoner.class).resolves(((Observation) value).getObservable(),
+                                (Observable) obj, null);
+                        // return ((Observation) value).getObservable().resolves((Observable) obj,
+                        // null);
+                    }
                 }
-            }
-            break;
-        case QUANTITY:
-            break;
-        case RANGE:
-            return value instanceof Number && ((RangeImpl) (kvalue.getStatedValue())).contains(((Number) value).doubleValue());
-        case REGEXP:
-            break;
-        case STRING:
-            return value instanceof String && value.equals(kvalue.getStatedValue().get(String.class));
-        case TABLE:
-            break;
-        case TYPE:
-            return value != null && (kvalue.getStatedValue().get(String.class).equals(value.getClass().getCanonicalName())
-                    || kvalue.getStatedValue().get(String.class)
-                            .equals(Utils.Paths.getLast(value.getClass().getCanonicalName(), '.')));
-        case URN:
-            break;
-        case ERROR:
-            // match any error? any literal for that?
-            return value instanceof Throwable;
-        case OBSERVATION:
-            // might
-            break;
-        case TREE:
-            break;
-        case CONSTANT:
-            return (value instanceof Enum
-                    && ((Enum<?>) value).name().toUpperCase().equals(kvalue.getStatedValue().get(String.class)))
-                    || (value instanceof String && value.equals(kvalue.getStatedValue().get(String.class)));
-        case EMPTY:
-            return value == null || (value instanceof Collection && ((Collection<?>) value).isEmpty())
-                    || (value instanceof String && ((String) value).isEmpty())
-                    || (value instanceof Concept && ((Concept) value).is(SemanticType.NOTHING))
-                    || (value instanceof Observable && ((Observable) value).is(SemanticType.NOTHING))
-                    || (value instanceof Artifact && !(value instanceof ObservationGroup) && ((Artifact) value).isEmpty())
-                    || (value instanceof Observation && ((Observation) value).getObservable().is(SemanticType.NOTHING));
-        case OBJECT:
-            break;
-        default:
-            break;
+                break;
+            case QUANTITY:
+                break;
+            case RANGE:
+                return value instanceof Number && ((RangeImpl) (kvalue.getStatedValue())).contains(((Number) value).doubleValue());
+            case REGEXP:
+                break;
+            case STRING:
+                return value instanceof String && value.equals(kvalue.getStatedValue().get(String.class));
+            case TABLE:
+                break;
+            case TYPE:
+                return value != null && (kvalue.getStatedValue().get(String.class).equals(value.getClass().getCanonicalName())
+                        || kvalue.getStatedValue().get(String.class)
+                                 .equals(Utils.Paths.getLast(value.getClass().getCanonicalName(), '.')));
+            case URN:
+                break;
+            case ERROR:
+                // match any error? any literal for that?
+                return value instanceof Throwable;
+            case OBSERVATION:
+                // might
+                break;
+            case TREE:
+                break;
+            case CONSTANT:
+                return (value instanceof Enum
+                        && ((Enum<?>) value).name().toUpperCase().equals(kvalue.getStatedValue().get(String.class)))
+                        || (value instanceof String && value.equals(kvalue.getStatedValue().get(String.class)));
+            case EMPTY:
+                return value == null || (value instanceof Collection && ((Collection<?>) value).isEmpty())
+                        || (value instanceof String && ((String) value).isEmpty())
+                        || (value instanceof Concept && ((Concept) value).is(SemanticType.NOTHING))
+                        || (value instanceof Observable && ((Observable) value).is(SemanticType.NOTHING))
+                        || (value instanceof Artifact && !(value instanceof ObservationGroup) && ((Artifact) value).isEmpty())
+                        || (value instanceof Observation && ((Observation) value).getObservable().is(SemanticType.NOTHING));
+            case OBJECT:
+                break;
+            default:
+                break;
         }
         return false;
     }
@@ -1867,12 +1892,13 @@ public class KActorsVM implements VM {
 
     /**
      * Invoke a method based on parameters from a call to a Java reactor inside the k.Actors code.
-     * 
+     *
      * @param reactor
      * @param arguments
      * @param scope
      */
-    public Object invokeReactorMethod(Object reactor, String methodName, Parameters<String> arguments, KActorsScope scope) {
+    public Object invokeReactorMethod(Object reactor, String methodName, Parameters<String> arguments,
+                                      KActorsScope scope) {
 
         Object ret = null;
         List<Object> jargs = new ArrayList<>();
@@ -1924,7 +1950,8 @@ public class KActorsVM implements VM {
             if (jargs.size() == 0) {
                 try {
                     // getter
-                    method = reactor.getClass().getDeclaredMethod("get" + Utils.Strings.capitalize(methodName));
+                    method =
+                            reactor.getClass().getDeclaredMethod("get" + Utils.Strings.capitalize(methodName));
                     if (method != null) {
                         ret = method.invoke(reactor, jargs.toArray());
                     }
@@ -1998,7 +2025,8 @@ public class KActorsVM implements VM {
                 scope.warn("k.Actors: cannot find a '" + methodName + "' method to invoke on object of class "
                         + reactor.getClass().getCanonicalName());
             } else {
-                Logging.INSTANCE.warn("k.Actors: cannot find a '" + methodName + "' method to invoke on object of class "
+                Logging.INSTANCE.warn("k.Actors: cannot find a '" + methodName + "' method to invoke on " +
+                        "object of class "
                         + reactor.getClass().getCanonicalName());
             }
         }
@@ -2007,9 +2035,9 @@ public class KActorsVM implements VM {
     }
 
     /**
-     * Return the boolean value of the passed object. In k.Actors, anything that isn't a null,
-     * false, empty string or zero is true.
-     * 
+     * Return the boolean value of the passed object. In k.Actors, anything that isn't a null, false, empty
+     * string or zero is true.
+     *
      * @param ret
      * @return
      */

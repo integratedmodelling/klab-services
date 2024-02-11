@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.services.resources.objects.AuthorityIden
 import org.integratedmodelling.klab.api.services.resources.objects.AuthorityReference;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.logging.Logging;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;

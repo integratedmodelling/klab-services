@@ -7,4 +7,12 @@ package org.integratedmodelling.klab.api.modeler;
  * Provides common methods to initialize and react to UI events.
  */
 public interface ModelerView extends UIReactor {
+
+    void show();
+
+    void hide();
+
+    boolean isShown();
+
+
 }
