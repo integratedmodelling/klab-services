@@ -18,16 +18,19 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 public interface Modeler {
 
     /**
-     * A modeler runs under one user, and its engine is locked to that scope.
+     * A modeler runs under one user at a time. The authentication view may be used to authenticate new users
+     * or switch between available identities. This should never be null: in case of no authentication, the
+     * anonymous user should be returned.
      *
-     * @return
+     * @return the currently authenticated user or Anonymous.
      */
     UserScope getUser();
 
     /**
-     * The modeler handles the engine, which should have a single, unchanging user scope.
+     * The modeler handles the engine, which will authenticate the user scope provided with all the services
+     * and use it for its operation.
      *
-     * @return
+     * @return the engine. Never null.
      */
     Engine getEngine();
 
@@ -36,25 +39,31 @@ public interface Modeler {
      * implementation. This does not reach outside the modeler, therefore the payload can be a pointer to
      * something large unless the modeler is implemented in a distributed fashion.
      *
-     * @param event
-     * @param payload
+     * @param sender  the view that dispatched the event. It's possible that workbench-level event pass null
+     *                here.
+     * @param event   the event. Parameters must correspond to the event's payload class.
+     * @param payload the payload. If multiple objects are sent, the payload is collected into a list.
      */
-    void dispatch(UIReactor.UIEvent event, Object payload);
+    void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload);
 
     /**
-     * Register an object (possibly a {@link UIReactor}) so that it can be informed of all UI-relevant events.
+     * Register a view instance (implementing {@link UIReactor}) so that it can be informed of all UI-relevant
+     * events. The view interfaces specify default methods that turn UI actions into events which go back to
+     * the modeler for wiring.
+     * <p>
      * Registration should inspect the reactor for annotated event methods, which must take the parameters
-     * specified in the event. If the object doesn't implement UIReactor, only the methods are analyzed and
-     * wired to the event manager.
+     * specified in the event. If source analysis is enabled (e.g. when the view is specified through k.Actors
+     * or JSON), any of the actions defined in the interface and not called in the implementation should be
+     * flagged as warning.
      *
      * @param reactor
      */
-    void register(Object reactor);
+    void register(UIReactor reactor);
 
     /**
      * Unregister the passed reactor.
      *
      * @param reactor
      */
-    void unregister(Object reactor);
+    void unregister(UIReactor reactor);
 }

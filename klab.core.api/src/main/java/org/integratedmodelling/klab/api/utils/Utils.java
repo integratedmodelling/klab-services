@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -25,7 +26,10 @@ import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.List;
@@ -1650,6 +1654,26 @@ public class Utils {
     }
 
     public static class Strings {
+
+        /**
+         * Sha256 hash of the passed input
+         *
+         * @param input
+         * @return the hashed string, or null if the input is null
+         */
+        public static String hash(String input) {
+            if (input == null) {
+                return null;
+            }
+            MessageDigest digest = null;
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+            } catch (NoSuchAlgorithmException e) {
+                throw new KlabInternalErrorException(e);
+            }
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            return new String(hash);
+        }
 
         /**
          * If the string has a fragment with a separating last #, return the fragment, otherwise return the

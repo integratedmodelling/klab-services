@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 
 /**
  * Annotates UI event action handler methods in UIReactor interfaces. If the
- * {@link org.integratedmodelling.klab.api.modeler.UIReactor.UIEvent} handled has a payload, this applies to
+ * {@link UIReactor.UIEvent} handled has a payload, this applies to
  * elements of that class, such as a menu for a document in a tree; otherwise it is a generic menu action
  * associated with the reactor, as a menu or action button.
  * <p>
@@ -16,8 +16,8 @@ import java.lang.annotation.*;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface UIActionHandler {
+@Target(ElementType.TYPE)
+public @interface UIView {
 
     /**
      * The type of event this method handles. Parameters passed to the method must be assignable to the
@@ -25,7 +25,7 @@ public @interface UIActionHandler {
      *
      * @return
      */
-    UIReactor.UIAction value();
+    UIReactor.Type value();
 
     /**
      * The label to use to prompt for the action.

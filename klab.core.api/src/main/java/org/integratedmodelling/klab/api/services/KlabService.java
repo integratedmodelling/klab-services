@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.api.services;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation should
@@ -29,6 +32,34 @@ public interface KlabService extends Service {
          * completion of service setup.
          */
         ENGINE
+    }
+
+    /**
+     * Service status should be cheap to obtain and may be polled by monitoring clients to visualize service
+     * status at regular intervals. Only the known fields may be reported, with negative values representing
+     * unknown values.
+     */
+    interface ServiceStatus extends Serializable {
+
+        int getHealthPercentage();
+
+        int getLoadPercentage();
+
+        long getMemoryAvailableBytes();
+
+        long getMemoryUsedBytes();
+
+        int getConnectedSessionCount();
+
+        int getKnownSessionCount();
+
+        long getUptimeMs();
+
+        long getBootTimeMs();
+
+        List<Notification> getAdvisories();
+
+        Metadata getMetadata();
     }
 
     /**
@@ -61,7 +92,20 @@ public interface KlabService extends Service {
         String getServerId();
     }
 
+    /**
+     * Each service publishes capabilities, overridden to the specific capability class for each service.
+     *
+     * @return
+     */
     ServiceCapabilities capabilities();
+
+    /**
+     * The service status should be cheap to obtain and small enough to enable multiple and frequent polling.
+     * Contents should be prioritized in favor of efficiency.
+     *
+     * @return
+     */
+    ServiceStatus status();
 
     /**
      * Get the URL to this service. If this is null, the service cannot be used except through direct

@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.Collection;
 import java.util.concurrent.Future;
@@ -55,6 +55,11 @@ public class RuntimeClient implements RuntimeService {
     @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ServiceStatus status() {
         return null;
     }
 

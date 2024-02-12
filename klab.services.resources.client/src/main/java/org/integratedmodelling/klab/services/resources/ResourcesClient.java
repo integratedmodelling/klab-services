@@ -18,7 +18,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
-import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
 import java.util.Collection;
@@ -65,6 +65,11 @@ public class ResourcesClient implements ResourcesService {
     @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ServiceStatus status() {
         return null;
     }
 
@@ -116,6 +121,11 @@ public class ResourcesClient implements ResourcesService {
     @Override
     public Resource resolveResource(String urn, Scope scope) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Workspace resolveWorkspace(String urn, Scope scope) {
         return null;
     }
 

@@ -245,6 +245,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
+    public Workspace resolveWorkspace(String urn, Scope scope) {
+        // TODO check permissions in scope, possibly filter the workspace's projects
+        return this.workspaceManager.getWorkspace(urn);
+    }
+
+    @Override
     public ResourceSet resolveServiceCall(String name, Scope scope) {
         // TODO
         var ret = new ResourceSet();

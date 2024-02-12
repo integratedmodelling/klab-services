@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.List;
 
@@ -52,6 +52,11 @@ public class ResolverClient implements Resolver {
     @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ServiceStatus status() {
         return null;
     }
 

@@ -185,6 +185,8 @@ public interface ResourcesService extends KlabService {
      */
     Resource resolveResource(String urn, Scope scope);
 
+    Workspace resolveWorkspace(String urn, Scope scope);
+
     /**
      * Resolve a component (and possibly its dependencies) that provides the passed service call.
      *

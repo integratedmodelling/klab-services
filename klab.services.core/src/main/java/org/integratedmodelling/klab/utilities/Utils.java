@@ -148,20 +148,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     public static class Strings extends org.integratedmodelling.klab.api.utils.Utils.Strings {
 
-        /**
-         * Sha256 hash of the passed input
-         *
-         * @param input
-         * @return the hashed string, or null if the input is null
-         */
-        public static String hash(String input) {
-            if (input == null) {
-                return null;
-            }
-            return Hashing.sha256()
-                    .hashString(input, StandardCharsets.UTF_8)
-                    .toString();
-        }
+
     }
 
     public static class Annotations {

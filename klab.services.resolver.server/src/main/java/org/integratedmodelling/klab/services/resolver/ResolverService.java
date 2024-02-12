@@ -59,6 +59,11 @@ public class ResolverService implements Resolver, Resolver.Admin {
     }
 
     @Override
+    public ServiceStatus status() {
+        return null;
+    }
+
+    @Override
     public Resolution resolve(Knowledge resolvable, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
