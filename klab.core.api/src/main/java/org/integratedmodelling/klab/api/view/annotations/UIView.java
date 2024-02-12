@@ -10,7 +10,7 @@ import java.lang.annotation.*;
  * it is a generic menu action associated with the reactor, as a menu or action button.
  * <p>
  * When an interface contains methods annotated with this, it must provide a correspondent menu selection for
- * the object set as the payload of the argument. The modeler will provide the associated labels and tooltips
+ * the object set as the payload of the argument. The controller will provide the associated labels and tooltips
  * (at some point also localized) so that consistent interfaces can be defined if wished.
  */
 @Documented

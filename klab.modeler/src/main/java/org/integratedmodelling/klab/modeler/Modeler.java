@@ -6,9 +6,27 @@ import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.scope.UserScope;
 
-public class ModelerImpl implements UIController {
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class Modeler implements UIController {
 
     EngineClient engine;
+
+
+    private class EventReactor {
+        List<Class<?>> parameterClasses = new ArrayList<>();
+        Method method;
+        UIReactor reactor;
+    }
+
+    /**
+     * Reactors to each event are registered here
+     */
+    Map<UIReactor.UIEvent, List<EventReactor>> reactors = new HashMap<>();
 
     @Override
     public UserScope getUser() {
