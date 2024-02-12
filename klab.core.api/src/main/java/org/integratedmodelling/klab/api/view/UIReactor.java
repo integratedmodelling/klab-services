@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.modeler;
+package org.integratedmodelling.klab.api.view;
 
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
@@ -10,12 +10,11 @@ import org.integratedmodelling.klab.api.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Anything that reacts to UI events implements this interface. The enums and the inherent constraints
@@ -215,7 +214,7 @@ public interface UIReactor {
 
         /**
          * Only used as a default in empty
-         * {@link org.integratedmodelling.klab.api.modeler.annotations.UIEventHandler} annotations
+         * {@link UIEventHandler} annotations
          */
         AnyEvent(EventDirection.Inactive);
 
@@ -232,7 +231,7 @@ public interface UIReactor {
         }
     }
 
-    Modeler getModeler();
+    UIController getModeler();
 
     /**
      * React to the passed UI event. The payload class is validated to be of the expected type before this is

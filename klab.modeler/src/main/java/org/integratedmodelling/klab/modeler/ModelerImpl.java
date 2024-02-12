@@ -2,11 +2,11 @@ package org.integratedmodelling.klab.modeler;
 
 import org.integratedmodelling.engine.client.EngineClient;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.modeler.Modeler;
-import org.integratedmodelling.klab.api.modeler.UIReactor;
+import org.integratedmodelling.klab.api.view.UIController;
+import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.scope.UserScope;
 
-public class ModelerImpl implements Modeler {
+public class ModelerImpl implements UIController {
 
     EngineClient engine;
 

@@ -1,13 +1,13 @@
 package org.integratedmodelling.klab.api.modeler.panels;
 
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.modeler.ModelerPanel;
-import org.integratedmodelling.klab.api.modeler.UIReactor;
-import org.integratedmodelling.klab.api.modeler.annotations.UIActionHandler;
-import org.integratedmodelling.klab.api.modeler.annotations.UIView;
+import org.integratedmodelling.klab.api.view.Panel;
+import org.integratedmodelling.klab.api.view.UIReactor;
+import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+import org.integratedmodelling.klab.api.view.annotations.UIView;
 
 @UIView(UIReactor.Type.DocumentEditor)
-public interface DocumentEditor extends ModelerPanel {
+public interface DocumentEditor extends Panel {
 
     KlabDocument<?> getDocument();
 

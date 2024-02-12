@@ -2,12 +2,11 @@ package org.integratedmodelling.klab.api.modeler.views;
 
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.modeler.ModelerView;
-import org.integratedmodelling.klab.api.modeler.UIReactor;
-import org.integratedmodelling.klab.api.modeler.annotations.UIActionHandler;
-import org.integratedmodelling.klab.api.modeler.annotations.UIEventHandler;
-import org.integratedmodelling.klab.api.modeler.annotations.UIView;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.View;
+import org.integratedmodelling.klab.api.view.UIReactor;
+import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
+import org.integratedmodelling.klab.api.view.annotations.UIView;
 import org.integratedmodelling.klab.api.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -27,7 +26,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  * and service, and reconstruct the latest configuration at each workspace switch.
  */
 @UIView(value = UIReactor.Type.ResourceNavigator, label = "k.LAB Resource Navigator")
-public interface ResourcesNavigator extends ModelerView {
+public interface ResourcesNavigator extends View {
 
     @UIActionHandler(value = UIAction.ImportProject, label = "New project", tooltip = "Create a new k" +
             ".LAB project")

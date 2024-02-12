@@ -1,9 +1,9 @@
 package org.integratedmodelling.klab.api.modeler.views;
 
-import org.integratedmodelling.klab.api.modeler.ModelerView;
-import org.integratedmodelling.klab.api.modeler.UIReactor;
-import org.integratedmodelling.klab.api.modeler.annotations.UIView;
+import org.integratedmodelling.klab.api.view.View;
+import org.integratedmodelling.klab.api.view.UIReactor;
+import org.integratedmodelling.klab.api.view.annotations.UIView;
 
 @UIView(UIReactor.Type.DebugView)
-public interface DebugView extends ModelerView {
+public interface DebugView extends View {
 }

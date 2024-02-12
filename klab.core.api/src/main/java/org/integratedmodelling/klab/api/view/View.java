@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.modeler;
+package org.integratedmodelling.klab.api.view;
 
 /**
  * Base class for all views in the modeler. These are shown in the UI permanently and reconfigure themselves
@@ -6,7 +6,7 @@ package org.integratedmodelling.klab.api.modeler;
  *
  * Provides common methods to initialize and react to UI events.
  */
-public interface ModelerView extends UIReactor {
+public interface View extends UIReactor {
 
     void show();
 

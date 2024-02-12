@@ -1,6 +1,6 @@
-package org.integratedmodelling.klab.api.modeler.annotations;
+package org.integratedmodelling.klab.api.view.annotations;
 
-import org.integratedmodelling.klab.api.modeler.UIReactor;
+import org.integratedmodelling.klab.api.view.UIReactor;
 
 import java.lang.annotation.*;
 

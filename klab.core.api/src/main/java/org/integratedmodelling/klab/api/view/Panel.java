@@ -1,10 +1,10 @@
-package org.integratedmodelling.klab.api.modeler;
+package org.integratedmodelling.klab.api.view;
 
 /**
  * Panels are used to configure one specific object and are brought up and removed as needed, normally
  * occupying the central part of the UI or a modal window.
  */
-public interface ModelerPanel<T> extends UIReactor {
+public interface Panel<T> extends UIReactor {
 
     /**
      * Loading the object handled must also show the panel and bring it in focus, which should have an OK/Save
