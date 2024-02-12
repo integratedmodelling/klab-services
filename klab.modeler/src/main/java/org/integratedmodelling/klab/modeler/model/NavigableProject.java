@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project {

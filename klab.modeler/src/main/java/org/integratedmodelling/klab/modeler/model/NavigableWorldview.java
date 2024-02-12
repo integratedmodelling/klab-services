@@ -7,7 +7,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements Worldview {
 

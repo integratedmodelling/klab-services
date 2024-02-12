@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.modeler.views;
+package org.integratedmodelling.klab.api.view.modeler.views;
 
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -7,9 +7,11 @@ import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableDocument;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
+import org.integratedmodelling.klab.api.view.modeler.panels.KnowledgeEditor;
 
 /**
  * The resource navigator is tuned to the current resources service in the current user scope. It should give
@@ -17,9 +19,9 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  * by the service. The documents should be presented in a suitable organization and it should be possible to
  * select them for editing or visualization through a suitable action. If the service is owned by the user and
  * suitably insulated (local), the UI should invoke a
- * {@link org.integratedmodelling.klab.api.modeler.panels.DocumentEditor} with write permission upon
+ * {@link DocumentEditor} with write permission upon
  * selection. Otherwise, it may choose a read-only editor or a specialized viewer/explorer (such as
- * {@link org.integratedmodelling.klab.api.modeler.panels.KnowledgeEditor}) according to implementation and
+ * {@link KnowledgeEditor}) according to implementation and
  * type of document.
  * <p>
  * The modeler should remember the configuration of documents and editors in the workbench for each workspace

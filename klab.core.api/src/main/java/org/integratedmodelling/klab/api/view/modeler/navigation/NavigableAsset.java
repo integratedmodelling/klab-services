@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.modeler.navigation;
+package org.integratedmodelling.klab.api.view.modeler.navigation;
 
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 

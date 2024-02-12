@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.modeler.panels;
+package org.integratedmodelling.klab.api.view.modeler.panels;
 
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIView;

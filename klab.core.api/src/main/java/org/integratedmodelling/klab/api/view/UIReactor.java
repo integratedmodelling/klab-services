@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableDocument;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;

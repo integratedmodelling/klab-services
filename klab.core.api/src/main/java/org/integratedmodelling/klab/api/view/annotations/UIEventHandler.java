@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.view.annotations;
 
 import org.integratedmodelling.klab.api.view.UIReactor;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 import java.lang.annotation.*;
 
@@ -12,7 +13,7 @@ import java.lang.annotation.*;
  * The annotated method must take parameters of the type specified in the associated event's payload class. In
  * addition, they may have other parameters of type {@link org.integratedmodelling.klab.api.view.UIController}
  * for the controller, {@link UIReactor} for the sender, {@link org.integratedmodelling.klab.api.scope.Scope}
- * and {@link org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset} in their different
+ * and {@link NavigableAsset} in their different
  * declinations, and potentially others that are automatically wired to the context of calling.
  */
 @Documented

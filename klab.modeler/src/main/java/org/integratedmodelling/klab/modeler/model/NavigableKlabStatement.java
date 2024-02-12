@@ -7,7 +7,6 @@ import java.util.List;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> implements KlabStatement {

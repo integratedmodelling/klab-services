@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>

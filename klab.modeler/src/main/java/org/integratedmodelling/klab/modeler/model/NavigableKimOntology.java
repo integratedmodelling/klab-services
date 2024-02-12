@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
 
 public class NavigableKimOntology extends NavigableKlabDocument<KimConceptStatement, KimOntology> implements KimOntology {
 

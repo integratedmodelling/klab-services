@@ -9,7 +9,7 @@ import java.util.List;
 //import org.eclipse.core.resources.IWorkspaceRoot;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 //import com.google.common.collect.BiMap;
 //import com.google.common.collect.HashBiMap;
