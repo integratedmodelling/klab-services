@@ -22,16 +22,32 @@ import java.util.List;
 public interface KlabService extends Service {
 
     enum Type {
-        REASONER,
-        RESOURCES,
-        RESOLVER,
-        RUNTIME,
-        COMMUNITY,
+        REASONER(8091),
+        RESOURCES(8092),
+        RESOLVER(8093),
+        RUNTIME(8094),
+        COMMUNITY(8095),
         /**
-         * Engine is added although it's an orchestrator of services, to be used in reporting to notify
-         * completion of service setup.
+         * Engine is not a k.LAB Service but has its own public observation API
          */
-        ENGINE
+        ENGINE(8283);
+
+        public int defaultPort;
+
+        private Type(int defaultPort) {
+            this.defaultPort = defaultPort;
+        }
+
+        public Type classify(KlabService service) {
+            return switch (service) {
+                case ResourcesService s -> RESOLVER;
+                case RuntimeService s -> RUNTIME;
+                case Reasoner s -> REASONER;
+                case Community s -> COMMUNITY;
+                case Resolver s -> RESOLVER;
+                default -> null;
+            };
+        }
     }
 
     /**

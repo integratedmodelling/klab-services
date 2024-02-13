@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
 import org.springframework.stereotype.Service;
 
+@Deprecated
 @Service
 public abstract class AuthenticationService implements Authentication {
 

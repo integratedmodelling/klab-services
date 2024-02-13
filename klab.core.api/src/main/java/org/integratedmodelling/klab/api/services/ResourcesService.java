@@ -69,8 +69,6 @@ import java.util.Set;
  */
 public interface ResourcesService extends KlabService {
 
-    public static final int DEFAULT_PORT = 8092;
-
 
     /**
      * All services publish capabilities and have a call to obtain them.

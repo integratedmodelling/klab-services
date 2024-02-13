@@ -24,9 +24,9 @@ public class NotificationImpl implements Notification, Serializable {
     private long timestamp = System.currentTimeMillis();
     // this will be null when parsed, identities are in the runtime
     private String identity;
-    private DocumentContext documentContext;
+    private LexicalContext lexicalContext;
 
-    public static class DocumentContextImpl implements DocumentContext {
+    public static class LexicalContextImpl implements LexicalContext {
         private URL url;
         private int offsetInDocument;
         private int length;
@@ -128,12 +128,12 @@ public class NotificationImpl implements Notification, Serializable {
     }
 
     @Override
-    public DocumentContext getDocumentContext() {
-        return documentContext;
+    public LexicalContext getLexicalContext() {
+        return lexicalContext;
     }
 
-    public void setDocumentContext(DocumentContext documentContext) {
-        this.documentContext = documentContext;
+    public void setLexicalContext(LexicalContext lexicalContext) {
+        this.lexicalContext = lexicalContext;
     }
 
     @Override

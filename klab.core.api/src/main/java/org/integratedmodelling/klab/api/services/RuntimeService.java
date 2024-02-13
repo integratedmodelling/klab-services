@@ -23,8 +23,6 @@ public interface RuntimeService extends KlabService {
         return "klab.runtime.service";
     }
 
-    public static final int DEFAULT_PORT = 8094;
-
     /**
      * Release all data related to this scope. This should be called at scope finalization.
      *

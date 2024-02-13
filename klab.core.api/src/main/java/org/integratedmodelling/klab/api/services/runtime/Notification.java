@@ -27,7 +27,7 @@ public interface Notification {
     /**
      * If the notification is relative to a document, return the document context to which it pertains.
      */
-    public interface DocumentContext {
+    public interface LexicalContext {
         URL getUrl();
 
         int getOffsetInDocument();
@@ -65,7 +65,7 @@ public interface Notification {
      *
      * @return
      */
-    DocumentContext getDocumentContext();
+    LexicalContext getLexicalContext();
 
     public static Notification of(String message, Level level) {
         return new NotificationImpl(message, level);

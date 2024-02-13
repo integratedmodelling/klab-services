@@ -15,6 +15,15 @@ import org.integratedmodelling.klab.api.scope.UserScope;
  * all message from the current services (and potentially from others) and turn them into UI events that are
  * dispatched to the UI reactors registered with it. Reactors can be of any type (their API is inspected for
  * reactor annotated methods) but if they implement UIReactor they get more functionality.
+ *
+ * The view implementation should:
+ * 1. create a UIController as a singleton and initialize it properly (asynchronously).
+ * 2. setup the UI for the workbench
+ *
+ * Each UIView and UIPanel in the view implementation must:
+ * 0. if a Panel, provide a construction that uses the target object(s)
+ * 1. implement the event reactors
+ * 2. call the action functions.
  */
 public interface UIController {
 
@@ -34,6 +43,11 @@ public interface UIController {
      * @return the engine. Never null.
      */
     Engine getEngine();
+
+    /**
+     * Boot the engine if needed, and start processing events.
+     */
+    void boot();
 
     /**
      * Dispatch a UI event to all reactors, which will have been registered upon creation by the

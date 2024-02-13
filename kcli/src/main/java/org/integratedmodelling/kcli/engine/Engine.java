@@ -57,10 +57,10 @@ public enum Engine implements Authentication {
          * check for a locally running service for each category; if existing, create a
          * client, otherwise create an embedded service
          */
-        if (Utils.Network.isAlive("http://127.0.0.1:" + ResourcesService.DEFAULT_PORT + " /resources" +
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " /resources" +
                 "/actuator")) {
             engineService
-                    .setResources(new ResourcesClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " " +
+                    .setResources(new ResourcesClient("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " " +
                             "/resources"));
         } else {
             engineService.setResources(
@@ -68,9 +68,9 @@ public enum Engine implements Authentication {
                             "Embedded resource manager"));
         }
 
-        if (Utils.Network.isAlive("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " /reasoner/actuator")) {
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " /reasoner/actuator")) {
             engineService
-                    .setReasoner(new ReasonerClient("http://127.0.0.1:" + Reasoner.DEFAULT_PORT + " " +
+                    .setReasoner(new ReasonerClient("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " " +
                             "/reasoner"));
         } else {
             engineService
@@ -79,9 +79,9 @@ public enum Engine implements Authentication {
         }
 
         // FIXME mutual dependency between resolver and runtime guarantees screwup
-        if (Utils.Network.isAlive("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " /resolver/actuator")) {
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " /resolver/actuator")) {
             engineService
-                    .setResolver(new ResolverClient("http://127.0.0.1:" + Resolver.DEFAULT_PORT + " " +
+                    .setResolver(new ResolverClient("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " " +
                             "/resolver"));
         } else {
             engineService
@@ -89,9 +89,9 @@ public enum Engine implements Authentication {
                             "Embedded resolver"));
         }
 
-        if (Utils.Network.isAlive("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " /runtime/actuator")) {
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " /runtime/actuator")) {
             engineService
-                    .setRuntime(new RuntimeClient("http://127.0.0.1:" + RuntimeService.DEFAULT_PORT + " " +
+                    .setRuntime(new RuntimeClient("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " " +
                             "/runtime"));
         } else {
             engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this,

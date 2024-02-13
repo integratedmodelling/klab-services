@@ -22,8 +22,6 @@ public interface Resolver extends KlabService {
         return "klab.resolver.service";
     }
 
-    public static final int DEFAULT_PORT = 8093;
-
     /**
      * All services publish capabilities and have a call to obtain them.
      * 

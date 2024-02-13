@@ -109,7 +109,9 @@ public interface Message extends Serializable {
         /**
          * Messages sent or received by the view actor, called from behaviors.
          */
-        ViewActor, ActorCommunication
+        ViewActor,
+
+        ActorCommunication
     }
 
     /**
