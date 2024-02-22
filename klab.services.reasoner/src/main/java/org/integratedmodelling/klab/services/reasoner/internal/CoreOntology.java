@@ -303,7 +303,7 @@ public class CoreOntology {
         this.root = Configuration.INSTANCE.getDataPath("knowledge");
         this.owl = owl;
         for (var ontology : ontologies) {
-
+            // TODO?
         }
     }
 

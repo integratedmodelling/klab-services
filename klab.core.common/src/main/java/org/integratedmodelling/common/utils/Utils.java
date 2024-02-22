@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Sets;
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import org.apache.commons.io.FileUtils;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -52,11 +54,27 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              */
             public <T> T post(String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
                 try {
+                    var payloadText = payload instanceof String
+                                      ? (String) payload :
+                                      Json.printAsJson(payload);
+                    var request =
+                            HttpRequest.newBuilder()
+                                       .version(HttpClient.Version.HTTP_1_1)
+                                       .timeout(Duration.ofSeconds(10))
+                                       .uri(URI.create(uri + apiRequest + encodeParameters(parameters)))
+                                       .header(HttpHeaders.CONTENT_TYPE, payload instanceof String ?
+                                                                         MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString())
+                                       .header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass))
+                                       .POST(HttpRequest.BodyPublishers.ofString(payloadText))
+                                       .build();
+
                     var response =
-                            client.send(HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(payload instanceof String ? (String) payload : Json.asString(payload))).uri(URI.create(uri + "/" + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
+                            client.send(request, HttpResponse.BodyHandlers.ofString());
 
                     if (response.statusCode() == 200) {
                         return parseResponse(response.body(), resultClass);
+                    } else {
+
                     }
 
                 } catch (Throwable e) {
@@ -64,6 +82,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
 
                 return null;
+            }
+
+            private String getAcceptedMediaType(Class<?> resultClass) {
+                if (String.class == resultClass) {
+                    return MediaType.PLAIN_TEXT_UTF_8.toString();
+                }
+                // TODO more
+                return MediaType.JSON_UTF_8.toString();
             }
 
             private String encodeParameters(Object[] parameters) {
@@ -112,7 +138,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 } else if (resultClass.isEnum()) {
                     try {
                         var method = resultClass.getMethod("valueOf", String.class);
-                        return (T)method.invoke(null, body);
+                        return (T) method.invoke(null, body);
                     } catch (Throwable e) {
                         throw new KlabIllegalArgumentException(e);
                     }
@@ -172,7 +198,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         static {
             defaultMapper =
-                    new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY).disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+                    new ObjectMapper()
+                            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                            .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
             defaultMapper.getSerializerProvider().setNullKeySerializer(new NullKeySerializer());
             JacksonConfiguration.configureObjectMapperForKlabTypes(defaultMapper);
         }

@@ -2,12 +2,16 @@ package org.integratedmodelling.engine.client;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.engine.client.distribution.Distribution;
+import org.integratedmodelling.engine.client.scopes.ClientScope;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.exceptions.KlabConfigurationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.engine.AbstractAuthenticatedEngine;
+import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -106,8 +110,22 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
     @Override
     protected UserScope authenticate() {
-        var scope = Authentication.INSTANCE.authenticate();
-        return null;
+        var authData = Authentication.INSTANCE.authenticate();
+        return createUserScope(authData);
+    }
+
+    private UserScope createUserScope(Pair<UserIdentity, List<ServiceReference>> authData) {
+        return new ClientScope(authData.getFirst()) {
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+                return null;
+            }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                return null;
+            }
+        };
     }
 
     @Override
@@ -124,4 +142,10 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     public String configurationPath() {
         return "engine/client";
     }
+
+    public static void main(String[] args) {
+        var client = new EngineClient();
+        client.boot();
+    }
+
 }

@@ -2,6 +2,7 @@ package org.integratedmodelling.common.authentication;
 
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
@@ -86,9 +87,9 @@ public enum Authentication {
                         certificate.getProperty(KlabCertificate.KEY_CERTIFICATE), certificate.getLevel(),
                         certificate.getProperty(KlabCertificate.KEY_AGREEMENT));
                 // add email if we have it, so the hub can notify in any case if so configured
-                request.setEmail(certificate.getProperty(KlabCertificate.KEY_USERNAME));
+                request.setEmail(certificate.getProperty(KlabCertificate.KEY_EMAIL));
 
-                authentication = client.post(authenticationServer, request,
+                authentication = client.post(ServicesAPI.HUB.AUTHENTICATE_ENGINE, request,
                         EngineAuthenticationResponse.class);
 
             } catch (Throwable e) {
@@ -107,7 +108,7 @@ public enum Authentication {
              * check expiration
              */
             try {
-                expiry = Instant.parse(authentication.getUserData().getExpiry());
+                expiry = Instant.parse(authentication.getUserData().getExpiry() + "Z");
             } catch (Throwable e) {
                 Logging.INSTANCE.error("bad date or wrong date format in certificate. Please use latest " +
                         "version of software. Continuing anonymously.");
@@ -151,11 +152,13 @@ public enum Authentication {
                 for (var service : authentication.getNodes()) {
                     if (service.getServiceType() == KlabService.Type.LEGACY_NODE) {
                         // TODO see if we need to adapt
+                        Logging.INSTANCE.info("Legacy service " + service.getId() + " from hub " + hubNode.getId()
+                                + " authorized, ignored");
                     } else {
                         services.add(service);
                     }
                 }
-                return Pair.of(ret, services);
+                return Pair.of(ret, addLocalServices(services));
             }
 
         } else {
@@ -166,12 +169,26 @@ public enum Authentication {
         return Pair.of(new AnonymousUser(), getLocalServices());
     }
 
+    /**
+     * If a specific service type is missing and the correspondent service is available locally, add the local
+     * service as primary; otherwise add it as secondary. If any of the 4 essential services is missing, throw
+     * an exception.
+     *
+     * @param services a list of services retrieved from the authentication response
+     * @return the patched list of services
+     * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if any essential
+     *                                                                                 service is missing
+     */
+    private List<ServiceReference> addLocalServices(List<ServiceReference> services) {
+        return services;
+    }
+
 
     /**
      * TODO create and return clients for any services running locally. If so configured, start embedded
      *  services for each service type.
      */
-    private List<ServiceReference> getLocalServices() {
+    public List<ServiceReference> getLocalServices() {
 
         List<ServiceReference> ret = new ArrayList<>();
 

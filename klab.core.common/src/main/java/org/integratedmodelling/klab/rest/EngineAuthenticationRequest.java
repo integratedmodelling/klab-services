@@ -4,7 +4,6 @@ import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 
 public class EngineAuthenticationRequest {
 
-
     private String name;
     private String email;
     private String certificate;
@@ -116,5 +115,21 @@ public class EngineAuthenticationRequest {
         } else if (!idAgreement.equals(other.idAgreement))
             return false;
         return true;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getIdAgreement() {
+        return idAgreement;
+    }
+
+    public void setIdAgreement(String idAgreement) {
+        this.idAgreement = idAgreement;
     }
 }

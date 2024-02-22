@@ -19,7 +19,7 @@ public class Group {
 	private boolean complimentary;
 	private long maxUpload;
 	private List<String> projectUrls = new ArrayList<String>();
-//	private List<ObservableReference> observables = new ArrayList<ObservableReference>();
+	private List<ObservableReference> observables = new ArrayList<ObservableReference>();
 	private Set<CustomProperty> customProperties= new HashSet<CustomProperty>();
 	private List<String> dependsOn = new ArrayList<String>();
 
@@ -89,13 +89,13 @@ public class Group {
 	 * 
 	 * @return
 	 */
-//	public List<ObservableReference> getObservables() {
-//		return observables;
-//	}
-//
-//	public void setObservables(List<ObservableReference> observables) {
-//		this.observables = observables;
-//	}
+	public List<ObservableReference> getObservables() {
+		return observables;
+	}
+
+	public void setObservables(List<ObservableReference> observables) {
+		this.observables = observables;
+	}
 
 	/**
 	 * If true, the projects from this group are worldview projects.maxUpload

@@ -27,7 +27,7 @@ public interface PropertyHolder {
         boolean isNew = _properties.isEmpty();
         if (isNew) {
             var pFile =
-                    Configuration.INSTANCE.getFileWithTemplate(configurationPath() + File.separator + PROPERTY_FILENAME, "creation.time=" + System.currentTimeMillis());
+                    Configuration.INSTANCE.getFileWithTemplate(configurationPath() + "/" + PROPERTY_FILENAME, "creation.time=" + System.currentTimeMillis());
             try (InputStream input = new FileInputStream(pFile)) {
                 this._properties.load(input);
             } catch (Exception e) {
