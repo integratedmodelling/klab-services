@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.rest;
+package org.integratedmodelling.klab.api.authentication;
 
 import java.util.Objects;
 

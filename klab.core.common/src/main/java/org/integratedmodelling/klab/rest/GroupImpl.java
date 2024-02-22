@@ -1,12 +1,15 @@
 package org.integratedmodelling.klab.rest;
 
+import org.integratedmodelling.klab.api.authentication.CustomProperty;
+import org.integratedmodelling.klab.api.identities.Group;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public class Group {
+public class GroupImpl implements Group {
 
 	private String id;
 	private String name;
@@ -23,13 +26,14 @@ public class Group {
 	private Set<CustomProperty> customProperties= new HashSet<CustomProperty>();
 	private List<String> dependsOn = new ArrayList<String>();
 
-	public Group() {
+	public GroupImpl() {
 	}
 
-	public Group(String id) {
+	public GroupImpl(String id) {
 		this.id = id;
 	}
 
+	@Override
 	public String getId() {
 	    return id;
 	}
@@ -37,6 +41,7 @@ public class Group {
 	public void setId(String id) {
 	    this.id = id;
 	}
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -45,6 +50,7 @@ public class Group {
 		this.name = name;
 	}
 
+	@Override
 	public String getDescription() {
 		return description;
 	}
@@ -59,6 +65,7 @@ public class Group {
 	 * 
 	 * @return
 	 */
+	@Override
 	public String getSshKey() {
 		return sshKey;
 	}
@@ -74,6 +81,7 @@ public class Group {
 	 * 
 	 * @return
 	 */
+	@Override
 	public List<String> getProjectUrls() {
 		return projectUrls;
 	}
@@ -89,6 +97,7 @@ public class Group {
 	 * 
 	 * @return
 	 */
+//	@Override
 	public List<ObservableReference> getObservables() {
 		return observables;
 	}
@@ -102,6 +111,7 @@ public class Group {
 	 * 
 	 * @return
 	 */
+	@Override
 	public boolean isWorldview() {
 		return worldview;
 	}
@@ -115,6 +125,7 @@ public class Group {
 	 * 
 	 * @return
 	 */
+	@Override
 	public String getIconUrl() {
 		return iconUrl;
 	}
@@ -131,6 +142,7 @@ public class Group {
 	 * The max upload permitted for that group
 	 * @return
 	 */
+	@Override
 	public long getMaxUpload() {
 		return maxUpload;
 	}
@@ -139,7 +151,8 @@ public class Group {
 	 * Custom properties for the group
 	 * @return
 	 */
-    public Set<CustomProperty> getCustomProperties() {
+    @Override
+	public Set<CustomProperty> getCustomProperties() {
         return customProperties;
     }
 
@@ -152,7 +165,8 @@ public class Group {
      * The time will be add to the date of group/user assignment
      * @return
      */
-    public long getDefaultExpirationTime() {
+    @Override
+	public long getDefaultExpirationTime() {
 		return defaultExpirationTime;
 	}
 
@@ -164,6 +178,7 @@ public class Group {
 	 * If true the group is automatic added on user request
 	 * @return
 	 */
+	@Override
 	public boolean isOptIn() {
 		return optIn;
 	}
@@ -176,6 +191,7 @@ public class Group {
 	 * If true the group will be assigned automatically on user creation
 	 * @return
 	 */
+	@Override
 	public boolean isComplimentary() {
 		return complimentary;
 	}
@@ -188,6 +204,7 @@ public class Group {
 	 * List of group IDs that are need
 	 * @return
 	 */
+	@Override
 	public List<String> getDependsOn() {
 		return dependsOn;
 	}
@@ -210,7 +227,7 @@ public class Group {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Group other = (Group) obj;
+		GroupImpl other = (GroupImpl) obj;
 		return complimentary == other.complimentary && Objects.equals(customProperties, other.customProperties)
 				&& defaultExpirationTime == other.defaultExpirationTime
 				&& Objects.equals(description, other.description) && Objects.equals(iconUrl, other.iconUrl)

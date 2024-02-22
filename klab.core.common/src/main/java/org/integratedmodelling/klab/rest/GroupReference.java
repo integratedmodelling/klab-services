@@ -3,6 +3,8 @@
  */
 package org.integratedmodelling.klab.rest;
 
+import org.integratedmodelling.klab.api.identities.Group;
+
 import java.util.Objects;
 
 /**
