@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -27,7 +28,6 @@ import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.QualifiedName;
-import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.*;
 

@@ -139,7 +139,7 @@ public class ViewScope {
             // scan annotations
             for (Annotation annotation : action.getAnnotations()) {
 
-                PanelLocation panelLocation = Utils.Data.valueOf(Utils.Strings.capitalize(annotation.getName()), PanelLocation.class);
+                PanelLocation panelLocation = Utils.Data.valueOf(org.integratedmodelling.common.utils.Utils.Strings.capitalize(annotation.getName()), PanelLocation.class);
 
                 if (panelLocation != null) {
 
@@ -198,7 +198,7 @@ public class ViewScope {
         ret.layout.setStyle(this.layout.getStyle());
         ret.layout.setDestination(this.layout.getDestination());
         ret.layout.setLabel(scope.localize(annotation.get("title", "")));
-        ret.layout.setDescription(Utils.Strings.pack(scope.localize(annotation.get("subtitle", ""))));
+        ret.layout.setDescription(org.integratedmodelling.common.utils.Utils.Strings.pack(scope.localize(annotation.get("subtitle", ""))));
         ret.layout.setPlatform(this.layout.getPlatform());
         ret.layout.setLogo(annotation.get("logo", (String) null));
         ret.layout.setProjectId(this.layout.getProjectId());
@@ -221,7 +221,7 @@ public class ViewScope {
         ret.setStyle(behavior.getStyle());
         ret.setDestination(behavior.getType());
         ret.setLabel(scope.localize(behavior.getLabel()));
-        ret.setDescription(Utils.Strings.pack(scope.localize(behavior.getDescription())));
+        ret.setDescription(org.integratedmodelling.common.utils.Utils.Strings.pack(scope.localize(behavior.getDescription())));
         ret.setPlatform(behavior.getPlatform());
         ret.setLogo(behavior.getLogo());
         ret.setProjectId(behavior.getProjectId());

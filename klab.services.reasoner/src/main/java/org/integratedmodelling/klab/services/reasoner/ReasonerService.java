@@ -161,11 +161,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private Authentication authenticationService;
 
     private OWL owl;
-    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
     @Override
     public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) ||
                 (capabilities().getServerId() != null && capabilities().getServerId().equals("REASONER_" + serverId));
     }
@@ -281,7 +281,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         if (config.exists()) {
-            configuration = Utils.YAML.load(config, ReasonerConfiguration.class);
+            configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config, ReasonerConfiguration.class);
         }
 
         for (ProjectConfiguration authority : configuration.getAuthorities()) {
@@ -316,7 +316,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     private void saveConfiguration() {
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
-        Utils.YAML.save(this.configuration, config);
+        org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 
     @Override
@@ -1254,7 +1254,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Collection<Concept> relationshipSources(Semantics relationship) {
-        return Utils.Collections.join(
+        return org.integratedmodelling.common.utils.Utils.Collections.join(
                 this.owl.getDirectRestrictedClasses(relationship.asConcept(),
                         this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)),
                 this.owl.getRestrictedClasses(relationship.asConcept(),
@@ -1269,7 +1269,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Collection<Concept> relationshipTargets(Semantics relationship) {
-        return Utils.Collections.join(
+        return org.integratedmodelling.common.utils.Utils.Collections.join(
                 this.owl.getDirectRestrictedClasses(relationship.asConcept(),
                         this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)),
                 this.owl.getRestrictedClasses(relationship.asConcept(),
@@ -2490,7 +2490,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             public void visitReference(String conceptName, Set<SemanticType> type,
                                        KimConcept validParent) {
                 Concept cn = resolveConcept(conceptName);
-                if (cn != null && Sets.intersection(type, Utils.Collections.asSet(types)).size() == types.size()) {
+                if (cn != null && Sets.intersection(type, org.integratedmodelling.common.utils.Utils.Collections.asSet(types)).size() == types.size()) {
                     ret.add(cn);
                 }
             }

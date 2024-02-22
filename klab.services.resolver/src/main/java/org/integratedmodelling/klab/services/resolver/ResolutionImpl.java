@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -21,7 +22,6 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
-import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -89,7 +89,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
         }
 
         public String toString() {
-            return observable + "\n" + Utils.Strings.capitalize(this.type.name().toLowerCase()) + " ("
+            return observable + "\n" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(this.type.name().toLowerCase()) + " ("
                     + NumberFormat.getPercentInstance().format(coverage.getCoverage()) + ")";
         }
 
@@ -205,7 +205,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
         StringBuffer ret = new StringBuffer(512);
         for (ResolutionType type : ResolutionType.values()) {
             for (Triple<Knowledge, Observable, Coverage> resolved : getResolving(first, type)) {
-                ret.append(Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": "
+                ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": "
                         + Utils.Strings.capitalize(type.name().toLowerCase()) + ", "
                         + NumberFormat.getPercentInstance().format(resolved.getThird().getCoverage()) + "]\n");
                 String child = printResolution(resolved.getFirst(), i + 3);

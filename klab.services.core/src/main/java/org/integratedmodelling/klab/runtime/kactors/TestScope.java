@@ -387,7 +387,7 @@ public class TestScope {
 		}
 		if (ok) {
 			if (assertion.getMetadata().containsKey("success")) {
-				desc.setDescriptor(Utils.Templates.substitute(assertion.getMetadata().get("success", String.class),
+				desc.setDescriptor(org.integratedmodelling.common.utils.Utils.Templates.substitute(assertion.getMetadata().get("success", String.class),
 						"value", result, "expected", expected));
 			} else {
 				if (expected != null) {
@@ -396,7 +396,7 @@ public class TestScope {
 			}
 		} else {
 			if (assertion.getMetadata().containsKey("fail")) {
-				desc.setDescriptor(Utils.Templates.substitute(assertion.getMetadata().get("fail", String.class), "value",
+				desc.setDescriptor(org.integratedmodelling.common.utils.Utils.Templates.substitute(assertion.getMetadata().get("fail", String.class), "value",
 						result, "expected", expected));
 			} else {
 				if (expected != null) {
@@ -406,7 +406,7 @@ public class TestScope {
 		}
 
 		if (desc.getDescriptor() == null) {
-			desc.setDescriptor(Utils.Strings.abbreviate(Utils.Strings.getFirstLine(assertion.sourceCode()), 60));
+			desc.setDescriptor(org.integratedmodelling.common.utils.Utils.Strings.abbreviate(org.integratedmodelling.common.utils.Utils.Strings.getFirstLine(assertion.sourceCode()), 60));
 		}
 
 	}

@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
@@ -489,7 +488,7 @@ public class ObservableImpl extends GroovyObjectSupport implements Observable {
 
     @Override
     public String toString() {
-        return Utils.Strings.capitalize(getDescriptionType().getVerbalForm().toLowerCase()) + " " + urn;
+        return org.integratedmodelling.common.utils.Utils.Strings.capitalize(getDescriptionType().getVerbalForm().toLowerCase()) + " " + urn;
     }
 
 }

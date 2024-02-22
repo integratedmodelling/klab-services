@@ -3,13 +3,22 @@ package org.integratedmodelling.common.authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
+import org.integratedmodelling.klab.rest.HubReference;
+import org.integratedmodelling.klab.rest.ServiceReference;
 
+import java.io.File;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implements the default certificate-based authentication mechanism for an engine. Also maintains external
@@ -24,8 +33,11 @@ public enum Authentication {
      *
      * @return
      */
-    public UserIdentity authenticate() {
-        return null;
+    public Pair<UserIdentity, List<ServiceReference>> authenticate() {
+        File certFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "klab.cert");
+        KlabCertificate certificate = certFile.isFile() ? KlabCertificateImpl.createFromFile(certFile) :
+                                      new AnonymousEngineCertificate();
+        return authenticate(certificate);
     }
 
     /**
@@ -35,18 +47,14 @@ public enum Authentication {
      * @param certificate
      * @return
      */
-    public UserIdentity authenticate(KlabCertificate certificate) {
+    public Pair<UserIdentity, List<ServiceReference>> authenticate(KlabCertificate certificate) {
 
-        UserIdentity ret = null;
-        EngineAuthenticationResponse authentication = null;
 
         if (certificate instanceof AnonymousEngineCertificate) {
             // no partner, no node, no token, no nothing. REST calls automatically accept
-            // the
-            // anonymous user when secured as Roles.PUBLIC.
+            // the anonymous user when secured as Roles.PUBLIC.
             Logging.INSTANCE.info("No user certificate: continuing in anonymous offline mode");
-
-            return new AnonymousUser();
+            return Pair.of(new AnonymousUser(), getLocalServices());
         }
 
         if (!certificate.isValid()) {
@@ -54,17 +62,10 @@ public enum Authentication {
              * expired or invalid certificate: throw away the identity, continue as anonymous.
              */
             Logging.INSTANCE.info("Certificate is invalid or expired: continuing in anonymous offline mode");
-            return new AnonymousUser();
+            return Pair.of(new AnonymousUser(), Collections.emptyList());
         }
 
-        //        if (certificate.getType() == Type.NODE && getAuthenticatedIdentity(INodeIdentity.class)
-        //        != null) {
-        //            ret = new KlabUser(certificate.getProperty(ICertificate.KEY_NODENAME),
-        //            getAuthenticatedIdentity(INodeIdentity.class));
-        //            registerIdentity(ret);
-        //            return ret;
-        //        }
-
+        EngineAuthenticationResponse authentication = null;
         String authenticationServer = certificate.getProperty(KlabCertificate.KEY_PARTNER_HUB);
 
         if (authenticationServer != null) {
@@ -84,14 +85,11 @@ public enum Authentication {
                         certificate.getProperty(KlabCertificate.KEY_CERTIFICATE_TYPE),
                         certificate.getProperty(KlabCertificate.KEY_CERTIFICATE), certificate.getLevel(),
                         certificate.getProperty(KlabCertificate.KEY_AGREEMENT));
-
                 // add email if we have it, so the hub can notify in any case if so configured
                 request.setEmail(certificate.getProperty(KlabCertificate.KEY_USERNAME));
 
-                var response = client.post(authenticationServer, request, EngineAuthenticationResponse.class);
-                if (response.statusCode() == 200) {
-                    authentication = response.body();
-                }
+                authentication = client.post(authenticationServer, request,
+                        EngineAuthenticationResponse.class);
 
             } catch (Throwable e) {
                 Logging.INSTANCE.error("authentication failed for user " + certificate.getProperty(KlabCertificate.KEY_USERNAME)
@@ -112,17 +110,17 @@ public enum Authentication {
                 expiry = Instant.parse(authentication.getUserData().getExpiry());
             } catch (Throwable e) {
                 Logging.INSTANCE.error("bad date or wrong date format in certificate. Please use latest " +
-                        "version of software.");
-                return null;
+                        "version of software. Continuing anonymously.");
+                return Pair.of(new AnonymousUser(), getLocalServices());
             }
             if (expiry == null) {
                 Logging.INSTANCE.error("certificate has no expiration date. Please obtain a new certificate" +
-                        ".");
-                return null;
+                        ". Continuing anonymously.");
+                return Pair.of(new AnonymousUser(), getLocalServices());
             } else if (expiry.isBefore(Instant.now())) {
                 Logging.INSTANCE.error("certificate expired on " + expiry + ". Please obtain a new " +
-                        "certificate.");
-                return null;
+                        "certificate. Continuing anonymously.");
+                return Pair.of(new AnonymousUser(), getLocalServices());
             }
         }
 
@@ -133,53 +131,65 @@ public enum Authentication {
 
             // if we have connected, insert network session identity
             if (authentication != null) {
-                //
-                //                HubReference hubNode = authentication.getHub();
-                //                Hub hub = new Hub(hubNode);
-                //                hub.setOnline(true);
-                //                NetworkSession networkSession = new NetworkSession(authentication
-                //                .getUserData().getToken(), hub);
-                //
-                //                ret = new KlabUser(authentication.getUserData(), networkSession);
-                //
-                //                Network.INSTANCE.buildNetwork(authentication);
-                //
-                //                Logging.INSTANCE.info("User " + ((IUserIdentity) ret).getUsername() + "
-                //                logged in through hub " + hubNode.getId()
-                //                        + " owned by " + hubNode.getPartner().getId());
-                //
-                //                Logging.INSTANCE.info("The following nodes are available:");
-                //                for (INodeIdentity n : Network.INSTANCE.getNodes()) {
-                //                    Duration uptime = new Duration(n.getUptime());
-                //                    DateTime boottime = DateTime.now(DateTimeZone.UTC).minus(uptime
-                //                    .toPeriod());
-                //                    IPartnerIdentity partner = n.getParentIdentity();
-                //                    Logging.INSTANCE.info("   " + n.getName() + " online since " +
-                //                    boottime);
-                //                    Logging.INSTANCE.info("      " + partner.getName() + " (" + partner
-                //                    .getEmailAddress() + ")");
-                //                    Logging.INSTANCE.info("      " + "online " + PeriodFormat.getDefault
-                //                    ().print(uptime.toPeriod()));
-                //                }
 
-            } else {
+                List<ServiceReference> services = new ArrayList<>();
+                var hubNode = authentication.getHub();
+                HubImpl hub = new HubImpl();
 
-                //                // offline node with no partner
-                //                Node node = new Node(certificate.getProperty(KlabCertificate
-                //                .KEY_NODENAME), null);
-                //                ((Node) node).setOnline(false);
-                //                ret = new KlabUser(certificate.getProperty(KlabCertificate.KEY_USERNAME),
-                //                node);
-                //
-                //                Logging.INSTANCE.info("User " + ((IUserIdentity) ret).getUsername() + "
-                //                activated in offline mode");
+                UserIdentityImpl ret = new UserIdentityImpl();
+                ret.setId(authentication.getUserData().getToken());
+                ret.setParentIdentity(hub);
+                ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
+                ret.setUsername(authentication.getUserData().getIdentity().getId());
+
+                Logging.INSTANCE.info("User " + ret.getUsername() + " logged in through hub " + hubNode.getId()
+                        + " owned by " + hubNode.getPartner().getId());
+
+                // TODO services
+                Logging.INSTANCE.info("The following services are available to " + ret.getUsername() + ":");
+
+                for (var service : authentication.getNodes()) {
+                    if (service.getServiceType() == KlabService.Type.LEGACY_NODE) {
+                        // TODO see if we need to adapt
+                    } else {
+                        services.add(service);
+                    }
+                }
+                return Pair.of(ret, services);
             }
-
-            //            ((KlabUser) ret).setOnline(authentication != null);
 
         } else {
             throw new KlabAuthorizationException(
                     "wrong certificate for an engine: cannot create identity of type " + certificate.getType());
+        }
+
+        return Pair.of(new AnonymousUser(), getLocalServices());
+    }
+
+
+    /**
+     * TODO create and return clients for any services running locally. If so configured, start embedded
+     *  services for each service type.
+     */
+    private List<ServiceReference> getLocalServices() {
+
+        List<ServiceReference> ret = new ArrayList<>();
+
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " " +
+                "/resources" +
+                "/actuator")) {
+        }
+
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " /reasoner" +
+                "/actuator")) {
+        }
+
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " /resolver" +
+                "/actuator")) {
+        }
+
+        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " /runtime" +
+                "/actuator")) {
         }
 
         return ret;

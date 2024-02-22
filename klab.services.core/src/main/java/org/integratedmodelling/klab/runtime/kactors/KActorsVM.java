@@ -1176,7 +1176,7 @@ public class KActorsVM implements VM {
                 if (ret != null) {
                     for (String setting : settings.keySet()) {
                         String methodName = setting.startsWith("set") ? setting :
-                                            ("set" + Utils.Strings.capitalize(setting));
+                                            ("set" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(setting));
                         Object argument = settings.get(setting);
                         Method method = null;
                         try {
@@ -1951,7 +1951,7 @@ public class KActorsVM implements VM {
                 try {
                     // getter
                     method =
-                            reactor.getClass().getDeclaredMethod("get" + Utils.Strings.capitalize(methodName));
+                            reactor.getClass().getDeclaredMethod("get" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(methodName));
                     if (method != null) {
                         ret = method.invoke(reactor, jargs.toArray());
                     }

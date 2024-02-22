@@ -97,7 +97,7 @@ public class Resolver {
                     // must have a single root subject
                 }
 
-                var urn = Utils.Strings.join(observables, " ");
+                var urn = org.integratedmodelling.common.utils.Utils.Strings.join(observables, " ");
                 var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
                 this.knowledge = resolver.resolveKnowledge(urn, Knowledge.class, ctx);
 
@@ -209,7 +209,7 @@ public class Resolver {
 
         private void dumpObservationStructure(Observation observation, ContextScope scope, RuntimeService service,
                                               PrintWriter out, int level) {
-            var spacer = Utils.Strings.spaces(level);
+            var spacer = org.integratedmodelling.common.utils.Utils.Strings.spaces(level);
             out.println(Ansi.AUTO.string("@|green " + spacer + (observation instanceof DirectObservation dobs ?
                     (dobs.getName() + " ") : "") + observation.getObservable() + "|@"));
             for (var child : service.children(scope, observation)) {

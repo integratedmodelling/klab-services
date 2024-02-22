@@ -1,6 +1,7 @@
 package org.integratedmodelling.kcli;
 
 import groovyjarjarpicocli.CommandLine.Help.Ansi;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.kcli.functional.FunctionalCommand;
 import org.integratedmodelling.klab.api.data.Version;
@@ -9,7 +10,6 @@ import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.utilities.Utils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -45,7 +45,7 @@ public class Reasoner {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            var urn = Utils.Strings.join(observables, " ");
+            var urn = org.integratedmodelling.common.utils.Utils.Strings.join(observables, " ");
             var reasoner = Engine.INSTANCE.getCurrentUser()
                     .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
@@ -61,7 +61,7 @@ public class Reasoner {
     public static void printRelated(PrintWriter out, Concept concept, Function<Concept,
             Collection<Concept>> producer
             , int offset) {
-        String spaces = Utils.Strings.spaces(offset);
+        String spaces = org.integratedmodelling.common.utils.Utils.Strings.spaces(offset);
         for (var child : producer.apply(concept)) {
             out.println(spaces + child.getUrn());
             printRelated(out, child, producer, offset + 3);
@@ -111,7 +111,7 @@ public class Reasoner {
                 // must have a single root subject
             }
 
-            var urn = Utils.Strings.join(observables, " ");
+            var urn = org.integratedmodelling.common.utils.Utils.Strings.join(observables, " ");
             var reasoner = ctx.getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             var observable = reasoner.resolveObservable(urn);
 
@@ -132,8 +132,8 @@ public class Reasoner {
             out.println(Ansi.AUTO.string("Observation strategies for @|bold " + observable.getDescriptionType().name().toLowerCase()
                     + "|@ of @|green " + observable.getUrn() + "|@:"));
             for (var strategy : reasoner.inferStrategies(observable, ctx)) {
-                out.println(Utils.Strings.indent(strategy.toString(),
-                        Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
+                out.println(org.integratedmodelling.common.utils.Utils.Strings.indent(strategy.toString(),
+                        org.integratedmodelling.common.utils.Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
                                 " ", 4)));
             }
         }
@@ -155,7 +155,7 @@ public class Reasoner {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            var urn = Utils.Strings.join(observables, " ");
+            var urn = org.integratedmodelling.common.utils.Utils.Strings.join(observables, " ");
             var reasoner = Engine.INSTANCE.getCurrentUser()
                     .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
@@ -184,7 +184,7 @@ public class Reasoner {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            var urn = Utils.Strings.join(observables, " ");
+            var urn = org.integratedmodelling.common.utils.Utils.Strings.join(observables, " ");
             var reasoner = Engine.INSTANCE.getCurrentUser()
                     .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
@@ -216,7 +216,7 @@ public class Reasoner {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            var urn = Utils.Strings.join(observables, " ");
+            var urn = org.integratedmodelling.common.utils.Utils.Strings.join(observables, " ");
             var reasoner = Engine.INSTANCE.getCurrentUser()
                     .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);

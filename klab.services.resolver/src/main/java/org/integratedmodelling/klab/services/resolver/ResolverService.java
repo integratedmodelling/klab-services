@@ -63,7 +63,7 @@ public class ResolverService extends BaseService implements Resolver {
     Map<String, Model> models = Collections.synchronizedMap(new HashMap<>());
     Map<String, Instance> instances = Collections.synchronizedMap(new HashMap<>());
     Parameters<String> defines = Parameters.createSynchronized();
-    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
     // TODO link to configuration
     private String serviceId;
 
@@ -78,7 +78,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) ||
                 (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
     }
@@ -762,7 +762,7 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     private StringBuffer encodeActuator(Actuator actuator, int offset, Map<String, String> resources) {
-        String ofs = Utils.Strings.spaces(offset);
+        String ofs = org.integratedmodelling.common.utils.Utils.Strings.spaces(offset);
         StringBuffer ret = new StringBuffer(1024);
 
         ret.append(ofs + actuator.getObservable().getDescriptionType().getKdlType() + " "
@@ -797,7 +797,7 @@ public class ResolverService extends BaseService implements Resolver {
     private String encodeServiceCall(ServiceCall contextualizable, int offset,
                                      Map<String, String> resources) {
         // TODO extract resource parameters and substitute with variables
-        return Utils.Strings.spaces(offset) + contextualizable.encode(Language.KDL);
+        return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset) + contextualizable.encode(Language.KDL);
     }
 
 }

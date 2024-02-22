@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.services.reasoner.configuration;
 
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.util.ArrayList;

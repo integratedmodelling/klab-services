@@ -1,5 +1,6 @@
 package org.integratedmodelling.engine.client;
 
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.engine.client.distribution.Distribution;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.exceptions.KlabConfigurationException;
@@ -105,6 +106,7 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
     @Override
     protected UserScope authenticate() {
+        var scope = Authentication.INSTANCE.authenticate();
         return null;
     }
 

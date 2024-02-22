@@ -34,7 +34,7 @@ public class RuntimeService extends BaseService
      * the runtime when they go out of scope.
      */
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
-    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
     // TODO connect to runtime.yaml configuration
     private String serviceId;
 
@@ -48,7 +48,7 @@ public class RuntimeService extends BaseService
 
     @Override
     public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) ||
                 (capabilities().getServerId() != null && capabilities().getServerId().equals("RUNTIME_" + serverId));
     }

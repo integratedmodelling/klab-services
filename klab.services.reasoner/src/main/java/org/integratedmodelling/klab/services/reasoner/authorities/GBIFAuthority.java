@@ -81,7 +81,7 @@ public class GBIFAuthority implements Authority {
         this.capabilities.getDocumentationFormats().add("text/plain");
         this.capabilities.getSubAuthorities().add(Pair.of("", "Any rank"));
         for (String rank : ranks) {
-            this.capabilities.getSubAuthorities().add(Pair.of(rank.toUpperCase(), Utils.Strings.capitalize(rank) + " rank"));
+            this.capabilities.getSubAuthorities().add(Pair.of(rank.toUpperCase(), org.integratedmodelling.common.utils.Utils.Strings.capitalize(rank) + " rank"));
         }
         this.capabilities.setName(ID);
 
@@ -174,7 +174,7 @@ public class GBIFAuthority implements Authority {
         result.setAuthorityName(ID);
         result.setId(key);
         result.setLabel(canonicalName);
-        result.setDescription((rank == null ? "" : (Utils.Strings.capitalize(rank) + ": ")) + canonicalName
+        result.setDescription((rank == null ? "" : (org.integratedmodelling.common.utils.Utils.Strings.capitalize(rank) + ": ")) + canonicalName
                 + ((authorship == null || authorship.isEmpty()) ? "" : (" (" + authorship + ")"))
                 + (parents == null ? "" : (". " + parents + ".")));
         result.setConceptName("gbif" + key);

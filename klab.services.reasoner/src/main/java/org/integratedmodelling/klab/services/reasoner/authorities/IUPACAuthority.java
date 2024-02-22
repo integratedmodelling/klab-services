@@ -106,7 +106,7 @@ public class IUPACAuthority implements Authority {
             ret.setLabel(original);
             ret.setId(identityId);
         }
-        boolean ws = Utils.Strings.containsWhitespace(original);
+        boolean ws = org.integratedmodelling.common.utils.Utils.Strings.containsWhitespace(original);
         ret.setLocator(ID + (ws ? ":'" : ":") + original + (ws ? "'" : ""));
 
         /*

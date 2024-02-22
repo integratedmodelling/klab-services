@@ -70,11 +70,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     private String url;
     private Authentication authenticationService;
-    private String hardwareSignature = Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
     @Override
     public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) || (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOURCES_" + serverId));
     }
 
@@ -616,7 +616,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         // Resources work independently and do not come with the project data.
 
         return Utils.Resources.create(this,
-                Utils.Collections.shallowCollection(namespaces, behaviors).toArray(new KlabAsset[namespaces.size()]));
+                org.integratedmodelling.common.utils.Utils.Collections.shallowCollection(namespaces, behaviors).toArray(new KlabAsset[namespaces.size()]));
     }
 
     @Override

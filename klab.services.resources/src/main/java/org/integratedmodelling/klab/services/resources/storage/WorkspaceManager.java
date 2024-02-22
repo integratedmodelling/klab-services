@@ -397,7 +397,7 @@ public class WorkspaceManager {
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
         if (config.exists() && config.length() > 0) {
-            this.configuration = Utils.YAML.load(config, ResourcesConfiguration.class);
+            this.configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config, ResourcesConfiguration.class);
         } else {
             // make an empty config
             this.configuration = new ResourcesConfiguration();
@@ -1633,7 +1633,7 @@ public class WorkspaceManager {
 
     private void saveConfiguration() {
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        Utils.YAML.save(this.configuration, config);
+        org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 
 

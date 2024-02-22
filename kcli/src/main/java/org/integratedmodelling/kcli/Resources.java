@@ -68,7 +68,7 @@ public class Resources {
 
             Observable observable = Engine.INSTANCE.getCurrentUser()
                     .getService(org.integratedmodelling.klab.api.services.Reasoner.class)
-                    .resolveObservable(Utils.Strings.join(urns, ' '));
+                    .resolveObservable(org.integratedmodelling.common.utils.Utils.Strings.join(urns, ' '));
 
             var service = Engine.INSTANCE.getServiceNamed(this.service, ResourcesService.class);
             ResourceSet result = service.queryModels(observable, Engine.INSTANCE.getCurrentContext(true));
@@ -129,7 +129,7 @@ public class Resources {
                     String text = result.getResourceUrn();
 
                     out.println(Ansi.AUTO
-                            .string("   " + Utils.Strings.capitalize(result.getKnowledgeClass().name().toLowerCase())
+                            .string("   " + org.integratedmodelling.common.utils.Utils.Strings.capitalize(result.getKnowledgeClass().name().toLowerCase())
                                     + " @|green " + result.getResourceUrn() + "|@ listing:"));
 
                     switch (result.getKnowledgeClass()) {
@@ -162,7 +162,7 @@ public class Resources {
                     }
 
                     if (output == null) {
-                        out.println(Utils.Strings.indent(text, 6));
+                        out.println(org.integratedmodelling.common.utils.Utils.Strings.indent(text, 6));
                     } else {
                         Utils.Files.writeStringToFile(text, output);
                         out.println(Ansi.AUTO.string("      Result written to @|yellow " + output + "|@"));

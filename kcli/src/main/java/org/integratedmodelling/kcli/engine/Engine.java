@@ -57,7 +57,7 @@ public enum Engine implements Authentication {
          * check for a locally running service for each category; if existing, create a
          * client, otherwise create an embedded service
          */
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " /resources" +
+        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " /resources" +
                 "/actuator")) {
             engineService
                     .setResources(new ResourcesClient("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " " +
@@ -68,7 +68,7 @@ public enum Engine implements Authentication {
                             "Embedded resource manager"));
         }
 
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " /reasoner/actuator")) {
+        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " /reasoner/actuator")) {
             engineService
                     .setReasoner(new ReasonerClient("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " " +
                             "/reasoner"));
@@ -79,7 +79,7 @@ public enum Engine implements Authentication {
         }
 
         // FIXME mutual dependency between resolver and runtime guarantees screwup
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " /resolver/actuator")) {
+        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " /resolver/actuator")) {
             engineService
                     .setResolver(new ResolverClient("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " " +
                             "/resolver"));
@@ -89,7 +89,7 @@ public enum Engine implements Authentication {
                             "Embedded resolver"));
         }
 
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " /runtime/actuator")) {
+        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " /runtime/actuator")) {
             engineService
                     .setRuntime(new RuntimeClient("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " " +
                             "/runtime"));

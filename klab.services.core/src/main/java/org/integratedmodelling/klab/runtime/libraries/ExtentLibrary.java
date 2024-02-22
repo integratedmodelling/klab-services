@@ -313,7 +313,7 @@ public class ExtentLibrary {
 
 		Pair<Double, String> pd = null;
 		if (spec instanceof String) {
-			pd = Utils.Strings.splitNumberFromString((String) spec);
+			pd = org.integratedmodelling.common.utils.Utils.Strings.splitNumberFromString((String) spec);
 		} else if (spec instanceof Quantity) {
 			pd = Pair.of(((Quantity) spec).getValue().doubleValue(),
 					((Quantity) spec).getCurrency() == null ? ((Quantity) spec).getUnit().toString()

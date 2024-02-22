@@ -30,7 +30,9 @@ public interface KlabService extends Service {
         /**
          * Engine is not a k.LAB Service but has its own public observation API
          */
-        ENGINE(8283);
+        ENGINE(8283),
+
+        LEGACY_NODE(8287);
 
         public int defaultPort;
 

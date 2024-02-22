@@ -567,7 +567,7 @@ public class SemanticExpression {
     private String dump(SemanticToken token, int level) {
 
         String ret = "";
-        String spacer = Utils.Strings.spaces(level);
+        String spacer = org.integratedmodelling.common.utils.Utils.Strings.spaces(level);
         ret += spacer + token + "\n";
         for (SemanticLink link : graph.outgoingEdgesOf(token)) {
             ret += spacer + "  \u2192 " + link + ":\n";

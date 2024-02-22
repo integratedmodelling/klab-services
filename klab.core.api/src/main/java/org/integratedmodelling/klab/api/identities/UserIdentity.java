@@ -26,7 +26,7 @@ import java.util.Set;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public abstract interface UserIdentity extends Identity {
+public interface UserIdentity extends Identity {
 
 	/**
 	 * Never null, may be ANONYMOUS_USER_ID when isAnonymous() returns true.
@@ -125,4 +125,5 @@ public abstract interface UserIdentity extends Identity {
 	 * @return date of last login. Not null.
 	 */
 	Date getLastLogin();
+
 }

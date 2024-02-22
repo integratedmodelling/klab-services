@@ -31,9 +31,9 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.ImmutableList;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.utilities.Utils;
 
 /**
  * List to return results of a Kbox query. Only stores object IDs, creating any

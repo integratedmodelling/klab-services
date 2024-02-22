@@ -258,7 +258,7 @@ public class KlabCLI {
                         arguments.set(i, "-" + arguments.get(i).substring(1));
                     }
                 }
-                String value = Utils.Strings.join(arguments.subList(1, arguments.size()), " ");
+                String value = org.integratedmodelling.common.utils.Utils.Strings.join(arguments.subList(1, arguments.size()), " ");
                 Run.aliases.put(alias, value);
                 Run.storeAliases();
             }
@@ -365,7 +365,7 @@ public class KlabCLI {
                  * If we have a command, run it and exit
                  */
                 if (args != null && args.length > 0) {
-                    String line = Utils.Strings.join(args, ' ');
+                    String line = org.integratedmodelling.common.utils.Utils.Strings.join(args, ' ');
                     try {
                         systemRegistry.execute(line);
                     } catch (Throwable t) {
@@ -440,9 +440,9 @@ public class KlabCLI {
     public static void printResourceSet(ResourceSet resourceSet, PrintStream out, int indent) {
 
         if (resourceSet == null) {
-            out.println(Utils.Strings.spaces(indent) + "Null resource set");
+            out.println(org.integratedmodelling.common.utils.Utils.Strings.spaces(indent) + "Null resource set");
         } else if (resourceSet.isEmpty()) {
-            out.println(Utils.Strings.spaces(indent) + "Empty resource set");
+            out.println(org.integratedmodelling.common.utils.Utils.Strings.spaces(indent) + "Empty resource set");
         } else {
 
             out.println("Namespaces:");

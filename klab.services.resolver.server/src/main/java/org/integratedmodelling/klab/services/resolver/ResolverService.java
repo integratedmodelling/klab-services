@@ -48,7 +48,7 @@ public class ResolverService implements Resolver, Resolver.Admin {
         return false;
     }
     public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
+        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) ||
                 (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
     }

@@ -10,7 +10,7 @@ public class EngineAuthenticationResponse {
 
 	private AuthenticatedIdentity userData;
 	private HubReference hub;
-	private List<NodeReference> nodes = new ArrayList<>();
+	private List<ServiceReference> nodes = new ArrayList<>();
 	private ArrayList<HubNotificationMessage> messages;
 	private String authentication; 
 
@@ -22,11 +22,11 @@ public class EngineAuthenticationResponse {
 		this.userData = userData;
 	}
 
-	public List<NodeReference> getNodes() {
+	public List<ServiceReference> getNodes() {
 		return nodes;
 	}
 
-	public void setNodes(List<NodeReference> nodes) {
+	public void setNodes(List<ServiceReference> nodes) {
 		this.nodes = nodes;
 	}
 	
@@ -50,7 +50,7 @@ public class EngineAuthenticationResponse {
 	}
 
 	public EngineAuthenticationResponse(AuthenticatedIdentity userData, HubReference hub,
-			Collection<NodeReference> nodes) {
+			Collection<ServiceReference> nodes) {
 		super();
 		this.userData = userData;
 		this.hub = hub;

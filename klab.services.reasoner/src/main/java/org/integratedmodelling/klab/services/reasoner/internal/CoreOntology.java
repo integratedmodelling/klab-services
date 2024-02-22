@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
 import com.google.common.collect.Sets;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -9,7 +10,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
-import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.util.*;
