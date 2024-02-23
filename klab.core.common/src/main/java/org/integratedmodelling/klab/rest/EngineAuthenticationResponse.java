@@ -1,14 +1,12 @@
 package org.integratedmodelling.klab.rest;
 
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class EngineAuthenticationResponse {
 
-	private AuthenticatedIdentity userData;
+	private AuthenticatedIdentityImpl userData;
 	private HubReference hub;
 	private List<ServiceReference> nodes = new ArrayList<>();
 	private ArrayList<HubNotificationMessage> messages;
@@ -18,7 +16,7 @@ public class EngineAuthenticationResponse {
 		return userData;
 	}
 
-	public void setUserData(AuthenticatedIdentity userData) {
+	public void setUserData(AuthenticatedIdentityImpl userData) {
 		this.userData = userData;
 	}
 
@@ -49,8 +47,8 @@ public class EngineAuthenticationResponse {
 	public EngineAuthenticationResponse() {
 	}
 
-	public EngineAuthenticationResponse(AuthenticatedIdentity userData, HubReference hub,
-			Collection<ServiceReference> nodes) {
+	public EngineAuthenticationResponse(AuthenticatedIdentityImpl userData, HubReference hub,
+                                        Collection<ServiceReference> nodes) {
 		super();
 		this.userData = userData;
 		this.hub = hub;

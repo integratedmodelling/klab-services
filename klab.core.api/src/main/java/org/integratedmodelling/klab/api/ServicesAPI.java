@@ -17,6 +17,10 @@ public interface ServicesAPI {
 
 		public static final String AUTH_BASE = "/auth-cert";
 
+
+		// TODO rename /nodes to /services (?)
+		public static final String SERVICE_BASE = API_BASE + "/nodes";
+
 		/**
 		 * Returns authenticated user details and network status with all nodes
 		 * (including offline if applicable) with refresh rate and unique network access
@@ -34,6 +38,12 @@ public interface ServicesAPI {
 		 * <b>Authentication:</b> open
 		 */
 		public static final String AUTHENTICATE_ENGINE = ENGINE_BASE + AUTH_BASE;
+
+		/**
+		 * Called by nodes on hubs when authenticating with them. Parameters like the engine
+		 * version.
+		 */
+		public static final String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
 	}
 
 	/**

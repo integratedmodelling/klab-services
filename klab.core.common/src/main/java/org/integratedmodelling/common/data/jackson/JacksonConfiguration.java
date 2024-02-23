@@ -5,6 +5,8 @@ import java.util.Currency;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.module.SimpleAbstractTypeResolver;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -18,6 +20,7 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
@@ -42,6 +45,9 @@ import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
+import org.integratedmodelling.klab.rest.AuthenticatedIdentityImpl;
+import org.integratedmodelling.klab.rest.GroupImpl;
 
 public class JacksonConfiguration {
 
@@ -65,6 +71,11 @@ public class JacksonConfiguration {
 
             return false;
         }
+//
+//        @Override
+//        public DefaultTypeResolverBuilder withDefaultImpl(Class<?> defaultImpl) {
+//            return super.withDefaultImpl(defaultImpl);
+//        }
     }
 
     static class LiteralDeserializer extends JsonDeserializer<Literal> {
@@ -244,14 +255,21 @@ public class JacksonConfiguration {
                 .addDeserializer(Annotation.class, new ParameterDeserializer())
                 .addDeserializer(Parameters.class, new ParameterDeserializer())
                 .addDeserializer(Literal.class, new LiteralDeserializer());
+
         mapper.registerModule(module);
         mapper.registerModule(new ParameterNamesModule());
+
+//        SimpleModule typeMapper = new SimpleModule("ExternalTypeMapping", Version.unknownVersion());
+//        SimpleAbstractTypeResolver resolver = new SimpleAbstractTypeResolver();
+//        resolver.addMapping(Group.class, GroupImpl.class);
+//        typeMapper.setAbstractTypes(resolver);
 
         TypeResolverBuilder<?> typeResolver = new KimStatementResolverBuilder();
         typeResolver.init(JsonTypeInfo.Id.CLASS, null);
         typeResolver.inclusion(JsonTypeInfo.As.PROPERTY);
         typeResolver.typeProperty("@CLASS");
         mapper.setDefaultTyping(typeResolver);
+//        mapper.registerModule(typeMapper);
     }
 
 }

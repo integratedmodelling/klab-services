@@ -16,8 +16,6 @@ public interface Group {
 
     List<String> getProjectUrls();
 
-//    List<ObservableReference> getObservables();
-
     boolean isWorldview();
 
     String getIconUrl();

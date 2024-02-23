@@ -61,6 +61,14 @@ public abstract interface Scope extends Channel {
      * hierarchy. For this reason all "child" scopes (i.e. any scope except {@link UserScope}) must use the
      * same conventions in creating the ID, which must consist of a forward slash-separated path from the
      * parent to self. The forward slash cannot be used as part of each individual ID.
+     * <p>
+     * A suggested structure for the ID starts at the ServiceId and contains up to the ActorID when scopes are
+     * specific to an actor. The maximal overall scheme should be
+     *
+     * <code>ServiceId.UserId.SessionId.ContextID.ActorID</code>
+     * <p>
+     * and the "level" of the scope should be deducible from the ID based on the number of elements in the ID
+     * path.
      *
      * @return
      */
@@ -81,8 +89,8 @@ public abstract interface Scope extends Channel {
     Ref getAgent();
 
     /**
-     * Retrieve the service corresponding to the passed class. A {@link KlabServiceAccessException} should be the
-     * response when services are unavailable. If there are multiple services available for the class, a
+     * Retrieve the service corresponding to the passed class. A {@link KlabServiceAccessException} should be
+     * the response when services are unavailable. If there are multiple services available for the class, a
      * default one should be chosen based on load factor, vicinity or any other sensible logic.
      *
      * @param <T>

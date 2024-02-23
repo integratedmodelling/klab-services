@@ -1,7 +1,11 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
+import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
@@ -23,6 +27,7 @@ public interface Message extends Serializable {
     /**
      * Message class. Ugly type name makes life easier.
      * TODO add enumset of all acceptable messageTypes and validate messages
+     *
      * @author ferdinando.villa
      */
     enum MessageClass {
@@ -122,26 +127,31 @@ public interface Message extends Serializable {
     enum MessageType {
 
 
-        /**
-         * Only used as a default for the MessageClass annotation.
-         */
-        Void,
+        //        /**
+        //         * Only used as a default for the MessageClass annotation.
+        //         */
+        //        Void,
 
-        /*
-         * For basic engine requests of class EngineLifecycle that don't require a response besides
-         * collateral effects.
-         */
-        ExecuteCommand,
-
-        /*
-         * Console requests: new console, command received, response received
-         */
-        ConsoleCreated, ConsoleClosed, CommandRequest, CommandResponse,
+        //        /*
+        //         * For basic engine requests of class EngineLifecycle that don't require a response besides
+        //         * collateral effects.
+        //         */
+        //        ExecuteCommand,
+        //
+        //        /*
+        //         * Console requests: new console, command received, response received
+        //         */
+        //        ConsoleCreated,
+        //        ConsoleClosed,
+        //        CommandRequest,
+        //        CommandResponse,
 
         /*
          * Service messages, coming with service capabilities
          */
-        ServiceInitializing, ServiceAvailable, ServiceUnavailable,
+        ServiceInitializing(KlabService.ServiceCapabilities.class),
+        ServiceAvailable(KlabService.ServiceCapabilities.class),
+        ServiceUnavailable(KlabService.ServiceCapabilities.class),
 
         /**
          * UI selections
@@ -156,131 +166,147 @@ public interface Message extends Serializable {
 
         DocumentSelected(KlabDocument.class),
 
-        /*
-         * UserContextChange-class types.
-         */
-        /**
-         * F->B.
-         */
-        RegionOfInterest, FeatureAdded,
+        //        /*
+        //         * UserContextChange-class types.
+        //         */
+        //        /**
+        //         * F->B.
+        //         */
+        //        RegionOfInterest, FeatureAdded,
+        //
+        //        /**
+        //         * F->B
+        //         */
+        //        PeriodOfInterest,
+        //
+        //        /**
+        //         * B->F sent whenever a user message affecting the context is processed
+        //         */
+        //        ScaleDefined,
+        //
+        //        /**
+        //         * F<->B
+        //         */
+        //        ResetContext,
+        //
+        //        /**
+        //         * F->F (internal message between views)
+        //         */
+        //        ResetScenarios,
+        //
+        //        /**
+        //         * F->B whenever the user wants to (re)contextualize to either a URN specifying one or
+        //         more contexts,
+        //         * a query (both may require users to choose one), or a specified observation ID. The
+        //         last use case
+        //         * can happen with a parent context set, when users want to select a sub-context of the
+        //         current, or
+        //         * without when the user wants to revert back to the original root context.
+        //         * <p>
+        //         * Class: ObservationLifecycle
+        //         */
+        //        Recontextualize,
+        //
+        //        /*
+        //         * Messages with class UserInterface, some local to the UI and not marshalled across
+        //         * websockets, others initiated on either side when user input is provided or requested.
+        //         */
+        //        HistoryChanged, FocusChanged, Notification,
+        //
+        //        /**
+        //         * B->F: notification for projects in user workspace when they are opened.UIs may not be
+        //         aware of them
+        //         * and want to offer to import them. The backend does not modify or delete projects.
+        //         * <p>
+        //         * F->B: notification for projects in IDE workspace that are opened and the engine may
+        //         not be aware
+        //         * of.
+        //         */
+        //        UserProjectOpened, UserProjectModified, UserProjectDeleted,
 
-        /**
-         * F->B
-         */
-        PeriodOfInterest,
+        //        /**
+        //         * Class UserInterface: User input requests and responses: request is B->F, response is
+        //         F->B. Use
+        //         * beans {@link UserInputRequested} and {@link UserInputProvided} respectively.
+        //         */
+        //        UserInputRequested, UserInputProvided,
 
-        /**
-         * B->F sent whenever a user message affecting the context is processed
-         */
-        ScaleDefined,
+        UserAuthorized(UserIdentity.class),
+        UserDisconnected(UserIdentity.class),
 
-        /**
-         * F<->B
-         */
-        ResetContext,
+        //        /**
+        //         * Class UserInterface: B->F when a new documentation item becomes available for display
+        //         at context
+        //         * level or at the dataflow actuator level. Uses bean {@link RuntimeDocumentation}.
+        //         */
+        //        RuntimeDocumentation, DataflowDocumentation, TicketRequest, TicketResponse,
+        //        AuthorityDocumentation,
+        //
+        //        /**
+        //         * Class UserInterface: request addition of action to either context menu or global menu.
+        //         Use bean
+        //         * {@link GlobalActionRequest}.
+        //         */
+        //        AddGlobalAction,
 
-        /**
-         * F->F (internal message between views)
-         */
-        ResetScenarios,
+        //        /**
+        //         * Class UserInterface: handling of drop events in UI
+        //         * <p>
+        //         * {@link #DropInitiated}: F->B communicate content type, name and size (bean {@link
+        //         DropRequest}
+        //         * {@link #DropPermission}: B->F accept/reject drop (bean {@link DropPermission} {@link
+        //         #DropData}:
+        //         * F->B execute drop upload and communicate on finish (bean {@link DropData}
+        //         */
+        //        DropInitiated, DropPermission, DropData,
 
-        /**
-         * F->B whenever the user wants to (re)contextualize to either a URN specifying one or more contexts,
-         * a query (both may require users to choose one), or a specified observation ID. The last use case
-         * can happen with a parent context set, when users want to select a sub-context of the current, or
-         * without when the user wants to revert back to the original root context.
-         * <p>
-         * Class: ObservationLifecycle
-         */
-        Recontextualize,
-
-        /*
-         * Messages with class UserInterface, some local to the UI and not marshalled across
-         * websockets, others initiated on either side when user input is provided or requested.
-         */
-        HistoryChanged, FocusChanged, Notification,
-
-        /**
-         * B->F: notification for projects in user workspace when they are opened.UIs may not be aware of them
-         * and want to offer to import them. The backend does not modify or delete projects.
-         * <p>
-         * F->B: notification for projects in IDE workspace that are opened and the engine may not be aware
-         * of.
-         */
-        UserProjectOpened, UserProjectModified, UserProjectDeleted,
-
-//        /**
-//         * Class UserInterface: User input requests and responses: request is B->F, response is F->B. Use
-//         * beans {@link UserInputRequested} and {@link UserInputProvided} respectively.
-//         */
-//        UserInputRequested, UserInputProvided,
-
-        UserAuthorized, UserDisconnected,
-
-//        /**
-//         * Class UserInterface: B->F when a new documentation item becomes available for display at context
-//         * level or at the dataflow actuator level. Uses bean {@link RuntimeDocumentation}.
-//         */
-        RuntimeDocumentation, DataflowDocumentation, TicketRequest, TicketResponse, AuthorityDocumentation,
-
-//        /**
-//         * Class UserInterface: request addition of action to either context menu or global menu. Use bean
-//         * {@link GlobalActionRequest}.
-//         */
-//        AddGlobalAction,
-
-//        /**
-//         * Class UserInterface: handling of drop events in UI
-//         * <p>
-//         * {@link #DropInitiated}: F->B communicate content type, name and size (bean {@link DropRequest}
-//         * {@link #DropPermission}: B->F accept/reject drop (bean {@link DropPermission} {@link #DropData}:
-//         * F->B execute drop upload and communicate on finish (bean {@link DropData}
-//         */
-//        DropInitiated, DropPermission, DropData,
-
-//        /**
-//         * Class UserInterface: request change in setting communicating through bean
-//         * {@link SettingChangeRequest}. F->B
-//         */
-//        ChangeSetting,
-//        /*
-//         * B->F, modify fixed explorer view settings
-//         */
-//        ViewSetting,
+        //        /**
+        //         * Class UserInterface: request change in setting communicating through bean
+        //         * {@link SettingChangeRequest}. F->B
+        //         */
+        //        ChangeSetting,
+        //        /*
+        //         * B->F, modify fixed explorer view settings
+        //         */
+        //        ViewSetting,
 
         /*
          * F->B: ask engine to modify or delete projects or project assets
-         */
-        CreateNamespace, CreateScenario, DeleteNamespace, DeleteLocalResource, CreateCodelist, GetCodelist,
-        UpdateCodelist, DeleteCodelist, CreateProject, DeleteProject, CreateScript, DeleteScript,
-        CreateTestCase, DeleteTestCase, CreateBehavior, DeleteBehavior,
-
-        /*
-         * F->B: publish or update a local or public resource
-         */
-        PublishLocalResource, UpdatePublicResource,
-
-        /**
-         * B->F: respond to a request to publish a resource (just submit asynchronously).
-         */
-        ResourceSubmitted,
-
-        /**
-         * B -> F after a resource operation request, reporting the results
-         */
-        ResourceInformation,
-
-        /**
-         * B->F to report the status of a resource as its ResourceReference data plus online/offline status if
-         * known, or unknown + the URN if not.
-         */
-        ResourceOnline, ResourceOffline, ResourceUnknown,
-
-        /**
-         * F->B: notification when files are explicitly changed, added or deleted; notify projects to load and
-         * respond to project lifecycle requests
-         */
-        ProjectFileAdded, ProjectFileModified, ProjectFileDeleted, NotifyProjects, DocumentationModified,
+//         */
+        //        CreateNamespace, CreateScenario, DeleteNamespace, DeleteLocalResource, CreateCodelist,
+        //        GetCodelist,
+        //        UpdateCodelist, DeleteCodelist, CreateProject, DeleteProject, CreateScript, DeleteScript,
+        //        CreateTestCase, DeleteTestCase, CreateBehavior, DeleteBehavior,
+        //
+        //        /*
+        //         * F->B: publish or update a local or public resource
+        //         */
+        //        PublishLocalResource, UpdatePublicResource,
+        //
+        //        /**
+        //         * B->F: respond to a request to publish a resource (just submit asynchronously).
+        //         */
+        //        ResourceSubmitted,
+        //
+        //        /**
+        //         * B -> F after a resource operation request, reporting the results
+        //         */
+        //        ResourceInformation,
+        //
+        //        /**
+        //         * B->F to report the status of a resource as its ResourceReference data plus
+        //         online/offline status if
+        //         * known, or unknown + the URN if not.
+        //         */
+        //        ResourceOnline, ResourceOffline, ResourceUnknown,
+        //
+        //        /**
+        //         * F->B: notification when files are explicitly changed, added or deleted; notify
+        //         projects to load and
+        //         * respond to project lifecycle requests
+        //         */
+        //        ProjectFileAdded, ProjectFileModified, ProjectFileDeleted, NotifyProjects,
+        //        DocumentationModified,
 
         /**
          * F <-> B: scenario selection from user action (if class == UserInterface) and/or from engine (after
@@ -288,140 +314,160 @@ public interface Message extends Serializable {
          * assumed to contain and honor all interdependencies and constraints. Scenario selection with no
          * scenarios is a reset.
          */
-        ScenariosSelected,
+        ScenariosSelected(String[].class),
 
         /*
          * --- Notification-class types ---
          */
-        Debug, Info, Warning, Error, EngineEvent, RuntimeEvent,
+        Debug(Notification.class),
+        Info(Notification.class),
+        Warning(Notification.class),
+        Error(Notification.class),
+        //        EngineEvent, RuntimeEvent,
 
-        /*
-         * --- KimLifecycle: one-off compile notifications at the namespace or project level
-         */
-        NamespaceCompilationIssues,
-
-        /*
-         * --- Observation lifecycle ---
-         */
-        /**
-         * Request the observation of a URN or logical expression. F->B. If the URN has resulted from a
-         * search, send the ID of the search so it can be disposed of.
-         */
-        RequestObservation,
-
-        /**
-         * Authority-related inquiries
-         */
-        AuthorityQuery, AuthoritySearchResults,
-
-//        /**
-//         * F->B: Start or stop watching an observation, i.e. receive messages about anything that changes
-//         * related to it. Linked to a {@link WatchRequest} message payload.
-//         */
-        WatchObservation,
-
-        /**
-         * A new observation is available. Back->Front.
-         */
-        NewObservation,
-
-        /**
-         * A previously reported observation had its contents modified. Back->Front.
-         */
-        ModifiedObservation,
-
-        /**
-         * F->B: user has selected an action among those supplied by the engine with each observation.
-         */
-        ExecuteObservationAction,
-
-        /**
-         * F->B Authorization class - inquiries about permitted operations and network status
-         */
-        NetworkStatus,
-
-        /**
-         * -- Ticketing system monitoring, send around internally by UserInterface after engine notification
-         */
-        TicketResolved, TicketStatusChanged, TicketCreated,
-
-        /**
-         * --- Task lifecycle --- B -> F
-         */
-        ScriptStarted, TaskStarted, TaskFinished, TaskAborted, DataflowCompiled, DataflowStateChanged,
-        ProvenanceChanged,
-
-        /**
-         * Task lifecycle F -> B
-         */
-        TaskInterrupted, DataflowNodeDetail, DataflowNodeRating,
-
-        /**
-         * Test lifecycle B -> F
-         */
-        TestRunStarted, TestRunFinished, TestCaseStarted, TestCaseFinished, TestStarted, TestFinished,
-
-        /**
-         * Scheduler lifecycle F->B
-         */
-        SchedulingStarted, SchedulingFinished, ScheduleAdvanced, SchedulerReset,
-
-        /*
-         * --- Search-class types --- FIXME SemanticSearch is a synonym of SubmitSearch, used in IDE
-         * queries to trigger experimental behavior, to be merged with SubmitSearch and removed when
-         * done. Same with SemanticMatch vs. MatchAction.
-         */
-        SemanticSearch, SubmitSearch, MatchAction, SemanticMatch,
-
-        /*
-         * --- Query-class types ---
-         */
-        QueryResult, QueryStatus,
-
-        /*
-         * --- EngineLifecycle ---
-         */
-        EngineStarting, EngineUp, EngineDown,
-
-        /*
-         * --- Run-class types
-         */
-        RunScript, RunTest, RunApp, RunUnitTest, DebugScript, DebugTest,
-
-        /*
-         * --- ResourceLifecycle-class types, F->B
-         */
-        ImportResource, DeleteResource, UpdateResource, ValidateResource, PreviewResource, CopyResource,
-        MoveResource, CreateResource, ImportIntoResource, ResourceOperation,
-
-        /*
-         * --- ResourceLifecycle-class types, B->F
-         */
-        ResourceImported, ResourceDeleted, ResourceUpdated, ResourceValidated, ResourceCreated,
-        CodelistCreated, CodelistUpdated, CodelistDeleted,
-
+        //        /*
+        //         * --- KimLifecycle: one-off compile notifications at the namespace or project level
+        //         */
+        //        NamespaceCompilationIssues,
+        //
+        //        /*
+        //         * --- Observation lifecycle ---
+        //         */
+        //        /**
+        //         * Request the observation of a URN or logical expression. F->B. If the URN has resulted
+        //         from a
+        //         * search, send the ID of the search so it can be disposed of.
+        //         */
+        //        RequestObservation,
+        //
+        //        /**
+        //         * Authority-related inquiries
+        //         */
+        //        AuthorityQuery, AuthoritySearchResults,
+        //
+        //        /**
+        //         * F->B: Start or stop watching an observation, i.e. receive messages about anything that
+        //         changes
+        //         * related to it. Linked to a {@link WatchRequest} message payload.
+        ////         */
+        //        WatchObservation,
+        //
+        //        /**
+        //         * A new observation is available. Back->Front.
+        //         */
+        //        NewObservation,
+        //
+        //        /**
+        //         * A previously reported observation had its contents modified. Back->Front.
+        //         */
+        //        ModifiedObservation,
+        //
+        //        /**
+        //         * F->B: user has selected an action among those supplied by the engine with each
+        //         observation.
+        //         */
+        //        ExecuteObservationAction,
+        //
+        //        /**
+        //         * F->B Authorization class - inquiries about permitted operations and network status
+        //         */
+        //        NetworkStatus,
+        //
+        //        /**
+        //         * -- Ticketing system monitoring, send around internally by UserInterface after engine
+        //         notification
+        //         */
+        //        TicketResolved, TicketStatusChanged, TicketCreated,
+        //
+        //        /**
+        //         * --- Task lifecycle --- B -> F
+        //         */
+        //        ScriptStarted, TaskStarted, TaskFinished, TaskAborted, DataflowCompiled,
+        //        DataflowStateChanged,
+        //        ProvenanceChanged,
+        //
+        //        /**
+        //         * Task lifecycle F -> B
+        //         */
+        //        TaskInterrupted, DataflowNodeDetail, DataflowNodeRating,
+        //
+        //        /**
+        //         * Test lifecycle B -> F
+        //         */
+//        TestRunStarted,
+//        TestRunFinished,
+        TestCaseStarted(TestStatistics.class),
+        TestCaseFinished(TestStatistics.class),
+        TestStarted(ActionStatistics.class),
+        TestFinished(ActionStatistics.class),
+        //
+        //        /**
+        //         * Scheduler lifecycle F->B
+        //         */
+        //        SchedulingStarted, SchedulingFinished, ScheduleAdvanced, SchedulerReset,
+        //
+        //        /*
+        //         * --- Search-class types --- FIXME SemanticSearch is a synonym of SubmitSearch, used in IDE
+        //         * queries to trigger experimental behavior, to be merged with SubmitSearch and removed when
+        //         * done. Same with SemanticMatch vs. MatchAction.
+        //         */
+        //        SemanticSearch, SubmitSearch, MatchAction, SemanticMatch,
+        //
+        //        /*
+        //         * --- Query-class types ---
+        //         */
+        //        QueryResult, QueryStatus,
+        //
+        //        /*
+        //         * --- EngineLifecycle ---
+        //         */
+        //        EngineStarting, EngineUp, EngineDown,
+        //
+        //        /*
+        //         * --- Run-class types
+        //         */
+        //        RunScript, RunTest, RunApp, RunUnitTest, DebugScript, DebugTest,
+        //
+        //        /*
+        //         * --- ResourceLifecycle-class types, F->B
+        //         */
+        //        ImportResource, DeleteResource, UpdateResource, ValidateResource, PreviewResource,
+        //        CopyResource,
+        //        MoveResource, CreateResource, ImportIntoResource, ResourceOperation,
+        //
+        //        /*
+        //         * --- ResourceLifecycle-class types, B->F
+        //         */
+        //        ResourceImported, ResourceDeleted, ResourceUpdated, ResourceValidated, ResourceCreated,
+        //        CodelistCreated, CodelistUpdated, CodelistDeleted,
+        //
         /*
          * --- View actor messages
          */
-        CreateViewComponent, SetupInterface, CreateWindow, CreateModalWindow,
+        CreateViewComponent,
+        SetupInterface,
+        CreateWindow,
+        CreateModalWindow,
+        //
+        //        /*
+        //         * --- Sent F->B when a view action interacts with a component and B->F to send a response
+        //         * to an explicit method call on a widget.
+        //         */
+        //        ViewAction,
+        //
+        //        /*
+        //         * Sent B->F when a new view has been generated in a context
+        //         */
+        //        ViewAvailable,
+        //
+        //        /*
+        //         * Sent B->F when one or more documentation views have incorporated a new element
+        //         */
+        //        DocumentationChanged, AgentResponse
+        ;
 
-        /*
-         * --- Sent F->B when a view action interacts with a component and B->F to send a response
-         * to an explicit method call on a widget.
-         */
-        ViewAction,
-
-        /*
-         * Sent B->F when a new view has been generated in a context
-         */
-        ViewAvailable,
-
-        /*
-         * Sent B->F when one or more documentation views have incorporated a new element
-         */
-        DocumentationChanged, AgentResponse;
-
-        // TODO add this to the message type so that we can validate the message payload against it. Use Void.class
+        // TODO add this to the message type so that we can validate the message payload against it. Use
+        //  Void.class
         // as the default
         Class<?> payloadClass;
 
@@ -433,7 +479,7 @@ public interface Message extends Serializable {
             this.payloadClass = payloadClass;
         }
 
-        }
+    }
 
     Repeatability getRepeatability();
 

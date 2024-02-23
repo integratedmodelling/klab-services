@@ -8,11 +8,17 @@ import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.utils.Utils;
 
+/**
+ * Each anonymous user has a separate ID so that scope communication can still work locally.
+ */
 public class AnonymousUser implements UserIdentity {
 
-	private Parameters<String> data = Parameters.create();
-	
+    private String id = "invalid.token." + Utils.Names.shortUUID();
+
+    private Parameters<String> data = Parameters.create();
+
     @Override
     public Type getIdentityType() {
         return Type.ENGINE_USER;
@@ -20,7 +26,7 @@ public class AnonymousUser implements UserIdentity {
 
     @Override
     public String getId() {
-        return "invalid.token";
+        return id;
     }
 
     @Override
@@ -98,13 +104,13 @@ public class AnonymousUser implements UserIdentity {
         return new Date();
     }
 
-	@Override
-	public Parameters<String> getData() {
-		return data;
-	}
-	
-	public String toString() {
-		return "anonymous (invalid.email@noservice.com)";
-	}
+    @Override
+    public Parameters<String> getData() {
+        return data;
+    }
+
+    public String toString() {
+        return "anonymous (invalid.email@noservice.com)";
+    }
 
 }
