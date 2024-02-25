@@ -1,19 +1,28 @@
 package org.integratedmodelling.klab.services.base;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Service;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.configuration.Configuration;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 public abstract class BaseService implements KlabService {
+
+    protected final Type type;
+    private String serviceSecret;
 
     public static class ServiceStatusImpl implements ServiceStatus {
 
@@ -126,13 +135,42 @@ public abstract class BaseService implements KlabService {
 
     protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
-    protected BaseService(ServiceScope scope, String localName,
+    protected BaseService(ServiceScope scope, String localName, KlabService.Type serviceType,
                           BiConsumer<Scope, Message>... eventListeners) {
         this.scope = scope;
         this.localName = localName;
+        this.type = serviceType;
+        createServiceSecret();
         if (eventListeners != null) {
             Arrays.stream(eventListeners).map(e -> this.eventListeners.add(e));
         }
+    }
+
+    /**
+     * Create a unique ID that will be
+     */
+    private void createServiceSecret() {
+        File secretFile =
+                Configuration.INSTANCE.getFileWithTemplate("services/" + type.name().toLowerCase() +
+                        "/secret.key", Utils.Names.newName());
+        try {
+            this.serviceSecret = Files.readString(secretFile.toPath());
+        } catch (IOException e) {
+            throw new KlabIOException(e);
+        }
+    }
+
+    /**
+     * The service secret is a legitimate API key for the service, only known to clients that can read it
+     * because they are sharing the filesystem. These clients can access the service by just stating their
+     * privileges, without authenticating through the hub.
+     * <p>
+     * The secret must NEVER be sent through the network - capabilities, status or anything.
+     *
+     * @return
+     */
+    public String getServiceSecret() {
+        return this.serviceSecret;
     }
 
     /**

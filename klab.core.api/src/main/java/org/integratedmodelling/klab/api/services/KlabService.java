@@ -81,7 +81,8 @@ public interface KlabService extends Service {
     }
 
     /**
-     * At the very minimum, each service advertises its type and local name.
+     * At the very minimum, each service advertises its type, an instance ID and a local name. There is also a
+     * secret key that's not advertised but can be read by clients on the same machine.
      *
      * @author Ferd
      */

@@ -102,7 +102,7 @@ public class Downloader {
 	    } else {
 	        this.retries = 0;
 	        scope.error(e.getMessage());
-	        throw new KlabException(e);
+	        throw new KlabIOException(e);
 	    }  
 	}
 

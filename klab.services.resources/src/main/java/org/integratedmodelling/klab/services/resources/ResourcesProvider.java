@@ -109,7 +109,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @SuppressWarnings("unchecked")
     public ResourcesProvider(ServiceScope scope, String localName,
                              BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName, messageListeners);
+        super(scope, localName, Type.RESOURCES, messageListeners);
         if (scope instanceof LocalServiceScope localScope) {
             localScope.setService(this);
         }

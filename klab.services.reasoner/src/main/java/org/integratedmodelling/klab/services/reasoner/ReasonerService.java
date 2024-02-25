@@ -261,7 +261,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Autowired
     public ReasonerService(Authentication authenticationService, ServiceScope scope, String localName,
                            BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName, messageListeners);
+        super(scope, localName, Type.REASONER, messageListeners);
         this.authenticationService = authenticationService;
         this.scope = scope;
         this.owl = new OWL(scope);

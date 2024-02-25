@@ -1,13 +1,13 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify it under the terms of the Affero
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root directory of the k.LAB
  * distribution (LICENSE.txt). If this cannot be found see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned in author tags. All
  * rights reserved.
  */
@@ -28,7 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The Enum Logging.
+ * Centralized logging functions. Most of the actual logging happens through the
+ * {@link org.integratedmodelling.klab.api.services.runtime.Channel} mechanism, so this is only used
+ * explicitly in services and the like.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
@@ -53,7 +55,8 @@ public enum Logging {
             System.err.println(
                     "--------------------------------------------------------------------------------------------------");
             System.err.println(
-                    "Error initializing logger: please spend the rest of your life checking dependencies and excluding jars");
+                    "Error initializing logger: please spend the rest of your life checking dependencies " +
+                            "and excluding jars");
             System.err.println(
                     "--------------------------------------------------------------------------------------------------");
         }
@@ -64,7 +67,8 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.INFO.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.MessageType.Info, payload.getFirst(),
+            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification,
+                    Message.MessageType.Info, payload.getFirst(),
                     payload.getSecond()));
         }
 
@@ -84,7 +88,8 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.WARNING.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), Message.MessageClass.Notification, Message.MessageType.Warning,
+            messageBus.post(Message.create(rootIdentity.getId(), Message.MessageClass.Notification,
+                    Message.MessageType.Warning,
                     payload.getFirst(), payload.getSecond()));
         }
 
@@ -103,7 +108,8 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.MessageType.Error,
+            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification,
+                    Message.MessageType.Error,
                     payload.getFirst(), payload.getSecond()));
         }
 
@@ -122,7 +128,8 @@ public enum Logging {
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
         if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.FINE.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification, Message.MessageType.Debug,
+            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification,
+                    Message.MessageType.Debug,
                     payload.getFirst(), payload.getSecond()));
         }
 

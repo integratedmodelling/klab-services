@@ -6,13 +6,14 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
 import org.integratedmodelling.klab.api.engine.Product;
 import org.integratedmodelling.klab.api.engine.Release;
+import org.integratedmodelling.klab.api.engine.RunningInstance;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-public abstract class RunningInstanceImpl implements org.integratedmodelling.klab.api.engine.RunningInstance {
+public abstract class RunningInstanceImpl implements RunningInstance {
 
 	protected Product product;
 	protected AtomicReference<Status> status = new AtomicReference<>(Status.UNKNOWN);

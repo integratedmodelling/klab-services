@@ -70,7 +70,7 @@ public class ResolverService extends BaseService implements Resolver {
     @Autowired
     public ResolverService(Authentication authentication, ServiceScope scope, String localName,
                            BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName, messageListeners);
+        super(scope, localName, Type.RESOLVER, messageListeners);
         if (scope instanceof LocalServiceScope localScope) {
             localScope.setService(this);
         }

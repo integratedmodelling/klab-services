@@ -40,7 +40,7 @@ public class RuntimeService extends BaseService
 
     public RuntimeService(Authentication testAuthentication, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
         // TODO Auto-generated constructor stub
-        super(scope, localName,messageListeners);
+        super(scope, localName,Type.RUNTIME, messageListeners);
         if (scope instanceof LocalServiceScope localScope) {
             localScope.setService(this);
         }

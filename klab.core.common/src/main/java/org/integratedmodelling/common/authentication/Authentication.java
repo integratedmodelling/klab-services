@@ -89,8 +89,11 @@ public enum Authentication {
                 // add email if we have it, so the hub can notify in any case if so configured
                 request.setEmail(certificate.getProperty(KlabCertificate.KEY_EMAIL));
 
+
                 authentication = client.post(ServicesAPI.HUB.AUTHENTICATE_ENGINE, request,
                         EngineAuthenticationResponse.class);
+
+                System.out.println(Utils.Json.printAsJson(authentication));
 
             } catch (Throwable e) {
                 Logging.INSTANCE.error("authentication failed for user " + certificate.getProperty(KlabCertificate.KEY_USERNAME)

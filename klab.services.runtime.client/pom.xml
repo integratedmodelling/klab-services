@@ -12,6 +12,12 @@
             <artifactId>klab.core.common</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.core.api</artifactId>
+            <version>${klab.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
 </project>

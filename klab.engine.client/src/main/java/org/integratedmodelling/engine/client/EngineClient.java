@@ -17,6 +17,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+/**
+ * The engine client uses client services and can be configured to use a local server for all services
+ * (possibly as a downloaded product) and use the local services if so desired or if online services are not
+ * available. The distribution up to this point should remain light so that it can be embedded in a IDE or
+ * other product.
+ */
 public class EngineClient extends AbstractAuthenticatedEngine implements PropertyHolder {
 
     boolean booted = false;
@@ -68,7 +74,6 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
                 if (url == null) {
                     return;
                 }
-
             }
 
 

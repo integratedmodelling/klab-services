@@ -24,7 +24,7 @@ import java.io.StringWriter;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public class KlabException extends RuntimeException {
+public abstract class KlabException extends RuntimeException {
 
     private static final long serialVersionUID = 5999457326224959271L;
 //    private Artifact scope;
