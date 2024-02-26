@@ -72,6 +72,7 @@ public class Service<T extends BaseService> {
     public static <T extends BaseService> Service start(T service, StartupOptions options) {
 
         if (!options.isCloudConfig()) {
+
             KlabCertificate certificate = null;
 
             if (options.getCertificateResource() != null) {

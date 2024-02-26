@@ -271,10 +271,6 @@ public class JacksonConfiguration {
         return mapper;
     }
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@CLASS")
-    public static class TypeInfoMixIn {
-    }
-
     @SuppressWarnings({"unchecked"})
     public static void configureObjectMapperForKlabTypes(ObjectMapper mapper) {
 
