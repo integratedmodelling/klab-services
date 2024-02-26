@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.components.security;
+package org.integratedmodelling.klab.services.application.security;
 
 import java.io.File;
 import java.io.FileInputStream;

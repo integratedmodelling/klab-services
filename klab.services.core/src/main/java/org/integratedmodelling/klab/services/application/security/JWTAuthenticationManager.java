@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.components.security;
+package org.integratedmodelling.klab.services.application.security;
 
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;

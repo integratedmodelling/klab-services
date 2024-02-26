@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
-import org.integratedmodelling.klab.components.security.JWTAuthenticationManager;
+import org.integratedmodelling.klab.services.application.security.JWTAuthenticationManager;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;

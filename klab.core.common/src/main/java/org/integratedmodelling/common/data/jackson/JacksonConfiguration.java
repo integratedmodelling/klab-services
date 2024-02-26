@@ -256,8 +256,10 @@ public class JacksonConfiguration {
         private Object checkField(Class<?> type, Object val) {
             if (type.isEnum() && val instanceof String) {
                 val = Enum.valueOf((Class<? extends Enum>) type, (String) val);
-            } else if (type == Long.class && val instanceof Integer integer) {
+            } else if ((type == Long.class || type == long.class) && val instanceof Integer integer) {
                 val = integer.longValue();
+            } else if ((type == Integer.class || type == int.class) && val instanceof Long integer) {
+                val = integer.intValue();
             }
             return val;
         }
@@ -269,22 +271,21 @@ public class JacksonConfiguration {
         return mapper;
     }
 
-    @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@CLASS")
-    public static class TypeInfoMixIn {}
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@CLASS")
+    public static class TypeInfoMixIn {
+    }
 
     @SuppressWarnings({"unchecked"})
     public static void configureObjectMapperForKlabTypes(ObjectMapper mapper) {
+
+        // needed to avoid some shit, provided we add and risk even more shit
+        mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
 
         SimpleModule module = new SimpleModule();
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
                                       Triple.class, Unit.class, KlabAsset.class, Currency.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
-
-//                mapper.addMixInAnnotations(cls, TypeInfoMixIn.class);
-
-//            // TODO this is ridiculous - it should just store the class for all subtypes of these. But I
-//            //  can't get it to work.
             module.addSerializer(cls, new PolymorphicSerializer());
             module.addDeserializer(cls, new PolymorphicDeserializer());
         }

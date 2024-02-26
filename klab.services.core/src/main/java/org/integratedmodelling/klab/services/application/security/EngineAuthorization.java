@@ -18,15 +18,13 @@
  *
  * - END LICENSE -
  */
-package org.integratedmodelling.klab.components.security;
+package org.integratedmodelling.klab.services.application.security;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
-import org.integratedmodelling.klab.rest.GroupImpl;
 import org.integratedmodelling.klab.rest.IdentityReference;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.CredentialsContainer;
