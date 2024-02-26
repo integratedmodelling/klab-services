@@ -284,10 +284,6 @@ public class GeometryImpl implements Geometry {
 
     public static final String PARAMETER_TIME_COVERAGE_END = "coverageend";
 
-    public static GeometryImpl create(String geometry) {
-        return makeGeometry(geometry, 0);
-    }
-
     private static String encodeDimension(Dimension dim) {
 
         String ret = "";
@@ -467,15 +463,15 @@ public class GeometryImpl implements Geometry {
     public static GeometryImpl distributedIn(ExtentDimension key) {
         switch (key) {
             case AREAL:
-                return create("S2");
+                return makeGeometry("S2", 0);
             case LINEAL:
-                return create("S1");
+                return makeGeometry("S1", 0);
             case PUNTAL:
-                return create("S0");
+                return makeGeometry("S0", 0);
             case TEMPORAL:
-                return create("T1");
+                return makeGeometry("T1", 0);
             case VOLUMETRIC:
-                return create("S3");
+                return makeGeometry("S3", 0);
             case CONCEPTUAL:
             default:
                 break;
@@ -520,8 +516,8 @@ public class GeometryImpl implements Geometry {
     }
 
     private static boolean isUndefined(List<Long> shape) {
-        for (long l : shape) {
-            if (l < 0) {
+        for (Number l : shape) {
+            if (l.intValue() < 0) {
                 return true;
             }
         }
@@ -1199,7 +1195,7 @@ public class GeometryImpl implements Geometry {
         // System.out.println(separateTargets(ITime.class, 1, Dimension.Type.SPACE, 2,
         // 3));
 
-        GeometryImpl gg = create("σ1(866){authority=IMF.CL_AREA}");
+        GeometryImpl gg = makeGeometry("σ1(866){authority=IMF.CL_AREA}", 0);
         System.out.println(gg.toString());
         // System.out.println(separateTargets(ITime.class, Dimension.Type.SPACE, 2, 3));
     }
@@ -1409,7 +1405,7 @@ public class GeometryImpl implements Geometry {
     public GeometryImpl merge(Geometry geometry) {
 
         if (this.isEmpty()) {
-            return create(geometry.encode());
+            return makeGeometry(geometry.encode(), 0);
         }
 
         if (geometry.isScalar() && geometry.isGeneric()) {
@@ -1563,7 +1559,7 @@ public class GeometryImpl implements Geometry {
         /*
          * compares dimension type and dimensionality; if both have a shape, shape is also compared.
          */
-        GeometryImpl other = create(string);
+        GeometryImpl other = makeGeometry(string, 0);
         if (other.dimensions.size() == this.dimensions.size()) {
             for (int i = 0; i < other.dimensions.size(); i++) {
                 if (other.dimensions.get(i).type != this.dimensions.get(i).type

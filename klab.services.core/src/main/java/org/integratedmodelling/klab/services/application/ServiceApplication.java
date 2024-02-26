@@ -1,10 +1,14 @@
 package org.integratedmodelling.klab.services.application;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PreDestroy;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -12,18 +16,28 @@ import org.springframework.http.converter.protobuf.ProtobufHttpMessageConverter;
 import org.springframework.http.converter.protobuf.ProtobufJsonFormatHttpMessageConverter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.context.request.WebRequestInterceptor;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.handler.WebRequestHandlerInterceptorAdapter;
 
 @Component
 @EnableAutoConfiguration
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.security",
                                "org.integratedmodelling.klab.services.resources",
                                "org.integratedmodelling.klab.services.controllers"})
-public class ServiceApplication<T extends KlabService> {
+public class ServiceApplication implements WebMvcConfigurer {
 
     private static Service service;
+    private AtomicBoolean maintenanceMode = new AtomicBoolean(false);
+    private AtomicBoolean atomicOperationMode = new AtomicBoolean(false);
 
-    public void run(KlabService klabService, String[] args) {
+    public void run(BaseService klabService, String[] args) {
         ServiceStartupOptions options = new ServiceStartupOptions();
         options.initialize(args);
         service = Service.start(klabService, options);
@@ -33,11 +47,6 @@ public class ServiceApplication<T extends KlabService> {
     public void shutdown() {
         // TODO engine shutdown if needed
     }
-
-    /**
-     * TODO add maintenance mode filter/interceptor
-     * @return
-     */
 
     @Bean
     public ProtobufJsonFormatHttpMessageConverter ProtobufJsonFormatHttpMessageConverter() {
@@ -49,33 +58,30 @@ public class ServiceApplication<T extends KlabService> {
         return new RestTemplate(Arrays.asList(hmc));
     }
 
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+
+        /**
+         * Handle maintenance mode and wait mode, defaulting to maintenance mode after configurable timeout
+         */
+        registry.addInterceptor(new HandlerInterceptor() {
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
+                                     Object handler) throws Exception {
+                // response.sendRedirect(maintenanceMapping); return false;
+                return HandlerInterceptor.super.preHandle(request, response, handler);
+            }
+
+        });
+    }
+
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    //	@Bean
-    //	public ServletWebServerFactory servletContainer() {
-    //		TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory() {
-    //			@Override
-    //			protected TomcatWebServer getTomcatWebServer(Tomcat tomcat) {
-    ////				try {
-    ////					Context context = tomcat.addWebapp("/kgit", Node.gitWarPath.getAbsolutePath());
-    ////					WebappLoader loader = new WebappLoader(Thread.currentThread()
-    // .getContextClassLoader());
-    ////					context.setLoader(loader);
-    ////				} catch (ServletException e) {
-    ////					throw new IllegalStateException("could not deploy the Git server from the
-    // embedded war");
-    ////				}
-    //				return super.getTomcatWebServer(tomcat);
-    //			}
-    //		};
-    //		return tomcat;
-    //	}
-
-//    public static void main(String args[]) {
-//        new ServiceApplication().run(args);
-//    }
+    //    public static void main(String args[]) {
+    //        new ServiceApplication().run(args);
+    //    }
 
 }

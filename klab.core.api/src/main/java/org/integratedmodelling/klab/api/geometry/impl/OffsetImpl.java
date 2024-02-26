@@ -229,7 +229,7 @@ public class OffsetImpl implements Locator, Offset {
         OffsetImpl ret = new OffsetImpl();
         int at = spec.indexOf('@');
         if (at > 0) {
-            ret.geometry = GeometryImpl.create(spec.substring(0, at));
+            ret.geometry = Geometry.create(spec.substring(0, at));
             ret.pos = read(spec.substring(at + 1), ret.geometry);
             ret.linear = ret.computeOffset(ret.pos, ret.geometry);
         } else {

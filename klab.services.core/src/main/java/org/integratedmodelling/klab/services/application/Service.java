@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.components.security.JWTAuthenticationManager;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -34,7 +35,7 @@ import org.springframework.core.env.MutablePropertySources;
  * @author ferdinando.villa
  * 
  */
-public class Service {
+public class Service<T extends BaseService> {
 
 	int port = /*IConfigurationService.DEFAULT_NODE_PORT*/ -1; // TODO
 	private ConfigurableApplicationContext context;
@@ -45,20 +46,14 @@ public class Service {
 	private KlabService service;
 
 	private static long bootTime;
-	
-	/**
-	 * 
-	 * This needs to be rearagned so that the authentication happens after the spring boot
-	 * so that we can use the injection of the properties to register the service with the hub.
-	 * @param certificate
-	 */
-	
-    public Service(KlabService service) {
+
+    public Service(T service) {
 		this.service = service;
 		this.port = service.capabilities().getType().defaultPort;
     };
-    
-	public Service(KlabService service, StartupOptions options, KlabCertificate certificate) {
+
+	public Service(T service, StartupOptions options, KlabCertificate certificate) {
+		this(service);
 		this.certificate = certificate;
 		this.owner = JWTAuthenticationManager.INSTANCE.authenticateService(certificate, options);
 	}
@@ -72,11 +67,11 @@ public class Service {
 		options.initialize(args);
 	}
 
-	public static Service start(KlabService service) {
+	public static <T extends BaseService> Service start(T service) {
 		return start(service,new ServiceStartupOptions());
 	}
 
-	public static Service start(KlabService service, StartupOptions options) {
+	public static <T extends BaseService>  Service start(T service, StartupOptions options) {
 		if(!options.isCloudConfig()) {
 			KlabCertificate certificate = null;
 	

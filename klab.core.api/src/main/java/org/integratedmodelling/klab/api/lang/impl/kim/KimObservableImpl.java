@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
+import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Observable.ResolutionException;
@@ -17,7 +17,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 
 	private static final long serialVersionUID = -727467882879783393L;
 	private KimConcept semantics;
-	private RangeImpl range;
+	private NumericRangeImpl range;
 	private String unit;
 	private String currency;
 	private String formalName;
@@ -42,7 +42,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	}
 
 	@Override
-	public RangeImpl getRange() {
+	public NumericRangeImpl getRange() {
 		return this.range;
 	}
 
@@ -131,7 +131,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 		this.semantics = semantics;
 	}
 
-	public void setRange(RangeImpl range) {
+	public void setRange(NumericRangeImpl range) {
 		this.range = range;
 	}
 

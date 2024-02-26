@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
 import org.integratedmodelling.klab.api.data.mediation.classification.LookupTable;
-import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
+import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -102,8 +102,8 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 				ret += (ret.length() == 1 ? "" : " ") + o + " " + stringValue(((Map<?, ?>) val).get(o));
 			}
 			return ret + "}";
-		} else if (val instanceof RangeImpl) {
-			return ((RangeImpl) val).getLowerBound() + " to " + ((RangeImpl) val).getUpperBound();
+		} else if (val instanceof NumericRangeImpl) {
+			return ((NumericRangeImpl) val).getLowerBound() + " to " + ((NumericRangeImpl) val).getUpperBound();
 		} else if (val instanceof Classification) {
 			String ret = "";
 			for (Pair<Concept, Classifier> o : ((Classification) val)) {

@@ -9,20 +9,14 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import org.apache.commons.io.FileUtils;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.mediation.impl.RangeImpl;
+import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Service;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +27,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
@@ -636,7 +628,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
         /**
          * Return all the substituted templates after substituting the passed variables. The substitution for
-         * each variable can be null, a single POD, a {@link RangeImpl} or a collection of objects.
+         * each variable can be null, a single POD, a {@link NumericRangeImpl} or a collection of objects.
          *
          * @param template
          * @param vars
@@ -754,9 +746,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             Set<Object> ret = new LinkedHashSet<>();
             if (object == null) {
                 ret.add("");
-            } else if (object instanceof RangeImpl) {
-                int bottom = (int) ((RangeImpl) object).getLowerBound();
-                int upper = (int) ((RangeImpl) object).getUpperBound();
+            } else if (object instanceof NumericRangeImpl) {
+                int bottom = (int) ((NumericRangeImpl) object).getLowerBound();
+                int upper = (int) ((NumericRangeImpl) object).getUpperBound();
                 for (int n = bottom; n <= upper; n++) {
                     ret.add(n);
                 }
@@ -787,8 +779,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             Map<String, Object> vars = new HashMap<>();
 
-            vars.put("year", RangeImpl.create(1998, 2010));
-            vars.put("month", RangeImpl.create(2, 3));
+            vars.put("year", NumericRangeImpl.create(1998, 2010));
+            vars.put("month", NumericRangeImpl.create(2, 3));
             vars.put("day", "monday,tuesday,happy_days");
 
             for (String uuh : expandMatches(url, vars)) {
