@@ -1,5 +1,6 @@
 package org.integratedmodelling.kcli.engine;
 
+import org.integratedmodelling.common.authentication.AnonymousUser;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -11,7 +12,6 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.services.authentication.impl.AnonymousUser;
 import org.integratedmodelling.klab.services.engine.EngineService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;

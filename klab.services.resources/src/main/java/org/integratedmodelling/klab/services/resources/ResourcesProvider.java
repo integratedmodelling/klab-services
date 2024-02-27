@@ -33,7 +33,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+//import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
@@ -110,9 +110,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public ResourcesProvider(ServiceScope scope, String localName,
                              BiConsumer<Scope, Message>... messageListeners) {
         super(scope, localName, Type.RESOURCES, messageListeners);
-        if (scope instanceof LocalServiceScope localScope) {
-            localScope.setService(this);
-        }
+//        if (scope instanceof LocalServiceScope localScope) {
+//            localScope.setService(this);
+//        }
         //        initializeLanguageServices();
 
         this.db =
