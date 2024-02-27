@@ -12,10 +12,15 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.engine.AbstractAuthenticatedEngine;
 import org.integratedmodelling.klab.rest.ServiceReference;
+import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
+import org.integratedmodelling.klab.services.resolver.ResolverClient;
+import org.integratedmodelling.klab.services.resources.ResourcesClient;
+import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The engine client uses client services and can be configured to use a local server for all services
@@ -25,14 +30,11 @@ import java.util.*;
  */
 public class EngineClient extends AbstractAuthenticatedEngine implements PropertyHolder {
 
-    boolean booted = false;
-    boolean available = false;
-    boolean online = false;
+    AtomicBoolean online = new AtomicBoolean(false);
+    AtomicBoolean available = new AtomicBoolean(false);
+    AtomicBoolean booted = new AtomicBoolean(false);
 
-    Reasoner defaultReasoner;
-    Resolver defaultResolver;
-    ResourcesService defaultResourcesService;
-    RuntimeService defaultRuntime;
+    Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
 
     Set<Resolver> availableResolvers = new HashSet<>();
     Set<RuntimeService> availableRuntimeServices = new HashSet<>();
@@ -58,59 +60,34 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
         }
     }
 
+    /**
+     * The boot process is a separate thread. Monitor {@link #isOnline()} or listen to engine lifecycle events
+     * to check for when the engine is available.
+     */
     public void boot() {
 
-        if (!booted) {
+        if (!booted.get()) {
 
-            // TODO use a delegate with forwarding of sent messages through the listeners
-            this.defaultUser = authenticate();
+            Thread.ofVirtual().start(() -> doBoot());
 
-            // TODO send auth message to user scope
-
-            booted = true;
-
-            for (var key : configuredServiceURLs.keySet()) {
-                var url = configuredServiceURLs.get(key);
-                if (url == null) {
-                    return;
-                }
-            }
-
-
-            if (defaultReasoner == null || defaultResourcesService == null || defaultResolver == null || defaultRuntime == null) {
-                throw new KlabIllegalStateException("one or more services are not available: cannot boot " +
-                        "the " +
-                        "engine");
-            }
-
-            /*
-             * Create the service scope for all embedded services. The order of initialization is
-             * resources, reasoner, resolver and runtime. The community service should always be
-             * remote except in test situations. The worldview must be loaded in the reasoner before
-             * the resource workspaces are read.
-             *
-             * Order matters and logic is intricate, careful when making changes.
-             */
-            //            Worldview worldview = null;
-            //            for (var service : new KlabService[]{defaultResourcesService, defaultReasoner,
-            //            defaultResolver,
-            //                                                 defaultRuntime}) {
-            //                if (service instanceof BaseService baseService) {
-            //                    baseService.initializeService();
-            //                    if (service instanceof ResourcesService admin) {
-            //                        worldview = admin.getWorldview();
-            //                    } else if (service instanceof Reasoner.Admin admin && !worldview.isEmpty
-            //                    ()) {
-            //                        admin.loadKnowledge(worldview, baseService.scope());
-            //                    }
-            //                }
-            //            }
-
-            //            if (defaultResourcesService instanceof BaseService && defaultResourcesService
-            //            instanceof ResourcesService.Admin) {
-            //                ((ResourcesService.Admin) defaultResourcesService).loadWorkspaces();
-            //            }
         }
+    }
+
+    private void doBoot() {
+
+        this.defaultUser = authenticate();
+
+        // TODO send auth message to user scope
+
+        booted.set(true);
+
+        for (var key : configuredServiceURLs.keySet()) {
+            var url = configuredServiceURLs.get(key);
+            if (url == null) {
+                return;
+            }
+        }
+
     }
 
     @Override
@@ -120,27 +97,109 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     }
 
     private UserScope createUserScope(Pair<UserIdentity, List<ServiceReference>> authData) {
+
+        /*
+        find out which services are available from the network
+         */
+        for (var service : authData.getSecond()) {
+            switch (service.getServiceType()) {
+                case REASONER -> {
+                    var s = new ReasonerClient(service.getUrls().get(0));
+                    this.availableReasoners.add(s);
+                    if (service.isPrimary() && currentServices.get(KlabService.Type.REASONER) == null) {
+                        currentServices.put(KlabService.Type.REASONER, s);
+                    }
+                }
+                case RESOURCES -> {
+                    var s = new ResourcesClient(service.getUrls().get(0));
+                    this.availableResourcesServices.add(s);
+                    if (service.isPrimary() && currentServices.get(KlabService.Type.RESOURCES) == null) {
+                        currentServices.put(KlabService.Type.RESOURCES, s);
+                    }
+                }
+                case RESOLVER -> {
+                    var s = new ResolverClient(service.getUrls().get(0));
+                    this.availableResolvers.add(s);
+                    if (service.isPrimary() && currentServices.get(KlabService.Type.RESOLVER) == null) {
+                        currentServices.put(KlabService.Type.RESOLVER, s);
+                    }
+                }
+                case RUNTIME -> {
+                    var s = new RuntimeClient(service.getUrls().get(0));
+                    this.availableRuntimeServices.add(s);
+                    if (service.isPrimary() && currentServices.get(KlabService.Type.RUNTIME) == null) {
+                        currentServices.put(KlabService.Type.RUNTIME, s);
+                    }
+                }
+                case COMMUNITY -> {
+                    // TODO we need this too, only in current, there should be one
+                    //                    var s = new CommunityClient(service.getUrls().get(0));
+                    //                    if (service.isPrimary() && currentServices.get(KlabService.Type
+                    //                    .COMMUNITY) == null) {
+                    //                        currentServices.put(KlabService.Type.COMMUNITY, s);
+                    //                    }
+                }
+                default ->
+                        throw new KlabIllegalStateException("Unexpected value: " + service.getServiceType());
+            }
+        }
+
+        /*
+        TODO
+        negotiate any missing services. If we have a configured distribution, use it to provide them.
+         */
+
+
+        /*
+        TODO
+        Start thread to check availability of the default services and set the online status when all are
+        available. If any service is still missing, status will be permanently offline.
+         */
+
         return new ClientScope(authData.getFirst()) {
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
-                return null;
+                return (T) currentServices.get(KlabService.Type.classify(serviceClass));
             }
 
             @Override
             public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                return null;
+                switch (KlabService.Type.classify(serviceClass)) {
+                    case REASONER -> {
+                        return (Collection<T>) availableReasoners;
+                    }
+                    case RESOURCES -> {
+                        return (Collection<T>) availableResourcesServices;
+                    }
+                    case RESOLVER -> {
+                        return (Collection<T>) availableResolvers;
+                    }
+                    case RUNTIME -> {
+                        return (Collection<T>) availableRuntimeServices;
+                    }
+                    case COMMUNITY -> {
+                        var ret = currentServices.get(KlabService.Type.COMMUNITY);
+                        if (ret != null) {
+                            return (Collection<T>) List.of(ret);
+                        }
+                    }
+                    case ENGINE -> {
+                        return List.of((T) EngineClient.this);
+                    }
+                }
+                return Collections.emptyList();
             }
         };
     }
 
     @Override
     public boolean isAvailable() {
-        return this.available;
+        return this.available.get();
     }
 
     @Override
     public boolean isOnline() {
-        return this.online;
+        return this.online.get();
     }
 
     @Override

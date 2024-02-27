@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.services.application;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
@@ -16,6 +13,7 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.security.JWTAuthenticationManager;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -27,11 +25,12 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.MutablePropertySources;
 
 /**
- * This will start a node at http://localhost:8287/node with the default security config.
+ * Service wrapper to turn a service base implementation into a Spring-enabled online service. Must supply
+ * controllers in the corresponding {@link ServiceApplication}.
  *
  * @author ferdinando.villa
  */
-public class Service<T extends BaseService> {
+public abstract class Service<T extends BaseService> {
 
     int port = /*IConfigurationService.DEFAULT_NODE_PORT*/ -1; // TODO
     private ConfigurableApplicationContext context;
@@ -48,7 +47,12 @@ public class Service<T extends BaseService> {
         this.port = service.capabilities().getType().defaultPort;
     }
 
-    ;
+    /**
+     * Return the type of the other services required for this service to be online.
+     *
+     * @return
+     */
+    protected abstract List<KlabService.Type> getEssentialServices();
 
     public Service(T service, StartupOptions options, KlabCertificate certificate) {
         this(service);
@@ -65,11 +69,11 @@ public class Service<T extends BaseService> {
         options.initialize(args);
     }
 
-    public static <T extends BaseService> Service start(T service) {
-        return start(service, new ServiceStartupOptions());
-    }
+//    public void start(T service) {
+//        start(service, new ServiceStartupOptions());
+//    }
 
-    public static <T extends BaseService> Service start(T service, StartupOptions options) {
+    public void start(StartupOptions options) {
 
         if (!options.isCloudConfig()) {
 
@@ -87,26 +91,24 @@ public class Service<T extends BaseService> {
                 throw new KlabAuthorizationException("certificate is invalid: " + certificate.getInvalidityCause());
             }
 
-            /*
-             * This authenticates with the hub
-             */
-            Service ret = new Service(service, options, certificate);
+//            /*
+//             * This authenticates with the hub
+//             *
+//             */
+//            Service ret = new Service(service, options, certificate);
 
-            if (!ret.boot(options)) {
+            if (!boot(options)) {
                 throw new KlabServiceAccessException("service failed to start");
             }
 
-            return ret;
+//            return ret;
 
         } else {
-            Service ret = new Service(service);
-
-            if (!ret.boot()) {
+            if (!boot()) {
                 throw new KlabServiceAccessException("service failed to start");
             }
-            ;
 
-            return ret;
+//            return ret;
         }
     }
 

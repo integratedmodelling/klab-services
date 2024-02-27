@@ -1,20 +1,12 @@
 package org.integratedmodelling.common.data.jackson;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.cfg.MapperConfig;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -32,6 +24,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.common.logging.Logging;
 
@@ -281,11 +274,13 @@ public class JacksonConfiguration {
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
                                       Triple.class, Unit.class, KlabAsset.class, Currency.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
-                                      Geometry.Dimension.class, Parameters.class}) {
+                                      Geometry.Dimension.class, Parameters.class,
+                                      KlabService.ServiceCapabilities.class}) {
             module.addSerializer(cls, new PolymorphicSerializer());
             module.addDeserializer(cls, new PolymorphicDeserializer());
         }
         module.addDeserializer(Literal.class, new LiteralDeserializer());
+
         mapper.registerModule(module);
         mapper.registerModule(new ParameterNamesModule());
     }

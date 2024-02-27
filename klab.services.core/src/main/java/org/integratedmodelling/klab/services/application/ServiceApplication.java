@@ -33,14 +33,15 @@ import org.springframework.web.servlet.handler.WebRequestHandlerInterceptorAdapt
                                "org.integratedmodelling.klab.services.controllers"})
 public class ServiceApplication implements WebMvcConfigurer {
 
-    private static Service service;
+    private Service service;
     private AtomicBoolean maintenanceMode = new AtomicBoolean(false);
     private AtomicBoolean atomicOperationMode = new AtomicBoolean(false);
 
-    public void run(BaseService klabService, String[] args) {
+    public void run(Service<?> klabService, String[] args) {
+        this.service = klabService;
         ServiceStartupOptions options = new ServiceStartupOptions();
         options.initialize(args);
-        service = Service.start(klabService, options);
+        klabService.start(options);
     }
 
     @PreDestroy

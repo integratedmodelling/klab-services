@@ -17,12 +17,16 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 public abstract class BaseService implements KlabService {
 
     protected final Type type;
     private String serviceSecret;
+
+    protected AtomicBoolean online = new AtomicBoolean(false);
+    protected AtomicBoolean available = new AtomicBoolean(false);
 
     public static class ServiceStatusImpl implements ServiceStatus {
 
@@ -201,5 +205,15 @@ public abstract class BaseService implements KlabService {
                 listener.accept(scope, Message.create(scope, objects));
             }
         }
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return available.get();
+    }
+
+    @Override
+    public boolean isOnline() {
+        return online.get();
     }
 }

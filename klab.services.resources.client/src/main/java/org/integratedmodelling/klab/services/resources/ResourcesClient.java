@@ -63,6 +63,16 @@ public class ResourcesClient implements ResourcesService {
     }
 
     @Override
+    public boolean isOnline() {
+        return false;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return false;
+    }
+
+    @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
         return null;

@@ -49,6 +49,17 @@ public class ResolverClient implements Resolver {
         return (capabilities().getServerId() == null && serverId == null) ||
                 (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
     }
+
+    @Override
+    public boolean isOnline() {
+        return false;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return false;
+    }
+
     @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub

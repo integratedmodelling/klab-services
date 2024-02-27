@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -40,7 +42,7 @@ public interface KlabService extends Service {
             this.defaultPort = defaultPort;
         }
 
-        public Type classify(KlabService service) {
+        public static Type classify(KlabService service) {
             return switch (service) {
                 case ResourcesService s -> RESOLVER;
                 case RuntimeService s -> RUNTIME;
@@ -50,6 +52,24 @@ public interface KlabService extends Service {
                 default -> null;
             };
         }
+
+
+        public static <T extends KlabService> Type classify(Class<T> serviceClass) {
+            if (Reasoner.class.isAssignableFrom(serviceClass)) {
+                return Type.REASONER;
+            } else if (Community.class.isAssignableFrom(serviceClass)) {
+                return Type.COMMUNITY;
+            } else if (ResourcesService.class.isAssignableFrom(serviceClass)) {
+                return Type.RESOURCES;
+            } else if (Resolver.class.isAssignableFrom(serviceClass)) {
+                return Type.RESOLVER;
+            } else if (RuntimeService.class.isAssignableFrom(serviceClass)) {
+                return Type.RUNTIME;
+            }
+            throw new KlabIllegalArgumentException("Unexpected service class " + serviceClass.getCanonicalName());
+        }
+
+
     }
 
     /**
@@ -110,6 +130,23 @@ public interface KlabService extends Service {
          */
         String getServerId();
     }
+
+    /**
+     * Service is ready to be used and has all other necessary services figured out. It still may become
+     * occasionally unavailable due to maintenance or uninterruptible operations.
+     *
+     * @return
+     */
+    boolean isOnline();
+
+    /**
+     * Availability implies online status and any unavailability must be temporary. The available status can
+     * only be false for enough time to wait for it during a request. Anything more than that becomes
+     * offline status.
+     *
+     * @return
+     */
+    boolean isAvailable();
 
     /**
      * Each service publishes capabilities, overridden to the specific capability class for each service.

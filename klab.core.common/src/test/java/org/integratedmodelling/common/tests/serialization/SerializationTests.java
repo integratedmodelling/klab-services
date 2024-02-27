@@ -36,17 +36,18 @@ class SerializationTests {
 
     @Test
     void pair() {
+        Geometry geometry = Geometry.create(centralColombia);
         Parameters<Object> object = Parameters.create("one", 1, "oneString", "one", "params",
                 Parameters.create("one", 1));
-        var pair = Pair.of("Zio", object);
+        var pair = Pair.of(geometry, object);
         String serialized = Utils.Json.asString(pair);
         Pair<?,?> deserialized = Utils.Json.parseObject(serialized, Pair.class);
         System.out.println(serialized);
         System.out.println(deserialized.getClass());
         System.out.println(deserialized.getFirst().getClass());
         System.out.println(deserialized.getSecond().getClass());
+        assert (deserialized.getFirst() instanceof Geometry);
         assert (deserialized.getSecond() instanceof Parameters);
-        assert (deserialized.getFirst() instanceof String);
     }
 
     @Test
