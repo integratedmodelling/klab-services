@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public enum Engine implements Authentication {
+public enum Engine /*implements Authentication*/ {
 
     INSTANCE;
 
@@ -108,12 +108,12 @@ public enum Engine implements Authentication {
 
     }
 
-    @Override
+//    @Override
     public UserScope authorizeUser(UserIdentity user) {
         return engineService.login(user);
     }
 
-    @Override
+//    @Override
     public boolean checkPermissions(ResourcePrivileges permissions, Scope scope) {
         // everything is allowed
         return true;
@@ -133,7 +133,7 @@ public enum Engine implements Authentication {
         return "local".equals(name) ? currentUser.getService(serviceClass) : /* TODO */ null;
     }
 
-    @Override
+//    @Override
     public UserScope getAnonymousScope() {
         return engineService.login(new AnonymousUser());
     }

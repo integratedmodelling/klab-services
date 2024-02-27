@@ -28,7 +28,6 @@ import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -157,8 +156,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      */
     private Cache<Integer, SemanticExpression> semanticExpressions = CacheBuilder.newBuilder()
             .expireAfterAccess(10, TimeUnit.MINUTES).build();
-
-    private Authentication authenticationService;
 
     private OWL owl;
     private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());

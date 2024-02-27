@@ -26,7 +26,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.Authentication;
+//import org.integratedmodelling.klab.api.services.Authentication;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -69,7 +69,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private static boolean languagesInitialized;
 
     private String url;
-    private Authentication authenticationService;
     private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
     @Override
