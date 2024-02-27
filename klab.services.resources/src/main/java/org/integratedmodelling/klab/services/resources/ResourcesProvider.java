@@ -130,12 +130,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
-    @Autowired
-    public ResourcesProvider(Authentication authenticationService, ServiceScope scope, String localName,
-                             BiConsumer<Scope, Message>... messageListeners) {
-        this(scope, localName, messageListeners);
-        this.authenticationService = authenticationService;
-    }
+//    @Autowired
+//    public ResourcesProvider(Authentication authenticationService, ServiceScope scope, String localName,
+//                             BiConsumer<Scope, Message>... messageListeners) {
+//        this(scope, localName, messageListeners);
+//        this.authenticationService = authenticationService;
+//    }
 
     @Override
     public void initializeService() {

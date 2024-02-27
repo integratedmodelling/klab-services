@@ -34,14 +34,20 @@ import org.springframework.web.servlet.handler.WebRequestHandlerInterceptorAdapt
 public class ServiceApplication implements WebMvcConfigurer {
 
     private Service service;
-    private AtomicBoolean maintenanceMode = new AtomicBoolean(false);
-    private AtomicBoolean atomicOperationMode = new AtomicBoolean(false);
+//    private AtomicBoolean maintenanceMode = new AtomicBoolean(false);
+//    private AtomicBoolean atomicOperationMode = new AtomicBoolean(false);
 
-    public void run(Service<?> klabService, String[] args) {
-        this.service = klabService;
+//    public void run(Service<?> klabService, String[] args) {
+//        this.service = klabService;
+//        ServiceStartupOptions options = new ServiceStartupOptions();
+//        options.initialize(args);
+//        klabService.start();
+//    }
+
+    public void run(String[] args) {
         ServiceStartupOptions options = new ServiceStartupOptions();
         options.initialize(args);
-        klabService.start(options);
+        // TODO
     }
 
     @PreDestroy

@@ -68,7 +68,7 @@ public class ResolverService extends BaseService implements Resolver {
     private String serviceId;
 
     @Autowired
-    public ResolverService(Authentication authentication, ServiceScope scope, String localName,
+    public ResolverService(/*Authentication authentication, */ServiceScope scope, String localName,
                            BiConsumer<Scope, Message>... messageListeners) {
         super(scope, localName, Type.RESOLVER, messageListeners);
         if (scope instanceof LocalServiceScope localScope) {

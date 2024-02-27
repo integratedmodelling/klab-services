@@ -37,8 +37,10 @@ public interface KlabService extends Service {
         LEGACY_NODE(8287);
 
         public int defaultPort;
+        public String defaultServicePath;
 
         private Type(int defaultPort) {
+            this.defaultServicePath = this.name().toLowerCase();
             this.defaultPort = defaultPort;
         }
 

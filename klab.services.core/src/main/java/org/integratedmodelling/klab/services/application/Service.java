@@ -1,19 +1,25 @@
 package org.integratedmodelling.klab.services.application;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.services.application.security.JWTAuthenticationManager;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -32,19 +38,23 @@ import org.springframework.core.env.MutablePropertySources;
  */
 public abstract class Service<T extends BaseService> {
 
-    int port = /*IConfigurationService.DEFAULT_NODE_PORT*/ -1; // TODO
+    private StartupOptions startupOptions;
     private ConfigurableApplicationContext context;
-    private String contextPath = "/node";
-    private Identity owner;
-    private KlabCertificate certificate;
 
     private BaseService service;
 
-    private static long bootTime;
+
+    Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
+
+    Set<Resolver> availableResolvers = new HashSet<>();
+    Set<RuntimeService> availableRuntimeServices = new HashSet<>();
+    Set<ResourcesService> availableResourcesServices = new HashSet<>();
+    Set<Reasoner> availableReasoners = new HashSet<>();
+
+    private long bootTime;
 
     public Service(T service) {
         this.service = service;
-        this.port = service.capabilities().getType().defaultPort;
     }
 
     /**
@@ -54,14 +64,39 @@ public abstract class Service<T extends BaseService> {
      */
     protected abstract List<KlabService.Type> getEssentialServices();
 
-    public Service(T service, StartupOptions options, KlabCertificate certificate) {
+    /**
+     * Called only if the service(s) specified in the certificate are unavailable or missing. This will be
+     * called for all service types as long as the service is not available, with a configurable interval. The
+     * default implementation launches a thread waiting for a service to become available locally and keeps
+     * track of the online status of the overall service resulting from the availability.
+     * <p>
+     * For essential services, this will be called every X minutes for as long as at least one instance of the
+     * service is missing. Non-essential services will only get one call with timeUnavailable == 0.
+     *
+     * @param serviceType
+     * @param timeUnavailable time since noticing the unavailability for the first time, in seconds. The first
+     *                        call will always get 0 here.
+     * @return
+     */
+    protected void createDefaultService(KlabService.Type serviceType, long timeUnavailable) {
+        try {
+            URL localServiceUrl = URI.create("http://127.0.0.1:" + serviceType.defaultPort + "/" + serviceType.defaultServicePath).toURL();
+            if (Utils.Network.isAlive(localServiceUrl.toString())) {
+
+            }
+        } catch (MalformedURLException e) {
+            throw new KlabInternalErrorException(e);
+        }
+    }
+
+    public Service(T service, StartupOptions options) {
         this(service);
-        this.certificate = certificate;
-        this.owner = JWTAuthenticationManager.INSTANCE.authenticateService(certificate, options);
+        this.startupOptions = options;
     }
 
     public String getLocalAddress() {
-        return "http://127.0.0.1:" + port + contextPath;
+        var type = KlabService.Type.classify(service);
+        return "http://127.0.0.1:" + type.defaultPort + "/" + type.defaultServicePath;
     }
 
     public void run(String[] args) {
@@ -69,20 +104,16 @@ public abstract class Service<T extends BaseService> {
         options.initialize(args);
     }
 
-//    public void start(T service) {
-//        start(service, new ServiceStartupOptions());
-//    }
+    public void start(ServiceScope scope) {
 
-    public void start(StartupOptions options) {
-
-        if (!options.isCloudConfig()) {
+        if (!startupOptions.isCloudConfig()) {
 
             KlabCertificate certificate = null;
 
-            if (options.getCertificateResource() != null) {
-                certificate = KlabCertificateImpl.createFromClasspath(options.getCertificateResource());
+            if (startupOptions.getCertificateResource() != null) {
+                certificate = KlabCertificateImpl.createFromClasspath(startupOptions.getCertificateResource());
             } else {
-                File certFile = options.getCertificateFile();
+                File certFile = startupOptions.getCertificateFile();
                 certificate = certFile.exists() ? KlabCertificateImpl.createFromFile(certFile)
                                                 : KlabCertificateImpl.createDefault();
             }
@@ -91,24 +122,24 @@ public abstract class Service<T extends BaseService> {
                 throw new KlabAuthorizationException("certificate is invalid: " + certificate.getInvalidityCause());
             }
 
-//            /*
-//             * This authenticates with the hub
-//             *
-//             */
-//            Service ret = new Service(service, options, certificate);
+            //            /*
+            //             * This authenticates with the hub
+            //             *
+            //             */
+            //            Service ret = new Service(service, options, certificate);
 
-            if (!boot(options)) {
+            if (!boot(startupOptions)) {
                 throw new KlabServiceAccessException("service failed to start");
             }
 
-//            return ret;
+            //            return ret;
 
         } else {
             if (!boot()) {
                 throw new KlabServiceAccessException("service failed to start");
             }
 
-//            return ret;
+            //            return ret;
         }
     }
 
@@ -121,15 +152,18 @@ public abstract class Service<T extends BaseService> {
      */
     private boolean boot(StartupOptions options) {
         try {
+
+            bootTime = System.currentTimeMillis();
+
             SpringApplication app = new SpringApplication(ServiceApplication.class);
             this.context = app.run(options.getArguments());
             Environment environment = this.context.getEnvironment();
             setPropertiesFromEnvironment(environment);
-            this.port = options.getPort();
+            var port = options.getPort();
             Map<String, Object> props = new HashMap<>();
             props.put("server.port", "" + options.getPort());
             props.put("spring.main.banner-mode", "off");
-            props.put("server.servlet.contextPath", contextPath);
+            props.put("server.servlet.contextPath", startupOptions);
             app.setDefaultProperties(props);
             System.out.println("\n" + Branding.NODE_BANNER);
             System.out.println(
@@ -149,14 +183,16 @@ public abstract class Service<T extends BaseService> {
 
     private boolean boot() {
         try {
+            bootTime = System.currentTimeMillis();
+
             SpringApplication app = new SpringApplication(ServiceApplication.class);
             this.context = app.run();
             Environment environment = this.context.getEnvironment();
             String certString = environment.getProperty("klab.certificate");
-            this.certificate = KlabCertificateImpl.createFromString(certString);
+//            this.certificate = KlabCertificateImpl.createFromString(certString);
             setPropertiesFromEnvironment(environment);
-            this.owner = JWTAuthenticationManager.INSTANCE.authenticateService(certificate,
-                    new ServiceStartupOptions());
+//            this.owner = JWTAuthenticationManager.INSTANCE.authenticateService(certificate,
+//                    new ServiceStartupOptions());
             System.out.println("\n" + Branding.NODE_BANNER);
             System.out.println(
                     "\nStartup successful: " + "k.LAB node server" + " v" + Version.CURRENT + " on " + new Date());
@@ -220,13 +256,13 @@ public abstract class Service<T extends BaseService> {
         context.close();
     }
 
-    public Identity getOwner() {
-        return owner;
-    }
-
-    public KlabCertificate getCertificate() {
-        return certificate;
-    }
+//    public Identity getOwner() {
+//        return owner;
+//    }
+//
+//    public KlabCertificate getCertificate() {
+//        return certificate;
+//    }
 
     //	public Engine getEngine() {
     //		return engine;
@@ -248,7 +284,7 @@ public abstract class Service<T extends BaseService> {
         return;
     }
 
-    public static long getBootTime() {
+    public long getBootTime() {
         return bootTime;
     }
 

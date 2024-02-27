@@ -23,9 +23,9 @@ public class ResourcesServer extends Service<ResourcesProvider> {
         return Collections.emptyList();
     }
 
-    public ResourcesServer(ResourcesProvider service, StartupOptions options, KlabCertificate certificate) {
-        super(service, options, certificate);
-    }
+//    public ResourcesServer(ResourcesProvider service) {
+//        super(service);
+//    }
 
 //    public static void main(String[] args) {
 //        ServiceApplication application = new ServiceApplication();

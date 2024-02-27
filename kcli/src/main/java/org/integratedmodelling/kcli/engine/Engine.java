@@ -64,7 +64,7 @@ public enum Engine implements Authentication {
                             "/resources"));
         } else {
             engineService.setResources(
-                    new ResourcesProvider(this, engineService.newServiceScope(ResourcesService.class),
+                    new ResourcesProvider(/*this, */engineService.newServiceScope(ResourcesService.class),
                             "Embedded resource manager"));
         }
 
@@ -74,7 +74,7 @@ public enum Engine implements Authentication {
                             "/reasoner"));
         } else {
             engineService
-                    .setReasoner(new ReasonerService(this, engineService.newServiceScope(Reasoner.class),
+                    .setReasoner(new ReasonerService(/*this, */engineService.newServiceScope(Reasoner.class),
                             "Embedded reasoner"));
         }
 
@@ -85,7 +85,7 @@ public enum Engine implements Authentication {
                             "/resolver"));
         } else {
             engineService
-                    .setResolver(new ResolverService(this, engineService.newServiceScope(Resolver.class),
+                    .setResolver(new ResolverService(/*this, */engineService.newServiceScope(Resolver.class),
                             "Embedded resolver"));
         }
 
@@ -94,7 +94,7 @@ public enum Engine implements Authentication {
                     .setRuntime(new RuntimeClient("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " " +
                             "/runtime"));
         } else {
-            engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(this,
+            engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(/*this,*/
                     engineService.newServiceScope(RuntimeService.class), "Embedded runtime"));
         }
 

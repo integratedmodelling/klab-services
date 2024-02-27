@@ -38,7 +38,7 @@ public class RuntimeService extends BaseService
     // TODO connect to runtime.yaml configuration
     private String serviceId;
 
-    public RuntimeService(Authentication testAuthentication, ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
+    public RuntimeService(/*Authentication testAuthentication, */ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
         // TODO Auto-generated constructor stub
         super(scope, localName,Type.RUNTIME, messageListeners);
         if (scope instanceof LocalServiceScope localScope) {
