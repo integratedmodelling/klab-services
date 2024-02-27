@@ -18,11 +18,6 @@
 			<artifactId>klab.core.api</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.integratedmodelling</groupId>
-			<artifactId>klab.services.authentication</artifactId>
-			<version>${klab.version}</version>
-		</dependency>
     </dependencies>
     <build>
         <plugins>

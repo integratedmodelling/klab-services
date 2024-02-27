@@ -10,11 +10,6 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
-			<artifactId>klab.services.authentication</artifactId>
-			<version>${klab.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.integratedmodelling</groupId>
 			<artifactId>klab.services.core</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
