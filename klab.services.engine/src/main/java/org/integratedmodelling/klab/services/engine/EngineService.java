@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
-import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+//import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scope.EngineScope;
 
@@ -242,39 +242,41 @@ public class EngineService implements Engine {
 
     public ServiceScope newServiceScope(Class<? extends KlabService> cls) {
 
-        return new LocalServiceScope(cls, eventListeners.toArray(new BiConsumer[]{})) {
-
-            @Override
-            public String getId() {
-                return cls.getCanonicalName();
-            }
-
-            // no agents for services in this implementation
-            @Override
-            public Ref getAgent() {
-                return null;
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass) {
-                if (serviceClass.isAssignableFrom(Reasoner.class)) {
-                    return (T) defaultReasoner;
-                } else if (serviceClass.isAssignableFrom(ResourcesService.class)) {
-                    return (T) defaultResourcesService;
-                } else if (serviceClass.isAssignableFrom(Resolver.class)) {
-                    return (T) defaultResolver;
-                } else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-                    return (T) defaultRuntime;
-                }
-                return null;
-            }
-
-            @Override
-            public void stop() {
-                // TODO (?) notify to engine, log, do something
-            }
-        };
+        // FIXME TODO
+        return null;
+//        return new LocalServiceScope(cls, eventListeners.toArray(new BiConsumer[]{})) {
+//
+//            @Override
+//            public String getId() {
+//                return cls.getCanonicalName();
+//            }
+//
+//            // no agents for services in this implementation
+//            @Override
+//            public Ref getAgent() {
+//                return null;
+//            }
+//
+//            @SuppressWarnings("unchecked")
+//            @Override
+//            public <T extends KlabService> T getService(Class<T> serviceClass) {
+//                if (serviceClass.isAssignableFrom(Reasoner.class)) {
+//                    return (T) defaultReasoner;
+//                } else if (serviceClass.isAssignableFrom(ResourcesService.class)) {
+//                    return (T) defaultResourcesService;
+//                } else if (serviceClass.isAssignableFrom(Resolver.class)) {
+//                    return (T) defaultResolver;
+//                } else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+//                    return (T) defaultRuntime;
+//                }
+//                return null;
+//            }
+//
+//            @Override
+//            public void stop() {
+//                // TODO (?) notify to engine, log, do something
+//            }
+//        };
     }
 
 }
