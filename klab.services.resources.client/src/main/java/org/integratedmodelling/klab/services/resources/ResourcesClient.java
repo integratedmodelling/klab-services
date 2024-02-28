@@ -28,12 +28,12 @@ public class ResourcesClient implements ResourcesService {
 
     private static final long serialVersionUID = 4305387731730961701L;
 
-    public ResourcesClient(String url) {
+    public ResourcesClient(URL url) {
         // TODO Auto-generated constructor stub
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

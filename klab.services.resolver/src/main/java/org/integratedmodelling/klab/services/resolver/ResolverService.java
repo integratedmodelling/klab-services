@@ -40,6 +40,7 @@ import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.net.URL;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -68,12 +69,8 @@ public class ResolverService extends BaseService implements Resolver {
     private String serviceId;
 
     @Autowired
-    public ResolverService(/*Authentication authentication, */ServiceScope scope, String localName,
-                           BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName, Type.RESOLVER, messageListeners);
-//        if (scope instanceof LocalServiceScope localScope) {
-//            localScope.setService(this);
-//        }
+    public ResolverService(ServiceScope scope) {
+        super(scope, Type.RESOLVER);
     }
 
     @Override
@@ -84,7 +81,7 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

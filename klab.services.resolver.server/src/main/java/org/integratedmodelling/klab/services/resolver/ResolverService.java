@@ -14,12 +14,13 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.utilities.Utils;
 
+import java.net.URL;
 import java.util.List;
 
 public class ResolverService implements Resolver, Resolver.Admin {
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

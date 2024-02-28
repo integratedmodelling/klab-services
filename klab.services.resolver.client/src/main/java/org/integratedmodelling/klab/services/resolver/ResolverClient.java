@@ -13,16 +13,17 @@ import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.net.URL;
 import java.util.List;
 
 public class ResolverClient implements Resolver {
 
-    public ResolverClient(String url) {
+    public ResolverClient(URL url) {
         // TODO Auto-generated constructor stub
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

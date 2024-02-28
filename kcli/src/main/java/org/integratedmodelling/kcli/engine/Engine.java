@@ -26,14 +26,13 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public enum Engine /*implements Authentication*/ {
+public enum Engine {
 
     INSTANCE;
 
     /*
      * these are set/unset by the user and can be used for substitutions in CLs
-     */
-    Parameters<String> userData = Parameters.create();
+     */ Parameters<String> userData = Parameters.create();
     Map<String, UserScope> authorizedIdentities = new LinkedHashMap<>();
 
     UserScope currentUser;
@@ -57,45 +56,29 @@ public enum Engine /*implements Authentication*/ {
          * check for a locally running service for each category; if existing, create a
          * client, otherwise create an embedded service
          */
-        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " /resources" +
-                "/actuator")) {
-            engineService
-                    .setResources(new ResourcesClient("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " " +
-                            "/resources"));
+        if (Utils.Network.isAlive(KlabService.Type.RESOURCES.localServiceUrl())) {
+            engineService.setResources(new ResourcesClient(KlabService.Type.RESOURCES.localServiceUrl()));
         } else {
-            engineService.setResources(
-                    new ResourcesProvider(/*this, */engineService.newServiceScope(ResourcesService.class),
-                            "Embedded resource manager"));
+            engineService.setResources(new ResourcesProvider(engineService.newServiceScope(ResourcesService.class)));
         }
 
-        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " /reasoner/actuator")) {
-            engineService
-                    .setReasoner(new ReasonerClient("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " " +
-                            "/reasoner"));
+        if (Utils.Network.isAlive(KlabService.Type.REASONER.localServiceUrl())) {
+            engineService.setReasoner(new ReasonerClient(KlabService.Type.REASONER.localServiceUrl()));
         } else {
-            engineService
-                    .setReasoner(new ReasonerService(/*this, */engineService.newServiceScope(Reasoner.class),
-                            "Embedded reasoner"));
+            engineService.setReasoner(new ReasonerService(engineService.newServiceScope(Reasoner.class)));
         }
 
         // FIXME mutual dependency between resolver and runtime guarantees screwup
-        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " /resolver/actuator")) {
-            engineService
-                    .setResolver(new ResolverClient("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " " +
-                            "/resolver"));
+        if (Utils.Network.isAlive(KlabService.Type.RESOLVER.localServiceUrl())) {
+            engineService.setResolver(new ResolverClient(KlabService.Type.RESOLVER.localServiceUrl()));
         } else {
-            engineService
-                    .setResolver(new ResolverService(/*this, */engineService.newServiceScope(Resolver.class),
-                            "Embedded resolver"));
+            engineService.setResolver(new ResolverService(engineService.newServiceScope(Resolver.class)));
         }
 
-        if (org.integratedmodelling.common.utils.Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " /runtime/actuator")) {
-            engineService
-                    .setRuntime(new RuntimeClient("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " " +
-                            "/runtime"));
+        if (Utils.Network.isAlive(KlabService.Type.RUNTIME.localServiceUrl())) {
+            engineService.setRuntime(new RuntimeClient(KlabService.Type.RUNTIME.localServiceUrl()));
         } else {
-            engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(/*this,*/
-                    engineService.newServiceScope(RuntimeService.class), "Embedded runtime"));
+            engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(engineService.newServiceScope(RuntimeService.class)));
         }
 
         // Boot will initialize all embedded services
@@ -108,12 +91,12 @@ public enum Engine /*implements Authentication*/ {
 
     }
 
-//    @Override
+    //    @Override
     public UserScope authorizeUser(UserIdentity user) {
         return engineService.login(user);
     }
 
-//    @Override
+    //    @Override
     public boolean checkPermissions(ResourcePrivileges permissions, Scope scope) {
         // everything is allowed
         return true;
@@ -133,7 +116,7 @@ public enum Engine /*implements Authentication*/ {
         return "local".equals(name) ? currentUser.getService(serviceClass) : /* TODO */ null;
     }
 
-//    @Override
+    //    @Override
     public UserScope getAnonymousScope() {
         return engineService.login(new AnonymousUser());
     }

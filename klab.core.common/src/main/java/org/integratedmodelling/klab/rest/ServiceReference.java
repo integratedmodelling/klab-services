@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.rest;
 
 import org.integratedmodelling.klab.api.services.KlabService;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -24,7 +25,7 @@ public class ServiceReference {
     private String id;
     private Set<Permission> permissions = new HashSet<>();
     private IdentityReference partner;
-    private List<String> urls = new ArrayList<>();
+    private List<URL> urls = new ArrayList<>();
     private boolean online;
     private int retryPeriodMinutes;
     private int loadFactor;
@@ -90,11 +91,11 @@ public class ServiceReference {
         this.partner = partner;
     }
 
-    public List<String> getUrls() {
+    public List<URL> getUrls() {
         return urls;
     }
 
-    public void setUrls(List<String> urls) {
+    public void setUrls(List<URL> urls) {
         this.urls = urls;
     }
 

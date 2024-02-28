@@ -7,6 +7,10 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -42,6 +46,15 @@ public interface KlabService extends Service {
         private Type(int defaultPort) {
             this.defaultServicePath = this.name().toLowerCase();
             this.defaultPort = defaultPort;
+        }
+
+        public URL localServiceUrl() {
+            try {
+                return new URI("http://127.0.0.1:" + defaultPort + "/" + defaultServicePath).toURL();
+            } catch (Exception e) {
+                // naah
+                throw new RuntimeException(e);
+            }
         }
 
         public static Type classify(KlabService service) {
@@ -173,7 +186,7 @@ public interface KlabService extends Service {
      *
      * @return
      */
-    String getUrl();
+    URL getUrl();
 
     /**
      * Local name should be unique among services even of the same type. It should reflect the local node and

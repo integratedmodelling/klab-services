@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Service;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -20,6 +19,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
+/**
+ * Base class for service implementations. A BaseService implements all the {@link KlabService} functions but
+ * does not create the {@link ServiceScope} it runs within, which is supplied from the outside. can be wrapped
+ * within a {@link org.integratedmodelling.klab.services.application.Service} to provide a
+ * {@link ServiceScope} and become usable.
+ */
 public abstract class BaseService implements KlabService {
 
     protected final Type type;
@@ -139,15 +144,11 @@ public abstract class BaseService implements KlabService {
 
     protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
-    protected BaseService(ServiceScope scope, String localName, KlabService.Type serviceType,
-                          BiConsumer<Scope, Message>... eventListeners) {
+    protected BaseService(ServiceScope scope, KlabService.Type serviceType) {
         this.scope = scope;
         this.localName = localName;
         this.type = serviceType;
         createServiceSecret();
-        if (eventListeners != null) {
-            Arrays.stream(eventListeners).map(e -> this.eventListeners.add(e));
-        }
     }
 
     /**
@@ -162,6 +163,14 @@ public abstract class BaseService implements KlabService {
         } catch (IOException e) {
             throw new KlabIOException(e);
         }
+    }
+
+    public void addEventListener(BiConsumer<Scope, Message> listener) {
+        this.eventListeners.add(listener);
+    }
+
+    public List<BiConsumer<Scope, Message>> getEventListeners() {
+        return this.eventListeners;
     }
 
     /**

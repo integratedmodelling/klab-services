@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
@@ -36,12 +37,8 @@ public class RuntimeService extends BaseService
     // TODO connect to runtime.yaml configuration
     private String serviceId;
 
-    public RuntimeService(/*Authentication testAuthentication, */ServiceScope scope, String localName, BiConsumer<Scope, Message>... messageListeners) {
-        // TODO Auto-generated constructor stub
-        super(scope, localName,Type.RUNTIME, messageListeners);
-//        if (scope instanceof LocalServiceScope localScope) {
-//            localScope.setService(this);
-//        }
+    public RuntimeService(ServiceScope scope) {
+        super(scope, Type.RUNTIME);
     }
 
     @Override
@@ -82,7 +79,7 @@ public class RuntimeService extends BaseService
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

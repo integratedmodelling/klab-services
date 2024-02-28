@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +22,14 @@ public class ReasonerClient implements Reasoner {
 
 	private static final long serialVersionUID = -3969112162251127910L;
 
-	String url;
+	URL url;
 
-	public ReasonerClient(String url) {
+	public ReasonerClient(URL url) {
 		this.url = url;
 	}
 
 	@Override
-	public String getUrl() {
+	public URL getUrl() {
 		// TODO Auto-generated method stub
 		return this.url;
 	}

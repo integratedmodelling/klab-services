@@ -7,17 +7,18 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.concurrent.Future;
 
 public class RuntimeClient implements RuntimeService {
 
-    public RuntimeClient(String url) {
+    public RuntimeClient(URL url) {
         // TODO Auto-generated constructor stub
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

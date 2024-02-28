@@ -823,6 +823,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             return false;
         }
 
+        static public boolean isAlive(URL host) {
+            return isAlive(host.toString());
+        }
+
         /**
          * Port available.
          *

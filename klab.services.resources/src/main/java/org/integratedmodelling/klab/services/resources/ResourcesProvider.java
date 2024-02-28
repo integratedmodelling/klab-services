@@ -68,7 +68,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     private static boolean languagesInitialized;
 
-    private String url;
+    private URL url;
     private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
     @Override
@@ -106,13 +106,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
 
     @SuppressWarnings("unchecked")
-    public ResourcesProvider(ServiceScope scope, String localName,
-                             BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName, Type.RESOURCES, messageListeners);
-//        if (scope instanceof LocalServiceScope localScope) {
-//            localScope.setService(this);
-//        }
-        //        initializeLanguageServices();
+    public ResourcesProvider(ServiceScope scope) {
+
+        super(scope, Type.RESOURCES);
 
         this.db =
                 DBMaker.fileDB(Configuration.INSTANCE.getDataPath("resources/catalog") + File.separator +
@@ -673,11 +669,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         return this.url;
     }
 
-    public void setUrl(String url) {
+    public void setUrl(URL url) {
         this.url = url;
     }
 
@@ -695,7 +691,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         ResourceSet results = new ResourceSet();
         for (ModelReference model : this.kbox.query(observable, scope)) {
-            results.getResults().add(new ResourceSet.Resource(this.url,
+            results.getResults().add(new ResourceSet.Resource(this.url.toString(),
                     model.getNamespaceId() + "." + model.getName(), model.getVersion(),
                     KnowledgeClass.MODEL));
         }
@@ -760,7 +756,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         resource.setKnowledgeClass(KnowledgeClass.NAMESPACE);
         resource.setResourceUrn(ns);
         resource.setResourceVersion(namespace.getVersion());
-        resource.setServiceId(getUrl());
+        resource.setServiceId(getUrl() == null ? null : getUrl().toString());
         storage.put(ns, resource);
 
         return true;
@@ -889,16 +885,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             if (namespace != null) {
                 for (KlabStatement statement : namespace.getStatements()) {
                     if (statement instanceof KimModel && urn.equals(((KimModel) statement).getUrn())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion()
+                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn, namespace.getVersion()
                                 , KnowledgeClass.MODEL));
                     } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl(), urn, namespace.getVersion()
+                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn, namespace.getVersion()
                                 , KnowledgeClass.INSTANCE));
                     }
                 }
 
                 if (ret.getResults().size() > 0) {
-                    ret.getNamespaces().add(new ResourceSet.Resource(getUrl(), namespace.getUrn(),
+                    ret.getNamespaces().add(new ResourceSet.Resource(getUrl().toString(), namespace.getUrn(),
                             namespace.getVersion(), KnowledgeClass.NAMESPACE));
                 }
 

@@ -4,6 +4,8 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Community;
 import org.integratedmodelling.klab.utilities.Utils;
 
+import java.net.URL;
+
 public class CommunityService implements Community {
 
     private static final long serialVersionUID = -7321738633095243998L;
@@ -30,7 +32,7 @@ public class CommunityService implements Community {
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         // TODO Auto-generated method stub
         return null;
     }

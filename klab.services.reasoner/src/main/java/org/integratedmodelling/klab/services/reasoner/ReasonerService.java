@@ -60,6 +60,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.Serial;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -104,16 +105,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      */
     static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
 
-//    /**
-//     * Flag for {@link #compatible(Semantics, Semantics, int)}.
-//     * <p>
-//     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective traits
-//     for
-//     * observables.
-//     */
-//    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
+    //    /**
+    //     * Flag for {@link #compatible(Semantics, Semantics, int)}.
+    //     * <p>
+    //     * If passed to {@link #compatible(Semantics, Semantics, int)} causes acceptance of subjective
+    //     traits
+    //     for
+    //     * observables.
+    //     */
+    //    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
 
-    private String url;
+    private URL url;
     private ReasonerConfiguration configuration = new ReasonerConfiguration();
     private Map<String, String> coreConceptPeers = new HashMap<>();
     private Map<Concept, Emergence> emergent = new HashMap<>();
@@ -154,17 +156,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     /**
      * Cache for ongoing requests expires in 10 minutes. CHECK this may be less and become configurable.
      */
-    private Cache<Integer, SemanticExpression> semanticExpressions = CacheBuilder.newBuilder()
-            .expireAfterAccess(10, TimeUnit.MINUTES).build();
+    private Cache<Integer, SemanticExpression> semanticExpressions =
+            CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).build();
 
     private OWL owl;
-    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature =
+            org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
     @Override
     public boolean isLocal() {
         String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("REASONER_" + serverId));
+        return (capabilities().getServerId() == null && serverId == null) || (capabilities().getServerId() != null && capabilities().getServerId().equals("REASONER_" + serverId));
     }
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
@@ -214,18 +216,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
             Emergence other = (Emergence) obj;
-            if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
-                return false;
-            return Objects.equals(emergentObservable, other.emergentObservable)
-                    && Objects.equals(namespaceId, other.namespaceId)
-                    && Objects.equals(triggerObservables, other.triggerObservables);
+            if (!getEnclosingInstance().equals(other.getEnclosingInstance())) return false;
+            return Objects.equals(emergentObservable, other.emergentObservable) && Objects.equals(namespaceId, other.namespaceId) && Objects.equals(triggerObservables, other.triggerObservables);
         }
 
         /*
@@ -256,18 +252,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Autowired
-    public ReasonerService(/*Authentication authenticationService, */ServiceScope scope, String localName,
-                           BiConsumer<Scope, Message>... messageListeners) {
-        super(scope, localName, Type.REASONER, messageListeners);
-//        this.authenticationService = authenticationService;
+    public ReasonerService(ServiceScope scope) {
+        super(scope, Type.REASONER);
         this.scope = scope;
         this.owl = new OWL(scope);
-//        this.owl.initialize();
         this.indexer = new Indexer(scope);
         this.emergence = new IntelligentMap<>(scope);
-//        if (scope instanceof LocalServiceScope localScope) {
-//            localScope.setService(this);
-//        }
     }
 
     @Override
@@ -278,7 +268,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
         if (config.exists()) {
-            configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config, ReasonerConfiguration.class);
+            configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config,
+                    ReasonerConfiguration.class);
         }
 
         for (ProjectConfiguration authority : configuration.getAuthorities()) {
@@ -298,11 +289,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             try {
                 Logging.INSTANCE.info("loading authority " + authority.getProject() + " from local " +
                         "classpath");
-                Class<? extends Authority> cls = (Class<? extends Authority>) Class
-                        .forName(authority.getUrl().substring("classpath:".length()));
+                Class<? extends Authority> cls =
+                        (Class<? extends Authority>) Class.forName(authority.getUrl().substring(("classpath" +
+                                ":").length()));
                 Configuration.INSTANCE.registerAuthority(cls.getDeclaredConstructor().newInstance());
-                Logging.INSTANCE.info("Authority " + authority.getProject() + " ready for "
-                        + (authority.isServe() ? "global" : "local") + " use");
+                Logging.INSTANCE.info("Authority " + authority.getProject() + " ready for " + (authority.isServe() ? "global" : "local") + " use");
             } catch (Exception e) {
                 Logging.INSTANCE.error(e);
             }
@@ -319,8 +310,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public Concept defineConcept(KimConceptStatement statement, Scope scope) {
         return build(statement, this.owl.requireOntology(statement.getNamespace(),
-                        OWL.DEFAULT_ONTOLOGY_PREFIX), null,
-                scope);
+                OWL.DEFAULT_ONTOLOGY_PREFIX), null, scope);
     }
 
     @Override
@@ -455,8 +445,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private Set<Concept> collectChildren(Semantics target, Set<Concept> hashSet) {
 
         for (Concept c : children(target)) {
-            if (!hashSet.contains(c))
-                collectChildren(c, hashSet);
+            if (!hashSet.contains(c)) collectChildren(c, hashSet);
             hashSet.add(c);
         }
         return hashSet;
@@ -526,8 +515,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public int semanticDistance(Semantics target, Semantics other, Semantics context) {
         return semanticDistance(target.asConcept(), other.asConcept(), context == null ? null :
-                                                                       context.asConcept(),
-                true, null);
+                                                                       context.asConcept(), true, null);
     }
 
     /**
@@ -600,21 +588,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
         }
 
-//        if (context == null) {
-//            context = context(to);
-//        }
+        //        if (context == null) {
+        //            context = context(to);
+        //        }
 
         int component;
 
         if (compareInherency) {
 
-//            component = distance(context(from), context, true);
-//
-//            if (component < 0) {
-//                double d = ((double) component / 10.0);
-//                return -1 * (int) (d > 10 ? d : 10);
-//            }
-//            distance += component;
+            //            component = distance(context(from), context, true);
+            //
+            //            if (component < 0) {
+            //                double d = ((double) component / 10.0);
+            //                return -1 * (int) (d > 10 ? d : 10);
+            //            }
+            //            distance += component;
 
             /*
              * any EXPLICIT inherency must be the same in both.
@@ -914,19 +902,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return false;
     }
 
-//    @Override
-//    public Concept directContext(Semantics concept) {
-//        Collection<Concept> cls = this.owl.getDirectRestrictedClasses(concept.asConcept(),
-//                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
-//        return cls.isEmpty() ? null : cls.iterator().next();
-//    }
-//
-//    @Override
-//    public Concept context(Semantics concept) {
-//        Collection<Concept> cls = this.owl.getRestrictedClasses(concept.asConcept(),
-//                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
-//        return cls.isEmpty() ? null : cls.iterator().next();
-//    }
+    //    @Override
+    //    public Concept directContext(Semantics concept) {
+    //        Collection<Concept> cls = this.owl.getDirectRestrictedClasses(concept.asConcept(),
+    //                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
+    //        return cls.isEmpty() ? null : cls.iterator().next();
+    //    }
+    //
+    //    @Override
+    //    public Concept context(Semantics concept) {
+    //        Collection<Concept> cls = this.owl.getRestrictedClasses(concept.asConcept(),
+    //                this.owl.getProperty(NS.HAS_CONTEXT_PROPERTY));
+    //        return cls.isEmpty() ? null : cls.iterator().next();
+    //    }
 
     @Override
     public Concept directInherent(Semantics concept) {
@@ -1051,8 +1039,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public String displayName(Semantics semantics) {
-        return semantics instanceof Observable ? observableDisplayName((Observable) semantics)
-                                               : conceptDisplayName(semantics.asConcept());
+        return semantics instanceof Observable ? observableDisplayName((Observable) semantics) :
+               conceptDisplayName(semantics.asConcept());
     }
 
     private String conceptDisplayName(Concept t) {
@@ -1195,9 +1183,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public Collection<Concept> directTraits(Semantics concept) {
         Set<Concept> ret = new HashSet<>();
-        ret.addAll(
-                this.owl.getDirectRestrictedClasses(concept.asConcept(),
-                        this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
+        ret.addAll(this.owl.getDirectRestrictedClasses(concept.asConcept(),
+                this.owl.getProperty(NS.HAS_REALM_PROPERTY)));
         ret.addAll(this.owl.getDirectRestrictedClasses(concept.asConcept(),
                 this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY)));
         ret.addAll(this.owl.getDirectRestrictedClasses(concept.asConcept(),
@@ -1230,15 +1217,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public SemanticType observableType(Semantics observable, boolean acceptTraits) {
-        if (observable instanceof Observable
-                && ((Observable) observable).getArtifactType().equals(Artifact.Type.VOID)) {
+        if (observable instanceof Observable && ((Observable) observable).getArtifactType().equals(Artifact.Type.VOID)) {
             return SemanticType.NOTHING;
         }
         Set<SemanticType> type = EnumSet.copyOf(observable.asConcept().getType());
         type.retainAll(SemanticType.BASE_MODELABLE_TYPES);
         if (type.size() != 1) {
-            throw new IllegalArgumentException(
-                    "trying to extract the observable type from non-observable " + observable);
+            throw new IllegalArgumentException("trying to extract the observable type from non-observable " + observable);
         }
         return type.iterator().next();
     }
@@ -1251,11 +1236,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Collection<Concept> relationshipSources(Semantics relationship) {
-        return org.integratedmodelling.common.utils.Utils.Collections.join(
-                this.owl.getDirectRestrictedClasses(relationship.asConcept(),
-                        this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)),
-                this.owl.getRestrictedClasses(relationship.asConcept(),
-                        this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)));
+        return org.integratedmodelling.common.utils.Utils.Collections.join(this.owl.getDirectRestrictedClasses(relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)), this.owl.getRestrictedClasses(relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY)));
     }
 
     @Override
@@ -1266,11 +1247,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Collection<Concept> relationshipTargets(Semantics relationship) {
-        return org.integratedmodelling.common.utils.Utils.Collections.join(
-                this.owl.getDirectRestrictedClasses(relationship.asConcept(),
-                        this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)),
-                this.owl.getRestrictedClasses(relationship.asConcept(),
-                        this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)));
+        return org.integratedmodelling.common.utils.Utils.Collections.join(this.owl.getDirectRestrictedClasses(relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)), this.owl.getRestrictedClasses(relationship.asConcept(), this.owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY)));
     }
 
     @Override
@@ -1316,12 +1293,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public String getUrl() {
+    public URL getUrl() {
         return this.url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
     }
 
     public void setLocalName(String localName) {
@@ -1341,8 +1314,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          * definition.
          */
         if (inWorldview(concept, other)) {
-            if (Sets.intersection(concept.asConcept().getType(), other.asConcept().getType()).size() < concept.asConcept()
-                    .getType().size()) {
+            if (Sets.intersection(concept.asConcept().getType(), other.asConcept().getType()).size() < concept.asConcept().getType().size()) {
                 return false;
             }
         }
@@ -1399,8 +1371,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public Observable declareObservable(KimObservable observableDeclaration) {
         return declare(observableDeclaration,
-                this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()),
-                scope);
+                this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()), scope);
     }
 
     @Override
@@ -1426,8 +1397,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          * The check of fundamental types is only performed when both concepts are inside the worldview.
          */
         if (inWorldview(o1, o2)) {
-            if ((!o1.is(SemanticType.OBSERVABLE) || !o2.is(SemanticType.OBSERVABLE))
-                    && !(o1.is(SemanticType.CONFIGURATION) && o2.is(SemanticType.CONFIGURATION))) {
+            if ((!o1.is(SemanticType.OBSERVABLE) || !o2.is(SemanticType.OBSERVABLE)) && !(o1.is(SemanticType.CONFIGURATION) && o2.is(SemanticType.CONFIGURATION))) {
                 return false;
             }
         }
@@ -1439,19 +1409,19 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 core2))) {
             return false;
         }
-//
-//        Concept cc1 = context(o1);
-//        Concept cc2 = context(o2);
-//
-//        // candidate may have no context; if both have them, they must be compatible
-//        if (cc1 == null && cc2 != null) {
-//            return false;
-//        }
-//        if (cc1 != null && cc2 != null) {
-//            if (!compatible(cc1, cc2, ACCEPT_REALM_DIFFERENCES)) {
-//                return false;
-//            }
-//        }
+        //
+        //        Concept cc1 = context(o1);
+        //        Concept cc2 = context(o2);
+        //
+        //        // candidate may have no context; if both have them, they must be compatible
+        //        if (cc1 == null && cc2 != null) {
+        //            return false;
+        //        }
+        //        if (cc1 != null && cc2 != null) {
+        //            if (!compatible(cc1, cc2, ACCEPT_REALM_DIFFERENCES)) {
+        //                return false;
+        //            }
+        //        }
 
         Concept ic1 = inherent(o1);
         Concept ic2 = inherent(o2);
@@ -1658,13 +1628,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             return concepts.iterator().next();
         }
         if (concepts.size() > 1) {
-            return connector == LogicalConnector.UNION
-                   ? this.owl.getUnion(concepts,
+            return connector == LogicalConnector.UNION ? this.owl.getUnion(concepts,
                     this.owl.getOntology(concepts.iterator().next().getNamespace()),
-                    concepts.iterator().next().getType())
-                   : this.owl.getIntersection(concepts,
-                           this.owl.getOntology(concepts.iterator().next().getNamespace()),
-                           concepts.iterator().next().getType());
+                    concepts.iterator().next().getType()) : this.owl.getIntersection(concepts,
+                    this.owl.getOntology(concepts.iterator().next().getNamespace()),
+                    concepts.iterator().next().getType());
         }
         return owl.getNothing();
     }
@@ -1734,8 +1702,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 if (concept.getDeclaredParent() == null) {
                     Concept parent = null;
                     if (concept.getUpperConceptDefined() != null) {
-                        upperConceptDefined = parent =
-                                this.owl.getConcept(concept.getUpperConceptDefined());
+                        upperConceptDefined = parent = this.owl.getConcept(concept.getUpperConceptDefined());
                         if (parent == null) {
                             monitor.error("Core concept " + concept.getUpperConceptDefined() + " is " +
                                     "unknown", concept);
@@ -1776,8 +1743,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     private Concept buildInternal(final KimConceptStatement concept, Ontology ontology,
-                                  KimConceptStatement kimObject,
-                                  final Scope monitor) {
+                                  KimConceptStatement kimObject, final Scope monitor) {
 
         Concept main = null;
         String mainId = concept.getUrn();
@@ -1794,8 +1760,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 OWL.getCleanFullId(ontology.getName(), concept.getUrn())));
 
         if (concept.getDocstring() != null) {
-            ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT,
-                    concept.getDocstring()));
+            ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT, concept.getDocstring()));
         }
 
         if (kimObject == null) {
@@ -1817,24 +1782,21 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         if (concept.getDeclaredParent() != null) {
 
-//            List<Concept> concepts = new ArrayList<>();
-//            for (KimConcept pdecl : parent.getConcepts()) {
+            //            List<Concept> concepts = new ArrayList<>();
+            //            for (KimConcept pdecl : parent.getConcepts()) {
             Concept declared = declare(concept.getDeclaredParent(), ontology, monitor);
             if (declared == null) {
-                monitor.error("parent declaration " + concept.getDeclaredParent() + " does not identify " +
-                                "known " +
-                                "concepts",
-                        concept.getDeclaredParent());
+                monitor.error("parent declaration " + concept.getDeclaredParent() + " does not identify " + "known " + "concepts", concept.getDeclaredParent());
                 return null;
             } else {
                 ontology.add(Axiom.SubClass(declared.getNamespace() + ":" + declared.getName(), mainId));
             }
-//                concepts.add(declared);
-//            }
-//
-//            if (concepts.size() == 1) {
-//
-//            }
+            //                concepts.add(declared);
+            //            }
+            //
+            //            if (concepts.size() == 1) {
+            //
+            //            }
             /* else {
                 Concept expr = null;
                 switch (parent.getConnector()) {
@@ -1897,8 +1859,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 monitor.error("affected " + affected.getName() + " does not identify known concepts",
                         affected);
             } else {
-                this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY),
-                        quality
+                this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality
                         , ontology);
             }
         }
@@ -1998,12 +1959,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
             ret = ii.next();
 
-            if (ret != null)
-                while (ii.hasNext()) {
-                    ret = this.owl.getLeastGeneralCommonConcept(ret, ii.next());
-                    if (ret == null)
-                        break;
-                }
+            if (ret != null) while (ii.hasNext()) {
+                ret = this.owl.getLeastGeneralCommonConcept(ret, ii.next());
+                if (ret == null) break;
+            }
         }
 
         return ret;
@@ -2123,16 +2082,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 builder.of(c);
             }
         }
-//        if (concept.getContext() != null) {
-//            Concept c = declareInternal(concept.getContext(), ontology, monitor);
-//            if (c != null) {
-//                if (SemanticRole.CONTEXT.equals(concept.getDistributedInherent())) {
-//                    builder.of(c);
-//                } else {
-//                    builder.within(c);
-//                }
-//            }
-//        }
+        //        if (concept.getContext() != null) {
+        //            Concept c = declareInternal(concept.getContext(), ontology, monitor);
+        //            if (c != null) {
+        //                if (SemanticRole.CONTEXT.equals(concept.getDistributedInherent())) {
+        //                    builder.of(c);
+        //                } else {
+        //                    builder.within(c);
+        //                }
+        //            }
+        //        }
         if (concept.getCompresent() != null) {
             Concept c = declareInternal(concept.getCompresent(), ontology, monitor);
             if (c != null) {
@@ -2210,19 +2169,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 for (KimConcept op : concept.getOperands()) {
                     concepts.add(declareInternal(op, ontology, monitor));
                 }
-                ret = concept.getExpressionType() == KimConcept.Expression.INTERSECTION
-                      ? this.owl.getIntersection(concepts, ontology,
-                        concept.getOperands().get(0).getType())
-                      : this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
+                ret = concept.getExpressionType() == KimConcept.Expression.INTERSECTION ?
+                      this.owl.getIntersection(concepts, ontology, concept.getOperands().get(0).getType())
+                                                                                        :
+                      this.owl.getUnion(concepts, ontology, concept.getOperands().get(0).getType());
             }
 
             // set the k.IM definition in the concept.This must only happen if the
             // concept wasn't there - within build() and repeat if mods are made
             if (builder.axiomsAdded()) {
 
-                this.owl.getOntology(ret.getNamespace()).define(Collections.singletonList(
-                        Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY,
-                                concept.getUrn())));
+                this.owl.getOntology(ret.getNamespace()).define(Collections.singletonList(Axiom.AnnotationAssertion(ret.getName(), NS.CONCEPT_DEFINITION_PROPERTY, concept.getUrn())));
 
                 // consistency check
                 if (!satisfiable(ret)) {
@@ -2262,7 +2219,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             Concept nsmain = this.owl.getNonsemanticPeer(concept.getModelReference(),
                     concept.getNonSemanticType());
             ObservableImpl observable = ObservableImpl.promote(nsmain, scope);
-//			observable.setModelReference(concept.getModelReference());
+            //			observable.setModelReference(concept.getModelReference());
             observable.setName(concept.getFormalName());
             observable.setStatedName(concept.getFormalName());
             observable.setReferenceName(concept.getFormalName());
@@ -2318,17 +2275,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
 
         builder = builder.optional(concept.isOptional()).generic(concept.isGeneric())/* .global(concept
-        .isGlobal()) */
-                .named(concept.getFormalName());
+        .isGlobal()) */.named(concept.getFormalName());
 
         // TODO gather generic concepts and abstract ones
-//        if (concept.isExclusive()) {
-//            builder = builder.withResolution(Observable.Resolution.Only);
-//        } else if (concept.isGlobal()) {
-//            builder = builder.withResolution(Observable.Resolution.All);
-//        } else if (concept.isGeneric()) {
-//            builder = builder.withResolution(Observable.Resolution.Any);
-//        }
+        //        if (concept.isExclusive()) {
+        //            builder = builder.withResolution(Observable.Resolution.Only);
+        //        } else if (concept.isGlobal()) {
+        //            builder = builder.withResolution(Observable.Resolution.All);
+        //        } else if (concept.isGeneric()) {
+        //            builder = builder.withResolution(Observable.Resolution.Any);
+        //        }
 
         for (var operator : concept.getValueOperators()) {
             builder = builder.withValueOperator(operator.getFirst(), operator.getSecond());
@@ -2442,8 +2398,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     }
 
                     for (var match : indexer.query(request.getQueryString(),
-                            expression.getCurrent().getScope(),
-                            request.getMaxResults())) {
+                            expression.getCurrent().getScope(), request.getMaxResults())) {
                         response.getMatches().add(match);
                     }
 
@@ -2484,10 +2439,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
         peer.visit(new DefaultKimVisitor() {
             @Override
-            public void visitReference(String conceptName, Set<SemanticType> type,
-                                       KimConcept validParent) {
+            public void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent) {
                 Concept cn = resolveConcept(conceptName);
-                if (cn != null && Sets.intersection(type, org.integratedmodelling.common.utils.Utils.Collections.asSet(types)).size() == types.size()) {
+                if (cn != null && Sets.intersection(type,
+                        org.integratedmodelling.common.utils.Utils.Collections.asSet(types)).size() == types.size()) {
                     ret.add(cn);
                 }
             }
@@ -2544,9 +2499,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 case WITH -> {
                     ret = ret.with(op.getConcepts().get(0));
                 }
-//                case WITHIN -> {
-//                    ret = ret.within(op.getConcepts().get(0));
-//                }
+                //                case WITHIN -> {
+                //                    ret = ret.within(op.getConcepts().get(0));
+                //                }
                 case GOAL -> {
                     ret = ret.withGoal(op.getConcepts().get(0));
                 }
@@ -2640,8 +2595,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 case AS_DESCRIPTION_TYPE -> {
                     ret = ret.as(op.getDescriptionType());
                 }
-                default -> throw new KlabUnimplementedException("ReasonerService::defineBuilder: unhandled " +
-                        "operation " + op.getType());
+                default ->
+                        throw new KlabUnimplementedException("ReasonerService::defineBuilder: unhandled " + "operation " + op.getType());
             }
         }
         return ret;

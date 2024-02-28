@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.application;
+package org.integratedmodelling.klab.services;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
