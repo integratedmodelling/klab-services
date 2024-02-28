@@ -28,6 +28,9 @@ import org.springframework.context.ConfigurableApplicationContext;
  * Once a {@link ServiceInstance} has been booted, the {@link KlabService} can be used through its API. The
  * {@link ServiceInstance} does not provide network controllers, which can be provided by wrapping the Service
  * within a properly configured ServiceApplication.
+ * <p>
+ * The service scope is produced using a k.LAB user certificate. If that isn't available, the service will
+ * operate in anonymous mode and only use local services.
  *
  * @author ferdinando.villa
  */
@@ -84,8 +87,8 @@ public abstract class ServiceInstance<T extends BaseService> {
      * @return
      */
     protected KlabService createDefaultService(KlabService.Type serviceType, long timeUnavailable) {
-        URL localServiceUrl = serviceType.localServiceUrl();
-        if (Utils.Network.isAlive(localServiceUrl.toString())) {
+        var localServiceUrl = serviceType.localServiceUrl();
+        if (Utils.Network.isAlive(localServiceUrl)) {
             return switch (serviceType) {
                 case REASONER -> new ReasonerClient(localServiceUrl);
                 case RESOURCES -> new ResourcesClient(localServiceUrl);

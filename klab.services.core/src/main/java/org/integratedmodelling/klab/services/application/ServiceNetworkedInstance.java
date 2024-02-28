@@ -41,22 +41,26 @@ import java.util.Map;
 import java.util.stream.StreamSupport;
 
 /**
- * Abstract wrapper for a {@link org.integratedmodelling.klab.api.services.KlabService} that is provided
- * online through Spring controllers. The base packages scanned below should be ALSO present in the final
- * derived class, which should add its own. That way all services can use the same security model and present
- * the same common API.
+ * Abstract wrapper for a {@link org.integratedmodelling.klab.api.services.KlabService} that is served as an
+ * online service through REST endpoints handled by Spring controllers. The base packages scanned below should
+ * be ALSO present in the final derived class, which should add its own. That way all services can use the
+ * same security model and present the same common API.
+ * <p>
+ * The {@link org.integratedmodelling.klab.api.scope.ServiceScope} is produced using a service certificate
+ * located in the configured service dataspace. If that isn't available, the service will use the strategy
+ * from the superclass and will only be available within the local network if the user is authenticated, or
+ * the local machine if anonymous.
  */
 @Component
 @EnableAutoConfiguration
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security", "org" +
         ".integratedmodelling.klab.services.application.controllers"})
-public abstract class ServiceInstanceApplication<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer {
+public abstract class ServiceNetworkedInstance<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer {
 
-    private ServiceInstance serviceInstance;
     private long bootTime;
     private ConfigurableApplicationContext context;
 
-    public ServiceInstanceApplication(T service) {
+    public ServiceNetworkedInstance(T service) {
         super(service);
     }
 
@@ -122,7 +126,7 @@ public abstract class ServiceInstanceApplication<T extends BaseService> extends 
 
             bootTime = System.currentTimeMillis();
 
-            SpringApplication app = new SpringApplication(ServiceInstanceApplication.class);
+            SpringApplication app = new SpringApplication(ServiceNetworkedInstance.class);
             this.context = app.run(startupOptions.getArguments());
             Environment environment = this.context.getEnvironment();
             setPropertiesFromEnvironment(environment);
@@ -133,7 +137,7 @@ public abstract class ServiceInstanceApplication<T extends BaseService> extends 
             props.put("server.servlet.contextPath", startupOptions);
             app.setDefaultProperties(props);
             System.out.println("\n" + Branding.NODE_BANNER);
-            System.out.println("\nStartup successful: " + "k.LAB service " + serviceInstance.klabService().getLocalName() + " " + "v" + Version.CURRENT + " on " + new Date());
+            System.out.println("\nStartup successful: " + "k.LAB service " + klabService().getLocalName() + " " + "v" + Version.CURRENT + " on " + new Date());
 
             // TODO call initialize in a thread; inform the application
 
@@ -150,7 +154,7 @@ public abstract class ServiceInstanceApplication<T extends BaseService> extends 
     private boolean boot() {
         try {
 
-            SpringApplication app = new SpringApplication(ServiceInstanceApplication.class);
+            SpringApplication app = new SpringApplication(ServiceNetworkedInstance.class);
             this.context = app.run();
             Environment environment = this.context.getEnvironment();
             String certString = environment.getProperty("klab.certificate");
@@ -159,8 +163,8 @@ public abstract class ServiceInstanceApplication<T extends BaseService> extends 
             //            this.owner = JWTAuthenticationManager.INSTANCE.authenticateService(certificate,
             //                    new ServiceStartupOptions());
             System.out.println("\n" + Branding.NODE_BANNER);
-            System.out.println("\nStartup successful: " + "k.LAB node server" + " v" + Version.CURRENT + " " +
-                    "on " + new Date());
+            System.out.println("\nStartup successful: " + "k.LAB node server" + " v" + Version.CURRENT + " "
+                    + "on " + new Date());
 
         } catch (Throwable e) {
             Logging.INSTANCE.error(e);

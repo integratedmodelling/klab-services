@@ -13,31 +13,54 @@ import org.integratedmodelling.klab.api.services.KlabService;
  */
 public interface ServiceScope extends Scope {
 
+    enum Locality {
+
+        /**
+         * Service is not REST-enabled and runs as an application in the same JVM, only to be used by code
+         * that owns the pointer to the {@link KlabService}.
+         */
+        EMBEDDED,
+        /**
+         * Service runs on a machine as a REST-enabled application and will only accept requests from clients
+         * that use a service secret, available only on the shared filesystem, with their authorization
+         * token.
+         */
+        SAME_HARDWARE,
+
+        /**
+         * Service is a REST application that can serve clients located on the local network only.
+         */
+        LAN,
+        /**
+         * Service is a REST application that has been authorized by a k.LAB hub and is available for
+         * authorized k.LAB users from remote clients.
+         */
+        WAN
+    }
+
     /**
-     * Local means there is no URL or no external connections are allowed, and the consequences of
-     * administering the service do not affect anything but the local enviroment.
+     * Locality reflects which clients can use the service.
      *
      * @return
      */
-    boolean isLocal();
+    Locality getLocality();
 
     /**
-     * Return the service running in this scope. The service should not be part of the set of services
-     * returned by the superclass methods.
+     * Availability is a long-term status: if this returns false, the service should not be used and any
+     * endpoints should redirect to a maintenance mode response.
      *
      * @return
      */
-    KlabService getService();
+    boolean isAvailable();
 
     /**
-     * Exclusive means that this is not a federated service or it is operating in non-federated mode, only
-     * accessing content that is available locally. Normally this state results from forking a public service
-     * before making destructive changes to the knowledge it handles.
+     * Busy is a temporary status that can always happen. If this returns true before serving a request, the
+     * service should wait until this status changes or a reasonable timeout expires. If the service becomes
+     * not busy, the request should be served normally; if a timeout happens, the response should be the same
+     * as when {@link #isAvailable()} returns false.
      *
      * @return
      */
-    boolean isExclusive();
-
-    boolean isDedicated();
+    boolean isBusy();
 
 }
