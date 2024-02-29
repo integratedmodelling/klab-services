@@ -37,11 +37,6 @@ public abstract class ClientScope implements UserScope {
 	protected Scope parentScope;
 	private Status status = Status.STARTED;
 
-	@Override
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
 	}
@@ -280,14 +275,6 @@ public abstract class ClientScope implements UserScope {
 	@Override
 	public void setData(String key, Object value) {
 		this.data.put(key, value);
-	}
-
-	@Override
-	public void stop() {
-//		agent.tell(ReActorStop.STOP);
-		this.data.clear();
-		this.agent = null;
-		setStatus(Status.EMPTY);
 	}
 
 	@Override

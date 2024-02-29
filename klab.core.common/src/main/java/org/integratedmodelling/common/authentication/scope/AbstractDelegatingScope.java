@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.authentication.scope;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -15,14 +16,16 @@ import java.util.function.Consumer;
  * An abstract scope delegating all communication to an externally supplied Channel. Provides the basic API to
  * set and retrieve services according to the context of usage.
  */
-public class AbstractDelegatingScope implements Scope {
+public abstract class AbstractDelegatingScope implements Scope {
 
     Channel delegateChannel;
+    Parameters<String> data = Parameters.create();
+    Status status = Status.EMPTY;
 
     /**
      * Holders of "other" services for the ServiceScope
      */
-    Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
+    private Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
 
     Set<Resolver> availableResolvers = new HashSet<>();
     Set<RuntimeService> availableRuntimeServices = new HashSet<>();
@@ -34,13 +37,8 @@ public class AbstractDelegatingScope implements Scope {
     }
 
     @Override
-    public String getId() {
-        return null;
-    }
-
-    @Override
     public Parameters<String> getData() {
-        return null;
+        return data;
     }
 
     @Override
@@ -49,33 +47,13 @@ public class AbstractDelegatingScope implements Scope {
     }
 
     @Override
-    public <T extends KlabService> T getService(Class<T> serviceClass) {
-        return null;
-    }
-
-    @Override
-    public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        return null;
-    }
-
-    @Override
     public Status getStatus() {
-        return null;
+        return this.status;
     }
 
     @Override
     public void setStatus(Status status) {
-
-    }
-
-    @Override
-    public void setData(String key, Object value) {
-
-    }
-
-    @Override
-    public void stop() {
-
+        this.status = status;
     }
 
     @Override
@@ -128,4 +106,30 @@ public class AbstractDelegatingScope implements Scope {
         return delegateChannel.hasErrors();
     }
 
+    @Override
+    public <T extends KlabService> T getService(Class<T> serviceClass) {
+        return (T) currentServices.get(KlabService.Type.classify(serviceClass));
+    }
+
+    @Override
+    public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+        return switch (KlabService.Type.classify(serviceClass)) {
+            case REASONER -> (Collection<T>) availableReasoners;
+            case RESOURCES -> (Collection<T>) availableResourcesServices;
+            case RESOLVER -> (Collection<T>) availableResolvers;
+            case RUNTIME -> (Collection<T>) availableRuntimeServices;
+            case COMMUNITY -> {
+                var cs = getService(serviceClass);
+                yield cs == null ? Collections.emptyList() : (Collection<T>) List.of(cs);
+            }
+            case ENGINE -> Collections.emptyList();
+            case LEGACY_NODE ->
+                    throw new KlabIllegalArgumentException("Cannot ask a scope for a legacy service ");
+        };
+    }
+
+    @Override
+    public void setData(String key, Object value) {
+        this.data.put(key, value);
+    }
 }

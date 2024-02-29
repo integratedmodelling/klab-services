@@ -49,11 +49,6 @@ public abstract class EngineScope implements UserScope {
 	protected EngineScope parentScope;
 	private Status status = Status.STARTED;
 
-	@Override
-	public String getId() {
-		return id;
-	}
-
 	public void setId(String id) {
 		this.id = id;
 	}
@@ -292,7 +287,7 @@ public abstract class EngineScope implements UserScope {
 		this.data.put(key, value);
 	}
 
-	@Override
+//	@Override
 	public void stop() {
 		agent.tell(ReActorStop.STOP);
 		this.data.clear();

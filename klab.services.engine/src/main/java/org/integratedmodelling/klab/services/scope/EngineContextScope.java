@@ -41,7 +41,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     EngineContextScope(EngineSessionScope parent) {
         super(parent);
-        this.setId(parent.getId() + "/c_" + org.integratedmodelling.klab.api.utils.Utils.Names.shortUUID());
+        this.setId(parent.getIdentity().getId() + "/c_" + org.integratedmodelling.klab.api.utils.Utils.Names.shortUUID());
         this.observer = parent.getUser();
         this.data = Parameters.create();
         this.data.putAll(parent.data);

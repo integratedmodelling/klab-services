@@ -142,10 +142,10 @@ public class RuntimeService extends BaseService
     }
 
     private DigitalTwin getDigitalTwin(ContextScope scope) {
-        DigitalTwin ret = digitalTwins.get(scope.getId());
+        DigitalTwin ret = digitalTwins.get(scope.getIdentity().getId());
         if (ret == null) {
             ret = new DigitalTwin(scope);
-            digitalTwins.put(scope.getId(), ret);
+            digitalTwins.put(scope.getIdentity().getId(), ret);
         }
         return ret;
     }
@@ -174,7 +174,7 @@ public class RuntimeService extends BaseService
 
     @Override
     public boolean releaseScope(ContextScope scope) {
-        var dt = this.digitalTwins.remove(scope.getId());
+        var dt = this.digitalTwins.remove(scope.getIdentity().getId());
         if (dt != null) {
             try {
                 dt.close();

@@ -25,7 +25,7 @@ public class EngineSessionScope extends EngineScope implements SessionScope {
 
 	EngineSessionScope(EngineScope parent) {
 		super(parent);
-		this.setId(parent.getId() + "/s_" + name + Utils.Names.shortUUID());
+		this.setId(parent.getIdentity().getId() + "/s_" + name + Utils.Names.shortUUID());
 		this.data = Parameters.create();
 		this.data.putAll(parent.data);
 	}

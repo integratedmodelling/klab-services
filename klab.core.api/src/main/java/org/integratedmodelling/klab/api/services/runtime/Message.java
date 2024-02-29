@@ -394,8 +394,8 @@ public interface Message extends Serializable {
         //        /**
         //         * Test lifecycle B -> F
         //         */
-//        TestRunStarted,
-//        TestRunFinished,
+        //        TestRunStarted,
+        //        TestRunFinished,
         TestCaseStarted(TestStatistics.class),
         TestCaseFinished(TestStatistics.class),
         TestStarted(ActionStatistics.class),
@@ -533,7 +533,7 @@ public interface Message extends Serializable {
     <T> T getPayload(Class<? extends T> cls);
 
     public static MessageImpl create(Scope scope, Object... o) {
-        return create(scope.getId(), o);
+        return create(scope.getIdentity().getId(), o);
     }
 
     /**

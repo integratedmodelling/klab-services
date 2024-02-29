@@ -8,6 +8,7 @@ import java.util.*;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -18,25 +19,29 @@ import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
- * This class is a wrapper for a {@link KlabService} that provides it with a ServiceScope and creates it for
- * embedded use. The default ServiceScope enables the service for local mode only, becoming available only if
- * all of the other needed services, if any, are also available locally. If embedded, non-REST versions of
- * these services are desired, they can be created or provided from a custom scope by overriding
- * {@link #createDefaultService(KlabService.Type, long)}, which in its default implementation will create
- * clients for either configured or embedded services whose URLs can be discovered.
+ * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
+ * {@link ServiceScope} to run under. The default service scope is produced using a k.LAB user certificate, so
+ * it's a promoted user scope that can only run a local service (along with other services that may come from
+ * the network). If the user certificate isn't available, the service will operate in anonymous mode and only
+ * clients for local services can fulfill its service dependencies.
  * <p>
- * Once a {@link ServiceInstance} has been booted, the {@link KlabService} can be used through its API. The
- * {@link ServiceInstance} does not provide network controllers, which can be provided by wrapping the Service
- * within a properly configured ServiceApplication.
+ * If embedded, non-REST versions of the services are desired, they can be created or provided from a custom
+ * scope by overriding {@link #createDefaultService(KlabService.Type, long)}, which in its default
+ * implementation will create clients for either configured or embedded services whose URLs can be discovered.
+ * If services are missing, the wrapped service will not be available.
  * <p>
- * The service scope is produced using a k.LAB user certificate. If that isn't available, the service will
- * operate in anonymous mode and only use local services.
+ * Once a {@link ServiceInstance} has successfully booted, the wrapped {@link KlabService} can be used through
+ * its API and is available through {@link #klabService()}. The {@link ServiceInstance} does not provide
+ * network controllers, which can be provided through the outer wrapper
+ * {@link org.integratedmodelling.klab.services.application.ServiceNetworkedInstance} after defining the
+ * controllers using Spring.
+ * <p>
  *
  * @author ferdinando.villa
  */
 public abstract class ServiceInstance<T extends BaseService> {
 
-    private StartupOptions startupOptions;
+    private ServiceStartupOptions startupOptions;
     private ConfigurableApplicationContext context;
     private T service;
 
@@ -51,10 +56,6 @@ public abstract class ServiceInstance<T extends BaseService> {
     Set<Reasoner> availableReasoners = new HashSet<>();
 
     private long bootTime;
-
-    public ServiceInstance(T service) {
-        this.service = service;
-    }
 
     /**
      * Return the type of any <em>other</em> services required for this service to be online. For each of
@@ -102,9 +103,23 @@ public abstract class ServiceInstance<T extends BaseService> {
         return null;
     }
 
-    public ServiceInstance(T service, StartupOptions options) {
-        this(service);
+    public ServiceInstance(ServiceStartupOptions options) {
         this.startupOptions = options;
+        this.service = createPrimaryService(createServiceScope());
+
+    }
+
+    /**
+     * Create the service scope that implements the authentication, messaging and service access strategy.
+     * @return
+     */
+    protected ServiceScope createServiceScope() {
+        var identity = authenticate();
+        return null;
+    }
+
+    protected Identity authenticate() {
+        return null;
     }
 
     public void run(String[] args) {

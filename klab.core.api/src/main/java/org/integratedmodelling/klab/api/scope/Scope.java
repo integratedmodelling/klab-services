@@ -52,27 +52,6 @@ public abstract interface Scope extends Channel {
         CONTEXT // context, on which observe() can be called
     }
 
-    /**
-     * The ID is unique in each scope and serves as an authorization token for any network calls. In a
-     * UserScope it may coincide with {@link Identity#getId()}, but we no longer require contexts,
-     * applications and tasks to be identities so the scope's ID should be used instead.
-     * <p>
-     * The ID must contain enough information for the receiving end to reconstruct a peer of the scope
-     * hierarchy. For this reason all "child" scopes (i.e. any scope except {@link UserScope}) must use the
-     * same conventions in creating the ID, which must consist of a forward slash-separated path from the
-     * parent to self. The forward slash cannot be used as part of each individual ID.
-     * <p>
-     * A suggested structure for the ID starts at the ServiceId and contains up to the ActorID when scopes are
-     * specific to an actor. The maximal overall scheme should be
-     *
-     * <code>ServiceId.UserId.SessionId.ContextID.ActorID</code>
-     * <p>
-     * and the "level" of the scope should be deducible from the ID based on the number of elements in the ID
-     * path.
-     *
-     * @return
-     */
-    String getId();
 
     /**
      * Each scope can carry arbitrary data linked to it.
@@ -140,10 +119,4 @@ public abstract interface Scope extends Channel {
      */
     void setData(String key, Object value);
 
-    /**
-     * Stopping the scope leaves it in an unusable state and has different side effects depending on the
-     * specific scope type. User scopes will logout the user, script scopes will stop any running scripts. All
-     * of them should release any resources and temporary storage as well as stopping all their child scopes.
-     */
-    void stop();
 }

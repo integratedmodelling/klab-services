@@ -198,7 +198,7 @@ public class WebsocketsClientMessageBus extends StompSessionHandlerAdapter imple
                     });
 
             subscriptions.put(scope, subscription);
-            receivers.put(scope.getId(), ret);
+            receivers.put(scope.getIdentity().getId(), ret);
         }
         ret.add(scope);
     }

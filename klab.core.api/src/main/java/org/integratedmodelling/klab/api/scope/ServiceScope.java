@@ -6,8 +6,9 @@ import org.integratedmodelling.klab.api.services.KlabService;
  * A service scope is obtained upon authentication of a service. It is a top-level scope akin to a UserScope
  * for the partner identity running a service. All operations in a service should have access to the scope.
  * <p>
- * TODO check if the maintenance and available flags are best put in the service scope than in the
- *  services themselves.
+ * A ServiceScope is not expected to have children; a service's implementation <em>may</em> choose to make
+ * {@link UserScope}s for its maintained users depend on it, which is entirely optional as long as the service
+ * scope is accessible from the context.
  *
  * @author ferd
  */
@@ -25,7 +26,7 @@ public interface ServiceScope extends Scope {
          * that use a service secret, available only on the shared filesystem, with their authorization
          * token.
          */
-        SAME_HARDWARE,
+        LOCALHOST,
 
         /**
          * Service is a REST application that can serve clients located on the local network only.

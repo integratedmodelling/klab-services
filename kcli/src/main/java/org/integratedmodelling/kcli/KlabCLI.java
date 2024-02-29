@@ -297,7 +297,7 @@ public class KlabCLI {
                     Set<SessionScope> removed = new HashSet<>();
                     for (SessionScope s : parent.running) {
                         if (s.getStatus() != Status.STARTED && s.getStatus() != Status.WAITING) {
-                            s.stop();
+//                            s.stop();
                             removed.add(s);
                         }
                     }
@@ -306,7 +306,7 @@ public class KlabCLI {
                     java.util.List<SessionScope> scopes = new ArrayList<>(parent.running);
                     for (int appId : appIds) {
                         SessionScope s = scopes.get(appId + 1);
-                        s.stop();
+//                        s.stop();
                         parent.running.remove(s);
                     }
                 }

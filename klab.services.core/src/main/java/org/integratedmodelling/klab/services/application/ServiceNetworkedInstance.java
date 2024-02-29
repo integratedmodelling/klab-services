@@ -60,8 +60,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     private long bootTime;
     private ConfigurableApplicationContext context;
 
-    public ServiceNetworkedInstance(T service) {
-        super(service);
+    public ServiceNetworkedInstance(ServiceStartupOptions options) {
+        super(options);
     }
 
     //    private AtomicBoolean maintenanceMode = new AtomicBoolean(false);

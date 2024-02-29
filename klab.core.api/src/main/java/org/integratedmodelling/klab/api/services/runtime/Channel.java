@@ -39,6 +39,14 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  */
 public interface Channel {
 
+    /**
+     * All channels (and their children, the {@link org.integratedmodelling.klab.api.scope.Scope}s) are owned
+     * by an Identity, which gives access to parent identities through its methods. In remote scopes, the
+     * access token associated with request must allow maintenance of the identity hierarchy representing the
+     * identity and its permissions in the requesting scope.
+     *
+     * @return
+     */
     Identity getIdentity();
 
     /**
