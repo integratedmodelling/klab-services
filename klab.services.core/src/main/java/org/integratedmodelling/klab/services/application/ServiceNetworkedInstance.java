@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.services.application;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
@@ -10,6 +12,8 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -115,6 +119,9 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         }
     }
 
+    protected Channel createChannel(UserIdentity identity) {
+        return new MessagingChannelImpl(null /* TODO websockets server-side message bus */);
+    }
     /**
      * The initialize() method of the service should be called in a thread and wait for the configured
      * services needed, setting the available flag as soon as boot is complete.

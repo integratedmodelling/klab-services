@@ -5,12 +5,22 @@ import java.net.URI;
 import java.net.URL;
 import java.util.*;
 
+import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.messaging.WebsocketsClientMessageBus;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.services.resolver.ResolverClient;
@@ -114,12 +124,22 @@ public abstract class ServiceInstance<T extends BaseService> {
      * @return
      */
     protected ServiceScope createServiceScope() {
-        var identity = authenticate();
-        return null;
+        var identity =  Authentication.INSTANCE.authenticate();
+        return new AbstractServiceDelegatingScope(createChannel(identity.getFirst())) {
+            @Override
+            public Locality getLocality() {
+                return Locality.EMBEDDED;
+            }
+
+            @Override
+            public boolean isAvailable() {
+                return true;
+            }
+        };
     }
 
-    protected Identity authenticate() {
-        return null;
+    protected Channel createChannel(UserIdentity identity) {
+        return new ChannelImpl();
     }
 
     public void run(String[] args) {

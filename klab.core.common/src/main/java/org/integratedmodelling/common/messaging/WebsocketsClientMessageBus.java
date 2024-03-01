@@ -1,4 +1,4 @@
-package org.integratedmodelling.engine.client.messaging;
+package org.integratedmodelling.common.messaging;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;

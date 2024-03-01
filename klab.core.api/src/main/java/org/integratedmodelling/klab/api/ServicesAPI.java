@@ -3,11 +3,20 @@ package org.integratedmodelling.klab.api;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 
+/**
+ * TODO add accepted http requests and payload types for both input (POST) and output
+ */
 public interface ServicesAPI {
 
 	public static final String API_BASE = "/api/v2";
 
 	public static String CAPABILITIES = "/capabilities";
+
+	/**
+	 * STOMP endpoint for client/server notifications to session receivers. Handled through
+	 * Websockets protocol.
+	 */
+	public static final String MESSAGE = "/message";
 
 	public interface HUB {
 		/**

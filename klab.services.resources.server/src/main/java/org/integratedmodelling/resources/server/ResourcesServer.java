@@ -2,14 +2,21 @@ package org.integratedmodelling.resources.server;
 
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 
+@Component
+@EnableAutoConfiguration
+@ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
+                               "org.integratedmodelling.klab.services.application.controllers",
+                                "org.integratedmodelling.resources.server.controllers"})
 public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider> {
 
     public ResourcesServer(ServiceStartupOptions startupOptions) {
@@ -32,12 +39,4 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
     //        ()), St)
     //        application.run(, args);
     //    }
-
-    private static String getDefaultListeners() {
-        return null;
-    }
-
-    private static ServiceScope getServiceScope() {
-        return null;
-    }
 }

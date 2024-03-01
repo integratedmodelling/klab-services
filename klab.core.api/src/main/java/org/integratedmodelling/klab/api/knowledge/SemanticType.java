@@ -369,7 +369,8 @@ public enum SemanticType {
 
     public static final EnumSet<SemanticType> MODELABLE_TYPES = EnumSet.of(SemanticType.QUALITY,
             SemanticType.SUBJECT, SemanticType.AGENT, SemanticType.EVENT, SemanticType.CONFIGURATION,
-            SemanticType.RELATIONSHIP, SemanticType.PROCESS, SemanticType.TRAIT, SemanticType.ROLE);
+            SemanticType.RELATIONSHIP, SemanticType.PROCESS, SemanticType.TRAIT, SemanticType.ROLE,
+            SemanticType.DOMAIN);
 
     /**
      * These need to be represented in the root domain of the ontology using core derivations. They are all
@@ -382,7 +383,7 @@ public enum SemanticType {
             SemanticType.LENGTH, SemanticType.MASS, SemanticType.VOLUME, SemanticType.WEIGHT,
             SemanticType.MONEY, SemanticType.DURATION, SemanticType.AREA, SemanticType.ACCELERATION,
             SemanticType.PRIORITY, SemanticType.ELECTRIC_POTENTIAL, SemanticType.CHARGE,
-            SemanticType.IDENTITY,
+            SemanticType.IDENTITY, SemanticType.DOMAIN,
             SemanticType.RESISTANCE, SemanticType.RESISTIVITY, SemanticType.PRESSURE, SemanticType.ANGLE,
             SemanticType.VELOCITY, SemanticType.TEMPERATURE, SemanticType.VISCOSITY, SemanticType.RATIO,
             SemanticType.AMOUNT, SemanticType.SUBJECT, SemanticType.AGENT, SemanticType.EVENT,
@@ -514,6 +515,7 @@ public enum SemanticType {
     static final Color CONCEPT_COLOR_TRAIT = new Color(0, 102, 204);
     static final Color CONCEPT_COLOR_ROLE = new Color(0, 86, 163);
     static final Color CONCEPT_COLOR_EXTENT = new Color(0, 153, 153);
+    static final Color CONCEPT_COLOR_DOMAIN = new Color(220, 220, 103);
 
     /**
      * Source of truth for the UI color corresponding to different semantic categories.
@@ -529,6 +531,7 @@ public enum SemanticType {
             ret = switch (fundamental.iterator().next()) {
                 case SUBJECT, AGENT -> CONCEPT_COLOR_SUBJECT;
                 case EVENT -> CONCEPT_COLOR_EVENT;
+                case DOMAIN -> CONCEPT_COLOR_DOMAIN;
                 case RELATIONSHIP -> CONCEPT_COLOR_RELATIONSHIP;
                 case PROCESS -> CONCEPT_COLOR_PROCESS;
                 case QUALITY -> CONCEPT_COLOR_QUALITY;
