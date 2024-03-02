@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
 import java.io.Serializable;
+import java.util.function.Consumer;
 
 /**
  * Messages exchanged between the engine and its clients.
@@ -491,6 +492,16 @@ public interface Message extends Serializable {
     long getId();
 
     /**
+     * Return this or a new message with the response ID set to that of the passed message, so that the call
+     * chain can be reconstructed across network boundaries. This is used to enable the
+     * {@link Channel#post(Consumer, Object...)} call.
+     *
+     * @param message
+     * @return
+     */
+    Message respondingTo(Message message);
+
+    /**
      * The message exposes the identity that created it through a token, which may or may not be parseable at
      * the receiving end but will be consistently linked to the message type. For example, task messages will
      * have the identity of the task that generated them so they can be correctly distributed among tasks.
@@ -518,13 +529,6 @@ public interface Message extends Serializable {
     long getTimestamp();
 
     /**
-     * Get the payload of the message, whatever it is.
-     *
-     * @return the payload or null.
-     */
-    Object getPayload();
-
-    /**
      * Get the payload of the message, ensuring it is of type T.
      *
      * @param cls
@@ -532,12 +536,16 @@ public interface Message extends Serializable {
      */
     <T> T getPayload(Class<? extends T> cls);
 
-    public static MessageImpl create(Scope scope, Object... o) {
+    public static MessageImpl create(Channel scope, Object... o) {
         return create(scope.getIdentity().getId(), o);
     }
 
     /**
      * Build a message by arranging all the arguments appropriately. Only one payload object can be passed.
+     * <p>
+     * TODO if we are passing a Message and it's not the only parameter, we should add its ID as the one
+     *  we're responding to. If it's the only parameter, copy the message.
+     * TODO validate the message type according to the class and the object payload according to the types
      *
      * @param identity
      * @param o

@@ -22,8 +22,8 @@ import java.util.function.BiConsumer;
 /**
  * Base class for service implementations. A BaseService implements all the {@link KlabService} functions but
  * does not create the {@link ServiceScope} it runs within, which is supplied from the outside. can be wrapped
- * within a {@link org.integratedmodelling.klab.services.application.Service} to provide a
- * {@link ServiceScope} and become usable.
+ * within a {@link org.integratedmodelling.klab.services.ServiceInstance} to provide a {@link ServiceScope}
+ * and become usable.
  */
 public abstract class BaseService implements KlabService {
 
@@ -142,7 +142,7 @@ public abstract class BaseService implements KlabService {
     protected ServiceScope scope;
     protected String localName = "Embedded";
 
-    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
+//    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
     protected BaseService(ServiceScope scope, KlabService.Type serviceType) {
         this.scope = scope;
@@ -164,14 +164,14 @@ public abstract class BaseService implements KlabService {
             throw new KlabIOException(e);
         }
     }
-
-    public void addEventListener(BiConsumer<Scope, Message> listener) {
-        this.eventListeners.add(listener);
-    }
-
-    public List<BiConsumer<Scope, Message>> getEventListeners() {
-        return this.eventListeners;
-    }
+//
+//    public void addEventListener(BiConsumer<Scope, Message> listener) {
+//        this.eventListeners.add(listener);
+//    }
+//
+//    public List<BiConsumer<Scope, Message>> getEventListeners() {
+//        return this.eventListeners;
+//    }
 
     /**
      * The service secret is a legitimate API key for the service, only known to clients that can read it
@@ -208,13 +208,13 @@ public abstract class BaseService implements KlabService {
 
     public abstract void initializeService();
 
-    protected void notify(Scope scope, Object... objects) {
-        if (!eventListeners.isEmpty()) {
-            for (var listener : eventListeners) {
-                listener.accept(scope, Message.create(scope, objects));
-            }
-        }
-    }
+//    protected void notify(Scope scope, Object... objects) {
+//        if (!eventListeners.isEmpty()) {
+//            for (var listener : eventListeners) {
+//                listener.accept(scope, Message.create(scope, objects));
+//            }
+//        }
+//    }
 
     @Override
     public boolean isAvailable() {

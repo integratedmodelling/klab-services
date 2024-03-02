@@ -4,6 +4,10 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
@@ -17,9 +21,11 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
@@ -51,14 +57,18 @@ import org.springframework.context.ConfigurableApplicationContext;
  */
 public abstract class ServiceInstance<T extends BaseService> {
 
-    private ServiceStartupOptions startupOptions;
+    protected ServiceStartupOptions startupOptions;
     private ConfigurableApplicationContext context;
     private T service;
 
+    private AbstractServiceDelegatingScope serviceScope;
     /**
      * Holders of "other" services for the ServiceScope
      */
     Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
+
+    ExecutorService servicesThreadPool = Executors.newFixedThreadPool(4);
+    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     Set<Resolver> availableResolvers = new HashSet<>();
     Set<RuntimeService> availableRuntimeServices = new HashSet<>();
@@ -116,16 +126,16 @@ public abstract class ServiceInstance<T extends BaseService> {
     public ServiceInstance(ServiceStartupOptions options) {
         this.startupOptions = options;
         this.service = createPrimaryService(createServiceScope());
-
     }
 
     /**
      * Create the service scope that implements the authentication, messaging and service access strategy.
+     *
      * @return
      */
     protected ServiceScope createServiceScope() {
-        var identity =  Authentication.INSTANCE.authenticate();
-        return new AbstractServiceDelegatingScope(createChannel(identity.getFirst())) {
+        var identity = Authentication.INSTANCE.authenticate();
+        return new AbstractServiceDelegatingScope(new ChannelImpl(identity.getFirst())) {
             @Override
             public Locality getLocality() {
                 return Locality.EMBEDDED;
@@ -138,17 +148,80 @@ public abstract class ServiceInstance<T extends BaseService> {
         };
     }
 
-    protected Channel createChannel(UserIdentity identity) {
-        return new ChannelImpl();
+    public void start() {
+
+        serviceScope.setStatus(Scope.Status.STARTED);
+        serviceScope.setMaintenanceMode(true);
+
+        var essentialServices = getEssentialServices();
+        if (essentialServices.size() > 0) {
+            for (var serviceType : getEssentialServices()) {
+
+                var service = this.createDefaultService(serviceType, 0);
+                if (service != null) {
+
+                }
+                if (!service.isOnline()) {
+                    // save record for timed task to re-check
+                }
+            }
+        }
+
+        scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
+
+
     }
 
-    public void run(String[] args) {
-        ServiceStartupOptions options = new ServiceStartupOptions();
-        options.initialize(args);
+    private void timedTasks() {
+
+        /*
+        check all needed services; put self offline if not available or not there, online otherwise; if
+        there's a
+        change in online status, report it through the service scope
+         */
+        boolean ok = true;
+
+        for (var serviceType : getEssentialServices()) {
+            var service = currentServices.get(serviceType);
+            if (service == null || !service.isOnline()) {
+                ok = false;
+                break;
+            }
+        }
+
+        if (serviceScope.isAvailable() && !ok) {
+            serviceScope.setMaintenanceMode(true);
+        }
+
+        /*
+        check and reassign server status; if any changes, report status
+         */
+
+        /*
+        if status is OK and the service hasn't been initialized, set maintenance mode and call
+        initializeService().
+         */
+
+        /*
+        if subscribed and configured interval has passed, send service health status through the scope
+         */
     }
 
 
     public void stop() {
+
+        /*
+        if WE have started the embedded other services, stop them, otherwise let them run
+         */
+
+        /*
+        call shutdown()
+         */
+
+        /*
+        send notifications
+         */
+
         // // shutdown all components
         // if (this.sessionClosingTask != null) {
         // this.sessionClosingTask.cancel(true);
@@ -204,5 +277,10 @@ public abstract class ServiceInstance<T extends BaseService> {
         return bootTime;
     }
 
+    public static void run(String[] args) {
+        ServiceStartupOptions options = new ServiceStartupOptions();
+        options.initialize(args);
+
+    }
 
 }

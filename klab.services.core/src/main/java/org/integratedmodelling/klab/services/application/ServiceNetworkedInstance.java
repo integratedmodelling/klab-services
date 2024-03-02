@@ -79,7 +79,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     //    }
 
 
-    public void start(ServiceStartupOptions startupOptions) {
+    public void start() {
 
         if (!startupOptions.isCloudConfig()) {
 
@@ -221,7 +221,11 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                                      Object handler) throws Exception {
-                // response.sendRedirect(maintenanceMapping); return false;
+                if (!klabService().isOnline()) {
+                    // response.sendRedirect(maintenanceMapping); return false;
+                } else if (!klabService().isAvailable()) {
+                    // TODO wait a configurable interval; if it's still not available, redirect, otherwise
+                }
                 return HandlerInterceptor.super.preHandle(request, response, handler);
             }
 

@@ -48,20 +48,23 @@ public interface ServiceScope extends Scope {
 
     /**
      * Availability is a long-term status: if this returns false, the service should not be used and any
-     * endpoints should redirect to a maintenance mode response.
+     * endpoints should redirect to a maintenance mode response. If it returns true, service calls may be
+     * made.
      *
      * @return
      */
     boolean isAvailable();
 
     /**
-     * Busy is a temporary status that can always happen. If this returns true before serving a request, the
-     * service should wait until this status changes or a reasonable timeout expires. If the service becomes
-     * not busy, the request should be served normally; if a timeout happens, the response should be the same
-     * as when {@link #isAvailable()} returns false.
+     * Busy is a temporary status that can always happen and it means that service calls may be made but may
+     * be slower to respond or fail. If this returns true before serving a request, the service should wait
+     * until this status changes or a reasonable timeout expires. If the service becomes not busy, the request
+     * should be served normally; if a timeout happens, the response should be the same as when
+     * {@link #isAvailable()} returns false.
      *
      * @return
      */
     boolean isBusy();
+
 
 }
