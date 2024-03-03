@@ -29,6 +29,10 @@ import org.integratedmodelling.klab.services.runtime.RuntimeClient;
  * the network). If the user certificate isn't available, the service will operate in anonymous mode and only
  * clients for local services can fulfill its service dependencies.
  * <p>
+ * Service initialization only happens after all needed services are available. The instance automatically
+ * waits for them to come online if they're configured in any way. Implementations may call
+ * {@link #waitOnline(int)} to block sensibly until the service is fully initialized and ready to use.
+ * <p>
  * If embedded, non-REST versions of the services are desired, they can be created or provided from a custom
  * scope by overriding {@link #createDefaultService(KlabService.Type, long)}, which in its default
  * implementation will create clients for either configured or embedded services whose URLs can be discovered.

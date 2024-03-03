@@ -19,13 +19,12 @@ import java.util.*;
  * k.LAB component, although they are part of the reasoner services.
  */
 public class ObservationReasoner {
+
     private Reasoner reasoner;
     private Collection<ObservationStrategy> observationStrategies = new ArrayList<>();
-
     public ObservationReasoner(ReasonerService reasonerService) {
         this.reasoner = reasonerService;
     }
-
 
     public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
 

@@ -126,18 +126,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
-//    @Autowired
-//    public ResourcesProvider(Authentication authenticationService, ServiceScope scope, String localName,
-//                             BiConsumer<Scope, Message>... messageListeners) {
-//        this(scope, localName, messageListeners);
-//        this.authenticationService = authenticationService;
-//    }
-
     @Override
     public void initializeService() {
 
         scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities());
+
         this.kbox = ModelKbox.create(localName, this.scope);
         this.workspaceManager.loadWorkspace();
         /*
