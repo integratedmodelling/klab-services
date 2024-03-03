@@ -118,6 +118,11 @@ public class MessageImpl implements Message, Serializable {
 		return id;
 	}
 
+	@Override
+	public Message respondingTo(Message message) {
+		return this;
+	}
+
 	public void setId(long id) {
 		this.id = id;
 	}

@@ -34,6 +34,7 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.InstanceImpl;
 import org.integratedmodelling.klab.knowledge.ModelImpl;
 //import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
@@ -69,8 +70,8 @@ public class ResolverService extends BaseService implements Resolver {
     private String serviceId;
 
     @Autowired
-    public ResolverService(ServiceScope scope) {
-        super(scope, Type.RESOLVER);
+    public ResolverService(ServiceScope scope, ServiceStartupOptions options) {
+        super(scope, Type.RESOLVER, options);
     }
 
     @Override

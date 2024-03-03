@@ -59,26 +59,26 @@ public enum Engine {
         if (Utils.Network.isAlive(KlabService.Type.RESOURCES.localServiceUrl())) {
             engineService.setResources(new ResourcesClient(KlabService.Type.RESOURCES.localServiceUrl()));
         } else {
-            engineService.setResources(new ResourcesProvider(engineService.newServiceScope(ResourcesService.class)));
+//            engineService.setResources(new ResourcesProvider(engineService.newServiceScope(ResourcesService.class)));
         }
 
         if (Utils.Network.isAlive(KlabService.Type.REASONER.localServiceUrl())) {
             engineService.setReasoner(new ReasonerClient(KlabService.Type.REASONER.localServiceUrl()));
         } else {
-            engineService.setReasoner(new ReasonerService(engineService.newServiceScope(Reasoner.class)));
+//            engineService.setReasoner(new ReasonerService(engineService.newServiceScope(Reasoner.class)));
         }
 
         // FIXME mutual dependency between resolver and runtime guarantees screwup
         if (Utils.Network.isAlive(KlabService.Type.RESOLVER.localServiceUrl())) {
             engineService.setResolver(new ResolverClient(KlabService.Type.RESOLVER.localServiceUrl()));
         } else {
-            engineService.setResolver(new ResolverService(engineService.newServiceScope(Resolver.class)));
+//            engineService.setResolver(new ResolverService(engineService.newServiceScope(Resolver.class)));
         }
 
         if (Utils.Network.isAlive(KlabService.Type.RUNTIME.localServiceUrl())) {
             engineService.setRuntime(new RuntimeClient(KlabService.Type.RUNTIME.localServiceUrl()));
         } else {
-            engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(engineService.newServiceScope(RuntimeService.class)));
+//            engineService.setRuntime(new org.integratedmodelling.klab.services.runtime.RuntimeService(engineService.newServiceScope(RuntimeService.class)));
         }
 
         // Boot will initialize all embedded services

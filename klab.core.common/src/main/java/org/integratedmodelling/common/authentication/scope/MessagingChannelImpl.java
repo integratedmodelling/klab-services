@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.authentication.scope;
 
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessageBus;
 
@@ -14,7 +15,8 @@ public class MessagingChannelImpl extends ChannelImpl {
 
     MessageBus messageBus;
 
-    public MessagingChannelImpl(MessageBus messageBus) {
+    public MessagingChannelImpl(Identity identity, MessageBus messageBus) {
+        super(identity);
         this.messageBus = messageBus;
     }
 

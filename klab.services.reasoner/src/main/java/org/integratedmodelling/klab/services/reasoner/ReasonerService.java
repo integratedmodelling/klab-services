@@ -43,6 +43,7 @@ import org.integratedmodelling.klab.knowledge.IntelligentMap;
 import org.integratedmodelling.klab.knowledge.ObservableImpl;
 import org.integratedmodelling.common.logging.Logging;
 //import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration.ProjectConfiguration;
@@ -252,8 +253,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Autowired
-    public ReasonerService(ServiceScope scope) {
-        super(scope, Type.REASONER);
+    public ReasonerService(ServiceScope scope, ServiceStartupOptions options) {
+        super(scope, Type.REASONER, options);
         this.scope = scope;
         this.owl = new OWL(scope);
         this.indexer = new Indexer(scope);

@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -62,6 +63,36 @@ public class ServiceStartupOptions implements StartupOptions {
      * All defaults
      */
     public ServiceStartupOptions() {
+    }
+
+    public static ServiceStartupOptions create(String[] args) {
+        var ret = new ServiceStartupOptions();
+        ret.initialize(args);
+        return ret;
+    }
+
+    /**
+     * Produce startup options with all the defaults for the passed service type.
+     *
+     * @param serviceType
+     * @return
+     */
+    public static ServiceStartupOptions defaultOptions(KlabService.Type serviceType) {
+        var ret = new ServiceStartupOptions();
+        ret.port = serviceType.defaultPort;
+        return ret;
+    }
+
+    /**
+     * Produce startup options with the defaults for a test environment.
+     *
+     * @param serviceType
+     * @return
+     */
+    public static ServiceStartupOptions testOptions(KlabService.Type serviceType) {
+        var ret = new ServiceStartupOptions();
+        ret.port = serviceType.defaultPort;
+        return ret;
     }
 
     public ServiceStartupOptions(String... args) {

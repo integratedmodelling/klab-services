@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
@@ -37,8 +38,8 @@ public class RuntimeService extends BaseService
     // TODO connect to runtime.yaml configuration
     private String serviceId;
 
-    public RuntimeService(ServiceScope scope) {
-        super(scope, Type.RUNTIME);
+    public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
+        super(scope, Type.RUNTIME, options);
     }
 
     @Override

@@ -120,7 +120,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     }
 
     protected Channel createChannel(UserIdentity identity) {
-        return new MessagingChannelImpl(null /* TODO websockets server-side message bus */);
+        return new MessagingChannelImpl(identity, null /* TODO websockets server-side message bus */);
     }
     /**
      * The initialize() method of the service should be called in a thread and wait for the configured

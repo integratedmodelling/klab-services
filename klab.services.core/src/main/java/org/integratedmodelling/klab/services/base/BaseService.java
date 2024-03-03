@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -141,13 +142,15 @@ public abstract class BaseService implements KlabService {
 
     protected ServiceScope scope;
     protected String localName = "Embedded";
+    protected ServiceStartupOptions startupOptions;
 
 //    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
-    protected BaseService(ServiceScope scope, KlabService.Type serviceType) {
+    protected BaseService(ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
         this.scope = scope;
         this.localName = localName;
         this.type = serviceType;
+        this.startupOptions = options;
         createServiceSecret();
     }
 

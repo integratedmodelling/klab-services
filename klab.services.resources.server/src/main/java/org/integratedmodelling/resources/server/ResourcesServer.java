@@ -29,8 +29,8 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
     }
 
     @Override
-    protected ResourcesProvider createPrimaryService(ServiceScope serviceScope) {
-        return new ResourcesProvider(serviceScope);
+    protected ResourcesProvider createPrimaryService(ServiceScope serviceScope, ServiceStartupOptions options) {
+        return new ResourcesProvider(serviceScope, options);
     }
 
     //    public static void main(String[] args) {

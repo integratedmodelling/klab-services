@@ -1,38 +1,26 @@
 package org.integratedmodelling.klab.services;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.messaging.WebsocketsClientMessageBus;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.authentication.KlabCertificate;
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.engine.StartupOptions;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.services.resolver.ResolverClient;
 import org.integratedmodelling.klab.services.resources.ResourcesClient;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
-import org.springframework.context.ConfigurableApplicationContext;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
@@ -52,13 +40,15 @@ import org.springframework.context.ConfigurableApplicationContext;
  * {@link org.integratedmodelling.klab.services.application.ServiceNetworkedInstance} after defining the
  * controllers using Spring.
  * <p>
+ *  TODO move all startup/shutdown notifications to the wrapper
  *
  * @author ferdinando.villa
  */
 public abstract class ServiceInstance<T extends BaseService> {
 
+    AtomicBoolean initialized = new AtomicBoolean(false);
+
     protected ServiceStartupOptions startupOptions;
-    private ConfigurableApplicationContext context;
     private T service;
 
     private AbstractServiceDelegatingScope serviceScope;
@@ -91,7 +81,7 @@ public abstract class ServiceInstance<T extends BaseService> {
      *
      * @return
      */
-    protected abstract T createPrimaryService(ServiceScope serviceScope);
+    protected abstract T createPrimaryService(ServiceScope serviceScope, ServiceStartupOptions options);
 
     /**
      * Called only if the service(s) specified in the certificate are unavailable or missing. This will be
@@ -125,7 +115,29 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     public ServiceInstance(ServiceStartupOptions options) {
         this.startupOptions = options;
-        this.service = createPrimaryService(createServiceScope());
+        this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
+    }
+
+    /**
+     * Wait for available (online) status until the passed timeout. If {@link #start()} hasn't been called,
+     * this will time out without effect.
+     *
+     * @param timeoutSeconds
+     * @return
+     */
+    public boolean waitOnline(int timeoutSeconds) {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start + (timeoutSeconds * 1000)) {
+            if (serviceScope.isAvailable()) {
+                return true;
+            }
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+        return false;
     }
 
     /**
@@ -133,7 +145,7 @@ public abstract class ServiceInstance<T extends BaseService> {
      *
      * @return
      */
-    protected ServiceScope createServiceScope() {
+    protected AbstractServiceDelegatingScope createServiceScope() {
         var identity = Authentication.INSTANCE.authenticate();
         return new AbstractServiceDelegatingScope(new ChannelImpl(identity.getFirst())) {
             @Override
@@ -142,65 +154,115 @@ public abstract class ServiceInstance<T extends BaseService> {
             }
 
             @Override
-            public boolean isAvailable() {
-                return true;
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+                return (T) currentServices.get(KlabService.Type.classify(serviceClass));
             }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                return switch (KlabService.Type.classify(serviceClass)) {
+                    case REASONER -> (Collection<T>) availableReasoners;
+                    case RESOURCES -> (Collection<T>) availableResourcesServices;
+                    case RESOLVER -> (Collection<T>) availableResolvers;
+                    case RUNTIME -> (Collection<T>) availableRuntimeServices;
+                    case COMMUNITY -> {
+                        var cs = getService(serviceClass);
+                        yield cs == null ? Collections.emptyList() : (Collection<T>) List.of(cs);
+                    }
+                    case ENGINE -> Collections.emptyList();
+                    case LEGACY_NODE ->
+                            throw new KlabIllegalArgumentException("Cannot ask a scope for a legacy service" +
+                                    " ");
+                };
+            }
+
         };
     }
 
     public void start() {
 
+        bootTime = System.currentTimeMillis();
         serviceScope.setStatus(Scope.Status.STARTED);
         serviceScope.setMaintenanceMode(true);
 
         var essentialServices = getEssentialServices();
         if (essentialServices.size() > 0) {
             for (var serviceType : getEssentialServices()) {
-
                 var service = this.createDefaultService(serviceType, 0);
                 if (service != null) {
-
-                }
-                if (!service.isOnline()) {
-                    // save record for timed task to re-check
+                    registerService(service, true);
                 }
             }
         }
-
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
+    }
 
+    private void registerService(KlabService service, boolean isDefault) {
 
+        if (isDefault) {
+            this.currentServices.put(KlabService.Type.classify(service), service);
+        }
+
+        switch (service) {
+            case Reasoner reasoner -> {
+                availableReasoners.add(reasoner);
+            }
+            case ResourcesService resources -> {
+                availableResourcesServices.add(resources);
+            }
+            case Resolver resolver -> {
+                availableResolvers.add(resolver);
+            }
+            case RuntimeService runtime -> {
+                availableRuntimeServices.add(runtime);
+            }
+            case Community community -> {
+            }
+            default -> {
+            }
+        }
     }
 
     private void timedTasks() {
 
         /*
         check all needed services; put self offline if not available or not there, online otherwise; if
-        there's a
-        change in online status, report it through the service scope
+        there's a change in online status, report it through the service scope
          */
         boolean ok = true;
 
         for (var serviceType : getEssentialServices()) {
             var service = currentServices.get(serviceType);
-            if (service == null || !service.isOnline()) {
+            if (service == null) {
+                service = this.createDefaultService(serviceType,
+                        (System.currentTimeMillis() - bootTime) / 1000);
+                ok = service != null && service.isOnline();
+                if (service != null) {
+                    registerService(service, true);
+                }
+            } else if (!service.isOnline()) {
                 ok = false;
-                break;
             }
-        }
-
-        if (serviceScope.isAvailable() && !ok) {
-            serviceScope.setMaintenanceMode(true);
         }
 
         /*
         check and reassign server status; if any changes, report status
          */
+        if (serviceScope.isAvailable() && !ok) {
+            serviceScope.setMaintenanceMode(true);
+        } else if (!serviceScope.isAvailable() && ok) {
+            serviceScope.setMaintenanceMode(false);
+        }
+
 
         /*
         if status is OK and the service hasn't been initialized, set maintenance mode and call
         initializeService().
          */
+        if (ok && !initialized.get()) {
+            klabService().initializeService();
+            initialized.set(true);
+        }
 
         /*
         if subscribed and configured interval has passed, send service health status through the scope
@@ -211,16 +273,19 @@ public abstract class ServiceInstance<T extends BaseService> {
     public void stop() {
 
         /*
-        if WE have started the embedded other services, stop them, otherwise let them run
+        if WE have started the embedded other services, stop them, otherwise let them run. We should
+        log out if the service is a client.
          */
 
         /*
-        call shutdown()
+        call shutdown() on the wrapped service
          */
+        klabService().shutdown();
 
         /*
         send notifications
          */
+
 
         // // shutdown all components
         // if (this.sessionClosingTask != null) {
@@ -266,7 +331,7 @@ public abstract class ServiceInstance<T extends BaseService> {
         // // shutdown the runtime
         // Klab.INSTANCE.getRuntimeProvider().shutdown();
 
-        context.close();
+        //        context.close();
     }
 
     public T klabService() {
@@ -277,10 +342,10 @@ public abstract class ServiceInstance<T extends BaseService> {
         return bootTime;
     }
 
-    public static void run(String[] args) {
-        ServiceStartupOptions options = new ServiceStartupOptions();
-        options.initialize(args);
-
-    }
+    //    public static void run(String[] args) {
+    //        ServiceStartupOptions options = new ServiceStartupOptions();
+    //        options.initialize(args);
+    //        start(options);
+    //    }
 
 }
