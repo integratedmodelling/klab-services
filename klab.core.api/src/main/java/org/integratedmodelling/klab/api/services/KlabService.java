@@ -153,23 +153,6 @@ public interface KlabService extends Service {
     }
 
     /**
-     * Service is ready to be used and has all other necessary services figured out. It still may become
-     * occasionally unavailable due to maintenance or uninterruptible operations.
-     *
-     * @return
-     */
-    boolean isOnline();
-
-    /**
-     * Availability implies online status and any unavailability must be temporary. The available status can
-     * only be false for enough time to wait for it during a request. Anything more than that becomes
-     * offline status.
-     *
-     * @return
-     */
-    boolean isAvailable();
-
-    /**
      * Each service publishes capabilities, overridden to the specific capability class for each service.
      *
      * @return

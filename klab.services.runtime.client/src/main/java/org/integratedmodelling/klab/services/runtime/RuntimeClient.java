@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime;
 
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -11,17 +12,12 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.concurrent.Future;
 
-public class RuntimeClient implements RuntimeService {
+public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     public RuntimeClient(URL url) {
-        // TODO Auto-generated constructor stub
+        super(url);
     }
 
-    @Override
-    public URL getUrl() {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public String getLocalName() {
@@ -37,12 +33,6 @@ public class RuntimeClient implements RuntimeService {
     }
 
     @Override
-    public ServiceScope scope() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean shutdown() {
         // TODO Auto-generated method stub
         return false;
@@ -54,23 +44,8 @@ public class RuntimeClient implements RuntimeService {
     }
 
     @Override
-    public boolean isOnline() {
-        return false;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return false;
-    }
-
-    @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ServiceStatus status() {
         return null;
     }
 

@@ -265,11 +265,11 @@ public abstract class ServiceInstance<T extends BaseService> {
             if (service == null) {
                 service = this.createDefaultService(serviceType,
                         (System.currentTimeMillis() - bootTime) / 1000);
-                ok = service != null && service.isOnline();
+                ok = service != null && service.scope().isAvailable();
                 if (service != null) {
                     registerService(service, true);
                 }
-            } else if (!service.isOnline()) {
+            } else if (!service.scope().isAvailable()) {
                 ok = false;
             }
         }

@@ -11,16 +11,6 @@ public class CommunityService implements Community {
     private static final long serialVersionUID = -7321738633095243998L;
 
     @Override
-    public boolean isOnline() {
-        return false;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return false;
-    }
-
-    @Override
     public ServiceCapabilities capabilities() {
         // TODO Auto-generated method stub
         return null;

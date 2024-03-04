@@ -249,21 +249,4 @@ public abstract class BaseService implements KlabService {
 
     public abstract void initializeService();
 
-//    protected void notify(Scope scope, Object... objects) {
-//        if (!eventListeners.isEmpty()) {
-//            for (var listener : eventListeners) {
-//                listener.accept(scope, Message.create(scope, objects));
-//            }
-//        }
-//    }
-
-    @Override
-    public boolean isAvailable() {
-        return available.get();
-    }
-
-    @Override
-    public boolean isOnline() {
-        return online.get();
-    }
 }

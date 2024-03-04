@@ -209,9 +209,9 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                                      Object handler) throws Exception {
-                if (!klabService().isOnline()) {
+                if (!klabService().scope().isAvailable()) {
                     // response.sendRedirect(maintenanceMapping); return false;
-                } else if (!klabService().isAvailable()) {
+                } else if (!klabService().scope().isBusy()) {
                     // TODO wait a configurable interval; if it's still not available, redirect, otherwise
                 }
                 return HandlerInterceptor.super.preHandle(request, response, handler);

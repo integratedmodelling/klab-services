@@ -55,16 +55,6 @@ public class ResolverService implements Resolver, Resolver.Admin {
     }
 
     @Override
-    public boolean isOnline() {
-        return false;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return false;
-    }
-
-    @Override
     public Capabilities capabilities() {
         return null;
     }

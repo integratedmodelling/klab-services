@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resources;
 
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -24,28 +25,16 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
-public class ResourcesClient implements ResourcesService {
+public class ResourcesClient extends ServiceClient implements ResourcesService {
 
     private static final long serialVersionUID = 4305387731730961701L;
 
     public ResourcesClient(URL url) {
-        // TODO Auto-generated constructor stub
-    }
-
-    @Override
-    public URL getUrl() {
-        // TODO Auto-generated method stub
-        return null;
+        super(url);
     }
 
     @Override
     public String getLocalName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ServiceScope scope() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -63,23 +52,8 @@ public class ResourcesClient implements ResourcesService {
     }
 
     @Override
-    public boolean isOnline() {
-        return false;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return false;
-    }
-
-    @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ServiceStatus status() {
         return null;
     }
 

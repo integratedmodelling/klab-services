@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver;
 
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -16,26 +17,14 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import java.net.URL;
 import java.util.List;
 
-public class ResolverClient implements Resolver {
+public class ResolverClient extends ServiceClient implements Resolver {
 
     public ResolverClient(URL url) {
-        // TODO Auto-generated constructor stub
-    }
-
-    @Override
-    public URL getUrl() {
-        // TODO Auto-generated method stub
-        return null;
+        super(url);
     }
 
     @Override
     public String getLocalName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ServiceScope scope() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -52,23 +41,8 @@ public class ResolverClient implements Resolver {
     }
 
     @Override
-    public boolean isOnline() {
-        return false;
-    }
-
-    @Override
-    public boolean isAvailable() {
-        return false;
-    }
-
-    @Override
     public Capabilities capabilities() {
         // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ServiceStatus status() {
         return null;
     }
 
