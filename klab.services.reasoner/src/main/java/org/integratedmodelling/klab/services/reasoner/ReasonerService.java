@@ -105,6 +105,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      * the traits in the first concept will be accepted.
      */
     static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
+    private final ServiceStartupOptions serviceOptions;
 
     //    /**
     //     * Flag for {@link #compatible(Semantics, Semantics, int)}.
@@ -259,15 +260,20 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.owl = new OWL(scope);
         this.indexer = new Indexer(scope);
         this.emergence = new IntelligentMap<>(scope);
+        this.serviceOptions = options;
     }
 
     @Override
     public void initializeService() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities());
+//        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+//                capabilities());
 
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
+        File config = serviceOptions.fileFromPath(serviceOptions.getConfigurationPath());
+        config = new File(config + File.separator + "reasoner.yaml");
+        if (config.exists() && config.length() > 0 && !serviceOptions.isClean()) {
+            // TODO/FIXME half-baked logics, see ResourcesProvider
+        }
         if (config.exists()) {
             configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config,
                     ReasonerConfiguration.class);
@@ -279,8 +285,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         this.observationReasoner = new ObservationReasoner(this);
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities());
+//        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+//                capabilities());
 
     }
 

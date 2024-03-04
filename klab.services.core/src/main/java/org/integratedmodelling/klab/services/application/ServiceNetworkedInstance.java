@@ -49,8 +49,17 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.service.Contact;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
 
 import javax.annotation.PreDestroy;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
@@ -71,6 +80,17 @@ import java.util.stream.StreamSupport;
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security", "org" +
         ".integratedmodelling.klab.services.application.controllers"})
 public abstract class ServiceNetworkedInstance<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer, InitializingBean {
+
+    /*
+     * overridden through properties in application.yml, if only it worked.
+     * TODO take from certificate
+     */
+    private String version = Version.CURRENT;
+    private String basePackage = "org.integratedmodelling.klab.services.reasoner.controllers";
+    private String title = "k.LAB Reasoner API";
+    private String description = "API documentation for the k.LAB reasoner service. POST methods use valid concepts obtained through the resolve endpoints.";
+    private String contactName = "Integrated Modelling Partnership";
+    private String contactEmail = "info@integratedmodelling.org";
 
     @Autowired
     private ConfigurableApplicationContext applicationContext;
@@ -98,6 +118,20 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     public void afterPropertiesSet() throws Exception {
         super.start(environment.getRequiredProperty("klab.service.options", ServiceStartupOptions.class));
     }
+
+
+    @Bean
+    public Docket api() {
+        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.basePackage(basePackage))
+                                                      .paths(PathSelectors.any()).build().directModelSubstitute(LocalDate.class, java.sql.Date.class)
+                                                      .directModelSubstitute(LocalDateTime.class, java.util.Date.class).apiInfo(apiInfo());
+    }
+
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder().title(title).description(description).version(version)
+                                   .contact(new Contact(contactName, null, contactEmail)).build();
+    }
+
 
     /**
      * Call this in main() using the concrete subclass of ServiceNetworkedInstance and the desired startup

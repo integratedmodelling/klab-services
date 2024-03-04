@@ -28,6 +28,9 @@ public class ServiceSecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        // TODO next one not working
+                        .requestMatchers("/swagger-ui").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JWTAuthorizationFilter(authenticationManager),
                         UsernamePasswordAuthenticationFilter.class)
