@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Component
-// TODO remove the argument when Spring is fixed
+// TODO remove the argument when all gson dependencies are the same (never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
                                "org.integratedmodelling.klab.services.application.controllers",
@@ -35,7 +36,7 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
     }
 
     public static void main(String[] args) {
-        var server = new ResourcesServer();
-        server.start(ServiceStartupOptions.create(KlabService.Type.RESOURCES, args));
+        ServiceNetworkedInstance.start(ResourcesServer.class,
+                ServiceStartupOptions.create(KlabService.Type.RESOURCES, args));
     }
 }

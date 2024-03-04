@@ -40,6 +40,8 @@ public enum Logging {
     INSTANCE;
 
     private Logger logger;
+
+    @Deprecated // this should be logging only, messages are for scopes
     private MessageBus messageBus;
     private Identity rootIdentity;
 

@@ -11,11 +11,15 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
 import org.integratedmodelling.klab.services.resolver.ResolverClient;
@@ -52,7 +56,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     AtomicBoolean initialized = new AtomicBoolean(false);
 
-    protected ServiceStartupOptions startupOptions;
+    private ServiceStartupOptions startupOptions;
     private T service;
 
     private AbstractServiceDelegatingScope serviceScope;
@@ -140,12 +144,24 @@ public abstract class ServiceInstance<T extends BaseService> {
     }
 
     /**
+     * Authentication for a simple ServiceInstance is through user/engine certificate, with the option of
+     * anonymous.
+     *
+     * @return
+     */
+    protected Pair<UserIdentity, List<ServiceReference>> authenticateService() {
+        return Authentication.INSTANCE.authenticate();
+    }
+
+    /**
      * Create the service scope that implements the authentication, messaging and service access strategy.
      *
      * @return
      */
     protected AbstractServiceDelegatingScope createServiceScope() {
-        var identity = Authentication.INSTANCE.authenticate();
+
+        var identity = authenticateService();
+
         return new AbstractServiceDelegatingScope(new ChannelImpl(identity.getFirst())) {
             @Override
             public Locality getLocality() {
@@ -180,7 +196,8 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     public boolean start(ServiceStartupOptions options) {
 
-        this.startupOptions = options;
+        setEnvironment(options);
+
         this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
 
         bootTime = System.currentTimeMillis();
@@ -199,6 +216,14 @@ public abstract class ServiceInstance<T extends BaseService> {
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
 
         return true;
+    }
+
+    private void setEnvironment(ServiceStartupOptions options) {
+        this.startupOptions = options;
+        // TODO sync the config environment with the options
+        if (options.getDataDir() != null) {
+//            Configuration.INSTANCE.setDataPath();
+        }
     }
 
     private void registerService(KlabService service, boolean isDefault) {

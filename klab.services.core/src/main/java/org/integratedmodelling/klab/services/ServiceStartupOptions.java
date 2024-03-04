@@ -108,7 +108,7 @@ public class ServiceStartupOptions implements StartupOptions {
     public static ServiceStartupOptions defaultOptions(KlabService.Type serviceType) {
         var ret = new ServiceStartupOptions();
         ret.port = serviceType.defaultPort;
-        ret.contextPath = serviceType.defaultServicePath;
+        ret.contextPath = "/" + serviceType.defaultServicePath;
         ret.configurationPath = "services/" + serviceType.defaultServicePath;
         ret.nodeName = serviceType.defaultServicePath;
         return ret;
@@ -123,7 +123,7 @@ public class ServiceStartupOptions implements StartupOptions {
     public static ServiceStartupOptions testOptions(KlabService.Type serviceType) {
         var ret = new ServiceStartupOptions();
         ret.port = serviceType.defaultPort;
-        ret.contextPath = serviceType.defaultServicePath;
+        ret.contextPath = "/" + serviceType.defaultServicePath;
         ret.configurationPath = "services/test/" + serviceType.defaultServicePath;
         ret.nodeName = "service." + serviceType.defaultServicePath + ".test";
         return ret;

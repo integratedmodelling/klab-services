@@ -10,7 +10,7 @@ public interface ServicesAPI {
 
 	public static final String API_BASE = "/api/v2";
 
-	public static String CAPABILITIES = "/capabilities";
+	public static String CAPABILITIES = "/public/capabilities";
 
 	/**
 	 * STOMP endpoint for client/server notifications to session receivers. Handled through

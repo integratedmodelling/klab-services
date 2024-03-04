@@ -3,23 +3,37 @@ package org.integratedmodelling.klab.services.application;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import jakarta.inject.Singleton;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.branding.Branding;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.messaging.WebsocketsServerMessageBus;
+import org.mapdb.elsa.ElsaSerializerBase;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -37,10 +51,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.annotation.PreDestroy;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
 /**
@@ -55,33 +66,64 @@ import java.util.stream.StreamSupport;
  * the local machine if anonymous.
  */
 @Component
+// TODO remove the argument when all gson dependencies are the same (never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security", "org" +
         ".integratedmodelling.klab.services.application.controllers"})
-public abstract class ServiceNetworkedInstance<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer {
+public abstract class ServiceNetworkedInstance<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer, InitializingBean {
 
-    private long bootTime;
-    private ConfigurableApplicationContext context;
-    private T klabService;
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
+    @Autowired
+    private Environment environment;
 
     @Override
-    public boolean start(ServiceStartupOptions startupOptions) {
+    protected Pair<UserIdentity, List<ServiceReference>> authenticateService() {
+        /**
+         * TODO lookup service certificate in configuration path; if found, use that to build the
+         *  identity. Otherwise proceed as per default. If service is certified, record the
+         *  privileges and adjust the service scope.
+         */
+        return super.authenticateService();
+    }
+
+    @Override
+    protected AbstractServiceDelegatingScope createServiceScope() {
+        var ret = super.createServiceScope();
+        // TODO if we're certified, adjust the scope's locality and service discovery capabilities
+        return ret;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        super.start(environment.getRequiredProperty("klab.service.options", ServiceStartupOptions.class));
+    }
+
+    /**
+     * Call this in main() using the concrete subclass of ServiceNetworkedInstance and the desired startup
+     * options.
+     *
+     * @param cls
+     * @param options
+     * @return
+     */
+    public static boolean start(Class<? extends ServiceNetworkedInstance> cls,
+                                ServiceStartupOptions options) {
 
         try {
-            super.start(startupOptions);
-            this.klabService = super.klabService();
-            SpringApplication app = new SpringApplication(this.getClass());
-            this.context = app.run(startupOptions.getArguments());
-            Environment environment = this.context.getEnvironment();
-            setPropertiesFromEnvironment(environment);
+            SpringApplication app = new SpringApplication(cls);
             Map<String, Object> props = new HashMap<>();
-            props.put("server.port", "" + startupOptions.getPort());
+            props.put("klab.service.options", options);
+            props.put("server.port", "" + options.getPort());
             props.put("spring.main.banner-mode", "off");
-            props.put("server.servlet.contextPath", startupOptions.getContextPath());
-
+            props.put("server.servlet.contextPath", options.getContextPath());
             app.setDefaultProperties(props);
+            app.run(options.getArguments());
+            //            Environment environment = this.context.getEnvironment();
+            //            setPropertiesFromEnvironment(environment);
             System.out.println("\n" + Branding.NODE_BANNER);
-            System.out.println("\nStartup successful: " + "k.LAB service " + startupOptions.getContextPath().toUpperCase() + " v" + Version.CURRENT + " on " + new Date());
+            System.out.println("\nStartup successful: " + "k.LAB service " + options.getContextPath().toUpperCase() + " v" + Version.CURRENT + " on " + new Date());
+            System.out.println("Capabilities: http://127.0.0.1:" + options.getPort() + options.getContextPath() + ServicesAPI.CAPABILITIES);
         } catch (Throwable e) {
             Logging.INSTANCE.error(e);
             return false;
@@ -89,18 +131,11 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         return true;
     }
 
-    @Bean
-    public T klabService() {
-        return klabService;
-    }
 
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper =
-                new ObjectMapper()
-                        .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-                        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-                        .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+                new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY).disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
         // objectMapper.getSerializerProvider().setNullKeySerializer(new Jsr310NullKeySerializer());
         JacksonConfiguration.configureObjectMapperForKlabTypes(objectMapper);
         return objectMapper;
@@ -110,7 +145,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         return new MessagingChannelImpl(identity, new WebsocketsServerMessageBus());
     }
 
-    private static void setPropertiesFromEnvironment(Environment environment) {
+    private void setPropertiesFromEnvironment(Environment environment) {
         MutablePropertySources propSrcs = ((ConfigurableEnvironment) environment).getPropertySources();
         StreamSupport.stream(propSrcs.spliterator(), false).filter(ps -> ps instanceof EnumerablePropertySource).map(ps -> ((EnumerablePropertySource) ps).getPropertyNames()).flatMap(Arrays::<String>stream).forEach(propName -> {
             if (propName.contains("klab.")) {
@@ -118,24 +153,17 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
                         environment.getProperty(propName));
             }
         });
-        return;
     }
 
-    //    @PreDestroy
-    public void shutdown() {
+    @PreDestroy
+    public void stopService() {
+        Logging.INSTANCE.info("Stopping service...");
         super.stop();
-        this.context.stop();
     }
 
-//    @Bean
-//    public ProtobufJsonFormatHttpMessageConverter ProtobufJsonFormatHttpMessageConverter() {
-//        return new ProtobufJsonFormatHttpMessageConverter();
-//    }
-
-    //    @Bean
-    //    public RestTemplate restTemplate(ProtobufHttpMessageConverter hmc) {
-    //        return new RestTemplate(Arrays.asList(hmc));
-    //    }
+    public void shutdown() {
+        this.applicationContext.stop();
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -154,7 +182,6 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
                 }
                 return HandlerInterceptor.super.preHandle(request, response, handler);
             }
-
         });
     }
 
