@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -111,6 +112,10 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     protected AbstractServiceDelegatingScope createServiceScope() {
         var ret = super.createServiceScope();
         // TODO if we're certified, adjust the scope's locality and service discovery capabilities
+        ret.setLocality(ServiceScope.Locality.LOCALHOST);
+        if (ret.getIdentity() instanceof UserIdentity user && !user.isAnonymous()) {
+            ret.setLocality(ServiceScope.Locality.LAN);
+        } /* else if certified by partner/institution and configured for cloud, set to WAN */
         return ret;
     }
 
@@ -118,7 +123,6 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     public void afterPropertiesSet() throws Exception {
         super.start(environment.getRequiredProperty("klab.service.options", ServiceStartupOptions.class));
     }
-
 
     @Bean
     public Docket api() {

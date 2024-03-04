@@ -1,12 +1,9 @@
 package org.integratedmodelling.klab.services.base;
 
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -14,11 +11,7 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 
 /**
  * Base class for service implementations. A BaseService implements all the {@link KlabService} functions but
@@ -33,140 +26,6 @@ public abstract class BaseService implements KlabService {
 
     protected AtomicBoolean online = new AtomicBoolean(false);
     protected AtomicBoolean available = new AtomicBoolean(false);
-
-    public static class ServiceStatusImpl implements ServiceStatus {
-
-        private int healthPercentage = -1;
-        private int loadPercentage = -1;
-        private long memoryAvailableBytes = Runtime.getRuntime().totalMemory();
-        private long memoryUsedBytes = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().freeMemory();
-        private int connectedSessionCount = -1;
-        private int knownSessionCount = -1;
-        private long uptimeMs = -1;
-        private long bootTimeMs = -1;
-        private List<Notification> advisories = new ArrayList<>();
-        private Metadata metadata = Metadata.create();
-        private boolean available;
-        private boolean busy;
-        private ServiceScope.Locality locality;
-
-        @Override
-        public int getHealthPercentage() {
-            return this.healthPercentage;
-        }
-
-        @Override
-        public int getLoadPercentage() {
-            return this.loadPercentage;
-        }
-
-        @Override
-        public long getMemoryAvailableBytes() {
-            return this.memoryAvailableBytes;
-        }
-
-        @Override
-        public long getMemoryUsedBytes() {
-            return this.memoryUsedBytes;
-        }
-
-        @Override
-        public int getConnectedSessionCount() {
-            return this.connectedSessionCount;
-        }
-
-        @Override
-        public int getKnownSessionCount() {
-            return this.knownSessionCount;
-        }
-
-        @Override
-        public long getUptimeMs() {
-            return this.uptimeMs;
-        }
-
-        @Override
-        public long getBootTimeMs() {
-            return this.bootTimeMs;
-        }
-
-        @Override
-        public List<Notification> getAdvisories() {
-            return this.advisories;
-        }
-
-        @Override
-        public Metadata getMetadata() {
-            return this.metadata;
-        }
-
-        public void setHealthPercentage(int healthPercentage) {
-            this.healthPercentage = healthPercentage;
-        }
-
-        public void setLoadPercentage(int loadPercentage) {
-            this.loadPercentage = loadPercentage;
-        }
-
-        public void setMemoryAvailableBytes(long memoryAvailableBytes) {
-            this.memoryAvailableBytes = memoryAvailableBytes;
-        }
-
-        public void setMemoryUsedBytes(long memoryUsedBytes) {
-            this.memoryUsedBytes = memoryUsedBytes;
-        }
-
-        public void setConnectedSessionCount(int connectedSessionCount) {
-            this.connectedSessionCount = connectedSessionCount;
-        }
-
-        public void setKnownSessionCount(int knownSessionCount) {
-            this.knownSessionCount = knownSessionCount;
-        }
-
-        public void setUptimeMs(long uptimeMs) {
-            this.uptimeMs = uptimeMs;
-        }
-
-        public void setBootTimeMs(long bootTimeMs) {
-            this.bootTimeMs = bootTimeMs;
-        }
-
-        public void setAdvisories(List<Notification> advisories) {
-            this.advisories = advisories;
-        }
-
-        public void setMetadata(Metadata metadata) {
-            this.metadata = metadata;
-        }
-
-        @Override
-        public boolean isAvailable() {
-            return available;
-        }
-
-        public void setAvailable(boolean available) {
-            this.available = available;
-        }
-
-        @Override
-        public boolean isBusy() {
-            return busy;
-        }
-
-        public void setBusy(boolean busy) {
-            this.busy = busy;
-        }
-
-        @Override
-        public ServiceScope.Locality getLocality() {
-            return locality;
-        }
-
-        public void setLocality(ServiceScope.Locality locality) {
-            this.locality = locality;
-        }
-    }
 
     private static final long serialVersionUID = 1646569587945609013L;
 

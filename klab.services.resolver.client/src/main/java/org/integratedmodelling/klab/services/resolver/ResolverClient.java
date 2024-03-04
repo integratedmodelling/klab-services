@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -13,11 +14,20 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.List;
 
 public class ResolverClient extends ServiceClient implements Resolver {
+
+    public ResolverClient() {
+        super(Type.RESOLVER);
+    }
+
+    public ResolverClient(UserIdentity identity, List<ServiceReference> services) {
+        super(Type.RESOLVER, identity, services);
+    }
 
     public ResolverClient(URL url) {
         super(url);

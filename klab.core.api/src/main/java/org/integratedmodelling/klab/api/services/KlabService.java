@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serializable;
@@ -119,6 +120,10 @@ public interface KlabService extends Service {
         List<Notification> getAdvisories();
 
         Metadata getMetadata();
+
+        public static ServiceStatus offline() {
+            return new ServiceStatusImpl();
+        }
     }
 
     /**

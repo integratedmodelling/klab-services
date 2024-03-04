@@ -1,18 +1,29 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Future;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
+
+    public RuntimeClient() {
+        super(Type.RUNTIME);
+    }
+
+    public RuntimeClient(UserIdentity identity, List<ServiceReference> services) {
+        super(Type.RUNTIME, identity, services);
+    }
 
     public RuntimeClient(URL url) {
         super(url);

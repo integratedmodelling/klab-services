@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.resources;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.Collection;
@@ -28,6 +30,14 @@ import java.util.List;
 public class ResourcesClient extends ServiceClient implements ResourcesService {
 
     private static final long serialVersionUID = 4305387731730961701L;
+
+    public ResourcesClient() {
+        super(Type.RESOURCES);
+    }
+
+    public ResourcesClient(UserIdentity identity, List<ServiceReference> services) {
+        super(Type.RESOURCES, identity, services);
+    }
 
     public ResourcesClient(URL url) {
         super(url);
@@ -47,7 +57,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService {
 
     @Override
     public boolean shutdown() {
-        // TODO Auto-generated method stub
+        // TODO just send a logout unless the service is local
         return false;
     }
 

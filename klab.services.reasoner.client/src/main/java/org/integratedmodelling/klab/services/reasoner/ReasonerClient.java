@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.reasoner;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -13,6 +14,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.Collection;
@@ -21,7 +23,13 @@ import java.util.Map;
 
 public class ReasonerClient extends ServiceClient implements Reasoner {
 
-    private static final long serialVersionUID = -3969112162251127910L;
+    public ReasonerClient() {
+        super(Type.REASONER);
+    }
+
+    public ReasonerClient(UserIdentity identity, List<ServiceReference> services) {
+        super(Type.REASONER, identity, services);
+    }
 
     public ReasonerClient(URL url) {
         super(url);
