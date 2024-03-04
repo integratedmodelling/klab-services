@@ -46,6 +46,9 @@ public abstract class BaseService implements KlabService {
         private long bootTimeMs = -1;
         private List<Notification> advisories = new ArrayList<>();
         private Metadata metadata = Metadata.create();
+        private boolean available;
+        private boolean busy;
+        private ServiceScope.Locality locality;
 
         @Override
         public int getHealthPercentage() {
@@ -136,6 +139,33 @@ public abstract class BaseService implements KlabService {
         public void setMetadata(Metadata metadata) {
             this.metadata = metadata;
         }
+
+        @Override
+        public boolean isAvailable() {
+            return available;
+        }
+
+        public void setAvailable(boolean available) {
+            this.available = available;
+        }
+
+        @Override
+        public boolean isBusy() {
+            return busy;
+        }
+
+        public void setBusy(boolean busy) {
+            this.busy = busy;
+        }
+
+        @Override
+        public ServiceScope.Locality getLocality() {
+            return locality;
+        }
+
+        public void setLocality(ServiceScope.Locality locality) {
+            this.locality = locality;
+        }
     }
 
     private static final long serialVersionUID = 1646569587945609013L;
@@ -199,7 +229,11 @@ public abstract class BaseService implements KlabService {
      * @return
      */
     public ServiceStatus status() {
-        return new ServiceStatusImpl();
+        var ret = new ServiceStatusImpl();
+        ret.setAvailable(scope().isAvailable());
+        ret.setBusy(scope().isBusy());
+        ret.setLocality(scope().getLocality());
+        return ret;
     }
 
 

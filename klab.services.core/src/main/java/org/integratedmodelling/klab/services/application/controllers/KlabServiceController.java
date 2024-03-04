@@ -22,4 +22,9 @@ public class KlabServiceController {
         return instance.klabService().capabilities();
     }
 
+    @GetMapping(ServicesAPI.STATUS)
+    public KlabService.ServiceStatus status() {
+        return instance.klabService().status();
+    }
+
 }

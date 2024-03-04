@@ -94,6 +94,12 @@ public interface KlabService extends Service {
      */
     interface ServiceStatus extends Serializable {
 
+        boolean isAvailable();
+
+        boolean isBusy();
+
+        ServiceScope.Locality getLocality();
+
         int getHealthPercentage();
 
         int getLoadPercentage();
