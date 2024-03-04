@@ -33,6 +33,7 @@ import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.WorldviewImpl;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
@@ -362,10 +363,10 @@ public class WorkspaceManager {
     private Map<String, Long> lastProjectUpdates = new HashMap<>();
     private List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
 
-    public WorkspaceManager(Scope scope, Function<String, Project> externalProjectResolver) {
+    public WorkspaceManager(Scope scope, ServiceStartupOptions options, Function<String, Project> externalProjectResolver) {
         this.externalProjectResolver = externalProjectResolver;
         this.scope = scope;
-        readConfiguration();
+        readConfiguration(options);
         scheduler.scheduleAtFixedRate(() -> checkForProjectUpdates(), 1, 1, TimeUnit.MINUTES);
     }
 
@@ -393,10 +394,11 @@ public class WorkspaceManager {
         scope.info("Checking for updates in " + projectDescriptor.name + ", scheduled each " + projectDescriptor.updateInterval + " minutes");
     }
 
-    private void readConfiguration() {
+    private void readConfiguration(ServiceStartupOptions options) {
 
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
-        if (config.exists() && config.length() > 0) {
+        File config = options.fileFromPath(options.getConfigurationPath());
+        config = new File(config + File.separator + "resources.yaml");
+        if (config.exists() && config.length() > 0 && !options.isClean()) {
             this.configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config, ResourcesConfiguration.class);
         } else {
             // make an empty config

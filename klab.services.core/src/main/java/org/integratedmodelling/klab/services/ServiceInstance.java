@@ -117,11 +117,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         return null;
     }
 
-    public ServiceInstance(ServiceStartupOptions options) {
-        this.startupOptions = options;
-        this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
-    }
-
     /**
      * Wait for available (online) status until the passed timeout. If {@link #start()} hasn't been called,
      * this will time out without effect.
@@ -183,7 +178,10 @@ public abstract class ServiceInstance<T extends BaseService> {
         };
     }
 
-    public void start() {
+    public boolean start(ServiceStartupOptions options) {
+
+        this.startupOptions = options;
+        this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
 
         bootTime = System.currentTimeMillis();
         serviceScope.setStatus(Scope.Status.STARTED);
@@ -199,6 +197,8 @@ public abstract class ServiceInstance<T extends BaseService> {
             }
         }
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
+
+        return true;
     }
 
     private void registerService(KlabService service, boolean isDefault) {

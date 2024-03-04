@@ -31,8 +31,8 @@ class ResourceIngestion {
     @BeforeAll
     static void setUp() throws Exception {
 
-        service = new ResourcesServiceInstance(ServiceStartupOptions.testOptions(KlabService.Type.RESOURCES));
-        service.start();
+        service = new ResourcesServiceInstance();
+        service.start(ServiceStartupOptions.testOptions(KlabService.Type.RESOURCES));
         if (!service.waitOnline(10)) {
             throw new KlabResourceAccessException("Cannot start server within 10 seconds");
         }

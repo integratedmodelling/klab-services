@@ -70,7 +70,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private static boolean languagesInitialized;
 
     private URL url;
-    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature =
+            org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
     @Override
     public boolean isLocal() {
@@ -117,7 +118,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         this.catalog =
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
 
-        this.workspaceManager = new WorkspaceManager(scope, (projectId) -> resolveRemoteProject(projectId));
+        this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(),
+                (projectId) -> resolveRemoteProject(projectId));
     }
 
     public Project resolveRemoteProject(String projectId) {
@@ -606,7 +608,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         // Resources work independently and do not come with the project data.
 
         return Utils.Resources.create(this,
-                org.integratedmodelling.common.utils.Utils.Collections.shallowCollection(namespaces, behaviors).toArray(new KlabAsset[namespaces.size()]));
+                org.integratedmodelling.common.utils.Utils.Collections.shallowCollection(namespaces,
+                        behaviors).toArray(new KlabAsset[namespaces.size()]));
     }
 
     @Override
@@ -880,10 +883,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             if (namespace != null) {
                 for (KlabStatement statement : namespace.getStatements()) {
                     if (statement instanceof KimModel && urn.equals(((KimModel) statement).getUrn())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn, namespace.getVersion()
+                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
+                                namespace.getVersion()
                                 , KnowledgeClass.MODEL));
                     } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
-                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn, namespace.getVersion()
+                        ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
+                                namespace.getVersion()
                                 , KnowledgeClass.INSTANCE));
                     }
                 }

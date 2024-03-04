@@ -25,7 +25,7 @@ public class ServiceStartupOptions implements StartupOptions {
             usage = "certificate file (default: <dataDir>/" + KlabCertificate.DEFAULT_NODE_CERTIFICATE_FILENAME + ")",
             metaVar = "<FILE_PATH>")
     File certificateFile = null;
-    
+
     @Option(
             name = "-certResource",
             usage = "certificate classpath resource (default null)",
@@ -37,36 +37,64 @@ public class ServiceStartupOptions implements StartupOptions {
             usage = "node name (overrides name in certificate)",
             metaVar = "<SIMPLE_STRING>")
     String nodeName = null;
-    
+
+    @Option(
+            name = "-config",
+            usage = "subdirectory of standard dataDir containing configuration files",
+            metaVar = "<SIMPLE_STRING>")
+    String configurationPath = null;
+
+
+    @Option(
+            name = "-secret",
+            usage = "the secret key to override the one saved on startup",
+            metaVar = "<SIMPLE_STRING>")
+    String serviceSecret = null;
+
     @Option(
             name = "-hub",
             usage = "URL of authenticating hub (default set in certificate)",
             metaVar = "<URL>")
-    
+
     String authenticatingHub = null;
-    
+
     @Option(name = "-port", usage = "http port for REST communication", metaVar = "<INT>")
     int port = -1;
 
     @Option(name = "-help", usage = "print command line options and exit")
     boolean help;
-    
-    @Option(name = "-cloudConfig", usage = "allow for External Configuration of Node")
+
+    @Option(name = "-clean", usage = "clean configuration on startup. CAUTION: destructive")
+    boolean clean;
+
+    @Option(name = "-cloudConfig", usage = "allow for external configuration of service")
     boolean cloudConfig;
 
-	@Option(name = "-components", usage = "paths to any custom component")
+    @Option(name = "-components", usage = "paths to any custom component")
     List<File> components = new ArrayList<>();
 
     private List<String> arguments = new ArrayList<>();
 
+    @Option(
+            name = "-contextPath",
+            usage = "context path for application (default is service dependent)",
+            metaVar = "<SIMPLE_STRING>")
+    private String contextPath;
+
     /**
      * All defaults
      */
-    public ServiceStartupOptions() {
+    private ServiceStartupOptions() {
     }
 
-    public static ServiceStartupOptions create(String[] args) {
-        var ret = new ServiceStartupOptions();
+//    public static ServiceStartupOptions create(String[] args) {
+//        var ret = new ServiceStartupOptions();
+//        ret.initialize(args);
+//        return ret;
+//    }
+
+    public static ServiceStartupOptions create(KlabService.Type serviceType, String[] args) {
+        var ret = defaultOptions(serviceType);
         ret.initialize(args);
         return ret;
     }
@@ -80,6 +108,9 @@ public class ServiceStartupOptions implements StartupOptions {
     public static ServiceStartupOptions defaultOptions(KlabService.Type serviceType) {
         var ret = new ServiceStartupOptions();
         ret.port = serviceType.defaultPort;
+        ret.contextPath = serviceType.defaultServicePath;
+        ret.configurationPath = "services/" + serviceType.defaultServicePath;
+        ret.nodeName = serviceType.defaultServicePath;
         return ret;
     }
 
@@ -92,32 +123,35 @@ public class ServiceStartupOptions implements StartupOptions {
     public static ServiceStartupOptions testOptions(KlabService.Type serviceType) {
         var ret = new ServiceStartupOptions();
         ret.port = serviceType.defaultPort;
+        ret.contextPath = serviceType.defaultServicePath;
+        ret.configurationPath = "services/test/" + serviceType.defaultServicePath;
+        ret.nodeName = "service." + serviceType.defaultServicePath + ".test";
         return ret;
     }
 
     public ServiceStartupOptions(String... args) {
-    	initialize(args);
+        initialize(args);
     }
 
     @Override
     public String getServiceName() {
-    	return nodeName;
+        return nodeName;
     }
-    
+
     @Override
     public String[] getArguments(String... additionalArguments) {
-    	List<String> args = new ArrayList<>(this.arguments);
-    	if (additionalArguments != null) {
-    		for (String additionalArgument : additionalArguments) {
-    			args.add(additionalArgument);
-    		}
-    	}
+        List<String> args = new ArrayList<>(this.arguments);
+        if (additionalArguments != null) {
+            for (String additionalArgument : additionalArguments) {
+                args.add(additionalArgument);
+            }
+        }
         return args.toArray(new String[args.size()]);
     }
 
     /**
      * Read the passed arguments and initialize all fields from them.
-     * 
+     *
      * @param arguments
      * @return true if arguments were OK, false otherwise.
      */
@@ -142,7 +176,8 @@ public class ServiceStartupOptions implements StartupOptions {
     @Override
     public File getCertificateFile() {
         if (certificateFile == null) {
-            certificateFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + KlabCertificate.DEFAULT_NODE_CERTIFICATE_FILENAME);
+            certificateFile =
+                    new File(Configuration.INSTANCE.getDataPath() + File.separator + KlabCertificate.DEFAULT_NODE_CERTIFICATE_FILENAME);
         }
         return certificateFile;
     }
@@ -165,6 +200,10 @@ public class ServiceStartupOptions implements StartupOptions {
         return port;
     }
 
+    public String getConfigurationPath() {
+        return configurationPath;
+    }
+
     @Override
     public boolean isHelp() {
         return help;
@@ -180,47 +219,123 @@ public class ServiceStartupOptions implements StartupOptions {
         return certificateResource;
     }
 
-    
+
     public void setDataDir(File dataDir) {
         this.dataDir = dataDir;
     }
 
-    
+
     public void setCertificateFile(File certificateFile) {
         this.certificateFile = certificateFile;
     }
 
-    
+
     public void setCertificateResource(String certificateResource) {
         this.certificateResource = certificateResource;
     }
-    
+
     public void setPort(int port) {
         this.port = port;
     }
 
-    
     public void setHelp(boolean help) {
         this.help = help;
     }
-    
+
     public void setComponents(List<File> components) {
         this.components = components;
     }
 
-    
     public void setArguments(List<String> arguments) {
         this.arguments = arguments;
     }
 
-	@Override
-	public String getAuthenticatingHub() {
-		return authenticatingHub;
-	}
+    @Override
+    public String getAuthenticatingHub() {
+        return authenticatingHub;
+    }
 
-	public boolean isCloudConfig() {
-		return cloudConfig;
-	}
-	
+    public boolean isCloudConfig() {
+        return cloudConfig;
+    }
 
+    public boolean isClean() {
+        return clean;
+    }
+
+    public String getServiceSecret() {
+        return serviceSecret;
+    }
+
+    public File getDataDir() {
+        return dataDir;
+    }
+
+    public String getNodeName() {
+        return nodeName;
+    }
+
+    public void setNodeName(String nodeName) {
+        this.nodeName = nodeName;
+    }
+
+    public void setConfigurationPath(String configurationPath) {
+        this.configurationPath = configurationPath;
+    }
+
+    public void setServiceSecret(String serviceSecret) {
+        this.serviceSecret = serviceSecret;
+    }
+
+    public void setAuthenticatingHub(String authenticatingHub) {
+        this.authenticatingHub = authenticatingHub;
+    }
+
+    public void setClean(boolean clean) {
+        this.clean = clean;
+    }
+
+    public void setCloudConfig(boolean cloudConfig) {
+        this.cloudConfig = cloudConfig;
+    }
+
+    public List<File> getComponents() {
+        return components;
+    }
+
+    /*
+     * Utils
+     */
+
+    /**
+     * Create a directory name for the passed path relative to the configured datapath, resolved from the
+     * overall configuration unless redefined here. If the path does not exist, create it before returning
+     * it.
+     *
+     * @param path
+     * @return
+     */
+    public File fileFromPath(String path) {
+
+        File configurationDirectory = dataDir == null ? Configuration.INSTANCE.getDataPath() : dataDir;
+        if (!configurationDirectory.exists()) {
+            configurationDirectory.mkdirs();
+        }
+
+        configurationDirectory = new File(configurationDirectory + File.separator + path);
+        if (!configurationDirectory.exists()) {
+            configurationDirectory.mkdirs();
+        }
+
+        return configurationDirectory;
+    }
+
+    public String getContextPath() {
+        return contextPath;
+    }
+
+
+    public void setContextPath(String contextPath) {
+        this.contextPath = contextPath;
+    }
 }

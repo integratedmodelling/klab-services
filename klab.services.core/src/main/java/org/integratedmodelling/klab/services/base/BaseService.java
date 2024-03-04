@@ -142,7 +142,7 @@ public abstract class BaseService implements KlabService {
 
     protected ServiceScope scope;
     protected String localName = "Embedded";
-    protected ServiceStartupOptions startupOptions;
+    private ServiceStartupOptions startupOptions;
 
 //    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
@@ -152,6 +152,10 @@ public abstract class BaseService implements KlabService {
         this.type = serviceType;
         this.startupOptions = options;
         createServiceSecret();
+    }
+
+    protected ServiceStartupOptions getStartupOptions() {
+        return startupOptions;
     }
 
     /**

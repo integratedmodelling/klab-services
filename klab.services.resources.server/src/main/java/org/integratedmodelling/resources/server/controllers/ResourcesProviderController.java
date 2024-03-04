@@ -20,6 +20,8 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.services.application.security.JWTAuthenticationManager;
+import org.integratedmodelling.resources.server.ResourcesServer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -32,173 +34,170 @@ import java.util.List;
 @RequestMapping("/api/resources")
 public class ResourcesProviderController {
 
-    private final ResourcesService resourcesService;
-
-    public ResourcesProviderController(ResourcesService resourcesService) {
-        this.resourcesService = resourcesService;
-    }
+    @Autowired
+    private ResourcesServer resourcesServer;
 
     @GetMapping("/projects")
     public ResourceSet getProjects(@RequestParam Collection<String> projects, Principal principal) {
-        return resourcesService.projects(projects, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+        return resourcesServer.klabService().projects(projects, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/project/{projectName}")
     public ResourceSet getProject(@PathVariable String projectName, Principal principal) {
-        return resourcesService.project(projectName,
+        return resourcesServer.klabService().project(projectName,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/model/{modelName}")
     public ResourceSet getModel(@PathVariable String modelName, Principal principal) {
-        return resourcesService.model(modelName, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+        return resourcesServer.klabService().model(modelName, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resolve/{urn}")
     public ResourceSet resolve(@PathVariable String urn, Principal principal) {
-        return resourcesService.resolve(urn, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+        return resourcesServer.klabService().resolve(urn, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resolveNamespace/{urn}")
     public KimNamespace resolveNamespace(@PathVariable String urn, Principal principal) {
-        return resourcesService.resolveNamespace(urn,
+        return resourcesServer.klabService().resolveNamespace(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
 
     @GetMapping("/resolveOntology/{urn}")
     public KimOntology resolveOntology(@PathVariable String urn, Principal principal) {
-        return resourcesService.resolveOntology(urn,
+        return resourcesServer.klabService().resolveOntology(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resolveObservationStrategyDocument/{urn}")
     public KimObservationStrategyDocument resolveObservationStrategyDocument(@PathVariable String urn,
                                                                              Principal principal) {
-        return resourcesService.resolveObservationStrategyDocument(urn,
+        return resourcesServer.klabService().resolveObservationStrategyDocument(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/listWorkspaces")
     public Collection<Workspace> listWorkspaces() {
-        return resourcesService.listWorkspaces();
+        return resourcesServer.klabService().listWorkspaces();
     }
 
     @GetMapping("/resolveBehavior/{urn}")
     public KActorsBehavior resolveBehavior(@PathVariable String urn,
                                            Principal principal) {
-        return resourcesService.resolveBehavior(urn,
+        return resourcesServer.klabService().resolveBehavior(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
 
     @GetMapping("/resolveResource/{urn}")
     public Resource resolveResource(@PathVariable String urn, Principal principal) {
-        return resourcesService.resolveResource(urn,
+        return resourcesServer.klabService().resolveResource(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resolveWorkspace/{urn}")
     public Workspace resolveWorkspace(@PathVariable String urn, Principal principal) {
-        return resourcesService.resolveWorkspace(urn,
+        return resourcesServer.klabService().resolveWorkspace(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resolveServiceCall/{name}")
     public ResourceSet resolveServiceCall(@PathVariable String name,
                                           Principal principal) {
-        return resourcesService.resolveServiceCall(name,
+        return resourcesServer.klabService().resolveServiceCall(name,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resourceStatus/{urn}")
     public ResourceStatus resourceStatus(@PathVariable String urn,
                                          Principal principal) {
-        return resourcesService.resourceStatus(urn,
+        return resourcesServer.klabService().resourceStatus(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resolveObservable")
     public KimObservable resolveObservable(@RequestParam String definition) {
-        return resourcesService.resolveObservable(definition);
+        return resourcesServer.klabService().resolveObservable(definition);
     }
 
     @GetMapping("/describeConcept/{conceptUrn}")
     public KimConcept.Descriptor describeConcept(@PathVariable String conceptUrn) {
-        return resourcesService.describeConcept(conceptUrn);
+        return resourcesServer.klabService().describeConcept(conceptUrn);
     }
 
     @GetMapping("/resolveConcept/{definition}")
     public KimConcept resolveConcept(@PathVariable String definition) {
-        return resourcesService.resolveConcept(definition);
+        return resourcesServer.klabService().resolveConcept(definition);
     }
 
     @PostMapping("/contextualizeResource")
     public Resource contextualizeResource(@RequestBody Resource originalResource, Principal principal) {
-        return resourcesService.contextualizeResource(originalResource,
+        return resourcesServer.klabService().contextualizeResource(originalResource,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal, ContextScope.class));
     }
 
     @PostMapping("/contextualize")
     public KlabData contextualize(@RequestBody Resource contextualizedResource, Principal principal) {
-        return resourcesService.contextualize(contextualizedResource,
+        return resourcesServer.klabService().contextualize(contextualizedResource,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/resolveDataflow/{urn}")
     public KdlDataflow resolveDataflow(@PathVariable String urn,
                                        Principal principal) {
-        return resourcesService.resolveDataflow(urn,
+        return resourcesServer.klabService().resolveDataflow(urn,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/getWorldview")
     public Worldview getWorldview() {
-        return resourcesService.getWorldview();
+        return resourcesServer.klabService().getWorldview();
     }
 
     @GetMapping("/dependents/{namespaceId}")
     public List<KimNamespace> dependents(@PathVariable String namespaceId) {
-        return resourcesService.dependents(namespaceId);
+        return resourcesServer.klabService().dependents(namespaceId);
     }
 
     @GetMapping("/precursors/{namespaceId}")
     public List<KimNamespace> precursors(@PathVariable String namespaceId) {
-        return resourcesService.precursors(namespaceId);
+        return resourcesServer.klabService().precursors(namespaceId);
     }
 
     @GetMapping("/queryResources")
     public List<String> queryResources(@RequestParam String urnPattern,
                                        @RequestParam KlabAsset.KnowledgeClass... resourceTypes) {
-        return resourcesService.queryResources(urnPattern, resourceTypes);
+        return resourcesServer.klabService().queryResources(urnPattern, resourceTypes);
     }
 
     @GetMapping("/resolveProject/{projectName}")
     public Project resolveProject(@PathVariable String projectName, Principal principal) {
-        return resourcesService.resolveProject(projectName,
+        return resourcesServer.klabService().resolveProject(projectName,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal));
     }
 
     @GetMapping("/queryModels")
     public ResourceSet queryModels(@RequestParam Observable observable, Principal principal) {
-        return resourcesService.queryModels(observable,
+        return resourcesServer.klabService().queryModels(observable,
                 JWTAuthenticationManager.INSTANCE.resolveScope(principal, ContextScope.class));
     }
 
     @GetMapping("/modelGeometry/{modelUrn}")
     public Coverage modelGeometry(@PathVariable String modelUrn) {
-        return resourcesService.modelGeometry(modelUrn);
+        return resourcesServer.klabService().modelGeometry(modelUrn);
     }
 
     @GetMapping("/readBehavior")
     public KActorsBehavior readBehavior(@RequestParam URL url) {
-        return resourcesService.readBehavior(url);
+        return resourcesServer.klabService().readBehavior(url);
     }
 
     @PostMapping("/importProject")
     public boolean importProject(@RequestParam String workspaceName, @RequestParam String projectUrl,
                                  @RequestParam boolean overwriteIfExisting) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.importProject(workspaceName, projectUrl, overwriteIfExisting);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -206,7 +205,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/createProject")
     public Project createProject(@RequestParam String workspaceName, @RequestParam String projectName) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createProject(workspaceName, projectName);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -215,7 +214,7 @@ public class ResourcesProviderController {
     @PostMapping("/updateProject")
     public Project updateProject(@RequestParam String projectName, @RequestBody Project.Manifest manifest,
                                  @RequestBody Metadata metadata) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.updateProject(projectName, manifest, metadata);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -224,7 +223,7 @@ public class ResourcesProviderController {
     @PostMapping("/createNamespace")
     public KimNamespace createNamespace(@RequestParam String projectName,
                                         @RequestBody String namespaceContent) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createNamespace(projectName, namespaceContent);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -232,7 +231,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/updateNamespace")
     public void updateNamespace(@RequestParam String projectName, @RequestBody String namespaceContent) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.updateNamespace(projectName, namespaceContent);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -241,7 +240,7 @@ public class ResourcesProviderController {
     @PostMapping("/createBehavior")
     public KActorsBehavior createBehavior(@RequestParam String projectName,
                                           @RequestBody String behaviorContent) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createBehavior(projectName, behaviorContent);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -249,7 +248,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/updateBehavior")
     public void updateBehavior(@RequestParam String projectName, @RequestBody String behaviorContent) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.updateBehavior(projectName, behaviorContent);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -257,7 +256,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/createOntology")
     public KimOntology createOntology(@RequestParam String projectName, @RequestBody String ontologyContent) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createOntology(projectName, ontologyContent);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -265,7 +264,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/updateOntology")
     public void updateOntology(@RequestParam String projectName, @RequestBody String ontologyContent) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.updateOntology(projectName, ontologyContent);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -274,7 +273,7 @@ public class ResourcesProviderController {
     @PostMapping("/publishProject")
     public boolean publishProject(@RequestParam String projectUrl,
                                   @RequestBody ResourcePrivileges permissions) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.publishProject(projectUrl, permissions);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -282,7 +281,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/unpublishProject")
     public boolean unpublishProject(@RequestParam String projectUrl) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.unpublishProject(projectUrl);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -290,7 +289,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/createResource")
     public String createResource(@RequestBody Resource resource) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createResource(resource);
 
         }
@@ -299,7 +298,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/createResourceFromPath")
     public String createResourceFromPath(@RequestBody File resourcePath) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createResource(resourcePath);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -309,7 +308,7 @@ public class ResourcesProviderController {
     public Resource createResourceForProject(@RequestParam String projectName, @RequestParam String urnId,
                                              @RequestParam String adapter,
                                              @RequestParam Parameters<String> resourceData) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createResource(projectName, urnId, adapter, resourceData);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -318,7 +317,7 @@ public class ResourcesProviderController {
     @PostMapping("/publishResource")
     public boolean publishResource(@RequestParam String resourceUrn,
                                    @RequestBody ResourcePrivileges permissions) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.publishResource(resourceUrn, permissions);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -326,7 +325,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/unpublishResource")
     public boolean unpublishResource(@RequestParam String resourceUrn) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.unpublishResource(resourceUrn);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -334,7 +333,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/removeProject")
     public void removeProject(@RequestParam String projectName) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.removeProject(projectName);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -342,7 +341,7 @@ public class ResourcesProviderController {
 
     @PostMapping("/removeWorkspace")
     public void removeWorkspace(@RequestParam String workspaceName) {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.removeWorkspace(workspaceName);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -350,7 +349,7 @@ public class ResourcesProviderController {
 
     @GetMapping("/listProjects")
     public Collection<Project> listProjects() {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.listProjects();
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -358,7 +357,7 @@ public class ResourcesProviderController {
 
     @GetMapping("/listResourceUrns")
     public Collection<String> listResourceUrns() {
-        if (resourcesService instanceof ResourcesService.Admin admin) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.listResourceUrns();
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");

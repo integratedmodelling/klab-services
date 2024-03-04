@@ -11,10 +11,6 @@ import java.util.List;
 
 public class ResourcesServiceInstance extends ServiceInstance<ResourcesProvider> {
 
-    public ResourcesServiceInstance(ServiceStartupOptions options) {
-        super(options);
-    }
-
     @Override
     protected List<KlabService.Type> getEssentialServices() {
         return Collections.emptyList();

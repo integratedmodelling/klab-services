@@ -1,23 +1,23 @@
 package org.integratedmodelling.klab.services.application;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.integratedmodelling.common.authentication.KlabCertificateImpl;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
-import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.messaging.WebsocketsServerMessageBus;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -37,7 +37,6 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.annotation.PreDestroy;
-import java.io.File;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -56,134 +55,60 @@ import java.util.stream.StreamSupport;
  * the local machine if anonymous.
  */
 @Component
-@EnableAutoConfiguration
+@EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security", "org" +
         ".integratedmodelling.klab.services.application.controllers"})
 public abstract class ServiceNetworkedInstance<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer {
 
     private long bootTime;
     private ConfigurableApplicationContext context;
+    private T klabService;
 
-    public ServiceNetworkedInstance(ServiceStartupOptions options) {
-        super(options);
-    }
+    @Override
+    public boolean start(ServiceStartupOptions startupOptions) {
 
-    //    private AtomicBoolean maintenanceMode = new AtomicBoolean(false);
-    //    private AtomicBoolean atomicOperationMode = new AtomicBoolean(false);
-
-    //    public void run(Service<?> klabService, String[] args) {
-    //        this.service = klabService;
-    //        ServiceStartupOptions options = new ServiceStartupOptions();
-    //        options.initialize(args);
-    //        klabService.start();
-    //    }
-
-
-    public void start() {
-
-        if (!startupOptions.isCloudConfig()) {
-
-            KlabCertificate certificate = null;
-
-            if (startupOptions.getCertificateResource() != null) {
-                certificate =
-                        KlabCertificateImpl.createFromClasspath(startupOptions.getCertificateResource());
-            } else {
-                File certFile = startupOptions.getCertificateFile();
-                certificate = certFile.exists() ? KlabCertificateImpl.createFromFile(certFile) :
-                              KlabCertificateImpl.createDefault();
-            }
-
-            if (!certificate.isValid()) {
-                throw new KlabAuthorizationException("certificate is invalid: " + certificate.getInvalidityCause());
-            }
-
-            //            /*
-            //             * This authenticates with the hub
-            //             *
-            //             */
-            //            Service ret = new Service(service, options, certificate);
-
-            if (!boot(startupOptions)) {
-                throw new KlabServiceAccessException("service failed to start");
-            }
-
-            //            return ret;
-
-        } else {
-            if (!boot()) {
-                throw new KlabServiceAccessException("service failed to start");
-            }
-
-            //            return ret;
-        }
-    }
-
-    protected Channel createChannel(UserIdentity identity) {
-        return new MessagingChannelImpl(identity, null /* TODO websockets server-side message bus */);
-    }
-    /**
-     * The initialize() method of the service should be called in a thread and wait for the configured
-     * services needed, setting the available flag as soon as boot is complete.
-     *
-     * @return
-     */
-    private boolean boot(StartupOptions startupOptions) {
         try {
-
-            bootTime = System.currentTimeMillis();
-
-            SpringApplication app = new SpringApplication(ServiceNetworkedInstance.class);
+            super.start(startupOptions);
+            this.klabService = super.klabService();
+            SpringApplication app = new SpringApplication(this.getClass());
             this.context = app.run(startupOptions.getArguments());
             Environment environment = this.context.getEnvironment();
             setPropertiesFromEnvironment(environment);
-            var port = startupOptions.getPort();
             Map<String, Object> props = new HashMap<>();
             props.put("server.port", "" + startupOptions.getPort());
             props.put("spring.main.banner-mode", "off");
-            props.put("server.servlet.contextPath", startupOptions);
+            props.put("server.servlet.contextPath", startupOptions.getContextPath());
+
             app.setDefaultProperties(props);
             System.out.println("\n" + Branding.NODE_BANNER);
-            System.out.println("\nStartup successful: " + "k.LAB service " + klabService().getLocalName() + " " + "v" + Version.CURRENT + " on " + new Date());
-
-            // TODO call initialize in a thread; inform the application
-
+            System.out.println("\nStartup successful: " + "k.LAB service " + startupOptions.getContextPath().toUpperCase() + " v" + Version.CURRENT + " on " + new Date());
         } catch (Throwable e) {
             Logging.INSTANCE.error(e);
             return false;
         }
-
-        bootTime = System.currentTimeMillis();
-
         return true;
     }
 
-    private boolean boot() {
-        try {
-
-            SpringApplication app = new SpringApplication(ServiceNetworkedInstance.class);
-            this.context = app.run();
-            Environment environment = this.context.getEnvironment();
-            String certString = environment.getProperty("klab.certificate");
-            //            this.certificate = KlabCertificateImpl.createFromString(certString);
-            setPropertiesFromEnvironment(environment);
-            //            this.owner = JWTAuthenticationManager.INSTANCE.authenticateService(certificate,
-            //                    new ServiceStartupOptions());
-            System.out.println("\n" + Branding.NODE_BANNER);
-            System.out.println("\nStartup successful: " + "k.LAB node server" + " v" + Version.CURRENT + " "
-                    + "on " + new Date());
-
-        } catch (Throwable e) {
-            Logging.INSTANCE.error(e);
-            return false;
-        }
-
-        bootTime = System.currentTimeMillis();
-        //		Klab.INSTANCE.setRootIdentity(owner);
-
-        return true;
+    @Bean
+    public T klabService() {
+        return klabService;
     }
 
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper objectMapper =
+                new ObjectMapper()
+                        .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                        .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+        // objectMapper.getSerializerProvider().setNullKeySerializer(new Jsr310NullKeySerializer());
+        JacksonConfiguration.configureObjectMapperForKlabTypes(objectMapper);
+        return objectMapper;
+    }
+
+    protected Channel createChannel(UserIdentity identity) {
+        return new MessagingChannelImpl(identity, new WebsocketsServerMessageBus());
+    }
 
     private static void setPropertiesFromEnvironment(Environment environment) {
         MutablePropertySources propSrcs = ((ConfigurableEnvironment) environment).getPropertySources();
@@ -196,20 +121,21 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         return;
     }
 
-    @PreDestroy
+    //    @PreDestroy
     public void shutdown() {
-        // TODO engine shutdown if needed
+        super.stop();
+        this.context.stop();
     }
 
-    @Bean
-    public ProtobufJsonFormatHttpMessageConverter ProtobufJsonFormatHttpMessageConverter() {
-        return new ProtobufJsonFormatHttpMessageConverter();
-    }
+//    @Bean
+//    public ProtobufJsonFormatHttpMessageConverter ProtobufJsonFormatHttpMessageConverter() {
+//        return new ProtobufJsonFormatHttpMessageConverter();
+//    }
 
-    @Bean
-    public RestTemplate restTemplate(ProtobufHttpMessageConverter hmc) {
-        return new RestTemplate(Arrays.asList(hmc));
-    }
+    //    @Bean
+    //    public RestTemplate restTemplate(ProtobufHttpMessageConverter hmc) {
+    //        return new RestTemplate(Arrays.asList(hmc));
+    //    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -236,9 +162,5 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-    //    public static void main(String args[]) {
-    //        new ServiceApplication().run(args);
-    //    }
 
 }

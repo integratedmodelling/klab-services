@@ -14,11 +14,6 @@ import java.util.List;
  */
 public class ReasonerInstance extends ServiceInstance<ReasonerService> {
 
-    public ReasonerInstance(ServiceStartupOptions options) {
-        super(options);
-    }
-
-    @Override
     protected List<KlabService.Type> getEssentialServices() {
         return List.of(KlabService.Type.RESOURCES);
     }
