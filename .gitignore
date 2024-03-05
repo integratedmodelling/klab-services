@@ -7,3 +7,4 @@ target
 **/.temp-*
 **/*._trace
 **/*.puml
+.mvn/wrapper/maven-wrapper.jar

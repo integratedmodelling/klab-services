@@ -7,18 +7,10 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'mvn -B -U clean package'
-                sh 'mvn -B --projects klab.core.api javadoc:javadoc'
-                script {
-                    def remote = [:]
-                    remote.name = "im-communication"
-                    remote.host = "192.168.250.200"
-                    remote.allowAnyHosts = true
-                    withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-im-communication', keyFileVariable: 'identity')]) {
-                        remote.user = 'ubuntu'
-                        remote.identityFile = identity
-                        sshPut remote: remote, from: 'klab.core.api/target/site/apidocs/', into: '/home/ubuntu/repos/documents.production.compose/javadocs'
-                    }
+                sh './mvnw -ntp -B -U clean package'
+                sh './mvnw -ntp -B --projects klab.core.api javadoc:javadoc'
+                withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-im-communication', keyFileVariable: 'identity')]) {
+                    sh 'rsync --archive --progress --delete --rsh="ssh -i ${identity} -o StrictHostKeyChecking=no" klab.core.api/target/site/apidocs/ ubuntu@192.168.250.200:repos/documents.production.compose/javadocs/'
                 }
             }
         }
