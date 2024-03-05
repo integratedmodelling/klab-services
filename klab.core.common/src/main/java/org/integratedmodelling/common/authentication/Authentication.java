@@ -210,4 +210,15 @@ public enum Authentication {
 
         return ret;
     }
+
+    /**
+     * Find the token on the filesystem installed by a running service of the passed type. If found, we may
+     * have a local service that lets us connect with just that token and administer it.
+     *
+     * @param serviceType
+     * @return
+     */
+    public String readLocalServiceToken(KlabService.Type serviceType) {
+        return null;
+    }
 }

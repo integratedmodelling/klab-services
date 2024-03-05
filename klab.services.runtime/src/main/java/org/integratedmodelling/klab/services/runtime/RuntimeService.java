@@ -43,14 +43,6 @@ public class RuntimeService extends BaseService
     }
 
     @Override
-    public boolean isLocal() {
-        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("RUNTIME_" + serverId));
-    }
-
-
-    @Override
     public void initializeService() {
 
         scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities());

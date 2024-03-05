@@ -13,6 +13,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class ServiceSecurityConfiguration {
+
+    @Autowired
+    ServiceAuthorizationManager authorizationManager;
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
@@ -32,7 +36,7 @@ public class ServiceSecurityConfiguration {
                         // TODO next one not working
                         .requestMatchers("/swagger-ui").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(new JWTAuthorizationFilter(authenticationManager),
+                .addFilterBefore(new TokenAuthorizationFilter(authenticationManager, authorizationManager),
                         UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

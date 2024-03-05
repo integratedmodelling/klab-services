@@ -14,7 +14,10 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Service;
 
 import java.io.File;
@@ -35,6 +38,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         public static class Client implements AutoCloseable {
             private HttpClient client;
             private URI uri;
+            private String authorization;
 
             /**
              * GET helper that sets all headers and automatically handles JSON marshalling.
@@ -49,16 +53,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     var payloadText = payload instanceof String
                                       ? (String) payload :
                                       Json.printAsJson(payload);
-                    var request =
+                    var requestBuilder =
                             HttpRequest.newBuilder()
                                        .version(HttpClient.Version.HTTP_1_1)
                                        .timeout(Duration.ofSeconds(10))
                                        .uri(URI.create(uri + apiRequest + encodeParameters(parameters)))
                                        .header(HttpHeaders.CONTENT_TYPE, payload instanceof String ?
                                                                          MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString())
-                                       .header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass))
-                                       .POST(HttpRequest.BodyPublishers.ofString(payloadText))
-                                       .build();
+                                       .header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+
+                    if (authorization != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    var request =
+                            requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
 
                     var response =
                             client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -99,8 +108,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              */
             public <T> T get(String apiRequest, Class<T> resultClass, Object... parameters) {
                 try {
+                    var requestBuilder = HttpRequest.newBuilder().GET();
+                    if (authorization != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
                     var response =
-                            client.send(HttpRequest.newBuilder().GET().uri(URI.create(uri + "/" + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
+                            client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
 
                     if (response.statusCode() == 200) {
                         return parseResponse(response.body(), resultClass);
@@ -157,6 +171,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param serviceUrl
          * @return
          */
+        public static Client getClient(URL serviceUrl) {
+            return getClient(serviceUrl.toString());
+        }
+
+
+        /**
+         * Get a configured client for a specific URL; if the URL is recognized as being handled by a specific
+         * authentication scheme, use the configured credentials for it and automatically build the
+         * authentication strategy into the returned client. This should be used for services outside the
+         * k.LAB network that do not require an authenticated scope. Use within a try {} pattern to ensure
+         * that the connection is closed appropriately.
+         *
+         * @param serviceUrl
+         * @return
+         */
         public static Client getClient(String serviceUrl) {
             // TODO use configuration for timeouts and other options
             var client =
@@ -179,8 +208,26 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @throws org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException if not authorized to
          *                                                                                access
          */
-        public static Client getServiceClient(Scope scope, Service service) {
-            return null;
+        public static Client getServiceClient(Scope scope, KlabService service) {
+
+            var client =
+                    HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
+            var ret = new Client();
+            ret.client = client;
+            try {
+                ret.uri = service.getUrl().toURI();
+                if (!(scope.getIdentity() instanceof UserIdentity user && user.isAnonymous())) {
+                    ret.authorization = scope.getIdentity().getId();
+                }
+
+                /*
+                TODO if scope is a child scope, add its IDs as parts of the token
+                 */
+
+            } catch (URISyntaxException e) {
+                throw new KlabInternalErrorException(e);
+            }
+            return ret;
         }
     }
 

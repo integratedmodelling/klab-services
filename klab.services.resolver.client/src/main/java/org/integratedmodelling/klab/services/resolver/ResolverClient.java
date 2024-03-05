@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -10,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -34,12 +36,6 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     @Override
-    public String getLocalName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public boolean shutdown() {
         // TODO Auto-generated method stub
         return false;
@@ -52,8 +48,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
     @Override
     public Capabilities capabilities() {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
     }
 
     @Override

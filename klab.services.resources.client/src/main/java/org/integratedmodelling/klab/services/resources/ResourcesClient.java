@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -43,12 +44,6 @@ public class ResourcesClient extends ServiceClient implements ResourcesService {
         super(url);
     }
 
-    @Override
-    public String getLocalName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     public boolean isLocal() {
         String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) ||
@@ -63,8 +58,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService {
 
     @Override
     public Capabilities capabilities() {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
     }
 
     @Override
@@ -221,6 +215,11 @@ public class ResourcesClient extends ServiceClient implements ResourcesService {
     public ResourceSet resolve(String urn, Scope scope) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public static void main(String[] args) {
+        var client = new ResourcesClient();
+        System.out.println("DEBUGGAMI ORA COME SAI FARE TU");
     }
 
 }

@@ -1657,7 +1657,7 @@ public class Utils {
     public static class Strings {
 
         /**
-         * Sha256 hash of the passed input
+         * Base64-encoded Sha256 hash of the passed input
          *
          * @param input
          * @return the hashed string, or null if the input is null
@@ -1673,7 +1673,7 @@ public class Utils {
                 throw new KlabInternalErrorException(e);
             }
             byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            return new String(hash);
+            return Base64.getEncoder().encodeToString(hash);
         }
 
         /**
@@ -3346,6 +3346,10 @@ public class Utils {
 
         static public boolean isGenerated(String name) {
             return name.startsWith("_uu_");
+        }
+
+        static public String getHardwareId() {
+            return Strings.hash(Utils.OS.getMACAddress());
         }
 
         /**

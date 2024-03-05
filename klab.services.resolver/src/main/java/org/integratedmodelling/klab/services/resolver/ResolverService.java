@@ -65,7 +65,7 @@ public class ResolverService extends BaseService implements Resolver {
     Map<String, Model> models = Collections.synchronizedMap(new HashMap<>());
     Map<String, Instance> instances = Collections.synchronizedMap(new HashMap<>());
     Parameters<String> defines = Parameters.createSynchronized();
-    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature = Utils.Names.getHardwareId();
     // TODO link to configuration
     private String serviceId;
 
@@ -74,12 +74,6 @@ public class ResolverService extends BaseService implements Resolver {
         super(scope, Type.RESOLVER, options);
     }
 
-    @Override
-    public boolean isLocal() {
-        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
-    }
 
     @Override
     public URL getUrl() {

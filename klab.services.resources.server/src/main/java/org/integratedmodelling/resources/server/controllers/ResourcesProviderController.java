@@ -19,7 +19,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
-import org.integratedmodelling.klab.services.application.security.JWTAuthenticationManager;
+import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -37,45 +37,48 @@ public class ResourcesProviderController {
     @Autowired
     private ResourcesServer resourcesServer;
 
+    @Autowired
+    private ServiceAuthorizationManager authenticationManager;
+
     @GetMapping("/projects")
     public ResourceSet getProjects(@RequestParam Collection<String> projects, Principal principal) {
-        return resourcesServer.klabService().projects(projects, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+        return resourcesServer.klabService().projects(projects, authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/project/{projectName}")
     public ResourceSet getProject(@PathVariable String projectName, Principal principal) {
         return resourcesServer.klabService().project(projectName,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/model/{modelName}")
     public ResourceSet getModel(@PathVariable String modelName, Principal principal) {
-        return resourcesServer.klabService().model(modelName, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+        return resourcesServer.klabService().model(modelName, authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resolve/{urn}")
     public ResourceSet resolve(@PathVariable String urn, Principal principal) {
-        return resourcesServer.klabService().resolve(urn, JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+        return resourcesServer.klabService().resolve(urn, authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resolveNamespace/{urn}")
     public KimNamespace resolveNamespace(@PathVariable String urn, Principal principal) {
         return resourcesServer.klabService().resolveNamespace(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
 
     @GetMapping("/resolveOntology/{urn}")
     public KimOntology resolveOntology(@PathVariable String urn, Principal principal) {
         return resourcesServer.klabService().resolveOntology(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resolveObservationStrategyDocument/{urn}")
     public KimObservationStrategyDocument resolveObservationStrategyDocument(@PathVariable String urn,
                                                                              Principal principal) {
         return resourcesServer.klabService().resolveObservationStrategyDocument(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/listWorkspaces")
@@ -87,34 +90,34 @@ public class ResourcesProviderController {
     public KActorsBehavior resolveBehavior(@PathVariable String urn,
                                            Principal principal) {
         return resourcesServer.klabService().resolveBehavior(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
 
     @GetMapping("/resolveResource/{urn}")
     public Resource resolveResource(@PathVariable String urn, Principal principal) {
         return resourcesServer.klabService().resolveResource(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resolveWorkspace/{urn}")
     public Workspace resolveWorkspace(@PathVariable String urn, Principal principal) {
         return resourcesServer.klabService().resolveWorkspace(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resolveServiceCall/{name}")
     public ResourceSet resolveServiceCall(@PathVariable String name,
                                           Principal principal) {
         return resourcesServer.klabService().resolveServiceCall(name,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resourceStatus/{urn}")
     public ResourceStatus resourceStatus(@PathVariable String urn,
                                          Principal principal) {
         return resourcesServer.klabService().resourceStatus(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resolveObservable")
@@ -135,20 +138,20 @@ public class ResourcesProviderController {
     @PostMapping("/contextualizeResource")
     public Resource contextualizeResource(@RequestBody Resource originalResource, Principal principal) {
         return resourcesServer.klabService().contextualizeResource(originalResource,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal, ContextScope.class));
+                authenticationManager.resolveScope(principal, ContextScope.class));
     }
 
     @PostMapping("/contextualize")
     public KlabData contextualize(@RequestBody Resource contextualizedResource, Principal principal) {
         return resourcesServer.klabService().contextualize(contextualizedResource,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/resolveDataflow/{urn}")
     public KdlDataflow resolveDataflow(@PathVariable String urn,
                                        Principal principal) {
         return resourcesServer.klabService().resolveDataflow(urn,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/getWorldview")
@@ -175,13 +178,13 @@ public class ResourcesProviderController {
     @GetMapping("/resolveProject/{projectName}")
     public Project resolveProject(@PathVariable String projectName, Principal principal) {
         return resourcesServer.klabService().resolveProject(projectName,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal));
+                authenticationManager.resolveScope(principal));
     }
 
     @GetMapping("/queryModels")
     public ResourceSet queryModels(@RequestParam Observable observable, Principal principal) {
         return resourcesServer.klabService().queryModels(observable,
-                JWTAuthenticationManager.INSTANCE.resolveScope(principal, ContextScope.class));
+                authenticationManager.resolveScope(principal, ContextScope.class));
     }
 
     @GetMapping("/modelGeometry/{modelUrn}")

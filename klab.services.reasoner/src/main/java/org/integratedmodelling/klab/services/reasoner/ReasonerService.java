@@ -162,14 +162,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).build();
 
     private OWL owl;
-    private String hardwareSignature =
-            org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-
-    @Override
-    public boolean isLocal() {
-        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) || (capabilities().getServerId() != null && capabilities().getServerId().equals("REASONER_" + serverId));
-    }
+    private String hardwareSignature = Utils.Names.getHardwareId();
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
 

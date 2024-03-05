@@ -112,7 +112,7 @@
         <dependency>
             <groupId>org.ojalgo</groupId>
             <artifactId>ojalgo</artifactId>
-            <version>53.0.0</version>
+            <version>53.2.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/commons-collections/commons-collections -->
@@ -133,7 +133,7 @@
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-objectmapper-jackson</artifactId>
-            <version>3.13.6</version>
+            <version>4.2.1</version>
         </dependency>
 
         <!-- MapDB for various persistent caches. Simple, used it a lot, never
@@ -141,7 +141,7 @@
         <dependency>
             <groupId>org.mapdb</groupId>
             <artifactId>mapdb</artifactId>
-            <version>3.0.9</version>
+            <version>3.1.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.guava</groupId>
@@ -154,38 +154,38 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <version>9.7.0</version>
+            <version>9.9.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-suggest</artifactId>
-            <version>9.7.0</version>
+            <version>9.9.2</version>
         </dependency>
         <!-- query parser is just for testing at the moment -->
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
-            <version>9.7.0</version>
+            <version>9.8.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>6.4.0.202211300538-r</version>
+            <version>6.7.0.202309050840-r</version>
         </dependency>
 
         <!-- DEPRECATED switch to Avro: https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.20.3</version>
+            <version>3.24.4</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy</artifactId>
             <!-- <version>2.5.0-beta-2</version> -->
-            <version>3.0.7</version>
+            <version>3.0.20</version>
             <!-- <classifier>indy</classifier> -->
         </dependency>
 
@@ -193,13 +193,13 @@
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger2</artifactId>
-            <version>2.9.2</version>
+            <version>3.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger-ui</artifactId>
-            <version>2.9.2</version>
+            <version>3.0.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
@@ -322,7 +322,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.9.2</version>
+            <version>5.10.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -354,7 +354,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.1.17</version>
+            <version>10.1.18</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

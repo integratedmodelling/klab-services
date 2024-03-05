@@ -192,15 +192,6 @@ public interface KlabService extends Service {
     String getLocalName();
 
     /**
-     * A local service runs on the local machine. This is checked by controlling that the hardware signature
-     * of the machine running the service matches the one of the machine making the request. In clients, the
-     * machine ID must be added as a header if this is ever to return true.
-     *
-     * @return
-     */
-    boolean isLocal();
-
-    /**
      * Each service operates under a root scope that is used to report issues, talk to clients and derive
      * child scopes for users and when appropriate, sessions and contexts.
      *

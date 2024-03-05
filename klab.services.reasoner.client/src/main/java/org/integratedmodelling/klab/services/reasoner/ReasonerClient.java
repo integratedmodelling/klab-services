@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -36,22 +37,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner {
     }
 
     @Override
-    public String getLocalName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Capabilities capabilities() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("REASONER_" + serverId));
+        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
     }
 
     @Override

@@ -274,7 +274,8 @@ public class JacksonConfiguration {
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
                                       Triple.class, Unit.class, KlabAsset.class, Currency.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
-                                      Geometry.Dimension.class, Parameters.class}) {
+                                      Geometry.Dimension.class, Parameters.class,
+                                      KlabService.ServiceCapabilities.class}) {
             module.addSerializer(cls, new PolymorphicSerializer());
             module.addDeserializer(cls, new PolymorphicDeserializer());
         }

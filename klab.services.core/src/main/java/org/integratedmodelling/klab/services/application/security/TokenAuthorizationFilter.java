@@ -11,10 +11,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
+public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
 
-    public JWTAuthorizationFilter(AuthenticationManager authManager) {
+    ServiceAuthorizationManager authorizationManager;
+
+    public TokenAuthorizationFilter(AuthenticationManager authManager, ServiceAuthorizationManager authorizationManager) {
         super(authManager);
+        this.authorizationManager = authorizationManager;
     }
 
     @Override
@@ -23,7 +26,7 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
         String tokenString = req.getHeader(HttpHeaders.AUTHORIZATION);
         if (tokenString != null) {
             try {
-                EngineAuthorization token = JWTAuthenticationManager.INSTANCE.validateJwt(tokenString);
+                EngineAuthorization token = authorizationManager.validateToken(tokenString);
                 if (token != null && token.isAuthenticated()) {
                     SecurityContextHolder.getContext().setAuthentication(token);
                 }

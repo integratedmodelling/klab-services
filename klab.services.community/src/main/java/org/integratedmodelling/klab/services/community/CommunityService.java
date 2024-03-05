@@ -9,6 +9,7 @@ import java.net.URL;
 public class CommunityService implements Community {
 
     private static final long serialVersionUID = -7321738633095243998L;
+    private String hardwareSignature = Utils.Names.getHardwareId();
 
     @Override
     public ServiceCapabilities capabilities() {
@@ -31,13 +32,6 @@ public class CommunityService implements Community {
     public String getLocalName() {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean isLocal() {
-        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("COMMUNITY_" + serverId));
     }
 
     @Override

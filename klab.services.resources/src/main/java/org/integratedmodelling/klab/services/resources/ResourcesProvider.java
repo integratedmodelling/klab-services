@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
+import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
@@ -50,7 +51,6 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.serializer.GroupSerializer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -60,7 +60,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiConsumer;
 
 @Service
 public class ResourcesProvider extends BaseService implements ResourcesService, ResourcesService.Admin {
@@ -70,14 +69,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private static boolean languagesInitialized;
 
     private URL url;
-    private String hardwareSignature =
-            org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-
-    @Override
-    public boolean isLocal() {
-        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) || (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOURCES_" + serverId));
-    }
+    private String hardwareSignature = Utils.Names.getHardwareId();
 
     private WorkspaceManager workspaceManager;
     /**
@@ -418,66 +410,28 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public Capabilities capabilities() {
-        return new Capabilities() {
-            @Override
-            public boolean isWorldviewProvider() {
-                // TODO
-                return !getWorldview().isEmpty();
-            }
 
-            @Override
-            public String getAdoptedWorldview() {
-                return getWorldview().isEmpty() ? null : getWorldview().getUrn();
+        var ret = new ResourcesCapabilitiesImpl();
+        ret.setWorldviewProvider(!getWorldview().isEmpty());
+        ret.setAdoptedWorldview(getWorldview().isEmpty() ? null : getWorldview().getUrn());
+        ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
+        ret.setType(Type.RESOURCES);
+        ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
+        ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
+//        if (isLocal()) {
+            // TODO capabilities are being asked from same machine as the one that runs the server. This call
+            //  should have a @Nullable scope
+            if (ResourcesProvider.this instanceof ResourcesService.Admin) {
+                ret.getPermissions().add(CRUDOperation.CREATE);
+                ret.getPermissions().add(CRUDOperation.DELETE);
+                ret.getPermissions().add(CRUDOperation.UPDATE);
             }
+//        } else {
+//            // TODO check permissions of current userscope vs. configuration
+//        }
 
-            @Override
-            public List<String> getWorkspaceNames() {
-                // TODO filter by requesting scope
-                return workspaceManager.getWorkspaceURNs();
-            }
+        return ret;
 
-            @Override
-            public Set<CRUDOperation> getPermissions() {
-
-                var ret = EnumSet.noneOf(CRUDOperation.class);
-                if (isLocal()) {
-                    // capabilities are being asked from same machine as the one that runs the server
-                    if (ResourcesProvider.this instanceof ResourcesService.Admin) {
-                        ret.add(CRUDOperation.CREATE);
-                        ret.add(CRUDOperation.DELETE);
-                        ret.add(CRUDOperation.UPDATE);
-                    }
-                } else {
-                    // TODO check permissions of current userscope vs. configuration
-                }
-                return ret;
-            }
-
-            @Override
-            public Type getType() {
-                return Type.RESOURCES;
-            }
-
-            @Override
-            public String getLocalName() {
-                return localName;
-            }
-
-            @Override
-            public String getServiceName() {
-                return "Resources";
-            }
-
-            @Override
-            public String getServiceId() {
-                return workspaceManager.getConfiguration().getServiceId();
-            }
-
-            @Override
-            public String getServerId() {
-                return hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature);
-            }
-        };
     }
 
     @Override
