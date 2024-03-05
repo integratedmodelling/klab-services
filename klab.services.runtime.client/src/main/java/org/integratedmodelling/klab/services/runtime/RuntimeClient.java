@@ -32,12 +32,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public boolean shutdown() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public boolean releaseScope(ContextScope scope) {
         return false;
     }

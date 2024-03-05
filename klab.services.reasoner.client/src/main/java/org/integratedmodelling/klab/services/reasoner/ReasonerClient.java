@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.reasoner;
 
+import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -38,7 +39,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner {
 
     @Override
     public Capabilities capabilities() {
-        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
+        return client.get(ServicesAPI.CAPABILITIES, ReasonerCapabilitiesImpl.class);
     }
 
     @Override
@@ -544,12 +545,6 @@ public class ReasonerClient extends ServiceClient implements Reasoner {
     public SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean shutdown() {
-        // TODO Auto-generated method stub
-        return false;
     }
 
     @Override

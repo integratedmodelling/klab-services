@@ -2,6 +2,8 @@ package org.integratedmodelling.common.services.client;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.messaging.WebsocketsClientMessageBus;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -158,32 +160,35 @@ public abstract class ServiceClient implements KlabService {
      */
     private void establishConnection() {
 
-        this.scope = new AbstractServiceDelegatingScope(/*new WebsocketsClientMessageBus(this.url.toString())*/ null) {
-            @Override
-            public <T extends KlabService> T getService(Class<T> serviceClass) {
-                return KlabService.Type.classify(serviceClass) == serviceType ? (T) ServiceClient.this : null;
-            }
+        this.scope =
+                new AbstractServiceDelegatingScope(status.get().getLocality() == ServiceScope.Locality.WAN
+                                                   ? new MessagingChannelImpl(this.authentication.getFirst(),
+                                                           new WebsocketsClientMessageBus(this.url.toString()))
+                                                   : new ChannelImpl(this.authentication.getFirst())) {
+                    @Override
+                    public <T extends KlabService> T getService(Class<T> serviceClass) {
+                        return KlabService.Type.classify(serviceClass) == serviceType ?
+                               (T) ServiceClient.this : null;
+                    }
 
-            @Override
-            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                return KlabService.Type.classify(serviceClass) == serviceType ?
-                       (Collection<T>) List.of(ServiceClient.this) : Collections.emptyList();
-            }
-        };
+                    @Override
+                    public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                        return KlabService.Type.classify(serviceClass) == serviceType ?
+                               (Collection<T>) List.of(ServiceClient.this) : Collections.emptyList();
+                    }
+                };
 
         this.client = Utils.Http.getServiceClient(scope, this);
         this.capabilities = capabilities();
 
         if (capabilities == null) {
             connected.set(false);
+        } else {
+            scheduler.scheduleAtFixedRate(() -> checkConnection(), 0, pollCycleSeconds, TimeUnit.SECONDS);
         }
-
-        scheduler.scheduleAtFixedRate(() -> checkConnection(), 0, pollCycleSeconds, TimeUnit.SECONDS);
-
     }
 
     private void checkConnection() {
-
 
         if (!connected.get()) {
             if ((this.url =
@@ -224,6 +229,13 @@ public abstract class ServiceClient implements KlabService {
     @Override
     public final String getLocalName() {
         return this.capabilities == null ? null : this.capabilities.getLocalName();
+    }
+
+    @Override
+    public final boolean shutdown() {
+        this.scheduler.shutdown();
+        // TODO see if we need to log out
+        return false;
     }
 
 }

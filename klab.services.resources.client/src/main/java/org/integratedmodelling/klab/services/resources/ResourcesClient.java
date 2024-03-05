@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resources;
 
+import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.KlabData;
@@ -51,14 +52,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService {
     }
 
     @Override
-    public boolean shutdown() {
-        // TODO just send a logout unless the service is local
-        return false;
-    }
-
-    @Override
     public Capabilities capabilities() {
-        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
+        return client.get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);
     }
 
     @Override

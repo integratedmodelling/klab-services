@@ -35,11 +35,6 @@ public class ResolverClient extends ServiceClient implements Resolver {
         super(url);
     }
 
-    @Override
-    public boolean shutdown() {
-        // TODO Auto-generated method stub
-        return false;
-    }
     public boolean isLocal() {
         String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) ||
