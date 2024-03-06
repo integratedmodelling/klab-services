@@ -47,6 +47,7 @@ public class ServiceAuthorizationManager {
     private String authenticatingHub;
     private String nodeName;
     private String hubName;
+    private boolean initialized;
 
     @Autowired
     ServiceNetworkedInstance service;
@@ -86,6 +87,7 @@ public class ServiceAuthorizationManager {
         request.setKey(certificate.getProperty(KlabCertificate.KEY_SIGNATURE));
         request.setLevel(certificate.getLevel());
         request.setEmail(certificate.getProperty(KlabCertificate.KEY_PARTNER_EMAIL));
+        initialized = true;
 
         /*
          * response contains the groupset for validation and the Base64-encoded public
@@ -134,6 +136,7 @@ public class ServiceAuthorizationManager {
 
         //        return rootIdentity;
 
+        // TODO return the partner identity for the service scope
         return null;
     }
 
@@ -167,6 +170,25 @@ public class ServiceAuthorizationManager {
     public EngineAuthorization validateToken(String token) {
 
         EngineAuthorization result = null;
+
+        if (token.startsWith(service.klabService().getServiceSecret())) {
+
+            /*
+            local connection on same machine, authorize service scope with all privileges.
+             */
+            return EngineAuthorization.create(service.klabService().scope(), true);
+
+        } else if (token.equals(service.klabService().scope().getIdentity().getId())) {
+            /*
+            authorized user is same user who runs the service; authorization is entire
+            service scope and service is run by user-level certificate, not institution.
+             */
+            return EngineAuthorization.create(service.klabService().scope(), false);
+        }
+
+        if (!initialized) {
+            return null;
+        }
 
         try {
             // first extract the partnerId so that we know which public key to use for
@@ -261,10 +283,18 @@ public class ServiceAuthorizationManager {
     }
 
     public Scope resolveScope(Principal principal) {
+        if (principal instanceof EngineAuthorization authorization) {
+            return authorization.getScope();
+        }
         return null;
     }
 
     public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass) {
+        if (principal instanceof EngineAuthorization authorization
+                && authorization.getScope() != null
+                && scopeClass.isAssignableFrom(authorization.getScope().getClass())) {
+            return (T) authorization.getScope();
+        }
         return null;
     }
 

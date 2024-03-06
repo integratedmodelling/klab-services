@@ -2,8 +2,12 @@ package org.integratedmodelling.klab.services.resources;
 
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.resources.ProjectRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -25,11 +29,12 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 
-public class ResourcesClient extends ServiceClient implements ResourcesService {
+public class ResourcesClient extends ServiceClient implements ResourcesService, ResourcesService.Admin {
 
     private static final long serialVersionUID = 4305387731730961701L;
 
@@ -176,35 +181,35 @@ public class ResourcesClient extends ServiceClient implements ResourcesService {
         return null;
     }
 
-	@Override
-	public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<String> queryResources(String urnPattern, KnowledgeClass... resourceTypes) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public ResourceStatus resourceStatus(String urn, Scope scope) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public ResourceStatus resourceStatus(String urn, Scope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Project resolveProject(String projectName, Scope scope) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Project resolveProject(String projectName, Scope scope) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public Coverage modelGeometry(String modelUrn) throws KlabIllegalArgumentException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public KActorsBehavior readBehavior(URL url) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public KActorsBehavior readBehavior(URL url) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
     @Override
     public ResourceSet resolve(String urn, Scope scope) {
@@ -215,6 +220,111 @@ public class ResourcesClient extends ServiceClient implements ResourcesService {
     public static void main(String[] args) {
         var client = new ResourcesClient();
         System.out.println("DEBUGGAMI ORA COME SAI FARE TU");
+        client.importProject("worldview", "https://github.com/integratedmodelling/imod.git", true);
     }
 
+    @Override
+    public boolean importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting) {
+        ProjectRequest request = new ProjectRequest();
+        request.setWorkspaceName(workspaceName);
+        request.setProjectUrl(projectUrl);
+        request.setOverwrite(overwriteIfExisting);
+        return client.post(ServicesAPI.RESOURCES.IMPORT_PROJECT, request, Boolean.class);
+    }
+
+    @Override
+    public Project createProject(String workspaceName, String projectName) {
+        return null;
+    }
+
+    @Override
+    public Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata) {
+        return null;
+    }
+
+    @Override
+    public KimNamespace createNamespace(String projectName, String namespaceContent) {
+        return null;
+    }
+
+    @Override
+    public void updateNamespace(String projectName, String namespaceContent) {
+
+    }
+
+    @Override
+    public KActorsBehavior createBehavior(String projectName, String behaviorContent) {
+        return null;
+    }
+
+    @Override
+    public void updateBehavior(String projectName, String behaviorContent) {
+
+    }
+
+    @Override
+    public KimOntology createOntology(String projectName, String ontologyContent) {
+        return null;
+    }
+
+    @Override
+    public void updateOntology(String projectName, String ontologyContent) {
+
+    }
+
+    @Override
+    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
+        return false;
+    }
+
+    @Override
+    public boolean unpublishProject(String projectUrl) {
+        return false;
+    }
+
+    @Override
+    public String createResource(Resource resource) {
+        return null;
+    }
+
+    @Override
+    public String createResource(File resourcePath) {
+        return null;
+    }
+
+    @Override
+    public Resource createResource(String projectName, String urnId, String adapter,
+                                   Parameters<String> resourceData) {
+        return null;
+    }
+
+    @Override
+    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
+        return false;
+    }
+
+    @Override
+    public boolean unpublishResource(String resourceUrn) {
+        return false;
+    }
+
+    @Override
+    public void removeProject(String projectName) {
+
+    }
+
+    @Override
+    public void removeWorkspace(String workspaceName) {
+
+    }
+
+    @Override
+    public Collection<Project> listProjects() {
+        return null;
+    }
+
+    @Override
+    public Collection<String> listResourceUrns() {
+        return null;
+    }
 }

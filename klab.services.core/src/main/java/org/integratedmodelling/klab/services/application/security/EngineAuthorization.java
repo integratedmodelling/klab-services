@@ -1,21 +1,20 @@
 /**
  * - BEGIN LICENSE: 4552165799761088680 -
- *
+ * <p>
  * Copyright (C) 2014-2018 by: - J. Luke Scott <luke@cron.works> - Ferdinando Villa
- * <ferdinando.villa@bc3research.org> - any other authors listed in the @author annotations in
- * source files
- *
- * This program is free software; you can redistribute it and/or modify it under the terms of the
- * Affero General Public License Version 3 or any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
- * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Affero
- * General Public License for more details.
- *
- * You should have received a copy of the Affero General Public License along with this program; if
- * not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA. The license is also available at: https://www.gnu.org/licenses/agpl.html
- *
+ * <ferdinando.villa@bc3research.org> - any other authors listed in the @author annotations in source files
+ * <p>
+ * This program is free software; you can redistribute it and/or modify it under the terms of the Affero
+ * General Public License Version 3 or any later version.
+ * <p>
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Affero General Public
+ * License for more details.
+ * <p>
+ * You should have received a copy of the Affero General Public License along with this program; if not, write
+ * to the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. The license
+ * is also available at: https://www.gnu.org/licenses/agpl.html
+ * <p>
  * - END LICENSE -
  */
 package org.integratedmodelling.klab.services.application.security;
@@ -24,6 +23,10 @@ import java.time.Instant;
 import java.util.*;
 
 import org.integratedmodelling.klab.api.identities.Group;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
 import org.integratedmodelling.klab.rest.IdentityReference;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -83,6 +86,11 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      */
     private final Credentials username;
 
+    /**
+     * A successful authorization should always result in a scope being obtained.
+     */
+    private Scope scope;
+
     public EngineAuthorization(String partnerId, String username) {
         this(partnerId, username, null);
     }
@@ -102,6 +110,33 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
             temp.addAll(roles);
             this.roles = Collections.unmodifiableList(temp);
         }
+    }
+
+    public static EngineAuthorization create(Scope scope, boolean clientIsLocal) {
+
+        String partnerIdentity = null;
+        String scopeIdentity = null;
+
+        Identity identity = scope.getIdentity();
+
+        Set<Role> roles = EnumSet.noneOf(Role.class);
+        if (identity instanceof UserIdentity user) {
+            scopeIdentity = user.getUsername();
+            // TODO find out the partner for the user, set partner identity
+        } // TODO partner identity, context, session etc
+        if (scope instanceof ServiceScope serviceScope) {
+            // TODO fix the actual roles we want
+            roles = EnumSet.allOf(Role.class);
+            if (scopeIdentity == null) {
+
+            }
+        }
+        if (partnerIdentity == null) {
+            partnerIdentity = scopeIdentity;
+        }
+        var ret = new EngineAuthorization(partnerIdentity, scopeIdentity, roles);
+        ret.setScope(scope);
+        return ret;
     }
 
     @Override
@@ -130,7 +165,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      * convenience method so that callers can retrieve authorities as a Collection<Role> generic
      * type
      */
-//    @Override
+    //    @Override
     public Collection<Role> getRoles() {
         return roles;
     }
@@ -203,6 +238,14 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
 
     public void setTokenString(Credentials tokenString) {
         this.tokenString = tokenString;
+    }
+
+    public Scope getScope() {
+        return scope;
+    }
+
+    public void setScope(Scope scope) {
+        this.scope = scope;
     }
 
     public class Credentials implements CredentialsContainer {

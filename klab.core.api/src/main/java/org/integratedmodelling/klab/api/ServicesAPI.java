@@ -219,7 +219,55 @@ public interface ServicesAPI {
 
 	public interface RESOURCES {
 
-		/**
+        String RESOLVE_PROJECT = "/resolveProject/{projectName}";
+        String QUERY_RESOURCES = "/queryResources";
+        String PRECURSORS = "/precursors/{namespaceId}";
+        String PROJECTS = "/projects";
+        String PROJECT = "/project/{projectName}";
+        String MODEL = "/model/{modelName}";
+        String RESOLVE_URN = "/resolve/{urn}";
+        String RESOLVE_NAMESPACE_URN = "/resolveNamespace/{urn}";
+        String RESOLVE_ONTOLOGY_URN = "/resolveOntology/{urn}";
+        String RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN = "/resolveObservationStrategyDocument/{urn}";
+        String LIST_WORKSPACES = "/listWorkspaces";
+        String RESOLVE_BEHAVIOR_URN = "/resolveBehavior/{urn}";
+        String RESOLVE_RESOURCE_URN = "/resolveResource/{urn}";
+        String RESOLVE_WORKSPACE_URN = "/resolveWorkspace/{urn}";
+        String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
+        String RESOURCE_STATUS = "/resourceStatus/{urn}";
+        String RESOLVE_OBSERVABLE = "/resolveObservable";
+        String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
+        String RESOLVE_CONCEPT = "/resolveConcept/{definition}";
+        String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
+        String CONTEXTUALIZE = "/contextualize";
+        String RESOLVE_DATAFLOW_URN = "/resolveDataflow/{urn}";
+        String GET_WORLDVIEW = "/getWorldview";
+        String DEPENDENTS = "/dependents/{namespaceId}";
+        String QUERY_MODELS = "/queryModels";
+        String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
+        String READ_BEHAVIOR = "/readBehavior";
+        String IMPORT_PROJECT = "/importProject";
+        String CREATE_PROJECT = "/createProject";
+        String UPDATE_PROJECT = "/updateProject";
+        String CREATE_NAMESPACE = "/createNamespace";
+        String UPDATE_NAMESPACE = "/updateNamespace";
+        String CREATE_BEHAVIOR = "/createBehavior";
+        String UPDATE_BEHAVIOR = "/updateBehavior";
+        String CREATE_ONTOLOGY = "/createOntology";
+        String UPDATE_ONTOLOGY = "/updateOntology";
+        String PUBLISH_PROJECT = "/publishProject";
+        String UNPUBLISH_PROJECT = "/unpublishProject";
+        String CREATE_RESOURCE = "/createResource";
+        String CREATE_RESOURCE_FROM_PATH = "/createResourceFromPath";
+        String CREATE_RESOURCE_FOR_PROJECT = "/createResourceForProject";
+        String PUBLISH_RESOURCE = "/publishResource";
+        String UNPUBLISH_RESOURCE = "/unpublishResource";
+        String REMOVE_PROJECT = "/removeProject";
+        String REMOVE_WORKSPACE = "/removeWorkspace";
+        String LIST_PROJECTS = "/listProjects";
+        String LIST_RESOURCE_URNS = "/listResourceUrns";
+
+        /**
 		 * Resource plug-ins provide resource adapters.
 		 * 
 		 * @author Ferd
