@@ -1,13 +1,21 @@
 package org.integratedmodelling.klab.services.application.security;
 
+import org.integratedmodelling.common.authentication.PartnerIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.PartnerIdentity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
@@ -49,8 +57,11 @@ public class ServiceAuthorizationManager {
     private String hubName;
     private boolean initialized;
 
-    @Autowired
-    ServiceNetworkedInstance service;
+    /**
+     * This is set explicitly after the scope is created. Without the root scope, no authentication is
+     * possible
+     */
+    private BaseService klabService;
 
     /**
      * Validate a SERVICE-level certificate and return the valid partner identity with the token to talk to
@@ -64,7 +75,8 @@ public class ServiceAuthorizationManager {
      * @param certificate //     * @param options
      * @return the partner identity that owns this node.
      */
-    public Identity authenticateService(KlabCertificate certificate, StartupOptions options) {
+    public Pair<Identity, List<ServiceReference>> authenticateService(KlabCertificate certificate,
+                                                                      StartupOptions options) {
 
         String serverHub = authenticatingHub;
         if (serverHub == null) {
@@ -108,10 +120,6 @@ public class ServiceAuthorizationManager {
             throw new KlabAuthorizationException("invalid public key sent by hub");
         }
 
-        for (Group group : response.getGroups()) {
-            //            this.groups.put(group.getName(), group);
-        }
-
         /*
          * build a verifier for the token coming from any engine that has validated with
          * the authenticating hub.
@@ -125,19 +133,24 @@ public class ServiceAuthorizationManager {
 
         jwksVerifiers.put(response.getAuthenticatingHub(), jwtVerifier);
 
+
+        // TODO fill in services from hub response, which at the moment contains no provision for that
+        List<ServiceReference> services = new ArrayList<>();
+
         /*
-         * setup the various identities: partner->node, we add the engine later.
+         * return the institutional identity this certificate belongs to.
          */
-        //        rootIdentity = new Partner(response.getUserData().getIdentity().getId());
-        //        Authentication.INSTANCE.registerIdentity(rootIdentity);
-        //        Node node = new Node(certificate.getProperty(ICertificate.KEY_NODENAME), rootIdentity);
-        //        node.setOnline(true);
-        //        Authentication.INSTANCE.registerIdentity(node);
+        var ret = new PartnerIdentityImpl();
+        ret.setId(response.getUserData().getIdentity().getId());
+        // ret.setContactPerson(UserIdentity.create(response.getUserData()); // TODO
+        ret.setName(certificate.getProperty(KlabCertificate.KEY_NODENAME));
+        ret.setAuthenticatingHub(response.getAuthenticatingHub());
+        ret.setPublicKey(response.getPublicKey());
+        for (Group group : response.getGroups()) {
+            ret.getGroups().add(group);
+        }
 
-        //        return rootIdentity;
-
-        // TODO return the partner identity for the service scope
-        return null;
+        return Pair.of(ret, services);
     }
 
     /**
@@ -171,19 +184,19 @@ public class ServiceAuthorizationManager {
 
         EngineAuthorization result = null;
 
-        if (token.startsWith(service.klabService().getServiceSecret())) {
+        if (token.startsWith(klabService.getServiceSecret())) {
 
             /*
             local connection on same machine, authorize service scope with all privileges.
              */
-            return EngineAuthorization.create(service.klabService().scope(), true);
+            return EngineAuthorization.create(klabService.scope(), true);
 
-        } else if (token.equals(service.klabService().scope().getIdentity().getId())) {
+        } else if (token.equals(klabService.scope().getIdentity().getId())) {
             /*
             authorized user is same user who runs the service; authorization is entire
             service scope and service is run by user-level certificate, not institution.
              */
-            return EngineAuthorization.create(service.klabService().scope(), false);
+            return EngineAuthorization.create(klabService.scope(), false);
         }
 
         if (!initialized) {
@@ -313,5 +326,9 @@ public class ServiceAuthorizationManager {
         //		authenticated);
 
         return ret;
+    }
+
+    public void setKlabService(BaseService klabService) {
+        this.klabService = klabService;
     }
 }

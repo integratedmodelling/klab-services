@@ -7,15 +7,18 @@ import jakarta.inject.Singleton;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -24,6 +27,7 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.messaging.WebsocketsServerMessageBus;
 import org.mapdb.elsa.ElsaSerializerBase;
@@ -59,6 +63,7 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 
 import javax.annotation.PreDestroy;
+import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -89,7 +94,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     private String version = Version.CURRENT;
     private String basePackage = "org.integratedmodelling.klab.services.reasoner.controllers";
     private String title = "k.LAB Reasoner API";
-    private String description = "API documentation for the k.LAB reasoner service. POST methods use valid concepts obtained through the resolve endpoints.";
+    private String description = "API documentation for the k.LAB reasoner service. POST methods use valid " +
+            "concepts obtained through the resolve endpoints.";
     private String contactName = "Integrated Modelling Partnership";
     private String contactEmail = "info@integratedmodelling.org";
 
@@ -97,14 +103,22 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     private ConfigurableApplicationContext applicationContext;
     @Autowired
     private Environment environment;
+    @Autowired
+    ServiceAuthorizationManager authorizationManager;
 
     @Override
-    protected Pair<UserIdentity, List<ServiceReference>> authenticateService() {
+    protected Pair<Identity, List<ServiceReference>> authenticateService() {
         /**
          * TODO lookup service certificate in configuration path; if found, use that to build the
          *  identity. Otherwise proceed as per default. If service is certified, record the
          *  privileges and adjust the service scope.
          */
+        File config = getStartupOptions().fileFromPath(getStartupOptions().getConfigurationPath());
+        config = new File(config + File.separator + "klab.cert");
+        if (config.isFile()) {
+            return authorizationManager.authenticateService(KlabCertificateImpl.createFromFile(config),
+                    getStartupOptions());
+        }
         return super.authenticateService();
     }
 
@@ -116,6 +130,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         if (ret.getIdentity() instanceof UserIdentity user && !user.isAnonymous()) {
             ret.setLocality(ServiceScope.Locality.LAN);
         } /* else if certified by partner/institution and configured for cloud, set to WAN */
+        authorizationManager.setKlabService(klabService());
         return ret;
     }
 
@@ -128,14 +143,14 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.basePackage(basePackage))
                                                       .paths(PathSelectors.any()).build().directModelSubstitute(LocalDate.class, java.sql.Date.class)
-                                                      .directModelSubstitute(LocalDateTime.class, java.util.Date.class).apiInfo(apiInfo());
+                                                      .directModelSubstitute(LocalDateTime.class,
+                                                              java.util.Date.class).apiInfo(apiInfo());
     }
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder().title(title).description(description).version(version)
                                    .contact(new Contact(contactName, null, contactEmail)).build();
     }
-
 
     /**
      * Call this in main() using the concrete subclass of ServiceNetworkedInstance and the desired startup

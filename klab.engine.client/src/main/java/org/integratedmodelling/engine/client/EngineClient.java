@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.exceptions.KlabConfigurationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
@@ -96,7 +97,7 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
         return createUserScope(authData);
     }
 
-    private UserScope createUserScope(Pair<UserIdentity, List<ServiceReference>> authData) {
+    private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
         /*
         find out which services are available from the network

@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
@@ -34,7 +35,7 @@ public enum Authentication {
      *
      * @return
      */
-    public Pair<UserIdentity, List<ServiceReference>> authenticate() {
+    public Pair<Identity, List<ServiceReference>> authenticate() {
         File certFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "klab.cert");
         KlabCertificate certificate = certFile.isFile() ? KlabCertificateImpl.createFromFile(certFile) :
                                       new AnonymousEngineCertificate();
@@ -48,7 +49,7 @@ public enum Authentication {
      * @param certificate
      * @return
      */
-    public Pair<UserIdentity, List<ServiceReference>> authenticate(KlabCertificate certificate) {
+    public Pair<Identity, List<ServiceReference>> authenticate(KlabCertificate certificate) {
 
         if (certificate instanceof AnonymousEngineCertificate) {
             // no partner, no node, no token, no nothing. REST calls automatically accept

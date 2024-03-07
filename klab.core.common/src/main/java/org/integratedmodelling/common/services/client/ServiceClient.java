@@ -1,13 +1,17 @@
 package org.integratedmodelling.common.services.client;
 
+import org.integratedmodelling.common.authentication.AnonymousEngineCertificate;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.messaging.WebsocketsClientMessageBus;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -15,6 +19,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class ServiceClient implements KlabService {
 
     private Type serviceType;
-    private Pair<UserIdentity, List<ServiceReference>> authentication;
+    private Pair<Identity, List<ServiceReference>> authentication;
     AtomicBoolean connected = new AtomicBoolean(false);
     AtomicBoolean authorized = new AtomicBoolean(false);
     AtomicBoolean authenticated = new AtomicBoolean(false);

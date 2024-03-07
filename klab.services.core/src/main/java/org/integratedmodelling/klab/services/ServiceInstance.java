@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -7,18 +8,22 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.integratedmodelling.common.authentication.AnonymousEngineCertificate;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
@@ -143,13 +148,18 @@ public abstract class ServiceInstance<T extends BaseService> {
         return false;
     }
 
+    protected ServiceStartupOptions getStartupOptions() {
+        return startupOptions;
+    }
+
     /**
      * Authentication for a simple ServiceInstance is through user/engine certificate, with the option of
      * anonymous.
      *
      * @return
      */
-    protected Pair<UserIdentity, List<ServiceReference>> authenticateService() {
+
+    protected Pair<Identity, List<ServiceReference>> authenticateService() {
         return Authentication.INSTANCE.authenticate();
     }
 
@@ -190,7 +200,6 @@ public abstract class ServiceInstance<T extends BaseService> {
                                     " ");
                 };
             }
-
         };
     }
 
