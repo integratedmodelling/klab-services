@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Configuration
 @EnableWebSecurity
@@ -31,10 +32,7 @@ public class ServiceSecurityConfiguration {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        // TODO next one not working
-                        .requestMatchers("/swagger-ui").permitAll()
+                        .requestMatchers("/public/**", "/actuator/**", "/swagger-ui").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new TokenAuthorizationFilter(authenticationManager, authorizationManager),
                         UsernamePasswordAuthenticationFilter.class)
