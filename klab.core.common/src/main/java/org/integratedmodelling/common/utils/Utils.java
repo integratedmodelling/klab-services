@@ -208,7 +208,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @throws org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException if not authorized to
          *                                                                                access
          */
-        public static Client getServiceClient(Scope scope, KlabService service) {
+        public static Client getServiceClient(String authorization, KlabService service) {
 
             var client =
                     HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
@@ -216,14 +216,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             ret.client = client;
             try {
                 ret.uri = service.getUrl().toURI();
-                if (!(scope.getIdentity() instanceof UserIdentity user && user.isAnonymous())) {
-                    ret.authorization = scope.getIdentity().getId();
-                }
-
-                /*
-                TODO if scope is a child scope, add its IDs as parts of the token
-                 */
-
+                ret.authorization = authorization;
             } catch (URISyntaxException e) {
                 throw new KlabInternalErrorException(e);
             }

@@ -116,7 +116,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         File config = getStartupOptions().fileFromPath(getStartupOptions().getConfigurationPath());
         config = new File(config + File.separator + "klab.cert");
         if (config.isFile()) {
-            return authorizationManager.authenticateService(KlabCertificateImpl.createFromFile(config),
+            return authorizationManager.authenticateService(
+                    KlabCertificateImpl.createFromFile(config),
                     getStartupOptions());
         }
         return super.authenticateService();
@@ -130,12 +131,12 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         if (ret.getIdentity() instanceof UserIdentity user && !user.isAnonymous()) {
             ret.setLocality(ServiceScope.Locality.LAN);
         } /* else if certified by partner/institution and configured for cloud, set to WAN */
-        authorizationManager.setKlabService(klabService());
         return ret;
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        authorizationManager.setKlabService(() -> klabService());
         super.start(environment.getRequiredProperty("klab.service.options", ServiceStartupOptions.class));
     }
 

@@ -19,9 +19,13 @@
  */
 package org.integratedmodelling.klab.services.application.security;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
 
+import io.swagger.models.auth.In;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -72,7 +76,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      * example, a PartnerAuthority [im, public-network] would indicate a "public-network" permission
      * level granted by the "im" partner directory.
      */
-    private final Collection<Role> roles;
+    private Collection<Role> roles;
 
     /**
      * JWT token string, in 3 dot-separated sections. Each section is base 64 encoded.
@@ -110,6 +114,16 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
             temp.addAll(roles);
             this.roles = Collections.unmodifiableList(temp);
         }
+    }
+
+    public static EngineAuthorization anonymous(ServiceScope scope) {
+        var ret = EngineAuthorization.create(scope, false);
+        ret.setExpiration(Instant.now().plus(Duration.ofDays(1)));
+        ret.setAuthenticated(false);
+        // no roles, no groups
+        ret.roles = EnumSet.noneOf(Role.class);
+        ret.groups = Collections.emptyList();
+        return ret;
     }
 
     public static EngineAuthorization create(Scope scope, boolean clientIsLocal) {

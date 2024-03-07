@@ -217,6 +217,9 @@ public interface ServicesAPI {
 		}
 	}
 
+	/*
+	TODO move admin endpoints to ADMIN
+	 */
 	public interface RESOURCES {
 
         String RESOLVE_PROJECT = "/resolveProject/{projectName}";

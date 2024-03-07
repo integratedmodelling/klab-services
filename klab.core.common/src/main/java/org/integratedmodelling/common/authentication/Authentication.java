@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -212,14 +213,5 @@ public enum Authentication {
         return ret;
     }
 
-    /**
-     * Find the token on the filesystem installed by a running service of the passed type. If found, we may
-     * have a local service that lets us connect with just that token and administer it.
-     *
-     * @param serviceType
-     * @return
-     */
-    public String readLocalServiceToken(KlabService.Type serviceType) {
-        return null;
-    }
+
 }

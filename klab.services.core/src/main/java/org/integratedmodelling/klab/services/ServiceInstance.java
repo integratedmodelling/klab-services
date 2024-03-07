@@ -127,8 +127,13 @@ public abstract class ServiceInstance<T extends BaseService> {
     }
 
     /**
-     * Wait for available (online) status until the passed timeout. If {@link #start()} hasn't been called,
-     * this will time out without effect.
+     * Wait for available (online) status until the passed timeout. If the service hasn't been started, this
+     * will time out without effect.
+     * <p>
+     * Ensure that atomic operations set the available flag in the scope, then wrap any service call that
+     * depends on the internal environment within a <code>if (waitOnline(x) { ... }</code> block to ensure
+     * proper handling of atomic operations. Send a redirect to the "temporarily unavailable" response outside
+     * the block to catch the timeout.
      *
      * @param timeoutSeconds
      * @return
@@ -195,7 +200,7 @@ public abstract class ServiceInstance<T extends BaseService> {
                         yield cs == null ? Collections.emptyList() : (Collection<T>) List.of(cs);
                     }
                     case ENGINE -> Collections.emptyList();
-                    case LEGACY_NODE ->
+                    case LEGACY_NODE, DISCOVERY ->
                             throw new KlabIllegalArgumentException("Cannot ask a scope for a legacy service" +
                                     " ");
                 };
@@ -231,7 +236,7 @@ public abstract class ServiceInstance<T extends BaseService> {
         this.startupOptions = options;
         // TODO sync the config environment with the options
         if (options.getDataDir() != null) {
-//            Configuration.INSTANCE.setDataPath();
+            //            Configuration.INSTANCE.setDataPath();
         }
     }
 

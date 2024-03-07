@@ -8,13 +8,8 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.PartnerIdentity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.rest.ServiceReference;
-import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
@@ -23,7 +18,6 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.jwt.consumer.JwtContext;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyFactory;
@@ -32,6 +26,7 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Singleton containing all the JWT management and hanshaking with the hub that every k.LAB service uses.
@@ -55,13 +50,18 @@ public class ServiceAuthorizationManager {
     private String authenticatingHub;
     private String nodeName;
     private String hubName;
-    private boolean initialized;
+    private boolean serviceAuthenticated;
 
     /**
      * This is set explicitly after the scope is created. Without the root scope, no authentication is
      * possible
      */
-    private BaseService klabService;
+    private Supplier<BaseService> klabService;
+
+
+    public void setKlabService(Supplier<BaseService> klabService) {
+        this.klabService = klabService;
+    }
 
     /**
      * Validate a SERVICE-level certificate and return the valid partner identity with the token to talk to
@@ -99,7 +99,7 @@ public class ServiceAuthorizationManager {
         request.setKey(certificate.getProperty(KlabCertificate.KEY_SIGNATURE));
         request.setLevel(certificate.getLevel());
         request.setEmail(certificate.getProperty(KlabCertificate.KEY_PARTNER_EMAIL));
-        initialized = true;
+        serviceAuthenticated = true;
 
         /*
          * response contains the groupset for validation and the Base64-encoded public
@@ -184,23 +184,22 @@ public class ServiceAuthorizationManager {
 
         EngineAuthorization result = null;
 
-        if (token.startsWith(klabService.getServiceSecret())) {
+        if (token.startsWith(klabService.get().getServiceSecret())) {
 
             /*
-            local connection on same machine, authorize service scope with all privileges.
+            local connection on same machine. Extract username and groups, authorize service scope with
+            UserScope identity and all privileges.
              */
-            return EngineAuthorization.create(klabService.scope(), true);
+            return EngineAuthorization.create(klabService.get().scope(), true);
 
-        } else if (token.equals(klabService.scope().getIdentity().getId())) {
-            /*
-            authorized user is same user who runs the service; authorization is entire
-            service scope and service is run by user-level certificate, not institution.
-             */
-            return EngineAuthorization.create(klabService.scope(), false);
         }
 
-        if (!initialized) {
-            return null;
+        /*
+        if we get here and there has been no service authentication with the hub, we have no rights to
+        further authenticate our connections.
+         */
+        if (!serviceAuthenticated) {
+            return EngineAuthorization.anonymous(klabService.get().scope());
         }
 
         try {
@@ -239,6 +238,10 @@ public class ServiceAuthorizationManager {
             if (!claims.getAudience().contains(ENGINE_AUDIENCE)) {
 
             }
+
+            /*
+            TODO result should
+             */
 
             /*
              * Expiration time (exp) - The "exp" (expiration time) claim identifies the
@@ -326,9 +329,5 @@ public class ServiceAuthorizationManager {
         //		authenticated);
 
         return ret;
-    }
-
-    public void setKlabService(BaseService klabService) {
-        this.klabService = klabService;
     }
 }

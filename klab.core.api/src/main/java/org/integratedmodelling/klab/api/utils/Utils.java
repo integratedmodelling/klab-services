@@ -3269,6 +3269,14 @@ public class Utils {
                 throw new KlabIOException(e);
             }
         }
+
+        public static String readFileIntoString(File file) {
+            try {
+                return java.nio.file.Files.readString(file.toPath());
+            } catch (IOException e) {
+                throw new KlabIOException(e);
+            }
+        }
     }
 
     public static class Templates {

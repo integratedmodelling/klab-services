@@ -12,6 +12,8 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.StartupOptions;
+import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -21,6 +23,7 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -115,7 +118,7 @@ public abstract class ServiceClient implements KlabService {
         if (ret == null) {
 
             if (token == null) {
-                String localServiceToken = Authentication.INSTANCE.readLocalServiceToken(serviceType);
+                String localServiceToken = readLocalServiceToken(serviceType);
                 if (localServiceToken != null) {
                     token = localServiceToken;
                     usingLocalSecret = true;
@@ -123,6 +126,10 @@ public abstract class ServiceClient implements KlabService {
             }
 
             url = serviceType.localServiceUrl();
+            var secret = readLocalServiceToken(serviceType);
+            if (secret != null) {
+                token = makeSecretToken(secret, identity);
+            }
             var status = readServiceStatus(url);
 
             if (status != null) {
@@ -133,6 +140,38 @@ public abstract class ServiceClient implements KlabService {
         }
 
         return ret;
+    }
+
+    private String makeSecretToken(String secret, Identity identity) {
+        StringBuffer ret =new StringBuffer(secret);
+        if (identity instanceof UserIdentity userIdentity) {
+            ret.append("/");
+            ret.append(userIdentity.getUsername());
+            ret.append("/");
+            ret.append(userIdentity.getEmailAddress());
+            for (Group group : userIdentity.getGroups()) {
+                ret.append("/");
+                ret.append(group.getName());
+            }
+        }
+        return ret.toString();
+    }
+
+    /**
+     * Find the token on the filesystem installed by a running service of the passed type. If found, we may
+     * have a local service that lets us connect with just that token and administer it.
+     *
+     * @param serviceType
+     * @return
+     */
+    private String readLocalServiceToken(Type serviceType) {
+        File secretFile =
+                Configuration.INSTANCE.getFileWithTemplate("services/" + serviceType.name().toLowerCase() +
+                        "/secret.key", org.integratedmodelling.klab.api.utils.Utils.Names.newName());
+        if (secretFile.isFile() && secretFile.canRead()) {
+            return Utils.Files.readFileIntoString(secretFile);
+        }
+        return null;
     }
 
 
@@ -183,7 +222,7 @@ public abstract class ServiceClient implements KlabService {
                     }
                 };
 
-        this.client = Utils.Http.getServiceClient(scope, this);
+        this.client = Utils.Http.getServiceClient(token, this);
         this.capabilities = capabilities();
 
         if (capabilities == null) {

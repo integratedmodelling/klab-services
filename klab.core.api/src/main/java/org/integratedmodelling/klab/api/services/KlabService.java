@@ -28,6 +28,12 @@ import java.util.List;
  */
 public interface KlabService extends Service {
 
+    /**
+     * A set of services is identified in the hub response to certificate authentication, both for engine
+     * (user-level) certificates and for service (partner-level) certificates (the latter is an addition
+     * w.r.t. k.LAB 0.11). The service descriptor in the hub response should have a serviceType field that is
+     * one of these; if the field isn't there, LEGACY_NODE is assumed.
+     */
     enum Type {
         REASONER(8091),
         RESOURCES(8092),
@@ -38,7 +44,10 @@ public interface KlabService extends Service {
          * Engine is not a k.LAB Service but has its own public observation API
          */
         ENGINE(8283),
-
+        /*
+        Discovery service for services. To be implemented.
+         */
+        DISCOVERY(8096),
         LEGACY_NODE(8287);
 
         public int defaultPort;
