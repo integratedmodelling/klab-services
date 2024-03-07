@@ -52,7 +52,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 try {
                     var payloadText = payload instanceof String
                                       ? (String) payload :
-                                      Json.printAsJson(payload);
+                                      Json.asString(payload);
                     var requestBuilder =
                             HttpRequest.newBuilder()
                                        .version(HttpClient.Version.HTTP_1_1)

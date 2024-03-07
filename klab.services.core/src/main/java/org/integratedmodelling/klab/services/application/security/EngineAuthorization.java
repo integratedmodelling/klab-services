@@ -149,6 +149,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
             partnerIdentity = scopeIdentity;
         }
         var ret = new EngineAuthorization(partnerIdentity, scopeIdentity, roles);
+        ret.setAuthenticated(true);
         ret.setScope(scope);
         return ret;
     }

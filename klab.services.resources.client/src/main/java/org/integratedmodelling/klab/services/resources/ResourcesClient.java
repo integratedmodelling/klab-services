@@ -229,7 +229,9 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         request.setWorkspaceName(workspaceName);
         request.setProjectUrl(projectUrl);
         request.setOverwrite(overwriteIfExisting);
-        return client.post(ServicesAPI.RESOURCES.IMPORT_PROJECT, request, Boolean.class);
+        var result = client.post(ServicesAPI.RESOURCES.IMPORT_PROJECT, request, ResourceSet.class);
+        // TODO log, events in scope
+        return !result.isEmpty();
     }
 
     @Override

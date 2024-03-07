@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
+
 /**
  * Unsecured API endpoints common to all controllers.
  */
@@ -17,8 +19,8 @@ public class KlabServiceController {
     ServiceNetworkedInstance instance;
 
     @GetMapping(ServicesAPI.CAPABILITIES)
-    public KlabService.ServiceCapabilities capabilities() {
-        // TODO filter for principal, including no principal
+    public KlabService.ServiceCapabilities capabilities(Principal principal) {
+        // TODO filter for principal, including principal==null
         return instance.klabService().capabilities();
     }
 

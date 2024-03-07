@@ -21,9 +21,11 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
@@ -33,6 +35,7 @@ import java.util.Collection;
 import java.util.List;
 
 @RestController
+@Secured(Role.USER)
 public class ResourcesProviderController {
 
     @Autowired
@@ -199,11 +202,14 @@ public class ResourcesProviderController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.IMPORT_PROJECT)
-    public boolean importProject(@RequestBody ProjectRequest request, Principal principal) {
+    public ResourceSet importProject(@RequestBody ProjectRequest request, Principal principal) {
         checkAdminPrivileges(principal);
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.importProject(request.getWorkspaceName(), request.getProjectName(),
-                    request.isOverwrite());
+            if (admin.importProject(request.getWorkspaceName(), request.getProjectUrl(),
+                    request.isOverwrite())) {
+                return resourcesServer.klabService().project(request.getProjectName(), /* TODO use scope in
+                 principal */ resourcesServer.klabService().scope());
+            }
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
