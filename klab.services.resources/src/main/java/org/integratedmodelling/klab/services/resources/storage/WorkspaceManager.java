@@ -169,11 +169,11 @@ public class WorkspaceManager {
 
 
     public Collection<String> getNamespaceUrns() {
-        return _behaviorMap.keySet();
+        return _namespaceMap.keySet();
     }
 
     public Collection<String> getBehaviorUrns() {
-        return _namespaceMap.keySet();
+        return _behaviorMap.keySet();
     }
 
 
