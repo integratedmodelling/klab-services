@@ -47,4 +47,9 @@ public interface SessionScope extends UserScope {
      */
     ContextScope getContext(String urn);
 
+    /**
+     * Stop the session, interrupt all tasks and free resources.
+     */
+    void logout();
+
 }

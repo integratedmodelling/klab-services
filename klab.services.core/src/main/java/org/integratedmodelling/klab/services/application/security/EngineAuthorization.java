@@ -117,16 +117,21 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     }
 
     public static EngineAuthorization anonymous(ServiceScope scope) {
-        var ret = EngineAuthorization.create(scope, false);
+        var ret = EngineAuthorization.create(scope);
         ret.setExpiration(Instant.now().plus(Duration.ofDays(1)));
-        ret.setAuthenticated(false);
+        ret.setAuthenticated(true);
         // no roles, no groups
         ret.roles = EnumSet.noneOf(Role.class);
         ret.groups = Collections.emptyList();
         return ret;
     }
 
-    public static EngineAuthorization create(Scope scope, boolean clientIsLocal) {
+    /**
+     * Create an authorization principal in service scope with full privileges.
+     * @param scope
+     * @return
+     */
+    public static EngineAuthorization create(Scope scope) {
 
         String partnerIdentity = null;
         String scopeIdentity = null;
@@ -140,7 +145,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         } // TODO partner identity, context, session etc
         if (scope instanceof ServiceScope serviceScope) {
             // TODO fix the actual roles we want
-            roles = EnumSet.allOf(Role.class);
+            roles = EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER, Role.ROLE_DATA_MANAGER);
             if (scopeIdentity == null) {
 
             }

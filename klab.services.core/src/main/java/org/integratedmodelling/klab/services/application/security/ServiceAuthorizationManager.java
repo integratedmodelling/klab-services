@@ -58,7 +58,6 @@ public class ServiceAuthorizationManager {
      */
     private Supplier<BaseService> klabService;
 
-
     public void setKlabService(Supplier<BaseService> klabService) {
         this.klabService = klabService;
     }
@@ -171,14 +170,15 @@ public class ServiceAuthorizationManager {
      * {@link org.integratedmodelling.klab.api.identities.UserIdentity}-level scope, i.e. it has been started
      * with a local engine certificate, the only token admitted is the same identity that's running the
      * engine, i.e. a user may access exclusively a service it owns. In this case the JWT is not processed but
-     * just matched to the service's identity.
+     * just matched to the service's identity. FIXME this is currently disabled - may be removed.
      * <p>
      * 2. The service is running on localhost and the authorization portion (1st dot-separated part) of the
      * token is the secret token saved on the filesystem and read back by the client. In that case the user is
-     * authorized for local requests and the rest of the token is used for the scope.
+     * fully authorized for local requests and the rest of the token is used for the scope.
      * <p>
-     * In both situations above, the authorization is given with full powers and all roles. Otherwise the hub
-     * makes the decision and the JWT is parsed to obtain username, groups and roles as expected.
+     * In both situations above, the authorization is given with full powers and all client-level roles.
+     * Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups and roles as
+     * expected.
      */
     public EngineAuthorization validateToken(String token) {
 
@@ -187,10 +187,12 @@ public class ServiceAuthorizationManager {
         if (token.startsWith(klabService.get().getServiceSecret())) {
 
             /*
-            local connection on same machine. Extract username and groups, authorize service scope with
-            UserScope identity and all privileges.
+            local connection on same machine: authorize everything.
+
+            TODO Extract username and groups, authorize service scope with
+             UserScope identity and all privileges.
              */
-            return EngineAuthorization.create(klabService.get().scope(), true);
+            return EngineAuthorization.create(klabService.get().scope());
 
         }
 

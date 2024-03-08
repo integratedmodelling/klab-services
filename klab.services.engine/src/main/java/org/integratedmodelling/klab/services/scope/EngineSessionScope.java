@@ -69,4 +69,9 @@ public class EngineSessionScope extends EngineScope implements SessionScope {
 		return contexts.get(urn);
 	}
 
+	@Override
+	public void logout() {
+		// TODO
+	}
+
 }

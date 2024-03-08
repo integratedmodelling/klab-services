@@ -25,8 +25,7 @@ public class ServiceSecurityConfiguration {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        //        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER);
-        //        http.csrf().disable();
+        // TODO reintegrate?       http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER);
         var authenticationManager =
                 authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
         return http

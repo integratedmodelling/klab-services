@@ -1,14 +1,19 @@
 package org.integratedmodelling.engine.client.distribution;
 
 
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.Product;
 import org.integratedmodelling.klab.api.engine.Release;
+import org.integratedmodelling.klab.api.engine.RunningInstance;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 public class ProductImpl implements Product {
 
@@ -21,6 +26,9 @@ public class ProductImpl implements Product {
 	private File localWorkspace;
 	private boolean onlyLocal; // if remote site is not present but the product exists locally
 	boolean osSpecific = false;
+	private Version version;
+	private List<Version> availableVersions = new ArrayList<>();
+	private ProductType productType;
 
 	public ProductImpl(String baseUrl, String productId, String ws) {
 
@@ -85,6 +93,22 @@ public class ProductImpl implements Product {
 	}
 
 	@Override
+	public Version getVersion() {
+		return version;
+	}
+
+	@Override
+	public List<Version> getAvailableVersions() {
+		return availableVersions;
+	}
+
+	@Override
+	public RunningInstance launch(Consumer<RunningInstance> onSuccess, Consumer<RunningInstance> onError) {
+
+		return null;
+	}
+
+	@Override
 	public boolean isOsSpecific() {
 		return osSpecific;
 	}
@@ -92,6 +116,10 @@ public class ProductImpl implements Product {
 	@Override
 	public Type getType() {
 		return type;
+	}
+
+	public ProductType getProductType() {
+		return productType;
 	}
 
     @Override

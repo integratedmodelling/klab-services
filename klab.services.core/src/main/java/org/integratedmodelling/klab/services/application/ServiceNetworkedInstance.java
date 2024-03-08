@@ -82,8 +82,9 @@ import java.util.stream.StreamSupport;
  * the local machine if anonymous.
  */
 @Component
-// TODO remove the argument when all gson dependencies are the same (never)
+// TODO remove the argument when all gson dependencies are the same (probably never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
+// These must be repeated in any derived class
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security", "org" +
         ".integratedmodelling.klab.services.application.controllers"})
 public abstract class ServiceNetworkedInstance<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer, InitializingBean {
@@ -190,7 +191,10 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper objectMapper =
-                new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY).disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+                new ObjectMapper()
+                        .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                        .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                        .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
         // objectMapper.getSerializerProvider().setNullKeySerializer(new Jsr310NullKeySerializer());
         JacksonConfiguration.configureObjectMapperForKlabTypes(objectMapper);
         return objectMapper;
@@ -202,12 +206,15 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
 
     private void setPropertiesFromEnvironment(Environment environment) {
         MutablePropertySources propSrcs = ((ConfigurableEnvironment) environment).getPropertySources();
-        StreamSupport.stream(propSrcs.spliterator(), false).filter(ps -> ps instanceof EnumerablePropertySource).map(ps -> ((EnumerablePropertySource) ps).getPropertyNames()).flatMap(Arrays::<String>stream).forEach(propName -> {
-            if (propName.contains("klab.")) {
-                Configuration.INSTANCE.getProperties().setProperty(propName,
-                        environment.getProperty(propName));
-            }
-        });
+        StreamSupport.stream(propSrcs.spliterator(), false)
+                     .filter(ps -> ps instanceof EnumerablePropertySource)
+                     .map(ps -> ((EnumerablePropertySource) ps).getPropertyNames())
+                     .flatMap(Arrays::<String>stream)
+                     .forEach(propName -> {
+                        if (propName.contains("klab.")) {
+                        Configuration.INSTANCE.getProperties().setProperty(propName, environment.getProperty(propName));
+                    }
+                });
     }
 
     @PreDestroy

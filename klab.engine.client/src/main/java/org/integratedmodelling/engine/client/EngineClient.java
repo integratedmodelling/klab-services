@@ -1,14 +1,17 @@
 package org.integratedmodelling.engine.client;
 
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.engine.client.distribution.Distribution;
+import org.integratedmodelling.engine.client.distribution.FileDistribution;
 import org.integratedmodelling.engine.client.scopes.ClientScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.engine.Distribution;
+import org.integratedmodelling.klab.api.engine.Product;
+import org.integratedmodelling.klab.api.engine.RunningInstance;
 import org.integratedmodelling.klab.api.exceptions.KlabConfigurationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.engine.AbstractAuthenticatedEngine;
@@ -44,6 +47,8 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
     Map<KlabService.Type, URL> configuredServiceURLs = new HashMap<>();
 
+    Map<KlabService.Type, RunningInstance> launchedServices = new HashMap<>();
+
     Distribution engineDistribution = null;
 
     UserScope defaultUser;
@@ -66,11 +71,8 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
      * to check for when the engine is available.
      */
     public void boot() {
-
         if (!booted.get()) {
-
             Thread.ofVirtual().start(() -> doBoot());
-
         }
     }
 
@@ -89,12 +91,77 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
             }
         }
 
+        /*
+        Lookup any missing services we may have in the linked distribution, if any is there. If so, start
+        all the
+        services we don't have available.
+         */
+        for (var serviceType : EnumSet.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER,
+                KlabService.Type.RUNTIME, KlabService.Type.RESOLVER, KlabService.Type.COMMUNITY)) {
+            if (currentServices.get(serviceType) == null) {
+                switch (serviceType) {
+                    case REASONER -> {
+                        var s = new ReasonerClient(serviceType.localServiceUrl());
+                        // TODO use another call to check if the URL existed, not necessarily available yet
+                        if (s.scope().isAvailable()) {
+                            this.availableReasoners.add(s);
+                            currentServices.put(KlabService.Type.REASONER, s);
+                        }
+                    }
+                    case RESOURCES -> {
+                        var s = new ResourcesClient(serviceType.localServiceUrl());
+                        if (s.scope().isAvailable()) {
+                            this.availableResourcesServices.add(s);
+                            currentServices.put(KlabService.Type.RESOURCES, s);
+                        }
+                    }
+                    case RESOLVER -> {
+                        var s = new ResolverClient(serviceType.localServiceUrl());
+                        if (s.scope().isAvailable()) {
+                            this.availableResolvers.add(s);
+                            currentServices.put(KlabService.Type.RESOLVER, s);
+                        }
+                    }
+                    case RUNTIME -> {
+                        var s = new RuntimeClient(serviceType.localServiceUrl());
+                        if (s.scope().isAvailable()) {
+                            this.availableRuntimeServices.add(s);
+                            currentServices.put(KlabService.Type.RUNTIME, s);
+                        }
+                    }
+                    default -> throw new KlabInternalErrorException("Unexpected value: " + serviceType);
+                }
+            }
+        }
+
+        /*
+         if we have no local clients, we had no running services but we may still have a product that we can launch
+         */
+        if (engineDistribution != null) {
+            for (var serviceType : EnumSet.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER,
+                    KlabService.Type.RUNTIME, KlabService.Type.RESOLVER, KlabService.Type.COMMUNITY)) {
+
+                if (currentServices.get(serviceType) == null) {
+                    var product = engineDistribution.findProduct(Product.ProductType.forService(serviceType));
+                    if (product != null) {
+                        launchedServices.put(serviceType, product.launch(p -> {
+
+                        }, p->{
+
+                        }));
+                    }
+                }
+            }
+        }
+
     }
 
     @Override
     protected UserScope authenticate() {
         var authData = Authentication.INSTANCE.authenticate();
-        return createUserScope(authData);
+        var ret = createUserScope(authData);
+        // TODO send auth messages to scope
+        return ret;
     }
 
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
@@ -147,17 +214,11 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
         /*
         TODO
-        negotiate any missing services. If we have a configured distribution, use it to provide them.
-         */
-
-
-        /*
-        TODO
         Start thread to check availability of the default services and set the online status when all are
         available. If any service is still missing, status will be permanently offline.
          */
 
-        return new ClientScope(authData.getFirst()) {
+        var ret = new ClientScope(authData.getFirst()) {
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return (T) currentServices.get(KlabService.Type.classify(serviceClass));
@@ -191,6 +252,8 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
                 return Collections.emptyList();
             }
         };
+
+        return ret;
     }
 
     @Override
