@@ -33,7 +33,7 @@ public abstract class BaseService implements KlabService {
     protected String localName = "Embedded";
     private ServiceStartupOptions startupOptions;
 
-//    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
+    //    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
     protected BaseService(ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
         this.scope = scope;
@@ -42,6 +42,7 @@ public abstract class BaseService implements KlabService {
         this.startupOptions = options;
         createServiceSecret();
     }
+
 
     protected ServiceStartupOptions getStartupOptions() {
         return startupOptions;
@@ -60,14 +61,6 @@ public abstract class BaseService implements KlabService {
             throw new KlabIOException(e);
         }
     }
-//
-//    public void addEventListener(BiConsumer<Scope, Message> listener) {
-//        this.eventListeners.add(listener);
-//    }
-//
-//    public List<BiConsumer<Scope, Message>> getEventListeners() {
-//        return this.eventListeners;
-//    }
 
     /**
      * The service secret is a legitimate API key for the service, only known to clients that can read it
@@ -108,4 +101,32 @@ public abstract class BaseService implements KlabService {
 
     public abstract void initializeService();
 
+    public static File getConfigurationDirectory(KlabService.Type serviceType,
+                                                 ServiceStartupOptions startupOptions) {
+        var ret =
+                new File(startupOptions.fileFromPath(startupOptions.getConfigurationPath()) + File.separator + serviceType.name().toLowerCase());
+        ret.mkdirs();
+        return ret;
+    }
+
+    public static File getConfigurationSubdirectory(KlabService.Type serviceType,
+                                                    ServiceStartupOptions startupOptions,
+                                                    String relativePath) {
+        var ret =
+                new File(startupOptions.fileFromPath(startupOptions.getConfigurationPath()) + File.separator
+                        + serviceType.name().toLowerCase() + (relativePath.startsWith("/") ? relativePath : ("/" + relativePath)));
+        ret.mkdirs();
+        return ret;
+    }
+
+
+    public static File getFileInConfigurationDirectory(Type type, ServiceStartupOptions options,
+                                                       String filename) {
+        return new File(getConfigurationDirectory(type, options) + File.separator + filename);
+    }
+
+    public static File getFileInConfigurationSubdirectory(Type type, ServiceStartupOptions options,
+                                                          String subdirectory, String filename) {
+        return new File(getConfigurationSubdirectory(type, options, subdirectory) + File.separator + filename);
+    }
 }

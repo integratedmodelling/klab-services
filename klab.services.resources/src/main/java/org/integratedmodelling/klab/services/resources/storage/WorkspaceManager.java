@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -34,6 +35,7 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.WorldviewImpl;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resources.assets.ProjectImpl;
 import org.integratedmodelling.klab.services.resources.assets.WorkspaceImpl;
 import org.integratedmodelling.klab.services.resources.configuration.ResourcesConfiguration;
@@ -74,6 +76,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class WorkspaceManager {
 
+    private final ServiceStartupOptions startupOptions;
     /**
      * Default interval to check for changes in Git (15 minutes in milliseconds)
      */
@@ -363,9 +366,11 @@ public class WorkspaceManager {
     private Map<String, Long> lastProjectUpdates = new HashMap<>();
     private List<Pair<String, Version>> unresolvedProjects = new ArrayList<>();
 
-    public WorkspaceManager(Scope scope, ServiceStartupOptions options, Function<String, Project> externalProjectResolver) {
+    public WorkspaceManager(Scope scope, ServiceStartupOptions options,
+                            Function<String, Project> externalProjectResolver) {
         this.externalProjectResolver = externalProjectResolver;
         this.scope = scope;
+        this.startupOptions = options;
         readConfiguration(options);
         scheduler.scheduleAtFixedRate(() -> checkForProjectUpdates(), 1, 1, TimeUnit.MINUTES);
     }
@@ -395,11 +400,11 @@ public class WorkspaceManager {
     }
 
     private void readConfiguration(ServiceStartupOptions options) {
-
-        File config = options.fileFromPath(options.getConfigurationPath());
-        config = new File(config + File.separator + "resources.yaml");
+        File config = BaseService.getFileInConfigurationDirectory(KlabService.Type.RESOURCES, options,
+                "resources.yaml");
         if (config.exists() && config.length() > 0 && !options.isClean()) {
-            this.configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config, ResourcesConfiguration.class);
+            this.configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config,
+                    ResourcesConfiguration.class);
         } else {
             // make an empty config
             this.configuration = new ResourcesConfiguration();
@@ -584,10 +589,6 @@ public class WorkspaceManager {
         return worldviewOnly ? _worldviewOntologies : _ontologyOrder;
     }
 
-    public ProjectStorage getProject(String projectName) {
-        return null;
-    }
-
     /**
      * Return all the namespaces in order of dependency. Resolution is internal like in
      * {@link #getOntologies(boolean)}.
@@ -690,7 +691,6 @@ public class WorkspaceManager {
         if (ret != null) {
             ResourcesConfiguration.ProjectConfiguration configuration =
                     new ResourcesConfiguration.ProjectConfiguration();
-            //            configuration.setLocalPath(new File(workspaceName + File.separator + projectName));
             configuration.setSourceUrl(projectUrl);
             configuration.setWorkspaceName(workspaceName);
             configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
@@ -734,9 +734,8 @@ public class WorkspaceManager {
 
             if (Utils.Git.isRemoteGitURL(projectUrl)) {
 
-                File workspace =
-                        Configuration.INSTANCE.getDataPath(configuration.getServicePath() + File.separator + "workspaces" + File.separator + workspaceName);
-                workspace.mkdirs();
+                File workspace = BaseService.getConfigurationSubdirectory(KlabService.Type.RESOURCES,
+                        startupOptions, "workspaces");
 
                 try {
 
@@ -1634,7 +1633,8 @@ public class WorkspaceManager {
     }
 
     private void saveConfiguration() {
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "resources.yaml");
+        File config = BaseService.getFileInConfigurationDirectory(KlabService.Type.RESOURCES,
+                startupOptions, "resources.yaml");
         org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 
