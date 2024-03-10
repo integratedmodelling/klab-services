@@ -20,11 +20,6 @@ public abstract class ReleaseImpl implements Release {
     }
 
     @Override
-    public boolean isLocallyAvailable() {
-        return false;
-    }
-
-    @Override
     public File getLocalWorkspace() {
         return null;
     }

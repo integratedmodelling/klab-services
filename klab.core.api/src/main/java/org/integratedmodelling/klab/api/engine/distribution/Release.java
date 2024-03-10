@@ -23,16 +23,17 @@ public interface Release {
 
     /**
      * The product we're part of.
+     *
      * @return
      */
     Product getProduct();
 
     /**
-     * True if build is locally available. If not, {@link #synchronize(Scope)} must be called.
+     * Synchronization status. Call {@link #synchronize(Scope)} to change it.
      *
      * @return
      */
-    boolean isLocallyAvailable();
+    Product.Status getStatus();
 
     /**
      * Synchronize if necessary. Uses the listeners from the distribution.
@@ -53,7 +54,8 @@ public interface Release {
     RunningInstance launch(Scope scope);
 
     /**
-     * After successful synchronization, this must be valid and point to a full distribution.
+     * Only relevant in locally available distributions. After successful synchronization, this must be valid
+     * and point to a full distribution.
      *
      * @return
      */
@@ -65,6 +67,14 @@ public interface Release {
      * @return
      */
     Instant getBuildDate();
+
+    /**
+     * Only relevant in remote distribution. The remote path to the directory containing the
+     * release.properties and filelist.txt digest relative to the containing product.
+     *
+     * @return
+     */
+    String getRemotePath();
 
     /**
      * Version of specified build.
@@ -79,6 +89,5 @@ public interface Release {
      * @return
      */
     boolean isOsSpecific();
-
 
 }

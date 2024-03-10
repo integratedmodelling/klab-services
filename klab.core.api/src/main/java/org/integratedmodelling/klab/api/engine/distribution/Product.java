@@ -252,18 +252,23 @@ public interface Product {
     String getDescription();
 
     /**
-     * Status of the product. If the product is UNAVAILABLE or UNKNOWN there's nothing we can do. LOCAL_ONLY
+     * Only relevant in local distributions.
+     *
+     * Status of the product. Corresponds to the status of the worse-off {@link Release} that is currently
+     * selected or needed in order to run. If the product is UNAVAILABLE there's nothing we can do. LOCAL_ONLY
      * means we're usable with at least one release but without knowing anything about updates and the like.
-     * Otherwise, we can tell if we're up-to-date or not.
+     * Otherwise, we can tell if we're up-to-date or not. {@link Release} also implements {@link #getStatus()}
+     * for release-specific information.
      *
      * @return
      */
     Status getStatus();
 
     /**
-     * TODO If the product properties define a "currently chosen" release, we should return its ID here.
-     * Otherwise we should default to the ID of the most current release, or return null if unavailable (we
-     * should always call {@link #getStatus()} before using, so we shouldn't use the null result).
+     * If the product properties define a "currently chosen" release, we should return its ID here. Otherwise
+     * we should default to the ID of the most current release among those we have synchronized, or return
+     * null if unavailable (we should always call {@link #getStatus()} before using, so we shouldn't use the
+     * null result).
      *
      * @return
      */
