@@ -4,9 +4,9 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
-import org.integratedmodelling.klab.api.engine.Product;
-import org.integratedmodelling.klab.api.engine.Release;
-import org.integratedmodelling.klab.api.engine.RunningInstance;
+import org.integratedmodelling.klab.api.engine.distribution.Release;
+import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
+import org.integratedmodelling.klab.api.engine.StartupOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,22 +15,15 @@ import java.util.function.Consumer;
 
 public abstract class RunningInstanceImpl implements RunningInstance {
 
-	protected Product product;
 	protected AtomicReference<Status> status = new AtomicReference<>(Status.UNKNOWN);
 	protected DefaultExecutor executor;
 	protected Consumer<Status> statusHandler;
-//	protected Settings settings;
+	protected StartupOptions startupOptions;
 	protected Release release;
 
-	public RunningInstanceImpl(Release release, ProductImpl product/*, Settings settings*/) {
-		this.product = product;
+	public RunningInstanceImpl(Release release, StartupOptions startupOptions) {
 //		this.settings = settings;
 		this.release = release;
-	}
-
-	@Override
-	public Product getProduct() {
-		return product;
 	}
 
 	@Override
@@ -38,21 +31,10 @@ public abstract class RunningInstanceImpl implements RunningInstance {
 	    return release;
 	}
 
-	public void setProduct(Product product) {
-		this.product = product;
-	}
-
 	@Override
 	public Status getStatus() {
 		return status.get();
 	}
-
-/*
-	@Override
-	public Settings getSettings() {
-	    return this.settings;
-	}
-*/
 
 	protected abstract CommandLine getCommandLine();
 
@@ -71,7 +53,7 @@ public abstract class RunningInstanceImpl implements RunningInstance {
 		}
 
 		this.executor = new DefaultExecutor();
-		this.executor.setWorkingDirectory(product.getLocalWorkspace());
+		this.executor.setWorkingDirectory(release.getLocalWorkspace());
 
 		Map<String, String> env = new HashMap<>();
 		env.putAll(System.getenv());

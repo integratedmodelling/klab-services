@@ -13,47 +13,27 @@
  */
 package org.integratedmodelling.klab.api.configuration;
 
-import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Literal;
-import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
 import org.integratedmodelling.klab.api.lang.impl.PrototypeImpl;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.Authority;
-import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resolver.Coverage;
-import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Argument;
-import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.OS;
 
 import java.io.*;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 
 /**
@@ -173,6 +153,14 @@ public enum Configuration {
      * Branch to use for groups observables
      */
     public static final String KLAB_PRODUCTS_BRANCH = "klab.products.branch";
+
+    /**
+     * Development source repository on this machine. If set, a testing
+     * {@link Distribution} will be created from the Maven compiled
+     * products in it and used by the default {@link org.integratedmodelling.klab.api.engine.Engine} client.
+     * Defaults to $HOME/git/klab-services.
+     */
+    public static final String KLAB_DEVELOPMENT_SOURCE_REPOSITORY = "klab.development.source.repository";
 
     private OS os;
     private Properties properties;

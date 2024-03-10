@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.engine;
+package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.scope.Scope;
 
@@ -11,6 +11,9 @@ public interface Distribution {
      * be done, scan the products and compare versions. Synchronization will use the scope using send() to
      * monitor all events implied in the operations and handle interruptions. The scope may also determine
      * which products can be accessed and how.
+     *
+     * TODO we should add optional parameters for sync of the latest version only, or whichever release is
+     *  defined in the product as the currently chosen one.
      *
      * @param scope
      */

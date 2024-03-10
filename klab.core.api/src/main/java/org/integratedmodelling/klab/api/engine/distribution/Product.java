@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.engine;
+package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import java.io.File;
 import java.util.List;
 import java.util.Properties;
-import java.util.function.Consumer;
 
 public interface Product {
 
@@ -16,24 +15,37 @@ public interface Product {
     public enum Status {
 
         /**
-         * Status before status is assessed and when offline but with available downloaded distributions.
+         * Status when offline or other error has occurred and there is no usable local distribution.
          */
-        UNKNOWN,
+        UNAVAILABLE(false),
 
         /**
-         * Status when offline or other error has occurred
+         * Status when the product is available locally with at least one internally consistent
+         * {@link Release} but we cannot access the online repository so we don't know if we're up to date or
+         * not.
          */
-        UNAVAILABLE,
+        LOCAL_ONLY(true),
 
         /**
          * When the latest available build is available locally.
          */
-        UP_TO_DATE,
+        UP_TO_DATE(true),
 
         /**
          * When builds are available but there are unsynchronized more recent builds.
          */
-        OBSOLETE
+        OBSOLETE(true);
+
+        private boolean usable;
+
+        public boolean isUsable() {
+            return usable;
+        }
+
+        private Status(boolean usable) {
+            this.usable = usable;
+        }
+
     }
 
     enum Type {
@@ -199,6 +211,7 @@ public interface Product {
     public final static String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
     //public final static String PRODUCT_AVAILABLE_BUILDS_PROPERTY = "klab.product.builds";
     public final static String PRODUCT_TYPE_PROPERTY = "klab.product.type";
+    public final static String PRODUCT_CLASS_PROPERTY = "klab.product.class";
     public final static String PRODUCT_OSSPECIFIC_PROPERTY = "klab.product.osspecific";
 
     public final static String BUILD_VERSION_PROPERTY = "klab.product.build.version";
@@ -214,13 +227,6 @@ public interface Product {
     String getId();
 
     ProductType getProductType();
-
-    /**
-     * True if a different distribution is needed per supported operating system.
-     *
-     * @return
-     */
-    boolean isOsSpecific();
 
     /**
      * Get the type of product. The type enum is of course limited to the current usage and should be expanded
@@ -246,45 +252,35 @@ public interface Product {
     String getDescription();
 
     /**
-     * The contents of the product.properties file in the product directory. Non-null values for all the
-     * static property names starting with PRODUCT_ in this interface are mandatory.
-     *
-     * @return
-     */
-    Properties getProperties();
-
-    /**
-     * Status of the product. If the product is UNAVAILABLE or UNKNOWN, properties, builds and the like may
-     * not be accessible.
+     * Status of the product. If the product is UNAVAILABLE or UNKNOWN there's nothing we can do. LOCAL_ONLY
+     * means we're usable with at least one release but without knowing anything about updates and the like.
+     * Otherwise, we can tell if we're up-to-date or not.
      *
      * @return
      */
     Status getStatus();
 
     /**
-     * Indicate that we have a product locally but the remote update site is not available, so we don't know
-     * the update situation. Used to avoid breaking the control center if we have some issues remotely.
+     * TODO If the product properties define a "currently chosen" release, we should return its ID here.
+     * Otherwise we should default to the ID of the most current release, or return null if unavailable (we
+     * should always call {@link #getStatus()} before using, so we shouldn't use the null result).
      *
      * @return
      */
-    boolean onlyLocal();
-
-    File getLocalWorkspace();
+    String getCurrentReleaseId();
 
     /**
-     * Version of current product in this distribution
+     * Version of the most current release in this product
      *
      * @return
      */
     Version getVersion();
 
     /**
-     * Versions of product available in remote distribution, most recent first. Synchronize the distribution
-     * and reload to update to a newer one.
+     * Releases of product available in remote distribution (and possibly locally), most recent first.
      *
      * @return
      */
-    List<Version> getAvailableVersions();
+    List<Release> getReleases();
 
-    RunningInstance launch(Consumer<RunningInstance> onSuccess, Consumer<RunningInstance> onError);
 }

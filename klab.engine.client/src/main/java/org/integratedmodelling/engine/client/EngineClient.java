@@ -1,13 +1,12 @@
 package org.integratedmodelling.engine.client;
 
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.engine.client.distribution.FileDistribution;
 import org.integratedmodelling.engine.client.scopes.ClientScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
-import org.integratedmodelling.klab.api.engine.Distribution;
-import org.integratedmodelling.klab.api.engine.Product;
-import org.integratedmodelling.klab.api.engine.RunningInstance;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.exceptions.KlabConfigurationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -143,12 +142,8 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
                 if (currentServices.get(serviceType) == null) {
                     var product = engineDistribution.findProduct(Product.ProductType.forService(serviceType));
-                    if (product != null) {
-                        launchedServices.put(serviceType, product.launch(p -> {
-
-                        }, p->{
-
-                        }));
+                    if (product != null && !product.getReleases().isEmpty()) {
+                        launchedServices.put(serviceType, product.getReleases().get(0).launch(this.defaultUser));
                     }
                 }
             }

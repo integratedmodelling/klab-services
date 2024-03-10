@@ -1,4 +1,6 @@
-package org.integratedmodelling.klab.api.engine;
+package org.integratedmodelling.klab.api.engine.distribution;
+
+import org.integratedmodelling.klab.api.engine.StartupOptions;
 
 import java.util.function.Consumer;
 
@@ -9,13 +11,6 @@ public interface RunningInstance {
     }
 
     public record Result(boolean result, Throwable error, String log) {}
-
-    /**
-     * The product this is an instance of.
-     *
-     * @return
-     */
-    Product getProduct();
 
     /**
      * The release this is an instance of
@@ -33,17 +28,7 @@ public interface RunningInstance {
      * The settings for this instance
      * @return
      */
-//    Settings getSettings();
-
-    /**
-     * Download if necessary, using the previous build to pre-populate to minimize
-     * the download size. If a listener is passed, use it to notify all events.
-     *
-     * @param build
-     * @param listener
-     * @return
-     */
-    // Distribution download(String build, Distribution.SyncListener listener);
+    StartupOptions getSettings();
 
     /**
      * Start the instance, returning immediately. A true return value means that the
