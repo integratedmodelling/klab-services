@@ -14,11 +14,8 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.services.engine.EngineService;
 import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
-import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.resolver.ResolverClient;
-import org.integratedmodelling.klab.services.resolver.ResolverService;
 import org.integratedmodelling.klab.services.resources.ResourcesClient;
-import org.integratedmodelling.klab.services.resources.ResourcesProvider;
 import org.integratedmodelling.klab.services.runtime.RuntimeClient;
 import org.integratedmodelling.klab.utilities.Utils;
 

@@ -21,7 +21,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <outputDirectory>target/release</outputDirectory>
+                    <outputDirectory>target/build</outputDirectory>
                     <productName>klab.server.resources</productName>
                     <productClass>RESOURCES_SERVICE</productClass>
                     <productMain>org.integratedmodelling.resources.server.ResourcesServer</productMain>

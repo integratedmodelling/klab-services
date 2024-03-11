@@ -2,14 +2,26 @@ package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.File;
 import java.util.List;
-import java.util.Properties;
 
+/**
+ * A {@link Product} contains zero or more named {@link Release}s, each containing one or more versioned
+ * {@link Build}s, one of which, that, once populated with artifacts and synchronized with a possibly online
+ * distribution, can be launched to run the Product.
+ */
 public interface Product {
+
+    public static final String PRODUCT_PROPERTIES_FILE = "product.properties";
+
+    public final static String PRODUCT_NAME_PROPERTY = "klab.product.name";
+    public final static String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
+    public final static String PRODUCT_TYPE_PROPERTY = "klab.product.type";
+    public final static String PRODUCT_CLASS_PROPERTY = "klab.product.class";
 
 
     public enum Status {
@@ -20,9 +32,8 @@ public interface Product {
         UNAVAILABLE(false),
 
         /**
-         * Status when the product is available locally with at least one internally consistent
-         * {@link Release} but we cannot access the online repository so we don't know if we're up to date or
-         * not.
+         * Status when the product is available locally with at least one internally consistent {@link Build}
+         * but we cannot access the online repository so we don't know if we're up to date or not.
          */
         LOCAL_ONLY(true),
 
@@ -198,25 +209,10 @@ public interface Product {
 
         public abstract String getRemoteUrl(String baseUrl);
 
-        public String getRemotePropertiesFileUrl(String baseUrl) {
-            return baseUrl + "/" + getId() + "/" + Release.PRODUCT_PROPERTIES_FILE;
-        }
-
         public File getLocalPath(String basePath) {
             return new File(basePath + File.separator + getId());
         }
     }
-
-    public final static String PRODUCT_NAME_PROPERTY = "klab.product.name";
-    public final static String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
-    //public final static String PRODUCT_AVAILABLE_BUILDS_PROPERTY = "klab.product.builds";
-    public final static String PRODUCT_TYPE_PROPERTY = "klab.product.type";
-    public final static String PRODUCT_CLASS_PROPERTY = "klab.product.class";
-    public final static String PRODUCT_OSSPECIFIC_PROPERTY = "klab.product.osspecific";
-
-    public final static String BUILD_VERSION_PROPERTY = "klab.product.build.version";
-    public final static String BUILD_MAINCLASS_PROPERTY = "klab.product.build.main";
-    public final static String BUILD_TIME_PROPERTY = "klab.product.build.time";
 
     /**
      * Name of product is a lowercase string, short and without spaces, corresponding to the directory where
@@ -253,11 +249,11 @@ public interface Product {
 
     /**
      * Only relevant in local distributions.
-     *
-     * Status of the product. Corresponds to the status of the worse-off {@link Release} that is currently
+     * <p>
+     * Status of the product. Corresponds to the status of the worse-off {@link Build} that is currently
      * selected or needed in order to run. If the product is UNAVAILABLE there's nothing we can do. LOCAL_ONLY
      * means we're usable with at least one release but without knowing anything about updates and the like.
-     * Otherwise, we can tell if we're up-to-date or not. {@link Release} also implements {@link #getStatus()}
+     * Otherwise, we can tell if we're up-to-date or not. {@link Build} also implements {@link #getStatus()}
      * for release-specific information.
      *
      * @return
@@ -286,6 +282,18 @@ public interface Product {
      *
      * @return
      */
-    List<Release> getReleases();
+    List<Build> getReleases();
+
+    /**
+     * Shorthand for "retrieve the currently configured or most recent {@link Release} and {@link Build}, then
+     * launch that in this {@link Scope}. The scope will be notified of any events related to the launch.
+     * <p>
+     * TODO add parameters for automatic synchronization,
+     *  {@link org.integratedmodelling.klab.api.engine.StartupOptions} and anything else we may need here.
+     *
+     * @param scope
+     * @return
+     */
+    RunningInstance launch(Scope scope);
 
 }

@@ -2,17 +2,18 @@ package org.integratedmodelling.klab.api.engine.distribution.impl;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
-import org.integratedmodelling.klab.api.engine.distribution.Release;
+import org.integratedmodelling.klab.api.engine.distribution.Build;
+import org.integratedmodelling.klab.api.utils.PropertiesBasedObject;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * {@link Product} bean which implements all the properties and can be initialized from a
  * {@link java.util.Properties} object. Subclasses will need to define any further properties.
  */
-public abstract class ProductImpl implements Product {
+public abstract class ProductImpl extends PropertiesBasedObject implements Product {
     private String id;
     private ProductType productType;
     private Type type;
@@ -20,7 +21,16 @@ public abstract class ProductImpl implements Product {
     private String description;
     private String currentReleaseId;
     private Version version;
-    private List<Release> releases = new ArrayList<>();
+    private List<Build> releases = new ArrayList<>();
+
+    public ProductImpl() {
+        super(null);
+    }
+
+    public ProductImpl(File propertiesFile){
+        super(propertiesFile);
+        // TODO read the properties
+    }
 
     @Override
     public String getId() {
@@ -58,7 +68,7 @@ public abstract class ProductImpl implements Product {
     }
 
     @Override
-    public List<Release> getReleases() {
+    public List<Build> getReleases() {
         return releases;
     }
 
@@ -90,7 +100,7 @@ public abstract class ProductImpl implements Product {
         this.version = version;
     }
 
-    public void setReleases(List<Release> releases) {
+    public void setReleases(List<Build> releases) {
         this.releases = releases;
     }
 }

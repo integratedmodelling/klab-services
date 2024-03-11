@@ -4,7 +4,7 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
-import org.integratedmodelling.klab.api.engine.distribution.Release;
+import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 
@@ -19,15 +19,15 @@ public abstract class RunningInstanceImpl implements RunningInstance {
 	protected DefaultExecutor executor;
 	protected Consumer<Status> statusHandler;
 	protected StartupOptions startupOptions;
-	protected Release release;
+	protected Build release;
 
-	public RunningInstanceImpl(Release release, StartupOptions startupOptions) {
+	public RunningInstanceImpl(Build release, StartupOptions startupOptions) {
 //		this.settings = settings;
 		this.release = release;
 	}
 
 	@Override
-	public Release getRelease() {
+	public Build getRelease() {
 	    return release;
 	}
 

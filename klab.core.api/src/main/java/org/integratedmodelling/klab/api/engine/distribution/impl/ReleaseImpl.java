@@ -1,45 +1,32 @@
 package org.integratedmodelling.klab.api.engine.distribution.impl;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Release;
-import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.utils.PropertiesBasedObject;
 
 import java.io.File;
-import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * {@link Release} bean which implements all the properties and can be initialized from a
- * {@link java.util.Properties} object. Subclasses will need to define any further properties.
- */
-public abstract class ReleaseImpl implements Release {
+public class ReleaseImpl extends PropertiesBasedObject implements Release {
 
-    private Product product;
-    private File localWorkspace;
-    private Instant buildDate;
+    private String name;
     private Version version;
-    private boolean osSpecific;
+    private List<Build> builds = new ArrayList<>();
 
-    public ReleaseImpl() {}
+    public ReleaseImpl() {
+        super(null);
+    }
 
-    public ReleaseImpl(File propertiesFile) {
-
+    public ReleaseImpl(File file) {
+        super(file);
+        // TODO read properties
     }
 
     @Override
-    public Product getProduct() {
-        return product;
-    }
-
-    @Override
-    public File getLocalWorkspace() {
-        return localWorkspace;
-    }
-
-    @Override
-    public Instant getBuildDate() {
-        return buildDate;
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -48,27 +35,19 @@ public abstract class ReleaseImpl implements Release {
     }
 
     @Override
-    public boolean isOsSpecific() {
-        return osSpecific;
+    public List<Build> getBuilds() {
+        return builds;
     }
 
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public void setLocalWorkspace(File localWorkspace) {
-        this.localWorkspace = localWorkspace;
-    }
-
-    public void setBuildDate(Instant buildDate) {
-        this.buildDate = buildDate;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setVersion(Version version) {
         this.version = version;
     }
 
-    public void setOsSpecific(boolean osSpecific) {
-        this.osSpecific = osSpecific;
+    public void setBuilds(List<Build> builds) {
+        this.builds = builds;
     }
 }

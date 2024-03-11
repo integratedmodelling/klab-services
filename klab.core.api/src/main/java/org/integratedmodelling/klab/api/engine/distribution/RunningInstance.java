@@ -15,7 +15,7 @@ public interface RunningInstance {
     /**
      * The release this is an instance of
      */
-    Release getRelease();
+    Build getRelease();
 
     /**
      * The current status of the instance.

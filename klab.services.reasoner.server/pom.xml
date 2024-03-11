@@ -20,7 +20,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<outputDirectory>target/release</outputDirectory>
+					<outputDirectory>target/build</outputDirectory>
 					<productName>klab.server.reasoner</productName>
 					<productClass>REASONER_SERVICE</productClass>
 					<productMain>org.integratedmodelling.services.reasoner.ReasonerServer</productMain>
