@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.engine.distribution.impl.ReleaseImpl;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.Scope;
 
 import java.io.File;
@@ -89,5 +91,29 @@ public interface Release {
      * @return
      */
     boolean isOsSpecific();
+
+    public static Release create(File releasePropertiesFile) {
+        return new ReleaseImpl(releasePropertiesFile) {
+            @Override
+            public Product.Status getStatus() {
+                return Product.Status.UNAVAILABLE;
+            }
+
+            @Override
+            public boolean synchronize(Scope scope) {
+                throw new KlabIllegalStateException("This release is a stub");
+            }
+
+            @Override
+            public RunningInstance launch(Scope scope) {
+                throw new KlabIllegalStateException("This release is a stub");
+            }
+
+            @Override
+            public String getRemotePath() {
+                throw new KlabIllegalStateException("This release is a stub");
+            }
+        };
+    }
 
 }
