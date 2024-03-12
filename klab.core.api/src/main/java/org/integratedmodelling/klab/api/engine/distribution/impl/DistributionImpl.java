@@ -1,7 +1,10 @@
 package org.integratedmodelling.klab.api.engine.distribution.impl;
 
+import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
+import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.PropertyBean;
 
 import java.io.File;
@@ -28,9 +31,7 @@ public abstract class DistributionImpl extends PropertyBean implements Distribut
 
     public DistributionImpl(File file) {
         super(file);
-        // TODO read the properties
     }
-
 
     @Override
     public Product findProduct(Product.ProductType productType) {
@@ -43,12 +44,16 @@ public abstract class DistributionImpl extends PropertyBean implements Distribut
     }
 
     /**
-     * Create all needed property files for the passed classes, creating subdirectories as specified by the
-     * relative paths in the linked objects.
+     * This is used by {@link LocalBuildImpl} so that we can run the build in more capable implementations by
+     * just overriding this.
      *
-     * @param outputDirectory the place to put the main distribution.properties file
+     * @param build
+     * @param scope
+     * @return
      */
-    public void createPropertyFiles(File outputDirectory, boolean addLocalPaths) {
-        
+    public RunningInstance runBuild(Build build, Scope scope) {
+        return null;
     }
+
+
 }

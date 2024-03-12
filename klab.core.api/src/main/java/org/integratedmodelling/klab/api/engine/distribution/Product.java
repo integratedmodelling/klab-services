@@ -24,6 +24,12 @@ public interface Product {
     public final static String PRODUCT_CLASS_PROPERTY = "klab.product.class";
     public final static String RELEASE_NAMES_PROPERTY = "klab.product.releases";
 
+    /**
+     * Used only in local products to remember the release and build we used last time when launch() is
+     * called. If not present, the most recent build in the first release found is used. Must be in
+     * release/build format.
+     */
+    public final static String LAST_BUILD_LAUNCHED = "klab.product.lastbuildlaunched";
 
     public enum Status {
 
@@ -62,28 +68,46 @@ public interface Product {
 
     enum Type {
 
-        UNKNOWN,
+        UNKNOWN("unknown"),
 
         /**
          * Jar packaging with bin/, lib/ and a main jar file with a main class in properties, OS independent
          * distribution with potential OS-specific subcomponents to merge in from subdirs.
          */
-        JAR,
+        JAR("jar"),
 
         /**
          * Installer executable packaging.
          */
-        INSTALLER_EXECUTABLE,
+        INSTALLER_EXECUTABLE("installer"),
 
         /**
          * Direct executable packaging.
          */
-        DIRECT_EXE,
+        DIRECT_EXE("exe"),
 
         /**
          * Eclipse packaging with a zipped or unzipped distribution per supported OS.
          */
-        ECLIPSE
+        ECLIPSE("eclipse");
+
+        // user-defined name of the product in build.properties options, set in Maven
+        // configuration of klab.product plugin
+        public String userOption;
+
+        public static Type forOption(String option) {
+            return switch(option) {
+                case "jar" -> JAR;
+                case "installer" -> INSTALLER_EXECUTABLE;
+                case "exe" -> DIRECT_EXE;
+                case "eclipse" -> ECLIPSE;
+                default -> UNKNOWN;
+            };
+        }
+
+        private Type(String userOption) {
+            this.userOption = userOption;
+        }
     }
 
     public enum ProductType {
@@ -262,16 +286,6 @@ public interface Product {
     Status getStatus();
 
     /**
-     * If the product properties define a "currently chosen" release, we should return its ID here. Otherwise
-     * we should default to the ID of the most current release among those we have synchronized, or return
-     * null if unavailable (we should always call {@link #getStatus()} before using, so we shouldn't use the
-     * null result).
-     *
-     * @return
-     */
-    String getCurrentReleaseId();
-
-    /**
      * Version of the most current release in this product
      *
      * @return
@@ -283,7 +297,7 @@ public interface Product {
      *
      * @return
      */
-    List<Build> getReleases();
+    List<Release> getReleases();
 
     /**
      * Shorthand for "retrieve the currently configured or most recent {@link Release} and {@link Build}, then

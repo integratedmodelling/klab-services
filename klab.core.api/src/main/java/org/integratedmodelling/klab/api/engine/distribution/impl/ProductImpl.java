@@ -1,8 +1,10 @@
 package org.integratedmodelling.klab.api.engine.distribution.impl;
 
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
+import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.utils.PropertyBean;
 
 import java.io.File;
@@ -19,17 +21,26 @@ public abstract class ProductImpl extends PropertyBean implements Product {
     private Type type;
     private String name;
     private String description;
-    private String currentReleaseId;
     private Version version;
-    private List<Build> releases = new ArrayList<>();
+    private List<Release> releases = new ArrayList<>();
 
     public ProductImpl() {
         super(null);
     }
 
-    public ProductImpl(File propertiesFile){
+    public ProductImpl(File propertiesFile, DistributionImpl distribution){
         super(propertiesFile);
-        // TODO read the properties
+        this.setName(getProperty(Product.PRODUCT_NAME_PROPERTY));
+        this.setProductType(ProductType.valueOf(getProperty(PRODUCT_CLASS_PROPERTY)));
+        this.setType(Type.forOption(getProperty(PRODUCT_TYPE_PROPERTY)));
+        this.setDescription(getProperty(PRODUCT_DESCRIPTION_PROPERTY));
+
+        for (String releaseName : getProperty(RELEASE_NAMES_PROPERTY, "").split(",")) {
+            File releasePropertyFile = new File(propertiesFile.getParent() + File.separator + releaseName + File.separator + ReleaseImpl.RELEASE_PROPERTIES_FILE);
+            if (releasePropertyFile.isFile()) {
+                getReleases().add(new LocalReleaseImpl(releasePropertyFile,  distribution, this));
+            }
+        }
     }
 
     @Override
@@ -58,17 +69,12 @@ public abstract class ProductImpl extends PropertyBean implements Product {
     }
 
     @Override
-    public String getCurrentReleaseId() {
-        return currentReleaseId;
-    }
-
-    @Override
     public Version getVersion() {
         return version;
     }
 
     @Override
-    public List<Build> getReleases() {
+    public List<Release> getReleases() {
         return releases;
     }
 
@@ -92,15 +98,11 @@ public abstract class ProductImpl extends PropertyBean implements Product {
         this.description = description;
     }
 
-    public void setCurrentReleaseId(String currentReleaseId) {
-        this.currentReleaseId = currentReleaseId;
-    }
-
     public void setVersion(Version version) {
         this.version = version;
     }
 
-    public void setReleases(List<Build> releases) {
+    public void setReleases(List<Release> releases) {
         this.releases = releases;
     }
 }

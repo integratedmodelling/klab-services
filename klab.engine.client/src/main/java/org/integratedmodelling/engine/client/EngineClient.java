@@ -1,6 +1,7 @@
 package org.integratedmodelling.engine.client;
 
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.engine.client.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.engine.client.scopes.ClientScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
@@ -36,7 +37,7 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     AtomicBoolean online = new AtomicBoolean(false);
     AtomicBoolean available = new AtomicBoolean(false);
     AtomicBoolean booted = new AtomicBoolean(false);
-
+    AtomicBoolean stopped = new AtomicBoolean(false);
     Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
 
     Set<Resolver> availableResolvers = new HashSet<>();
@@ -53,6 +54,7 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     UserScope defaultUser;
 
     public EngineClient() {
+
         for (var type : EnumSet.of(KlabService.Type.REASONER, KlabService.Type.RESOURCES,
                 KlabService.Type.RUNTIME, KlabService.Type.RESOLVER)) {
             var key = "service.url." + type.name().toLowerCase();
@@ -95,46 +97,63 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
         all the
         services we don't have available.
          */
-        for (var serviceType : EnumSet.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER,
-                KlabService.Type.RUNTIME, KlabService.Type.RESOLVER, KlabService.Type.COMMUNITY)) {
-            if (currentServices.get(serviceType) == null) {
-                switch (serviceType) {
-                    case REASONER -> {
-                        var s = new ReasonerClient(serviceType.localServiceUrl());
-                        // TODO use another call to check if the URL existed, not necessarily available yet
-                        if (s.scope().isAvailable()) {
-                            this.availableReasoners.add(s);
-                            currentServices.put(KlabService.Type.REASONER, s);
-                        }
-                    }
-                    case RESOURCES -> {
-                        var s = new ResourcesClient(serviceType.localServiceUrl());
-                        if (s.scope().isAvailable()) {
-                            this.availableResourcesServices.add(s);
-                            currentServices.put(KlabService.Type.RESOURCES, s);
-                        }
-                    }
-                    case RESOLVER -> {
-                        var s = new ResolverClient(serviceType.localServiceUrl());
-                        if (s.scope().isAvailable()) {
-                            this.availableResolvers.add(s);
-                            currentServices.put(KlabService.Type.RESOLVER, s);
-                        }
-                    }
-                    case RUNTIME -> {
-                        var s = new RuntimeClient(serviceType.localServiceUrl());
-                        if (s.scope().isAvailable()) {
-                            this.availableRuntimeServices.add(s);
-                            currentServices.put(KlabService.Type.RUNTIME, s);
-                        }
-                    }
-                    default -> throw new KlabInternalErrorException("Unexpected value: " + serviceType);
-                }
+//        for (var serviceType : EnumSet.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER,
+//                KlabService.Type.RUNTIME, KlabService.Type.RESOLVER, KlabService.Type.COMMUNITY)) {
+//            if (currentServices.get(serviceType) == null) {
+//                switch (serviceType) {
+//                    case REASONER -> {
+//                        var s = new ReasonerClient(serviceType.localServiceUrl());
+//                        // TODO use another call to check if the URL existed, not necessarily available yet
+//                        if (s.scope().isAvailable()) {
+//                            this.availableReasoners.add(s);
+//                            currentServices.put(KlabService.Type.REASONER, s);
+//                        }
+//                    }
+//                    case RESOURCES -> {
+//                        var s = new ResourcesClient(serviceType.localServiceUrl());
+//                        if (s.scope().isAvailable()) {
+//                            this.availableResourcesServices.add(s);
+//                            currentServices.put(KlabService.Type.RESOURCES, s);
+//                        }
+//                    }
+//                    case RESOLVER -> {
+//                        var s = new ResolverClient(serviceType.localServiceUrl());
+//                        if (s.scope().isAvailable()) {
+//                            this.availableResolvers.add(s);
+//                            currentServices.put(KlabService.Type.RESOLVER, s);
+//                        }
+//                    }
+//                    case RUNTIME -> {
+//                        var s = new RuntimeClient(serviceType.localServiceUrl());
+//                        if (s.scope().isAvailable()) {
+//                            this.availableRuntimeServices.add(s);
+//                            currentServices.put(KlabService.Type.RUNTIME, s);
+//                        }
+//                    }
+//                    default -> throw new KlabInternalErrorException("Unexpected value: " + serviceType);
+//                }
+//            }
+//        }
+
+        var missingServices =
+                currentServices.get(KlabService.Type.REASONER) == null
+                        || currentServices.get(KlabService.Type.RESOURCES) == null
+                        || currentServices.get(KlabService.Type.RUNTIME) == null
+                        || currentServices.get(KlabService.Type.RESOLVER) == null;
+
+        if (missingServices && engineDistribution == null) {
+            /*
+            See if we have a configured engine distribution or we can build a local one
+             */
+            DevelopmentDistributionImpl developmentDistribution = new DevelopmentDistributionImpl();
+            if (developmentDistribution.isAvailable()) {
+                engineDistribution = developmentDistribution;
             }
         }
 
         /*
-         if we have no local clients, we had no running services but we may still have a product that we can launch
+         if we have no local clients, we had no running services but we may still have a product that we
+         can launch
          */
         if (engineDistribution != null) {
             for (var serviceType : EnumSet.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER,
@@ -142,13 +161,15 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
                 if (currentServices.get(serviceType) == null) {
                     var product = engineDistribution.findProduct(Product.ProductType.forService(serviceType));
-                    if (product != null && !product.getReleases().isEmpty()) {
-                        launchedServices.put(serviceType, product.getReleases().get(0).launch(this.defaultUser));
+                    if (product != null) {
+                        var instance = product.launch(this.defaultUser);
+                        if (instance != null) {
+                            launchedServices.put(serviceType, instance);
+                        }
                     }
                 }
             }
         }
-
     }
 
     @Override
@@ -269,6 +290,21 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     public static void main(String[] args) {
         var client = new EngineClient();
         client.boot();
+        while (!client.isStopped()) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+    }
+
+    public void stop() {
+        this.stopped.set(true);
+    }
+
+    private boolean isStopped() {
+        return this.stopped.get();
     }
 
 }

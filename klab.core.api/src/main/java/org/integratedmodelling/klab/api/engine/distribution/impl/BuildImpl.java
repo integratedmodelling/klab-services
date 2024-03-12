@@ -32,7 +32,7 @@ public abstract class BuildImpl extends PropertyBean implements Build {
     public BuildImpl(File propertiesFile) {
         super(propertiesFile);
         // TODO read the properties. This creates a stub so we create the product as well.
-        readProperties(getProperties());
+        readProperties();
         this.product = new ProductImpl() {
             @Override
             public Status getStatus() {
@@ -44,17 +44,22 @@ public abstract class BuildImpl extends PropertyBean implements Build {
                 return null;
             }
         };
-        this.product.setName(getProperties().getProperty(Product.PRODUCT_NAME_PROPERTY));
+        this.product.setName(getProperty(Product.PRODUCT_NAME_PROPERTY));
     }
 
-    private void readProperties(Properties properties) {
-
+    private void readProperties() {
+        var localWs = getProperty(BUILD_WORKSPACE_PROPERTY);
+        if (localWs != null) {
+            setLocalWorkspace(new File(localWs));
+        }
+        setVersion(Version.create(getProperty(BUILD_VERSION_PROPERTY)));
+//        setBuildDate(Instant.ofEpochMilli(Long.valueOf(properties.getProperty(BUILD_TIME_PROPERTY)), System.currentTimeMillis()));
     }
 
     public BuildImpl(File propertiesFile, ProductImpl product, ReleaseImpl release) {
         super(propertiesFile);
         // TODO read the properties. This creates a stub so we create the product as well.
-        readProperties(getProperties());
+        readProperties();
         this.product = product;
         this.release = release;
     }

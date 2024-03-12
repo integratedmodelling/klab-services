@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 
 import java.util.List;
 
@@ -20,4 +21,5 @@ public interface Release {
 
     List<Build> getBuilds();
 
+    ProductImpl getProduct();
 }

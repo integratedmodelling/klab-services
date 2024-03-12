@@ -22,7 +22,7 @@ public class PropertyBean {
         propertiesFile = file;
     }
 
-    public Properties getProperties() {
+    private Properties getProperties() {
         if (properties == null) {
             properties = new Properties();
             if (propertiesFile != null && propertiesFile.exists()) {
@@ -34,6 +34,11 @@ public class PropertyBean {
             }
         }
         return properties;
+    }
+
+    protected void initialize(File propertiesFile) {
+        this.propertiesFile = propertiesFile;
+        this.properties = null;
     }
 
     public void setProperty(String propertyName, String propertyValue) {

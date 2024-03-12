@@ -15,6 +15,8 @@ public class ReleaseImpl extends PropertyBean implements Release {
     private Version version;
     private List<Build> builds = new ArrayList<>();
 
+    private ProductImpl product;
+
     public ReleaseImpl() {
         super(null);
     }
@@ -50,4 +52,14 @@ public class ReleaseImpl extends PropertyBean implements Release {
     public void setBuilds(List<Build> builds) {
         this.builds = builds;
     }
+
+    @Override
+    public ProductImpl getProduct() {
+        return product;
+    }
+
+    public void setProduct(ProductImpl product) {
+        this.product = product;
+    }
+
 }
