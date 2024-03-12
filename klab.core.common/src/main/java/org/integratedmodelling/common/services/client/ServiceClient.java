@@ -44,6 +44,7 @@ public abstract class ServiceClient implements KlabService {
     AtomicBoolean connected = new AtomicBoolean(false);
     AtomicBoolean authorized = new AtomicBoolean(false);
     AtomicBoolean authenticated = new AtomicBoolean(false);
+    AtomicBoolean attemptingConnection = new AtomicBoolean(false);
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
     boolean usingLocalSecret;
     AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
@@ -143,7 +144,7 @@ public abstract class ServiceClient implements KlabService {
     }
 
     private String makeSecretToken(String secret, Identity identity) {
-        StringBuffer ret =new StringBuffer(secret);
+        StringBuffer ret = new StringBuffer(secret);
         if (identity instanceof UserIdentity userIdentity) {
             ret.append("/");
             ret.append(userIdentity.getUsername());
@@ -197,17 +198,16 @@ public abstract class ServiceClient implements KlabService {
 
     /**
      * Connection has succeeded; we have a URL and (possibly) a token. Create client with the token we have
-     * stored and if needed, authenticate further and read the capabilities using the token. Start polling at
-     * regular intervals to ensure the connection remains alive. Build the service scope and if we're on the
-     * LAN or LOCALHOST locality, establish the Websocket link between the client and the server so we can
-     * listen to events.
+     * stored and if needed, authenticate further using the token. Start polling at regular intervals to
+     * ensure the connection remains alive. Build the service scope and if we're on the LAN or LOCALHOST
+     * locality, establish the Websocket link between the client and the server so we can listen to events.
      */
     private void establishConnection() {
 
         this.scope =
-                new AbstractServiceDelegatingScope(status.get().getLocality() == ServiceScope.Locality.WAN
+                new AbstractServiceDelegatingScope(status.get().getLocality() == ServiceScope.Locality.LOCALHOST
                                                    ? new MessagingChannelImpl(this.authentication.getFirst(),
-                                                           new WebsocketsClientMessageBus(this.url.toString()))
+                                            new WebsocketsClientMessageBus(this.url.toString()))
                                                    : new ChannelImpl(this.authentication.getFirst())) {
                     @Override
                     public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -223,34 +223,43 @@ public abstract class ServiceClient implements KlabService {
                 };
 
         this.client = Utils.Http.getServiceClient(token, this);
-        this.capabilities = capabilities();
-
-        if (capabilities == null) {
-            connected.set(false);
-        } else {
-            scheduler.scheduleAtFixedRate(() -> checkConnection(), 0, pollCycleSeconds, TimeUnit.SECONDS);
-        }
+        scheduler.scheduleAtFixedRate(() -> checkConnection(), 0, pollCycleSeconds, TimeUnit.SECONDS);
     }
 
     private void checkConnection() {
 
-        if (!connected.get()) {
-            if ((this.url =
-                    discoverService(authentication.getFirst(), authentication.getSecond(), serviceType)) != null) {
-                establishConnection();
-            }
-        } else {
-            var s = readServiceStatus(this.url);
-            if (s == null) {
-                connected.set(false);
-                status.set(ServiceStatus.offline());
-                // TODO send ServerUnavailable to scope
-            } else {
-                status.set(s);
+        if (!attemptingConnection.get()) {
+
+            /*
+            TODO check for changes of status and send messages over
+             */
+
+            try {
+                attemptingConnection.set(true);
+                //        if (!connected.get()) {
+                //            if ((this.url =
+                //                    discoverService(authentication.getFirst(), authentication.getSecond()
+                //                    , serviceType)) != null) {
+                //                establishConnection();
+                //            }
+                //        } else {
+                var s = readServiceStatus(this.url);
+                if (s == null) {
+                    connected.set(false);
+                    status.set(ServiceStatus.offline());
+                    // TODO send ServerUnavailable to scope
+                } else {
+                    status.set(s);
+                    if (capabilities == null) {
+                        this.capabilities = capabilities();
+                    }
+                }
+            } finally {
+                attemptingConnection.set(false);
             }
             // TODO send ServerStatus to scope
+            //        }
         }
-
         /**
          *
          */

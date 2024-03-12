@@ -97,44 +97,6 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
         all the
         services we don't have available.
          */
-//        for (var serviceType : EnumSet.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER,
-//                KlabService.Type.RUNTIME, KlabService.Type.RESOLVER, KlabService.Type.COMMUNITY)) {
-//            if (currentServices.get(serviceType) == null) {
-//                switch (serviceType) {
-//                    case REASONER -> {
-//                        var s = new ReasonerClient(serviceType.localServiceUrl());
-//                        // TODO use another call to check if the URL existed, not necessarily available yet
-//                        if (s.scope().isAvailable()) {
-//                            this.availableReasoners.add(s);
-//                            currentServices.put(KlabService.Type.REASONER, s);
-//                        }
-//                    }
-//                    case RESOURCES -> {
-//                        var s = new ResourcesClient(serviceType.localServiceUrl());
-//                        if (s.scope().isAvailable()) {
-//                            this.availableResourcesServices.add(s);
-//                            currentServices.put(KlabService.Type.RESOURCES, s);
-//                        }
-//                    }
-//                    case RESOLVER -> {
-//                        var s = new ResolverClient(serviceType.localServiceUrl());
-//                        if (s.scope().isAvailable()) {
-//                            this.availableResolvers.add(s);
-//                            currentServices.put(KlabService.Type.RESOLVER, s);
-//                        }
-//                    }
-//                    case RUNTIME -> {
-//                        var s = new RuntimeClient(serviceType.localServiceUrl());
-//                        if (s.scope().isAvailable()) {
-//                            this.availableRuntimeServices.add(s);
-//                            currentServices.put(KlabService.Type.RUNTIME, s);
-//                        }
-//                    }
-//                    default -> throw new KlabInternalErrorException("Unexpected value: " + serviceType);
-//                }
-//            }
-//        }
-
         var missingServices =
                 currentServices.get(KlabService.Type.REASONER) == null
                         || currentServices.get(KlabService.Type.RESOURCES) == null
@@ -165,6 +127,9 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
                         var instance = product.launch(this.defaultUser);
                         if (instance != null) {
                             launchedServices.put(serviceType, instance);
+                            var client = createLocalServiceClient(serviceType);
+                            currentServices.put(serviceType, client);
+                            getServices(serviceType).add(client);
                         }
                     }
                 }
@@ -242,35 +207,58 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
             @Override
             public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                switch (KlabService.Type.classify(serviceClass)) {
-                    case REASONER -> {
-                        return (Collection<T>) availableReasoners;
-                    }
-                    case RESOURCES -> {
-                        return (Collection<T>) availableResourcesServices;
-                    }
-                    case RESOLVER -> {
-                        return (Collection<T>) availableResolvers;
-                    }
-                    case RUNTIME -> {
-                        return (Collection<T>) availableRuntimeServices;
-                    }
-                    case COMMUNITY -> {
-                        var ret = currentServices.get(KlabService.Type.COMMUNITY);
-                        if (ret != null) {
-                            return (Collection<T>) List.of(ret);
-                        }
-                    }
-                    case ENGINE -> {
-                        return List.of((T) EngineClient.this);
-                    }
-                }
-                return Collections.emptyList();
+                return EngineClient.this.getServices(KlabService.Type.classify(serviceClass));
             }
         };
 
         return ret;
     }
+
+    private <T extends KlabService> Collection<T> getServices(KlabService.Type serviceType) {
+        switch (serviceType) {
+            case REASONER -> {
+                return (Collection<T>) availableReasoners;
+            }
+            case RESOURCES -> {
+                return (Collection<T>) availableResourcesServices;
+            }
+            case RESOLVER -> {
+                return (Collection<T>) availableResolvers;
+            }
+            case RUNTIME -> {
+                return (Collection<T>) availableRuntimeServices;
+            }
+            case COMMUNITY -> {
+                var ret = currentServices.get(KlabService.Type.COMMUNITY);
+                if (ret != null) {
+                    return (Collection<T>) List.of(ret);
+                }
+            }
+            case ENGINE -> {
+                return List.of((T) EngineClient.this);
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType) {
+        switch (serviceType) {
+            case REASONER -> {
+                return (T)new ReasonerClient();
+            }
+            case RESOURCES -> {
+                return (T)new ResourcesClient();
+            }
+            case RESOLVER -> {
+                return (T) new ResolverClient();
+            }
+            case RUNTIME -> {
+                return (T) new RuntimeClient();
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public boolean isAvailable() {
