@@ -22,7 +22,7 @@ public abstract class RunningInstanceImpl implements RunningInstance {
 	protected Build release;
 
 	public RunningInstanceImpl(Build release, StartupOptions startupOptions) {
-//		this.settings = settings;
+		this.startupOptions = startupOptions;
 		this.release = release;
 	}
 

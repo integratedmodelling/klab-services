@@ -1,7 +1,9 @@
 package org.integratedmodelling.engine.client.distribution;
 
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.engine.distribution.impl.DistributionImpl;
 import org.integratedmodelling.klab.api.engine.distribution.impl.LocalProductImpl;
 import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
@@ -48,5 +50,15 @@ public class DevelopmentDistributionImpl extends DistributionImpl {
 
     public boolean isAvailable() {
         return getProducts().size() > 0;
+    }
+
+    @Override
+    public RunningInstance runBuild(Build build, Scope scope) {
+        if (build.getLocalWorkspace() != null) {
+            /*
+            create JavaOptions with StartupOptions, use it for createCommandLine in a new RunningInstanceImpl
+             */
+        }
+        return super.runBuild(build, scope);
     }
 }
