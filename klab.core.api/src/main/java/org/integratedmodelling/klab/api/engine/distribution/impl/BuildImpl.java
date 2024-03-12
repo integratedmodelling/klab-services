@@ -3,10 +3,9 @@ package org.integratedmodelling.klab.api.engine.distribution.impl;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
-import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.utils.PropertiesBasedObject;
+import org.integratedmodelling.klab.api.utils.PropertyBean;
 
 import java.io.File;
 import java.time.Instant;
@@ -16,7 +15,7 @@ import java.util.Properties;
  * {@link Build} bean which implements all the properties and can be initialized from a
  * {@link java.util.Properties} object. Subclasses will need to define any further properties.
  */
-public abstract class BuildImpl extends PropertiesBasedObject implements Build {
+public abstract class BuildImpl extends PropertyBean implements Build {
 
     private ProductImpl product;
 

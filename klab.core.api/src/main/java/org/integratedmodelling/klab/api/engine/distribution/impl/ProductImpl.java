@@ -3,7 +3,7 @@ package org.integratedmodelling.klab.api.engine.distribution.impl;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
-import org.integratedmodelling.klab.api.utils.PropertiesBasedObject;
+import org.integratedmodelling.klab.api.utils.PropertyBean;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.List;
  * {@link Product} bean which implements all the properties and can be initialized from a
  * {@link java.util.Properties} object. Subclasses will need to define any further properties.
  */
-public abstract class ProductImpl extends PropertiesBasedObject implements Product {
+public abstract class ProductImpl extends PropertyBean implements Product {
     private String id;
     private ProductType productType;
     private Type type;

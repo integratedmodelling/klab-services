@@ -50,6 +50,7 @@
                 <configuration>
                     <!-- plugin won't work in submodules I'm afraid. The Git branch is the ideal choice here. -->
                     <releaseName>develop</releaseName>
+                    <outputDirectory>target/distribution</outputDirectory>
                     <distributionName>klab</distributionName>
                     <distributionVersion>${klab.version}</distributionVersion>
                 </configuration>

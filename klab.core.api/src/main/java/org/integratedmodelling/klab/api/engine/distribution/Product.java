@@ -22,6 +22,7 @@ public interface Product {
     public final static String PRODUCT_DESCRIPTION_PROPERTY = "klab.product.description";
     public final static String PRODUCT_TYPE_PROPERTY = "klab.product.type";
     public final static String PRODUCT_CLASS_PROPERTY = "klab.product.class";
+    public final static String RELEASE_NAMES_PROPERTY = "klab.product.releases";
 
 
     public enum Status {

@@ -32,6 +32,7 @@ public interface Build {
     public final static String BUILD_VERSION_PROPERTY = "klab.build.version";
     public final static String BUILD_MAINCLASS_PROPERTY = "klab.build.main";
     public final static String BUILD_TIME_PROPERTY = "klab.build.time";
+    public final static String BUILD_WORKSPACE_PROPERTY = "klab.build.workspace";
     /**
      * The product we're part of.
      *

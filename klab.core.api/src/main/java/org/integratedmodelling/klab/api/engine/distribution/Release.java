@@ -12,8 +12,7 @@ public interface Release {
 
     public static final String RELEASE_PROPERTIES_FILE = "release.properties";
     public static final String BUILD_VERSIONS_PROPERTY = "klab.build.versions";
-    public static final String BUILD_NAME_PROPERTY = "klab.build.versions";
-    public static final String BUILD_VERSION_PROPERTY = "klab.build.versions";
+    public static final String RELEASE_NAME_PROPERTY = "klab.release.name";
 
     String getName();
 

@@ -3,13 +3,13 @@ package org.integratedmodelling.klab.api.engine.distribution.impl;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Release;
-import org.integratedmodelling.klab.api.utils.PropertiesBasedObject;
+import org.integratedmodelling.klab.api.utils.PropertyBean;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReleaseImpl extends PropertiesBasedObject implements Release {
+public class ReleaseImpl extends PropertyBean implements Release {
 
     private String name;
     private Version version;
