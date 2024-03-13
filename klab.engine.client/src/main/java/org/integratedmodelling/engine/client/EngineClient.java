@@ -98,8 +98,8 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
         services we don't have available.
          */
         var missingServices =
-                currentServices.get(KlabService.Type.REASONER) == null
-                        || currentServices.get(KlabService.Type.RESOURCES) == null
+                currentServices.get(KlabService.Type.RESOURCES) == null
+                        || currentServices.get(KlabService.Type.REASONER) == null
                         || currentServices.get(KlabService.Type.RUNTIME) == null
                         || currentServices.get(KlabService.Type.RESOLVER) == null;
 
@@ -276,6 +276,7 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     }
 
     public static void main(String[] args) {
+
         var client = new EngineClient();
         client.boot();
         while (!client.isStopped()) {

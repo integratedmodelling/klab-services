@@ -14,6 +14,7 @@ public class LocalBuildImpl extends BuildImpl {
 
     public LocalBuildImpl(File buildPropertyFile, DistributionImpl distribution, ProductImpl product, ReleaseImpl release) {
         super(buildPropertyFile, product, release);
+        this.distribution = distribution;
     }
 
     @Override

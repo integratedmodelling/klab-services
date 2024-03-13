@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.utils.PropertyBean;
 
 import java.io.File;
 import java.time.Instant;
-import java.util.Properties;
 
 /**
  * {@link Build} bean which implements all the properties and can be initialized from a
@@ -24,6 +23,7 @@ public abstract class BuildImpl extends PropertyBean implements Build {
     private Instant buildDate;
     private Version version;
     private boolean osSpecific;
+    private String executable;
 
     public BuildImpl() {
         super(null);
@@ -53,7 +53,10 @@ public abstract class BuildImpl extends PropertyBean implements Build {
             setLocalWorkspace(new File(localWs));
         }
         setVersion(Version.create(getProperty(BUILD_VERSION_PROPERTY)));
-//        setBuildDate(Instant.ofEpochMilli(Long.valueOf(properties.getProperty(BUILD_TIME_PROPERTY)), System.currentTimeMillis()));
+        setOsSpecific(Boolean.valueOf(getProperty(PRODUCT_OSSPECIFIC_PROPERTY)));
+        setExecutable(getProperty(BUILD_MAINCLASS_PROPERTY));
+        setBuildDate(Instant.ofEpochMilli(Long.valueOf(getProperty(BUILD_TIME_PROPERTY,
+                "" + System.currentTimeMillis()))));
     }
 
     public BuildImpl(File propertiesFile, ProductImpl product, ReleaseImpl release) {
@@ -116,5 +119,14 @@ public abstract class BuildImpl extends PropertyBean implements Build {
 
     public void setRelease(ReleaseImpl release) {
         this.release = release;
+    }
+
+    @Override
+    public String getExecutable() {
+        return executable;
+    }
+
+    public void setExecutable(String executable) {
+        this.executable = executable;
     }
 }

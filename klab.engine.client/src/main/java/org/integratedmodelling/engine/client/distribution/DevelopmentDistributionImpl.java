@@ -1,6 +1,8 @@
 package org.integratedmodelling.engine.client.distribution;
 
+import org.apache.commons.exec.CommandLine;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
@@ -10,6 +12,7 @@ import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 
 import java.io.File;
+import java.util.function.Consumer;
 
 /**
  * Finds or reads a git repository with Maven artifacts and builds a distribution out of all the products
@@ -55,10 +58,19 @@ public class DevelopmentDistributionImpl extends DistributionImpl {
     @Override
     public RunningInstance runBuild(Build build, Scope scope) {
         if (build.getLocalWorkspace() != null) {
-            /*
-            create JavaOptions with StartupOptions, use it for createCommandLine in a new RunningInstanceImpl
-             */
+            return new RunningInstanceImpl(build, scope,makeOptions(build, scope));
         }
         return super.runBuild(build, scope);
+    }
+
+    /**
+     * Startup options for the specific instance
+     *
+     * @param build
+     * @param scope
+     * @return
+     */
+    private StartupOptions makeOptions(Build build, Scope scope) {
+        return null;
     }
 }

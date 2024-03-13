@@ -127,4 +127,12 @@ public interface Build {
     }
 
     Release getRelease();
+
+    /**
+     * The executable path in the build. Either a Java class with the main() method or the name of the
+     * executable file.
+     *
+     * @return
+     */
+    String getExecutable();
 }

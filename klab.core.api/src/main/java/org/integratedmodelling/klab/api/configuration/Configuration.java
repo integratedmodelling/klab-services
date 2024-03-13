@@ -60,7 +60,7 @@ public enum Configuration {
     public static final int DEFAULT_LEVER_PORT = 8761;
     public static final int DEFAULT_SEMANTIC_SERVER_PORT = 8301;
     public static final String DEFAULT_PRODUCTS_BRANCH = "master";
-
+    public static final String JREDIR_PROPERTY = "klab.directory.jre";
     public static final String KLAB_LOG_FILE = "klab.log.file";
     public static final String KLAB_OFFLINE = "klab.offline";
     public static final String KLAB_EXPORT_PATH = "klab.export.path";

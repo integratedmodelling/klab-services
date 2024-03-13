@@ -13,7 +13,8 @@ public class LocalReleaseImpl extends ReleaseImpl {
         this.setProduct(product);
         this.setName(getProperty(RELEASE_NAME_PROPERTY));
         for (String buildName : getProperty(BUILD_VERSIONS_PROPERTY, "").split(",")) {
-            File buildPropertyFile = new File(releasePropertyFile.getParent() + File.separator + buildName + Build.BUILD_PROPERTIES_FILE);
+            File buildPropertyFile =
+                    new File(releasePropertyFile.getParent() + File.separator + buildName + File.separator + Build.BUILD_PROPERTIES_FILE);
             if (buildPropertyFile.isFile()) {
                 getBuilds().add(new LocalBuildImpl(buildPropertyFile, distribution, product, this));
             }
