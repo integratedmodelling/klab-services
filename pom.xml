@@ -178,7 +178,21 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
     </repositories>
-
+    
+    <pluginRepositories>
+        <pluginRepository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Maven Central snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+              <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+              <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository> 
+    </pluginRepositories>
+    
     <dependencyManagement>
         <dependencies>
             <dependency>
