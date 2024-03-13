@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -42,7 +43,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         super(Type.RESOURCES);
     }
 
-    public ResourcesClient(UserIdentity identity, List<ServiceReference> services) {
+    public ResourcesClient(Identity identity, List<ServiceReference> services) {
         super(Type.RESOURCES, identity, services);
     }
 

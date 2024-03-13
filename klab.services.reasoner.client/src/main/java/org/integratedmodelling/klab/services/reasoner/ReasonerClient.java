@@ -4,6 +4,7 @@ import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
@@ -29,7 +30,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner {
         super(Type.REASONER);
     }
 
-    public ReasonerClient(UserIdentity identity, List<ServiceReference> services) {
+    public ReasonerClient(Identity identity, List<ServiceReference> services) {
         super(Type.REASONER, identity, services);
     }
 

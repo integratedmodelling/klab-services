@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resolver;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -27,7 +28,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
         super(Type.RESOLVER);
     }
 
-    public ResolverClient(UserIdentity identity, List<ServiceReference> services) {
+    public ResolverClient(Identity identity, List<ServiceReference> services) {
         super(Type.RESOLVER, identity, services);
     }
 

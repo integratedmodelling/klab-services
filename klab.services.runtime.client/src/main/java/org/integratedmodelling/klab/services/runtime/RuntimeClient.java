@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -23,7 +24,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         super(Type.RUNTIME);
     }
 
-    public RuntimeClient(UserIdentity identity, List<ServiceReference> services) {
+    public RuntimeClient(Identity identity, List<ServiceReference> services) {
         super(Type.RUNTIME, identity, services);
     }
 

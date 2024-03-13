@@ -52,6 +52,7 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     Distribution engineDistribution = null;
 
     UserScope defaultUser;
+    private Pair<Identity, List<ServiceReference>> authData;
 
     public EngineClient() {
 
@@ -139,7 +140,7 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
 
     @Override
     protected UserScope authenticate() {
-        var authData = Authentication.INSTANCE.authenticate();
+        this.authData = Authentication.INSTANCE.authenticate();
         var ret = createUserScope(authData);
         // TODO send auth messages to scope
         return ret;
@@ -244,16 +245,18 @@ public class EngineClient extends AbstractAuthenticatedEngine implements Propert
     public <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType) {
         switch (serviceType) {
             case REASONER -> {
-                return (T)new ReasonerClient();
+                return (T)new ReasonerClient(authData.getFirst(), authData.getSecond()) {
+
+                };
             }
             case RESOURCES -> {
-                return (T)new ResourcesClient();
+                return (T)new ResourcesClient(authData.getFirst(), authData.getSecond());
             }
             case RESOLVER -> {
-                return (T) new ResolverClient();
+                return (T) new ResolverClient(authData.getFirst(), authData.getSecond());
             }
             case RUNTIME -> {
-                return (T) new RuntimeClient();
+                return (T) new RuntimeClient(authData.getFirst(), authData.getSecond());
             }
         }
         return null;

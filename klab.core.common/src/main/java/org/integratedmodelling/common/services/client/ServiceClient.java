@@ -64,7 +64,7 @@ public abstract class ServiceClient implements KlabService {
         }
     }
 
-    protected ServiceClient(KlabService.Type serviceType, UserIdentity identity,
+    protected ServiceClient(KlabService.Type serviceType, Identity identity,
                             List<ServiceReference> services) {
         this.authentication = Authentication.INSTANCE.authenticate();
         this.serviceType = serviceType;
@@ -207,7 +207,7 @@ public abstract class ServiceClient implements KlabService {
         this.scope =
                 new AbstractServiceDelegatingScope(status.get().getLocality() == ServiceScope.Locality.LOCALHOST
                                                    ? new MessagingChannelImpl(this.authentication.getFirst(),
-                                            new WebsocketsClientMessageBus(this.url.toString()))
+                        new WebsocketsClientMessageBus(this.url.toString()))
                                                    : new ChannelImpl(this.authentication.getFirst())) {
                     @Override
                     public <T extends KlabService> T getService(Class<T> serviceClass) {
