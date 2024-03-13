@@ -110,7 +110,7 @@ public class RunningInstanceImpl implements RunningInstance {
             }
         }
 
-        return null;
+        return ret;
     }
 
     private String getClassPath() {
@@ -136,6 +136,7 @@ public class RunningInstanceImpl implements RunningInstance {
             case RESOURCES_SERVICE -> KlabService.Type.RESOURCES.defaultPort;
             case REASONER_SERVICE -> KlabService.Type.REASONER.defaultPort;
             case RESOLVER_SERVICE -> KlabService.Type.RESOLVER.defaultPort;
+            case COMMUNITY_SERVICE -> KlabService.Type.COMMUNITY.defaultPort;
             case RUNTIME_SERVICE -> KlabService.Type.RUNTIME.defaultPort;
         };
     }

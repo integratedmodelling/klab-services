@@ -58,7 +58,10 @@ public class DevelopmentDistributionImpl extends DistributionImpl {
     @Override
     public RunningInstance runBuild(Build build, Scope scope) {
         if (build.getLocalWorkspace() != null) {
-            return new RunningInstanceImpl(build, scope,makeOptions(build, scope));
+            var ret = new RunningInstanceImpl(build, scope,makeOptions(build, scope));
+            if (ret.start()) {
+                return ret;
+            }
         }
         return super.runBuild(build, scope);
     }
