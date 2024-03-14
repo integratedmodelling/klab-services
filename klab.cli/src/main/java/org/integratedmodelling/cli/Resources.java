@@ -65,12 +65,12 @@ public class Resources {
         @Override
         public void run() {
 
-            Observable observable = KlabCLI.INSTANCE.currentUser()
+            Observable observable = KlabCLI.INSTANCE.modeler().currentUser()
                                                     .getService(org.integratedmodelling.klab.api.services.Reasoner.class)
                                                     .resolveObservable(Utils.Strings.join(urns, ' '));
 
             var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-            ResourceSet result = service.queryModels(observable, KlabCLI.INSTANCE.currentContext());
+            ResourceSet result = service.queryModels(observable, KlabCLI.INSTANCE.modeler().currentContext());
             out.println("Resource set: (TODO)");
             KlabCLI.printResourceSet(result, out, 3);
 
@@ -121,7 +121,7 @@ public class Resources {
         public void run() {
             var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
             if (service != null) {
-                ResourceSet asset = service.resolve(urn, KlabCLI.INSTANCE.currentUser());
+                ResourceSet asset = service.resolve(urn, KlabCLI.INSTANCE.modeler().currentUser());
                 out.println("Resource set: (TODO)");
                 KlabCLI.printResourceSet(asset, out, 3);
                 out.println("Results:");
@@ -491,12 +491,14 @@ public class Resources {
     }
 
     public static String listApplication(String resourceUrn, boolean source, ResourcesService service) {
-        KActorsBehavior behavior = service.resolveBehavior(resourceUrn, KlabCLI.INSTANCE.currentUser());
+        KActorsBehavior behavior = service.resolveBehavior(resourceUrn,
+                KlabCLI.INSTANCE.modeler().currentUser());
         return source ? behavior.getSourceCode() : Utils.Json.printAsJson(behavior);
     }
 
     public static String listNamespace(String resourceUrn, boolean source, ResourcesService service) {
-        KimNamespace namespace = service.resolveNamespace(resourceUrn, KlabCLI.INSTANCE.currentUser());
+        KimNamespace namespace = service.resolveNamespace(resourceUrn,
+                KlabCLI.INSTANCE.modeler().currentUser());
         return source ? namespace.getSourceCode() : Utils.Json.printAsJson(namespace);
     }
 
@@ -506,7 +508,7 @@ public class Resources {
         String ns = Utils.Paths.getLeading(resourceUrn, '.');
         String on = Utils.Paths.getLast(resourceUrn, '.');
 
-        KimNamespace namespace = service.resolveNamespace(ns, KlabCLI.INSTANCE.currentUser());
+        KimNamespace namespace = service.resolveNamespace(ns, KlabCLI.INSTANCE.modeler().currentUser());
         for (KlabStatement statement : namespace.getStatements()) {
             if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance
                     && on.equals(((KimInstance) statement).getName())) {

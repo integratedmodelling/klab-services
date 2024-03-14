@@ -81,8 +81,8 @@ public class Resolver {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            ContextScope ctx = context == null ? KlabCLI.INSTANCE.currentContext() :
-                               KlabCLI.INSTANCE.context(context);
+            ContextScope ctx = context == null ? KlabCLI.INSTANCE.modeler().currentContext() :
+                               KlabCLI.INSTANCE.modeler().context(context);
 
             if (ctx == null) {
                 out.println(Ansi.AUTO.string("No context for the observation! Create a context or choose among the " +
@@ -147,8 +147,8 @@ public class Resolver {
             if (this.resolution instanceof Resolution) {
 
                 ContextScope ctx = context == null
-                        ? KlabCLI.INSTANCE.currentContext()
-                        : KlabCLI.INSTANCE.context(context);
+                        ? KlabCLI.INSTANCE.modeler().currentContext()
+                        : KlabCLI.INSTANCE.modeler().context(context);
 
                 PrintWriter out = commandSpec.commandLine().getOut();
                 PrintWriter err = commandSpec.commandLine().getErr();
@@ -185,8 +185,8 @@ public class Resolver {
             if (this.dataflow != null && !this.dataflow.isEmpty()) {
 
                 ContextScope ctx = context == null
-                        ? KlabCLI.INSTANCE.currentContext()
-                        : KlabCLI.INSTANCE.context(context);
+                        ? KlabCLI.INSTANCE.modeler().currentContext()
+                        : KlabCLI.INSTANCE.modeler().context(context);
 
                 ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
 

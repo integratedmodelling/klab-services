@@ -1,17 +1,16 @@
 package org.integratedmodelling.cli;
 
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.services.client.engine.EngineClient;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.modeler.Modeler;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
@@ -33,7 +32,6 @@ import picocli.shell.jline3.PicocliCommands.PicocliCommandsFactory;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Stack;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -59,43 +57,16 @@ import java.util.function.Supplier;
  * org.integratedmodelling.kcli.KlabCLI"
  */
 public enum KlabCLI {
-
     INSTANCE;
 
-    EngineClient engine = new EngineClient();
+    private Modeler modeler = new Modeler();
 
     public Engine engine() {
-        return this.engine;
+        return modeler.getEngine();
     }
 
-    public UserScope currentUser() {
-        // TODO
-        return null;
-    }
-
-    public SessionScope currentSession() {
-        // TODO
-        return null;
-    }
-
-    public ContextScope currentContext() {
-        // TODO
-        return null;
-    }
-
-    public ContextScope context(String context) {
-        // TODO named context
-        return null;
-    }
-
-    public UserScope user(String username) {
-        // TODO named user
-        return null;
-    }
-
-    public SessionScope session(String session) {
-        // TODO named session
-        return null;
+    public Modeler modeler() {
+        return this.modeler;
     }
 
     public <T extends KlabService> T service(String service, Class<T> serviceClass) {

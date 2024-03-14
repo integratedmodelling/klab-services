@@ -44,7 +44,7 @@ public class Reasoner {
             PrintWriter err = commandSpec.commandLine().getErr();
 
             var urn = Utils.Strings.join(observables, " ");
-            var reasoner = KlabCLI.INSTANCE.currentUser()
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
                                            .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
             if (concept == null) {
@@ -101,7 +101,7 @@ public class Reasoner {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            ContextScope ctx = context == null ? KlabCLI.INSTANCE.currentContext() : KlabCLI.INSTANCE.context(context);
+            ContextScope ctx = context == null ? KlabCLI.INSTANCE.modeler().currentContext() : KlabCLI.INSTANCE.modeler().context(context);
 
             if (within != null) {
                 // TODO find the context observation and switch the context to it. If a dot,
@@ -155,7 +155,7 @@ public class Reasoner {
             PrintWriter err = commandSpec.commandLine().getErr();
 
             var urn = Utils.Strings.join(observables, " ");
-            var reasoner = KlabCLI.INSTANCE.currentUser()
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
                                            .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
             if (concept == null) {
@@ -184,7 +184,7 @@ public class Reasoner {
             PrintWriter err = commandSpec.commandLine().getErr();
 
             var urn = Utils.Strings.join(observables, " ");
-            var reasoner = KlabCLI.INSTANCE.currentUser()
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
                                            .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
             if (concept == null) {
@@ -216,7 +216,7 @@ public class Reasoner {
             PrintWriter err = commandSpec.commandLine().getErr();
 
             var urn = Utils.Strings.join(observables, " ");
-            var reasoner = KlabCLI.INSTANCE.currentUser()
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
                                            .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
             if (concept == null) {
@@ -248,7 +248,7 @@ public class Reasoner {
             PrintWriter err = commandSpec.commandLine().getErr();
 
             var urn = Utils.Strings.join(observables, " ");
-            var reasoner = KlabCLI.INSTANCE.currentUser()
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
                                            .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
             Concept concept = reasoner.resolveConcept(urn);
             if (concept == null) {
@@ -281,7 +281,7 @@ public class Reasoner {
 
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
-            var reasoner = KlabCLI.INSTANCE.currentUser()
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
                                            .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
 
             if (reasoner instanceof org.integratedmodelling.klab.api.services.Reasoner.Admin) {

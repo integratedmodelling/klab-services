@@ -23,7 +23,7 @@
     <dependencies>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.core.common</artifactId>
+            <artifactId>klab.modeler</artifactId>
             <version>${klab.version}</version>
         </dependency>
         <dependency>
