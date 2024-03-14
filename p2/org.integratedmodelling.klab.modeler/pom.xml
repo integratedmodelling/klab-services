@@ -45,12 +45,6 @@
                                             <id>org.integratedmodelling:klab.core.common:jar:0.11.0-SNAPSHOT</id>id>
                                         </artifact>
                                         <artifact>
-                                            <id>org.integratedmodelling:klab.engine:jar:0.11.0-SNAPSHOT</id>id>
-                                        </artifact>
-                                        <artifact>
-                                            <id>org.integratedmodelling:klab.engine.client:jar:0.11.0-SNAPSHOT</id>id>
-                                        </artifact>
-                                        <artifact>
                                             <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>id>
                                         </artifact>
                                     </artifacts>

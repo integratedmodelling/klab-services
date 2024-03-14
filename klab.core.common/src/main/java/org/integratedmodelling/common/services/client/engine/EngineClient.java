@@ -47,7 +47,6 @@ public class EngineClient implements Engine, PropertyHolder {
     public UserScope getUser() {
         return this.users.size() > 0 ? users.get(0) : null;
     }
-
     @Override
     public List<UserScope> getUsers() {
         return users;
@@ -73,6 +72,7 @@ public class EngineClient implements Engine, PropertyHolder {
         /*
         TODO send shutdown to all services that were launched in our scope
          */
+        stopped.set(true);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class EngineClient implements Engine, PropertyHolder {
     protected UserScope authenticate() {
         this.authData = Authentication.INSTANCE.authenticate();
         var ret = createUserScope(authData);
-        // TODO send auth messages to scope
+        ret.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, authData.getFirst());
         return ret;
     }
 
@@ -189,10 +189,6 @@ public class EngineClient implements Engine, PropertyHolder {
                 return;
             }
         }
-    }
-
-    public void stop() {
-        this.stopped.set(true);
     }
 
     private boolean isStopped() {
