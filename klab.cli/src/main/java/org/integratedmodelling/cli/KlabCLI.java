@@ -1,19 +1,16 @@
 package org.integratedmodelling.cli;
 
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.engine.client.EngineClient;
+import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;

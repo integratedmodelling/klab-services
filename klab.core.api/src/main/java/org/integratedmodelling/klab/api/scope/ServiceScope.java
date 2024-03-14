@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.scope;
 
+import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
@@ -38,6 +39,18 @@ public interface ServiceScope extends Scope {
          */
         WAN
     }
+
+    /**
+     * Create a user scope for authenticated users. Service must be able to authenticate the user through the
+     * authenticating hub. The user scope, in addition to offering all functionalities if this service is an
+     * engine, must be able to coordinate with any sub-scopes coming from _other_ services and created on
+     * demand.
+     *
+     * @param username
+     * @param password
+     * @return
+     */
+    UserScope createUser(String username, String password);
 
     /**
      * Locality reflects which clients can use the service.

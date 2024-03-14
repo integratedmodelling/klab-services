@@ -2,15 +2,13 @@ package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 
@@ -202,11 +200,13 @@ public interface KlabService extends Service {
 
     /**
      * Each service operates under a root scope that is used to report issues, talk to clients and derive
-     * child scopes for users and when appropriate, sessions and contexts.
+     * child scopes for users and when appropriate, sessions and contexts. The service scope may be a
+     * {@link org.integratedmodelling.klab.api.scope.UserScope} or a {@link ServiceScope} according to who
+     * owns and operates the engine service.
      *
      * @return
      */
-    ServiceScope scope();
+    Scope serviceScope();
 
     /**
      * All services provide a shutdown call to clean up things upon normal termination. The service should not

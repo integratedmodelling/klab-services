@@ -64,7 +64,6 @@ import java.io.Serial;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -2417,7 +2416,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public boolean shutdown() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
                 capabilities());
         // TODO Auto-generated method stub
         return false;

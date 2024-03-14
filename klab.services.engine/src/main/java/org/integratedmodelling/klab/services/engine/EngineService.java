@@ -112,7 +112,7 @@ public class EngineService implements Engine {
                     if (service instanceof ResourcesService admin) {
                         worldview = admin.getWorldview();
                     } else if (service instanceof Reasoner.Admin admin && !worldview.isEmpty()) {
-                        admin.loadKnowledge(worldview, baseService.scope());
+                        admin.loadKnowledge(worldview, baseService.serviceScope());
                     }
                 }
             }

@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.services;
 
-import java.io.File;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -8,28 +7,24 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.integratedmodelling.common.authentication.AnonymousEngineCertificate;
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.reasoner.ReasonerClient;
-import org.integratedmodelling.klab.services.resolver.ResolverClient;
-import org.integratedmodelling.klab.services.resources.ResourcesClient;
-import org.integratedmodelling.klab.services.runtime.RuntimeClient;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
+import org.integratedmodelling.common.services.client.resolver.ResolverClient;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
@@ -63,27 +58,24 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     private ServiceStartupOptions startupOptions;
     private T service;
-
     private AbstractServiceDelegatingScope serviceScope;
     /**
      * Holders of "other" services for the ServiceScope
      */
     Map<KlabService.Type, KlabService> currentServices = new HashMap<>();
-
-    ExecutorService servicesThreadPool = Executors.newFixedThreadPool(4);
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
     Set<Resolver> availableResolvers = new HashSet<>();
     Set<RuntimeService> availableRuntimeServices = new HashSet<>();
     Set<ResourcesService> availableResourcesServices = new HashSet<>();
     Set<Reasoner> availableReasoners = new HashSet<>();
 
     private long bootTime;
+    private Pair<Identity, List<ServiceReference>> identity;
 
     /**
      * Return the type of any <em>other</em> services required for this service to be online. For each of
-     * these the {@link #createDefaultService(KlabService.Type, long)} function will be called and online
-     * status won't be set until all of these are available.
+     * these the {@link #createDefaultService(KlabService.Type, Scope, long)} function will be called and
+     * online status won't be set until all of these are available.
      *
      * @return
      */
@@ -110,20 +102,10 @@ public abstract class ServiceInstance<T extends BaseService> {
      *                        call will always get 0 here.
      * @return
      */
-    protected KlabService createDefaultService(KlabService.Type serviceType, long timeUnavailable) {
-        var localServiceUrl = serviceType.localServiceUrl();
-        if (Utils.Network.isAlive(localServiceUrl)) {
-            return switch (serviceType) {
-                case REASONER -> new ReasonerClient(localServiceUrl);
-                case RESOURCES -> new ResourcesClient(localServiceUrl);
-                case RESOLVER -> new ResolverClient(localServiceUrl);
-                case RUNTIME -> new RuntimeClient(localServiceUrl);
-                //                    case COMMUNITY -> new CommunityClient(localServiceUrl);
-                default -> throw new KlabInternalErrorException("Unexpected request from " +
-                        "ServiceInstance::createDefaultService: " + serviceType);
-            };
-        }
-        return null;
+    protected KlabService createDefaultService(KlabService.Type serviceType, Scope scope,
+                                               long timeUnavailable) {
+        return Authentication.INSTANCE.findService(serviceType, scope, identity.getFirst(),
+                identity.getSecond());
     }
 
     /**
@@ -175,9 +157,14 @@ public abstract class ServiceInstance<T extends BaseService> {
      */
     protected AbstractServiceDelegatingScope createServiceScope() {
 
-        var identity = authenticateService();
+        this.identity = authenticateService();
 
         return new AbstractServiceDelegatingScope(new ChannelImpl(identity.getFirst())) {
+            @Override
+            public UserScope createUser(String username, String password) {
+                return createUserScope(username, password);
+            }
+
             @Override
             public Locality getLocality() {
                 return Locality.EMBEDDED;
@@ -208,27 +195,18 @@ public abstract class ServiceInstance<T extends BaseService> {
         };
     }
 
+    protected UserScope createUserScope(String username, String password) {
+        // TODO use hub or throw exception.
+        return null;
+    }
+
     public boolean start(ServiceStartupOptions options) {
-
         setEnvironment(options);
-
         this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
-
         bootTime = System.currentTimeMillis();
         serviceScope.setStatus(Scope.Status.STARTED);
         serviceScope.setMaintenanceMode(true);
-
-        var essentialServices = getEssentialServices();
-        if (essentialServices.size() > 0) {
-            for (var serviceType : getEssentialServices()) {
-                var service = this.createDefaultService(serviceType, 0);
-                if (service != null) {
-                    registerService(service, true);
-                }
-            }
-        }
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
-
         return true;
     }
 
@@ -277,21 +255,20 @@ public abstract class ServiceInstance<T extends BaseService> {
         for (var serviceType : getEssentialServices()) {
             var service = currentServices.get(serviceType);
             if (service == null) {
-                service = this.createDefaultService(serviceType,
+                service = this.createDefaultService(serviceType, serviceScope,
                         (System.currentTimeMillis() - bootTime) / 1000);
-                ok = service != null && service.scope().isAvailable();
+                ok = service != null && service.status().isAvailable();
                 if (service != null) {
                     registerService(service, true);
                 }
-            } else if (!service.scope().isAvailable()) {
+            } else if (!service.status().isAvailable()) {
                 ok = false;
             }
         }
 
-        /*
-        check and reassign server status; if any changes, report status
-         */
-        if (serviceScope.isAvailable() && !ok) {
+        if (!ok) {
+            serviceScope.setStatus(Scope.Status.WAITING);
+        } else if (serviceScope.isAvailable() && !ok) {
             serviceScope.setMaintenanceMode(true);
         } else if (!serviceScope.isAvailable() && ok) {
             serviceScope.setMaintenanceMode(false);
@@ -311,7 +288,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         if subscribed and configured interval has passed, send service health status through the scope
          */
     }
-
 
     public void stop() {
 

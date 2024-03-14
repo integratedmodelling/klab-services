@@ -1,17 +1,13 @@
 package org.integratedmodelling.klab.modeler;
 
 import org.integratedmodelling.common.view.AbstractUIController;
-import org.integratedmodelling.engine.client.EngineClient;
+import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.view.UIController;
-import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
-
-import java.lang.reflect.Method;
-import java.util.*;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the

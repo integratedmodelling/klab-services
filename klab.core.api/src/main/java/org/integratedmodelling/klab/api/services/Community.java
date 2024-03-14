@@ -10,4 +10,7 @@ package org.integratedmodelling.klab.api.services;
  */
 public interface Community extends KlabService {
 
+    interface Capabilities extends ServiceCapabilities {
+
+    }
 }

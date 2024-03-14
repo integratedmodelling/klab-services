@@ -1,8 +1,6 @@
 package org.integratedmodelling.klab.api.engine.distribution.impl;
 
-import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
-import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.scope.Scope;
 
@@ -10,9 +8,9 @@ import java.io.File;
 
 public class LocalBuildImpl extends BuildImpl {
 
-    DistributionImpl distribution;
+    AbstractDistributionImpl distribution;
 
-    public LocalBuildImpl(File buildPropertyFile, DistributionImpl distribution, ProductImpl product, ReleaseImpl release) {
+    public LocalBuildImpl(File buildPropertyFile, AbstractDistributionImpl distribution, ProductImpl product, ReleaseImpl release) {
         super(buildPropertyFile, product, release);
         this.distribution = distribution;
     }

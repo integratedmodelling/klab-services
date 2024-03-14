@@ -291,7 +291,7 @@ public class ModelKbox extends ObservableKbox {
                 if (model.getPermissions().checkAuthorization(context)) {
                     Coverage coverage = resourceService.modelGeometry(model.getName());
                     if (coverage != null && !coverage.checkConstraints(context.getScale())) {
-                        resourceService.scope().debug("model " + model.getName() + " of " + observable
+                        resourceService.serviceScope().debug("model " + model.getName() + " of " + observable
                                 + " discarded because of coverage constraints mismatch");
                         continue;
                     }
@@ -300,7 +300,7 @@ public class ModelKbox extends ObservableKbox {
             }
         }
 
-        resourceService.scope().info("model query for " + observable.getDescriptionType().name().toLowerCase() + " of "
+        resourceService.serviceScope().info("model query for " + observable.getDescriptionType().name().toLowerCase() + " of "
                 + observable + " found " + (ret.size() == 1 ? ret.get(0).getName() : (ret.size() + " models")));
 
         return ret;
@@ -645,7 +645,7 @@ public class ModelKbox extends ObservableKbox {
 
         if (o instanceof KimModel) {
 
-            resourceService.scope().debug("storing model " + ((KimModel) o).getUrn());
+            resourceService.serviceScope().debug("storing model " + ((KimModel) o).getUrn());
 
             for (ModelReference data : inferModels((KimModel) o, monitor)) {
                 toStore.add(data);

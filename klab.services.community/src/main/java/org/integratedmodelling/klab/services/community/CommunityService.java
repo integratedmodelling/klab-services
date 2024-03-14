@@ -41,7 +41,7 @@ public class CommunityService implements Community {
     }
 
     @Override
-    public ServiceScope scope() {
+    public ServiceScope serviceScope() {
         // TODO Auto-generated method stub
         return null;
     }

@@ -3,25 +3,20 @@ package org.integratedmodelling.klab.services.application;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import jakarta.inject.Singleton;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.branding.Branding;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -30,15 +25,10 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.messaging.WebsocketsServerMessageBus;
-import org.mapdb.elsa.ElsaSerializerBase;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -46,11 +36,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MutablePropertySources;
-import org.springframework.http.converter.protobuf.ProtobufHttpMessageConverter;
-import org.springframework.http.converter.protobuf.ProtobufJsonFormatHttpMessageConverter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -61,7 +48,6 @@ import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.Contact;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
@@ -237,9 +223,9 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                                      Object handler) throws Exception {
-                if (!klabService().scope().isAvailable()) {
+                if (!klabService().serviceScope().isAvailable()) {
                     // response.sendRedirect(maintenanceMapping); return false;
-                } else if (!klabService().scope().isBusy()) {
+                } else if (!klabService().serviceScope().isBusy()) {
                     // TODO wait a configurable interval; if it's still not available, redirect, otherwise
                 }
                 return HandlerInterceptor.super.preHandle(request, response, handler);

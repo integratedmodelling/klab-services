@@ -40,7 +40,7 @@ public class ResourceAdminController {
             if (admin.importProject(request.getWorkspaceName(), request.getProjectUrl(),
                     request.isOverwrite())) {
                 return resourcesServer.klabService().project(request.getProjectName(), /* TODO use scope in
-                 principal */ resourcesServer.klabService().scope());
+                 principal */ resourcesServer.klabService().serviceScope());
             }
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");

@@ -43,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URL;
 import java.util.*;
-import java.util.function.BiConsumer;
 
 public class ResolverService extends BaseService implements Resolver {
 
@@ -84,7 +83,7 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public boolean shutdown() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
                 capabilities());
 
         // TODO Auto-generated method stub
@@ -663,7 +662,7 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public void initializeService() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities());
 
         /*
@@ -686,7 +685,7 @@ public class ResolverService extends BaseService implements Resolver {
                     Configuration.INSTANCE.LIBRARY_LOADER));
         }
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities());
 
     }

@@ -16,6 +16,7 @@ public interface Distribution {
     public static final String DISTRIBUTION_NAME_PROPERTY = "klab.distribution.name";
     public static final String DISTRIBUTION_DATE_PROPERTY = "klab.distribution.date";
     public static final String DISTRIBUTION_PRODUCTS_PROPERTY = "klab.distribution.products";
+    public static final String DISTRIBUTION_URL_PROPERTY = "klab.distribution.url";
 
     /**
      * Synchronize with the remote peer, if there is one. In order to know if there is any synchronization to

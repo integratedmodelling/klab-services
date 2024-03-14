@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -72,6 +73,14 @@ public abstract class ServiceClient implements KlabService {
                 discoverService(authentication.getFirst(), authentication.getSecond(), serviceType)) != null) {
             establishConnection();
         }
+    }
+
+    protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
+                            List<ServiceReference> services) {
+        this.authentication = Authentication.INSTANCE.authenticate();
+        this.serviceType = serviceType;
+        this.url = url;
+        establishConnection();
     }
 
     /**
@@ -210,6 +219,11 @@ public abstract class ServiceClient implements KlabService {
                         new WebsocketsClientMessageBus(this.url.toString()))
                                                    : new ChannelImpl(this.authentication.getFirst())) {
                     @Override
+                    public UserScope createUser(String username, String password) {
+                        return null;
+                    }
+
+                    @Override
                     public <T extends KlabService> T getService(Class<T> serviceClass) {
                         return KlabService.Type.classify(serviceClass) == serviceType ?
                                (T) ServiceClient.this : null;
@@ -266,7 +280,7 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
-    public final ServiceScope scope() {
+    public final ServiceScope serviceScope() {
         return scope;
     }
 

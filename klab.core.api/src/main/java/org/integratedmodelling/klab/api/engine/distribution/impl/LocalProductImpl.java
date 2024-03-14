@@ -1,17 +1,14 @@
 package org.integratedmodelling.klab.api.engine.distribution.impl;
 
 import org.integratedmodelling.klab.api.engine.distribution.Build;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
-import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
-import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 
 import java.io.File;
 
 public class LocalProductImpl extends ProductImpl {
 
-    public LocalProductImpl(File file, DistributionImpl distribution) {
+    public LocalProductImpl(File file, AbstractDistributionImpl distribution) {
         super(file, distribution);
     }
 

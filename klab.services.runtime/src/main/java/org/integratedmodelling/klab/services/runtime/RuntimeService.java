@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
 
 public class RuntimeService extends BaseService
         implements
@@ -45,7 +44,7 @@ public class RuntimeService extends BaseService
     @Override
     public void initializeService() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities());
 
         /*
          * Components
@@ -67,7 +66,7 @@ public class RuntimeService extends BaseService
             Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
         }
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities());
 
     }
 
@@ -80,7 +79,7 @@ public class RuntimeService extends BaseService
     @Override
     public boolean shutdown() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
 
         // TODO Auto-generated method stub
         return false;

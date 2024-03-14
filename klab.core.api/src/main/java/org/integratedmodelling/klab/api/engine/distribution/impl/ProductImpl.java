@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.api.engine.distribution.impl;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
-import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.Release;
 import org.integratedmodelling.klab.api.utils.PropertyBean;
 
@@ -28,7 +26,7 @@ public abstract class ProductImpl extends PropertyBean implements Product {
         super(null);
     }
 
-    public ProductImpl(File propertiesFile, DistributionImpl distribution){
+    public ProductImpl(File propertiesFile, AbstractDistributionImpl distribution){
         super(propertiesFile);
         this.setName(getProperty(Product.PRODUCT_NAME_PROPERTY));
         this.setProductType(ProductType.valueOf(getProperty(PRODUCT_CLASS_PROPERTY)));

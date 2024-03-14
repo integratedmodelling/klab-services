@@ -1,23 +1,31 @@
 package org.integratedmodelling.common.authentication;
 
+import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
+import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.community.CommunityClient;
+import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
+import org.integratedmodelling.common.services.client.resolver.ResolverClient;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.api.engine.StartupOptions;
+import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
-import org.integratedmodelling.klab.rest.HubReference;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
+import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +64,7 @@ public enum Authentication {
             // no partner, no node, no token, no nothing. REST calls automatically accept
             // the anonymous user when secured as Roles.PUBLIC.
             Logging.INSTANCE.info("No user certificate: continuing in anonymous offline mode");
-            return Pair.of(new AnonymousUser(), getLocalServices());
+            return Pair.of(new AnonymousUser(), Collections.emptyList());
         }
 
         if (!certificate.isValid()) {
@@ -113,16 +121,16 @@ public enum Authentication {
             } catch (Throwable e) {
                 Logging.INSTANCE.error("bad date or wrong date format in certificate. Please use latest " +
                         "version of software. Continuing anonymously.");
-                return Pair.of(new AnonymousUser(), getLocalServices());
+                return Pair.of(new AnonymousUser(), Collections.emptyList());
             }
             if (expiry == null) {
                 Logging.INSTANCE.error("certificate has no expiration date. Please obtain a new certificate" +
                         ". Continuing anonymously.");
-                return Pair.of(new AnonymousUser(), getLocalServices());
+                return Pair.of(new AnonymousUser(), Collections.emptyList());
             } else if (expiry.isBefore(Instant.now())) {
                 Logging.INSTANCE.error("certificate expired on " + expiry + ". Please obtain a new " +
                         "certificate. Continuing anonymously.");
-                return Pair.of(new AnonymousUser(), getLocalServices());
+                return Pair.of(new AnonymousUser(), Collections.emptyList());
             }
         }
 
@@ -159,7 +167,7 @@ public enum Authentication {
                         services.add(service);
                     }
                 }
-                return Pair.of(ret, addLocalServices(services));
+                return Pair.of(ret, services);
             }
 
         } else {
@@ -167,51 +175,84 @@ public enum Authentication {
                     "wrong certificate for an engine: cannot create identity of type " + certificate.getType());
         }
 
-        return Pair.of(new AnonymousUser(), getLocalServices());
+        return Pair.of(new AnonymousUser(), Collections.emptyList());
     }
 
+
     /**
-     * If a specific service type is missing and the correspondent service is available locally, add the local
-     * service as primary; otherwise add it as secondary. If any of the 4 essential services is missing, throw
-     * an exception.
+     * Strategy to locate a primary service in all possible ways. If there are primary service URLs for the
+     * passed service class in the list of service references obtained through authentication, try them and if
+     * one responds return a client to it. Otherwise, try the local URL and if the passed service is running
+     * locally, return a client to it. As a last resort, check if we have a source distribution configured or
+     * available, and if so, synchronize it if needed and if it provides the required service product, run it
+     * and return a service client.
      *
-     * @param services a list of services retrieved from the authentication response
-     * @return the patched list of services
-     * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if any essential
-     *                                                                                 service is missing
+     * @param serviceType       the service we need.
+     * @param identity          the identity we represent
+     * @param availableServices a list of {@link ServiceReference} objects obtained through certificate
+     *                          authentication, or an empty list.
+     * @param <T>               the type of service we want to obtain
+     * @return a service client or null. The service status should be checked before use.
      */
-    private List<ServiceReference> addLocalServices(List<ServiceReference> services) {
-        return services;
+    public <T extends KlabService> T findService(KlabService.Type serviceType,
+                                                 Scope scope,
+                                                 Identity identity,
+                                                 List<ServiceReference> availableServices) {
+
+        for (var service : availableServices) {
+            if (service.getServiceType() == serviceType && service.isPrimary()) {
+                for (var url : service.getUrls()) {
+                    if (ServiceClient.readServiceStatus(url) != null) {
+                        return (T) createLocalServiceClient(serviceType, url, identity, availableServices);
+                    }
+                }
+            }
+        }
+
+        // if we get here, we have no remote services available and we should try a running local one first.
+        if (ServiceClient.readServiceStatus(serviceType.localServiceUrl()) != null) {
+            return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
+                    availableServices);
+        }
+
+        // if we got here, we need to launch the service ourselves. We may be using a remote distribution or
+        // a development one, which takes priority.
+        var distribution = DistributionImpl.isDevelopmentDistributionAvailable() ?
+                           new DevelopmentDistributionImpl() : new DistributionImpl();
+
+        if (distribution.isAvailable()) {
+            var product = distribution.findProduct(Product.ProductType.forService(serviceType));
+            var instance = product.launch(scope);
+            if (instance.start()) {
+                return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
+                        availableServices);
+            }
+        }
+
+        return null;
     }
 
-
-    /**
-     * TODO create and return clients for any services running locally. If so configured, start embedded
-     *  services for each service type.
-     */
-    public List<ServiceReference> getLocalServices() {
-
-        List<ServiceReference> ret = new ArrayList<>();
-
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOURCES.defaultPort + " " +
-                "/resources" +
-                "/actuator")) {
+    public <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType, URL url,
+                                                              Identity identity,
+                                                              List<ServiceReference> services) {
+        switch (serviceType) {
+            case REASONER -> {
+                return (T) new ReasonerClient(url, identity, services);
+            }
+            case RESOURCES -> {
+                return (T) new ResourcesClient(url, identity, services);
+            }
+            case RESOLVER -> {
+                return (T) new ResolverClient(url, identity, services);
+            }
+            case RUNTIME -> {
+                return (T) new RuntimeClient(url, identity, services);
+            }
+            case COMMUNITY -> {
+                return (T) new CommunityClient(url, identity, services);
+            }
         }
-
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.REASONER.defaultPort + " /reasoner" +
-                "/actuator")) {
-        }
-
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RESOLVER.defaultPort + " /resolver" +
-                "/actuator")) {
-        }
-
-        if (Utils.Network.isAlive("http://127.0.0.1:" + KlabService.Type.RUNTIME.defaultPort + " /runtime" +
-                "/actuator")) {
-        }
-
-        return ret;
+        return null;
     }
-
 
 }

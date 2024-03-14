@@ -192,7 +192,7 @@ public class ServiceAuthorizationManager {
             TODO Extract username and groups, authorize service scope with
              UserScope identity and all privileges.
              */
-            return EngineAuthorization.create(klabService.get().scope());
+            return EngineAuthorization.create(klabService.get().serviceScope());
 
         }
 
@@ -201,7 +201,7 @@ public class ServiceAuthorizationManager {
         further authenticate our connections.
          */
         if (!serviceAuthenticated) {
-            return EngineAuthorization.anonymous(klabService.get().scope());
+            return EngineAuthorization.anonymous(klabService.get().serviceScope());
         }
 
         try {

@@ -1,14 +1,13 @@
 package org.integratedmodelling.klab.api.engine.distribution.impl;
 
 import org.integratedmodelling.klab.api.engine.distribution.Build;
-import org.integratedmodelling.klab.api.engine.distribution.Release;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
 
 public class LocalReleaseImpl extends ReleaseImpl {
-    public LocalReleaseImpl(File releasePropertyFile, DistributionImpl distribution, ProductImpl product) {
+    public LocalReleaseImpl(File releasePropertyFile, AbstractDistributionImpl distribution, ProductImpl product) {
         super(releasePropertyFile);
         this.setProduct(product);
         this.setName(getProperty(RELEASE_NAME_PROPERTY));

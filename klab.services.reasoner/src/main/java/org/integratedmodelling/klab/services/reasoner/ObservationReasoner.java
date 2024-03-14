@@ -37,7 +37,7 @@ public class ObservationReasoner {
          * independent observables as dependencies.
          */
         var generics = observable.getGenericComponents();
-        var resources = reasoner.scope().getService(ResourcesService.class);
+        var resources = reasoner.serviceScope().getService(ResourcesService.class);
         var traits = observable.is(SemanticType.QUALITY)
                      ? reasoner.directAttributes(observable)
                      : reasoner.directTraits(observable);

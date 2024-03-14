@@ -82,9 +82,9 @@ public abstract class BaseService implements KlabService {
      */
     public ServiceStatus status() {
         var ret = new ServiceStatusImpl();
-        ret.setAvailable(scope().isAvailable());
-        ret.setBusy(scope().isBusy());
-        ret.setLocality(scope().getLocality());
+        ret.setAvailable(serviceScope().isAvailable());
+        ret.setBusy(serviceScope().isBusy());
+        ret.setLocality(serviceScope().getLocality());
         return ret;
     }
 
@@ -95,7 +95,7 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
-    public ServiceScope scope() {
+    public ServiceScope serviceScope() {
         return scope;
     }
 

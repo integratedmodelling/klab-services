@@ -1,5 +1,9 @@
-package org.integratedmodelling.klab.services.resolver;
+package org.integratedmodelling.common.services.client.resolver;
 
+import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -8,60 +12,43 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.utilities.Utils;
+import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.List;
 
-public class ResolverService implements Resolver, Resolver.Admin {
+public class ResolverClient extends ServiceClient implements Resolver {
 
-    @Override
-    public URL getUrl() {
-        // TODO Auto-generated method stub
-        return null;
+    public ResolverClient() {
+        super(Type.RESOLVER);
     }
 
-    @Override
-    public String getLocalName() {
-        // TODO Auto-generated method stub
-        return null;
+    public ResolverClient(Identity identity, List<ServiceReference> services) {
+        super(Type.RESOLVER, identity, services);
     }
 
-    @Override
-    public ServiceScope serviceScope() {
-        // TODO Auto-generated method stub
-        return null;
+    public ResolverClient(URL url, Identity identity, List<ServiceReference> services) {
+        super(Type.RESOLVER, url, identity, services);
     }
 
-    @Override
-    public boolean shutdown() {
-        // TODO Auto-generated method stub
-        return false;
+    public ResolverClient(URL url) {
+        super(url);
     }
 
-    @Override
-    public boolean loadKnowledge(ResourceSet resources) {
-        // TODO Auto-generated method stub
-        return false;
-    }
     public boolean isLocal() {
-        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
+        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
         return (capabilities().getServerId() == null && serverId == null) ||
                 (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
     }
 
     @Override
     public Capabilities capabilities() {
-        return null;
-    }
-
-    @Override
-    public ServiceStatus status() {
-        return null;
+        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
     }
 
     @Override

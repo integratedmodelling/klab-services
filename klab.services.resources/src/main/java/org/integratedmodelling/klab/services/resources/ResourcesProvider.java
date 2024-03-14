@@ -123,7 +123,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public void initializeService() {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities());
 
         this.kbox = ModelKbox.create(localName, this.scope);
@@ -131,7 +131,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         /*
          * TODO launch update service
          */
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities());
     }
 
@@ -396,7 +396,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     public boolean shutdown(int secondsToWait) {
 
-        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
                 capabilities());
 
         // try {
@@ -634,7 +634,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ServiceScope scope() {
+    public ServiceScope serviceScope() {
         return this.scope;
     }
 
