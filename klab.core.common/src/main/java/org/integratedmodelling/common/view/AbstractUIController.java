@@ -46,7 +46,7 @@ public abstract class AbstractUIController implements UIController {
     private Engine engine;
 
     protected AbstractUIController() {
-        this.engine = createEngine();
+
     }
 
     /**
@@ -65,9 +65,11 @@ public abstract class AbstractUIController implements UIController {
      * after creation.
      */
     public void boot() {
+        engine = createEngine();
         engine.addEventListener((scope, message) -> {
             processMessage(scope, message);
         });
+        engine.boot();
     }
 
     private void processMessage(Scope scope, Message message) {

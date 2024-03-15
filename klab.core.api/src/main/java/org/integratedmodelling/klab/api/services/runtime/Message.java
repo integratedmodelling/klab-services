@@ -150,7 +150,7 @@ public interface Message extends Serializable {
         /*
          * Service messages, coming with service capabilities
          */
-        ServiceInitializing(KlabService.ServiceCapabilities.class),
+        ServiceInitializing(String.class),
         ServiceAvailable(KlabService.ServiceCapabilities.class),
         ServiceUnavailable(KlabService.ServiceCapabilities.class),
 
@@ -536,7 +536,7 @@ public interface Message extends Serializable {
      */
     <T> T getPayload(Class<? extends T> cls);
 
-    public static MessageImpl create(Channel scope, Object... o) {
+    public static Message create(Channel scope, Object... o) {
         return create(scope.getIdentity().getId(), o);
     }
 
@@ -552,7 +552,16 @@ public interface Message extends Serializable {
      * @return a new message
      * @throws IllegalArgumentException if there are not enough arguments or more than one payload was passed
      */
-    public static MessageImpl create(String identity, Object... o) {
+    public static Message create(String identity, Object... o) {
+
+        if (o == null) {
+            return null;
+        }
+
+        if (o.length == 1 && o[0] instanceof Message message) {
+            return message;
+        }
+
         MessageImpl ret = new MessageImpl();
         ret.setIdentity(identity);
         Notification.Type notype = null;

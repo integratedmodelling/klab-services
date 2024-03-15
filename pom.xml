@@ -25,7 +25,6 @@
         <module>klab.services.resolver</module>
         <module>p2</module>
         <module>klab.cli</module>
-        <module>klab.engine.client</module>
         <module>klab.modeler</module>
         <module>klab.distribution</module>
     </modules>

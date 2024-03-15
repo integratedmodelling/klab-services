@@ -11,9 +11,14 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessageBus;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -34,23 +39,36 @@ public abstract class ClientScope implements UserScope {
     private Ref agent;
     protected Scope parentScope;
     private Status status = Status.STARTED;
+    private boolean errors;
 
     public void setId(String id) {
         this.id = id;
     }
 
+    private MessageBus messageBus;
     private String id;
+
+    private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
 
     //	private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
     //	Collections
     //			.synchronizedMap(new HashMap<>());
 
+    public BiConsumer<Scope, Message>[] getListeners() {
+        return listeners.toArray(new BiConsumer[]{});
+    }
+
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ClientScope(Identity user) {
+    public ClientScope(Identity user, BiConsumer<Scope, Message>... listeners) {
         this.user = user;
         this.data = Parameters.create();
         this.id = user.getId();
+        if (listeners != null) {
+            for (var listener : listeners) {
+                this.listeners.add(listener);
+            }
+        }
     }
 
     //	/**
@@ -166,30 +184,61 @@ public abstract class ClientScope implements UserScope {
 
     @Override
     public void info(Object... info) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.info(info);
+        if (!listeners.isEmpty() || messageBus != null) {
+            var notification = Notification.create(info);
+            send(Message.MessageClass.Notification,
+                    Message.MessageType.Info, notification);
+        } else {
+            Logging.INSTANCE.info(info);
+        }
     }
 
     @Override
     public void warn(Object... o) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.warn(o);
+        if (!listeners.isEmpty() || messageBus != null) {
+            var notification = Notification.create(o);
+            send(Message.MessageClass.Notification,
+                    Message.MessageType.Warning, notification);
+        } else {
+            Logging.INSTANCE.warn(o);
+        }
     }
 
     @Override
     public void error(Object... o) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.error(o);
+        errors = true;
+        if (!listeners.isEmpty() || messageBus != null) {
+            var notification = Notification.create(o);
+            send(Message.MessageClass.Notification,
+                    Message.MessageType.Error, notification);
+        } else {
+            Logging.INSTANCE.error(o);
+        }
     }
 
     @Override
     public void debug(Object... o) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.debug(o);
+        if (!listeners.isEmpty() || messageBus != null) {
+            var notification = Notification.create(o);
+            send(Message.MessageClass.Notification,
+                    Message.MessageType.Debug, notification);
+        } else {
+            Logging.INSTANCE.debug(o);
+        }
     }
 
     @Override
-    public void post(Consumer<Message> responseHandler, Object... message) {
+    public void post(Consumer<Message> responseHandler, Object... messageElements) {
+
+        var message = Message.create(this, messageElements);
+        for (var listener : listeners) {
+            listener.accept(this, message);
+        }
+
+        if (messageBus != null) {
+            // TODO handle response if handler is != null
+            messageBus.post(message);
+        }
 
         /*
          * Agent scopes will intercept the response from an agent and pair it with the
@@ -231,12 +280,6 @@ public abstract class ClientScope implements UserScope {
 
     }
 
-    //	@Override
-    //	public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-    //		// TODO if a service resolver is available, that should be used.
-    //		return Collections.singleton(getService(serviceClass));
-    //	}
-
     @Override
     public void send(Object... message) {
         post(null, message);
@@ -255,7 +298,7 @@ public abstract class ClientScope implements UserScope {
     @Override
     public boolean hasErrors() {
         // TODO Auto-generated method stub
-        return false;
+        return errors;
     }
 
     @Override

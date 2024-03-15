@@ -71,6 +71,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     private long bootTime;
     private Pair<Identity, List<ServiceReference>> identity;
+    private boolean firstCall = true;
 
     /**
      * Return the type of any <em>other</em> services required for this service to be online. For each of
@@ -105,7 +106,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     protected KlabService createDefaultService(KlabService.Type serviceType, Scope scope,
                                                long timeUnavailable) {
         return Authentication.INSTANCE.findService(serviceType, scope, identity.getFirst(),
-                identity.getSecond());
+                identity.getSecond(), firstCall);
     }
 
     /**
@@ -147,7 +148,7 @@ public abstract class ServiceInstance<T extends BaseService> {
      */
 
     protected Pair<Identity, List<ServiceReference>> authenticateService() {
-        return Authentication.INSTANCE.authenticate();
+        return Authentication.INSTANCE.authenticate(true);
     }
 
     /**
@@ -265,6 +266,8 @@ public abstract class ServiceInstance<T extends BaseService> {
                 ok = false;
             }
         }
+
+        firstCall = false;
 
         if (!ok) {
             serviceScope.setStatus(Scope.Status.WAITING);

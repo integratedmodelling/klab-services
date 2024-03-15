@@ -9,6 +9,7 @@ import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
+import org.integratedmodelling.common.services.client.scope.ClientScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -30,6 +32,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Implements the default certificate-based authentication mechanism for an engine. Also maintains external
@@ -42,13 +45,14 @@ public enum Authentication {
     /**
      * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
      *
+     * @param logEvents log info messages (errors are logged no matter what)
      * @return
      */
-    public Pair<Identity, List<ServiceReference>> authenticate() {
+    public Pair<Identity, List<ServiceReference>> authenticate(boolean logEvents) {
         File certFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "klab.cert");
         KlabCertificate certificate = certFile.isFile() ? KlabCertificateImpl.createFromFile(certFile) :
                                       new AnonymousEngineCertificate();
-        return authenticate(certificate);
+        return authenticate(certificate, logEvents);
     }
 
     /**
@@ -56,14 +60,18 @@ public enum Authentication {
      * return the anonymous user.
      *
      * @param certificate
+     * @param logEvents   log info messages (errors are logged no matter what)
      * @return
      */
-    public Pair<Identity, List<ServiceReference>> authenticate(KlabCertificate certificate) {
+    public Pair<Identity, List<ServiceReference>> authenticate(KlabCertificate certificate,
+                                                               boolean logEvents) {
 
         if (certificate instanceof AnonymousEngineCertificate) {
             // no partner, no node, no token, no nothing. REST calls automatically accept
             // the anonymous user when secured as Roles.PUBLIC.
-            Logging.INSTANCE.info("No user certificate: continuing in anonymous offline mode");
+            if (logEvents) {
+                Logging.INSTANCE.info("No user certificate: continuing in anonymous offline mode");
+            }
             return Pair.of(new AnonymousUser(), Collections.emptyList());
         }
 
@@ -71,7 +79,10 @@ public enum Authentication {
             /*
              * expired or invalid certificate: throw away the identity, continue as anonymous.
              */
-            Logging.INSTANCE.info("Certificate is invalid or expired: continuing in anonymous offline mode");
+            if (logEvents) {
+                Logging.INSTANCE.info("Certificate is invalid or expired: continuing in anonymous offline " +
+                        "mode");
+            }
             return Pair.of(new AnonymousUser(), Collections.emptyList());
         }
 
@@ -82,9 +93,10 @@ public enum Authentication {
 
             try (var client = Utils.Http.getClient(authenticationServer)) {
 
-                Logging.INSTANCE.info("authenticating " + certificate.getProperty(KlabCertificate.KEY_USERNAME) + " with hub "
-                        + authenticationServer);
-
+                if (logEvents) {
+                    Logging.INSTANCE.info("authenticating " + certificate.getProperty(KlabCertificate.KEY_USERNAME) + " with hub "
+                            + authenticationServer);
+                }
                 /*
                  * Authenticate with server(s). If authentication fails because of a 403, invalidate the
                  * certificate. If no server can be reached, certificate is valid but engine is offline.
@@ -197,13 +209,17 @@ public enum Authentication {
     public <T extends KlabService> T findService(KlabService.Type serviceType,
                                                  Scope scope,
                                                  Identity identity,
-                                                 List<ServiceReference> availableServices) {
+                                                 List<ServiceReference> availableServices,
+                                                 boolean logFailures) {
+
+        BiConsumer<Scope, Message>[] listeners = scope instanceof ClientScope clientScope ? clientScope.getListeners() : null;
 
         for (var service : availableServices) {
             if (service.getServiceType() == serviceType && service.isPrimary()) {
                 for (var url : service.getUrls()) {
                     if (ServiceClient.readServiceStatus(url) != null) {
-                        return (T) createLocalServiceClient(serviceType, url, identity, availableServices);
+                        scope.info("Using authenticated " + service.getServiceType() + " service from " + service.getPartner().getId());
+                        return (T) createLocalServiceClient(serviceType, url, identity, availableServices, listeners);
                     }
                 }
             }
@@ -211,8 +227,9 @@ public enum Authentication {
 
         // if we get here, we have no remote services available and we should try a running local one first.
         if (ServiceClient.readServiceStatus(serviceType.localServiceUrl()) != null) {
+            scope.info("Using locally running " + serviceType + " service at " + serviceType.localServiceUrl());
             return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
-                    availableServices);
+                    availableServices, listeners);
         }
 
         // if we got here, we need to launch the service ourselves. We may be using a remote distribution or
@@ -221,12 +238,19 @@ public enum Authentication {
                            new DevelopmentDistributionImpl() : new DistributionImpl();
 
         if (distribution.isAvailable()) {
+            scope.info("No service available for " + serviceType + ": starting local service from local k" +
+                    ".LAB distribution");
             var product = distribution.findProduct(Product.ProductType.forService(serviceType));
             var instance = product.launch(scope);
             if (instance.start()) {
+                scope.info("Service is starting: will be attempting connection to locally running " + serviceType);
+                scope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, serviceType + " service at " + serviceType.localServiceUrl());
                 return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
-                        availableServices);
+                        availableServices, listeners);
             }
+        } else if (logFailures) {
+            scope.info("No service available for " + serviceType + " and no k.LAB distribution available");
+
         }
 
         return null;
@@ -234,24 +258,33 @@ public enum Authentication {
 
     public <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType, URL url,
                                                               Identity identity,
-                                                              List<ServiceReference> services) {
-        switch (serviceType) {
+                                                              List<ServiceReference> services,
+                                                              BiConsumer<Scope, Message>... listeners) {
+        T ret = switch (serviceType) {
             case REASONER -> {
-                return (T) new ReasonerClient(url, identity, services);
+                yield (T) new ReasonerClient(url, identity, services);
             }
             case RESOURCES -> {
-                return (T) new ResourcesClient(url, identity, services);
+                yield (T) new ResourcesClient(url, identity, services);
             }
             case RESOLVER -> {
-                return (T) new ResolverClient(url, identity, services);
+                yield (T) new ResolverClient(url, identity, services);
             }
             case RUNTIME -> {
-                return (T) new RuntimeClient(url, identity, services);
+                yield (T) new RuntimeClient(url, identity, services);
             }
             case COMMUNITY -> {
-                return (T) new CommunityClient(url, identity, services);
+                yield (T) new CommunityClient(url, identity, services);
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + serviceType);
+        };
+
+        if (ret instanceof ServiceClient serviceClient && listeners != null) {
+            for (var listener : listeners) {
+                serviceClient.addListener(listener);
             }
         }
+
         return null;
     }
 

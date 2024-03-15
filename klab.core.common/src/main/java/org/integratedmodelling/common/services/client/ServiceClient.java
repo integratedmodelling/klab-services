@@ -16,15 +16,18 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 /**
  * Common implementation of a service client, to be specialized for all service types and APIs. Manages the
@@ -42,22 +46,25 @@ public abstract class ServiceClient implements KlabService {
 
     private Type serviceType;
     private Pair<Identity, List<ServiceReference>> authentication;
-    AtomicBoolean connected = new AtomicBoolean(false);
-    AtomicBoolean authorized = new AtomicBoolean(false);
-    AtomicBoolean authenticated = new AtomicBoolean(false);
-    AtomicBoolean attemptingConnection = new AtomicBoolean(false);
-    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
-    boolean usingLocalSecret;
-    AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
-    AbstractServiceDelegatingScope scope;
-    URL url;
-    String token;
+    private AtomicBoolean connected = new AtomicBoolean(false);
+    private AtomicBoolean authorized = new AtomicBoolean(false);
+    private AtomicBoolean authenticated = new AtomicBoolean(false);
+    private AtomicBoolean attemptingConnection = new AtomicBoolean(false);
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+    private boolean usingLocalSecret;
+    private AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
+    private AbstractServiceDelegatingScope scope;
+    private URL url;
+    private String token;
     private long pollCycleSeconds = 1;
     protected Utils.Http.Client client;
     private ServiceCapabilities capabilities;
 
+    // these can be installed from the outside
+    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
+
     protected ServiceClient(KlabService.Type serviceType) {
-        this.authentication = Authentication.INSTANCE.authenticate();
+        this.authentication = Authentication.INSTANCE.authenticate(false);
         this.serviceType = serviceType;
         if ((this.url =
                 discoverService(authentication.getFirst(), authentication.getSecond(), serviceType)) != null) {
@@ -67,7 +74,7 @@ public abstract class ServiceClient implements KlabService {
 
     protected ServiceClient(KlabService.Type serviceType, Identity identity,
                             List<ServiceReference> services) {
-        this.authentication = Authentication.INSTANCE.authenticate();
+        this.authentication = Authentication.INSTANCE.authenticate(false);
         this.serviceType = serviceType;
         if ((this.url =
                 discoverService(authentication.getFirst(), authentication.getSecond(), serviceType)) != null) {
@@ -77,7 +84,7 @@ public abstract class ServiceClient implements KlabService {
 
     protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
                             List<ServiceReference> services) {
-        this.authentication = Authentication.INSTANCE.authenticate();
+        this.authentication = Authentication.INSTANCE.authenticate(false);
         this.serviceType = serviceType;
         this.url = url;
         establishConnection();
@@ -244,6 +251,8 @@ public abstract class ServiceClient implements KlabService {
 
         if (!attemptingConnection.get()) {
 
+            boolean currentStatus = connected.get();
+
             /*
             TODO check for changes of status and send messages over
              */
@@ -264,12 +273,20 @@ public abstract class ServiceClient implements KlabService {
                     // TODO send ServerUnavailable to scope
                 } else {
                     status.set(s);
+                    connected.set(true);
                     if (capabilities == null) {
                         this.capabilities = capabilities();
                     }
                 }
             } finally {
                 attemptingConnection.set(false);
+                if (connected.get() != currentStatus) {
+                    for (var listener : listeners) {
+                        listener.accept(scope, Message.create(scope, Message.MessageClass.ServiceLifecycle,
+                                (connected.get() ? Message.MessageType.ServiceAvailable :
+                                 Message.MessageType.ServiceUnavailable), capabilities));
+                    }
+                }
             }
             // TODO send ServerStatus to scope
             //        }
@@ -305,4 +322,7 @@ public abstract class ServiceClient implements KlabService {
         return false;
     }
 
+    public void addListener(BiConsumer<Scope, Message> listener) {
+        this.listeners.add(listener);
+    }
 }

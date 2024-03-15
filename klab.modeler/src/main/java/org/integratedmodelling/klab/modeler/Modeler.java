@@ -8,8 +8,11 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
+
+import java.util.function.BiConsumer;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
@@ -21,15 +24,28 @@ import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
  */
 public class Modeler extends AbstractUIController implements PropertyHolder {
 
+    private final BiConsumer<Scope, Message>[] listeners;
     EngineConfiguration workbench;
 
-    public Modeler() {
+    public Modeler(BiConsumer<Scope, Message>... listeners) {
+        this.listeners = listeners;
         // TODO read the workbench config
     }
 
     @Override
     public Engine createEngine() {
-        return new EngineClient();
+        var ret = new EngineClient();
+        ret.addEventListener((scope, message) -> onMessage(scope, message));
+        if (this.listeners != null) {
+            for (var listener : this.listeners) {
+                ret.addEventListener(listener);
+            }
+        }
+        return ret;
+    }
+
+    private void onMessage(Scope scope, Message message) {
+        // TODO react to events
     }
 
     @Override

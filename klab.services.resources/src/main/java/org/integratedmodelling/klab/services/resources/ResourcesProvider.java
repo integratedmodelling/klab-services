@@ -124,7 +124,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public void initializeService() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities());
+                capabilities().toString());
 
         this.kbox = ModelKbox.create(localName, this.scope);
         this.workspaceManager.loadWorkspace();

@@ -663,7 +663,7 @@ public class ResolverService extends BaseService implements Resolver {
     public void initializeService() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities());
+                capabilities().toString());
 
         /*
          * Components

@@ -44,7 +44,7 @@ public class RuntimeService extends BaseService
     @Override
     public void initializeService() {
 
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities().toString());
 
         /*
          * Components

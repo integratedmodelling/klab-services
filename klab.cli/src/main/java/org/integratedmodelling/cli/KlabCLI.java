@@ -6,10 +6,13 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.modeler.Modeler;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
@@ -62,6 +65,7 @@ public enum KlabCLI {
     private Modeler modeler;
 
     private CLIStartupOptions options;
+    private CommandLine commandLine;
 
     public Engine engine() {
         return modeler.engine();
@@ -84,10 +88,10 @@ public enum KlabCLI {
             "Hit @|magenta ALT-S|@ to toggle tailtips.", ""}, footer = {"", "Press Ctrl-D to exit."},
              subcommands = {
                      Auth.class, Expressions.class, Reasoner.class, Report.class, Resolver.class,
-                     Resources.class,
+                     Resources.class, Shutdown.class,
                      Services.class, Run.class, PicocliCommands.ClearScreen.class,
                      CommandLine.HelpCommand.class,
-                     Session.class, Context.class, Components.class, Stack.class, Test.class, Run.Alias.class,
+                     Session.class, Context.class, Components.class, Test.class, Run.Alias.class,
                      Run.Unalias.class})
     static class CliCommands implements Runnable {
 
@@ -136,7 +140,7 @@ public enum KlabCLI {
                     new File(System.getProperty("user.home") + File.separator + ".klab" + File.separator +
                             "kcli" + File.separator + "aliases.txt");
             if (!aliasFile.exists()) {
-//                Utils.Files.touch(aliasFile);
+                //                Utils.Files.touch(aliasFile);
             }
             try (InputStream input = new FileInputStream(aliasFile)) {
                 Properties properties = new Properties();
@@ -175,17 +179,22 @@ public enum KlabCLI {
 
                 for (String scriptName : scriptNames) {
 
-//                    KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser(true, null)
-//                            .getService(ResourcesService.class)
-//                            .resolveBehavior(scriptName, Engine.INSTANCE.getCurrentUser());
-//
-//                    if (behavior == null) {
-//                        out.println(Ansi.AUTO.string("Behavior @|red " + scriptName + "|@ unknown or not " +
-//                                "available"));
-//                    } else {
-//                        out.println(Ansi.AUTO.string("Running @|green " + scriptName + "|@..."));
-//                        running.add(Engine.INSTANCE.getCurrentUser().run(scriptName, behavior.getType()));
-//                    }
+                    //                    KActorsBehavior behavior = Engine.INSTANCE.getCurrentUser(true,
+                    //                    null)
+                    //                            .getService(ResourcesService.class)
+                    //                            .resolveBehavior(scriptName, Engine.INSTANCE
+                    //                            .getCurrentUser());
+                    //
+                    //                    if (behavior == null) {
+                    //                        out.println(Ansi.AUTO.string("Behavior @|red " + scriptName +
+                    //                        "|@ unknown or not " +
+                    //                                "available"));
+                    //                    } else {
+                    //                        out.println(Ansi.AUTO.string("Running @|green " + scriptName
+                    //                        + "|@..."));
+                    //                        running.add(Engine.INSTANCE.getCurrentUser().run(scriptName,
+                    //                        behavior.getType()));
+                    //                    }
                 }
             }
         }
@@ -195,7 +204,7 @@ public enum KlabCLI {
             int n = 1;
             for (SessionScope scope : running) {
                 commandSpec.commandLine().getOut()
-                        .println("   " + n++ + ". " + scope.getName() + " [" + scope.getStatus() + "]");
+                           .println("   " + n++ + ". " + scope.getName() + " [" + scope.getStatus() + "]");
             }
 
         }
@@ -275,9 +284,10 @@ public enum KlabCLI {
                         arguments.set(i, "-" + arguments.get(i).substring(1));
                     }
                 }
-//                String value = Utils.Strings.join(arguments.subList(1, arguments.size()), " ");
-//                Run.aliases.put(alias, value);
-//                Run.storeAliases();
+                //                String value = Utils.Strings.join(arguments.subList(1, arguments.size()),
+                //                " ");
+                //                Run.aliases.put(alias, value);
+                //                Run.storeAliases();
             }
         }
 
@@ -333,7 +343,7 @@ public enum KlabCLI {
     }
 
     public static void main(String[] args) {
-//        AnsiConsole.systemInstall();
+        //        AnsiConsole.systemInstall();
 
         INSTANCE.options = CLIStartupOptions.create(args);
 
@@ -353,8 +363,8 @@ public enum KlabCLI {
             // picocli
             CliCommands commands = new CliCommands();
             PicocliCommandsFactory factory = new PicocliCommandsFactory();
-            CommandLine cmd = new CommandLine(commands, factory);
-            PicocliCommands picocliCommands = new PicocliCommands(cmd);
+            INSTANCE.commandLine = new CommandLine(commands, factory);
+            PicocliCommands picocliCommands = new PicocliCommands(INSTANCE.commandLine);
             File historyFile = new File(Configuration.INSTANCE.getDataPath() + File.separator + "kcli" +
                     ".history");
             Parser parser = new DefaultParser();
@@ -367,8 +377,8 @@ public enum KlabCLI {
                 History history = new DefaultHistory();
                 LineReader reader =
                         LineReaderBuilder.builder().terminal(terminal).completer(completer).parser(parser)
-                                .variable(LineReader.LIST_MAX, 50) // candidates
-                                .history(history).build();
+                                         .variable(LineReader.LIST_MAX, 50) // candidates
+                                         .history(history).build();
 
                 builtins.setLineReader(reader);
                 commands.setReader(reader);
@@ -408,7 +418,10 @@ public enum KlabCLI {
                 // tie the scope monitor to the CLI input and output streams
 
                 // create the modeler
-                INSTANCE.modeler = new Modeler(/* TODO params */);
+                INSTANCE.modeler = new Modeler((scope, message) -> INSTANCE.onEvent(scope, message));
+
+                // boot the engine. This will schedule processes so it wont'delay startup.
+                INSTANCE.modeler.boot();
 
                 // start the shell and process input until the user quits with Ctrl-D
                 String line;
@@ -437,7 +450,7 @@ public enum KlabCLI {
 
                         if (aliased) {
                             // print the actual line in grey + italic
-                            cmd.getOut().println(Ansi.AUTO.string("@|gray" + line
+                            INSTANCE.commandLine.getOut().println(Ansi.AUTO.string("@|gray" + line
                                     + "|@"));
                         }
 
@@ -459,7 +472,100 @@ public enum KlabCLI {
         } catch (Throwable t) {
             t.printStackTrace();
         } finally {
-//            AnsiConsole.systemUninstall();
+            //            AnsiConsole.systemUninstall();
+        }
+    }
+
+    private void onEvent(Scope scope, Message message) {
+
+        switch (message.getMessageClass()) {
+            case UserInterface -> {
+            }
+            case UserContextChange -> {
+            }
+            case UserContextDefinition -> {
+            }
+            case ServiceLifecycle -> {
+                switch (message.getMessageType()) {
+                    case ServiceAvailable -> {
+                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
+                                " service available: " + capabilities.getServiceName()
+                                + "|@"));
+
+                    }
+                    case ServiceInitializing -> {
+                        var description = message.getPayload(String.class);
+                        commandLine.getOut().println(Ansi.AUTO.string("@|blue "
+                                + "service initializing: " + description
+                                + "|@"));
+
+                    }
+                    case ServiceUnavailable -> {
+                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
+                                " service unavailable: " + capabilities.getServiceName()
+                                + "|@"));
+
+                    }
+                }
+            }
+            case EngineLifecycle -> {
+            }
+            case KimLifecycle -> {
+            }
+            case ResourceLifecycle -> {
+            }
+            case ProjectLifecycle -> {
+            }
+            case Authorization -> {
+            }
+            case TaskLifecycle -> {
+            }
+            case ObservationLifecycle -> {
+            }
+            case SessionLifecycle -> {
+            }
+            case UnitTests -> {
+            }
+            case Notification -> {
+                switch (message.getMessageType()) {
+                    case Info -> {
+                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + message.getPayload(Notification.class).getMessage()
+                                + "|@"));
+                    }
+                    case Error -> {
+                        commandLine.getOut().println(Ansi.AUTO.string("@|red " + message.getPayload(Notification.class).getMessage()
+                                + "|@"));
+                    }
+                    case Debug -> {
+                        commandLine.getOut().println(Ansi.AUTO.string("@|gray " + message.getPayload(Notification.class).getMessage()
+                                + "|@"));
+                    }
+                    case Warning -> {
+                        commandLine.getOut().println(Ansi.AUTO.string("@|yellow " + message.getPayload(Notification.class).getMessage()
+                                + "|@"));
+                    }
+                    default -> {
+                    }
+                }
+            }
+            case Search -> {
+            }
+            case Query -> {
+            }
+            case Run -> {
+            }
+            case ViewActor -> {
+            }
+            case ActorCommunication -> {
+            }
+            default -> {
+            }
+        }
+
+        if (message.getMessageClass() == Message.MessageClass.Notification) {
+
         }
     }
 

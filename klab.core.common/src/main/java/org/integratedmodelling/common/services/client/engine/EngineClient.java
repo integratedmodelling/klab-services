@@ -43,6 +43,7 @@ public class EngineClient implements Engine, PropertyHolder {
     List<UserScope> users = new ArrayList<>();
     List<BiConsumer<Scope, Message>> listeners = Collections.synchronizedList(new ArrayList<>());
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private boolean firstCall = true;
 
     public UserScope getUser() {
         return this.users.size() > 0 ? users.get(0) : null;
@@ -78,12 +79,13 @@ public class EngineClient implements Engine, PropertyHolder {
     @Override
     public void boot() {
         this.defaultUser = authenticate();
+        this.users.add(this.defaultUser);
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
         booted.set(true);
     }
 
     protected UserScope authenticate() {
-        this.authData = Authentication.INSTANCE.authenticate();
+        this.authData = Authentication.INSTANCE.authenticate(false);
         var ret = createUserScope(authData);
         ret.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, authData.getFirst());
         return ret;
@@ -97,19 +99,27 @@ public class EngineClient implements Engine, PropertyHolder {
         there's a change in online status, report it through the service scope
          */
         var ok = true;
-        for (var type : EnumSet.of(KlabService.Type.REASONER, KlabService.Type.RESOURCES,
-                KlabService.Type.RUNTIME, KlabService.Type.RESOLVER)) {
+        for (var type : List.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER,
+                KlabService.Type.RUNTIME, KlabService.Type.RESOLVER, KlabService.Type.COMMUNITY)) {
 
             var service = currentServices.get(type);
             if (service == null) {
                 service = Authentication.INSTANCE.findService(type, getUser(), authData.getFirst(),
-                        authData.getSecond());
+                        authData.getSecond(), firstCall);
             }
             if (service == null || !service.status().isAvailable() && serviceIsEssential(type)) {
                 ok = false;
             }
-            available.set(ok);
+            if (service != null) {
+                registerService(type, service);
+            }
+            firstCall = false;
         }
+        available.set(ok);
+    }
+
+    private void registerService(KlabService.Type serviceType, KlabService service) {
+
     }
 
     /**
@@ -122,7 +132,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
-        return new ClientScope(authData.getFirst()) {
+        var ret = new ClientScope(authData.getFirst(), listeners.toArray(new BiConsumer[] {})) {
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return (T) currentServices.get(KlabService.Type.classify(serviceClass));
@@ -133,6 +143,8 @@ public class EngineClient implements Engine, PropertyHolder {
                 return EngineClient.this.getServices(KlabService.Type.classify(serviceClass));
             }
         };
+
+        return ret;
     }
 
     private <T extends KlabService> Collection<T> getServices(KlabService.Type serviceType) {
