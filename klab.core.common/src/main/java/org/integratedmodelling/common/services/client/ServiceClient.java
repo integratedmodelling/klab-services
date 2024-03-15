@@ -334,7 +334,10 @@ public abstract class ServiceClient implements KlabService {
     @Override
     public final boolean shutdown() {
         this.scheduler.shutdown();
-        // TODO see if we need to log out
+        if (local) {
+            client.get(ServicesAPI.SHUTDOWN, Void.class);
+            return true;
+        }
         return false;
     }
 
