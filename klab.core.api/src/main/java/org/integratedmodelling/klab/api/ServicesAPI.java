@@ -11,6 +11,7 @@ public interface ServicesAPI {
 	public static final String API_BASE = "/api/v2";
 
 	public static String CAPABILITIES = "/public/capabilities";
+	public static String SHUTDOWN = "/shutdown";
 	public static String STATUS = "/public/status";
 
 	/**

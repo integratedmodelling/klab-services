@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
 import org.integratedmodelling.klab.api.lang.impl.PrototypeImpl;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Argument;
@@ -33,6 +34,7 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -155,10 +157,9 @@ public enum Configuration {
     public static final String KLAB_PRODUCTS_BRANCH = "klab.products.branch";
 
     /**
-     * Development source repository on this machine. If set, a testing
-     * {@link Distribution} will be created from the Maven compiled
-     * products in it and used by the default {@link org.integratedmodelling.klab.api.engine.Engine} client.
-     * Defaults to $HOME/git/klab-services.
+     * Development source repository on this machine. If set, a testing {@link Distribution} will be created
+     * from the Maven compiled products in it and used by the default
+     * {@link org.integratedmodelling.klab.api.engine.Engine} client. Defaults to $HOME/git/klab-services.
      */
     public static final String KLAB_DEVELOPMENT_SOURCE_REPOSITORY = "klab.development.source.repository";
 
@@ -604,5 +605,15 @@ public enum Configuration {
         }
     }
 
+    public String getServiceSecret(KlabService.Type serviceType) {
+        File secretFile =
+                Configuration.INSTANCE.getFile("services/" + serviceType.name().toLowerCase() +
+                        "/secret.key");
+        try {
+            return Files.readString(secretFile.toPath());
+        } catch (IOException e) {
+            return null;
+        }
+    }
 
 }

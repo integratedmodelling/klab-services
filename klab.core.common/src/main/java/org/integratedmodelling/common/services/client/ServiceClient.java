@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client;
 
 import org.integratedmodelling.common.authentication.AnonymousEngineCertificate;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.IdentityImpl;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
@@ -85,10 +86,24 @@ public abstract class ServiceClient implements KlabService {
 
     protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
                             List<ServiceReference> services) {
-        this.authentication = Authentication.INSTANCE.authenticate(false);
+        this.authentication = Pair.of(localizeIdentity(identity, serviceType.localServiceUrl().equals(url),
+                serviceType), services);
         this.serviceType = serviceType;
         this.url = url;
         establishConnection();
+    }
+
+    private Identity localizeIdentity(Identity identity, boolean localUrl, KlabService.Type serviceType) {
+        if (localUrl) {
+            var token = Configuration.INSTANCE.getServiceSecret(serviceType);
+            if (token != null) {
+                identity = Utils.Json.cloneObject(identity);
+                if (identity instanceof IdentityImpl id) {
+                    id.setId(token);
+                }
+            }
+        }
+        return identity;
     }
 
     /**

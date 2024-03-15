@@ -74,16 +74,18 @@ public class EngineClient implements Engine, PropertyHolder {
     @Override
     public void shutdown() {
         /*
-        TODO send shutdown to all services that were launched in our scope
+        send shutdown to all services that were launched in our scope
+        TODO check for embedded services, which should stop themselves when the JVM exits but should also
+         made to shutdown correctly.
          */
         for (KlabService.Type type : new KlabService.Type[]{KlabService.Type.RUNTIME,
                                                             KlabService.Type.RESOLVER,
                                                             KlabService.Type.REASONER,
                                                             KlabService.Type.RESOURCES}) {
             for (var service : getServices(type)) {
-            /*
-            TODO find ways to understand if service is local. URL or isLocal(), or use the scope
-             */
+                if (service instanceof ServiceClient client && client.isLocal()) {
+                    client.shutdown();
+                }
             }
         }
         stopped.set(true);
