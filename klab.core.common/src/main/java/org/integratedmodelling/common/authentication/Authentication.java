@@ -233,7 +233,7 @@ public enum Authentication {
         }
 
         // if we got here, we need to launch the service ourselves. We may be using a remote distribution or
-        // a development one, which takes priority.
+        // a development one, which takes priority. TODO use options to influence the priority here.
         var distribution = DistributionImpl.isDevelopmentDistributionAvailable() ?
                            new DevelopmentDistributionImpl() : new DistributionImpl();
 
@@ -241,7 +241,7 @@ public enum Authentication {
             scope.info("No service available for " + serviceType + ": starting local service from local k" +
                     ".LAB distribution");
             var product = distribution.findProduct(Product.ProductType.forService(serviceType));
-            var instance = product.launch(scope);
+            var instance = product.getInstance(scope);
             if (instance.start()) {
                 scope.info("Service is starting: will be attempting connection to locally running " + serviceType);
                 scope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, serviceType + " service at " + serviceType.localServiceUrl());

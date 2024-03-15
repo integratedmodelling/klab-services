@@ -123,6 +123,11 @@ public interface Build {
             public String getRemotePath() {
                 throw new KlabIllegalStateException("This release is a stub");
             }
+
+            @Override
+            public RunningInstance getInstance(Scope scope) {
+                throw new KlabIllegalStateException("This release is a stub");
+            }
         };
     }
 
@@ -135,4 +140,12 @@ public interface Build {
      * @return
      */
     String getExecutable();
+
+    /**
+     * Return a new instance that has not been started yet.
+     *
+     * @param scope
+     * @return
+     */
+    RunningInstance getInstance(Scope scope);
 }

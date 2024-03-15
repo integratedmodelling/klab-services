@@ -317,6 +317,13 @@ public interface Product {
     List<Release> getReleases();
 
     /**
+     * Create a new instance that will have to be started manually.
+     * @param scope
+     * @return
+     */
+    RunningInstance getInstance(Scope scope);
+
+    /**
      * Shorthand for "retrieve the currently configured or most recent {@link Release} and {@link Build}, then
      * launch that in this {@link Scope}. The scope will be notified of any events related to the launch.
      * <p>

@@ -28,6 +28,18 @@ public class LocalProductImpl extends ProductImpl {
         return null;
     }
 
+    @Override
+    public RunningInstance getInstance(Scope scope) {
+
+        var lastLaunched = getProperty(LAST_BUILD_LAUNCHED);
+        var build = locateBuild(lastLaunched);
+        if (build != null) {
+            return build.getInstance(scope);
+        }
+        return null;
+    }
+
+
     private Build locateBuild(String lastLaunched) {
         if (lastLaunched != null) {
             String[] launched = lastLaunched.split("\\/");

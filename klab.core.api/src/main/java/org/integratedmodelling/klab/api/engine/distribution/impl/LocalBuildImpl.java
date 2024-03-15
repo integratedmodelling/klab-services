@@ -26,6 +26,12 @@ public class LocalBuildImpl extends BuildImpl {
     }
 
     @Override
+    public RunningInstance getInstance(Scope scope) {
+        return distribution.getInstance(this, scope);
+    }
+
+
+    @Override
     public RunningInstance launch(Scope scope) {
         return distribution.runBuild(this, scope);
     }

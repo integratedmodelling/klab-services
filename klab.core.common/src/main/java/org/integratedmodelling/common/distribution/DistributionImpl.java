@@ -69,7 +69,7 @@ public class DistributionImpl extends AbstractDistributionImpl {
     public static boolean isDevelopmentDistributionAvailable() {
         File distributionDirectory =
                 new File(Configuration.INSTANCE.getProperty(Configuration.KLAB_DEVELOPMENT_SOURCE_REPOSITORY, System.getProperty("user.home") + File.separator + "git" + File.separator + "klab" + "-services"));
-        if (!distributionDirectory.isDirectory()) {
+        if (distributionDirectory.isDirectory()) {
             File distributionProperties = new File(distributionDirectory + File.separator + "klab" +
                     ".distribution" + File.separator + "target" + File.separator + "distribution" + File.separator + Distribution.DISTRIBUTION_PROPERTIES_FILE);
             return distributionProperties.isFile();
@@ -136,6 +136,13 @@ public class DistributionImpl extends AbstractDistributionImpl {
             }
         }
         return super.runBuild(build, scope);
+    }
+
+    public RunningInstance getInstance(Build build, Scope scope) {
+        if (build.getLocalWorkspace() != null) {
+            return new RunningInstanceImpl(build, scope, makeOptions(build, scope));
+        }
+        return super.getInstance(build, scope);
     }
 
     /**

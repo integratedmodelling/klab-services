@@ -55,5 +55,8 @@ public abstract class AbstractDistributionImpl extends PropertyBean implements D
         return null;
     }
 
+    public RunningInstance getInstance(Build build, Scope scope) {
+        return null;
+    }
 
 }

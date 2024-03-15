@@ -40,6 +40,11 @@ public abstract class BuildImpl extends PropertyBean implements Build {
             }
 
             @Override
+            public RunningInstance getInstance(Scope scope) {
+                return null;
+            }
+
+            @Override
             public RunningInstance launch(Scope scope) {
                 return null;
             }
