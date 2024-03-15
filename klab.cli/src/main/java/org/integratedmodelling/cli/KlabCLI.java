@@ -59,10 +59,12 @@ import java.util.function.Supplier;
 public enum KlabCLI {
     INSTANCE;
 
-    private Modeler modeler = new Modeler();
+    private Modeler modeler;
+
+    private CLIStartupOptions options;
 
     public Engine engine() {
-        return modeler.getEngine();
+        return modeler.engine();
     }
 
     public Modeler modeler() {
@@ -332,6 +334,9 @@ public enum KlabCLI {
 
     public static void main(String[] args) {
 //        AnsiConsole.systemInstall();
+
+        INSTANCE.options = CLIStartupOptions.create(args);
+
         try {
             Supplier<Path> workDir = () -> Paths
                     .get(System.getProperty("user.home") + File.separator + ".klab" + File.separator +
@@ -378,6 +383,7 @@ public enum KlabCLI {
 
                 /**
                  * If we have a command, run it and exit
+                 * FIXME use options field
                  */
                 if (args != null && args.length > 0) {
                     String line = Utils.Strings.join(args, ' ');
@@ -398,6 +404,11 @@ public enum KlabCLI {
                 }
 
                 Run.loadAliases();
+
+                // tie the scope monitor to the CLI input and output streams
+
+                // create the modeler
+                INSTANCE.modeler = new Modeler(/* TODO params */);
 
                 // start the shell and process input until the user quits with Ctrl-D
                 String line;
@@ -459,7 +470,7 @@ public enum KlabCLI {
         } else if (resourceSet.isEmpty()) {
             out.println(Utils.Strings.spaces(indent) + "Empty resource set");
         } else {
-
+            // TODO
             out.println("Namespaces:");
             for (ResourceSet.Resource namespace : resourceSet.getNamespaces()) {
                 out.println("   " + namespace);

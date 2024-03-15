@@ -43,7 +43,7 @@ public abstract class AbstractUIController implements UIController {
      * Reactors to each event are registered here
      */
     Map<UIReactor.UIEvent, List<EventReactor>> reactors = new HashMap<>();
-    Engine engine;
+    private Engine engine;
 
     protected AbstractUIController() {
         this.engine = createEngine();
@@ -56,7 +56,7 @@ public abstract class AbstractUIController implements UIController {
     public abstract Engine createEngine();
 
     @Override
-    public Engine getEngine() {
+    public Engine engine() {
         return engine;
     }
 
@@ -123,7 +123,7 @@ public abstract class AbstractUIController implements UIController {
                 try {
                     desc.method.invoke(desc.reactor, desc.reorderArguments(sender,payload));
                 } catch (Throwable e) {
-                    getScope().error(e);
+                    scope().error(e);
                 }
             }
         }
@@ -134,7 +134,7 @@ public abstract class AbstractUIController implements UIController {
      *
      * @return
      */
-    protected abstract Scope getScope();
+    protected abstract Scope scope();
 
     @Override
     public void register(UIReactor reactor) {

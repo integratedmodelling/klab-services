@@ -34,7 +34,7 @@ public interface UIController {
      *
      * @return the currently authenticated user or Anonymous.
      */
-    UserScope getUser();
+    UserScope user();
 
     /**
      * The controller handles the engine, which will authenticate the user scope provided with all the
@@ -42,7 +42,7 @@ public interface UIController {
      *
      * @return the engine. Never null.
      */
-    Engine getEngine();
+    Engine engine();
 
     /**
      * Boot the engine if needed, and start processing events.

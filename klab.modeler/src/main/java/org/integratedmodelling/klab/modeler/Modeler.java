@@ -33,13 +33,13 @@ public class Modeler extends AbstractUIController implements PropertyHolder {
     }
 
     @Override
-    public UserScope getUser() {
-        return ((EngineClient) getEngine()).getUser();
+    public UserScope user() {
+        return ((EngineClient) engine()).getUser();
     }
 
     @Override
-    protected Scope getScope() {
-        return getUser();
+    protected Scope scope() {
+        return user();
     }
 
     @Override

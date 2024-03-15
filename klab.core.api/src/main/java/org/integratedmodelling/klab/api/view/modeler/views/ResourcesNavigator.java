@@ -57,7 +57,7 @@ public interface ResourcesNavigator extends View {
     @UIActionHandler(value = UIAction.SwitchWorkspace, label = "Switch workspace", tooltip = "Switch the " +
             "workspace in use for the current service")
     default void switchWorkspace(String workspaceUrn) {
-        var service = getModeler().getUser().getService(ResourcesService.class);
+        var service = getModeler().user().getService(ResourcesService.class);
         if (service != null) {
             if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(workspaceUrn)) {
                 var worldview = service.getWorldview();
@@ -65,7 +65,7 @@ public interface ResourcesNavigator extends View {
                     getModeler().dispatch(this, UIEvent.WorldviewSelected, worldview);
                 }
             } else {
-                var workspace = service.resolveWorkspace(workspaceUrn, getModeler().getUser());
+                var workspace = service.resolveWorkspace(workspaceUrn, getModeler().user());
                 if (workspace != null) {
                     getModeler().dispatch(this, UIEvent.WorkspaceSelected, workspace);
                 }

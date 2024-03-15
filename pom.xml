@@ -23,9 +23,7 @@
         <module>klab.services.community.server</module>
         <module>klab.services.runtime</module>
         <module>klab.services.resolver</module>
-        <!--<module>kcli</module>-->
         <module>p2</module>
-        <module>klab.engine</module>
         <module>klab.cli</module>
         <module>klab.engine.client</module>
         <module>klab.modeler</module>

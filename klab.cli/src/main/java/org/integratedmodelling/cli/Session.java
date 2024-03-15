@@ -75,7 +75,6 @@ public class Session {
                 out.println(Ansi.AUTO.string("Session @|green " + name + "|@ is now the default session"));
             }
         }
-
     }
 
     @Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
