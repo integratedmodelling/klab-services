@@ -23,7 +23,7 @@
 					<outputDirectory>target/build</outputDirectory>
 					<productName>klab.server.reasoner</productName>
 					<productClass>REASONER_SERVICE</productClass>
-					<productMain>org.integratedmodelling.services.reasoner.ReasonerServer</productMain>
+					<productMain>org.integratedmodelling.klab.services.reasoner.ReasonerServer</productMain>
 					<productDescription>The reference implementation of the k.LAB Reasoner server</productDescription>
 				</configuration>
 			</plugin>

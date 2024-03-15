@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.engine;
 
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientScope;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.util.*;
@@ -48,6 +50,7 @@ public class EngineClient implements Engine, PropertyHolder {
     public UserScope getUser() {
         return this.users.size() > 0 ? users.get(0) : null;
     }
+
     @Override
     public List<UserScope> getUsers() {
         return users;
@@ -73,6 +76,16 @@ public class EngineClient implements Engine, PropertyHolder {
         /*
         TODO send shutdown to all services that were launched in our scope
          */
+        for (KlabService.Type type : new KlabService.Type[]{KlabService.Type.RUNTIME,
+                                                            KlabService.Type.RESOLVER,
+                                                            KlabService.Type.REASONER,
+                                                            KlabService.Type.RESOURCES}) {
+            for (var service : getServices(type)) {
+            /*
+            TODO find ways to understand if service is local. URL or isLocal(), or use the scope
+             */
+            }
+        }
         stopped.set(true);
     }
 
@@ -132,7 +145,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
-        var ret = new ClientScope(authData.getFirst(), listeners.toArray(new BiConsumer[] {})) {
+        var ret = new ClientScope(authData.getFirst(), listeners.toArray(new BiConsumer[]{})) {
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return (T) currentServices.get(KlabService.Type.classify(serviceClass));

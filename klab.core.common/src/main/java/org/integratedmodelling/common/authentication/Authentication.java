@@ -279,10 +279,13 @@ public enum Authentication {
             default -> throw new IllegalStateException("Unexpected value: " + serviceType);
         };
 
-        if (ret instanceof ServiceClient serviceClient && listeners != null) {
-            for (var listener : listeners) {
-                serviceClient.addListener(listener);
+        if (ret instanceof ServiceClient serviceClient) {
+            if (listeners != null) {
+                for (var listener : listeners) {
+                    serviceClient.addListener(listener);
+                }
             }
+            serviceClient.setLocal(true);
         }
 
         return null;

@@ -62,6 +62,7 @@ public abstract class ServiceClient implements KlabService {
 
     // these can be installed from the outside
     protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
+    private boolean local;
 
     protected ServiceClient(KlabService.Type serviceType) {
         this.authentication = Authentication.INSTANCE.authenticate(false);
@@ -324,5 +325,13 @@ public abstract class ServiceClient implements KlabService {
 
     public void addListener(BiConsumer<Scope, Message> listener) {
         this.listeners.add(listener);
+    }
+
+    public void setLocal(boolean b) {
+        this.local = b;
+    }
+
+    public boolean isLocal() {
+        return this.local;
     }
 }
