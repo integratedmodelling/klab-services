@@ -76,6 +76,9 @@ public enum KlabCLI {
     }
 
     public <T extends KlabService> T service(String service, Class<T> serviceClass) {
+        if (service == null || "local".equals(service)) {
+            return engine().serviceScope().getService(serviceClass);
+        } // TODO
         return null;
     }
 

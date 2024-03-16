@@ -302,7 +302,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     private void saveConfiguration() {
-        File config = new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner.yaml");
+        File config = getFileInConfigurationDirectory(Type.REASONER, getStartupOptions(), "reasoner.yaml");
         org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 

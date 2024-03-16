@@ -221,7 +221,6 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     public static void main(String[] args) {
         var client = new ResourcesClient();
-        System.out.println("DEBUGGAMI ORA COME SAI FARE TU");
         client.importProject("worldview", "https://github.com/integratedmodelling/imod.git", true);
     }
 
@@ -331,4 +330,5 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     public Collection<String> listResourceUrns() {
         return null;
     }
+
 }

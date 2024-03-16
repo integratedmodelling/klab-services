@@ -105,7 +105,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         super(scope, Type.RESOURCES, options);
 
         this.db =
-                DBMaker.fileDB(Configuration.INSTANCE.getDataPath("resources/catalog") + File.separator +
+                DBMaker.fileDB(getConfigurationSubdirectory(Type.RESOURCES, options, "catalog") + File.separator +
                         "resources.db").transactionEnable().closeOnJvmShutdown().make();
         this.catalog =
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
@@ -419,17 +419,17 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.setServiceName("Resources");
         ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
         ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
-//        if (isLocal()) {
-            // TODO capabilities are being asked from same machine as the one that runs the server. This call
-            //  should have a @Nullable scope
-            if (ResourcesProvider.this instanceof ResourcesService.Admin) {
-                ret.getPermissions().add(CRUDOperation.CREATE);
-                ret.getPermissions().add(CRUDOperation.DELETE);
-                ret.getPermissions().add(CRUDOperation.UPDATE);
-            }
-//        } else {
-//            // TODO check permissions of current userscope vs. configuration
-//        }
+        //        if (isLocal()) {
+        // TODO capabilities are being asked from same machine as the one that runs the server. This call
+        //  should have a @Nullable scope
+        if (ResourcesProvider.this instanceof ResourcesService.Admin) {
+            ret.getPermissions().add(CRUDOperation.CREATE);
+            ret.getPermissions().add(CRUDOperation.DELETE);
+            ret.getPermissions().add(CRUDOperation.UPDATE);
+        }
+        //        } else {
+        //            // TODO check permissions of current userscope vs. configuration
+        //        }
 
         return ret;
 

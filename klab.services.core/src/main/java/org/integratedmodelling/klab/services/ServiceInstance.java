@@ -286,13 +286,16 @@ public abstract class ServiceInstance<T extends BaseService> {
                 serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, klabService().capabilities());
             }
         }
+
         /*
         if status is OK and the service hasn't been initialized, set maintenance mode and call
         initializeService().
          */
         if (ok && !initialized.get()) {
+            setBusy(true);
             klabService().initializeService();
             initialized.set(true);
+            setBusy(false);
         }
 
         /*
