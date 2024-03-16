@@ -188,7 +188,7 @@ public class Utils {
          */
         public static ResourceSet create(ResourcesService service, KlabAsset... resources) {
             ResourceSet ret = new ResourceSet();
-            ret.getServices().put(service.getLocalName(), service);
+            ret.getServices().put(service.getLocalName(), service.getUrl());
             if (resources != null) {
                 for (KlabAsset resource : resources) {
                     ResourceSet.Resource descriptor = new ResourceSet.Resource();

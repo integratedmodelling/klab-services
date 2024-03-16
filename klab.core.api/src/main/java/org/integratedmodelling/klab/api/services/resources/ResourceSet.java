@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -108,7 +109,7 @@ public class ResourceSet implements Serializable {
 
     }
 
-    private Map<String, ResourcesService> services = new HashMap<>();
+    private Map<String, URL> services = new HashMap<>();
     private List<Resource> namespaces = new ArrayList<>();
     private String workspace;
     private List<Resource> ontologies = new ArrayList<>();
@@ -152,11 +153,11 @@ public class ResourceSet implements Serializable {
         this.empty = empty;
     }
 
-    public Map<String, ResourcesService> getServices() {
+    public Map<String, URL> getServices() {
         return services;
     }
 
-    public void setServices(Map<String, ResourcesService> services) {
+    public void setServices(Map<String, URL> services) {
         this.services = services;
     }
 
