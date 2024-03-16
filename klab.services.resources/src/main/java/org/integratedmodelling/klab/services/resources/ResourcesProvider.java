@@ -111,7 +111,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
 
         this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(),
-                (projectId) -> resolveRemoteProject(projectId));
+                this::resolveRemoteProject);
     }
 
     public Project resolveRemoteProject(String projectId) {
