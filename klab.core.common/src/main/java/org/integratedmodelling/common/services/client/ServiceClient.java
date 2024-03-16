@@ -86,24 +86,12 @@ public abstract class ServiceClient implements KlabService {
 
     protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
                             List<ServiceReference> services) {
-        this.authentication = Pair.of(localizeIdentity(identity, serviceType.localServiceUrl().equals(url),
-                serviceType), services);
+        this.authentication = Pair.of(identity, services);
         this.serviceType = serviceType;
         this.url = url;
+        this.local = url.equals(serviceType.localServiceUrl());
+        this.token = this.local ? Configuration.INSTANCE.getServiceSecret(serviceType) : identity.getId();
         establishConnection();
-    }
-
-    private Identity localizeIdentity(Identity identity, boolean localUrl, KlabService.Type serviceType) {
-        if (localUrl) {
-            var token = Configuration.INSTANCE.getServiceSecret(serviceType);
-            if (token != null) {
-                identity = Utils.Json.cloneObject(identity);
-                if (identity instanceof IdentityImpl id) {
-                    id.setId(token);
-                }
-            }
-        }
-        return identity;
     }
 
     /**

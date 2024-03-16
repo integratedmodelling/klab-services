@@ -212,14 +212,16 @@ public enum Authentication {
                                                  List<ServiceReference> availableServices,
                                                  boolean logFailures) {
 
-        BiConsumer<Scope, Message>[] listeners = scope instanceof ClientScope clientScope ? clientScope.getListeners() : null;
+        BiConsumer<Scope, Message>[] listeners = scope instanceof ClientScope clientScope ?
+                                                 clientScope.getListeners() : null;
 
         for (var service : availableServices) {
             if (service.getServiceType() == serviceType && service.isPrimary()) {
                 for (var url : service.getUrls()) {
                     if (ServiceClient.readServiceStatus(url) != null) {
                         scope.info("Using authenticated " + service.getServiceType() + " service from " + service.getPartner().getId());
-                        return (T) createLocalServiceClient(serviceType, url, identity, availableServices, listeners);
+                        return (T) createLocalServiceClient(serviceType, url, identity, availableServices,
+                                listeners);
                     }
                 }
             }
@@ -238,15 +240,23 @@ public enum Authentication {
                            new DevelopmentDistributionImpl() : new DistributionImpl();
 
         if (distribution.isAvailable()) {
-            scope.info("No service available for " + serviceType + ": starting local service from local k" +
-                    ".LAB distribution");
             var product = distribution.findProduct(Product.ProductType.forService(serviceType));
-            var instance = product.getInstance(scope);
-            if (instance.start()) {
-                scope.info("Service is starting: will be attempting connection to locally running " + serviceType);
-                scope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, serviceType + " service at " + serviceType.localServiceUrl());
-                return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
-                        availableServices, listeners);
+            if (logFailures) {
+                scope.info("No service available for " + serviceType + ": " +
+                        (product == null ? "distribution does not provide service implementation" :
+                         "starting " +
+                                "local service from local k.LAB distribution"));
+            }
+            if (product != null) {
+                var instance = product.getInstance(scope);
+                if (instance.start()) {
+                    scope.info("Service is starting: will be attempting connection to locally running " + serviceType);
+                    scope.send(Message.MessageClass.ServiceLifecycle,
+                            Message.MessageType.ServiceInitializing,
+                            serviceType + " service at " + serviceType.localServiceUrl());
+                    return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
+                            availableServices, listeners);
+                }
             }
         } else if (logFailures) {
             scope.info("No service available for " + serviceType + " and no k.LAB distribution available");
@@ -288,7 +298,7 @@ public enum Authentication {
             serviceClient.setLocal(true);
         }
 
-        return null;
+        return ret;
     }
 
 }

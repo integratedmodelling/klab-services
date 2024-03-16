@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -72,7 +73,32 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     @Override
-    public void shutdown() {
+    public ServiceCapabilities capabilities() {
+        return null;
+    }
+
+    @Override
+    public ServiceStatus status() {
+        return null;
+    }
+
+    @Override
+    public URL getUrl() {
+        return null;
+    }
+
+    @Override
+    public String getLocalName() {
+        return null;
+    }
+
+    @Override
+    public Scope serviceScope() {
+        return defaultUser;
+    }
+
+    @Override
+    public boolean shutdown() {
         /*
         send shutdown to all services that were launched in our scope
         TODO check for embedded services, which should stop themselves when the JVM exits but should also
@@ -89,6 +115,7 @@ public class EngineClient implements Engine, PropertyHolder {
             }
         }
         stopped.set(true);
+        return true;
     }
 
     @Override
@@ -122,7 +149,7 @@ public class EngineClient implements Engine, PropertyHolder {
                 service = Authentication.INSTANCE.findService(type, getUser(), authData.getFirst(),
                         authData.getSecond(), firstCall);
             }
-            if (service == null || !service.status().isAvailable() && serviceIsEssential(type)) {
+            if (service == null && serviceIsEssential(type)) {
                 ok = false;
             }
             if (service != null) {
@@ -134,7 +161,10 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     private void registerService(KlabService.Type serviceType, KlabService service) {
-
+        if (!currentServices.containsKey(serviceType)) {
+            currentServices.put(serviceType, service);
+        }
+        getServices(serviceType).add(service);
     }
 
     /**
@@ -222,4 +252,8 @@ public class EngineClient implements Engine, PropertyHolder {
         return this.stopped.get();
     }
 
+    @Override
+    public String getServiceName() {
+        return null;
+    }
 }

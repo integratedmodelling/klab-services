@@ -277,7 +277,6 @@ public abstract class ServiceInstance<T extends BaseService> {
             serviceScope.setMaintenanceMode(false);
         }
 
-
         /*
         if status is OK and the service hasn't been initialized, set maintenance mode and call
         initializeService().

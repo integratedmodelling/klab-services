@@ -116,7 +116,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     var response =
                             client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
 
-                    if (response.statusCode() == 200) {
+                    if (response.statusCode() == 200 && Void.class != resultClass) {
                         return parseResponse(response.body(), resultClass);
                     }
 
@@ -202,7 +202,6 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * always be authorized. Use within a try {} pattern to ensure that the  connection is closed
          * appropriately.
          *
-         * @param scope
          * @param service
          * @return a client authenticated for the service in the passed scope
          * @throws org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException if not authorized to

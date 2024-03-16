@@ -416,6 +416,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.setAdoptedWorldview(getWorldview().isEmpty() ? null : getWorldview().getUrn());
         ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
         ret.setType(Type.RESOURCES);
+        ret.setServiceName("Resources");
         ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
         ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
 //        if (isLocal()) {

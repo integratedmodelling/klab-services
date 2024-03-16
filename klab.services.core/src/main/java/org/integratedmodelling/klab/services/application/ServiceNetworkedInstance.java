@@ -210,6 +210,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     }
 
     public void shutdown() {
+        Logging.INSTANCE.info("Application context = " + applicationContext);
         this.applicationContext.stop();
     }
 

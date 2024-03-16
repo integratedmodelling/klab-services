@@ -26,6 +26,8 @@ public class Modeler extends AbstractUIController implements PropertyHolder {
 
     private final BiConsumer<Scope, Message>[] listeners;
     EngineConfiguration workbench;
+    private ContextScope currentContext;
+    private SessionScope currentSession;
 
     public Modeler(BiConsumer<Scope, Message>... listeners) {
         this.listeners = listeners;
@@ -64,18 +66,17 @@ public class Modeler extends AbstractUIController implements PropertyHolder {
     }
 
     public UserScope currentUser() {
-        // TODO
-        return null;
+        return engine() == null || engine().getUsers().isEmpty() ? null : engine().getUsers().getFirst();
     }
 
     public SessionScope currentSession() {
         // TODO
-        return null;
+        return currentSession;
     }
 
     public ContextScope currentContext() {
         // TODO
-        return null;
+        return currentContext;
     }
 
     public ContextScope context(String context) {

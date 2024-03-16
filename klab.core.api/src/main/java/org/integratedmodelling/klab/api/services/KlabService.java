@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -63,6 +65,19 @@ public interface KlabService extends Service {
                 // naah
                 throw new RuntimeException(e);
             }
+        }
+
+        public Class<? extends KlabService> classify() {
+            return switch(this) {
+                case REASONER -> Reasoner.class;
+                case RESOURCES -> ResourcesService.class;
+                case RESOLVER -> Resolver.class;
+                case RUNTIME -> RuntimeService.class;
+                case COMMUNITY -> Community.class;
+                case ENGINE -> Engine.class;
+                case DISCOVERY -> null;
+                case LEGACY_NODE -> null;
+            };
         }
 
         public static Type classify(KlabService service) {
@@ -201,7 +216,7 @@ public interface KlabService extends Service {
     /**
      * Each service operates under a root scope that is used to report issues, talk to clients and derive
      * child scopes for users and when appropriate, sessions and contexts. The service scope may be a
-     * {@link org.integratedmodelling.klab.api.scope.UserScope} or a {@link ServiceScope} according to who
+     * {@link UserScope} or a {@link ServiceScope} according to who
      * owns and operates the engine service.
      *
      * @return

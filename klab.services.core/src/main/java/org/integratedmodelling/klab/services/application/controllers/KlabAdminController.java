@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
@@ -23,7 +24,8 @@ public class KlabAdminController {
 
     @GetMapping(ServicesAPI.SHUTDOWN)
     public void shutdown(Principal principal) {
-        instance.klabService().shutdown();
+        Logging.INSTANCE.info("Shutting down service instance " + instance.klabService().getLocalName());
+        instance.shutdown();
     }
 
 }

@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.services.scope.EngineScope;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -233,11 +234,38 @@ public class EngineService implements Engine {
         this.defaultResolver = resolver;
     }
 
-    public void shutdown() {
+    @Override
+    public ServiceCapabilities capabilities() {
+        return null;
+    }
+
+    @Override
+    public ServiceStatus status() {
+        return null;
+    }
+
+    @Override
+    public URL getUrl() {
+        return null;
+    }
+
+    @Override
+    public String getLocalName() {
+        return null;
+    }
+
+    @Override
+    public Scope serviceScope() {
+        return null;
+    }
+
+    public boolean shutdown() {
+        // fixme
         this.defaultReasoner.shutdown();
         this.defaultResourcesService.shutdown();
         this.defaultReasoner.shutdown();
         this.defaultRuntime.shutdown();
+        return true;
     }
 
     public ServiceScope newServiceScope(Class<? extends KlabService> cls) {
@@ -279,4 +307,8 @@ public class EngineService implements Engine {
 //        };
     }
 
+    @Override
+    public String getServiceName() {
+        return null;
+    }
 }

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.engine;
 
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -23,7 +24,7 @@ import java.util.function.BiConsumer;
  * and {@link #isOnline()} can be used to monitor status, and the messaging system must report all
  * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#EngineLifecycle} events.
  */
-public interface Engine {
+public interface Engine extends KlabService {
 
     /**
      * The engine is available to boot.
@@ -62,14 +63,5 @@ public interface Engine {
      * There is no requirement for the boot to be reentrant so that it can be called multiple times.
      */
     void boot();
-
-    /**
-     * To facilitate implementations, we expose the boot and shutdown as explicitly called phases. The
-     * shutdown phases should do what's appropriate also with the services (e.g. invoke a cleanup and shutdown
-     * phases if the service is embedded). The engine must be non-functional after this is called and all
-     * methods should throw {@link org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException}
-     * exceptions.
-     */
-    void shutdown();
 
 }
