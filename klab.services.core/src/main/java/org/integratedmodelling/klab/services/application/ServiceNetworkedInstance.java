@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.messaging.WebsocketsServerMessageBus;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -51,9 +52,13 @@ import springfox.documentation.spring.web.plugins.Docket;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
 /**
@@ -196,10 +201,11 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
                      .map(ps -> ((EnumerablePropertySource) ps).getPropertyNames())
                      .flatMap(Arrays::<String>stream)
                      .forEach(propName -> {
-                        if (propName.contains("klab.")) {
-                        Configuration.INSTANCE.getProperties().setProperty(propName, environment.getProperty(propName));
-                    }
-                });
+                         if (propName.contains("klab.")) {
+                             Configuration.INSTANCE.getProperties().setProperty(propName,
+                                     environment.getProperty(propName));
+                         }
+                     });
     }
 
     @PreDestroy
@@ -209,8 +215,11 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     }
 
     public void shutdown() {
-        Logging.INSTANCE.info("Application context = " + applicationContext);
-        applicationContext.close();
+        Logging.INSTANCE.info(klabService().getServiceName() + " shutting down in 5 seconds...");
+        Executors.newScheduledThreadPool(1).schedule(() -> {
+            int exitCode = SpringApplication.exit(applicationContext, () -> 0);
+            System.exit(exitCode);
+        }, 5, TimeUnit.SECONDS);
     }
 
     @Override

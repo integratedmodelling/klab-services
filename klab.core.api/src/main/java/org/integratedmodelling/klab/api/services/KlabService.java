@@ -82,7 +82,7 @@ public interface KlabService extends Service {
 
         public static Type classify(KlabService service) {
             return switch (service) {
-                case ResourcesService s -> RESOLVER;
+                case ResourcesService s -> RESOURCES;
                 case RuntimeService s -> RUNTIME;
                 case Reasoner s -> REASONER;
                 case Community s -> COMMUNITY;

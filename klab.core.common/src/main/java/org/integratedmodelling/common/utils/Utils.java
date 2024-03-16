@@ -132,12 +132,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
-             * POST helper that sets all headers and automatically handles JSON marshalling.
+             * PUT helper that sets all headers and automatically handles JSON marshalling.
              *
              * @param apiRequest
-             * @param resultClass
              * @param parameters  paired key, value sequence for URL options
-             * @param <T>
              * @return
              */
             public void put(String apiRequest, Object... parameters) {

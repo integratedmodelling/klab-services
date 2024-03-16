@@ -270,8 +270,10 @@ public abstract class ServiceInstance<T extends BaseService> {
         }
 
         if (ok) {
+            setAvailable(true);
             serviceScope.setStatus(Scope.Status.STARTED);
         } else {
+            setAvailable(false);
             serviceScope.setStatus(Scope.Status.WAITING);
         }
 
@@ -284,14 +286,6 @@ public abstract class ServiceInstance<T extends BaseService> {
                 serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, klabService().capabilities());
             }
         }
-
-        //
-        //        if (serviceScope.isAvailable() && !ok) {
-        //            serviceScope.setMaintenanceMode(true);
-        //        } else if (!serviceScope.isAvailable() && ok) {
-        //            serviceScope.setMaintenanceMode(false);
-        //        }
-
         /*
         if status is OK and the service hasn't been initialized, set maintenance mode and call
         initializeService().
@@ -307,67 +301,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     }
 
     public void stop() {
-
-        /*
-        if WE have started the embedded other services, stop them, otherwise let them run. We should
-        log out if the service is a client.
-         */
-
-        /*
-        call shutdown() on the wrapped service
-         */
         klabService().shutdown();
-
-        /*
-        send notifications
-         */
-
-
-        // // shutdown all components
-        // if (this.sessionClosingTask != null) {
-        // this.sessionClosingTask.cancel(true);
-        // }
-        //
-        // // shutdown the task executor
-        // if (taskExecutor != null) {
-        // taskExecutor.shutdown();
-        // try {
-        // if (!taskExecutor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-        // taskExecutor.shutdownNow();
-        // }
-        // } catch (InterruptedException e) {
-        // taskExecutor.shutdownNow();
-        // }
-        // }
-        //
-        // // shutdown the script executor
-        // if (scriptExecutor != null) {
-        // scriptExecutor.shutdown();
-        // try {
-        // if (!scriptExecutor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-        // scriptExecutor.shutdownNow();
-        // }
-        // } catch (InterruptedException e) {
-        // scriptExecutor.shutdownNow();
-        // }
-        // }
-        //
-        // // and the session scheduler
-        // if (scheduler != null) {
-        // scheduler.shutdown();
-        // try {
-        // if (!scheduler.awaitTermination(800, TimeUnit.MILLISECONDS)) {
-        // scheduler.shutdownNow();
-        // }
-        // } catch (InterruptedException e) {
-        // scheduler.shutdownNow();
-        // }
-        // }
-        //
-        // // shutdown the runtime
-        // Klab.INSTANCE.getRuntimeProvider().shutdown();
-
-        //        context.close();
     }
 
     public T klabService() {
@@ -378,10 +312,12 @@ public abstract class ServiceInstance<T extends BaseService> {
         return bootTime;
     }
 
-    //    public static void run(String[] args) {
-    //        ServiceStartupOptions options = new ServiceStartupOptions();
-    //        options.initialize(args);
-    //        start(options);
-    //    }
+    protected void setAvailable(boolean b) {
+        serviceScope.setMaintenanceMode(!b);
+    }
+
+    protected void setBusy(boolean b) {
+        serviceScope.setAtomicOperationMode(b);
+    }
 
 }

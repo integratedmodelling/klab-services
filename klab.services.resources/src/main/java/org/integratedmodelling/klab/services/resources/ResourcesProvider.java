@@ -104,8 +104,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         super(scope, Type.RESOURCES, options);
 
-        System.out.println("CALLED DIOCANE CALLED");
-
         this.db =
                 DBMaker.fileDB(Configuration.INSTANCE.getDataPath("resources/catalog") + File.separator +
                         "resources.db").transactionEnable().closeOnJvmShutdown().make();

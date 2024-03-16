@@ -79,5 +79,4 @@ public interface ServiceScope extends Scope {
      */
     boolean isBusy();
 
-
 }
