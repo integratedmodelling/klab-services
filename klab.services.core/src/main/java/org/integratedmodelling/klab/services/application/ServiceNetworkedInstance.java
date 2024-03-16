@@ -86,7 +86,6 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             "concepts obtained through the resolve endpoints.";
     private String contactName = "Integrated Modelling Partnership";
     private String contactEmail = "info@integratedmodelling.org";
-
     @Autowired
     private ConfigurableApplicationContext applicationContext;
     @Autowired
@@ -211,7 +210,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
 
     public void shutdown() {
         Logging.INSTANCE.info("Application context = " + applicationContext);
-        this.applicationContext.stop();
+        applicationContext.close();
     }
 
     @Override

@@ -81,6 +81,12 @@
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.common</artifactId>
             <version>${klab.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -125,7 +131,7 @@
 
         <!-- Unirest, while redundant with Spring templates, removes a lot of pain
             when doing quick REST interactions. DEPRECATED - use Java HttpClient instead -->
-        <dependency>
+<!--        <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
             <version>3.13.6</version>
@@ -134,7 +140,7 @@
             <groupId>com.konghq</groupId>
             <artifactId>unirest-objectmapper-jackson</artifactId>
             <version>4.2.1</version>
-        </dependency>
+        </dependency>-->
 
         <!-- MapDB for various persistent caches. Simple, used it a lot, never
             a problem. -->

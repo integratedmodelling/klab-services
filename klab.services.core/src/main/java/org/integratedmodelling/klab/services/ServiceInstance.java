@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
@@ -38,9 +39,10 @@ import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
  * {@link #waitOnline(int)} to block sensibly until the service is fully initialized and ready to use.
  * <p>
  * If embedded, non-REST versions of the services are desired, they can be created or provided from a custom
- * scope by overriding {@link #createDefaultService(KlabService.Type, long)}, which in its default
- * implementation will create clients for either configured or embedded services whose URLs can be discovered.
- * If services are missing, the wrapped service will not be available.
+ * scope; in its default implementation will create clients for either configured or embedded services whose
+ * URLs can be discovered. If services are missing, the wrapped service will not be available. The lookup of a
+ * service distribution to start a needed service is turned off in service instances, as that should be only
+ * done by clients in a local configuration.
  * <p>
  * Once a {@link ServiceInstance} has successfully booted, the wrapped {@link KlabService} can be used through
  * its API and is available through {@link #klabService()}. The {@link ServiceInstance} does not provide
@@ -106,7 +108,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     protected KlabService createDefaultService(KlabService.Type serviceType, Scope scope,
                                                long timeUnavailable) {
         return Authentication.INSTANCE.findService(serviceType, scope, identity.getFirst(),
-                identity.getSecond(), firstCall);
+                identity.getSecond(), firstCall, false);
     }
 
     /**
@@ -238,8 +240,6 @@ public abstract class ServiceInstance<T extends BaseService> {
             case RuntimeService runtime -> {
                 availableRuntimeServices.add(runtime);
             }
-            case Community community -> {
-            }
             default -> {
             }
         }
@@ -252,6 +252,8 @@ public abstract class ServiceInstance<T extends BaseService> {
         there's a change in online status, report it through the service scope
          */
         boolean ok = true;
+
+        boolean wasAvailable = serviceScope.isAvailable();
 
         for (var serviceType : getEssentialServices()) {
             var service = currentServices.get(serviceType);
@@ -267,15 +269,28 @@ public abstract class ServiceInstance<T extends BaseService> {
             }
         }
 
+        if (ok) {
+            serviceScope.setStatus(Scope.Status.STARTED);
+        } else {
+            serviceScope.setStatus(Scope.Status.WAITING);
+        }
+
         firstCall = false;
 
-        if (!ok) {
-            serviceScope.setStatus(Scope.Status.WAITING);
-        } else if (serviceScope.isAvailable() && !ok) {
-            serviceScope.setMaintenanceMode(true);
-        } else if (!serviceScope.isAvailable() && ok) {
-            serviceScope.setMaintenanceMode(false);
+        if (wasAvailable != ok) {
+            if (ok) {
+                serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, klabService().capabilities());
+            } else {
+                serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, klabService().capabilities());
+            }
         }
+
+        //
+        //        if (serviceScope.isAvailable() && !ok) {
+        //            serviceScope.setMaintenanceMode(true);
+        //        } else if (!serviceScope.isAvailable() && ok) {
+        //            serviceScope.setMaintenanceMode(false);
+        //        }
 
         /*
         if status is OK and the service hasn't been initialized, set maintenance mode and call

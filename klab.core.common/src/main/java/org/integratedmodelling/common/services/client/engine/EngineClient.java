@@ -136,6 +136,8 @@ public class EngineClient implements Engine, PropertyHolder {
 
     private void timedTasks() {
 
+        boolean wasAvailable = available.get();
+
         /*
         check all needed services; put self offline if not available or not there, online otherwise; if
         there's a change in online status, report it through the service scope
@@ -147,7 +149,7 @@ public class EngineClient implements Engine, PropertyHolder {
             var service = currentServices.get(type);
             if (service == null) {
                 service = Authentication.INSTANCE.findService(type, getUser(), authData.getFirst(),
-                        authData.getSecond(), firstCall);
+                        authData.getSecond(), firstCall, true);
             }
             if (service == null && serviceIsEssential(type)) {
                 ok = false;
@@ -157,6 +159,16 @@ public class EngineClient implements Engine, PropertyHolder {
             }
             firstCall = false;
         }
+
+        // inform listeners
+        if (wasAvailable != ok) {
+            if (ok) {
+                serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceAvailable, capabilities());
+            } else {
+                serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
+            }
+        }
+
         available.set(ok);
     }
 

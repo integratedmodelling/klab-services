@@ -14,6 +14,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
@@ -28,10 +29,9 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
 import java.net.URL;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
@@ -41,6 +41,8 @@ import java.util.function.BiConsumer;
 public enum Authentication {
 
     INSTANCE;
+
+    private Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
 
     /**
      * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
@@ -210,7 +212,7 @@ public enum Authentication {
                                                  Scope scope,
                                                  Identity identity,
                                                  List<ServiceReference> availableServices,
-                                                 boolean logFailures) {
+                                                 boolean logFailures, boolean launchProduct) {
 
         BiConsumer<Scope, Message>[] listeners = scope instanceof ClientScope clientScope ?
                                                  clientScope.getListeners() : null;
@@ -239,7 +241,7 @@ public enum Authentication {
         var distribution = DistributionImpl.isDevelopmentDistributionAvailable() ?
                            new DevelopmentDistributionImpl() : new DistributionImpl();
 
-        if (distribution.isAvailable()) {
+        if (distribution.isAvailable() && launchProduct) {
             var product = distribution.findProduct(Product.ProductType.forService(serviceType));
             if (logFailures) {
                 scope.info("No service available for " + serviceType + ": " +
@@ -247,13 +249,20 @@ public enum Authentication {
                          "starting " +
                                 "local service from local k.LAB distribution"));
             }
-            if (product != null) {
+            if (product != null && !started.contains(serviceType)) {
+                started.add(serviceType);
                 var instance = product.getInstance(scope);
                 if (instance.start()) {
                     scope.info("Service is starting: will be attempting connection to locally running " + serviceType);
                     scope.send(Message.MessageClass.ServiceLifecycle,
                             Message.MessageType.ServiceInitializing,
                             serviceType + " service at " + serviceType.localServiceUrl());
+                    try {
+                        // give the service a few seconds to start up
+                        Thread.sleep(Duration.ofSeconds(2));
+                    } catch (InterruptedException e) {
+                        // move on
+                    }
                     return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
                             availableServices, listeners);
                 }

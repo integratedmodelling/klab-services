@@ -113,11 +113,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
                     }
 
-                    var response =
-                            client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
+                    if (Void.class != resultClass) {
+                        var response =
+                                client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
 
-                    if (response.statusCode() == 200 && Void.class != resultClass) {
-                        return parseResponse(response.body(), resultClass);
+                        if (response != null && response.statusCode() == 200) {
+                            return parseResponse(response.body(), resultClass);
+                        }
+                    } else {
+                        client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.discarding());
                     }
 
                 } catch (Throwable e) {
@@ -125,6 +129,29 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
 
                 return null;
+            }
+
+            /**
+             * POST helper that sets all headers and automatically handles JSON marshalling.
+             *
+             * @param apiRequest
+             * @param resultClass
+             * @param parameters  paired key, value sequence for URL options
+             * @param <T>
+             * @return
+             */
+            public void put(String apiRequest, Object... parameters) {
+                try {
+                    var requestBuilder = HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.noBody());
+                    if (authorization != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.discarding());
+
+                } catch (Throwable e) {
+                    throw new KlabIOException(e);
+                }
             }
 
             private <T> T parseResponse(String body, Class<T> resultClass) {

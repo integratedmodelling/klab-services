@@ -323,7 +323,7 @@ public abstract class ServiceClient implements KlabService {
     public final boolean shutdown() {
         this.scheduler.shutdown();
         if (local) {
-            client.get(ServicesAPI.SHUTDOWN, Void.class);
+            client.put(ServicesAPI.SHUTDOWN);
             return true;
         }
         return false;
