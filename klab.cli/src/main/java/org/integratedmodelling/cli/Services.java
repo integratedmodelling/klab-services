@@ -2,6 +2,7 @@ package org.integratedmodelling.cli;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.services.KlabService;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -100,15 +101,16 @@ public class Services {
                          */
 
                         if (first) {
-                            out.println(serviceType);
-                            // TODO highlight the name of the "current" service in each category
+//                            out.println(serviceType);
+                            // TODO number for selection; highlight the name of the "current" service in each category
                             out.println("  " + Utils.Paths.getLast(service.getClass().getName(), '.') + ": "
                                     + service.getServiceName() + " "
                                     + " ["
                                     + (service.status().isAvailable() ? "available" : "not available")
-                                    + (service instanceof ServiceClient client && client.isLocal() ? "," +
-                                    "local" : "")
-                                    + "]");
+                                    + (service instanceof ServiceClient client && client.isLocal() ? "," + "local" : "")
+                                    + "] "
+                                    + service.getUrl() + ServicesAPI.CAPABILITIES
+                            );
                             if (verbose) {
                                 out.println(Utils.Strings.indent(service.capabilities().toString(), 6));
                             }
@@ -117,8 +119,6 @@ public class Services {
                     }
                 }
             }
-
-
         }
     }
 

@@ -1,6 +1,5 @@
 package org.integratedmodelling.cli;
 
-import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -13,7 +12,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.modeler.Modeler;
+import org.integratedmodelling.klab.modeler.ModelerImpl;
 import org.jline.builtins.ConfigurationPath;
 import org.jline.console.SystemRegistry;
 import org.jline.console.impl.Builtins;
@@ -62,7 +61,7 @@ import java.util.function.Supplier;
 public enum KlabCLI {
     INSTANCE;
 
-    private Modeler modeler;
+    private ModelerImpl modeler;
 
     private CLIStartupOptions options;
     private CommandLine commandLine;
@@ -71,7 +70,7 @@ public enum KlabCLI {
         return modeler.engine();
     }
 
-    public Modeler modeler() {
+    public ModelerImpl modeler() {
         return this.modeler;
     }
 
@@ -421,7 +420,10 @@ public enum KlabCLI {
                 // tie the scope monitor to the CLI input and output streams
 
                 // create the modeler
-                INSTANCE.modeler = new Modeler((scope, message) -> INSTANCE.onEvent(scope, message));
+                INSTANCE.modeler = new ModelerImpl((scope, message) -> INSTANCE.onEvent(scope, message));
+
+                // Configure messages for CLI use
+                INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);
 
                 // boot the engine. This will schedule processes so it wont'delay startup.
                 INSTANCE.modeler.boot();

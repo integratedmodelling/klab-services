@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.view.modeler.panels;
+package org.integratedmodelling.klab.modeler.panels;
 
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.view.Panel;

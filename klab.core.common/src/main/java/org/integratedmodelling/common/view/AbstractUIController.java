@@ -115,6 +115,7 @@ public abstract class AbstractUIController implements UIController {
             case ActorCommunication -> {
             }
         };
+        System.out.println("AHA " + message);
     }
 
     @Override

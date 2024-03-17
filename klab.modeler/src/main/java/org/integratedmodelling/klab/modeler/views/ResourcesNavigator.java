@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.view.modeler.views;
+package org.integratedmodelling.klab.modeler.views;
 
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -10,8 +10,8 @@ import org.integratedmodelling.klab.api.view.annotations.UIView;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
-import org.integratedmodelling.klab.api.view.modeler.panels.KnowledgeEditor;
+import org.integratedmodelling.klab.modeler.panels.DocumentEditor;
+import org.integratedmodelling.klab.modeler.panels.KnowledgeEditor;
 
 /**
  * The resource navigator is tuned to the current resources service in the current user scope. It should give

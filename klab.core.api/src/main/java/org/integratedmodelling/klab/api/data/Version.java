@@ -11,10 +11,14 @@ import org.integratedmodelling.klab.api.data.mediation.NumericRange;
  * Serializable version compatible with semantic versioning conventions.
  * <p>
  * TODO the version syntax must accept compatibility modifiers so that it can express a version
- * range or constraint as well as a simple version.
- * 
- * @author Ferd
+ * range or constraint as well as a simple version. This should be used only in plugin manifests
+ * and project manifests.
+ * <p>
+ * TODO consider building klab/build.properties in resources with buildnumber-maven-plugin (already
+ * included), then turning this into an enum and read the build number and other parameters in the
+ * constructor.
  *
+ * @author Ferd
  */
 public class Version implements Comparable<Version>, Serializable {
 
@@ -43,18 +47,23 @@ public class Version implements Comparable<Version>, Serializable {
         public int getTarget() {
             return target;
         }
+
         public void setTarget(int target) {
             this.target = target;
         }
+
         public String getModifierPattern() {
             return modifierPattern;
         }
+
         public void setModifierPattern(String modifierPattern) {
             this.modifierPattern = modifierPattern;
         }
+
         public NumericRange getRange() {
             return range;
         }
+
         public void setRange(NumericRange range) {
             this.range = range;
         }
@@ -62,8 +71,8 @@ public class Version implements Comparable<Version>, Serializable {
     }
 
     /**
-     * Parses given string as version identifier. All missing parts will be initialized to 0 or
-     * empty string. Parsing starts from left side of the string.
+     * Parses given string as version identifier. All missing parts will be initialized to 0 or empty string.
+     * Parsing starts from left side of the string.
      *
      * @param str version identifier as string
      * @return version identifier object
@@ -81,8 +90,7 @@ public class Version implements Comparable<Version>, Serializable {
     private List<Constraint> constraints = new ArrayList<>();
 
     /**
-     * The default version parses the current version string, so it can be used for comparison with
-     * others.
+     * The default version parses the current version string, so it can be used for comparison with others.
      */
     public Version() {
     }
@@ -112,7 +120,7 @@ public class Version implements Comparable<Version>, Serializable {
             major = Integer.parseInt(token, 10);
         } catch (NumberFormatException nfe) {
             modifier = token;
-            while(st.hasMoreTokens()) {
+            while (st.hasMoreTokens()) {
                 modifier += st.nextToken();
             }
             return;
@@ -126,7 +134,7 @@ public class Version implements Comparable<Version>, Serializable {
             minor = Integer.parseInt(token, 10);
         } catch (NumberFormatException nfe) {
             modifier = token;
-            while(st.hasMoreTokens()) {
+            while (st.hasMoreTokens()) {
                 modifier += st.nextToken();
             }
             return;
@@ -140,7 +148,7 @@ public class Version implements Comparable<Version>, Serializable {
             build = Integer.parseInt(token, 10);
         } catch (NumberFormatException nfe) {
             modifier = token;
-            while(st.hasMoreTokens()) {
+            while (st.hasMoreTokens()) {
                 modifier += st.nextToken();
             }
             return;
@@ -148,7 +156,7 @@ public class Version implements Comparable<Version>, Serializable {
         // name segment
         if (st.hasMoreTokens()) {
             modifier = st.nextToken();
-            while(st.hasMoreTokens()) {
+            while (st.hasMoreTokens()) {
                 modifier += st.nextToken();
             }
         }
@@ -165,7 +173,7 @@ public class Version implements Comparable<Version>, Serializable {
      * @param aMajor major version number
      * @param aMinor minor version number
      * @param aBuild build number
-     * @param aName build name, <code>null</code> value becomes empty string
+     * @param aName  build name, <code>null</code> value becomes empty string
      */
     public Version(final int aMajor, final int aMinor, final int aBuild, final String modifier) {
         this.major = aMajor;
@@ -213,16 +221,15 @@ public class Version implements Comparable<Version>, Serializable {
     /**
      * Compares two version identifiers to see if this one is greater than or equal to the argument.
      * <p>
-     * A version identifier is considered to be greater than or equal if its major component is
-     * greater than the argument major component, or the major components are equal and its minor
-     * component is greater than the argument minor component, or the major and minor components are
-     * equal and its build component is greater than the argument build component, or all components
-     * are equal.
+     * A version identifier is considered to be greater than or equal if its major component is greater than
+     * the argument major component, or the major components are equal and its minor component is greater than
+     * the argument minor component, or the major and minor components are equal and its build component is
+     * greater than the argument build component, or all components are equal.
      * </p>
      *
      * @param other the other version identifier
      * @return <code>true</code> if this version identifier is compatible with the given version
-     *         identifier, and <code>false</code> otherwise
+     * identifier, and <code>false</code> otherwise
      */
     public boolean greaterOrEqual(final Version other) {
         if (other == null) {
@@ -247,16 +254,16 @@ public class Version implements Comparable<Version>, Serializable {
     /**
      * Compares two version identifiers for compatibility.
      * <p>
-     * A version identifier is considered to be compatible if its major component equals to the
-     * argument major component, and its minor component is greater than or equal to the argument
-     * minor component. If the minor components are equal, than the build component of the version
-     * identifier must be greater than or equal to the build component of the argument identifier.
+     * A version identifier is considered to be compatible if its major component equals to the argument major
+     * component, and its minor component is greater than or equal to the argument minor component. If the
+     * minor components are equal, than the build component of the version identifier must be greater than or
+     * equal to the build component of the argument identifier.
      * </p>
      * TODO extend the version syntax to allow compatibility modifiers for accepted versions.
-     * 
+     *
      * @param other the other version identifier
      * @return <code>true</code> if this version identifier is compatible with the given version
-     *         identifier, and <code>false</code> otherwise
+     * identifier, and <code>false</code> otherwise
      */
     public boolean compatible(final Version other) {
         if (other == null) {
@@ -280,13 +287,13 @@ public class Version implements Comparable<Version>, Serializable {
     /**
      * Compares two version identifiers for equivalence.
      * <p>
-     * Two version identifiers are considered to be equivalent if their major and minor components
-     * equal and are at least at the same build level as the argument.
+     * Two version identifiers are considered to be equivalent if their major and minor components equal and
+     * are at least at the same build level as the argument.
      * </p>
      *
      * @param other the other version identifier
      * @return <code>true</code> if this version identifier is equivalent to the given version
-     *         identifier, and <code>false</code> otherwise
+     * identifier, and <code>false</code> otherwise
      */
     public boolean equivalent(final Version other) {
         if (other == null) {
@@ -309,7 +316,7 @@ public class Version implements Comparable<Version>, Serializable {
      *
      * @param other the other version identifier
      * @return <code>true</code> if this version identifier is greater than the given version
-     *         identifier, and <code>false</code> otherwise
+     * identifier, and <code>false</code> otherwise
      */
     public boolean greater(final Version other) {
         if (other == null) {

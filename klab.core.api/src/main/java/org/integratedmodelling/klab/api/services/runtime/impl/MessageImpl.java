@@ -59,7 +59,7 @@ public class MessageImpl implements Message, Serializable {
 
 	@Override
 	public String toString() {
-		return "{" + identity + ": " + messageClass + "/" + messageType + ": " + payload + "}";
+		return "{" + messageClass + "/" + messageType + ": " + payload + "}";
 	}
 
 	public MessageImpl inResponseTo(Message message) {

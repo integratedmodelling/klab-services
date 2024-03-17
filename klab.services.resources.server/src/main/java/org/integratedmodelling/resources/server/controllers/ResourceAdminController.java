@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
@@ -190,16 +191,16 @@ public class ResourceAdminController {
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @GetMapping(ServicesAPI.RESOURCES.LIST_PROJECTS)
-    public Collection<Project> listProjects() {
+    @GetMapping(value = ServicesAPI.RESOURCES.LIST_PROJECTS, produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody Collection<Project> listProjects() {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.listProjects();
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @GetMapping(ServicesAPI.RESOURCES.LIST_RESOURCE_URNS)
-    public Collection<String> listResourceUrns() {
+    @GetMapping(value = ServicesAPI.RESOURCES.LIST_RESOURCE_URNS, produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody Collection<String> listResourceUrns() {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.listResourceUrns();
         }

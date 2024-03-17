@@ -390,6 +390,8 @@ public class Resources {
             @Override
             public void run() {
 
+                KlabCLI.INSTANCE.modeler().importProject(projectUrl, workspace, service);
+
                 try {
                     var url = new File(projectUrl).isDirectory() ? new File(projectUrl).toURI().toURL() :
                               new URL(projectUrl);

@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UIController;
+import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
 
 import java.util.function.BiConsumer;
@@ -22,22 +23,25 @@ import java.util.function.BiConsumer;
  * <p>
  * Call {@link #boot()} in a separate thread when the view is initialized and let the UI events do the rest.
  */
-public class Modeler extends AbstractUIController implements PropertyHolder {
+public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
+
 
     private final BiConsumer<Scope, Message>[] listeners;
     EngineConfiguration workbench;
     private ContextScope currentContext;
     private SessionScope currentSession;
 
-    public Modeler(BiConsumer<Scope, Message>... listeners) {
+    public ModelerImpl(BiConsumer<Scope, Message>... listeners) {
         this.listeners = listeners;
+        // TODO instantiate all the default views. They exist independent of what happens in the view.
+
         // TODO read the workbench config
     }
 
     @Override
     public Engine createEngine() {
         var ret = new EngineClient();
-        ret.addEventListener((scope, message) -> onMessage(scope, message));
+//        ret.addEventListener((scope, message) -> onMessage(scope, message));
         if (this.listeners != null) {
             for (var listener : this.listeners) {
                 ret.addEventListener(listener);
@@ -46,8 +50,15 @@ public class Modeler extends AbstractUIController implements PropertyHolder {
         return ret;
     }
 
-    private void onMessage(Scope scope, Message message) {
-        // TODO react to events
+//    private void onMessage(Scope scope, Message message) {
+//        // TODO react to events
+//        System.out.println("AHA " + message);
+//    }
+
+    @Override
+    public void setOption(Option option, Object... payload) {
+        // TODO validate option
+        // TODO react
     }
 
     @Override
@@ -93,4 +104,11 @@ public class Modeler extends AbstractUIController implements PropertyHolder {
         // TODO named session
         return null;
     }
+
+
+    @Override
+    public void importProject(String projectUrl, String workspace, String service) {
+    }
+
+
 }
