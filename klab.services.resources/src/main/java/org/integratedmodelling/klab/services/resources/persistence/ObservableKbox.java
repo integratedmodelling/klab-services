@@ -74,7 +74,7 @@ public abstract class ObservableKbox extends H2Kbox {
     private Map<String, Set<String>> coreTypeHash = new HashMap<>();
     private Map<String, Concept> conceptHash = new HashMap<>();
 
-    protected Reasoner reasoner;
+//    protected Reasoner reasoner;
     protected Scope scope;
     protected ResourcesService resourceService;
 
@@ -98,7 +98,7 @@ public abstract class ObservableKbox extends H2Kbox {
             // return
             // reasoner.declareObservable(resourceService.resolveObservable(typeHash.get(id)));
             // }
-            return reasoner.declareObservable(resourceService.resolveObservable(typeHash.get(id)));
+            return scope.getService(Reasoner.class).declareObservable(resourceService.resolveObservable(typeHash.get(id)));
         }
         return null;
     }
@@ -109,13 +109,13 @@ public abstract class ObservableKbox extends H2Kbox {
 
     protected String joinStringConditions(String field, Collection<?> stringValues, String operator) {
 
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
 
         for (Object o : stringValues) {
-            ret += (ret.isEmpty() ? "" : (" " + operator + " ")) + field + " = '" + o + "'";
+            ret.append((ret.length() == 0) ? "" : (" " + operator + " ")).append(field).append(" = '").append(o).append("'");
         }
 
-        return ret;
+        return ret.toString();
     }
 
     /**
@@ -165,7 +165,7 @@ public abstract class ObservableKbox extends H2Kbox {
             return 0;
         }
         List<Long> ret = database.queryIds("SELECT COUNT(*) from " + getMainTableId() + ";");
-        return ret.size() > 0 ? ret.get(0) : 0L;
+        return !ret.isEmpty() ? ret.getFirst() : 0L;
     }
 
     class ObservableSchema implements Schema {
@@ -270,7 +270,7 @@ public abstract class ObservableKbox extends H2Kbox {
             conceptHash.put(definition, observable);
 
             // store all existing definitions with same core type
-            Concept coreType = reasoner.coreObservable(observable);
+            Concept coreType = scope.getService(Reasoner.class).coreObservable(observable);
             String cdef = coreType.getUrn();
             Set<String> cset = coreTypeHash.get(cdef);
             if (cset == null) {
@@ -303,7 +303,7 @@ public abstract class ObservableKbox extends H2Kbox {
     public Set<Long> getCompatibleTypeIds(Observable observable, Concept context) {
 
         Set<Long> ret = new HashSet<>();
-        Concept main = reasoner.coreObservable(observable);
+        Concept main = scope.getService(Reasoner.class).coreObservable(observable);
         if (main == null) {
             /*
              * not a domain concept or abstract; can't have observables.
@@ -327,7 +327,7 @@ public abstract class ObservableKbox extends H2Kbox {
              * to specialized contexts
              */
 
-            if (reasoner.semanticDistance(candidate, observable,
+            if (scope.getService(Reasoner.class).semanticDistance(candidate, observable,
                     context)/*
                              * TODO handle the resolved predicates?
                              * candidate.getSemanticDistance(observable, context,
@@ -363,7 +363,7 @@ public abstract class ObservableKbox extends H2Kbox {
 
                     if (candidate.is(SemanticType.PREDICATE)) {
                         // inherency must align with the resolution mode
-                        boolean hasDistributedInherency = reasoner.hasDistributedInherency(candidate);
+                        boolean hasDistributedInherency = scope.getService(Reasoner.class).hasDistributedInherency(candidate);
                         ok = (hasDistributedInherency && instantiation) || (!hasDistributedInherency && !instantiation);
                     }
                     if (ok) {
@@ -388,12 +388,12 @@ public abstract class ObservableKbox extends H2Kbox {
         List<Concept> ret = new ArrayList<>();
         ret.add(concept);
         if (concept.is(SemanticType.TRAIT) || concept.is(SemanticType.ROLE)) {
-            Concept base = reasoner.baseParentTrait(concept);
+            Concept base = scope.getService(Reasoner.class).baseParentTrait(concept);
             if (base == null) {
                 return ret;
             }
             for (;;) {
-                concept = reasoner.parent(concept);
+                concept = scope.getService(Reasoner.class).parent(concept);
                 ret.add(concept);
                 if (concept.isAbstract() || concept.equals(base)) {
                     break;
@@ -417,12 +417,12 @@ public abstract class ObservableKbox extends H2Kbox {
         super(name);
 
         this.scope = scope;
-        this.reasoner = scope.getService(Reasoner.class);
+//        this.reasoner = scope.getService(Reasoner.class);
         this.resourceService = scope.getService(ResourcesService.class);
 
-        if (this.reasoner == null || this.resourceService == null) {
-            throw new KlabIllegalStateException("cannot initialize kbox without a valid reasoner or resource service");
-        }
+//        if (this.reasoner == null || this.resourceService == null) {
+//            throw new KlabIllegalStateException("cannot initialize kbox without a valid reasoner or resource service");
+//        }
 
         setSchema(Concept.class, new ObservableSchema());
         setSchema(KimNamespace.class, new NamespaceSchema());
@@ -636,7 +636,7 @@ public abstract class ObservableKbox extends H2Kbox {
             declaration = declaration.replace(key.getFirst().getUrn(), rep);
         }
 
-        return reasoner.declareConcept(resourceService.resolveConcept(declaration));
+        return scope.getService(Reasoner.class).declareConcept(resourceService.resolveConcept(declaration));
     }
 
 }

@@ -31,7 +31,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
-import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.knowledge.WorldviewImpl;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -423,7 +422,11 @@ public class WorkspaceManager {
         for (var workspace : configuration.getWorkspaces().keySet()) {
 
             // ensure existing
-            getWorkspace(workspace);
+            if (!this.workspaces.containsKey(workspace)) {
+                var ws = new WorkspaceImpl();
+                ws.setUrn(workspace);
+                this.workspaces.put(workspace, ws);
+            }
 
             for (var project : configuration.getWorkspaces().get(workspace)) {
                 var projectConfiguration = configuration.getProjectConfiguration().get(project);
@@ -728,7 +731,7 @@ public class WorkspaceManager {
             String projectName = Utils.URLs.getURLBaseName(projectUrl);
             ResourcesConfiguration.ProjectConfiguration config =
                     this.configuration.getProjectConfiguration().get(projectName);
-            if (config != null) {
+            if (config == null) {
                 // throw exception
             }
 
@@ -737,7 +740,15 @@ public class WorkspaceManager {
                 File workspace = BaseService.getConfigurationSubdirectory(KlabService.Type.RESOURCES,
                         startupOptions, "workspaces");
 
-                try {
+                File projectHome = new File(workspace + File.separator + projectName);
+
+                if (projectHome.isDirectory()) {
+
+                    scope.info("Pulling recent changes in " + projectHome);
+                    Utils.Git.pull(projectHome);
+                    ret = new FileProjectStorage(projectHome, this::handleFileChange);
+
+                } else try {
 
                     /**
                      * This should be the main use of project resources. TODO handle credentials
@@ -753,9 +764,8 @@ public class WorkspaceManager {
 
                 } catch (Throwable t) {
                     // just make the return value null
-                    File ws = new File(workspace + File.separator + projectName);
-                    if (ws.exists()) {
-                        Utils.Files.deleteQuietly(ws);
+                    if (projectHome.exists()) {
+                        Utils.Files.deleteQuietly(projectHome);
                     }
                 }
 

@@ -50,7 +50,11 @@ public abstract class H2Kbox {
 	protected Map<Class<?>, Deserializer> deserializers = new HashMap<>();
 
 	public H2Kbox(String name) {
-		database = H2Database.create(name);
+		try {
+			database = H2Database.create(name);
+		} catch (Throwable t) {
+			System.out.println("DIO MAIALE");
+		}
 	}
 
 	public <T> List<T> query(String query, Class<T> cls, Channel monitor) {

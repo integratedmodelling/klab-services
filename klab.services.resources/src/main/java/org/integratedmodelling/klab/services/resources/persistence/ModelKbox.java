@@ -684,7 +684,7 @@ public class ModelKbox extends ObservableKbox {
             return ret;
         }
 
-        Observable mainObservable = reasoner.declareObservable(model.getObservables().get(0));
+        Observable mainObservable = scope.getService(Reasoner.class).declareObservable(model.getObservables().get(0));
 
         for (ModelReference m : getModelDescriptors(model, monitor)) {
             ret.add(m);
@@ -694,7 +694,7 @@ public class ModelKbox extends ObservableKbox {
 
             for (KimObservable attr : model.getAttributeObservables()) {
 
-                Observable observable = reasoner.declareObservable(attr);
+                Observable observable = scope.getService(Reasoner.class).declareObservable(attr);
 
                 if (attr == null) {
                     // only in error
@@ -708,7 +708,7 @@ public class ModelKbox extends ObservableKbox {
                  */
                 Concept type = observable.getSemantics();
                 if (model.isInstantiator()) {
-                    Concept context = reasoner.inherent(type);
+                    Concept context = scope.getService(Reasoner.class).inherent(type);
                     if (context == null || !scope.getService(Reasoner.class).subsumes(context,
                             mainObservable.getSemantics())) {
                         type = observable.builder(monitor).of(mainObservable.getSemantics()).buildConcept();
@@ -805,7 +805,7 @@ public class ModelKbox extends ObservableKbox {
         Observable main = null;
         for (KimObservable kobs : model.getObservables()) {
 
-            Observable oobs = reasoner.declareObservable(kobs);
+            Observable oobs = scope.getService(Reasoner.class).declareObservable(kobs);
 
             if (first) {
                 main = oobs;
@@ -905,8 +905,8 @@ public class ModelKbox extends ObservableKbox {
              * Subsequent observables inherit any explicit specialization in the main observable of
              * a model
              */
-            Concept specialized = reasoner.directInherent(main.getSemantics());
-            Concept oobsContext = reasoner.inherent(oobs);
+            Concept specialized = scope.getService(Reasoner.class).directInherent(main.getSemantics());
+            Concept oobsContext = scope.getService(Reasoner.class).inherent(oobs);
             if (specialized != null
                     && (oobsContext == null || !scope.getService(Reasoner.class).subsumes(oobsContext, specialized))) {
                 oobs = oobs.builder(monitor).of(specialized).build();
