@@ -161,6 +161,23 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <!-- This makes build info available downstream. Used in klab.distribution to find the ${scmBranch}. Also
+                 creates a build number, not used at the moment. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <repositories>
@@ -173,21 +190,21 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
     </repositories>
-    
+
     <pluginRepositories>
         <pluginRepository>
             <id>sonatype-nexus-snapshots</id>
             <name>Maven Central snapshots</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <releases>
-              <updatePolicy>never</updatePolicy>
+                <updatePolicy>never</updatePolicy>
             </releases>
             <snapshots>
-              <enabled>true</enabled>
+                <enabled>true</enabled>
             </snapshots>
-        </pluginRepository> 
+        </pluginRepository>
     </pluginRepositories>
-    
+
     <dependencyManagement>
         <dependencies>
             <dependency>
