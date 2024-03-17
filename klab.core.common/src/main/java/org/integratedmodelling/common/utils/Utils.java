@@ -15,7 +15,9 @@ import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Service;
@@ -85,6 +87,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return null;
             }
 
+
             private String getAcceptedMediaType(Class<?> resultClass) {
                 if (String.class == resultClass) {
                     return MediaType.PLAIN_TEXT_UTF_8.toString();
@@ -131,11 +134,34 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return null;
             }
 
+            public <T> List<T> getCollection(String apiRequest, Class<T> resultClass, Object... parameters) {
+                try {
+                    var requestBuilder = HttpRequest.newBuilder().GET();
+                    if (authorization != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    var response =
+                            client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
+
+                    if (response != null && response.statusCode() == 200) {
+                        return parseResponseList(response.body(), resultClass);
+                    }
+
+                } catch (Throwable e) {
+                    throw new KlabIOException(e);
+                }
+
+                return java.util.Collections.emptyList();
+
+            }
+
+
             /**
              * PUT helper that sets all headers and automatically handles JSON marshalling.
              *
              * @param apiRequest
-             * @param parameters  paired key, value sequence for URL options
+             * @param parameters paired key, value sequence for URL options
              * @return
              */
             public void put(String apiRequest, Object... parameters) {
@@ -152,7 +178,35 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
             }
 
-            private <T> T parseResponse(String body, Class<T> resultClass) {
+            private <T> List<T> parseResponseList(String body, Class<T> resultClass) {
+                if (body.startsWith("[")) {
+                    List<T> ret = new ArrayList<>();
+                    List<?> list = Json.parseObject(body, List.class);
+                    for (var object : list) {
+                        if (object == null) {
+                            ret.add(null);
+                        } else if (resultClass.isAssignableFrom(object.getClass())) {
+                            ret.add((T) object);
+                        } else if (object instanceof Collection) {
+                            // TODO
+                            throw new KlabUnimplementedException("json retrieval of collections within collections");
+                        } else if (object instanceof Map map) {
+                            ret.add(Json.convertMap(map, resultClass));
+                        }
+                    }
+                } else {
+                    // try parsing a single object and returning as a list
+                    T object = parseResponse(body, resultClass);
+                    if (object != null) {
+                        return List.of(object);
+                    }
+                }
+
+                return java.util.Collections.emptyList();
+            }
+
+
+                private <T> T parseResponse(String body, Class<T> resultClass) {
                 if (body == null) {
                     return null;
                 }
@@ -184,6 +238,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     client.close();
                 }
             }
+
         }
 
         /**

@@ -323,7 +323,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public Collection<Project> listProjects() {
-        return (Collection<Project>) client.get(ServicesAPI.RESOURCES.LIST_PROJECTS, List.class);
+        return client.getCollection(ServicesAPI.RESOURCES.LIST_PROJECTS, Project.class);
     }
 
     @Override
