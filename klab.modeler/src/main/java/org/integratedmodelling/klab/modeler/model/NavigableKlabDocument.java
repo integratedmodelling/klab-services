@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -16,6 +17,22 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 		extends NavigableKlabAsset<T> implements KlabDocument<E> {
 
 	private static final long serialVersionUID = 7741675272275189813L;
+
+
+	/**
+	 * Use to inject implementation-specific instrumentation
+	 * @return
+	 */
+	public Parameters<String> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(Parameters<String> parameters) {
+		this.parameters = parameters;
+	}
+
+	protected Parameters<String> parameters = Parameters.create();
+
 
 	public NavigableKlabDocument(T document, NavigableKlabAsset<?> parent) {
 		super(document, parent);
