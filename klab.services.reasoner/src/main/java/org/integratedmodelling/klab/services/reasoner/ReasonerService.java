@@ -261,7 +261,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 //        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
 //                capabilities());
 
-        File config = serviceOptions.fileFromPath(serviceOptions.getConfigurationPath());
+        File config = getConfigurationDirectory(serviceOptions);;
         config = new File(config + File.separator + "reasoner.yaml");
         if (config.exists() && config.length() > 0 && !serviceOptions.isClean()) {
             // TODO/FIXME half-baked logics, see ResourcesProvider
@@ -302,7 +302,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     private void saveConfiguration() {
-        File config = getFileInConfigurationDirectory(Type.REASONER, getStartupOptions(), "reasoner.yaml");
+        File config = getFileInConfigurationDirectory(serviceOptions, "reasoner.yaml");
         org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 

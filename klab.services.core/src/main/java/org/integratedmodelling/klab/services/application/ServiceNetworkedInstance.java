@@ -105,7 +105,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
          *  identity. Otherwise proceed as per default. If service is certified, record the
          *  privileges and adjust the service scope.
          */
-        File config = getStartupOptions().fileFromPath(getStartupOptions().getConfigurationPath());
+        File config = BaseService.getConfigurationDirectory(getStartupOptions());
         config = new File(config + File.separator + "klab.cert");
         if (config.isFile()) {
             return authorizationManager.authenticateService(

@@ -38,11 +38,11 @@ public class ServiceStartupOptions implements StartupOptions {
             metaVar = "<SIMPLE_STRING>")
     String nodeName = null;
 
-    @Option(
-            name = "-config",
-            usage = "subdirectory of standard dataDir containing configuration files",
-            metaVar = "<SIMPLE_STRING>")
-    String configurationPath = null;
+//    @Option(
+//            name = "-config",
+//            usage = "subdirectory of standard dataDir containing configuration files",
+//            metaVar = "<SIMPLE_STRING>")
+//    String configurationPath = null;
 
 
     @Option(
@@ -72,6 +72,9 @@ public class ServiceStartupOptions implements StartupOptions {
 
     @Option(name = "-components", usage = "paths to any custom component")
     List<File> components = new ArrayList<>();
+
+    KlabService.Type serviceType;
+
 
     private List<String> arguments = new ArrayList<>();
 
@@ -107,9 +110,10 @@ public class ServiceStartupOptions implements StartupOptions {
      */
     public static ServiceStartupOptions defaultOptions(KlabService.Type serviceType) {
         var ret = new ServiceStartupOptions();
+        ret.serviceType = serviceType;
         ret.port = serviceType.defaultPort;
         ret.contextPath = "/" + serviceType.defaultServicePath;
-        ret.configurationPath = "services/" + serviceType.defaultServicePath;
+//        ret.configurationPath = "services/" + serviceType.defaultServicePath;
         ret.nodeName = serviceType.defaultServicePath;
         return ret;
     }
@@ -122,9 +126,10 @@ public class ServiceStartupOptions implements StartupOptions {
      */
     public static ServiceStartupOptions testOptions(KlabService.Type serviceType) {
         var ret = new ServiceStartupOptions();
+        ret.serviceType = serviceType;
         ret.port = serviceType.defaultPort;
         ret.contextPath = "/" + serviceType.defaultServicePath;
-        ret.configurationPath = "services/test/" + serviceType.defaultServicePath;
+//        ret.configurationPath = "services/test/" + serviceType.defaultServicePath;
         ret.nodeName = "service." + serviceType.defaultServicePath + ".test";
         return ret;
     }
@@ -200,9 +205,9 @@ public class ServiceStartupOptions implements StartupOptions {
         return port;
     }
 
-    public String getConfigurationPath() {
-        return configurationPath;
-    }
+//    public String getConfigurationPath() {
+//        return configurationPath;
+//    }
 
     @Override
     public boolean isHelp() {
@@ -279,9 +284,9 @@ public class ServiceStartupOptions implements StartupOptions {
         this.nodeName = nodeName;
     }
 
-    public void setConfigurationPath(String configurationPath) {
-        this.configurationPath = configurationPath;
-    }
+//    public void setConfigurationPath(String configurationPath) {
+//        this.configurationPath = configurationPath;
+//    }
 
     public void setServiceSecret(String serviceSecret) {
         this.serviceSecret = serviceSecret;
@@ -337,5 +342,14 @@ public class ServiceStartupOptions implements StartupOptions {
 
     public void setContextPath(String contextPath) {
         this.contextPath = contextPath;
+    }
+
+
+    public KlabService.Type getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(KlabService.Type serviceType) {
+        this.serviceType = serviceType;
     }
 }

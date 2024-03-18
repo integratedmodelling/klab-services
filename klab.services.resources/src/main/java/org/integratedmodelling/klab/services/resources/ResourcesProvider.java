@@ -104,12 +104,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         super(scope, Type.RESOURCES, options);
 
         this.db =
-                DBMaker.fileDB(getConfigurationSubdirectory(Type.RESOURCES, options, "catalog") + File.separator +
+                DBMaker.fileDB(getConfigurationSubdirectory(options, "catalog") + File.separator +
                         "resources.db").transactionEnable().closeOnJvmShutdown().make();
         this.catalog =
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
 
-        this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(),
+        this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(), this,
                 this::resolveRemoteProject);
     }
 

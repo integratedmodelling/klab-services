@@ -31,7 +31,7 @@ public abstract class BaseService implements KlabService {
 
     protected ServiceScope scope;
     protected String localName = "Embedded";
-    private ServiceStartupOptions startupOptions;
+    protected final ServiceStartupOptions startupOptions;
 
     //    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
@@ -101,32 +101,41 @@ public abstract class BaseService implements KlabService {
 
     public abstract void initializeService();
 
-    public static File getConfigurationDirectory(KlabService.Type serviceType,
-                                                 ServiceStartupOptions startupOptions) {
+    public static File getDataDir(ServiceStartupOptions startupOptions) {
+        return startupOptions.getDataDir() == null ? Configuration.INSTANCE.getDataPath() :
+               startupOptions.getDataDir();
+    }
+
+    public static File getConfigurationDirectory(ServiceStartupOptions startupOptions) {
         var ret =
-                new File(startupOptions.fileFromPath(startupOptions.getConfigurationPath()) + File.separator + serviceType.name().toLowerCase());
+                new File(getDataDir(startupOptions) + File.separator + "services" + File.separator + startupOptions.getServiceType().name().toLowerCase());
         ret.mkdirs();
         return ret;
     }
 
-    public static File getConfigurationSubdirectory(KlabService.Type serviceType,
-                                                    ServiceStartupOptions startupOptions,
+    public static File getConfigurationSubdirectory(ServiceStartupOptions startupOptions,
                                                     String relativePath) {
-        var ret =
-                new File(startupOptions.fileFromPath(startupOptions.getConfigurationPath()) + File.separator
-                        + serviceType.name().toLowerCase() + (relativePath.startsWith("/") ? relativePath : ("/" + relativePath)));
+        var ret = new File(getConfigurationDirectory(startupOptions)
+                + ((relativePath.startsWith("/") ? relativePath : (File.separator + relativePath))));
         ret.mkdirs();
         return ret;
     }
 
-
-    public static File getFileInConfigurationDirectory(Type type, ServiceStartupOptions options,
+    public static File getFileInConfigurationDirectory(ServiceStartupOptions options,
                                                        String filename) {
-        return new File(getConfigurationDirectory(type, options) + File.separator + filename);
+        return new File(getConfigurationDirectory(options) + File.separator + filename);
     }
 
-    public static File getFileInConfigurationSubdirectory(Type type, ServiceStartupOptions options,
+    public static File getFileInConfigurationSubdirectory(ServiceStartupOptions options,
                                                           String subdirectory, String filename) {
-        return new File(getConfigurationSubdirectory(type, options, subdirectory) + File.separator + filename);
+        return new File(getConfigurationSubdirectory(options, subdirectory) + File.separator + filename);
+    }
+
+    public ServiceStartupOptions startupOptions() {
+        return startupOptions;
+    }
+
+    public KlabService.Type serviceType() {
+        return type;
     }
 }
