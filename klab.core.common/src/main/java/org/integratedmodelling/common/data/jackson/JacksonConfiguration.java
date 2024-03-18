@@ -7,12 +7,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.*;
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
@@ -243,18 +246,25 @@ public class JacksonConfiguration {
                 return new HashSet<>();
             } else if (Queue.class.isAssignableFrom(type)) {
                 return new LinkedList<>();
+            } else if (Collection.class.isAssignableFrom(type)) {
+                // generic collection, just use an ArrayList
+                return new ArrayList<>();
             }
             throw new KlabInternalErrorException("Unpredicted collection type in custom deserializer: " + type.getCanonicalName());
         }
 
         private Object checkField(Class<?> type, Object val) {
+
             if (type.isEnum() && val instanceof String) {
                 val = Enum.valueOf((Class<? extends Enum>) type, (String) val);
             } else if ((type == Long.class || type == long.class) && val instanceof Integer integer) {
                 val = integer.longValue();
             } else if ((type == Integer.class || type == int.class) && val instanceof Long integer) {
                 val = integer.intValue();
+            } else if (val instanceof Map map && !Map.class.isAssignableFrom(type)) {
+                val = Utils.Json.convertMap(map, type);
             }
+
             return val;
         }
     }
@@ -270,10 +280,11 @@ public class JacksonConfiguration {
 
         // needed to avoid some shit, provided we add and risk even more shit
         mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
-
         SimpleModule module = new SimpleModule();
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
-                                      Triple.class, Unit.class, Project.class, KlabAsset.class, Currency.class,
+                                      RepositoryMetadata.class, Project.Manifest.class,
+                                      Triple.class, Unit.class, Project.class, KlabAsset.class,
+                                      Currency.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
             module.addSerializer(cls, new PolymorphicSerializer());

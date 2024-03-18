@@ -180,6 +180,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             private <T> List<T> parseResponseList(String body, Class<T> resultClass) {
                 if (body.startsWith("[")) {
+
                     List<T> ret = new ArrayList<>();
                     List<?> list = Json.parseObject(body, List.class);
                     for (var object : list) {
@@ -194,6 +195,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             ret.add(Json.convertMap(map, resultClass));
                         }
                     }
+                    return ret;
+
                 } else {
                     // try parsing a single object and returning as a list
                     T object = parseResponse(body, resultClass);
