@@ -99,7 +99,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public Collection<Workspace> listWorkspaces() {
-        return null;
+        return client.getCollection(ServicesAPI.RESOURCES.LIST_WORKSPACES, Workspace.class);
     }
 
     @Override

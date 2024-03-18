@@ -15,8 +15,8 @@ import java.lang.annotation.*;
  * <p>
  * In Java-based views, actions do not necessarily need to be explicitly annotated as the dispatch() method
  * can be called explicitly on the controller. Still, it's good practice to only use explicitly declared
- * actions, which can be validated, documented and used whenever the view is specified in anything other than
- * Java, e.g. JSON or k.Actors.
+ * actions, which can be validated, documented and possibly transpiled whenever the view is specified in
+ * anything other than Java, e.g. JSON or k.Actors.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -47,5 +47,20 @@ public @interface UIActionHandler {
     String label() default "";
 
     String tooltip() default "";
+
+    /**
+     * The target class of the action, which must be an object in current focus within the view this action is
+     * part of. If the target is Void.class, the action is enabled globally in the view that contains it..
+     *
+     * @return
+     */
+    Class<?> target() default Void.class;
+
+    /**
+     * The events that this action may send to the UI once it's executed.
+     *
+     * @return the event list
+     */
+    UIReactor.UIEvent[] sends() default {};
 
 }

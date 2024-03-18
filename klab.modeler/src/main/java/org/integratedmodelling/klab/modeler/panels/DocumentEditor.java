@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
 
 @UIView(UIReactor.Type.DocumentEditor)
-public interface DocumentEditor extends Panel {
+public interface DocumentEditor extends Panel<KlabDocument<?>> {
 
     KlabDocument<?> getDocument();
 

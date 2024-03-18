@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
@@ -18,6 +19,7 @@ import picocli.CommandLine.Parameters;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -357,16 +359,67 @@ public class Resources {
                 "List and describe local projects.", ""}, subcommands = {})
         public static class List implements Runnable {
 
+            @CommandLine.Spec
+            CommandLine.Model.CommandSpec commandSpec;
+
             @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
                     "Resource service to connect to"}, required = false)
             private String service;
 
+            @Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {
+                    "List project contents and metadata"}, required = false)
+            private boolean verbose;
+
             @Override
             public void run() {
+
+                PrintWriter out = commandSpec.commandLine().getOut();
+                PrintWriter err = commandSpec.commandLine().getErr();
+
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
                     for (var project : ((ResourcesService.Admin) service).listProjects()) {
-                        System.out.println("   " + project.getUrn());
+                        out.println("   " + project.getUrn());
+                        if (verbose) {
+
+                            boolean first = true;
+                            for (var ontology : project.getOntologies()) {
+                                if (first) {
+                                    out.println("   Ontologies:");
+                                }
+                                out.println("      " + ontology.getUrn());
+                                first = false;
+                            }
+                            first = true;
+                            for (var namespace : project.getNamespaces()) {
+                                if (first) {
+                                    out.println("   Namespaces::");
+                                }
+                                out.println("      " + namespace.getUrn());
+                                first = false;
+                            }
+                            for (var behavior : project.getBehaviors()) {
+                                if (first) {
+                                    out.println("   Behaviors::");
+                                }
+                                out.println("      " + behavior.getUrn());
+                                first = false;
+                            }
+                            for (var app : project.getApps()) {
+                                if (first) {
+                                    out.println("   Applications:");
+                                }
+                                out.println("      " + app.getUrn());
+                                first = false;
+                            }
+                            for (var testcase : project.getTestCases()) {
+                                if (first) {
+                                    out.println("   Test cases:");
+                                }
+                                out.println("      " + testcase.getUrn());
+                                first = false;
+                            }
+                        }
                     }
                 }
             }

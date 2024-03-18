@@ -20,15 +20,33 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.integratedmodelling</groupId>
+                <artifactId>klab.product</artifactId>
+                <version>1.0.1-SNAPSHOT</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>package-release</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputDirectory>target/build</outputDirectory>
+                    <productName>klab.shell</productName>
+                    <productClass>CLI</productClass>
+                    <productMain>org.integratedmodelling.cli.KlabCLI</productMain>
+                    <productDescription>The k.LAB command line shell</productDescription>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <dependencies>
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.modeler</artifactId>
-            <version>${klab.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.engine.client</artifactId>
             <version>${klab.version}</version>
         </dependency>
         <dependency>

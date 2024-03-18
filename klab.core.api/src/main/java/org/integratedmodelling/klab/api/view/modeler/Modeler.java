@@ -12,6 +12,9 @@ import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
  * The modeler must wrap all k.LAB assets coming from the services into
  * {@link org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset} to enable navigation and
  * selection.
+ *
+ * TODO the modeler is itself a view that should receive UI events, particularly those related to
+ * showing and hiding views.
  */
 public interface Modeler extends UIController {
 

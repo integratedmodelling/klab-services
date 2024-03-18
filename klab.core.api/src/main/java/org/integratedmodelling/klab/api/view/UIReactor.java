@@ -47,6 +47,7 @@ public interface UIReactor {
         DocumentationEditor(ViewCategory.Panel),
         DocumentEditor(ViewCategory.Panel, NavigableDocument.class),
         KnowledgeNavigator(ViewCategory.View),
+        DistributionPanel(ViewCategory.Panel),
         KnowledgeEditor(ViewCategory.Panel),
         ResourceNavigator(ViewCategory.View),
         ProjectPropertyEditor(ViewCategory.Panel),

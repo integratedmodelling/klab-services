@@ -26,6 +26,10 @@ public @interface UIView {
      */
     UIReactor.Type value();
 
+    UIReactor.UIEvent[] sends() default {};
+
+    UIReactor.UIEvent[] receives() default {};
+
     /**
      * The ID is used to associate to components in declarative languages or JSON. If not provided, it
      * defaults to the name of the annotated class.

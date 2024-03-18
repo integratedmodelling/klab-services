@@ -17,9 +17,9 @@ import java.util.function.BiConsumer;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
- * k.Modeler application. Uses an {@link EngineClient} which will connect to local services if available. Also
- * handles one or more users and keeps a catalog of sessions and contexts, tagging the "current" one in focus
- * in the UI.
+ * k.Modeler application. Uses an {@link org.integratedmodelling.common.services.client.engine.EngineClient}
+ * which will connect to local services if available. Also handles one or more users and keeps a catalog of
+ * sessions and contexts, tagging the "current" one in focus in the UI.
  * <p>
  * Call {@link #boot()} in a separate thread when the view is initialized and let the UI events do the rest.
  */
@@ -41,7 +41,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     public Engine createEngine() {
         var ret = new EngineClient();
-//        ret.addEventListener((scope, message) -> onMessage(scope, message));
+        //        ret.addEventListener((scope, message) -> onMessage(scope, message));
         if (this.listeners != null) {
             for (var listener : this.listeners) {
                 ret.addEventListener(listener);
@@ -50,10 +50,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         return ret;
     }
 
-//    private void onMessage(Scope scope, Message message) {
-//        // TODO react to events
-//        System.out.println("AHA " + message);
-//    }
+    //    private void onMessage(Scope scope, Message message) {
+    //        // TODO react to events
+    //        System.out.println("AHA " + message);
+    //    }
 
     @Override
     public void setOption(Option option, Object... payload) {
