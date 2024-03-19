@@ -15,9 +15,11 @@ import java.util.Objects;
 //import org.eclipse.ui.model.IWorkbenchAdapter;
 //import org.eclipse.ui.model.IWorkbenchAdapter2;
 //import org.eclipse.ui.model.IWorkbenchAdapter3;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 //import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -38,12 +40,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements /*IAdap
 
 	protected T delegate;
 	protected NavigableAsset parent;
-//	protected IResource resource;
 	protected String path;
 
-//	public IResource getResource() {
-//		return resource;
-//	}
 
 	public NavigableKlabAsset(T asset, NavigableKlabAsset<?> parent) {
 		this.delegate = asset;
@@ -145,6 +143,14 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements /*IAdap
 //			Activator.get().getNavigableWorkspace(workspace, Activator.engine().canEditWorkspace());
 		default -> null;
 		};
+	}
+
+	public NavigableAsset getParent() {
+		return parent;
+	}
+
+	public void setParent(NavigableAsset parent) {
+		this.parent = parent;
 	}
 
 }
