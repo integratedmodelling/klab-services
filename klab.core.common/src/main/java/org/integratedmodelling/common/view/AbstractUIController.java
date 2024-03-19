@@ -66,17 +66,29 @@ public abstract class AbstractUIController implements UIController {
      */
     public void boot() {
         engine = createEngine();
+        createView();
         engine.addEventListener((scope, message) -> {
             processMessage(scope, message);
         });
         engine.boot();
     }
 
+    protected void createView() {
+
+    }
+
+    /**
+     * Translate k.LAB events into UI events and dispatch them.
+     *
+     * @param scope
+     * @param message
+     */
     private void processMessage(Scope scope, Message message) {
         switch (message.getMessageClass()) {
             case Void -> {
             }
             case UserInterface -> {
+                // shouldn't happen
             }
             case UserContextChange -> {
             }

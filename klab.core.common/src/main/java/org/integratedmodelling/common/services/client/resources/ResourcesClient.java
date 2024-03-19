@@ -52,12 +52,6 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         super(url);
     }
 
-    public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOURCES_" + serverId));
-    }
-
     @Override
     public Capabilities capabilities() {
         return client.get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);

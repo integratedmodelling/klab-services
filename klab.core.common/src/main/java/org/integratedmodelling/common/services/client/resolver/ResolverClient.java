@@ -40,12 +40,6 @@ public class ResolverClient extends ServiceClient implements Resolver {
         super(url);
     }
 
-    public boolean isLocal() {
-        String serverId = Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
-    }
-
     @Override
     public Capabilities capabilities() {
         return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);

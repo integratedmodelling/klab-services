@@ -16,7 +16,7 @@ import java.security.Principal;
 public class KlabServiceController {
 
     @Autowired
-    ServiceNetworkedInstance instance;
+    ServiceNetworkedInstance<?> instance;
 
     @GetMapping(ServicesAPI.CAPABILITIES)
     public KlabService.ServiceCapabilities capabilities(Principal principal) {

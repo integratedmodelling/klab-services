@@ -17,6 +17,7 @@ import java.util.List;
 // TODO remove the argument when all gson dependencies are the same (never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
+                               "org.integratedmodelling.klab.services.messaging",
                                "org.integratedmodelling.klab.services.application.controllers",
                                "org.integratedmodelling.resources.server.controllers"})
 public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider> {

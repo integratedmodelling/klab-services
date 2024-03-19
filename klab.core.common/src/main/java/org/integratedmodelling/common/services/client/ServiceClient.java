@@ -224,10 +224,14 @@ public abstract class ServiceClient implements KlabService {
      */
     private void establishConnection() {
 
+        /*
+        TODO revise the websockets strategy by calling the scope controller if the conditions are there, and
+         obtaining a channel to pair the scopes.
+         */
         this.scope =
-                new AbstractServiceDelegatingScope(status.get().getLocality() == ServiceScope.Locality.LOCALHOST
+                new AbstractServiceDelegatingScope(false
                                                    ? new MessagingChannelImpl(this.authentication.getFirst(),
-                        new WebsocketsClientMessageBus(this.url.toString()))
+                        new WebsocketsClientMessageBus(this.serviceType))
                                                    : new ChannelImpl(this.authentication.getFirst())) {
                     @Override
                     public UserScope createUser(String username, String password) {

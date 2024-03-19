@@ -14,6 +14,15 @@ public interface ServicesAPI {
 	public static String SHUTDOWN = "/shutdown";
 	public static String STATUS = "/public/status";
 
+	public interface SCOPE {
+
+		public static String REGISTER = "/scope/register/{scopeType}/{scopeId}";
+
+		public static String DISPOSE = "/scope/dispose/{scopeId}";
+
+	}
+
+
 	/**
 	 * STOMP endpoint for client/server notifications to session receivers. Handled through
 	 * Websockets protocol.

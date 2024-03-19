@@ -45,7 +45,7 @@ public interface UIController {
     Engine engine();
 
     /**
-     * Boot the engine if needed, and start processing events.
+     * Boot the engine if needed, create the view if needed, and start processing events.
      */
     void boot();
 

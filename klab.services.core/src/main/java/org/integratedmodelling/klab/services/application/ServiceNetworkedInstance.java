@@ -24,10 +24,9 @@ import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.messaging.WebsocketsServerMessageBus;
+import org.integratedmodelling.klab.services.application.security.WebsocketsServerMessageBus;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -52,12 +51,10 @@ import springfox.documentation.spring.web.plugins.Docket;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
@@ -76,8 +73,9 @@ import java.util.stream.StreamSupport;
 // TODO remove the argument when all gson dependencies are the same (probably never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 // These must be repeated in any derived class
-@ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security", "org" +
-        ".integratedmodelling.klab.services.application.controllers"})
+@ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
+                               "org.integratedmodelling.klab.services.messaging",
+                               "org.integratedmodelling.klab.services.application.controllers"})
 public abstract class ServiceNetworkedInstance<T extends BaseService> extends ServiceInstance<T> implements WebMvcConfigurer, InitializingBean {
 
     /*
@@ -191,7 +189,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     }
 
     protected Channel createChannel(UserIdentity identity) {
-        return new MessagingChannelImpl(identity, new WebsocketsServerMessageBus());
+        return new MessagingChannelImpl(identity, null);
     }
 
     private void setPropertiesFromEnvironment(Environment environment) {
@@ -216,17 +214,23 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
 
     public void shutdown() {
         Logging.INSTANCE.info(klabService().getServiceName() + " shutting down in 5 seconds...");
-        Executors.newScheduledThreadPool(1).schedule(() -> {
-            int exitCode = SpringApplication.exit(applicationContext, () -> 0);
-            System.exit(exitCode);
-        }, 5, TimeUnit.SECONDS);
+        try (var executor = Executors.newScheduledThreadPool(1)) {
+            executor.schedule(() -> {
+                int exitCode = SpringApplication.exit(applicationContext, () -> 0);
+                System.exit(exitCode);
+            }, 5, TimeUnit.SECONDS);
+        } catch (Throwable t) {
+            // just exit
+            System.exit(255);
+        }
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
 
         /**
-         * Handle maintenance mode and wait mode, defaulting to maintenance mode after configurable timeout
+         * Handle maintenance mode and wait mode, defaulting to maintenance mode after configurable
+         * timeout
          */
         registry.addInterceptor(new HandlerInterceptor() {
             @Override

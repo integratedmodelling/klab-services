@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessageBus;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -16,6 +19,8 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -27,6 +32,7 @@ import java.util.function.Consumer;
  */
 public class WebsocketsClientMessageBus extends StompSessionHandlerAdapter implements MessageBus {
 
+    private final String url;
     private ObjectMapper objectMapper = new ObjectMapper()
             .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
             .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
@@ -39,25 +45,31 @@ public class WebsocketsClientMessageBus extends StompSessionHandlerAdapter imple
             Collections.synchronizedMap(new HashMap<>());
     //    private Reactor reactor = new Reactor(this);
     private Scope scope;
+    private boolean active = false;
 
-    public WebsocketsClientMessageBus(String url) {
+    public WebsocketsClientMessageBus(KlabService.Type serviceType) {
 
         JacksonConfiguration.configureObjectMapperForKlabTypes(objectMapper);
+        objectMapper = JacksonConfiguration.newObjectMapper();
+        JacksonConfiguration.configureObjectMapperForKlabTypes(objectMapper);
+        this.url =
+                "ws://localhost:" + serviceType.defaultPort + "/" + serviceType.defaultServicePath + ServicesAPI.MESSAGE;
 
-        WebSocketClient webSocketClient = new StandardWebSocketClient();
-        WebSocketStompClient stompClient = new WebSocketStompClient(webSocketClient);
-        stompClient.setInboundMessageSizeLimit(1024 * 1024);
-        var converter = new MappingJackson2MessageConverter();
-        converter.setObjectMapper(this.objectMapper);
-        stompClient.setMessageConverter(converter);
         try {
-            this.session = stompClient.connect(url, this).get();
+            WebSocketClient webSocketClient = new StandardWebSocketClient();
+            WebSocketStompClient stompClient = new WebSocketStompClient(webSocketClient);
+            stompClient.setInboundMessageSizeLimit(1024 * 1024);
+            var converter = new MappingJackson2MessageConverter();
+            converter.setObjectMapper(this.objectMapper);
+            stompClient.setMessageConverter(converter);
+            this.session = stompClient.connectAsync(url, this).get();
+            ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+            taskScheduler.afterPropertiesSet();
+            stompClient.setTaskScheduler(taskScheduler); // for heartbeats
+            active = true;
         } catch (Throwable e) {
-            throw new KlabInternalErrorException(e);
+            Logging.INSTANCE.error("websocket connection failed", e);
         }
-        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
-        taskScheduler.afterPropertiesSet();
-        stompClient.setTaskScheduler(taskScheduler); // for heartbeats
     }
 
 
@@ -101,13 +113,17 @@ public class WebsocketsClientMessageBus extends StompSessionHandlerAdapter imple
 
     @Override
     public synchronized void post(Message message) {
-        session.send("/klab/message", message);
+        if (active) {
+            session.send("/klab/message", message);
+        }
     }
 
     @Override
     public synchronized void post(Message message, Consumer<Message> responder) {
-        responders.put(message.getId(), responder);
-        post(message);
+        if (active) {
+            responders.put(message.getId(), responder);
+            post(message);
+        }
     }
 
     @Override
@@ -213,16 +229,16 @@ public class WebsocketsClientMessageBus extends StompSessionHandlerAdapter imple
         receivers.remove(identity);
     }
 
-//    @Override
-//    public void unsubscribe(Scope identity, Object receiver) {
-//        Set<Object> ret = receivers.get(identity);
-//        if (ret != null) {
-//            ret.remove(receiver);
-//            if (ret.isEmpty()) {
-//                unsubscribe(identity);
-//            }
-//        }
-//    }
+    //    @Override
+    //    public void unsubscribe(Scope identity, Object receiver) {
+    //        Set<Object> ret = receivers.get(identity);
+    //        if (ret != null) {
+    //            ret.remove(receiver);
+    //            if (ret.isEmpty()) {
+    //                unsubscribe(identity);
+    //            }
+    //        }
+    //    }
 
     public void stop() {
         if (session.isConnected()) {

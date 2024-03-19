@@ -21,7 +21,7 @@ import java.security.Principal;
 public class KlabAdminController {
 
     @Autowired
-    ServiceNetworkedInstance instance;
+    ServiceNetworkedInstance<?> instance;
 
     @PutMapping(ServicesAPI.SHUTDOWN)
     public void shutdown() {
