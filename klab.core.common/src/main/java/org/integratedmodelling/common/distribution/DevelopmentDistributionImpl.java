@@ -2,13 +2,15 @@ package org.integratedmodelling.common.distribution;
 
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
+import org.integratedmodelling.klab.api.scope.Scope;
 
 import java.io.File;
 
 /**
  * A {@link org.integratedmodelling.klab.api.engine.distribution.Distribution} that prioritizes lookup of
- * source code distributions to any synchronizable distro in ~/.klab. This one won't look for a synchronized
- * distribution in the k.LAB configuration directory.
+ * source code distributions to any synchronizable distro in ~/.klab. The only difference with the regular
+ * distribution is that the local installation is given priority and if one is available,
+ * {@link #needsSynchronization(Scope)} will return false irrespective of the remote repository.
  */
 public class DevelopmentDistributionImpl extends DistributionImpl {
 
@@ -23,4 +25,6 @@ public class DevelopmentDistributionImpl extends DistributionImpl {
             }
         }
     }
+
+    // TODO handle the needsSynchronization() logics
 }

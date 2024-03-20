@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -31,7 +32,7 @@ import java.util.function.Consumer;
  *
  * @author Ferd
  */
-public abstract class ClientScope implements UserScope {
+public abstract class ClientScope extends MessagingChannelImpl implements UserScope {
 
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
@@ -61,6 +62,7 @@ public abstract class ClientScope implements UserScope {
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     public ClientScope(Identity user, BiConsumer<Scope, Message>... listeners) {
+        super(user, null);
         this.user = user;
         this.data = Parameters.create();
         this.id = user.getId();
@@ -122,6 +124,7 @@ public abstract class ClientScope implements UserScope {
     //	}
 
     protected ClientScope(ClientScope parent) {
+        super(parent.getIdentity(), parent.messageBus);
         this.user = parent.user;
         this.parentScope = parent;
         this.data = parent.data;
@@ -186,8 +189,7 @@ public abstract class ClientScope implements UserScope {
     public void info(Object... info) {
         if (!listeners.isEmpty() || messageBus != null) {
             var notification = Notification.create(info);
-            send(Message.MessageClass.Notification,
-                    Message.MessageType.Info, notification);
+            send(Message.MessageClass.Notification, Message.MessageType.Info, notification);
         } else {
             Logging.INSTANCE.info(info);
         }
@@ -197,8 +199,7 @@ public abstract class ClientScope implements UserScope {
     public void warn(Object... o) {
         if (!listeners.isEmpty() || messageBus != null) {
             var notification = Notification.create(o);
-            send(Message.MessageClass.Notification,
-                    Message.MessageType.Warning, notification);
+            send(Message.MessageClass.Notification, Message.MessageType.Warning, notification);
         } else {
             Logging.INSTANCE.warn(o);
         }
@@ -209,8 +210,7 @@ public abstract class ClientScope implements UserScope {
         errors = true;
         if (!listeners.isEmpty() || messageBus != null) {
             var notification = Notification.create(o);
-            send(Message.MessageClass.Notification,
-                    Message.MessageType.Error, notification);
+            send(Message.MessageClass.Notification, Message.MessageType.Error, notification);
         } else {
             Logging.INSTANCE.error(o);
         }
@@ -220,8 +220,7 @@ public abstract class ClientScope implements UserScope {
     public void debug(Object... o) {
         if (!listeners.isEmpty() || messageBus != null) {
             var notification = Notification.create(o);
-            send(Message.MessageClass.Notification,
-                    Message.MessageType.Debug, notification);
+            send(Message.MessageClass.Notification, Message.MessageType.Debug, notification);
         } else {
             Logging.INSTANCE.debug(o);
         }

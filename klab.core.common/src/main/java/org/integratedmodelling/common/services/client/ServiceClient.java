@@ -290,6 +290,12 @@ public abstract class ServiceClient implements KlabService {
                 attemptingConnection.set(false);
                 if (connected.get() != currentStatus) {
                     for (var listener : listeners) {
+                        // establish whatever scope "entanglement" is allowed by the service
+                        if (connected.get()) {
+                            scope.connect(this);
+                        } else {
+                            scope.disconnect(this);
+                        }
                         listener.accept(scope, Message.create(scope, Message.MessageClass.ServiceLifecycle,
                                 (connected.get() ? Message.MessageType.ServiceAvailable :
                                  Message.MessageType.ServiceUnavailable), capabilities));
@@ -325,6 +331,7 @@ public abstract class ServiceClient implements KlabService {
 
     @Override
     public final boolean shutdown() {
+        scope.disconnect(this);
         this.scheduler.shutdown();
         if (local) {
             client.put(ServicesAPI.SHUTDOWN);

@@ -1,16 +1,15 @@
 package org.integratedmodelling.klab.api.view;
 
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
-import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,7 @@ public interface UIReactor {
         DocumentationEditor(ViewCategory.Panel),
         DocumentEditor(ViewCategory.Panel, NavigableDocument.class),
         KnowledgeNavigator(ViewCategory.View),
-        DistributionPanel(ViewCategory.Panel),
+        DistributionView(ViewCategory.Panel),
         KnowledgeEditor(ViewCategory.Panel),
         ResourceNavigator(ViewCategory.View),
         ProjectPropertyEditor(ViewCategory.Panel),
@@ -110,7 +109,10 @@ public interface UIReactor {
          * the view must own one in order to send this.
          */
         ChangeDocumentPosition(Integer.class),
-        SwitchWorkspace(String.class);
+
+        SelectDistribution(Distribution.class),
+
+        SelectService(KlabService.class);
 
         List<Class<?>> targetClasses = new ArrayList<>();
 
@@ -169,55 +171,40 @@ public interface UIReactor {
          * First parameter is the Project (or null for "current service", the second the URN, the rest is the
          * initialization payload
          */
-        ResourceAddRequest(EventDirection.ViewToEngine, String.class, String.class,
+        AssetCreateRequest(EventDirection.ViewToEngine, String.class, String.class,
                 Map.class),
-
         /**
          * Show a document after selection. The second parameter is true if the document should be read only,
          * otherwise an editor will be used.
          */
-        DocumentShowRequest(EventDirection.ViewToView, NavigableDocument.class, Boolean.class),
-        DocumentHideRequest(EventDirection.ViewToView, NavigableDocument.class),
+        AssetShowRequest(EventDirection.ViewToView, NavigableDocument.class, Boolean.class),
+        AssetHideRequest(EventDirection.ViewToView, NavigableDocument.class),
 
         /**
          * Request to update document in passed URN with passed text content
          */
-        DocumentUpdateRequest(EventDirection.ViewToView, String.class, String.class),
-        AllDocumentHideRequest(EventDirection.ViewToView),
+        AssetUpdateRequest(EventDirection.ViewToView, String.class, String.class),
 
-        ResourceDeleteRequest(EventDirection.ViewToEngine, String.class),
+        AssetDeleteRequest(EventDirection.ViewToEngine, String.class),
 
-        ResourceSelected(EventDirection.ViewToEngine, KlabDocument.class),
-
-        ResourceChanged(EventDirection.ViewToEngine, Resource.class),
-
-        WorkspaceChanged(EventDirection.EngineToView, ResourceSet.class),
-
-        WorkspaceSelected(EventDirection.EngineToView, Workspace.class),
-
-        WorldviewSelected(EventDirection.EngineToView, Worldview.class),
+        AssetChanged(EventDirection.EngineToView, ResourceSet.class),
 
         ViewShown(EventDirection.ViewToView, Type.class),
 
         ViewHidden(EventDirection.ViewToView, Type.class),
 
-        DocumentAddRequest(EventDirection.ViewToEngine, KlabAsset.KnowledgeClass.class, String.class,
-                Map.class),
+        AssetSelected(EventDirection.ViewToEngine, KlabDocument.class),
 
-        DocumentDeleteRequest(EventDirection.ViewToEngine, KlabDocument.class),
-
-        DocumentSelected(EventDirection.ViewToEngine, KlabDocument.class),
+        AssetFocused(EventDirection.ViewToEngine, KlabDocument.class),
 
         DocumentPositionChanged(EventDirection.ViewToEngine, KlabDocument.class, Integer.class),
 
         NewProjectRequest(EventDirection.ViewToEngine, String.class),
         ImportProjectRequest(EventDirection.ViewToEngine, String.class),
 
-        /**
-         * Only used as a default in empty
-         * {@link UIEventHandler} annotations
-         */
-        AnyEvent(EventDirection.Inactive);
+        Notification(EventDirection.Bidirectional, Notification.class),
+
+        Void(EventDirection.Bidirectional, Void.class);
 
         List<Class<?>> payloadClasses = new ArrayList<>();
         EventDirection direction;
@@ -232,7 +219,24 @@ public interface UIReactor {
         }
     }
 
-    UIController getModeler();
+    UIController getController();
+
+
+    void show();
+
+    void hide();
+
+    /**
+     * Views in the enabled state permit all allowed interaction with their target.
+     */
+    void enable();
+
+    void disable();
+
+    boolean isShown();
+
+    boolean isEnabled();
+
 
     /**
      * React to the passed UI event. The payload class is validated to be of the expected type before this is

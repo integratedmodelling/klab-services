@@ -51,6 +51,7 @@ public abstract class AbstractUIController implements UIController {
 
     /**
      * Create the engine. Do not boot it! It will be booted when {@link #boot()} is called.
+     *
      * @return
      */
     public abstract Engine createEngine();
@@ -67,18 +68,28 @@ public abstract class AbstractUIController implements UIController {
     public void boot() {
         engine = createEngine();
         createView();
+        createViewGraph();
         engine.addEventListener((scope, message) -> {
             processMessage(scope, message);
         });
         engine.boot();
     }
 
-    protected void createView() {
-
+    /**
+     * After all views were registered, process views and their links so that events can be properly routed.
+     */
+    private void createViewGraph() {
+        // TODO build the event routing strategy based on the annotations
     }
 
     /**
-     * Translate k.LAB events into UI events and dispatch them.
+     * All the registration of views should happen here. Panels are created on demand but views must pre-exist
+     * before boot, potentially in a hidden state.
+     */
+    protected abstract void createView();
+
+    /**
+     * Translate k.LAB events into relevant UI events and dispatch them, routing through the view graph.
      *
      * @param scope
      * @param message
@@ -126,7 +137,8 @@ public abstract class AbstractUIController implements UIController {
             }
             case ActorCommunication -> {
             }
-        };
+        }
+        ;
         System.out.println("AHA " + message);
     }
 
@@ -136,7 +148,7 @@ public abstract class AbstractUIController implements UIController {
         if (rs != null) {
             for (var desc : rs) {
                 try {
-                    desc.method.invoke(desc.reactor, desc.reorderArguments(sender,payload));
+                    desc.method.invoke(desc.reactor, desc.reorderArguments(sender, payload));
                 } catch (Throwable e) {
                     scope().error(e);
                 }

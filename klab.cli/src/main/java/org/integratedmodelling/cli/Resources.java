@@ -443,7 +443,12 @@ public class Resources {
             @Override
             public void run() {
 
-                KlabCLI.INSTANCE.modeler().importProject(projectUrl, workspace, service);
+                /*
+                TODO select the workspace if the passed value isn't null - remove the "local" default and
+                 just create it if not existing.
+                 */
+
+                KlabCLI.INSTANCE.modeler().importProject(projectUrl);
 
                 try {
                     var url = new File(projectUrl).isDirectory() ? new File(projectUrl).toURI().toURL() :

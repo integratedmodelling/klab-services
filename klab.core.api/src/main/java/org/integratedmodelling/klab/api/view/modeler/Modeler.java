@@ -1,8 +1,11 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 /**
  * A {@link UIController} that contains all the user actions relevant to a modeler IDE. Implement this to use
@@ -12,7 +15,7 @@ import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
  * The modeler must wrap all k.LAB assets coming from the services into
  * {@link org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset} to enable navigation and
  * selection.
- *
+ * <p>
  * TODO the modeler is itself a view that should receive UI events, particularly those related to
  * showing and hiding views.
  */
@@ -41,16 +44,16 @@ public interface Modeler extends UIController {
      */
     void setOption(Option option, Object... payload);
 
-    /**
-     * User action "Import project...". Must not throw exceptions, run asynchronously and dispatch all
-     * relevant events upon success or failure.
-     *
-     * TODO provide default implementations for all obvious actions.
-     *
-     * @param projectUrl
-     * @param workspace
-     * @param service
-     */
-    @UIActionHandler(UIReactor.UIAction.ImportProject)
-    void importProject(String projectUrl, String workspace, String service);
+
+    @UIActionHandler(value = UIReactor.UIAction.ImportProject, label = "New project", tooltip =
+            "Create a new k.LAB project in the current workspace and scope")
+    default void importProject(String projectUrl) {
+        // dispatch(this, UIReactor.UIEvent.ImportProjectRequest, projectUrl);
+    }
+
+    @UIActionHandler(value = UIReactor.UIAction.NewProject, label = "New project", tooltip =
+            "Create a new k.LAB asset of the passed type within its passed parent asset")
+    default void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType) {
+        // dispatch(this, UIReactor.UIEvent.NewProjectRequest, projectUrn);
+    }
 }

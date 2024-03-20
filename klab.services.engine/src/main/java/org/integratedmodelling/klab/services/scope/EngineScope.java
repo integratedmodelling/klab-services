@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.scope;
 
 import io.reacted.core.messages.reactors.ReActorStop;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -40,7 +41,7 @@ import java.util.function.Consumer;
  * @author Ferd
  *
  */
-public abstract class EngineScope implements UserScope {
+public abstract class EngineScope extends MessagingChannelImpl implements UserScope {
 
 	// the data hash is the SAME OBJECT throughout the child
 	protected Parameters<String> data;
@@ -61,6 +62,7 @@ public abstract class EngineScope implements UserScope {
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
 	public EngineScope(UserIdentity user) {
+		super(user, null);
 		this.user = user;
 		this.data = Parameters.create();
 		this.id = user.getId();
@@ -116,6 +118,7 @@ public abstract class EngineScope implements UserScope {
 	}
 
 	protected EngineScope(EngineScope parent) {
+		super(parent.user, null);
 		this.user = parent.user;
 		this.parentScope = parent;
 		this.data = parent.data;

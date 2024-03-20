@@ -10,8 +10,8 @@ import java.lang.annotation.*;
  * it is a generic menu action associated with the reactor, as a menu or action button.
  * <p>
  * When an interface contains methods annotated with this, it must provide a correspondent menu selection for
- * the object set as the payload of the argument. The controller will provide the associated labels and tooltips
- * (at some point also localized) so that consistent interfaces can be defined if wished.
+ * the object set as the payload of the argument. The controller will provide the associated labels and
+ * tooltips (at some point also localized) so that consistent interfaces can be defined if wished.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -46,5 +46,14 @@ public @interface UIView {
     String label() default "";
 
     String tooltip() default "";
+
+    /**
+     * The API class of the target object, if any, handled by this view. If the view looks for example at a
+     * specific type of service, this may filter events to those targeting that type. The view should be
+     * automatically disabled by the modeler if there is no choice available for the target.
+     *
+     * @return
+     */
+    Class<?>[] target() default Void.class;
 
 }

@@ -8,11 +8,4 @@ package org.integratedmodelling.klab.api.view;
  */
 public interface View extends UIReactor {
 
-    void show();
-
-    void hide();
-
-    boolean isShown();
-
-
 }

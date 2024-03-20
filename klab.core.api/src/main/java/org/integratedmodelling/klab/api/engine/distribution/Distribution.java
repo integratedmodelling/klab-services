@@ -32,6 +32,15 @@ public interface Distribution {
     void synchronize(Scope scope);
 
     /**
+     * If true, synchronize() may be called to update the distribution. This will return
+     * false without exceptions also in case of connection errors or other failures.
+     *
+     * @param scope
+     * @return true if synchronization is needed
+     */
+    boolean needsSynchronization(Scope scope);
+
+    /**
      * A distribution is a list of products. Each may be individually versioned.
      *
      * @return

@@ -12,6 +12,8 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
+import org.integratedmodelling.klab.modeler.views.DistributionViewImpl;
+import org.integratedmodelling.klab.modeler.views.ResourcesNavigatorImpl;
 
 import java.util.function.BiConsumer;
 
@@ -33,9 +35,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     public ModelerImpl(BiConsumer<Scope, Message>... listeners) {
         this.listeners = listeners;
-        // TODO instantiate all the default views. They exist independent of what happens in the view.
-
-        // TODO read the workbench config
+        // TODO read the workbench config - NAH this probably pertains to the IDE
     }
 
     @Override
@@ -48,6 +48,15 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             }
         }
         return ret;
+    }
+
+    @Override
+    protected void createView() {
+
+        register(new DistributionViewImpl(this));
+        register(new ResourcesNavigatorImpl(this));
+        // TODO etc.
+
     }
 
     //    private void onMessage(Scope scope, Message message) {
@@ -105,10 +114,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         return null;
     }
 
-
-    @Override
-    public void importProject(String projectUrl, String workspace, String service) {
-    }
 
 
 }

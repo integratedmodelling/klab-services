@@ -13,6 +13,7 @@ import java.util.function.Consumer;
  * an exchange of notifications.
  *
  * @author ferdinando.villa
+ * @deprecated use scope connection mechanism
  */
 public interface MessageBus {
 

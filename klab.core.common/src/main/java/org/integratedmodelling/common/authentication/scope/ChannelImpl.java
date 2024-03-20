@@ -1,12 +1,10 @@
 package org.integratedmodelling.common.authentication.scope;
 
-import org.checkerframework.checker.units.qual.A;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +17,7 @@ import java.util.function.Consumer;
 /**
  * Basic logging channel. Does not have a {@link org.integratedmodelling.klab.api.services.runtime.MessageBus}
  * linked to {@link #send(Object...)} and {@link #post(Consumer, Object...)}. So the latter calls have no
- * effect besides invoking listeners and functors.
+ * effect besides invoking listeners and functors. The service connection mechanism is not activated.
  */
 public class ChannelImpl implements Channel {
 
@@ -89,5 +87,16 @@ public class ChannelImpl implements Channel {
     @Override
     public boolean hasErrors() {
         return errors.get();
+    }
+
+
+    @Override
+    public boolean connect(KlabService service) {
+        return false;
+    }
+
+    @Override
+    public boolean disconnect(KlabService service) {
+        return false;
     }
 }

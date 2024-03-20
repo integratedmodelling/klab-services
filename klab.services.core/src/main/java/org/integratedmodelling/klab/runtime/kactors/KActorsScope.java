@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
@@ -572,6 +573,16 @@ public class KActorsScope implements VM.BehaviorScope {
 	@Override
 	public boolean hasErrors() {
 		return mainScope.hasErrors();
+	}
+
+	@Override
+	public boolean connect(KlabService service) {
+		return false;
+	}
+
+	@Override
+	public boolean disconnect(KlabService service) {
+		return false;
 	}
 
 }

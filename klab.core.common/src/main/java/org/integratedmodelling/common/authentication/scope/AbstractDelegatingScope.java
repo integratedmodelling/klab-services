@@ -101,4 +101,14 @@ public abstract class AbstractDelegatingScope implements Scope {
     public void setData(String key, Object value) {
         this.data.put(key, value);
     }
+
+    @Override
+    public boolean connect(KlabService service) {
+        return delegateChannel.connect(service);
+    }
+
+    @Override
+    public boolean disconnect(KlabService service) {
+        return delegateChannel.disconnect(service);
+    }
 }

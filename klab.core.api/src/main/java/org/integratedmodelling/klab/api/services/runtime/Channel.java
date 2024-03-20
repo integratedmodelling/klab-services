@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import javax.sound.midi.Receiver;
 
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message.MessageClass;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
@@ -141,4 +142,25 @@ public interface Channel {
      */
     boolean hasErrors();
 
+    /**
+     * Notify this client scope to the passed service (normally a service client). If the service accepts to
+     * manage the scope and returns the Websockets URL to establish the link, create the link. From that point
+     * on, this scope receives for events posted at the server side, and the server-side scope receives events
+     * posted here until disconnect is called or the scope ends.
+     *
+     * THis may be called multiple times with different services.
+     *
+     * @param service
+     * @return
+     */
+    boolean connect(KlabService service);
+
+    /**
+     * Disconnect a previously connected service. If the disconnection fails (e.g. the service had not
+     * connected in the first place) return false without error.
+     *
+     * @param service
+     * @return true if the disconnection was successful.
+     */
+    boolean disconnect(KlabService service);
 }

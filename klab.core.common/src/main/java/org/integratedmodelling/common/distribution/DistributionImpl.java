@@ -123,6 +123,12 @@ public class DistributionImpl extends AbstractDistributionImpl {
         }
     }
 
+    @Override
+    public boolean needsSynchronization(Scope scope) {
+        // TODO
+        return false;
+    }
+
     public boolean isAvailable() {
         return getProducts().size() > 0;
     }
