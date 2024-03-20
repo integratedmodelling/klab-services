@@ -10,19 +10,27 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * The k.LAB engine is a service orchestrator that has "current" and "available" services for all categories.
- * It handles one or more users and contains a messaging system that enables listening to events from all
- * services.
+ * The k.LAB engine is a service orchestrator that starts and maintains all services used by the scopes in its
+ * purview. Its primary role is to provide {@link UserScope}s, of which it can handle one or more. The scopes
+ * give access to all authorized services and expose a messaging system that enables listening to authorized
+ * events from all services.
  * <p>
- * The engine instantiates user scopes upon authentication (or anonymously), enabling them to access the
- * services handled by the engine through its {@link UserScope#getService(Class)} and
- * {@link UserScope#getServices(Class)} methods. In this interface there is no API related to authentication
- * of user scopes, which can be implemented as needed downstream.
+ * The engine instantiates user scopes upon authentication or anonymously. Access to services happens through
+ * the services handled by the engine through its {@link UserScope#getService(Class)} and
+ * {@link UserScope#getServices(Class)} methods. There is no API related to authentication except defining the
+ * API model for {@link org.integratedmodelling.klab.api.authentication.KlabCertificate}s.
  * <p>
  * Methods are exposed for booting and shutting down the engine, for situations when implementations need to
- * control these phases. The engine should not boot automatically upon creation; the {@link #isAvailable()}
- * and {@link #isOnline()} can be used to monitor status, and the messaging system must report all
- * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#EngineLifecycle} events.
+ * control these phases. Those should operate harmlessly where a boot phase is not needed. The engine should
+ * not boot automatically upon creation; the {@link #isAvailable()} and {@link #isOnline()} can be used to
+ * monitor status, ensuring that the engine is online before using the scope for k.LAB activities. The
+ * messaging system must correctly report all
+ * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#EngineLifecycle}  and
+ * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ServiceLifecycle} events.
+ * <p>
+ * The engine has a simple REST API defined in {@link org.integratedmodelling.klab.api.ServicesAPI.ENGINE} and
+ * is authenticated with certificates, so it inherits from {@link KlabService} and it is one of the service
+ * categories reported as {@link KlabService.Type}.
  */
 public interface Engine extends KlabService {
 

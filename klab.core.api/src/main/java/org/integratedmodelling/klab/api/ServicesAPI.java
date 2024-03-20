@@ -22,6 +22,10 @@ public interface ServicesAPI {
 
 	}
 
+	public interface ENGINE {
+
+	}
+
 
 	/**
 	 * STOMP endpoint for client/server notifications to session receivers. Handled through
