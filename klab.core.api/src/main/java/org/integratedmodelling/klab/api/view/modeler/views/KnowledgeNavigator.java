@@ -30,7 +30,6 @@ public interface KnowledgeNavigator extends View {
      */
     void queryResultChosen(/* TODO */);
 
-
     void knowledgeFocused(Semantics focus);
 
     /**
