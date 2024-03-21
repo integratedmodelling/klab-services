@@ -42,6 +42,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     @Override
     public Engine createEngine() {
+        // TODO first should locate and set the distribution
         var ret = new EngineClient();
         //        ret.addEventListener((scope, message) -> onMessage(scope, message));
         if (this.listeners != null) {

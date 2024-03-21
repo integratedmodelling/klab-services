@@ -115,12 +115,13 @@ public abstract class AbstractUIController implements UIController {
     protected abstract void createView();
 
     /**
-     * Translate k.LAB events into relevant UI events and dispatch them, routing through the view graph.
+     * Translate k.LAB events into relevant UI events and dispatch them, routing through the view graph. If
+     * overridden, most implementation should make sure that super is called.
      *
      * @param scope
      * @param message
      */
-    private void processMessage(Scope scope, Message message) {
+    protected void processMessage(Scope scope, Message message) {
         switch (message.getMessageClass()) {
             case Void -> {
             }
@@ -133,20 +134,18 @@ public abstract class AbstractUIController implements UIController {
             }
             case ServiceLifecycle -> {
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable ->
-                            dispatch(null, UIReactor.UIEvent.ServiceUnavailable,
-                                    message.getPayload(Object.class));
-                    case ServiceAvailable ->
-                            dispatch(null, UIReactor.UIEvent.ServiceAvailable,
-                                    message.getPayload(Object.class));
-                    case ServiceInitializing ->
-                            dispatch(null, UIReactor.UIEvent.ServiceStarting,
-                                    message.getPayload(Object.class));
+                    case ServiceUnavailable -> dispatch(null, UIReactor.UIEvent.ServiceUnavailable,
+                            message.getPayload(Object.class));
+                    case ServiceAvailable -> dispatch(null, UIReactor.UIEvent.ServiceAvailable,
+                            message.getPayload(Object.class));
+                    case ServiceInitializing -> dispatch(null, UIReactor.UIEvent.ServiceStarting,
+                            message.getPayload(Object.class));
                     default -> {
                     }
                 }
             }
             case EngineLifecycle -> {
+                // TODO engine ready event and status
             }
             case KimLifecycle -> {
             }
