@@ -1,10 +1,8 @@
 package org.integratedmodelling.klab.api.view.modeler.views;
 
-import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
-import org.integratedmodelling.klab.api.view.View;
+import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
@@ -26,7 +24,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
  */
 @UIView(value = UIReactor.Type.ResourceNavigator, label = "k.LAB Resource Navigator", target =
         ResourcesService.class)
-public interface ResourcesNavigator extends View {
+public interface ResourcesNavigator extends ViewController {
 
 
     /**

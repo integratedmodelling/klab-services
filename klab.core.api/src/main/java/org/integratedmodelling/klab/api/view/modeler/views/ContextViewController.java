@@ -2,12 +2,12 @@ package org.integratedmodelling.klab.api.view.modeler.views;
 
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
-import org.integratedmodelling.klab.api.view.View;
+import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
 
 @UIView(UIReactor.Type.ContextView)
-public interface ContextView extends View {
+public interface ContextViewController extends ViewController {
 
     /**
      * Called when other views put semantics or a model into focus. May pre-select it for observation or do

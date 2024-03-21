@@ -38,7 +38,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * Command line for the next k.LAB. No longer tied to an engine.
+ * Command line for the next k.LAB. Provides a Modeler controlled by command line instructions.
  * <p>
  * Commands can be bare Runnables or the specialized FunctionalCommand, which manages a stack of values that
  * the command execution can push. Any pushed values are matched into a global stack, and they can be referred
@@ -56,7 +56,13 @@ import java.util.function.Supplier;
  *
  * <code> alias klab="java -cp "target/kcli-0.11.0-SNAPSHOT.jar;target/lib/*"
  * -Xmx4096M -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
- * org.integratedmodelling.kcli.KlabCLI"
+ * org.integratedmodelling.kcli.KlabCLI"</code>
+ *
+ * TODO revise around the {@link org.integratedmodelling.klab.api.view.modeler.Modeler} and provide
+ * CLI-versions of each view instead of making up commands. Should be
+ *
+ *  resources, services, statistics, report, distribution, knowledge, events, debug and context.
+ *
  */
 public enum KlabCLI {
     INSTANCE;

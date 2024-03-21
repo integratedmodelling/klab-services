@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.view.modeler.views;
 
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.view.View;
+import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
 
@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.view.annotations.UIView;
  * knowledge event whenever the semantics under definition is consistent.
  */
 @UIView(value = UIReactor.Type.KnowledgeNavigator, target = Reasoner.class)
-public interface KnowledgeNavigator extends View {
+public interface KnowledgeNavigator extends ViewController {
 
     void queryModified(String query);
 

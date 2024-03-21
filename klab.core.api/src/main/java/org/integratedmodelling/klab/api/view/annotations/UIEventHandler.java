@@ -27,6 +27,6 @@ public @interface UIEventHandler {
      *
      * @return
      */
-    UIReactor.UIEvent value() default UIReactor.UIEvent.Void;
+    UIReactor.UIEvent value() default UIReactor.UIEvent.AnyEvent;
 
 }

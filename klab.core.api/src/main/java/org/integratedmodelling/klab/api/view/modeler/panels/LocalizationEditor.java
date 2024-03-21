@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.panels;
 
-import org.integratedmodelling.klab.api.view.Panel;
+import org.integratedmodelling.klab.api.view.PanelController;
 
-public interface LocalizationEditor extends Panel {
+public interface LocalizationEditor extends PanelController {
 }

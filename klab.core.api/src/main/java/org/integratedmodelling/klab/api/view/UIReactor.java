@@ -204,7 +204,12 @@ public interface UIReactor {
 
         Notification(EventDirection.Bidirectional, Notification.class),
 
-        Void(EventDirection.Bidirectional, Void.class);
+        DistributionSelected(EventDirection.ViewToView, Distribution.class),
+        /**
+         * Declaring a dependency on this event means that we want all events sent to the
+         * annotated method.
+         */
+        AnyEvent(EventDirection.Bidirectional, Void.class);
 
         List<Class<?>> payloadClasses = new ArrayList<>();
         EventDirection direction;

@@ -9,11 +9,13 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.view.PanelController;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
-import org.integratedmodelling.klab.modeler.views.DistributionViewImpl;
+import org.integratedmodelling.klab.modeler.views.DistributionViewImplController;
 import org.integratedmodelling.klab.modeler.views.ResourcesNavigatorImpl;
+import org.integratedmodelling.klab.modeler.views.ServicesViewImpl;
 
 import java.util.function.BiConsumer;
 
@@ -53,7 +55,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     protected void createView() {
 
-        register(new DistributionViewImpl(this));
+        register(new ServicesViewImpl(this));
+        register(new DistributionViewImplController(this));
         register(new ResourcesNavigatorImpl(this));
         // TODO etc.
 
@@ -74,6 +77,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public UserScope user() {
         return ((EngineClient) engine()).getUser();
     }
+
 
     @Override
     protected Scope scope() {

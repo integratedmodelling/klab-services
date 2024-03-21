@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.api.view.modeler.panels;
 
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.View;
+import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.view.annotations.UIView;
  * discretion. The main user event is {@link #selectDistribution(Distribution)} which
  */
 @UIView(value = UIReactor.Type.DistributionView, target = Distribution.class)
-public interface DistributionView extends View {
+public interface DistributionViewController extends ViewController {
 
     /**
      * Set up the UI for the passed distribution. If we have one already and this is different, make it
