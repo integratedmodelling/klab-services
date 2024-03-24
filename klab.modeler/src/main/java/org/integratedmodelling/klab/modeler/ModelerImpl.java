@@ -79,7 +79,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         return ((EngineClient) engine()).getUser();
     }
 
-
     @Override
     protected Scope scope() {
         return user();

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.scope;
 
 import io.reacted.core.messages.reactors.ReActorStop;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -41,7 +42,7 @@ import java.util.function.Consumer;
  * @author Ferd
  *
  */
-public abstract class EngineScope extends MessagingChannelImpl implements UserScope {
+public abstract class EngineScope extends ChannelImpl implements UserScope {
 
 	// the data hash is the SAME OBJECT throughout the child
 	protected Parameters<String> data;
@@ -62,7 +63,7 @@ public abstract class EngineScope extends MessagingChannelImpl implements UserSc
 	private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
 	public EngineScope(UserIdentity user) {
-		super(user, null);
+		super(user);
 		this.user = user;
 		this.data = Parameters.create();
 		this.id = user.getId();
@@ -118,7 +119,7 @@ public abstract class EngineScope extends MessagingChannelImpl implements UserSc
 	}
 
 	protected EngineScope(EngineScope parent) {
-		super(parent.user, null);
+		super(parent.user);
 		this.user = parent.user;
 		this.parentScope = parent;
 		this.data = parent.data;
@@ -201,7 +202,7 @@ public abstract class EngineScope extends MessagingChannelImpl implements UserSc
 	}
 
 	@Override
-	public void post(Consumer<Message> responseHandler, Object... message) {
+	public Message post(Consumer<Message> responseHandler, Object... message) {
 
 		/*
 		 * Agent scopes will intercept the response from an agent and pair it with the
@@ -219,7 +220,7 @@ public abstract class EngineScope extends MessagingChannelImpl implements UserSc
 					}
 				});
 			}
-			return;
+			return null;
 		} else if (message != null && message.length == 1 && message[0] instanceof VM.AgentMessage) {
 			/*
 			 * dispatch to the agent. If there's a handler, make a responseHandler and
@@ -236,10 +237,10 @@ public abstract class EngineScope extends MessagingChannelImpl implements UserSc
 			}
 
 		} else {
-			/*
-			 * usual behavior: make a message and send through whatever channel we have.
-			 */
+			return super.post(responseHandler, message);
 		}
+
+		return null;
 
 	}
 
@@ -250,8 +251,8 @@ public abstract class EngineScope extends MessagingChannelImpl implements UserSc
 	}
 
 	@Override
-	public void send(Object... message) {
-		post(null, message);
+	public Message send(Object... message) {
+		return post(null, message);
 	}
 
 	@Override

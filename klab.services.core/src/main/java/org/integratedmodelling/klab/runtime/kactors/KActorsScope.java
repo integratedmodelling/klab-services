@@ -551,13 +551,13 @@ public class KActorsScope implements VM.BehaviorScope {
 	}
 
 	@Override
-	public void send(Object... message) {
-		mainScope.send(message);
+	public Message send(Object... message) {
+		return mainScope.send(message);
 	}
 
 	@Override
-	public void post(Consumer<Message> handler, Object... message) {
-		mainScope.post(handler, message);
+	public Message post(Consumer<Message> handler, Object... message) {
+		return mainScope.post(handler, message);
 	}
 
 	@Override

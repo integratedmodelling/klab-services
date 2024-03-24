@@ -15,4 +15,10 @@ import org.integratedmodelling.klab.modeler.ModelerImpl;
  * be at top level as currently, TBD)
  */
 public class CommandLineModeler extends ModelerImpl {
+
+    public static void main(String args) {
+        // settings
+        // setup
+        // start the REPL
+    }
 }

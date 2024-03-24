@@ -12,7 +12,6 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.MessageBus;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
         this.id = id;
     }
 
-    private MessageBus messageBus;
     private String id;
 
     private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
@@ -123,12 +121,12 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
     //		return ret;
     //	}
 
-    protected ClientScope(ClientScope parent) {
-        super(parent.getIdentity(), parent.messageBus);
-        this.user = parent.user;
-        this.parentScope = parent;
-        this.data = parent.data;
-    }
+//    protected ClientScope(ClientScope parent) {
+//        super(parent.getIdentity(), client);
+//        this.user = parent.user;
+//        this.parentScope = parent;
+//        this.data = parent.data;
+//    }
 
     @Override
     public SessionScope runSession(String sessionName) {
@@ -187,7 +185,7 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
 
     @Override
     public void info(Object... info) {
-        if (!listeners.isEmpty() || messageBus != null) {
+        if (!listeners.isEmpty() || isPaired()) {
             var notification = Notification.create(info);
             send(Message.MessageClass.Notification, Message.MessageType.Info, notification);
         } else {
@@ -197,7 +195,7 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
 
     @Override
     public void warn(Object... o) {
-        if (!listeners.isEmpty() || messageBus != null) {
+        if (!listeners.isEmpty() || isPaired()) {
             var notification = Notification.create(o);
             send(Message.MessageClass.Notification, Message.MessageType.Warning, notification);
         } else {
@@ -208,7 +206,7 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
     @Override
     public void error(Object... o) {
         errors = true;
-        if (!listeners.isEmpty() || messageBus != null) {
+        if (!listeners.isEmpty() || isPaired()) {
             var notification = Notification.create(o);
             send(Message.MessageClass.Notification, Message.MessageType.Error, notification);
         } else {
@@ -218,7 +216,7 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
 
     @Override
     public void debug(Object... o) {
-        if (!listeners.isEmpty() || messageBus != null) {
+        if (!listeners.isEmpty() || isPaired()) {
             var notification = Notification.create(o);
             send(Message.MessageClass.Notification, Message.MessageType.Debug, notification);
         } else {
@@ -227,16 +225,16 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
     }
 
     @Override
-    public void post(Consumer<Message> responseHandler, Object... messageElements) {
+    public Message post(Consumer<Message> responseHandler, Object... messageElements) {
 
         var message = Message.create(this, messageElements);
         for (var listener : listeners) {
             listener.accept(this, message);
         }
 
-        if (messageBus != null) {
+        if (isPaired()) {
             // TODO handle response if handler is != null
-            messageBus.post(message);
+            send(message);
         }
 
         /*
@@ -277,11 +275,13 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
         //			 */
         //		}
 
+        return message;
+
     }
 
     @Override
-    public void send(Object... message) {
-        post(null, message);
+    public Message send(Object... message) {
+        return post(null, message);
     }
 
     @Override

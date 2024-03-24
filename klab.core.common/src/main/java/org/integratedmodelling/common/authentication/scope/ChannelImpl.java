@@ -15,9 +15,9 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
- * Basic logging channel. Does not have a {@link org.integratedmodelling.klab.api.services.runtime.MessageBus}
- * linked to {@link #send(Object...)} and {@link #post(Consumer, Object...)}. So the latter calls have no
- * effect besides invoking listeners and functors. The service connection mechanism is not activated.
+ * Basic listenable, logging channel. Does not attempt to pair scopes when {@link #connect(KlabService)} is
+ * called.  Calls to {@link #post(Consumer, Object...)} and {@link #send(Object...)} have no effect besides
+ * invoking listeners and functors.
  */
 public class ChannelImpl implements Channel {
 
@@ -62,16 +62,21 @@ public class ChannelImpl implements Channel {
     }
 
     @Override
-    public void send(Object... message) {
+    public Message send(Object... message) {
         var me = Message.create(this, message);
         for (var listener : listeners) {
             listener.accept(this.identity, me);
         }
+        return me;
     }
 
     @Override
-    public void post(Consumer<Message> handler, Object... message) {
-
+    public Message post(Consumer<Message> handler, Object... message) {
+        var me = Message.create(this, message);
+        for (var listener : listeners) {
+            listener.accept(this.identity, me);
+        }
+        return me;
     }
 
     @Override

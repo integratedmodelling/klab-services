@@ -49,7 +49,7 @@ public class MessageImpl implements Message, Serializable {
 	private long inResponseTo;
 	private Notification.Type notificationType;
 	private long timestamp = System.currentTimeMillis();
-	private Repeatability repeatability = Repeatability.Once;
+	private Provenance provenance = Provenance.Original;
 
 	private static BiFunction<Map<?, ?>, Class<?>, Object> translator;
 
@@ -209,11 +209,11 @@ public class MessageImpl implements Message, Serializable {
 	}
 
 	@Override
-	public Repeatability getRepeatability() {
-		return repeatability;
+	public Provenance getProvenance() {
+		return provenance;
 	}
 
-	public void setRepeatability(Repeatability repeatability) {
-		this.repeatability = repeatability;
+	public void setProvenance(Provenance repeatability) {
+		this.provenance = repeatability;
 	}
 }

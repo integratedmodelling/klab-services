@@ -304,7 +304,6 @@ public enum Authentication {
                     serviceClient.addListener(listener);
                 }
             }
-            serviceClient.setLocal(true);
         }
 
         return ret;

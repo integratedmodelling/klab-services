@@ -149,6 +149,8 @@ public interface Parameters<T> extends Map<T, Object>, Serializable {
      */
     Parameters<String> getTemplateVariables();
 
+    Map<T, Object> asMap();
+
     /**
      * Create a parameters object from a list of key/value pairs, optionally including also other (non-paired) map
      * objects whose values are added as is. A null in first position of a pair is ignored, as well as anything whose

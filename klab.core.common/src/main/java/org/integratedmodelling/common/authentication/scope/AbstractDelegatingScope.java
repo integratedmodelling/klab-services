@@ -72,13 +72,13 @@ public abstract class AbstractDelegatingScope implements Scope {
     }
 
     @Override
-    public void send(Object... message) {
-        delegateChannel.send(message);
+    public Message send(Object... message) {
+        return delegateChannel.send(message);
     }
 
     @Override
-    public void post(Consumer<Message> handler, Object... message) {
-        delegateChannel.post(handler, message);
+    public Message post(Consumer<Message> handler, Object... message) {
+        return delegateChannel.post(handler, message);
     }
 
     @Override

@@ -31,6 +31,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
+import java.util.Scanner;
 
 public class ResourcesClient extends ServiceClient implements ResourcesService, ResourcesService.Admin {
 
@@ -215,7 +216,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     public static void main(String[] args) {
         var client = new ResourcesClient();
-        client.importProject("worldview", "https://github.com/integratedmodelling/imod.git", true);
+        Utils.OS.pressAKeyToExit();
+//        client.importProject("worldview", "https://github.com/integratedmodelling/imod.git", true);
     }
 
     @Override

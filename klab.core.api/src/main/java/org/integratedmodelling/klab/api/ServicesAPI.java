@@ -31,7 +31,7 @@ public interface ServicesAPI {
 	 * STOMP endpoint for client/server notifications to session receivers. Handled through
 	 * Websockets protocol.
 	 */
-	public static final String MESSAGE = "/message";
+	public static final String MESSAGE = "/public/message";
 
 	public interface HUB {
 		/**

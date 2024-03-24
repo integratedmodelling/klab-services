@@ -11,6 +11,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Service;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.io.File;
 import java.io.IOException;
@@ -190,7 +192,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             ret.add((T) object);
                         } else if (object instanceof Collection) {
                             // TODO
-                            throw new KlabUnimplementedException("json retrieval of collections within collections");
+                            throw new KlabUnimplementedException("json retrieval of collections within " +
+                                    "collections");
                         } else if (object instanceof Map map) {
                             ret.add(Json.convertMap(map, resultClass));
                         }
@@ -209,7 +212,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
 
-                private <T> T parseResponse(String body, Class<T> resultClass) {
+            private <T> T parseResponse(String body, Class<T> resultClass) {
                 if (body == null) {
                     return null;
                 }
@@ -318,6 +321,61 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
             defaultMapper.getSerializerProvider().setNullKeySerializer(new NullKeySerializer());
             JacksonConfiguration.configureObjectMapperForKlabTypes(defaultMapper);
+        }
+
+        public static ObjectMapper newObjectMapper() {
+            var ret = new ObjectMapper()
+                    .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+                    .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                    .enable(SerializationFeature.WRITE_NULL_MAP_VALUES);
+            ret.getSerializerProvider().setNullKeySerializer(new NullKeySerializer());
+            JacksonConfiguration.configureObjectMapperForKlabTypes(ret);
+            return ret;
+        }
+
+        /**
+         * Reconstruct a message from the JSON map equivalent. Used in Websockets communication where
+         * the usual strategy for message conversion falls apart.
+         *
+         * @param map
+         * @return the reconstructed message.
+         */
+        public static Message convertMessage(Map<?,?> map, Object... additionalArguments) {
+
+            var arguments = new ArrayList<Object>();
+            var message = Parameters.create(map);
+            String identity = message.get("identity", String.class);
+            Message.MessageClass messageClass = message.get("messageClass", Message.MessageClass.class);
+            Message.MessageType messageType = message.get("messageType", Message.MessageType.class);
+            Object payload = message.get("payload");
+            if (messageType != null && messageType.payloadClass != null && messageType.payloadClass != Void.class) {
+                if (payload instanceof Map m) {
+                    if (payload instanceof Parameters<?> parameters) {
+                        payload = parameters.asMap();
+                        ((Map<?,?>)payload).remove(JacksonConfiguration.CLASS_FIELD);
+                    }
+                    payload = convertMap((Map<?,?>)payload, messageType.payloadClass);
+                }
+            }
+
+            if (identity == null || messageClass == null || messageType == null) {
+                arguments.add(Message.MessageClass.Notification);
+                arguments.add(Message.MessageType.Error);
+                arguments.add("Cannot convert message from " + message);
+            } else {
+                arguments.add(messageClass);
+                arguments.add(messageType);
+                if (payload != null) {
+                    arguments.add(payload);
+                }
+            }
+
+            if (additionalArguments != null) {
+                arguments.addAll(Arrays.asList(additionalArguments));
+            }
+
+            return Message.create(identity, arguments.toArray());
+
         }
 
         static class NullKeySerializer extends StdSerializer<Object> {

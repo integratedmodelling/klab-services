@@ -125,8 +125,8 @@ public abstract class ServiceClient implements KlabService {
                     var status = readServiceStatus(url);
                     if (status != null) {
                         ret = url;
+                        // we are connected but we leave setting the connected flag to the timed task
                         this.status.set(status);
-                        connected.set(true);
                         break;
                     }
                 }
@@ -155,8 +155,9 @@ public abstract class ServiceClient implements KlabService {
 
             if (status != null) {
                 ret = url;
+                // we are connected but we leave setting the connected flag to the timed task
                 this.status.set(status);
-                connected.set(true);
+                this.local = true;
             }
         }
 
@@ -229,10 +230,7 @@ public abstract class ServiceClient implements KlabService {
          obtaining a channel to pair the scopes.
          */
         this.scope =
-                new AbstractServiceDelegatingScope(false
-                                                   ? new MessagingChannelImpl(this.authentication.getFirst(),
-                        new WebsocketsClientMessageBus(this.serviceType))
-                                                   : new ChannelImpl(this.authentication.getFirst())) {
+                new AbstractServiceDelegatingScope(new MessagingChannelImpl(this.authentication.getFirst(), client)) {
                     @Override
                     public UserScope createUser(String username, String password) {
                         return null;
@@ -252,6 +250,7 @@ public abstract class ServiceClient implements KlabService {
                 };
 
         this.client = Utils.Http.getServiceClient(token, this);
+
         scheduler.scheduleAtFixedRate(() -> checkConnection(), 0, pollCycleSeconds, TimeUnit.SECONDS);
     }
 
@@ -291,14 +290,14 @@ public abstract class ServiceClient implements KlabService {
                 if (connected.get() != currentStatus) {
                     for (var listener : listeners) {
                         // establish whatever scope "entanglement" is allowed by the service
-                        if (connected.get()) {
-                            scope.connect(this);
-                        } else {
-                            scope.disconnect(this);
-                        }
                         listener.accept(scope, Message.create(scope, Message.MessageClass.ServiceLifecycle,
                                 (connected.get() ? Message.MessageType.ServiceAvailable :
                                  Message.MessageType.ServiceUnavailable), capabilities));
+                    }
+                    if (local && connected.get()) {
+                        // FIXME scope connections should happen if configured and allowed, not just if the
+                        //  URL is local
+                        scope.connect(this);
                     }
                 }
             }
@@ -342,10 +341,6 @@ public abstract class ServiceClient implements KlabService {
 
     public void addListener(BiConsumer<Scope, Message> listener) {
         this.listeners.add(listener);
-    }
-
-    public void setLocal(boolean b) {
-        this.local = b;
     }
 
     public boolean isLocal() {

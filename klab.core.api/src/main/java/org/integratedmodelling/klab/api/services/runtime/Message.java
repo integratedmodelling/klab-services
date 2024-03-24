@@ -4,10 +4,10 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
+import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
 
 import java.io.Serializable;
 import java.util.function.Consumer;
@@ -21,8 +21,15 @@ public interface Message extends Serializable {
 
     public static Message NO_RESPONSE = null;
 
-    enum Repeatability {
-        Repeatable, Once
+    enum Provenance {
+        /**
+         * Message was created locally and will be forwarded to paired scopes
+         */
+        Original,
+        /**
+         * Message was forwarded from a paired scope and will not be further forwarded
+         */
+        Forwarded
     }
 
     /**
@@ -153,6 +160,8 @@ public interface Message extends Serializable {
         ServiceInitializing(String.class),
         ServiceAvailable(KlabService.ServiceCapabilities.class),
         ServiceUnavailable(KlabService.ServiceCapabilities.class),
+
+        ConnectScope(ScopeOptions.class),
 
         /**
          * UI selections
@@ -470,7 +479,7 @@ public interface Message extends Serializable {
         // TODO add this to the message type so that we can validate the message payload against it. Use
         //  Void.class
         // as the default
-        Class<?> payloadClass;
+        public Class<?> payloadClass;
 
         private MessageType() {
             this(Void.class);
@@ -482,7 +491,7 @@ public interface Message extends Serializable {
 
     }
 
-    Repeatability getRepeatability();
+    Provenance getProvenance();
 
     /**
      * Unique ID for each message.
@@ -536,6 +545,18 @@ public interface Message extends Serializable {
      */
     <T> T getPayload(Class<? extends T> cls);
 
+    default boolean is(MessageClass messageClass) {
+        return this.getMessageClass() == messageClass;
+    }
+
+    default boolean is(MessageType messageClass) {
+        return this.getMessageType() == messageClass;
+    }
+
+    default boolean is(MessageClass messageClass, MessageType messageType) {
+        return this.getMessageClass() == messageClass && getMessageType() == messageType;
+    }
+
     public static Message create(Channel scope, Object... o) {
         return create(scope.getIdentity().getId(), o);
     }
@@ -572,8 +593,8 @@ public interface Message extends Serializable {
                 ret.setMessageClass((MessageClass) ob);
             } else if (ob instanceof Notification.Type) {
                 notype = (Notification.Type) ob;
-            } else if (ob instanceof Repeatability) {
-                ret.setRepeatability((Repeatability) ob);
+            } else if (ob instanceof Provenance) {
+                ret.setProvenance((Provenance) ob);
             } else if (ob instanceof Notification) {
                 notype = ((Notification) ob).getType();
                 ret.setPayload(ob);

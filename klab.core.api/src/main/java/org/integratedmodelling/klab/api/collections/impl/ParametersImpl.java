@@ -137,6 +137,14 @@ public class ParametersImpl<T> implements Parameters<T> {
         return ret;
     }
 
+    public Map<T, Object> asMap() {
+        Map<T, Object> ret = new LinkedHashMap<>();
+        for (T object : keySet()) {
+            ret.put(object, ret.get(object) == null ? null : ret.get(object));
+        }
+        return ret;
+    }
+
     public void clear() {
         delegate.clear();
     }

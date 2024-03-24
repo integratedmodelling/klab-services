@@ -24,7 +24,7 @@ import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.application.security.WebsocketsServerMessageBus;
+//import org.integratedmodelling.klab.services.application.security.WebsocketsServerMessageBus;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;

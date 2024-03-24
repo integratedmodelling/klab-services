@@ -498,6 +498,11 @@ public class Utils {
             return ret;
         }
 
+        public static void pressAKeyToExit() {
+            System.out.println("Press a key to exit...");
+            new Scanner(System.in).nextLine(); // Don't close immediately.
+        }
+
         public String getClasspathSeparator() {
             return this == WIN ? ";" : ":";
         }
@@ -3756,11 +3761,19 @@ public class Utils {
          * @param cls
          * @return the object as a cls or null
          */
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         public static <T> T asType(Object ret, Class<?> cls) {
 
             if (cls.equals(Object.class)) {
                 return (T) ret;
+            }
+
+            if (cls.isEnum() && ret instanceof String) {
+                try {
+                    return (T) Enum.valueOf((Class<Enum>) cls, (String) ret);
+                } catch (Throwable t) {
+                    // just get to the end and barf there
+                }
             }
 
             if (cls.isArray() && ret.getClass().isArray()) {

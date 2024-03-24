@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.common.logging.Logging;
 
@@ -39,6 +40,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 public class JacksonConfiguration {
+
+    public static final String CLASS_FIELD = "@CLASS";
 
     static class LiteralDeserializer extends JsonDeserializer<Literal> {
 
@@ -143,7 +146,7 @@ public class JacksonConfiguration {
         @Override
         public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
-            gen.writeObjectField("@CLASS", value.getClass().getName());
+            gen.writeObjectField(CLASS_FIELD, value.getClass().getName());
             for (Field field : getAllFields(value.getClass())) {
                 field.setAccessible(true); // You might want to set modifier to public first.
                 try {
@@ -185,8 +188,8 @@ public class JacksonConfiguration {
         private Object deserialize(JsonNode node, JsonParser parser, Field field) throws Exception {
 
             if (node.isObject()) {
-                return deserializeObject(node, parser, Class.forName(node.has("@CLASS") ?
-                                                                     node.get("@CLASS").asText() :
+                return deserializeObject(node, parser, Class.forName(node.has(CLASS_FIELD) ?
+                                                                     node.get(CLASS_FIELD).asText() :
                                                                      LinkedHashMap.class.getName()));
             } else if (node.isArray()) {
                 return deserializeArray(node, parser, field);
@@ -284,7 +287,7 @@ public class JacksonConfiguration {
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
                                       RepositoryMetadata.class, Project.Manifest.class,
                                       Triple.class, Unit.class, Project.class, KlabAsset.class,
-                                      Currency.class,
+                                      Currency.class, Message.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
             module.addSerializer(cls, new PolymorphicSerializer());
