@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.messages;
+package org.integratedmodelling.klab.api.services.runtime.kactors;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.scope.Scope.Status;

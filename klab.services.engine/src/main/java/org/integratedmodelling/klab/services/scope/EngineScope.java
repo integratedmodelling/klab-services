@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.scope;
 
 import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -15,8 +14,8 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
-import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
+import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
+import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
 import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
@@ -72,7 +71,7 @@ public abstract class EngineScope extends ChannelImpl implements UserScope {
 	/**
 	 * Obtain a message to an agent that is set up to intercept a response sent to
 	 * this channel using send()
-	 * 
+	 *
 	 * @param <T>
 	 * @param messageClass
 	 * @param handler
@@ -96,7 +95,7 @@ public abstract class EngineScope extends ChannelImpl implements UserScope {
 	/**
 	 * Return a future for the result of an agent message which encodes the
 	 * request/response using AgentMessage/AgentResponse
-	 * 
+	 *
 	 * @param <T>
 	 * @param message
 	 * @param resultClass

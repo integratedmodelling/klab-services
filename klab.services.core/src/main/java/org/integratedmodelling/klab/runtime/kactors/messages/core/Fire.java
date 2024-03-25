@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.runtime.kactors.messages.core;
 
 import org.integratedmodelling.klab.runtime.kactors.KActorsScope;
-import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
+import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 
 public class Fire extends AgentMessage {
 

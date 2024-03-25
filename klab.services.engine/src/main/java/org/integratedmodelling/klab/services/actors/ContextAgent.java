@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.runtime.kactors.messages.AgentResponse;
+import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
 import org.integratedmodelling.klab.services.actors.messages.context.GetChildren;
 import org.integratedmodelling.klab.services.actors.messages.context.GetParent;
 import org.integratedmodelling.klab.services.actors.messages.context.Observe;

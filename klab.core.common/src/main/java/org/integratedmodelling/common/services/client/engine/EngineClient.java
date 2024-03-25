@@ -163,9 +163,11 @@ public class EngineClient implements Engine, PropertyHolder {
         // inform listeners
         if (wasAvailable != ok) {
             if (ok) {
-                serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceAvailable, capabilities());
+                serviceScope().send(Message.MessageClass.EngineLifecycle,
+                        Message.MessageType.ServiceAvailable, capabilities());
             } else {
-                serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
+                serviceScope().send(Message.MessageClass.EngineLifecycle,
+                        Message.MessageType.ServiceUnavailable, capabilities());
             }
         }
 
@@ -189,7 +191,8 @@ public class EngineClient implements Engine, PropertyHolder {
 
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
-        var ret = new ClientScope(authData.getFirst(), listeners.toArray(new BiConsumer[]{})) {
+        var ret = new ClientScope(authData.getFirst(), Scope.Type.SERVICE,
+                listeners.toArray(new BiConsumer[]{})) {
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return (T) currentServices.get(KlabService.Type.classify(serviceClass));

@@ -21,7 +21,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
-import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
+import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 
 /**
  * Runtime scope for all k.Actors statements. Root scopes are for each action.

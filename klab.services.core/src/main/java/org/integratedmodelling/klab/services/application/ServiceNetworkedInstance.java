@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -24,7 +25,6 @@ import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
-//import org.integratedmodelling.klab.services.application.security.WebsocketsServerMessageBus;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -167,7 +167,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
             //            setPropertiesFromEnvironment(environment);
             System.out.println("\n" + Branding.NODE_BANNER);
             System.out.println("\nStartup successful: " + "k.LAB service " + options.getContextPath().toUpperCase() + " v" + Version.CURRENT + " on " + new Date());
-            System.out.println("Capabilities: http://127.0.0.1:" + options.getPort() + options.getContextPath() + ServicesAPI.CAPABILITIES);
+            System.out.println("Capabilities: " + options.getServiceHostUrl() +
+                    ":" + options.getPort() + options.getContextPath() + ServicesAPI.CAPABILITIES);
         } catch (Throwable e) {
             Logging.INSTANCE.error(e);
             return false;
@@ -189,7 +190,9 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     }
 
     protected Channel createChannel(UserIdentity identity) {
-        return new MessagingChannelImpl(identity, null);
+        // Use a simple logging channel for now. TODO Notifications should be broadcast to subscribers that
+        //  ask for them (see options in subscriptions)
+        return new ChannelImpl(identity);
     }
 
     private void setPropertiesFromEnvironment(Environment environment) {

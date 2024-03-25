@@ -2,11 +2,14 @@ package org.integratedmodelling.common.authentication.scope;
 
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
@@ -38,11 +41,65 @@ public class MessagingChannelImpl extends ChannelImpl {
     private AtomicBoolean paired = new AtomicBoolean(false);
     private Utils.Http.Client client;
     private String channel;
+    // This becomes the ID for the paired scopes in the service
+    private String scopeId;
+    private Scope.Type scopeType;
 
-    public MessagingChannelImpl(Identity identity, Utils.Http.Client client) {
+    // default provenance for notifications: set to Forwarded so that client messages are not sent to server
+    private Message.Provenance notificationProvenance = Message.Provenance.Forwarded;
+
+    public MessagingChannelImpl(Identity identity, Utils.Http.Client client, Scope.Type scopeType) {
         super(identity);
         this.client = client;
+        this.scopeType = scopeType;
     }
+
+
+    @Override
+    public void info(Object... info) {
+        if (!listeners.isEmpty() || isPaired()) {
+            var notification = Notification.create(info);
+            send(Message.MessageClass.Notification, Message.MessageType.Info, notificationProvenance,
+                    notification);
+        } else {
+            Logging.INSTANCE.info(info);
+        }
+    }
+
+    @Override
+    public void warn(Object... o) {
+        if (!listeners.isEmpty() || isPaired()) {
+            var notification = Notification.create(o);
+            send(Message.MessageClass.Notification, Message.MessageType.Warning, notificationProvenance,
+                    notification);
+        } else {
+            Logging.INSTANCE.warn(o);
+        }
+    }
+
+    @Override
+    public void error(Object... o) {
+        errors.set(true);
+        if (!listeners.isEmpty() || isPaired()) {
+            var notification = Notification.create(o);
+            send(Message.MessageClass.Notification, Message.MessageType.Error, notificationProvenance,
+                    notification);
+        } else {
+            Logging.INSTANCE.error(o);
+        }
+    }
+
+    @Override
+    public void debug(Object... o) {
+        if (!listeners.isEmpty() || isPaired()) {
+            var notification = Notification.create(o);
+            send(Message.MessageClass.Notification, Message.MessageType.Debug, notificationProvenance,
+                    notification);
+        } else {
+            Logging.INSTANCE.debug(o);
+        }
+    }
+
 
     public boolean isPaired() {
         return paired.get();
@@ -60,7 +117,10 @@ public class MessagingChannelImpl extends ChannelImpl {
             return false;
         }
 
-        String response = client.get(ServicesAPI.SCOPE.REGISTER, String.class);
+        this.scopeId = Utils.Names.shortUUID();
+
+        String response = client.get(ServicesAPI.SCOPE.REGISTER, String.class, "scopeType", scopeType,
+                "scopeId", scopeId);
 
         if (response != null) {
             String[] split = response.split(",");
@@ -180,8 +240,17 @@ public class MessagingChannelImpl extends ChannelImpl {
 
     private Message getHandshakingMessage() {
         ScopeOptions scopeData = new ScopeOptions();
-        return Message.create(this, Message.MessageClass.ServiceLifecycle, Message.MessageType.ConnectScope
+
+        return Message.create(scopeId, Message.MessageClass.ServiceLifecycle, Message.MessageType.ConnectScope
                 , scopeData);
+    }
+
+    public Message.Provenance getNotificationProvenance() {
+        return notificationProvenance;
+    }
+
+    public void setNotificationProvenance(Message.Provenance notificationProvenance) {
+        this.notificationProvenance = notificationProvenance;
     }
 
 }

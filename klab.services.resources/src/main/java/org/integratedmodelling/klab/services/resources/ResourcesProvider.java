@@ -67,7 +67,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     private static boolean languagesInitialized;
 
-    private URL url;
     private String hardwareSignature = Utils.Names.getHardwareId();
 
     private WorkspaceManager workspaceManager;
@@ -620,15 +619,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return false;
     }
 
-    @Override
-    public URL getUrl() {
-        return this.url;
-    }
-
-    public void setUrl(URL url) {
-        this.url = url;
-    }
-
     public void setLocalName(String localName) {
         this.localName = localName;
     }
@@ -643,7 +633,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         ResourceSet results = new ResourceSet();
         for (ModelReference model : this.kbox.query(observable, scope)) {
-            results.getResults().add(new ResourceSet.Resource(this.url.toString(),
+            results.getResults().add(new ResourceSet.Resource(getUrl().toString(),
                     model.getNamespaceId() + "." + model.getName(), model.getVersion(),
                     KnowledgeClass.MODEL));
         }

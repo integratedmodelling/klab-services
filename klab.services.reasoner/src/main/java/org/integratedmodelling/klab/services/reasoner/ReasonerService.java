@@ -116,7 +116,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     //     */
     //    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
 
-    private URL url;
     private ReasonerConfiguration configuration = new ReasonerConfiguration();
     private Map<String, String> coreConceptPeers = new HashMap<>();
     private Map<Concept, Emergence> emergent = new HashMap<>();
@@ -1289,11 +1288,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         // TODO set the loaded worldview as the one of reference
 
         return true;
-    }
-
-    @Override
-    public URL getUrl() {
-        return this.url;
     }
 
     public void setLocalName(String localName) {

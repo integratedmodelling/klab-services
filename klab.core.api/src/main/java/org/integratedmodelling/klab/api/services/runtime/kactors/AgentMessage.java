@@ -1,7 +1,6 @@
-package org.integratedmodelling.klab.runtime.kactors.messages;
+package org.integratedmodelling.klab.api.services.runtime.kactors;
 
 import org.integratedmodelling.klab.api.scope.Scope.Status;
-import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;

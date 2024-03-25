@@ -57,18 +57,28 @@ public class KlabScopeController {
      * is returned, the server accepts the pairing and the scope will be let in. In this implementation, this
      * is contingent to the client using the secret token for authorization, which means the client is on the
      * same machine.
+     * <p>
+     * Note: the names in the path variables needs to stay specified because at least in Idea, the parameter
+     * names are apparently not available at runtime unless some flags are passed.
      *
-     * @param scopeType
+     * @param scopeType the type of scope
      * @param scopeId
      * @param principal
      * @return the websockets URL to use for communication with this scope with the comma-separated channel to
      * subscribe to appended, or an empty string if the feature is unavailable.
      */
     @GetMapping(ServicesAPI.SCOPE.REGISTER)
-    public String registerScope(@PathVariable Scope.Type scopeType, @PathVariable String scopeId,
-                                Principal principal) {
+    public String registerScope(@PathVariable("scopeType") Scope.Type scopeType,
+                                @PathVariable("scopeId") String scopeId, Principal principal) {
+
+        /*
+        based on the scope type and permissions, either add listeners to the service scope or build a
+        lower-level scope for future reference.
+         */
+
         // TODO we may want to register a specific topic/channel linked to the scope.
-        return "ws://" + service.klabService().getUrl() + "/klab" + ServicesAPI.MESSAGE + ",/klab";
+        return service.klabService().getUrl().toString().replaceFirst(service.klabService().getUrl().getProtocol(), "ws")
+                + ServicesAPI.MESSAGE + ",/klab";
     }
 
     @GetMapping(ServicesAPI.SCOPE.DISPOSE)

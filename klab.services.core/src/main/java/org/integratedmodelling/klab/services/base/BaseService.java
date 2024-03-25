@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.base;
 
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -10,6 +11,8 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -24,6 +27,7 @@ public abstract class BaseService implements KlabService {
     protected final Type type;
     private String serviceSecret;
 
+    private URL url;
     protected AtomicBoolean online = new AtomicBoolean(false);
     protected AtomicBoolean available = new AtomicBoolean(false);
 
@@ -33,16 +37,18 @@ public abstract class BaseService implements KlabService {
     protected String localName = "Embedded";
     protected final ServiceStartupOptions startupOptions;
 
-    //    protected List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
-
     protected BaseService(ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
         this.scope = scope;
         this.localName = localName;
         this.type = serviceType;
         this.startupOptions = options;
+        try {
+            this.url = new URL(options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath());
+        } catch (MalformedURLException e) {
+            throw new KlabIllegalStateException(e);
+        }
         createServiceSecret();
     }
-
 
     protected ServiceStartupOptions getStartupOptions() {
         return startupOptions;
@@ -138,4 +144,11 @@ public abstract class BaseService implements KlabService {
     public KlabService.Type serviceType() {
         return type;
     }
+
+    @Override
+    public URL getUrl() {
+        return url;
+    }
+
+
 }

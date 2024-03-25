@@ -69,13 +69,6 @@ public class RuntimeService extends BaseService
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities());
 
     }
-
-    @Override
-    public URL getUrl() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     @Override
     public boolean shutdown() {
 

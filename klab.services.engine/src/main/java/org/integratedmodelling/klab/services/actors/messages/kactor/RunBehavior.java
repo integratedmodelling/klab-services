@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.actors.messages.kactor;
 
 import java.net.URL;
 
-import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
+import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 
 /**
  * Just a message to run a behavior, normally one that has been already

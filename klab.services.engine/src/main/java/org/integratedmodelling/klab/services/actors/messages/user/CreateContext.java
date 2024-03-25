@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.actors.messages.user;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.runtime.kactors.messages.AgentMessage;
+import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 
 public class CreateContext extends AgentMessage {
 

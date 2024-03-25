@@ -225,12 +225,15 @@ public abstract class ServiceClient implements KlabService {
      */
     private void establishConnection() {
 
+        this.client = Utils.Http.getServiceClient(token, this);
+
         /*
         TODO revise the websockets strategy by calling the scope controller if the conditions are there, and
          obtaining a channel to pair the scopes.
          */
         this.scope =
-                new AbstractServiceDelegatingScope(new MessagingChannelImpl(this.authentication.getFirst(), client)) {
+                new AbstractServiceDelegatingScope(new MessagingChannelImpl(this.authentication.getFirst(),
+                        client, Scope.Type.SERVICE)) {
                     @Override
                     public UserScope createUser(String username, String password) {
                         return null;
@@ -248,8 +251,6 @@ public abstract class ServiceClient implements KlabService {
                                (Collection<T>) List.of(ServiceClient.this) : Collections.emptyList();
                     }
                 };
-
-        this.client = Utils.Http.getServiceClient(token, this);
 
         scheduler.scheduleAtFixedRate(() -> checkConnection(), 0, pollCycleSeconds, TimeUnit.SECONDS);
     }

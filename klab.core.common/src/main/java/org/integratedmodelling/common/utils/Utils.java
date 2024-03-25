@@ -53,6 +53,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              * @return
              */
             public <T> T post(String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+
+                var params = Utils.Maps.makeKeyMap(parameters);
+                var apiCall = substituteTemplateParameters(apiRequest, params);
+
                 try {
                     var payloadText = payload instanceof String
                                       ? (String) payload :
@@ -61,7 +65,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             HttpRequest.newBuilder()
                                        .version(HttpClient.Version.HTTP_1_1)
                                        .timeout(Duration.ofSeconds(10))
-                                       .uri(URI.create(uri + apiRequest + encodeParameters(parameters)))
+                                       .uri(URI.create(uri + apiCall + encodeParameters(params)))
                                        .header(HttpHeaders.CONTENT_TYPE, payload instanceof String ?
                                                                          MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString())
                                        .header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
@@ -98,8 +102,33 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return MediaType.JSON_UTF_8.toString();
             }
 
-            private String encodeParameters(Object[] parameters) {
-                return "";
+            /**
+             * Substitutes any {xxx} template variable in request and remove the keys from the parameter map.
+             *
+             * @param request
+             * @param parameters
+             * @return
+             */
+            private String substituteTemplateParameters(String request, Map<String, Object> parameters) {
+                var ret = request;
+                var toRemove = new HashSet<String>();
+                for (String key : parameters.keySet()) {
+                    var subst = "{" + key + "}";
+                    if (request.contains(subst)) {
+                        ret = ret.replace(subst, parameters.get(key).toString());
+                        toRemove.add(key);
+                    }
+                }
+                for (var k : toRemove) parameters.remove(k);
+                return ret;
+            }
+
+            private String encodeParameters(Map<String, Object> parameters) {
+                StringBuilder ret = new StringBuilder();
+                for (var k : parameters.keySet()) {
+                    ret.append((ret.isEmpty()) ? "?" : "&").append(k).append("=").append(parameters.get(k));
+                }
+                return ret.toString();
             }
 
             /**
@@ -112,6 +141,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              * @return
              */
             public <T> T get(String apiRequest, Class<T> resultClass, Object... parameters) {
+
+                var params = Utils.Maps.makeKeyMap(parameters);
+                var apiCall = substituteTemplateParameters(apiRequest, params);
+
                 try {
                     var requestBuilder = HttpRequest.newBuilder().GET();
                     if (authorization != null) {
@@ -120,13 +153,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                     if (Void.class != resultClass) {
                         var response =
-                                client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
+                                client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.ofString());
 
                         if (response != null && response.statusCode() == 200) {
                             return parseResponse(response.body(), resultClass);
                         }
                     } else {
-                        client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.discarding());
+                        client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.discarding());
                     }
 
                 } catch (Throwable e) {
@@ -137,6 +170,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             public <T> List<T> getCollection(String apiRequest, Class<T> resultClass, Object... parameters) {
+
+                var params = Utils.Maps.makeKeyMap(parameters);
+                var apiCall = substituteTemplateParameters(apiRequest, params);
+
                 try {
                     var requestBuilder = HttpRequest.newBuilder().GET();
                     if (authorization != null) {
@@ -144,7 +181,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     }
 
                     var response =
-                            client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.ofString());
+                            client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.ofString());
 
                     if (response != null && response.statusCode() == 200) {
                         return parseResponseList(response.body(), resultClass);
@@ -167,13 +204,17 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              * @return
              */
             public void put(String apiRequest, Object... parameters) {
+
+                var params = Utils.Maps.makeKeyMap(parameters);
+                var apiCall = substituteTemplateParameters(apiRequest, params);
+
                 try {
                     var requestBuilder = HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.noBody());
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
                     }
 
-                    client.send(requestBuilder.uri(URI.create(uri + apiRequest + encodeParameters(parameters))).build(), HttpResponse.BodyHandlers.discarding());
+                    client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.discarding());
 
                 } catch (Throwable e) {
                     throw new KlabIOException(e);
@@ -334,13 +375,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Reconstruct a message from the JSON map equivalent. Used in Websockets communication where
-         * the usual strategy for message conversion falls apart.
+         * Reconstruct a message from the JSON map equivalent. Used in Websockets communication where the
+         * usual strategy for message conversion falls apart.
          *
          * @param map
          * @return the reconstructed message.
          */
-        public static Message convertMessage(Map<?,?> map, Object... additionalArguments) {
+        public static Message convertMessage(Map<?, ?> map, Object... additionalArguments) {
 
             var arguments = new ArrayList<Object>();
             var message = Parameters.create(map);
@@ -352,9 +393,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 if (payload instanceof Map m) {
                     if (payload instanceof Parameters<?> parameters) {
                         payload = parameters.asMap();
-                        ((Map<?,?>)payload).remove(JacksonConfiguration.CLASS_FIELD);
+                        ((Map<?, ?>) payload).remove(JacksonConfiguration.CLASS_FIELD);
                     }
-                    payload = convertMap((Map<?,?>)payload, messageType.payloadClass);
+                    payload = convertMap((Map<?, ?>) payload, messageType.payloadClass);
                 }
             }
 
@@ -799,6 +840,27 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             for (K key : originalMap.keySet()) {
                 ret.put(translationTable.containsKey(key) ? translationTable.get(key) : key,
                         originalMap.get(key));
+            }
+            return ret;
+        }
+
+        /**
+         * Create a key->value map by pairing keys with the object that follows them.
+         *
+         * @param parameters
+         * @return a key-value map
+         * @throws KlabIllegalArgumentException if keys aren't matched
+         */
+        public static Map<String, Object> makeKeyMap(Object[] parameters) {
+            var ret = new LinkedHashMap<String, Object>();
+            if (parameters != null) {
+                for (int i = 0; i < parameters.length; i++) {
+                    if (i == parameters.length - 1) {
+                        throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched keys in " +
+                                "argument list");
+                    }
+                    ret.put(parameters[i].toString(), parameters[++i]);
+                }
             }
             return ret;
         }

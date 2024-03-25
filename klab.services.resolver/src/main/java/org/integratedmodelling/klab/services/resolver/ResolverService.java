@@ -73,13 +73,6 @@ public class ResolverService extends BaseService implements Resolver {
         super(scope, Type.RESOLVER, options);
     }
 
-
-    @Override
-    public URL getUrl() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     @Override
     public boolean shutdown() {
 
