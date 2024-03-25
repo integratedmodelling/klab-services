@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,16 +41,18 @@ public class KlabScopeController {
     private SimpMessagingTemplate webSocket;
 
     @MessageMapping(ServicesAPI.MESSAGE)
-    @SendTo("/klab")
-    public Message handleMessage(Map<?, ?> payload) {
+    //    @SendTo("/klab")
+    public void handleMessage(Map<?, ?> payload) {
+
         var message = Utils.Json.convertMessage(payload, Message.Provenance.Forwarded);
         // TODO serviceScope().post() - find the scope for the ID and post it there. Scope must exist.
         //        scopeManager.
+
+
         // TODO IF RESPONSE IS RETURNED IT GOES BACK TO THE CHANNEL. Should be done asynchronously using
         //  the template except when handshaking
         System.out.println("MESSAGE " + message);
 
-        return null;
     }
 
     /**
@@ -71,19 +74,24 @@ public class KlabScopeController {
     public String registerScope(@PathVariable("scopeType") Scope.Type scopeType,
                                 @PathVariable("scopeId") String scopeId, Principal principal) {
 
-        /*
-        based on the scope type and permissions, either add listeners to the service scope or build a
-        lower-level scope for future reference.
-         */
-
-        // TODO we may want to register a specific topic/channel linked to the scope.
-        return service.klabService().getUrl().toString().replaceFirst(service.klabService().getUrl().getProtocol(), "ws")
-                + ServicesAPI.MESSAGE + ",/klab";
+        if (principal instanceof EngineAuthorization engineAuthorization) {
+            if (scopeManager.registerScope(scopeType, scopeId, engineAuthorization)) {
+                // TODO (?) we may want to register a specific topic/channel linked to the scope using the
+                //  scope ID
+                return service.klabService().getUrl().toString().replaceFirst(service.klabService().getUrl().getProtocol(), "ws")
+                        + ServicesAPI.MESSAGE + ",/klab";
+            }
+        }
+        return null;
     }
+
 
     @GetMapping(ServicesAPI.SCOPE.DISPOSE)
     public boolean disposeScope(@PathVariable String scopeId, Principal principal) {
-        return true;
+        if (principal instanceof EngineAuthorization engineAuthorization) {
+            return scopeManager.unregisterScope(scopeId, engineAuthorization);
+        }
+        return false;
     }
 
 }

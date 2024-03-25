@@ -21,7 +21,6 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Message.MessageClass;
-import org.integratedmodelling.klab.api.services.runtime.MessageBus;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.slf4j.Logger;
@@ -41,8 +40,6 @@ public enum Logging {
 
     private Logger logger;
 
-    @Deprecated // this should be logging only, messages are for scopes
-    private MessageBus messageBus;
     private Identity rootIdentity;
 
     Consumer<String> infoWriter = (message) -> System.out.println("INFO: " + message);
@@ -68,12 +65,6 @@ public enum Logging {
 
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
-        if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.INFO.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification,
-                    Message.MessageType.Info, payload.getFirst(),
-                    payload.getSecond()));
-        }
-
         if (Configuration.INSTANCE.getLoggingLevel().intValue() >= Level.INFO.intValue()) {
             if (infoWriter != null) {
                 infoWriter.accept(payload.getFirst());
@@ -89,12 +80,6 @@ public enum Logging {
 
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
-        if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.WARNING.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), Message.MessageClass.Notification,
-                    Message.MessageType.Warning,
-                    payload.getFirst(), payload.getSecond()));
-        }
-
         if (Configuration.INSTANCE.getLoggingLevel().intValue() >= Level.WARNING.intValue()) {
             if (warningWriter != null) {
                 warningWriter.accept(payload.getFirst());
@@ -108,12 +93,6 @@ public enum Logging {
     public void error(Object... o) {
 
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
-
-        if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification,
-                    Message.MessageType.Error,
-                    payload.getFirst(), payload.getSecond()));
-        }
 
         if (Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
             if (errorWriter != null) {
@@ -129,12 +108,6 @@ public enum Logging {
 
         Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
 
-        if (messageBus != null && Configuration.INSTANCE.getNotificationLevel().intValue() >= Level.FINE.intValue()) {
-            messageBus.post(Message.create(rootIdentity.getId(), MessageClass.Notification,
-                    Message.MessageType.Debug,
-                    payload.getFirst(), payload.getSecond()));
-        }
-
         if (Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.FINE.intValue()) {
             if (debugWriter != null) {
                 debugWriter.accept(payload.getFirst());
@@ -144,11 +117,7 @@ public enum Logging {
             }
         }
     }
-
-    public void setMessageBus(MessageBus mbus) {
-        this.messageBus = mbus;
-    }
-
+    
     public void setRootIdentity(Identity identity) {
         this.rootIdentity = identity;
     }

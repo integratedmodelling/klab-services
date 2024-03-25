@@ -332,4 +332,33 @@ public class ServiceAuthorizationManager {
 
         return ret;
     }
+
+    /**
+     * Based on the scope type and permissions, either add listeners to the service scope or build a
+     * lower-level scope for future reference.
+     *
+     * TODO
+     *
+     * @param scopeType
+     * @param scopeId
+     * @param engineAuthorization
+     * @return
+     */
+    public boolean registerScope(Scope.Type scopeType, String scopeId,
+                                 EngineAuthorization engineAuthorization) {
+        // TODO must work with the service scope channel etc.
+        return true;
+    }
+
+    /**
+     * Unregister a previously registered scope.
+     *
+     * @param scopeId
+     * @param engineAuthorization
+     * @return
+     */
+    public boolean unregisterScope(String scopeId, EngineAuthorization engineAuthorization) {
+        // TODO uninstall any listeners and monitors if service; remove child scopes
+        return true;
+    }
 }
