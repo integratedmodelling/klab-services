@@ -77,7 +77,7 @@ public class KlabScopeController {
         if (principal instanceof EngineAuthorization engineAuthorization) {
             if (scopeManager.registerScope(scopeType, scopeId, engineAuthorization)) {
                 // TODO (?) we may want to register a specific topic/channel linked to the scope using the
-                //  scope ID
+                //  scope ID. Or if the channel is only one, its name should probably be generated on startup.
                 return service.klabService().getUrl().toString().replaceFirst(service.klabService().getUrl().getProtocol(), "ws")
                         + ServicesAPI.MESSAGE + ",/klab";
             }

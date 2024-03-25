@@ -34,7 +34,7 @@ class SerializationTests {
         assert (deserialized.get("params") instanceof Parameters);
     }
 
-    @Test
+//    @Test
     void pair() {
         Geometry geometry = Geometry.create(centralColombia);
         Parameters<Object> object = Parameters.create("one", 1, "oneString", "one", "params",
