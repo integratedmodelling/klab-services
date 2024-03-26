@@ -74,8 +74,17 @@ public interface UIController {
      *
      * @param reactor
      */
-    void registerViewController(ViewController reactor);
-    
+    void registerViewController(ViewController<?> reactor);
+
+    /**
+     * Return the registered view controller for the passed class. Used in view implementations to register
+     * themselves.
+     *
+     * @param controllerClass
+     * @return the view controller or null
+     */
+    <T extends ViewController<?>> T viewController(Class<T> controllerClass);
+
     /**
      * Open a panel to display an object.
      *

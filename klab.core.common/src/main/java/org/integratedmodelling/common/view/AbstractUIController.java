@@ -27,6 +27,7 @@ import java.util.*;
 public abstract class AbstractUIController implements UIController {
 
     private class EventReactor {
+
         List<Class<?>> parameterClasses = new ArrayList<>();
         Method method;
         UIReactor reactor;
@@ -233,6 +234,16 @@ public abstract class AbstractUIController implements UIController {
 
             }
         }
+    }
+
+    @Override
+    public <T extends ViewController<?>> T viewController(Class<T> controllerClass) {
+        for (var view : views.values()) {
+            if (controllerClass.isAssignableFrom(view.getClass())) {
+                return (T) view;
+            }
+        }
+        return null;
     }
 
     @Override

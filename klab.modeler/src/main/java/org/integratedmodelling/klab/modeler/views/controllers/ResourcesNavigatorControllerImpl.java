@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
-import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigatorController;
+import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

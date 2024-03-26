@@ -4,7 +4,7 @@ import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.api.view.modeler.panels.DistributionView;
-import org.integratedmodelling.klab.api.view.modeler.panels.DistributionViewController;
+import org.integratedmodelling.klab.api.view.modeler.panels.controllers.DistributionViewController;
 
 import java.util.HashSet;
 import java.util.Set;

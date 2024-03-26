@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.view.modeler.panels;
+package org.integratedmodelling.klab.api.view.modeler.panels.controllers;
 
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.view.UIReactor;
@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.modeler.panels.DistributionView;
 
 /**
  * Interact with and show the status of the current software distribution, if any. If a distribution is

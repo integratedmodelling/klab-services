@@ -1,10 +1,11 @@
-package org.integratedmodelling.klab.api.view.modeler.views;
+package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.modeler.views.EventViewer;
 
 /**
  * Subscribes to events from different sources and shows notifications appropriately. It should only react to

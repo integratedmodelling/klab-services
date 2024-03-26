@@ -4,7 +4,7 @@ import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
-import org.integratedmodelling.klab.api.view.modeler.views.ServicesViewController;
+import org.integratedmodelling.klab.api.view.modeler.views.controllers.ServicesViewController;
 
 public class ServicesViewImpl extends AbstractUIViewController<ServicesView> implements ServicesViewController {
 

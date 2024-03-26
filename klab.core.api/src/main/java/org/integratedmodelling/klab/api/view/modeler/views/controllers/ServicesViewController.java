@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.api.view.modeler.views;
+package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 
 /**
  * Service chooser at a minimum should give access to every service available in the engine, reflect their
