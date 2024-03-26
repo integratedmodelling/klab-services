@@ -43,7 +43,7 @@ public class Downloader {
         this.maxRetries = maxRetries;
         this.retries = 0;
 	}
-	
+
 	private class ProgressListener implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {

@@ -47,7 +47,7 @@ public interface Modeler extends UIController {
 
     @UIActionHandler(value = UIReactor.UIAction.ImportProject, label = "New project", tooltip =
             "Create a new k.LAB project in the current workspace and scope")
-    default void importProject(String projectUrl) {
+    default void importProject(String projectUrl, boolean overwriteExisting) {
         // dispatch(this, UIReactor.UIEvent.ImportProjectRequest, projectUrl);
     }
 

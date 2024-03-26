@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.api.view;
 
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 
 /**
  * The UI controller is a singleton that represents the engine when it's associated to a UI. It starts the
@@ -60,13 +59,13 @@ public interface UIController {
     void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload);
 
     /**
-     * Register a view controller (implementing {@link ViewController}) so that it can be informed of all UI-relevant
-     * events. The view interfaces specify default methods that turn UI actions into events which go back to
-     * the modeler for wiring. This must be done for all views prior to booting the UI: views pre-exist
-     * although they may be invisible or inactive. Panels are opened but not registered.
+     * Register a view controller (implementing {@link ViewController}) so that it can be informed of all
+     * UI-relevant events. The view interfaces specify default methods that turn UI actions into events which
+     * go back to the modeler for wiring. This must be done for all views prior to booting the UI: views
+     * pre-exist although they may be invisible or inactive. Panels are opened but not registered.
      * <p>
-     * There can only be one view per view annotation declared. only {@link PanelController}s can be present in multiple
-     * instances.
+     * There can only be one view per view annotation declared. only {@link PanelController}s can be present
+     * in multiple instances.
      * <p>
      * Registration should inspect the reactor for annotated event methods, which must take the parameters
      * specified in the event. If source analysis is enabled (e.g. when the view is specified through k.Actors
@@ -75,8 +74,8 @@ public interface UIController {
      *
      * @param reactor
      */
-    void register(ViewController reactor);
-
+    void registerViewController(ViewController reactor);
+    
     /**
      * Open a panel to display an object.
      *
@@ -95,9 +94,9 @@ public interface UIController {
     void unregister(UIReactor reactor);
 
     /**
-     * Called whenever something has changed that has the potential of changing the
-     * entire layout of the view. Pass the objects whose contents are likely to be
-     * changed for reference (could be services, assets, settings etc.)
+     * Called whenever something has changed that has the potential of changing the entire layout of the view.
+     * Pass the objects whose contents are likely to be changed for reference (could be services, assets,
+     * settings etc.)
      *
      * @param changedElements
      */

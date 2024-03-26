@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.scope.Scope;
 
+import java.io.File;
 import java.util.Collection;
 
 /**
@@ -10,6 +11,58 @@ import java.util.Collection;
  * distribution will be able of synchronizing its contents with the network.
  */
 public interface Distribution {
+
+
+    /**
+     * Use one of these to implement progress monitoring for downloads.
+     *
+     * @author Ferd
+     *
+     */
+    interface SynchronizationMonitor {
+
+        /**
+         * @param file
+         */
+        void beforeDownload(String file);
+
+        /**
+         * This is only called when preparing an incremental update from a previous
+         * distribution, which can run relatively long.
+         */
+        void notifyDownloadPreparationStart();
+
+        /**
+         * This is only called when preparing an incremental update from a previous
+         * distribution, which can run relatively long.
+         */
+        void notifyDownloadPreparationEnd();
+
+        void notifyFileProgress(String file, long bytesSoFar, long totalBytes);
+
+        /**
+         * @param localFile
+         */
+        void beforeDelete(File localFile);
+
+        /**
+         * @param downloadFilecount
+         * @param deleteFileCount
+         */
+        void notifyDownloadCount(int downloadFilecount, int deleteFileCount);
+
+        /**
+         * Notify an error
+         * @param e an exception
+         */
+        void notifyError(Exception e);
+
+        /**
+         *
+         */
+        void transferFinished(Exception e);
+    }
+
 
     public static final String DISTRIBUTION_PROPERTIES_FILE = "distribution.properties";
 
@@ -29,7 +82,7 @@ public interface Distribution {
      *
      * @param scope
      */
-    void synchronize(Scope scope);
+    void synchronize(Scope scope, SynchronizationMonitor listener);
 
     /**
      * If true, synchronize() may be called to update the distribution. This will return

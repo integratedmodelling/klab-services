@@ -199,7 +199,7 @@ public abstract class AbstractUIController implements UIController {
     protected abstract Scope scope();
 
     @Override
-    public void register(ViewController reactor) {
+    public void registerViewController(ViewController reactor) {
 
         var viewAnnotation = AnnotationUtils.findAnnotation(reactor.getClass(), UIView.class);
         if (viewAnnotation == null) {

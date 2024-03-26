@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 
 @Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -437,6 +438,10 @@ public class Resources {
                     "Workspace for the imported project"}, required = false)
             private String workspace;
 
+            @Option(names = {"-f", "--force"}, defaultValue = "false", description = {
+                    "Force reimport of an existing project"}, required = false)
+            private boolean force;
+
             @Parameters
             private String projectUrl;
 
@@ -448,11 +453,11 @@ public class Resources {
                  just create it if not existing.
                  */
 
-                KlabCLI.INSTANCE.modeler().importProject(projectUrl);
+                KlabCLI.INSTANCE.modeler().importProject(projectUrl, force);
 
                 try {
                     var url = new File(projectUrl).isDirectory() ? new File(projectUrl).toURI().toURL() :
-                              new URL(projectUrl);
+                              new URI(projectUrl).toURL();
                     var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                     if (service instanceof ResourcesService.Admin) {
                         if (!((ResourcesService.Admin) service).importProject(workspace,
@@ -466,7 +471,7 @@ public class Resources {
                         System.out.println("service " + this.service + " does not have admin permissions in" +
                                 " this scope");
                     }
-                } catch (MalformedURLException e) {
+                } catch (Exception e) {
                     System.err.println("Invalid project URL entered");
                 }
             }

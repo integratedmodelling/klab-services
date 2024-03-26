@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.view.PanelController;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
@@ -56,9 +55,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     protected void createView() {
 
-        register(new ServicesViewImpl(this));
-        register(new DistributionViewImplController(this));
-        register(new ResourcesNavigatorImpl(this));
+        registerViewController(new ServicesViewImpl(this));
+        registerViewController(new DistributionViewImplController(this));
+        registerViewController(new ResourcesNavigatorImpl(this));
         // TODO etc.
 
     }

@@ -39,18 +39,33 @@
                                     <license>GNU Affero GPL 3.0+</license>
                                     <artifacts>
                                         <artifact>
-                                            <id>org.integratedmodelling:klab.core.api:jar:0.11.0-SNAPSHOT</id>id>
+                                            <id>org.integratedmodelling:klab.core.api:jar:0.11.0-SNAPSHOT</id>
+                                            <source>true</source>
                                         </artifact>
                                         <artifact>
-                                            <id>org.integratedmodelling:klab.core.common:jar:0.11.0-SNAPSHOT</id>id>
+                                            <id>org.integratedmodelling:klab.core.common:jar:0.11.0-SNAPSHOT</id>
+                                            <source>true</source>
                                         </artifact>
                                         <artifact>
-                                            <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>id>
+                                            <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>
+                                            <source>true</source>
                                         </artifact>
                                     </artifacts>
                                 </feature>
                             </featureDefinitions>
                             <artifacts>
+                                <artifact>
+                                    <id>org.integratedmodelling:klab.core.api:jar:0.11.0-SNAPSHOT</id>id>
+                                    <source>true</source>
+                                </artifact>
+                                <artifact>
+                                    <id>org.integratedmodelling:klab.core.common:jar:0.11.0-SNAPSHOT</id>id>
+                                    <source>true</source>
+                                </artifact>
+                                <artifact>
+                                    <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>id>
+                                    <source>true</source>
+                                </artifact>
                                 <!-- specify your depencies here
                                  groupId:artifactId:version
                                 <artifact>
