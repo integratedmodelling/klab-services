@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.view.annotations.UIView;
  * discretion. The main user event is {@link #selectDistribution(Distribution)} which
  */
 @UIView(value = UIReactor.Type.DistributionView, target = Distribution.class)
-public interface DistributionViewController extends ViewController {
+public interface DistributionViewController extends ViewController<DistributionView> {
 
     /**
      * Set up the UI for the passed distribution. If we have one already and this is different, make it

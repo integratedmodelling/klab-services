@@ -28,8 +28,9 @@
                             <goal>site</goal>
                         </goals>
                         <configuration>
+<!--
                             <featureDefinitions>
-                                <feature> <!-- Generate a feature including artifacts that are listed below inside the feature element-->
+                                <feature>
                                     <id>org.integratedmodelling.klab.modeler.feature</id>
                                     <version>1.0.0</version>
                                     <label>k.LAB core API</label>
@@ -40,33 +41,48 @@
                                     <artifacts>
                                         <artifact>
                                             <id>org.integratedmodelling:klab.core.api:jar:0.11.0-SNAPSHOT</id>
-                                            <source>true</source>
                                         </artifact>
                                         <artifact>
                                             <id>org.integratedmodelling:klab.core.common:jar:0.11.0-SNAPSHOT</id>
-                                            <source>true</source>
                                         </artifact>
                                         <artifact>
                                             <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>
-                                            <source>true</source>
                                         </artifact>
                                     </artifacts>
                                 </feature>
                             </featureDefinitions>
+-->
                             <artifacts>
                                 <artifact>
-                                    <id>org.integratedmodelling:klab.core.api:jar:0.11.0-SNAPSHOT</id>id>
-                                    <source>true</source>
+                                    <id>org.integratedmodelling:klab.core.api:jar:0.11.0-SNAPSHOT</id>
+                                    <override>true</override>
+                                    <instructions>
+                                        <_noee>true</_noee>
+                                    </instructions>
                                 </artifact>
                                 <artifact>
-                                    <id>org.integratedmodelling:klab.core.common:jar:0.11.0-SNAPSHOT</id>id>
-                                    <source>true</source>
+                                    <id>org.integratedmodelling:klab.core.common:jar:0.11.0-SNAPSHOT</id>
+                                    <override>true</override>
+                                    <instructions>
+                                        <_noee>true</_noee>
+                                    </instructions>
+
                                 </artifact>
                                 <artifact>
-                                    <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>id>
-                                    <source>true</source>
+                                    <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>
+                                    <override>true</override>
+                                    <instructions>
+                                        <_noee>true</_noee>
+                                    </instructions>
                                 </artifact>
-                                <!-- specify your depencies here
+                                <artifact>
+                                    <id>com.google.inject:guice:jar:7.0.0</id>
+                                    <override>true</override>
+                                    <instructions>
+                                        <_noee>true</_noee>
+                                    </instructions>
+                                </artifact>
+                                <!-- specify your dependencies here
                                  groupId:artifactId:version
                                 <artifact>
                                     <id>com.google.guava:guava:jar:23.0</id>  Artifact with existing OSGi-Manifest

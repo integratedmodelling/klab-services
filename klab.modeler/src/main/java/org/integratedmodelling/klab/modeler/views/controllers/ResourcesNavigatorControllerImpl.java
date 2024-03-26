@@ -1,22 +1,22 @@
-package org.integratedmodelling.klab.modeler.views;
+package org.integratedmodelling.klab.modeler.views.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
-import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
+import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigatorController;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class ResourcesNavigatorImpl extends AbstractUIViewController implements ResourcesNavigator {
+public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<ResourcesNavigator> implements ResourcesNavigatorController {
 
     Map<String, NavigableAsset> assetMap = new LinkedHashMap<>();
 
-    public ResourcesNavigatorImpl(UIController controller) {
+    public ResourcesNavigatorControllerImpl(UIController controller) {
         super(controller);
     }
 

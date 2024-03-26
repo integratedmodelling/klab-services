@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
 
 @UIView(UIReactor.Type.ContextView)
-public interface ContextViewController extends ViewController {
+public interface ContextViewController extends ViewController<ContextView> {
 
     /**
      * Called when other views put semantics or a model into focus. May pre-select it for observation or do

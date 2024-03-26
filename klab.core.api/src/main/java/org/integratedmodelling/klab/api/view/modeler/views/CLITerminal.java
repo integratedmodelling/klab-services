@@ -1,9 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.views;
 
-import org.integratedmodelling.klab.api.view.ViewController;
-import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.View;
 
-@UIView(UIReactor.Type.CLIConsole)
-public interface CLITerminal extends ViewController {
+public interface CLITerminal extends View {
 }

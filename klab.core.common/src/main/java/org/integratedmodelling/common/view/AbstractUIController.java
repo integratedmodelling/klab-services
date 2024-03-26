@@ -243,7 +243,7 @@ public abstract class AbstractUIController implements UIController {
     }
 
     @Override
-    public <T> void open(PanelController<T> panel, T payload) {
+    public <T> void open(PanelController<T, ?> panel, T payload) {
 
     }
 

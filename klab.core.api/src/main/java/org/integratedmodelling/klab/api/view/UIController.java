@@ -84,7 +84,7 @@ public interface UIController {
      * @param <T>     the type of the object handled by the panel. Must be assignable from the class set for
      *                the panel.
      */
-    <T> void open(PanelController<T> panel, T payload);
+    <T> void open(PanelController<T, ?> panel, T payload);
 
     /**
      * Unregister the passed reactor.

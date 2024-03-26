@@ -5,8 +5,12 @@ package org.integratedmodelling.klab.api.view;
  * reconfigure themselves based on the UI events they receive, unlike the "panels" that are shown one-off to
  * edit a specific object.
  * <p>
- * Provides common methods to initialize and react to UI events. View implementation
+ * The ViewController registers a View of a specified type, and becomes active from that moment on. The
+ * controller implementation will drive the view, so that any view implementation only needs to implement
+ * the interface.
  */
-public interface ViewController extends UIReactor {
+public interface ViewController<T extends View> extends UIReactor {
+
+    void registerView(T view);
 
 }

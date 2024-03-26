@@ -12,9 +12,9 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
-import org.integratedmodelling.klab.modeler.views.DistributionViewImplController;
-import org.integratedmodelling.klab.modeler.views.ResourcesNavigatorImpl;
-import org.integratedmodelling.klab.modeler.views.ServicesViewImpl;
+import org.integratedmodelling.klab.modeler.views.controllers.DistributionViewImplController;
+import org.integratedmodelling.klab.modeler.views.controllers.ResourcesNavigatorControllerImpl;
+import org.integratedmodelling.klab.modeler.views.controllers.ServicesViewImpl;
 
 import java.util.function.BiConsumer;
 
@@ -27,7 +27,6 @@ import java.util.function.BiConsumer;
  * Call {@link #boot()} in a separate thread when the view is initialized and let the UI events do the rest.
  */
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
-
 
     private final BiConsumer<Scope, Message>[] listeners;
     EngineConfiguration workbench;
@@ -57,7 +56,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
         registerViewController(new ServicesViewImpl(this));
         registerViewController(new DistributionViewImplController(this));
-        registerViewController(new ResourcesNavigatorImpl(this));
+        registerViewController(new ResourcesNavigatorControllerImpl(this));
         // TODO etc.
 
     }

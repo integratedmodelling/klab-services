@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.view.modeler.views;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIReactor;
+import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIView;
@@ -14,7 +15,7 @@ import org.integratedmodelling.klab.api.view.annotations.UIView;
  * one service per category as the "focal"/current service for the engine and for other views..
  */
 @UIView(value = UIReactor.Type.ServiceChooser, target = Engine.class)
-public interface ServiceChooser {
+public interface ServicesViewController extends ViewController<ServicesView> {
 
     /**
      * Service exists - may be on, off or in error. If no other services are available for its type, the view
