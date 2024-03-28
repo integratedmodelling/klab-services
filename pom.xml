@@ -120,7 +120,7 @@
         <spring.version>6.1.4</spring.version>
         <spring-security.version>6.2.2</spring-security.version>
         <junit-version>5.6.3</junit-version>
-        <jackson-version>2.15.3</jackson-version>
+        <jackson-version>2.15.4</jackson-version>
         <!-- <jsonld-java-version>0.13.4</jsonld-java-version> -->
         <!-- end versions that need to be in lock-step to avoid multiple Spring
             issues -->

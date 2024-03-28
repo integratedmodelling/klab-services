@@ -25,34 +25,9 @@ public abstract class AbstractUIViewController<T extends View> implements ViewCo
         this.view = view;
     }
 
-    @Override
-    public void show() {
-
-    }
-
-    @Override
-    public void hide() {
-
-    }
-
-    @Override
-    public void enable() {
-
-    }
-
-    @Override
-    public void disable() {
-
-    }
-
-    @Override
-    public boolean isShown() {
-        return false;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return false;
+    protected T view() {
+        assert(view != null);
+        return view;
     }
 
     /**

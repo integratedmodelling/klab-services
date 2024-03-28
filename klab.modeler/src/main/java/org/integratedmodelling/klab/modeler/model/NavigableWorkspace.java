@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
 //import com.google.common.collect.BiMap;
 //import com.google.common.collect.HashBiMap;
@@ -19,7 +20,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
  * Workspaces should never be modified after creation: any change to the namespaces should create a new
  * workspace.
  */
-public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements Workspace {
+public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements Workspace, NavigableContainer {
 
     @Serial
     private static final long serialVersionUID = -6967097462644821300L;

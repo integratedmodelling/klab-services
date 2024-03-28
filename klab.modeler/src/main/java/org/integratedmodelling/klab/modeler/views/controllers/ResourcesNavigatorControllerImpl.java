@@ -5,16 +5,21 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
+import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
+import org.integratedmodelling.klab.modeler.model.NavigableWorldview;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<ResourcesNavigator> implements ResourcesNavigatorController {
 
-    Map<String, NavigableAsset> assetMap = new LinkedHashMap<>();
+    Map<String, NavigableContainer> assetMap = new LinkedHashMap<>();
+    ResourcesService currentService;
 
     public ResourcesNavigatorControllerImpl(UIController controller) {
         super(controller);
@@ -27,10 +32,13 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     @Override
     public void loadService(ResourcesService service) {
-        var currentService = getController().engine().serviceScope().getService(ResourcesService.class);
-        if (service == currentService) {
+        if (service == null) {
+            view().disable();
+        } else {
+            view().enable();
             getController().storeView(currentService);
             createNavigableAssets(service);
+            view().showWorkspaces(new ArrayList<>(assetMap.values()));
         }
     }
 
@@ -60,7 +68,16 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     private void createNavigableAssets(ResourcesService service) {
         assetMap.clear();
-
+        var capabilities = service.capabilities();
+        if (capabilities.isWorldviewProvider()) {
+            assetMap.put("Worldview", new NavigableWorldview(service.getWorldview()));
+        }
+        for (var workspaceId : capabilities.getWorkspaceNames()) {
+            var workspace = service.resolveWorkspace(workspaceId, getController().user());
+            if (workspace != null) {
+                assetMap.put(workspaceId, new NavigableWorkspace(workspace));
+            }
+        }
     }
 
 

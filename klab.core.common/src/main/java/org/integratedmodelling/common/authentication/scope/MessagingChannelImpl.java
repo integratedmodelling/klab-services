@@ -137,9 +137,10 @@ public class MessagingChannelImpl extends ChannelImpl {
     @Override
     public boolean disconnect(KlabService service) {
         if (isPaired() && session.isConnected()) {
-            session.disconnect();
             paired.set(false);
-            return client.get(ServicesAPI.SCOPE.DISPOSE, Boolean.class);
+            var ret = client.get(ServicesAPI.SCOPE.DISPOSE, Boolean.class, "scopeId", scopeId);
+            session.disconnect();
+            return ret != null && ret;
         }
         return false;
     }
@@ -147,7 +148,7 @@ public class MessagingChannelImpl extends ChannelImpl {
     @Override
     public Message send(Object... message) {
         var ret = super.send(message);
-        if (ret.getProvenance() == Message.Provenance.Original) {
+        if (session != null && ret.getProvenance() == Message.Provenance.Original) {
             session.send(channel, ret);
         }
         return ret;
@@ -156,7 +157,7 @@ public class MessagingChannelImpl extends ChannelImpl {
     @Override
     public Message post(Consumer<Message> handler, Object... message) {
         var ret = super.post(handler, message);
-        if (ret.getProvenance() == Message.Provenance.Original) {
+        if (session != null && ret.getProvenance() == Message.Provenance.Original) {
             session.send(channel, ret);
         }
         return ret;

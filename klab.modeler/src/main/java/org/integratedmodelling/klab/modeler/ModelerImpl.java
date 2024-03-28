@@ -12,10 +12,10 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
-import org.integratedmodelling.klab.modeler.views.controllers.DistributionViewImplController;
-import org.integratedmodelling.klab.modeler.views.controllers.ResourcesNavigatorControllerImpl;
-import org.integratedmodelling.klab.modeler.views.controllers.ServicesViewImpl;
+import org.integratedmodelling.klab.modeler.views.controllers.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
@@ -28,13 +28,13 @@ import java.util.function.BiConsumer;
  */
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
 
-    private final BiConsumer<Scope, Message>[] listeners;
+    private final List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     EngineConfiguration workbench;
     private ContextScope currentContext;
     private SessionScope currentSession;
 
-    public ModelerImpl(BiConsumer<Scope, Message>... listeners) {
-        this.listeners = listeners;
+    public ModelerImpl() {
+        super();
         // TODO read the workbench config - NAH this probably pertains to the IDE
     }
 
@@ -43,11 +43,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         // TODO first should locate and set the distribution
         var ret = new EngineClient();
         //        ret.addEventListener((scope, message) -> onMessage(scope, message));
-        if (this.listeners != null) {
             for (var listener : this.listeners) {
                 ret.addEventListener(listener);
             }
-        }
         return ret;
     }
 
@@ -57,6 +55,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         registerViewController(new ServicesViewImpl(this));
         registerViewController(new DistributionViewImplController(this));
         registerViewController(new ResourcesNavigatorControllerImpl(this));
+        registerViewController(new ContextInspectorControllerImpl(this));
+        registerViewController(new AuthenticationViewControllerImpl(this));
+        registerViewController(new ContextControllerImpl(this));
         // TODO etc.
 
     }
@@ -116,6 +117,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         return null;
     }
 
-
-
+    public void addListener(BiConsumer<Scope, Message> listener) {
+        this.listeners.add(listener);
+    }
 }

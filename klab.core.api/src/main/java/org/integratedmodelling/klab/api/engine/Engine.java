@@ -61,7 +61,7 @@ public interface Engine extends KlabService {
      *
      * @param eventListeners
      */
-    void addEventListener(BiConsumer<Scope, Message>... eventListeners);
+    void addEventListener(BiConsumer<Scope, Message> eventListener);
 
     /**
      * To facilitate implementations, we expose the boot and shutdown as explicitly called phases. Booting the

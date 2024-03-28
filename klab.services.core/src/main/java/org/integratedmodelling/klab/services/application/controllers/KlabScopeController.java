@@ -87,7 +87,7 @@ public class KlabScopeController {
 
 
     @GetMapping(ServicesAPI.SCOPE.DISPOSE)
-    public boolean disposeScope(@PathVariable String scopeId, Principal principal) {
+    public boolean disposeScope(@PathVariable("scopeId") String scopeId, Principal principal) {
         if (principal instanceof EngineAuthorization engineAuthorization) {
             return scopeManager.unregisterScope(scopeId, engineAuthorization);
         }

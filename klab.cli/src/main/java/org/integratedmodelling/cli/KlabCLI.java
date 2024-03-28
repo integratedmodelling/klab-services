@@ -426,7 +426,9 @@ public enum KlabCLI {
                 // tie the scope monitor to the CLI input and output streams
 
                 // create the modeler
-                INSTANCE.modeler = new ModelerImpl((scope, message) -> INSTANCE.onEvent(scope, message));
+                INSTANCE.modeler = new ModelerImpl();
+
+                INSTANCE.modeler.addListener((scope, message) -> INSTANCE.onEvent(scope, message));
 
                 // Configure messages for CLI use
                 INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);

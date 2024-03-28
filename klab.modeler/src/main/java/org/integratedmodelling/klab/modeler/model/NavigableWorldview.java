@@ -8,8 +8,9 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
-public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements Worldview {
+public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements Worldview, NavigableContainer {
 
 	@Serial
 	private static final long serialVersionUID = 506794106478880781L;

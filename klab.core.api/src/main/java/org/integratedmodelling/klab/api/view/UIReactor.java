@@ -227,22 +227,6 @@ public interface UIReactor {
     UIController getController();
 
 
-    void show();
-
-    void hide();
-
-    /**
-     * Views in the enabled state permit all allowed interaction with their target.
-     */
-    void enable();
-
-    void disable();
-
-    boolean isShown();
-
-    boolean isEnabled();
-
-
     /**
      * React to the passed UI event. The payload class is validated to be of the expected type before this is
      * called (an array if multiple). This is a catch-all method that is called only if there are no

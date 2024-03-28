@@ -26,6 +26,12 @@ import java.util.*;
  */
 public abstract class AbstractUIController implements UIController {
 
+    /**
+     * All events that the UI reacts to. Used to filter the engine events so they are not dispatched unless
+     * something is listening.
+     */
+    private Set<UIReactor.UIEvent> relevantEvents = EnumSet.noneOf(UIReactor.UIEvent.class);
+
     private class EventReactor {
 
         List<Class<?>> parameterClasses = new ArrayList<>();
@@ -72,7 +78,8 @@ public abstract class AbstractUIController implements UIController {
     private Engine engine;
 
     protected AbstractUIController() {
-
+        createView();
+        createViewGraph();
     }
 
     /**
@@ -93,8 +100,6 @@ public abstract class AbstractUIController implements UIController {
      */
     public void boot() {
         engine = createEngine();
-        createView();
-        createViewGraph();
         engine.addEventListener(this::processMessage);
         engine.boot();
     }
@@ -183,11 +188,13 @@ public abstract class AbstractUIController implements UIController {
 
     @Override
     public void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload) {
-        var rs = reactors.get(event);
-        if (rs != null) {
-            for (var desc : rs) {
-                // TODO debug?
-                desc.call(sender, payload);
+        if (relevantEvents.contains(event)) {
+            var rs = reactors.get(event);
+            if (rs != null) {
+                for (var desc : rs) {
+                    // TODO debug?
+                    desc.call(sender, payload);
+                }
             }
         }
     }
@@ -200,7 +207,7 @@ public abstract class AbstractUIController implements UIController {
     protected abstract Scope scope();
 
     @Override
-    public void registerViewController(ViewController reactor) {
+    public void registerViewController(ViewController<?> reactor) {
 
         var viewAnnotation = AnnotationUtils.findAnnotation(reactor.getClass(), UIView.class);
         if (viewAnnotation == null) {
@@ -221,6 +228,7 @@ public abstract class AbstractUIController implements UIController {
                 var descriptor = new EventReactor(reactor, method);
                 descriptor.method = method;
                 descriptor.reactor = reactor;
+                relevantEvents.add(eventHandlerDefinition.value());
                 // TODO validate the argument list w.r.t. the event payload class!
                 this.reactors.computeIfAbsent(key, k -> new ArrayList<>()).add(descriptor);
 

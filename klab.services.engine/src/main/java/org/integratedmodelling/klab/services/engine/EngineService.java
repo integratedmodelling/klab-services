@@ -75,10 +75,8 @@ public class EngineService implements Engine {
     }
 
     @Override
-    public void addEventListener(BiConsumer<Scope, Message>... eventListeners) {
-        for (var listener : eventListeners) {
-            this.eventListeners.add(listener);
-        }
+    public void addEventListener(BiConsumer<Scope, Message> eventListener) {
+        this.eventListeners.add(eventListener);
     }
 
     /**
@@ -272,39 +270,39 @@ public class EngineService implements Engine {
 
         // FIXME TODO
         return null;
-//        return new LocalServiceScope(cls, eventListeners.toArray(new BiConsumer[]{})) {
-//
-//            @Override
-//            public String getId() {
-//                return cls.getCanonicalName();
-//            }
-//
-//            // no agents for services in this implementation
-//            @Override
-//            public Ref getAgent() {
-//                return null;
-//            }
-//
-//            @SuppressWarnings("unchecked")
-//            @Override
-//            public <T extends KlabService> T getService(Class<T> serviceClass) {
-//                if (serviceClass.isAssignableFrom(Reasoner.class)) {
-//                    return (T) defaultReasoner;
-//                } else if (serviceClass.isAssignableFrom(ResourcesService.class)) {
-//                    return (T) defaultResourcesService;
-//                } else if (serviceClass.isAssignableFrom(Resolver.class)) {
-//                    return (T) defaultResolver;
-//                } else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-//                    return (T) defaultRuntime;
-//                }
-//                return null;
-//            }
-//
-//            @Override
-//            public void stop() {
-//                // TODO (?) notify to engine, log, do something
-//            }
-//        };
+        //        return new LocalServiceScope(cls, eventListeners.toArray(new BiConsumer[]{})) {
+        //
+        //            @Override
+        //            public String getId() {
+        //                return cls.getCanonicalName();
+        //            }
+        //
+        //            // no agents for services in this implementation
+        //            @Override
+        //            public Ref getAgent() {
+        //                return null;
+        //            }
+        //
+        //            @SuppressWarnings("unchecked")
+        //            @Override
+        //            public <T extends KlabService> T getService(Class<T> serviceClass) {
+        //                if (serviceClass.isAssignableFrom(Reasoner.class)) {
+        //                    return (T) defaultReasoner;
+        //                } else if (serviceClass.isAssignableFrom(ResourcesService.class)) {
+        //                    return (T) defaultResourcesService;
+        //                } else if (serviceClass.isAssignableFrom(Resolver.class)) {
+        //                    return (T) defaultResolver;
+        //                } else if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+        //                    return (T) defaultRuntime;
+        //                }
+        //                return null;
+        //            }
+        //
+        //            @Override
+        //            public void stop() {
+        //                // TODO (?) notify to engine, log, do something
+        //            }
+        //        };
     }
 
     @Override

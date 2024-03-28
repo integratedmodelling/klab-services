@@ -66,10 +66,8 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     @Override
-    public void addEventListener(BiConsumer<Scope, Message>... eventListeners) {
-        for (var listener : eventListeners) {
-            listeners.add(listener);
-        }
+    public void addEventListener(BiConsumer<Scope, Message> eventListener) {
+        listeners.add(eventListener);
     }
 
     @Override

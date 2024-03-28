@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.view.modeler.views.controllers.ContextIn
 
 public class ContextInspectorControllerImpl extends AbstractUIViewController<ContextInspector> implements ContextInspectorController {
 
-    protected ContextInspectorControllerImpl(UIController controller) {
+    public ContextInspectorControllerImpl(UIController controller) {
         super(controller);
     }
 
