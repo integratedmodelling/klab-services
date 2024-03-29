@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -287,11 +288,11 @@ public class JacksonConfiguration {
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
                                       RepositoryMetadata.class, Project.Manifest.class,
                                       Triple.class, Unit.class, Project.class, KlabAsset.class,
-                                      Currency.class, Message.class,
+                                      Currency.class, Message.class, Worldview.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
-            module.addSerializer(cls, new PolymorphicSerializer());
-            module.addDeserializer(cls, new PolymorphicDeserializer());
+            module.addSerializer(cls, new PolymorphicSerializer<>());
+            module.addDeserializer(cls, new PolymorphicDeserializer<>());
         }
         module.addDeserializer(Literal.class, new LiteralDeserializer());
 

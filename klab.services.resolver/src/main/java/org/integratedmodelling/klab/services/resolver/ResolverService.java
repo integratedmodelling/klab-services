@@ -31,8 +31,8 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.knowledge.InstanceImpl;
-import org.integratedmodelling.klab.knowledge.ModelImpl;
+import org.integratedmodelling.common.knowledge.InstanceImpl;
+import org.integratedmodelling.common.knowledge.ModelImpl;
 //import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -41,7 +41,6 @@ import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.net.URL;
 import java.util.*;
 
 public class ResolverService extends BaseService implements Resolver {

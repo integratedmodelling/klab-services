@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.knowledge;
+package org.integratedmodelling.common.knowledge;
 
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.identities.Identity;

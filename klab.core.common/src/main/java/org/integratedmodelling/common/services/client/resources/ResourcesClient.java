@@ -157,7 +157,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public Worldview getWorldview() {
-        return null;
+        return client.get(ServicesAPI.RESOURCES.GET_WORLDVIEW, Worldview.class);
     }
 
     @Override
@@ -217,7 +217,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     public static void main(String[] args) {
         var client = new ResourcesClient();
         Utils.OS.pressAKeyToExit();
-//        client.importProject("worldview", "https://github.com/integratedmodelling/imod.git", true);
+        //        client.importProject("worldview", "https://github.com/integratedmodelling/imod.git", true);
     }
 
     @Override

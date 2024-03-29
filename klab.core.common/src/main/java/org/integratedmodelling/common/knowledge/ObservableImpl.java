@@ -1,6 +1,6 @@
-package org.integratedmodelling.klab.knowledge;
+package org.integratedmodelling.common.knowledge;
 
-import groovy.lang.GroovyObjectSupport;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
@@ -17,12 +17,11 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
 
-public class ObservableImpl extends GroovyObjectSupport implements Observable {
+public class ObservableImpl implements Observable {
 
     private static final long serialVersionUID = 6188649888474774359L;
 

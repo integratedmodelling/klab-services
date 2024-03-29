@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.knowledge;
+package org.integratedmodelling.common.knowledge;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -6,19 +6,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.util.StringUtils;
 
-import groovy.lang.GroovyObjectSupport;
-
-public class ConceptImpl extends GroovyObjectSupport implements Concept {
+public class ConceptImpl implements Concept {
 
     private static final long serialVersionUID = -6871573029225503370L;
 

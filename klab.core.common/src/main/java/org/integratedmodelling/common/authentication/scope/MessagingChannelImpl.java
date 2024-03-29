@@ -193,6 +193,10 @@ public class MessagingChannelImpl extends ChannelImpl {
             public void handleFrame(StompHeaders headers, Object payload) {
                 // NAH this will be a Map diocane, must convert and add the forwarding nature
                 Message message = (Message) payload;
+                if (payload == null) {
+                    debug("Received null payload");
+                    return;
+                }
                 info("Received : " + message + " from : " + message.getIdentity());
                 if (message.is(Message.MessageClass.ServiceLifecycle, Message.MessageType.ConnectScope)) {
                     // TODO handshaking message must be received once, after which we're connected

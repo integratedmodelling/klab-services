@@ -4,6 +4,10 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * TODO must become the server-side instance of {@link org.integratedmodelling.klab.api.view.View}, and be
+ * complemented with a k.Actors-capable {@link org.integratedmodelling.klab.api.view.ViewController}.
+ */
 public class KActorsView {
 
     static public Set<String> layoutMetadata = null;
