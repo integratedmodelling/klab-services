@@ -109,6 +109,10 @@ public class RuntimeService extends BaseService
         };
     }
 
+    public String serviceId() {
+        return serviceId;
+    }
+
     @Override
     public Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope) {
         return new ObservationTask(dataflow, scope, getDigitalTwin(scope), true);

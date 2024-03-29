@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.view;
 
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.View;
 import org.integratedmodelling.klab.api.view.ViewController;
@@ -20,13 +21,22 @@ public abstract class AbstractUIViewController<T extends View> implements ViewCo
     public UIController getController() {
         return controller;
     }
-    
+
+    public <S extends KlabService> S service(KlabService.ServiceCapabilities capabilities,
+                                             Class<S> serviceClass) {
+        if (capabilities == null) {
+            return null;
+        }
+        return ((AbstractUIController) controller).serviceById(capabilities.getServiceId(),
+                serviceClass);
+    }
+
     public void registerView(T view) {
         this.view = view;
     }
 
     protected T view() {
-        assert(view != null);
+        assert (view != null);
         return view;
     }
 

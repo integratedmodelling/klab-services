@@ -434,6 +434,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
+    public String serviceId() {
+        return workspaceManager.getConfiguration().getServiceId();
+    }
+
+    @Override
     public KimObservable resolveObservable(String definition) {
         var parsed = this.workspaceManager.resolveObservable(definition);
         if (parsed != null) {

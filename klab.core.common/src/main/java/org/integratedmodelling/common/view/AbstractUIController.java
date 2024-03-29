@@ -1,8 +1,11 @@
 package org.integratedmodelling.common.view;
 
+import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.PanelController;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -19,6 +22,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base abstract {@link UIController} class that implements annotation-driven (un)registration of
@@ -56,13 +60,56 @@ public abstract class AbstractUIController implements UIController {
         }
 
         public Object[] reorderArguments(@Nullable UIReactor sender, Object[] payload) {
-            // TODO reorder and fill in the arguments as needed
-            return payload;
+
+            // Must be same parameter number
+            if ((method.getParameterCount() == 0 && !(payload == null || payload.length == 0)) ||
+                    method.getParameterCount() > 0 && (payload == null || payload.length != method.getParameterCount())) {
+                return null;
+            }
+
+            if (method.getParameterCount() == 0) {
+                // do not return null
+                return new Object[0];
+            }
+
+            // 1+ parameters, same number, check for exact match
+            if (classesMatch(method.getParameterTypes(), payload)) {
+                return payload;
+            }
+
+            // no exact match, same number, reorder if possible
+            ArrayList<Object> reordered = new ArrayList<>();
+            for (var cls : method.getParameterTypes()) {
+                for (var arg : payload) {
+                    if (arg == null || cls.isAssignableFrom(arg.getClass())) {
+                        reordered.add(arg);
+                        break;
+                    }
+                }
+            }
+
+            return reordered.size() == method.getParameterCount() ? reordered.toArray() : null;
+        }
+
+        private boolean classesMatch(Class<?>[] parameterTypes, Object[] payload) {
+            for (int i = 0; i < parameterTypes.length; i++) {
+                if (payload[i] != null && !parameterTypes[i].isAssignableFrom(payload[i].getClass())) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public Object call(UIReactor sender, Object... payload) {
+
+            // TODO only call if the arguments are appropriate for the types. This will allow controllers
+            //  to filter calls by simply specializing the argument types.
+            var args = reorderArguments(sender, payload);
+            if (args == null && payload != null) {
+                return null;
+            }
             try {
-                return method.invoke(reactor, reorderArguments(sender, payload));
+                return method.invoke(reactor, args);
             } catch (Exception e) {
                 scope().error(e);
             }
@@ -192,7 +239,6 @@ public abstract class AbstractUIController implements UIController {
             var rs = reactors.get(event);
             if (rs != null) {
                 for (var desc : rs) {
-                    // TODO debug?
                     desc.call(sender, payload);
                 }
             }
@@ -263,8 +309,28 @@ public abstract class AbstractUIController implements UIController {
 
     @Override
     public <T> void open(PanelController<T, ?> panel, T payload) {
-
+        // create and register the panel controller, which must unregister itself when the panel is closed.
+        // This must be hooked into a view-side controller somehow, as we cannot create
+        // the view itself.
     }
+
+    /**
+     * Convenience method used by inheritors
+     *
+     * @param serviceId
+     * @param serviceClass
+     * @param <S>
+     * @return
+     */
+    public <S extends KlabService> S serviceById(String serviceId, Class<S> serviceClass) {
+        for (var service : engine.serviceScope().getServices(serviceClass)) {
+            if (serviceId.equals(service.serviceId())) {
+                return service;
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Empty implementation of storeView. Override to implement/

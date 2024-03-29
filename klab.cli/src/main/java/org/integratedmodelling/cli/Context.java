@@ -1,12 +1,13 @@
 package org.integratedmodelling.cli;
 
-//import org.integratedmodelling.kcli.engine.Engine;
-//import org.integratedmodelling.kcli.engine.Geometries;
+
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.view.modeler.views.ContextInspector;
+import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
 import picocli.CommandLine.*;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
@@ -16,7 +17,7 @@ import java.io.PrintWriter;
 @Command(name = "context", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
 		"Commands to create, access and manipulate contexts.",
 		"" }, subcommands = { Context.List.class, Context.New.class, Context.Connect.class, Context.Observe.class })
-public class Context {
+public class Context  {
 
 	@Command(name = "new", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
 			"Create a new context and make it current.", "" }, subcommands = {})

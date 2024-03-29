@@ -253,6 +253,12 @@ public class EngineService implements Engine {
     }
 
     @Override
+    public String serviceId() {
+        // TODO configure
+        return null;
+    }
+
+    @Override
     public Scope serviceScope() {
         return null;
     }

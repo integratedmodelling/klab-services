@@ -339,4 +339,9 @@ public abstract class ServiceClient implements KlabService {
     public boolean isLocal() {
         return this.local;
     }
+
+    @Override
+    public String serviceId() {
+        return capabilities.getServiceId();
+    }
 }

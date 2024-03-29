@@ -28,6 +28,7 @@ import java.util.List;
  */
 public interface KlabService extends Service {
 
+
     /**
      * A set of services is identified in the hub response to certificate authentication, both for engine
      * (user-level) certificates and for service (partner-level) certificates (the latter is an addition
@@ -68,7 +69,7 @@ public interface KlabService extends Service {
         }
 
         public Class<? extends KlabService> classify() {
-            return switch(this) {
+            return switch (this) {
                 case REASONER -> Reasoner.class;
                 case RESOURCES -> ResourcesService.class;
                 case RESOLVER -> Resolver.class;
@@ -214,10 +215,19 @@ public interface KlabService extends Service {
     String getLocalName();
 
     /**
+     * The service ID is an ugly, unique string that uniquely identifies a server instance. Any clients that
+     * use a service must report the same ID as the remote service. The service ID is also available in the
+     * {@link ServiceCapabilities#serviceId()} but it must be public and available for quick access so it's
+     * also exposed in the core service API.
+     *
+     * @return the service ID. Never null.
+     */
+    String serviceId();
+
+    /**
      * Each service operates under a root scope that is used to report issues, talk to clients and derive
      * child scopes for users and when appropriate, sessions and contexts. The service scope may be a
-     * {@link UserScope} or a {@link ServiceScope} according to who
-     * owns and operates the engine service.
+     * {@link UserScope} or a {@link ServiceScope} according to who owns and operates the engine service.
      *
      * @return
      */

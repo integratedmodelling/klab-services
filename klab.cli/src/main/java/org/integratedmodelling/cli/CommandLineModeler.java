@@ -1,6 +1,9 @@
 package org.integratedmodelling.cli;
 
+import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
+import org.integratedmodelling.klab.api.view.modeler.views.controllers.*;
 import org.integratedmodelling.klab.modeler.ModelerImpl;
+import org.integratedmodelling.klab.modeler.views.*;
 
 /**
  * Command-line driven modeler to replace {@link KlabCLI}. Each modeler view should have its command class and
@@ -15,6 +18,17 @@ import org.integratedmodelling.klab.modeler.ModelerImpl;
  * be at top level as currently, TBD)
  */
 public class CommandLineModeler extends ModelerImpl {
+
+    public CommandLineModeler() {
+        super();
+        // register basic view advisors for each class.
+        viewController(ResourcesNavigatorController.class).registerView(new ResourcesNavigatorAdvisor());
+        viewController(ContextInspectorController.class).registerView(new ContextInspectorAdvisor());
+        viewController(AuthenticationViewController.class).registerView(new AuthenticationViewAdvisor());
+        viewController(ServicesViewController.class).registerView(new ServicesViewAdvisor());
+        viewController(ContextViewController.class).registerView(new ContextViewAdvisor());
+        // TODO others
+    }
 
     public static void main(String args) {
         // settings

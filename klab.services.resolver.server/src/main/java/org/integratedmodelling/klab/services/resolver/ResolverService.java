@@ -32,6 +32,11 @@ public class ResolverService implements Resolver, Resolver.Admin {
     }
 
     @Override
+    public String serviceId() {
+        return null;
+    }
+
+    @Override
     public ServiceScope serviceScope() {
         // TODO Auto-generated method stub
         return null;

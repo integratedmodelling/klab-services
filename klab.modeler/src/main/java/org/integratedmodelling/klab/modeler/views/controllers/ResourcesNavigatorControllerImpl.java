@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.modeler.views.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIViewController;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -26,12 +27,8 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     }
 
     @Override
-    public UIController getController() {
-        return null;
-    }
-
-    @Override
-    public void loadService(ResourcesService service) {
+    public void loadService(ResourcesService.Capabilities capabilities) {
+        var service = service(capabilities, ResourcesService.class);
         if (service == null) {
             view().disable();
         } else {

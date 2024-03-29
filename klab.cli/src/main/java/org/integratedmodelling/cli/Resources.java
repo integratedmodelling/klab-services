@@ -20,15 +20,13 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 
 @Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, list, access and manipulate resources.", ""}, subcommands = {Resources.List.class,
                                                                                         Resources.Query.class, Resources.Services.class, Resources.Workspace.class, Resources.Project.class,
                                                                                         Resources.Components.class, Resources.Resolve.class})
-public class Resources {
+public class Resources  {
 
     @Command(name = "services", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "List and describe all the available resource services.", ""}, subcommands = {})

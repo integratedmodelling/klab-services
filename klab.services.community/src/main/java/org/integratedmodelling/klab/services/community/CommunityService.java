@@ -35,6 +35,12 @@ public class CommunityService implements Community {
     }
 
     @Override
+    public String serviceId() {
+        // TODO
+        return null;
+    }
+
+    @Override
     public String getServiceName() {
         // TODO Auto-generated method stub
         return null;

@@ -47,6 +47,7 @@ public class EngineClient implements Engine, PropertyHolder {
     List<BiConsumer<Scope, Message>> listeners = Collections.synchronizedList(new ArrayList<>());
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private boolean firstCall = true;
+    String serviceId = Utils.Names.shortUUID();
 
     public UserScope getUser() {
         return this.users.size() > 0 ? users.get(0) : null;
@@ -268,5 +269,9 @@ public class EngineClient implements Engine, PropertyHolder {
     @Override
     public String getServiceName() {
         return null;
+    }
+
+    public String serviceId() {
+        return serviceId;
     }
 }

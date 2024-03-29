@@ -1,8 +1,6 @@
 package org.integratedmodelling.cli;
 
-//import org.integratedmodelling.kcli.engine.Engine;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;

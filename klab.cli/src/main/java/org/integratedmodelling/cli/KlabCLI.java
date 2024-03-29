@@ -65,6 +65,7 @@ import java.util.function.Supplier;
  *
  */
 public enum KlabCLI {
+
     INSTANCE;
 
     private ModelerImpl modeler;
@@ -426,7 +427,7 @@ public enum KlabCLI {
                 // tie the scope monitor to the CLI input and output streams
 
                 // create the modeler
-                INSTANCE.modeler = new ModelerImpl();
+                INSTANCE.modeler = new CommandLineModeler();
 
                 INSTANCE.modeler.addListener((scope, message) -> INSTANCE.onEvent(scope, message));
 

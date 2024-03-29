@@ -4,6 +4,7 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
@@ -22,7 +23,7 @@ import java.io.PrintWriter;
          subcommands = {
                  org.integratedmodelling.cli.Services.List.class,
                  org.integratedmodelling.cli.Services.Connect.class})
-public class Services {
+public class Services  {
 
     @Command(name = "list", mixinStandardHelpOptions = true, description = {"List the services available",
                                                                             "Colors show services connected" +

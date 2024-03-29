@@ -37,7 +37,7 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
      * @param service
      */
     @UIEventHandler(UIEvent.ServiceAvailable)
-    void loadService(ResourcesService service);
+    void loadService(ResourcesService.Capabilities service);
 
     /**
      * Adapt the UI to any changes in the workspace coming from the service handled. If the workspace is the

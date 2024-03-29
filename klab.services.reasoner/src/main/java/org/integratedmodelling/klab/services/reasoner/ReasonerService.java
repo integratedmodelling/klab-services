@@ -1114,6 +1114,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
+    public String serviceId() {
+        return configuration.getServiceId();
+    }
+
+    @Override
     public Collection<Concept> identities(Semantics concept) {
         return this.owl.getRestrictedClasses(concept.asConcept(),
                 this.owl.getProperty(NS.HAS_IDENTITY_PROPERTY));
