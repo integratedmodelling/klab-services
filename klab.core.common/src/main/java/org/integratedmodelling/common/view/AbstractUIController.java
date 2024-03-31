@@ -129,6 +129,7 @@ public abstract class AbstractUIController implements UIController {
                 } else {
                     while (!messageQueue.isEmpty()) {
                         var message = messageQueue.remove();
+                        System.out.println("SVUOTO LA VESCICHETTA " + message);
                         callMessage(message.getFirst(), message.getSecond());
                     }
                 }

@@ -12,10 +12,12 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -23,6 +25,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 public class ReasonerClient extends ServiceClient implements Reasoner {
 
@@ -34,8 +37,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner {
         super(Type.REASONER, identity, services);
     }
 
-    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services) {
-        super(Type.REASONER, url, identity, services);
+    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Scope, Message>... listeners) {
+        super(Type.REASONER, url, identity, services, listeners);
     }
 
     public ReasonerClient(URL url) {

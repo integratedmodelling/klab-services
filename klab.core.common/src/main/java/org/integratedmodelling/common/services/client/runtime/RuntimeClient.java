@@ -6,10 +6,12 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -17,6 +19,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
@@ -28,8 +31,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         super(Type.RUNTIME, identity, services);
     }
 
-    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services) {
-        super(Type.RUNTIME, url, identity, services);
+    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Scope, Message>... listeners){
+        super(Type.RUNTIME, url, identity, services, listeners);
     }
 
     public RuntimeClient(URL url) {

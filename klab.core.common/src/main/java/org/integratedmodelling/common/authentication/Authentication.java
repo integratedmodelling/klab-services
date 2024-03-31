@@ -290,30 +290,22 @@ public enum Authentication {
                                                               BiConsumer<Scope, Message>... listeners) {
         T ret = switch (serviceType) {
             case REASONER -> {
-                yield (T) new ReasonerClient(url, identity, services);
+                yield (T) new ReasonerClient(url, identity, services, listeners);
             }
             case RESOURCES -> {
-                yield (T) new ResourcesClient(url, identity, services);
+                yield (T) new ResourcesClient(url, identity, services, listeners);
             }
             case RESOLVER -> {
-                yield (T) new ResolverClient(url, identity, services);
+                yield (T) new ResolverClient(url, identity, services, listeners);
             }
             case RUNTIME -> {
-                yield (T) new RuntimeClient(url, identity, services);
+                yield (T) new RuntimeClient(url, identity, services, listeners);
             }
             case COMMUNITY -> {
-                yield (T) new CommunityClient(url, identity, services);
+                yield (T) new CommunityClient(url, identity, services, listeners);
             }
             default -> throw new IllegalStateException("Unexpected value: " + serviceType);
         };
-
-        if (ret instanceof ServiceClient serviceClient) {
-            if (listeners != null) {
-                for (var listener : listeners) {
-                    serviceClient.addListener(listener);
-                }
-            }
-        }
 
         return ret;
     }

@@ -16,11 +16,13 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 public class ResolverClient extends ServiceClient implements Resolver {
 
@@ -32,8 +34,8 @@ public class ResolverClient extends ServiceClient implements Resolver {
         super(Type.RESOLVER, identity, services);
     }
 
-    public ResolverClient(URL url, Identity identity, List<ServiceReference> services) {
-        super(Type.RESOLVER, url, identity, services);
+    public ResolverClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Scope, Message>... listeners) {
+        super(Type.RESOLVER, url, identity, services, listeners);
     }
 
     public ResolverClient(URL url) {

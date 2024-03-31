@@ -1,11 +1,8 @@
 package org.integratedmodelling.common.services;
 
-import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.services.Community;
 import org.integratedmodelling.klab.api.services.KlabService;
 
-import java.util.List;
-import java.util.Set;
 
 public class CommunityCapabilitiesImpl implements Community.Capabilities {
     private KlabService.Type type;

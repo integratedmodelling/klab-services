@@ -429,7 +429,7 @@ public enum KlabCLI {
                 // create the modeler
                 INSTANCE.modeler = new CommandLineModeler();
 
-                INSTANCE.modeler.addListener((scope, message) -> INSTANCE.onEvent(scope, message));
+//                INSTANCE.modeler.addListener((scope, message) -> INSTANCE.onEvent(scope, message));
 
                 // Configure messages for CLI use
                 INSTANCE.modeler.setOption(ModelerImpl.Option.UseAnsiEscapeSequences, true);
@@ -490,97 +490,97 @@ public enum KlabCLI {
         }
     }
 
-    private void onEvent(Scope scope, Message message) {
-
-        switch (message.getMessageClass()) {
-            case UserInterface -> {
-            }
-            case UserContextChange -> {
-            }
-            case UserContextDefinition -> {
-            }
-            case ServiceLifecycle -> {
-                switch (message.getMessageType()) {
-                    case ServiceAvailable -> {
-                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
-                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
-                                " service available: " + capabilities.getServiceName()
-                                + "|@"));
-
-                    }
-                    case ServiceInitializing -> {
-                        var description = message.getPayload(KlabService.ServiceCapabilities.class);
-                        commandLine.getOut().println(Ansi.AUTO.string("@|blue "
-                                + "service initializing: " + description
-                                + "|@"));
-
-                    }
-                    case ServiceUnavailable -> {
-                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
-                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
-                                " service unavailable: " + capabilities.getServiceName()
-                                + "|@"));
-                    }
-                }
-            }
-            case EngineLifecycle -> {
-            }
-            case KimLifecycle -> {
-            }
-            case ResourceLifecycle -> {
-            }
-            case ProjectLifecycle -> {
-            }
-            case Authorization -> {
-            }
-            case TaskLifecycle -> {
-            }
-            case ObservationLifecycle -> {
-            }
-            case SessionLifecycle -> {
-            }
-            case UnitTests -> {
-            }
-            case Notification -> {
-                switch (message.getMessageType()) {
-                    case Info -> {
-                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + message.getPayload(Notification.class).getMessage()
-                                + "|@"));
-                    }
-                    case Error -> {
-                        commandLine.getOut().println(Ansi.AUTO.string("@|red " + message.getPayload(Notification.class).getMessage()
-                                + "|@"));
-                    }
-                    case Debug -> {
-                        commandLine.getOut().println(Ansi.AUTO.string("@|gray " + message.getPayload(Notification.class).getMessage()
-                                + "|@"));
-                    }
-                    case Warning -> {
-                        commandLine.getOut().println(Ansi.AUTO.string("@|yellow " + message.getPayload(Notification.class).getMessage()
-                                + "|@"));
-                    }
-                    default -> {
-                    }
-                }
-            }
-            case Search -> {
-            }
-            case Query -> {
-            }
-            case Run -> {
-            }
-            case ViewActor -> {
-            }
-            case ActorCommunication -> {
-            }
-            default -> {
-            }
-        }
-
-        if (message.getMessageClass() == Message.MessageClass.Notification) {
-
-        }
-    }
+//    private void onEvent(Scope scope, Message message) {
+//
+//        switch (message.getMessageClass()) {
+//            case UserInterface -> {
+//            }
+//            case UserContextChange -> {
+//            }
+//            case UserContextDefinition -> {
+//            }
+//            case ServiceLifecycle -> {
+//                switch (message.getMessageType()) {
+//                    case ServiceAvailable -> {
+//                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
+//                                " service available: " + capabilities.getServiceName()
+//                                + "|@"));
+//
+//                    }
+//                    case ServiceInitializing -> {
+//                        var description = message.getPayload(KlabService.ServiceCapabilities.class);
+//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue "
+//                                + "service initializing: " + description
+//                                + "|@"));
+//
+//                    }
+//                    case ServiceUnavailable -> {
+//                        var capabilities = message.getPayload(KlabService.ServiceCapabilities.class);
+//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
+//                                " service unavailable: " + capabilities.getServiceName()
+//                                + "|@"));
+//                    }
+//                }
+//            }
+//            case EngineLifecycle -> {
+//            }
+//            case KimLifecycle -> {
+//            }
+//            case ResourceLifecycle -> {
+//            }
+//            case ProjectLifecycle -> {
+//            }
+//            case Authorization -> {
+//            }
+//            case TaskLifecycle -> {
+//            }
+//            case ObservationLifecycle -> {
+//            }
+//            case SessionLifecycle -> {
+//            }
+//            case UnitTests -> {
+//            }
+//            case Notification -> {
+//                switch (message.getMessageType()) {
+//                    case Info -> {
+//                        commandLine.getOut().println(Ansi.AUTO.string("@|blue " + message.getPayload(Notification.class).getMessage()
+//                                + "|@"));
+//                    }
+//                    case Error -> {
+//                        commandLine.getOut().println(Ansi.AUTO.string("@|red " + message.getPayload(Notification.class).getMessage()
+//                                + "|@"));
+//                    }
+//                    case Debug -> {
+//                        commandLine.getOut().println(Ansi.AUTO.string("@|gray " + message.getPayload(Notification.class).getMessage()
+//                                + "|@"));
+//                    }
+//                    case Warning -> {
+//                        commandLine.getOut().println(Ansi.AUTO.string("@|yellow " + message.getPayload(Notification.class).getMessage()
+//                                + "|@"));
+//                    }
+//                    default -> {
+//                    }
+//                }
+//            }
+//            case Search -> {
+//            }
+//            case Query -> {
+//            }
+//            case Run -> {
+//            }
+//            case ViewActor -> {
+//            }
+//            case ActorCommunication -> {
+//            }
+//            default -> {
+//            }
+//        }
+//
+//        if (message.getMessageClass() == Message.MessageClass.Notification) {
+//
+//        }
+//    }
 
     public static void printResourceSet(ResourceSet resourceSet, PrintStream out, int indent) {
 

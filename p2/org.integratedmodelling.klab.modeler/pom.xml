@@ -189,13 +189,13 @@
                                         <_noee>true</_noee>
                                     </instructions>
                                 </artifact>
-<!--                                <artifact>
+                                <artifact>
                                     <id>dev.failsafe:failsafe:3.3.2</id>
                                     <override>true</override>
                                     <instructions>
                                         <_noee>true</_noee>
                                     </instructions>
-                                </artifact>-->
+                                </artifact>
                                 <artifact>
                                     <id>com.google.guava:failureaccess:1.0.2</id>
                                     <override>true</override>
@@ -266,13 +266,13 @@
                                         <_noee>true</_noee>
                                     </instructions>
                                 </artifact>
-<!--                                <artifact>
+                                <artifact>
                                     <id>com.fasterxml.jackson.core:jackson-annotations:2.15.4</id>
                                     <override>true</override>
                                     <instructions>
                                         <_noee>true</_noee>
                                     </instructions>
-                                </artifact>-->
+                                </artifact>
                                 <artifact>
                                     <id>com.fasterxml.jackson.core:jackson-core:2.15.4</id>
                                     <override>true</override>
@@ -280,21 +280,21 @@
                                         <_noee>true</_noee>
                                     </instructions>
                                 </artifact>
-<!--                                <artifact>
+                                <artifact>
                                     <id>com.fasterxml.jackson.core:jackson-databind:2.15.4</id>
                                     <override>true</override>
                                     <instructions>
                                         <_noee>true</_noee>
                                     </instructions>
-                                </artifact>-->
-<!--                                <artifact>
+                                </artifact>
+                                <artifact>
                                     <id>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.4</id>
                                     <override>true</override>
                                     <instructions>
                                         <_noee>true</_noee>
                                     </instructions>
-                                </artifact>-->
-<!--                                <artifact>
+                                </artifact>
+                                <artifact>
                                     <id>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.15.4</id>
                                     <override>true</override>
                                     <instructions>
@@ -314,7 +314,7 @@
                                     <instructions>
                                         <_noee>true</_noee>
                                     </instructions>
-                                </artifact>-->
+                                </artifact>
                                 <artifact>
                                     <id>jakarta.annotation:jakarta.annotation-api:2.1.1</id>
                                     <override>true</override>

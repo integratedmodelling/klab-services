@@ -78,11 +78,16 @@ public abstract class ServiceClient implements KlabService {
     }
 
     protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
-                            List<ServiceReference> services) {
+                            List<ServiceReference> services, BiConsumer<Scope, Message>... listeners) {
         this.authentication = Pair.of(identity, services);
         this.serviceType = serviceType;
         this.url = url;
         this.local = url.equals(serviceType.localServiceUrl());
+        if (listeners != null) {
+            for (var listener : listeners) {
+                addListener(listener);
+            }
+        }
         this.token = this.local ? Configuration.INSTANCE.getServiceSecret(serviceType) : identity.getId();
         establishConnection();
     }
