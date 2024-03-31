@@ -54,7 +54,7 @@ public interface AuthenticationViewController extends ViewController<Authenticat
      */
     void loginUser(KlabCertificate certificate);
 
-    @UIEventHandler
+    @UIEventHandler(UIEvent.UserAuthenticated)
     void authenticationResult(UserIdentity identity);
 
 

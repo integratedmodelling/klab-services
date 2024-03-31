@@ -46,7 +46,7 @@ public class MessagingChannelImpl extends ChannelImpl {
     private Scope.Type scopeType;
 
     // default provenance for notifications: set to Forwarded so that client messages are not sent to server
-    private Message.Provenance notificationProvenance = Message.Provenance.Forwarded;
+    private Message.ForwardingPolicy notificationProvenance = Message.ForwardingPolicy.DoNotForward;
 
     public MessagingChannelImpl(Identity identity, Utils.Http.Client client, Scope.Type scopeType) {
         super(identity);
@@ -148,7 +148,7 @@ public class MessagingChannelImpl extends ChannelImpl {
     @Override
     public Message send(Object... message) {
         var ret = super.send(message);
-        if (session != null && ret.getProvenance() == Message.Provenance.Original) {
+        if (session != null && ret.getForwardingPolicy() == Message.ForwardingPolicy.Forward) {
             session.send(channel, ret);
         }
         return ret;
@@ -157,7 +157,7 @@ public class MessagingChannelImpl extends ChannelImpl {
     @Override
     public Message post(Consumer<Message> handler, Object... message) {
         var ret = super.post(handler, message);
-        if (session != null && ret.getProvenance() == Message.Provenance.Original) {
+        if (session != null && ret.getForwardingPolicy() == Message.ForwardingPolicy.Forward) {
             session.send(channel, ret);
         }
         return ret;
@@ -250,11 +250,11 @@ public class MessagingChannelImpl extends ChannelImpl {
                 , scopeData);
     }
 
-    public Message.Provenance getNotificationProvenance() {
+    public Message.ForwardingPolicy getNotificationProvenance() {
         return notificationProvenance;
     }
 
-    public void setNotificationProvenance(Message.Provenance notificationProvenance) {
+    public void setNotificationProvenance(Message.ForwardingPolicy notificationProvenance) {
         this.notificationProvenance = notificationProvenance;
     }
 

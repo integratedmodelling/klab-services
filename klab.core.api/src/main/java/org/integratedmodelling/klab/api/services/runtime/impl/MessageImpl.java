@@ -1,15 +1,15 @@
 /*
  * This file is part of k.LAB.
- * 
+ *
  * k.LAB is free software: you can redistribute it and/or modify
  * it under the terms of the Affero GNU General Public License as published
  * by the Free Software Foundation, either version 3 of the License,
  * or (at your option) any later version.
  *
  * A copy of the GNU Affero General Public License is distributed in the root
- * directory of the k.LAB distribution (LICENSE.txt). If this cannot be found 
+ * directory of the k.LAB distribution (LICENSE.txt). If this cannot be found
  * see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Copyright (C) 2007-2018 integratedmodelling.org and any authors mentioned
  * in author tags. All rights reserved.
  */
@@ -25,195 +25,194 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 /**
- * Typed message with potential payload to be transferred through a message bus.
- * Used for fast, duplex engine/client communication.
+ * Typed message with potential payload to be transferred through a message bus. Used for fast, duplex
+ * engine/client communication.
  * <p>
- * Payloads that are maps can be optionally translated to
- * implementation-dependent types by supplying a static translator function.
+ * Payloads that are maps can be optionally translated to implementation-dependent types by supplying a static
+ * translator function.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
  */
 public class MessageImpl implements Message, Serializable {
 
-	private static final long serialVersionUID = 4889814573447834819L;
+    private static final long serialVersionUID = 4889814573447834819L;
 
-	private static AtomicLong nextId = new AtomicLong(0L);
-	
-	private MessageType messageType;
-	private MessageClass messageClass;
-	private String identity;
-	private String payloadClass;
-	private Object payload;
-	private long id = nextId.incrementAndGet();
-	private long inResponseTo;
-	private Notification.Type notificationType;
-	private long timestamp = System.currentTimeMillis();
-	private Provenance provenance = Provenance.Original;
+    private static AtomicLong nextId = new AtomicLong(0L);
 
-	private static BiFunction<Map<?, ?>, Class<?>, Object> translator;
+    private MessageType messageType;
+    private MessageClass messageClass;
+    private String identity;
+    private String payloadClass;
+    private Object payload;
+    private long id = nextId.incrementAndGet();
+    private long inResponseTo;
+    private Notification.Type notificationType;
+    private long timestamp = System.currentTimeMillis();
+    private ForwardingPolicy forwardingPolicy = ForwardingPolicy.DoNotForward;
 
-	public static void setPayloadMapTranslator(BiFunction<Map<?, ?>, Class<?>, Object> function) {
-		translator = function;
-	}
+    private static BiFunction<Map<?, ?>, Class<?>, Object> translator;
 
-	@Override
-	public String toString() {
-		return "{" + messageClass + "/" + messageType + ": " + payload + "}";
-	}
+    public static void setPayloadMapTranslator(BiFunction<Map<?, ?>, Class<?>, Object> function) {
+        translator = function;
+    }
 
-	public MessageImpl inResponseTo(Message message) {
-		this.inResponseTo = ((MessageImpl) message).id;
-		return this;
-	}
+    @Override
+    public String toString() {
+        return "{" + messageClass + "/" + messageType + ": " + payload + "}";
+    }
 
-	/**
-	 * Gets the type.
-	 *
-	 * @return the type
-	 */
-	@Override
-	public MessageType getMessageType() {
-		return messageType;
-	}
+    public MessageImpl inResponseTo(Message message) {
+        this.inResponseTo = ((MessageImpl) message).id;
+        return this;
+    }
 
-	@Override
-	public MessageClass getMessageClass() {
-		return messageClass;
-	}
+    /**
+     * Gets the type.
+     *
+     * @return the type
+     */
+    @Override
+    public MessageType getMessageType() {
+        return messageType;
+    }
 
-	/**
-	 * Sets the type.
-	 *
-	 * @param type the new type
-	 */
-	public void setMessageType(MessageType type) {
-		this.messageType = type;
-	}
+    @Override
+    public MessageClass getMessageClass() {
+        return messageClass;
+    }
 
-	/**
-	 * Gets the payload.
-	 *
-	 * @return the payload
-	 */
-	public Object getPayload() {
-		return payload;
-	}
+    /**
+     * Sets the type.
+     *
+     * @param type the new type
+     */
+    public void setMessageType(MessageType type) {
+        this.messageType = type;
+    }
 
-	/**
-	 * Sets the payload.
-	 *
-	 * @param payload the new payload
-	 */
-	public void setPayload(Object payload) {
-		this.payload = payload;
-	}
+    /**
+     * Gets the payload.
+     *
+     * @return the payload
+     */
+    public Object getPayload() {
+        return payload;
+    }
 
-	@Override
-	public String getIdentity() {
-		return identity;
-	}
+    /**
+     * Sets the payload.
+     *
+     * @param payload the new payload
+     */
+    public void setPayload(Object payload) {
+        this.payload = payload;
+    }
 
-	public long getId() {
-		return id;
-	}
+    @Override
+    public String getIdentity() {
+        return identity;
+    }
 
-	@Override
-	public Message respondingTo(Message message) {
-		return this;
-	}
+    public long getId() {
+        return id;
+    }
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    @Override
+    public Message respondingTo(Message message) {
+        return this;
+    }
 
-	public long getInResponseTo() {
-		return inResponseTo;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public MessageImpl inResponseTo(long inResponseTo) {
-		this.inResponseTo = inResponseTo;
-		return this;
-	}
+    public long getInResponseTo() {
+        return inResponseTo;
+    }
 
-	public void setInResponseTo(long inResponseTo) {
-		this.inResponseTo = inResponseTo;
-	}
+    public MessageImpl inResponseTo(long inResponseTo) {
+        this.inResponseTo = inResponseTo;
+        return this;
+    }
 
-	public void setMessageClass(MessageClass messageClass) {
-		this.messageClass = messageClass;
-	}
+    public void setInResponseTo(long inResponseTo) {
+        this.inResponseTo = inResponseTo;
+    }
 
-	public void setIdentity(String identity) {
-		this.identity = identity;
-	}
+    public void setMessageClass(MessageClass messageClass) {
+        this.messageClass = messageClass;
+    }
 
-	public String getPayloadClass() {
-		return payloadClass;
-	}
+    public void setIdentity(String identity) {
+        this.identity = identity;
+    }
 
-	public void setPayloadClass(String payloadClass) {
-		this.payloadClass = payloadClass;
-	}
+    public String getPayloadClass() {
+        return payloadClass;
+    }
 
-	@Override
-	public long getTimestamp() {
-		return timestamp;
-	}
+    public void setPayloadClass(String payloadClass) {
+        this.payloadClass = payloadClass;
+    }
 
-	public void setTimestamp(long timestamp) {
-		this.timestamp = timestamp;
-	}
+    @Override
+    public long getTimestamp() {
+        return timestamp;
+    }
 
-	/**
-	 * Make an exact copy of this message using a different identity. Used for
-	 * relaying.
-	 * 
-	 * @param relayId
-	 * @return a new message identified by relayId
-	 */
-	public MessageImpl copyWithIdentity(String relayId) {
-		MessageImpl ret = new MessageImpl();
-		ret.identity = relayId;
-		ret.messageClass = this.messageClass;
-		ret.payload = this.payload;
-		ret.payloadClass = this.payloadClass;
-		ret.messageType = this.messageType;
-		ret.inResponseTo = this.inResponseTo;
-		ret.timestamp = this.timestamp;
-		return ret;
-	}
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
-	@Override
-	public <T> T getPayload(Class<? extends T> cls) {
+    /**
+     * Make an exact copy of this message using a different identity. Used for relaying.
+     *
+     * @param relayId
+     * @return a new message identified by relayId
+     */
+    public MessageImpl copyWithIdentity(String relayId) {
+        MessageImpl ret = new MessageImpl();
+        ret.identity = relayId;
+        ret.messageClass = this.messageClass;
+        ret.payload = this.payload;
+        ret.payloadClass = this.payloadClass;
+        ret.messageType = this.messageType;
+        ret.inResponseTo = this.inResponseTo;
+        ret.timestamp = this.timestamp;
+        return ret;
+    }
 
-		if (payload == null) {
-			return null;
-		}
+    @Override
+    public <T> T getPayload(Class<? extends T> cls) {
 
-		Object p = payload;
+        if (payload == null) {
+            return null;
+        }
 
-		if (payload instanceof Map && translator != null) {
-			p = translator.apply((Map<?, ?>) p, cls);
-		}
+        Object p = payload;
 
-		return Utils.Data.asType(p, cls);
-	}
+        if (payload instanceof Map && translator != null) {
+            p = translator.apply((Map<?, ?>) p, cls);
+        }
 
-	public Notification.Type getNotificationType() {
-		return notificationType;
-	}
+        return Utils.Data.asType(p, cls);
+    }
 
-	public void setNotificationType(Notification.Type notificationType) {
-		this.notificationType = notificationType;
-	}
+    public Notification.Type getNotificationType() {
+        return notificationType;
+    }
 
-	@Override
-	public Provenance getProvenance() {
-		return provenance;
-	}
+    public void setNotificationType(Notification.Type notificationType) {
+        this.notificationType = notificationType;
+    }
 
-	public void setProvenance(Provenance repeatability) {
-		this.provenance = repeatability;
-	}
+    @Override
+    public ForwardingPolicy getForwardingPolicy() {
+        return forwardingPolicy;
+    }
+
+    public void setForwardingPolicy(ForwardingPolicy forwardingPolicy) {
+        this.forwardingPolicy = forwardingPolicy;
+    }
 }

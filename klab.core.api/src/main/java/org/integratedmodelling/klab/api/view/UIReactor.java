@@ -164,6 +164,11 @@ public interface UIReactor {
         ServiceSelected(EventDirection.Bidirectional, KlabService.class),
 
         /**
+         * Communicate service status according to configured options and communication permissions
+         */
+        ServiceStatus(EventDirection.EngineToView, KlabService.ServiceStatus.class),
+
+        /**
          * Document add requested contains type of document, URN and a map of parameters
          */
 
@@ -205,6 +210,8 @@ public interface UIReactor {
         Notification(EventDirection.Bidirectional, Notification.class),
 
         DistributionSelected(EventDirection.ViewToView, Distribution.class),
+
+        UserAuthenticated(EventDirection.Bidirectional, UserIdentity.class),
         /**
          * Declaring a dependency on this event means that we want all events sent to the
          * annotated method.
@@ -226,14 +233,4 @@ public interface UIReactor {
 
     UIController getController();
 
-
-    /**
-     * React to the passed UI event. The payload class is validated to be of the expected type before this is
-     * called (an array if multiple). This is a catch-all method that is called only if there are no
-     * specifically annotated methods in the reactor.
-     *
-     * @param event
-     * @param payload
-     */
-    void onEvent(UIEvent event, Object payload);
 }

@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
  * Each UIView and UIPanel in the view implementation must: 0. if a Panel, provide a construction that uses
  * the target object(s) 1. implement the event reactors 2. call the action functions.
  */
-public interface UIController {
+public interface UIController extends UIReactor {
 
     /**
      * A controller runs under one user at a time. The authentication view may be used to authenticate new

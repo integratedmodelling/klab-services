@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Service;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private HttpClient client;
             private URI uri;
             private String authorization;
+            private Scope scope; // may be null
+
+            static class Options {
+                public boolean silent = false;
+                // TODO
+            }
 
             /**
              * GET helper that sets all headers and automatically handles JSON marshalling.
@@ -54,7 +61,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              */
             public <T> T post(String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
 
-                var params = Utils.Maps.makeKeyMap(parameters);
+                var options = new Options();
+                var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
 
                 try {
@@ -82,12 +90,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                     if (response.statusCode() == 200) {
                         return parseResponse(response.body(), resultClass);
-                    } else {
-
                     }
 
                 } catch (Throwable e) {
-                    throw new KlabIOException(e);
+                    if (scope != null) {
+                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                    } else {
+//                        e.printStackTrace();
+                    }
                 }
 
                 return null;
@@ -132,6 +142,32 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
+             * Make a map of the parameter list filtering out any options for the handling of errors and
+             * notifications.
+             *
+             * @param options
+             * @param parameters
+             * @return
+             */
+            private static Map<String, Object> makeKeyMap(Options options, Object[] parameters) {
+                var ret = new LinkedHashMap<String, Object>();
+                if (parameters != null) {
+                    for (int i = 0; i < parameters.length; i++) {
+                        if (parameters[i] instanceof Notification.Mode mode) {
+                            options.silent = mode == Notification.Mode.Silent;
+                            continue;
+                        }
+                        if (i == parameters.length - 1) {
+                            throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched keys in " +
+                                    "argument list");
+                        }
+                        ret.put(parameters[i].toString(), parameters[++i]);
+                    }
+                }
+                return ret;
+            }
+
+            /**
              * POST helper that sets all headers and automatically handles JSON marshalling.
              *
              * @param apiRequest
@@ -142,7 +178,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              */
             public <T> T get(String apiRequest, Class<T> resultClass, Object... parameters) {
 
-                var params = Utils.Maps.makeKeyMap(parameters);
+                var options = new Options();
+                var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
 
                 try {
@@ -163,7 +200,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     }
 
                 } catch (Throwable e) {
-                    throw new KlabIOException(e);
+                    if (scope != null) {
+                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                    } else {
+//                        e.printStackTrace();
+                    }
+
                 }
 
                 return null;
@@ -171,7 +213,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             public <T> List<T> getCollection(String apiRequest, Class<T> resultClass, Object... parameters) {
 
-                var params = Utils.Maps.makeKeyMap(parameters);
+                var options = new Options();
+                var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
 
                 try {
@@ -188,7 +231,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     }
 
                 } catch (Throwable e) {
-                    throw new KlabIOException(e);
+                    if (scope != null) {
+                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                    } else {
+//                        e.printStackTrace();
+                    }
+
                 }
 
                 return java.util.Collections.emptyList();
@@ -203,9 +251,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
              * @param parameters paired key, value sequence for URL options
              * @return
              */
-            public void put(String apiRequest, Object... parameters) {
+            public boolean put(String apiRequest, Object... parameters) {
 
-                var params = Utils.Maps.makeKeyMap(parameters);
+                var options = new Options();
+                var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
 
                 try {
@@ -214,11 +263,22 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
                     }
 
-                    client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.discarding());
+                    var response = client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.discarding());
+
+                    if (response != null && response.statusCode() == 200) {
+                        return true;
+                    }
 
                 } catch (Throwable e) {
-                    throw new KlabIOException(e);
+                    if (scope != null) {
+                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                    } else {
+//                        e.printStackTrace();
+                    }
+
                 }
+
+                return false;
             }
 
             private <T> List<T> parseResponseList(String body, Class<T> resultClass) {
@@ -298,8 +358,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param serviceUrl
          * @return
          */
-        public static Client getClient(URL serviceUrl) {
-            return getClient(serviceUrl.toString());
+        public static Client getClient(URL serviceUrl, Scope scope) {
+            return getClient(serviceUrl.toString(), scope);
         }
 
 
@@ -313,13 +373,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param serviceUrl
          * @return
          */
-        public static Client getClient(String serviceUrl) {
+        public static Client getClient(String serviceUrl, Scope scope) {
             // TODO use configuration for timeouts and other options
             var client =
                     HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).connectTimeout(Duration.ofSeconds(10)).build();
             var ret = new Client();
             ret.client = client;
             ret.uri = URI.create(serviceUrl);
+            ret.scope = scope;
             return ret;
         }
 
@@ -343,6 +404,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             try {
                 ret.uri = service.getUrl().toURI();
                 ret.authorization = authorization;
+                ret.scope = service.serviceScope();
             } catch (URISyntaxException e) {
                 throw new KlabInternalErrorException(e);
             }

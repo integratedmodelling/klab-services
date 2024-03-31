@@ -40,6 +40,6 @@ public class AuthenticationViewControllerImpl extends AbstractUIViewController<A
 
     @Override
     public void authenticationResult(UserIdentity identity) {
-
+        view().notifyUser(identity);
     }
 }

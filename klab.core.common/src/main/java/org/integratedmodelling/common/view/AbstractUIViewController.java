@@ -5,6 +5,8 @@ import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.View;
 import org.integratedmodelling.klab.api.view.ViewController;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * The default abstract ancestor for views builds upon the annotations found on the class and collaborates
  * with the routing process implemented in the {@link AbstractUIController}.
@@ -12,7 +14,7 @@ import org.integratedmodelling.klab.api.view.ViewController;
 public abstract class AbstractUIViewController<T extends View> implements ViewController<T> {
 
     UIController controller;
-    private T view;
+    private AtomicReference<T> view = new AtomicReference<>();
 
     protected AbstractUIViewController(UIController controller) {
         this.controller = controller;
@@ -32,23 +34,18 @@ public abstract class AbstractUIViewController<T extends View> implements ViewCo
     }
 
     public void registerView(T view) {
-        this.view = view;
-    }
-
-    protected T view() {
-        assert (view != null);
-        return view;
+        this.view.set(view);
     }
 
     /**
-     * The default onEvent does nothing as the routing mechanism should take care of everything.
+     * Get the view. NOTE: may be null depending on when {@link #registerView(View)} gets called. If so,
+     * messages should be stored and replayed when the view is available.
      *
-     * @param event
-     * @param payload
+     * @return the view or null
      */
-    @Override
-    public void onEvent(UIEvent event, Object payload) {
-
+    protected T view() {
+        return view.get();
     }
+
 
 }

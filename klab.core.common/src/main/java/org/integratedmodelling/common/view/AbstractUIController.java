@@ -1,9 +1,12 @@
 package org.integratedmodelling.common.view;
 
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -22,6 +25,8 @@ import org.springframework.core.annotation.AnnotationUtils;
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -41,6 +46,7 @@ public abstract class AbstractUIController implements UIController {
         List<Class<?>> parameterClasses = new ArrayList<>();
         Method method;
         UIReactor reactor;
+        Queue<Pair<UIReactor, Object[]>> messageQueue = new LinkedBlockingDeque<>();
 
         class EventReactionEdge extends DefaultEdge {
             UIReactor.UIEvent event;
@@ -59,6 +65,14 @@ public abstract class AbstractUIController implements UIController {
             this.parameterClasses.addAll(Arrays.stream(method.getParameterTypes()).toList());
         }
 
+
+        /**
+         * TODO enable injection of sender and standard arguments such as scope, controller and service
+         *
+         * @param sender
+         * @param payload
+         * @return
+         */
         public Object[] reorderArguments(@Nullable UIReactor sender, Object[] payload) {
 
             // Must be same parameter number
@@ -80,11 +94,16 @@ public abstract class AbstractUIController implements UIController {
             // no exact match, same number, reorder if possible
             ArrayList<Object> reordered = new ArrayList<>();
             for (var cls : method.getParameterTypes()) {
+                boolean found = false;
                 for (var arg : payload) {
                     if (arg == null || cls.isAssignableFrom(arg.getClass())) {
                         reordered.add(arg);
+                        found = true;
                         break;
                     }
+                }
+                if (!found) {
+                    // TODO check for standard injected arguments.
                 }
             }
 
@@ -102,8 +121,23 @@ public abstract class AbstractUIController implements UIController {
 
         public Object call(UIReactor sender, Object... payload) {
 
-            // TODO only call if the arguments are appropriate for the types. This will allow controllers
-            //  to filter calls by simply specializing the argument types.
+            if (reactor instanceof AbstractUIViewController<?> viewController) {
+                if (viewController.view() == null) {
+                    // put away the messages in the synchronous queue
+                    messageQueue.add(Pair.of(sender, payload));
+                    return null;
+                } else {
+                    while (!messageQueue.isEmpty()) {
+                        var message = messageQueue.remove();
+                        callMessage(message.getFirst(), message.getSecond());
+                    }
+                }
+            }
+
+            return callMessage(sender, payload);
+        }
+
+        private Object callMessage(UIReactor sender, Object... payload) {
             var args = reorderArguments(sender, payload);
             if (args == null && payload != null) {
                 return null;
@@ -175,6 +209,7 @@ public abstract class AbstractUIController implements UIController {
      * @param message
      */
     protected void processMessage(Scope scope, Message message) {
+
         switch (message.getMessageClass()) {
             case Void -> {
             }
@@ -187,18 +222,44 @@ public abstract class AbstractUIController implements UIController {
             }
             case ServiceLifecycle -> {
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable -> dispatch(null, UIReactor.UIEvent.ServiceUnavailable,
+                    case ServiceUnavailable -> dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
                             message.getPayload(Object.class));
-                    case ServiceAvailable -> dispatch(null, UIReactor.UIEvent.ServiceAvailable,
+                    case ServiceAvailable -> dispatch(this, UIReactor.UIEvent.ServiceAvailable,
                             message.getPayload(Object.class));
-                    case ServiceInitializing -> dispatch(null, UIReactor.UIEvent.ServiceStarting,
+                    case ServiceInitializing -> dispatch(this, UIReactor.UIEvent.ServiceStarting,
                             message.getPayload(Object.class));
+                    case ServiceStatus -> dispatch(this, UIReactor.UIEvent.ServiceStatus,
+                            message.getPayload(KlabService.ServiceStatus.class));
                     default -> {
                     }
                 }
             }
             case EngineLifecycle -> {
                 // TODO engine ready event and status
+                switch (message.getMessageType()) {
+                    case ServiceUnavailable -> {
+                        dispatch(this, UIReactor.UIEvent.EngineUnavailable,
+                                message.getPayload(Object.class));
+                    }
+                    case ServiceAvailable -> {
+                        dispatch(this, UIReactor.UIEvent.EngineAvailable,
+                                message.getPayload(Object.class));
+                    }
+                    case ServiceInitializing -> {
+                        dispatch(this, UIReactor.UIEvent.EngineStarting,
+                                message.getPayload(Object.class));
+                    }
+                    case ServiceStatus -> {
+                        dispatch(this, UIReactor.UIEvent.ServiceStatus,
+                                message.getPayload(KlabService.ServiceStatus.class));
+                    }
+                    case UsingDistribution -> {
+                        dispatch(this, UIReactor.UIEvent.DistributionSelected,
+                                message.getPayload(Distribution.class));
+                    }
+                    default -> {
+                    }
+                }
             }
             case KimLifecycle -> {
             }
@@ -207,6 +268,10 @@ public abstract class AbstractUIController implements UIController {
             case ProjectLifecycle -> {
             }
             case Authorization -> {
+                if (message.is(Message.MessageType.UserAuthorized)) {
+                    dispatch(this, UIReactor.UIEvent.UserAuthenticated,
+                            message.getPayload(UserIdentity.class));
+                }
             }
             case TaskLifecycle -> {
             }
@@ -229,8 +294,7 @@ public abstract class AbstractUIController implements UIController {
             case ActorCommunication -> {
             }
         }
-        ;
-        System.out.println("AHA " + message);
+
     }
 
     @Override

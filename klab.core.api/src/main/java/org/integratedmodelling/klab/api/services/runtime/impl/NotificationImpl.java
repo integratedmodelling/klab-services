@@ -25,6 +25,7 @@ public class NotificationImpl implements Notification, Serializable {
     // this will be null when parsed, identities are in the runtime
     private String identity;
     private LexicalContext lexicalContext;
+    private Mode mode;
 
     public static class LexicalContextImpl implements LexicalContext {
         private URL url;
@@ -111,6 +112,11 @@ public class NotificationImpl implements Notification, Serializable {
     }
 
     @Override
+    public Mode getMode() {
+        return mode;
+    }
+
+    @Override
     public String getIdentity() {
         return identity;
     }
@@ -136,11 +142,12 @@ public class NotificationImpl implements Notification, Serializable {
         this.lexicalContext = lexicalContext;
     }
 
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
     @Override
     public String toString() {
-        return "NotificationImpl{" +
-                "message='" + message + '\'' +
-                ", level=" + level +
-                '}';
+        return "NotificationImpl{" + "message='" + message + '\'' + ", level=" + level + '}';
     }
 }

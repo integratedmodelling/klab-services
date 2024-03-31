@@ -23,6 +23,8 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
     private boolean available = false;
     private boolean busy = false;
     private ServiceScope.Locality locality = ServiceScope.Locality.EMBEDDED;
+    private KlabService.Type serviceType;
+    private String serviceId;
 
     @Override
     public int getHealthPercentage() {
@@ -115,6 +117,16 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
     }
 
     @Override
+    public KlabService.Type getServiceType() {
+        return serviceType;
+    }
+
+    @Override
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    @Override
     public boolean isAvailable() {
         return available;
     }
@@ -139,5 +151,27 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
 
     public void setLocality(ServiceScope.Locality locality) {
         this.locality = locality;
+    }
+
+    public void setServiceType(KlabService.Type serviceType) {
+        this.serviceType = serviceType;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    @Override
+    public String toString() {
+        return "ServiceStatusImpl{" +
+                "memoryAvailableBytes=" + memoryAvailableBytes +
+                ", memoryUsedBytes=" + memoryUsedBytes +
+                ", serviceType=" + serviceType +
+                ", serviceId='" + serviceId + '\'' +
+                ", uptimeMs=" + uptimeMs +
+                ", bootTimeMs=" + bootTimeMs +
+                ", available=" + available +
+                ", busy=" + busy +
+                '}';
     }
 }

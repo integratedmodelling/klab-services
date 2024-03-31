@@ -118,6 +118,10 @@ public interface KlabService extends Service {
      */
     interface ServiceStatus extends Serializable {
 
+        KlabService.Type getServiceType();
+
+        String getServiceId();
+
         boolean isAvailable();
 
         boolean isBusy();

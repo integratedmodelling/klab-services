@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
@@ -42,7 +43,6 @@ public abstract class ServiceClient implements KlabService {
     private AtomicBoolean connected = new AtomicBoolean(false);
     private AtomicBoolean authorized = new AtomicBoolean(false);
     private AtomicBoolean authenticated = new AtomicBoolean(false);
-    private AtomicBoolean attemptingConnection = new AtomicBoolean(false);
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
     private boolean usingLocalSecret;
     private AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
@@ -53,7 +53,8 @@ public abstract class ServiceClient implements KlabService {
     protected Utils.Http.Client client;
     private ServiceCapabilities capabilities;
 
-    // these can be installed from the outside
+    // these can be installed from the outside. TODO these should go in the scope and only there
+    @Deprecated
     protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     private boolean local;
 
@@ -114,7 +115,7 @@ public abstract class ServiceClient implements KlabService {
         for (var service : services) {
             if (service.getServiceType() == serviceType && service.isPrimary() && service.getUrls().size() > 0) {
                 for (var url : service.getUrls()) {
-                    var status = readServiceStatus(url);
+                    var status = readServiceStatus(url, scope);
                     if (status != null) {
                         ret = url;
                         // we are connected but we leave setting the connected flag to the timed task
@@ -143,7 +144,7 @@ public abstract class ServiceClient implements KlabService {
             if (secret != null) {
                 token = makeSecretToken(secret, identity);
             }
-            var status = readServiceStatus(url);
+            var status = readServiceStatus(url, scope);
 
             if (status != null) {
                 ret = url;
@@ -201,9 +202,9 @@ public abstract class ServiceClient implements KlabService {
      * @param url
      * @return
      */
-    public static ServiceStatus readServiceStatus(URL url) {
-        try (var client = Utils.Http.getClient(url)) {
-            return client.get(ServicesAPI.STATUS, ServiceStatusImpl.class);
+    public static ServiceStatus readServiceStatus(URL url, Scope scope) {
+        try (var client = Utils.Http.getClient(url, scope)) {
+            return client.get(ServicesAPI.STATUS, ServiceStatusImpl.class, Notification.Mode.Silent);
         } catch (Throwable t) {
             return null;
         }
@@ -244,12 +245,12 @@ public abstract class ServiceClient implements KlabService {
                     }
                 };
 
-        scheduler.scheduleAtFixedRate(() -> checkConnection(), 0, pollCycleSeconds, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::timedTasks, 0, pollCycleSeconds, TimeUnit.SECONDS);
     }
 
-    private void checkConnection() {
+    private void timedTasks() {
 
-        if (!attemptingConnection.get()) {
+        try {
 
             boolean currentStatus = connected.get();
 
@@ -258,19 +259,10 @@ public abstract class ServiceClient implements KlabService {
              */
 
             try {
-                attemptingConnection.set(true);
-                //        if (!connected.get()) {
-                //            if ((this.url =
-                //                    discoverService(authentication.getFirst(), authentication.getSecond()
-                //                    , serviceType)) != null) {
-                //                establishConnection();
-                //            }
-                //        } else {
-                var s = readServiceStatus(this.url);
+                var s = readServiceStatus(this.url, scope);
                 if (s == null) {
                     connected.set(false);
                     status.set(ServiceStatus.offline());
-                    // TODO send ServerUnavailable to scope
                 } else {
                     status.set(s);
                     connected.set(true);
@@ -279,27 +271,34 @@ public abstract class ServiceClient implements KlabService {
                     }
                 }
             } finally {
-                attemptingConnection.set(false);
                 if (connected.get() != currentStatus) {
                     for (var listener : listeners) {
-                        // establish whatever scope "entanglement" is allowed by the service
                         listener.accept(scope, Message.create(scope, Message.MessageClass.ServiceLifecycle,
                                 (connected.get() ? Message.MessageType.ServiceAvailable :
                                  Message.MessageType.ServiceUnavailable), capabilities));
                     }
-                    if (local && connected.get()) {
-                        // FIXME scope connections should happen if configured and allowed, not just if the
-                        //  URL is local
+                    if (Configuration.INSTANCE.pairServiceScopes() && local && connected.get()) {
+                        // establish whatever scope "entanglement" is allowed by the service
                         scope.connect(this);
                     }
                 }
             }
-            // TODO send ServerStatus to scope
-            //        }
+
+            /**
+             *
+             */
+            // send the status
+            if (connected.get() && status != null) {
+                for (var listener : listeners) {
+                    listener.accept(scope, Message.create(scope, Message.MessageClass.ServiceLifecycle,
+                            Message.MessageType.ServiceStatus, status.get()));
+                }
+            }
+
+        } catch (Throwable ziocan) {
+            scope.error(ziocan);
         }
-        /**
-         *
-         */
+
     }
 
     @Override
@@ -326,8 +325,7 @@ public abstract class ServiceClient implements KlabService {
         scope.disconnect(this);
         this.scheduler.shutdown();
         if (local) {
-            client.put(ServicesAPI.SHUTDOWN);
-            return true;
+            return client.put(ServicesAPI.SHUTDOWN);
         }
         return false;
     }

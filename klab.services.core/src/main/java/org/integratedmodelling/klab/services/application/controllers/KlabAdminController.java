@@ -24,9 +24,10 @@ public class KlabAdminController {
     ServiceNetworkedInstance<?> instance;
 
     @PutMapping(ServicesAPI.SHUTDOWN)
-    public void shutdown() {
+    public boolean shutdown() {
         Logging.INSTANCE.info("Shutting down service instance " + instance.klabService().getLocalName());
         instance.shutdown();
+        return true;
     }
 
 }

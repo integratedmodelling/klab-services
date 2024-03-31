@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
@@ -43,6 +44,7 @@ public enum Authentication {
     INSTANCE;
 
     private Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
+    private DistributionImpl distribution;
 
     /**
      * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
@@ -93,7 +95,7 @@ public enum Authentication {
 
         if (authenticationServer != null) {
 
-            try (var client = Utils.Http.getClient(authenticationServer)) {
+            try (var client = Utils.Http.getClient(authenticationServer, null)) {
 
                 if (logEvents) {
                     Logging.INSTANCE.info("authenticating " + certificate.getProperty(KlabCertificate.KEY_USERNAME) + " with hub "
@@ -220,7 +222,7 @@ public enum Authentication {
         for (var service : availableServices) {
             if (service.getServiceType() == serviceType && service.isPrimary()) {
                 for (var url : service.getUrls()) {
-                    if (ServiceClient.readServiceStatus(url) != null) {
+                    if (ServiceClient.readServiceStatus(url, scope) != null) {
                         scope.info("Using authenticated " + service.getServiceType() + " service from " + service.getPartner().getId());
                         return (T) createLocalServiceClient(serviceType, url, identity, availableServices,
                                 listeners);
@@ -230,24 +232,31 @@ public enum Authentication {
         }
 
         // if we get here, we have no remote services available and we should try a running local one first.
-        if (ServiceClient.readServiceStatus(serviceType.localServiceUrl()) != null) {
-            scope.info("Using locally running " + serviceType + " service at " + serviceType.localServiceUrl());
+        var status = ServiceClient.readServiceStatus(serviceType.localServiceUrl(), null);
+        if (status != null) {
+            scope.info("Using locally running " + status.getServiceType() + " service at " + serviceType.localServiceUrl());
             return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
                     availableServices, listeners);
         }
 
+
         // if we got here, we need to launch the service ourselves. We may be using a remote distribution or
         // a development one, which takes priority. TODO use options to influence the priority here.
-        var distribution = DistributionImpl.isDevelopmentDistributionAvailable() ?
-                           new DevelopmentDistributionImpl() : new DistributionImpl();
+        var distribution = this.distribution == null ?
+                           (DistributionImpl.isDevelopmentDistributionAvailable() ?
+                            new DevelopmentDistributionImpl() :
+                            new DistributionImpl()) : this.distribution;
 
         if (distribution.isAvailable() && launchProduct) {
+
+            this.distribution = distribution;
+
             var product = distribution.findProduct(Product.ProductType.forService(serviceType));
             if (logFailures) {
                 scope.info("No service available for " + serviceType + ": " +
                         (product == null ? "distribution does not provide service implementation" :
                          "starting " +
-                                "local service from local k.LAB distribution"));
+                                 "local service from local k.LAB distribution"));
             }
             if (product != null && !started.contains(serviceType)) {
                 started.add(serviceType);
@@ -309,4 +318,12 @@ public enum Authentication {
         return ret;
     }
 
+    /**
+     * This will only return a non-null distribution after authentication if a distribution was used.
+     *
+     * @return
+     */
+    public Distribution getDistribution() {
+        return this.distribution;
+    }
 }

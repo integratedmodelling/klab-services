@@ -24,14 +24,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class BaseService implements KlabService {
 
-    protected final Type type;
+    private final Type type;
     private String serviceSecret;
 
     private URL url;
     protected AtomicBoolean online = new AtomicBoolean(false);
     protected AtomicBoolean available = new AtomicBoolean(false);
-
-    private static final long serialVersionUID = 1646569587945609013L;
 
     protected ServiceScope scope;
     protected String localName = "Embedded";
@@ -88,6 +86,8 @@ public abstract class BaseService implements KlabService {
      */
     public ServiceStatus status() {
         var ret = new ServiceStatusImpl();
+        ret.setServiceId(serviceId());
+        ret.setServiceType(serviceType());
         ret.setAvailable(serviceScope().isAvailable());
         ret.setBusy(serviceScope().isBusy());
         ret.setLocality(serviceScope().getLocality());

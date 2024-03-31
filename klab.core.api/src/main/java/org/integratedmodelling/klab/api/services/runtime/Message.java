@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
@@ -21,15 +22,16 @@ public interface Message extends Serializable {
 
     public static Message NO_RESPONSE = null;
 
-    enum Provenance {
+    enum ForwardingPolicy {
         /**
          * Message was created locally and will be forwarded to paired scopes
          */
-        Original,
+        Forward,
         /**
-         * Message was forwarded from a paired scope and will not be further forwarded
+         * Message was forwarded from a paired scope and will not be further forwarded. This should be the
+         * default policy for newly created messages.
          */
-        Forwarded
+        DoNotForward
     }
 
     /**
@@ -157,10 +159,10 @@ public interface Message extends Serializable {
         /*
          * Service messages, coming with service capabilities
          */
-        ServiceInitializing(String.class),
+        ServiceInitializing(KlabService.ServiceCapabilities.class),
         ServiceAvailable(KlabService.ServiceCapabilities.class),
         ServiceUnavailable(KlabService.ServiceCapabilities.class),
-
+        ServiceStatus(KlabService.ServiceStatus.class),
         ConnectScope(ScopeOptions.class),
 
         /**
@@ -474,7 +476,10 @@ public interface Message extends Serializable {
         //         * Sent B->F when one or more documentation views have incorporated a new element
         //         */
         //        DocumentationChanged, AgentResponse
-        ;
+        /**
+         * Engine lifecycle, should only be client-wide
+         */
+        UsingDistribution(Distribution.class);
 
         // TODO add this to the message type so that we can validate the message payload against it. Use
         //  Void.class
@@ -491,7 +496,7 @@ public interface Message extends Serializable {
 
     }
 
-    Provenance getProvenance();
+    ForwardingPolicy getForwardingPolicy();
 
     /**
      * Unique ID for each message.
@@ -593,8 +598,8 @@ public interface Message extends Serializable {
                 ret.setMessageClass((MessageClass) ob);
             } else if (ob instanceof Notification.Type) {
                 notype = (Notification.Type) ob;
-            } else if (ob instanceof Provenance) {
-                ret.setProvenance((Provenance) ob);
+            } else if (ob instanceof ForwardingPolicy) {
+                ret.setForwardingPolicy((ForwardingPolicy) ob);
             } else if (ob instanceof Notification) {
                 notype = ((Notification) ob).getType();
                 ret.setPayload(ob);

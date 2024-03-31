@@ -24,16 +24,14 @@ public interface ServicesViewController extends ViewController<ServicesView> {
      *
      * @param service
      */
-    @UIEventHandler
-    void serviceAvailable(KlabService service);
+    @UIEventHandler(UIEvent.ServiceAvailable)
+    void serviceAvailable(KlabService.ServiceCapabilities service);
 
-    /**
-     * User action choosing a service to focus on. React and dispatch.
-     *
-     * @param service
-     */
-    @UIActionHandler(UIReactor.UIAction.SelectService)
-    void focusService(KlabService service);
+    @UIEventHandler(UIEvent.ServiceUnavailable)
+    void serviceUnavailable(KlabService.ServiceCapabilities service);
+
+    @UIEventHandler(UIEvent.ServiceStarting)
+    void serviceStarting(KlabService.ServiceCapabilities service);
 
     /**
      * Will be called at least once after {@link #serviceAvailable(KlabService)} to report on service status,
@@ -43,8 +41,19 @@ public interface ServicesViewController extends ViewController<ServicesView> {
      * @param service
      * @param status
      */
-    @UIEventHandler
-    void statusAvailable(KlabService service, KlabService.ServiceStatus status);
+    @UIEventHandler(UIEvent.ServiceStatus)
+    void serviceStatus(KlabService.ServiceStatus status);
+
+    /**
+     * User action choosing a service to focus on. React and dispatch.
+     *
+     * @param service
+     */
+    @UIActionHandler(UIReactor.UIAction.SelectService)
+    void focusService(KlabService service);
+
+
+
 
 
 }

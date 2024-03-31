@@ -52,7 +52,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     protected void createView() {
 
-        registerViewController(new ServicesViewImpl(this));
+        registerViewController(new ServicesViewControllerImpl(this));
         registerViewController(new DistributionViewImplController(this));
         registerViewController(new ResourcesNavigatorControllerImpl(this));
         registerViewController(new ContextInspectorControllerImpl(this));
@@ -61,11 +61,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         // TODO etc.
 
     }
-
-    //    private void onMessage(Scope scope, Message message) {
-    //        // TODO react to events
-    //        System.out.println("AHA " + message);
-    //    }
 
     @Override
     public void setOption(Option option, Object... payload) {
@@ -119,5 +114,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     public void addListener(BiConsumer<Scope, Message> listener) {
         this.listeners.add(listener);
+    }
+
+    @Override
+    public UIController getController() {
+        return this;
     }
 }

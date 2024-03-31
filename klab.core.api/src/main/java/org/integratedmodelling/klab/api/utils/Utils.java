@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
@@ -440,32 +441,43 @@ public class Utils {
 
         /**
          * Organizes a set of inputs into a message and a severity level.
+         * <p>
+         * FIXME this is useless, just use Notification.create()
          *
          * @param objects the objects
          * @return the message
          */
-        public static Pair<String, Notification.Type> getMessage(Object... objects) {
+        public static Notification getMessage(Object... objects) {
 
-            StringBuffer ret = new StringBuffer(256);
-            Notification.Type ntype = null;
+            StringBuilder ret = new StringBuilder(256);
+            Notification.Type ntype = Notification.Type.None;
+            Notification.Mode nmode = Notification.Mode.Normal;
+            Notification.Level nlevel = Level.Info;
 
             for (Object o : objects) {
                 if (o instanceof String) {
-                    ret.append((ret.length() == 0 ? "" : " ") + o);
-                } else if (o instanceof Throwable) {
-                    ret.append((ret.length() == 0 ? "" : " ") + ((Throwable) o).getLocalizedMessage());
+                    ret.append(ret.isEmpty() ? "" : " ").append(o);
+                } else if (o instanceof Throwable throwable) {
+                    ret.append(ret.isEmpty() ? "" : " ").append(throwable.getLocalizedMessage()).append(". " +
+                            "Stack trace:\n").append(Exceptions.stackTrace(throwable));
                 }/* else if (o instanceof KimScope) {
                     ret.insert(0, ((KimScope) o).getLocationDescriptor() + ": ");
-                }*/ else if (o instanceof Notification.Type) {
-                    ntype = (Notification.Type) o;
-                } else if (o instanceof Notification) {
-                    ntype = ((Notification) o).getType();
-                    ret.append(((Notification) o).getMessage());
+                }*/ else if (o instanceof Notification.Type notificationType) {
+                    ntype = notificationType;
+                } else if (o instanceof Notification notification) {
+                    ntype = notification.getType();
+                    nlevel = notification.getLevel();
+                    nmode = notification.getMode();
+                    ret.append(notification.getMessage());
+                } else if (o instanceof Notification.Mode mode) {
+                    nmode = mode;
+                } else if (o instanceof Notification.Level level) {
+                    nlevel = level;
                 }
                 // TODO continue
             }
 
-            return Pair.of(ret.toString(), ntype);
+            return Notification.create(ntype, nmode, nlevel, ret.toString());
         }
 
         public static boolean hasErrors(Collection<Notification> notifications) {
@@ -3765,7 +3777,8 @@ public class Utils {
         @SuppressWarnings({"unchecked", "rawtypes"})
         public static <T> T asType(Object ret, Class<?> cls) {
 
-            if (cls.equals(Object.class)) {
+
+            if (cls.isAssignableFrom(ret.getClass())) {
                 return (T) ret;
             }
 
@@ -3837,10 +3850,6 @@ public class Utils {
                 }
 
                 return null;
-            }
-
-            if (cls.isAssignableFrom(ret.getClass())) {
-                return (T) ret;
             }
 
             if (cls.equals(String.class)) {
@@ -4044,6 +4053,11 @@ public class Utils {
 
     public static class Exceptions {
 
+        public static String stackTrace(Throwable throwable) {
+            StringWriter sw = new StringWriter();
+            throwable.printStackTrace(new PrintWriter(sw));
+            return sw.toString();
+        }
     }
 
     public static class URLs {

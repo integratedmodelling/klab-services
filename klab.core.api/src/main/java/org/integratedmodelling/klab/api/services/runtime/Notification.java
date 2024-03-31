@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.awt.event.WindowStateListener;
 import java.io.PrintWriter;
@@ -65,6 +66,8 @@ public interface Notification {
 
     Type getType();
 
+    Mode getMode();
+
     /**
      * The document context or null.
      *
@@ -83,17 +86,18 @@ public interface Notification {
      * @return
      */
     public static Notification create(Object... objects) {
+
         Level level = Level.Info;
         String message = "No message";
         LexicalContext lexicalContext = null;
         long timestamp = System.currentTimeMillis();
+        Type type = Type.None;
+        Mode mode = Mode.Normal;
 
         if (objects != null) {
             for (Object o : objects) {
                 if (o instanceof Throwable throwable) {
-                    var writer = new StringWriter();
-                    throwable.printStackTrace(new PrintWriter(writer));
-                    message = writer.toString();
+                    message = Utils.Exceptions.stackTrace(throwable);
                     level = Level.Error;
                 } else if (o instanceof String string) {
                     message = string;
@@ -105,6 +109,10 @@ public interface Notification {
                     level = l;
                 } else if (o instanceof LexicalContext lc) {
                     lexicalContext = lc;
+                } else if (o instanceof Mode mod) {
+                    mode = mod;
+                } else if (o instanceof Type typ) {
+                    type = typ;
                 }
             }
         }
@@ -112,6 +120,8 @@ public interface Notification {
         var ret = new NotificationImpl(message, level);
         ret.setLexicalContext(lexicalContext);
         ret.setTimestamp(timestamp);
+        ret.setMode(mode);
+        ret.setType(type);
 
         return ret;
     }

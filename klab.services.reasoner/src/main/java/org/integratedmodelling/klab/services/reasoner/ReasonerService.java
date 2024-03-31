@@ -103,7 +103,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      * the traits in the first concept will be accepted.
      */
     static public final int USE_TRAIT_PARENT_CLOSURE = 0x08;
-    private final ServiceStartupOptions serviceOptions;
 
     //    /**
     //     * Flag for {@link #compatible(Semantics, Semantics, int)}.
@@ -250,24 +249,30 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.owl = new OWL(scope);
         this.indexer = new Indexer(scope);
         this.emergence = new IntelligentMap<>(scope);
-        this.serviceOptions = options;
+        readConfiguration(options);
+    }
+
+    private void readConfiguration(ServiceStartupOptions options) {
+        File config = BaseService.getFileInConfigurationDirectory(options, "reasoner.yaml");
+        if (config.exists() && config.length() > 0 && !options.isClean()) {
+            this.configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config,
+                    ReasonerConfiguration.class);
+        } else {
+            // make an empty config
+            this.configuration = new ReasonerConfiguration();
+            //            this.configuration.setServicePath("resources");
+            //            this.configuration.setLocalResourcePath("local");
+            //            this.configuration.setPublicResourcePath("public");
+            this.configuration.setServiceId(UUID.randomUUID().toString());
+            saveConfiguration();
+        }
     }
 
     @Override
     public void initializeService() {
 
-//        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-//                capabilities());
-
-        File config = getConfigurationDirectory(serviceOptions);;
-        config = new File(config + File.separator + "reasoner.yaml");
-        if (config.exists() && config.length() > 0 && !serviceOptions.isClean()) {
-            // TODO/FIXME half-baked logics, see ResourcesProvider
-        }
-        if (config.exists()) {
-            configuration = org.integratedmodelling.common.utils.Utils.YAML.load(config,
-                    ReasonerConfiguration.class);
-        }
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+                capabilities());
 
         for (ProjectConfiguration authority : configuration.getAuthorities()) {
             loadAuthority(authority);
@@ -275,8 +280,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         this.observationReasoner = new ObservationReasoner(this);
 
-//        scope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-//                capabilities());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                capabilities());
 
     }
 
@@ -300,7 +305,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     private void saveConfiguration() {
-        File config = getFileInConfigurationDirectory(serviceOptions, "reasoner.yaml");
+        File config = BaseService.getFileInConfigurationDirectory(startupOptions, "reasoner.yaml");
         org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 

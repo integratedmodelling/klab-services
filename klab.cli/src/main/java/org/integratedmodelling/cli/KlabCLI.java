@@ -509,7 +509,7 @@ public enum KlabCLI {
 
                     }
                     case ServiceInitializing -> {
-                        var description = message.getPayload(String.class);
+                        var description = message.getPayload(KlabService.ServiceCapabilities.class);
                         commandLine.getOut().println(Ansi.AUTO.string("@|blue "
                                 + "service initializing: " + description
                                 + "|@"));
@@ -520,7 +520,6 @@ public enum KlabCLI {
                         commandLine.getOut().println(Ansi.AUTO.string("@|blue " + capabilities.getType() +
                                 " service unavailable: " + capabilities.getServiceName()
                                 + "|@"));
-
                     }
                 }
             }

@@ -11,7 +11,6 @@ import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,7 +43,7 @@ public class KlabScopeController {
     //    @SendTo("/klab")
     public void handleMessage(Map<?, ?> payload) {
 
-        var message = Utils.Json.convertMessage(payload, Message.Provenance.Forwarded);
+        var message = Utils.Json.convertMessage(payload, Message.ForwardingPolicy.DoNotForward);
         // TODO serviceScope().post() - find the scope for the ID and post it there. Scope must exist.
         //        scopeManager.
 

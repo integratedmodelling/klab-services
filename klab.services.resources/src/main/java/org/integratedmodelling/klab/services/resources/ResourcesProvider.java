@@ -628,10 +628,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         this.localName = localName;
     }
 
-    @Override
-    public ServiceScope serviceScope() {
-        return this.scope;
-    }
 
     @Override
     public ResourceSet queryModels(Observable observable, ContextScope scope) {

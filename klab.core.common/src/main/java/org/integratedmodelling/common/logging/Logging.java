@@ -63,14 +63,18 @@ public enum Logging {
 
     public void info(Object... o) {
 
-        Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
+        Notification payload = Utils.Notifications.getMessage(o);
+
+        if (payload.getMode() == Notification.Mode.Silent) {
+            return;
+        }
 
         if (Configuration.INSTANCE.getLoggingLevel().intValue() >= Level.INFO.intValue()) {
             if (infoWriter != null) {
-                infoWriter.accept(payload.getFirst());
+                infoWriter.accept(payload.getMessage());
             }
             if (logger != null) {
-                logger.info(payload.getFirst());
+                logger.info(payload.getMessage());
             }
         }
 
@@ -78,42 +82,54 @@ public enum Logging {
 
     public void warn(Object... o) {
 
-        Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
+        Notification payload = Utils.Notifications.getMessage(o);
+
+        if (payload.getMode() == Notification.Mode.Silent) {
+            return;
+        }
 
         if (Configuration.INSTANCE.getLoggingLevel().intValue() >= Level.WARNING.intValue()) {
             if (warningWriter != null) {
-                warningWriter.accept(payload.getFirst());
+                warningWriter.accept(payload.getMessage());
             }
             if (logger != null) {
-                logger.warn(payload.getFirst());
+                logger.warn(payload.getMessage());
             }
         }
     }
 
     public void error(Object... o) {
 
-        Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
+        Notification payload = Utils.Notifications.getMessage(o);
+
+        if (payload.getMode() == Notification.Mode.Silent) {
+            return;
+        }
 
         if (Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
             if (errorWriter != null) {
-                errorWriter.accept(payload.getFirst());
+                errorWriter.accept(payload.getMessage());
             }
             if (logger != null) {
-                logger.error(payload.getFirst());
+                logger.error(payload.getMessage());
             }
         }
     }
 
     public void debug(Object... o) {
 
-        Pair<String, Notification.Type> payload = Utils.Notifications.getMessage(o);
+        Notification payload = Utils.Notifications.getMessage(o);
+
+        if (payload.getMode() == Notification.Mode.Silent) {
+            return;
+        }
 
         if (Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.FINE.intValue()) {
             if (debugWriter != null) {
-                debugWriter.accept(payload.getFirst());
+                debugWriter.accept(payload.getMessage());
             }
             if (logger != null) {
-                logger.debug(payload.getFirst());
+                logger.debug(payload.getMessage());
             }
         }
     }

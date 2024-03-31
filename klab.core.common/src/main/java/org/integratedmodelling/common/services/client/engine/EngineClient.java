@@ -98,11 +98,10 @@ public class EngineClient implements Engine, PropertyHolder {
 
     @Override
     public boolean shutdown() {
-        /*
-        send shutdown to all services that were launched in our scope
-        TODO check for embedded services, which should stop themselves when the JVM exits but should also
-         made to shutdown correctly.
-         */
+
+        serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
+
+        /* shutdown all services that were launched in our scope */
         for (KlabService.Type type : new KlabService.Type[]{KlabService.Type.RUNTIME,
                                                             KlabService.Type.RESOLVER,
                                                             KlabService.Type.REASONER,
@@ -128,6 +127,8 @@ public class EngineClient implements Engine, PropertyHolder {
     protected UserScope authenticate() {
         this.authData = Authentication.INSTANCE.authenticate(false);
         var ret = createUserScope(authData);
+        ret.send(Message.MessageClass.EngineLifecycle,
+                Message.MessageType.ServiceInitializing, capabilities());
         ret.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, authData.getFirst());
         return ret;
     }
@@ -202,6 +203,11 @@ public class EngineClient implements Engine, PropertyHolder {
                 return EngineClient.this.getServices(KlabService.Type.classify(serviceClass));
             }
         };
+
+        if (Authentication.INSTANCE.getDistribution() != null) {
+            serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.UsingDistribution
+                    , Authentication.INSTANCE.getDistribution());
+        }
 
         return ret;
     }

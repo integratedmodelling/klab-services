@@ -103,6 +103,7 @@ public enum Configuration {
     public static final String KLAB_DISABLE_CONSOLE_ECHO = "klab.disable.console.echo";
 
     public static final String KLAB_ACCEPTED_WAIT_TIME_SECONDS = "klab.accepted.wait.time";
+    public static final String KLAB_PAIR_SERVICE_SCOPES = "klab.accepted.wait.time";
 
     /**
      * Name of work directory relative to ${user.home}. Ignored if THINKLAB_DATA_DIRECTORY_PROPERTY is
@@ -616,4 +617,13 @@ public enum Configuration {
         }
     }
 
+    /**
+     * If true, client service scopes will be paired to locally running services using websockets and share
+     * all scope messages meant for broadcasting.
+     *
+     * @return
+     */
+    public boolean pairServiceScopes() {
+        return Boolean.parseBoolean(getProperty(Configuration.KLAB_PAIR_SERVICE_SCOPES, "false"));
+    }
 }
