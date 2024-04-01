@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.engine;
 
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientScope;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -42,9 +44,10 @@ public class EngineClient implements Engine, PropertyHolder {
     Set<ResourcesService> availableResourcesServices = new HashSet<>();
     Set<Reasoner> availableReasoners = new HashSet<>();
     UserScope defaultUser;
+    // park any listeners here before boot() to install them in the default scope.
+    List<BiConsumer<Channel, Message>> scopeListeners = new ArrayList<>();
     private Pair<Identity, List<ServiceReference>> authData;
     List<UserScope> users = new ArrayList<>();
-    List<BiConsumer<Scope, Message>> listeners = Collections.synchronizedList(new ArrayList<>());
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private boolean firstCall = true;
     String serviceId = Utils.Names.shortUUID();
@@ -66,10 +69,10 @@ public class EngineClient implements Engine, PropertyHolder {
         return null;
     }
 
-    @Override
-    public void addEventListener(BiConsumer<Scope, Message> eventListener) {
-        listeners.add(eventListener);
-    }
+    //    @Override
+    //    public void addEventListener(BiConsumer<Scope, Message> eventListener) {
+    //        listeners.add(eventListener);
+    //    }
 
     @Override
     public ServiceCapabilities capabilities() {
@@ -96,10 +99,15 @@ public class EngineClient implements Engine, PropertyHolder {
         return defaultUser;
     }
 
+    public void addScopeListener(BiConsumer<Channel, Message> listener) {
+        this.scopeListeners.add(listener);
+    }
+
     @Override
     public boolean shutdown() {
 
-        serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
+        serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceUnavailable,
+                capabilities());
 
         /* shutdown all services that were launched in our scope */
         for (KlabService.Type type : new KlabService.Type[]{KlabService.Type.RUNTIME,
@@ -119,7 +127,15 @@ public class EngineClient implements Engine, PropertyHolder {
     @Override
     public void boot() {
         this.defaultUser = authenticate();
+        if (this.defaultUser instanceof ChannelImpl channel) {
+            for (var listener : scopeListeners) {
+                channel.addListener(listener);
+            }
+        }
         this.users.add(this.defaultUser);
+        this.defaultUser.send(Message.MessageClass.EngineLifecycle,
+                Message.MessageType.ServiceInitializing, capabilities());
+        this.defaultUser.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, authData.getFirst());
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
         booted.set(true);
     }
@@ -127,9 +143,7 @@ public class EngineClient implements Engine, PropertyHolder {
     protected UserScope authenticate() {
         this.authData = Authentication.INSTANCE.authenticate(false);
         var ret = createUserScope(authData);
-        ret.send(Message.MessageClass.EngineLifecycle,
-                Message.MessageType.ServiceInitializing, capabilities());
-        ret.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, authData.getFirst());
+
         return ret;
     }
 
@@ -192,7 +206,8 @@ public class EngineClient implements Engine, PropertyHolder {
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
         var ret = new ClientScope(authData.getFirst(), Scope.Type.SERVICE,
-                listeners.toArray(new BiConsumer[]{})) {
+                (serviceScope() instanceof ChannelImpl channel) ?
+                channel.listeners().toArray(new BiConsumer[]{}) : new BiConsumer[]{}) {
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
                 return (T) currentServices.get(KlabService.Type.classify(serviceClass));
@@ -203,6 +218,7 @@ public class EngineClient implements Engine, PropertyHolder {
                 return EngineClient.this.getServices(KlabService.Type.classify(serviceClass));
             }
         };
+
 
         if (Authentication.INSTANCE.getDistribution() != null) {
             serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.UsingDistribution

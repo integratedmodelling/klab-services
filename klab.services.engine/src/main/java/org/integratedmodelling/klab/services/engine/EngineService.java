@@ -41,15 +41,8 @@ public class EngineService implements Engine {
     private RuntimeService defaultRuntime;
     private Resolver defaultResolver;
     private boolean booted;
-    private List<BiConsumer<Scope, Message>> eventListeners = new ArrayList<>();
 
-    public EngineService(BiConsumer<Scope, Message>... eventListeners) {
-
-        if (eventListeners != null) {
-            for (var e : eventListeners) {
-                this.eventListeners.add(e);
-            }
-        }
+    public EngineService() {
 
         /*
          * boot the actor system right away, so that we can call login() before boot().
@@ -72,11 +65,6 @@ public class EngineService implements Engine {
     @Override
     public List<UserScope> getUsers() {
         return null;
-    }
-
-    @Override
-    public void addEventListener(BiConsumer<Scope, Message> eventListener) {
-        this.eventListeners.add(eventListener);
     }
 
     /**
@@ -175,18 +163,18 @@ public class EngineService implements Engine {
             }
         }
 
-        notify(ret, Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, user);
+        serviceScope().send(ret, Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, user);
 
         return ret;
     }
 
-    public void notify(Scope scope, Object... objects) {
-        if (!eventListeners.isEmpty()) {
-            for (var listener : eventListeners) {
-                listener.accept(scope, Message.create(scope, objects));
-            }
-        }
-    }
+//    public void notify(Scope scope, Object... objects) {
+//        if (!eventListeners.isEmpty()) {
+//            for (var listener : eventListeners) {
+//                listener.accept(scope, Message.create(scope, objects));
+//            }
+//        }
+//    }
 
     public void registerScope(EngineScope scope) {
         userScopes.put(scope.getUser().getUsername(), scope);

@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -38,6 +39,7 @@ import java.util.function.BiConsumer;
  */
 public abstract class ServiceClient implements KlabService {
 
+    private BiConsumer<Channel, Message>[] scopeListeners;
     private Type serviceType;
     private Pair<Identity, List<ServiceReference>> authentication;
     private AtomicBoolean connected = new AtomicBoolean(false);
@@ -53,9 +55,9 @@ public abstract class ServiceClient implements KlabService {
     protected Utils.Http.Client client;
     private ServiceCapabilities capabilities;
 
-    // these can be installed from the outside. TODO these should go in the scope and only there
-    @Deprecated
-    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
+    //    // these can be installed from the outside. TODO these should go in the scope and only there
+    //    @Deprecated
+    //    protected List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     private boolean local;
 
     protected ServiceClient(KlabService.Type serviceType) {
@@ -78,16 +80,12 @@ public abstract class ServiceClient implements KlabService {
     }
 
     protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
-                            List<ServiceReference> services, BiConsumer<Scope, Message>... listeners) {
+                            List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
         this.authentication = Pair.of(identity, services);
         this.serviceType = serviceType;
         this.url = url;
         this.local = url.equals(serviceType.localServiceUrl());
-        if (listeners != null) {
-            for (var listener : listeners) {
-                addListener(listener);
-            }
-        }
+        this.scopeListeners = listeners;
         this.token = this.local ? Configuration.INSTANCE.getServiceSecret(serviceType) : identity.getId();
         establishConnection();
     }
@@ -250,6 +248,12 @@ public abstract class ServiceClient implements KlabService {
                     }
                 };
 
+        if (this.scopeListeners != null) {
+            for (var listener: scopeListeners) {
+                this.scope.addListener(listener);
+            }
+        }
+
         scheduler.scheduleAtFixedRate(this::timedTasks, 0, pollCycleSeconds, TimeUnit.SECONDS);
     }
 
@@ -277,11 +281,9 @@ public abstract class ServiceClient implements KlabService {
                 }
             } finally {
                 if (connected.get() != currentStatus) {
-                    for (var listener : listeners) {
-                        listener.accept(scope, Message.create(scope, Message.MessageClass.ServiceLifecycle,
-                                (connected.get() ? Message.MessageType.ServiceAvailable :
-                                 Message.MessageType.ServiceUnavailable), capabilities));
-                    }
+                    scope.send(Message.MessageClass.ServiceLifecycle,
+                            (connected.get() ? Message.MessageType.ServiceAvailable :
+                             Message.MessageType.ServiceUnavailable), capabilities);
                     if (Configuration.INSTANCE.pairServiceScopes() && local && connected.get()) {
                         // establish whatever scope "entanglement" is allowed by the service
                         scope.connect(this);
@@ -294,10 +296,8 @@ public abstract class ServiceClient implements KlabService {
              */
             // send the status
             if (connected.get() && status != null) {
-                for (var listener : listeners) {
-                    listener.accept(scope, Message.create(scope, Message.MessageClass.ServiceLifecycle,
-                            Message.MessageType.ServiceStatus, status.get()));
-                }
+                scope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceStatus,
+                        status.get());
             }
 
         } catch (Throwable ziocan) {
@@ -333,10 +333,6 @@ public abstract class ServiceClient implements KlabService {
             return client.put(ServicesAPI.SHUTDOWN);
         }
         return false;
-    }
-
-    public void addListener(BiConsumer<Scope, Message> listener) {
-        this.listeners.add(listener);
     }
 
     public boolean isLocal() {

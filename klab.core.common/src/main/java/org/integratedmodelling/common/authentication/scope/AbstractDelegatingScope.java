@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -110,5 +111,16 @@ public abstract class AbstractDelegatingScope implements Scope {
     @Override
     public boolean disconnect(KlabService service) {
         return delegateChannel.disconnect(service);
+    }
+
+    public void addListener(BiConsumer<Channel, Message> listener) {
+        if (delegateChannel instanceof ChannelImpl channel) {
+            channel.addListener(listener);
+        } // TODO maybe warn otherwise
+    }
+
+    public BiConsumer<Channel, Message>[] listeners() {
+        return delegateChannel instanceof ChannelImpl channel ?
+               channel.listeners().toArray(BiConsumer[]::new) : null;
     }
 }

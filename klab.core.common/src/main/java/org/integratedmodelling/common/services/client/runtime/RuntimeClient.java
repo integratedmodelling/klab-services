@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -31,7 +32,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         super(Type.RUNTIME, identity, services);
     }
 
-    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Scope, Message>... listeners){
+    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners){
         super(Type.RUNTIME, url, identity, services, listeners);
     }
 

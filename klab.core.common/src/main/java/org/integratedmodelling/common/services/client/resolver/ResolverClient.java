@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -34,7 +35,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
         super(Type.RESOLVER, identity, services);
     }
 
-    public ResolverClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Scope, Message>... listeners) {
+    public ResolverClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
         super(Type.RESOLVER, url, identity, services, listeners);
     }
 

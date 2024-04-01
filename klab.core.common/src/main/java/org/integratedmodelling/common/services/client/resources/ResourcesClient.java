@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -47,7 +48,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         super(Type.RESOURCES, identity, services);
     }
 
-    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Scope, Message>... listeners) {
+    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
         super(Type.RESOURCES, url, identity, services, listeners);
     }
 

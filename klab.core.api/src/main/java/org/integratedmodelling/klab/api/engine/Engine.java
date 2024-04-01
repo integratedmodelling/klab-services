@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.engine;
 
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -54,14 +55,6 @@ public interface Engine extends KlabService {
      * @return
      */
     List<UserScope> getUsers();
-
-    /**
-     * Event listeners can be added to react to anything happening and must be propagated to the services.
-     * This can be called before or after boot. For now there is no provision to remove listeners.
-     *
-     * @param eventListeners
-     */
-    void addEventListener(BiConsumer<Scope, Message> eventListener);
 
     /**
      * To facilitate implementations, we expose the boot and shutdown as explicitly called phases. Booting the

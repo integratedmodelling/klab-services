@@ -2,6 +2,7 @@ package org.integratedmodelling.common.authentication.scope;
 
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -24,7 +25,7 @@ public class ChannelImpl implements Channel {
     Identity identity;
     AtomicBoolean interrupted = new AtomicBoolean(false);
     AtomicBoolean errors = new AtomicBoolean(false);
-    List<BiConsumer<Identity, Message>> listeners = Collections.synchronizedList(new ArrayList<>());
+    List<BiConsumer<Channel, Message>> listeners = Collections.synchronizedList(new ArrayList<>());
     List<BiFunction<Message, Identity, Message>> functors = Collections.synchronizedList(new ArrayList<>());
 
     public ChannelImpl(Identity identity) {
@@ -65,7 +66,7 @@ public class ChannelImpl implements Channel {
     public Message send(Object... message) {
         var me = Message.create(this, message);
         for (var listener : listeners) {
-            listener.accept(this.identity, me);
+            listener.accept(this, me);
         }
         return me;
     }
@@ -74,7 +75,7 @@ public class ChannelImpl implements Channel {
     public Message post(Consumer<Message> handler, Object... message) {
         var me = Message.create(this, message);
         for (var listener : listeners) {
-            listener.accept(this.identity, me);
+            listener.accept(this, me);
         }
         return me;
     }
@@ -94,6 +95,13 @@ public class ChannelImpl implements Channel {
         return errors.get();
     }
 
+    public List<BiConsumer<Channel, Message>> listeners() {
+        return this.listeners;
+    }
+
+    public void addListener(BiConsumer<Channel, Message> listener) {
+        this.listeners.add(listener);
+    }
 
     @Override
     public boolean connect(KlabService service) {

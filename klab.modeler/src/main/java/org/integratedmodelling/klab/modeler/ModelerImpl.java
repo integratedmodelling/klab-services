@@ -28,7 +28,6 @@ import java.util.function.BiConsumer;
  */
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
 
-    private final List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     EngineConfiguration workbench;
     private ContextScope currentContext;
     private SessionScope currentSession;
@@ -41,12 +40,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     public Engine createEngine() {
         // TODO first should locate and set the distribution
-        var ret = new EngineClient();
-        //        ret.addEventListener((scope, message) -> onMessage(scope, message));
-            for (var listener : this.listeners) {
-                ret.addEventListener(listener);
-            }
-        return ret;
+        return new EngineClient();
     }
 
     @Override
@@ -110,10 +104,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public SessionScope session(String session) {
         // TODO named session
         return null;
-    }
-
-    public void addListener(BiConsumer<Scope, Message> listener) {
-        this.listeners.add(listener);
     }
 
     @Override

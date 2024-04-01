@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.view;
 
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -7,8 +9,10 @@ import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.lang.kactors.beans.ViewPanel;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.PanelController;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -46,7 +50,7 @@ public abstract class AbstractUIController implements UIController {
         List<Class<?>> parameterClasses = new ArrayList<>();
         Method method;
         UIReactor reactor;
-        Queue<Pair<UIReactor, Object[]>> messageQueue = new LinkedBlockingDeque<>();
+        Queue<Pair<UIReactor, Object[]>> messageQueue = new LinkedBlockingDeque<>(128);
 
         class EventReactionEdge extends DefaultEdge {
             UIReactor.UIEvent event;
@@ -129,7 +133,6 @@ public abstract class AbstractUIController implements UIController {
                 } else {
                     while (!messageQueue.isEmpty()) {
                         var message = messageQueue.remove();
-                        System.out.println("SVUOTO LA VESCICHETTA " + message);
                         callMessage(message.getFirst(), message.getSecond());
                     }
                 }
@@ -182,7 +185,11 @@ public abstract class AbstractUIController implements UIController {
      */
     public void boot() {
         engine = createEngine();
-        engine.addEventListener(this::processMessage);
+        if (engine instanceof EngineClient engineClient) {
+            engineClient.addScopeListener(this::processMessage);
+        } else {
+            engine.serviceScope().warn("Engine is not default: will not communicate engine messages to UI");
+        }
         engine.boot();
     }
 
@@ -202,6 +209,10 @@ public abstract class AbstractUIController implements UIController {
      */
     protected abstract void createView();
 
+    protected  <T extends ViewPanel> T createPanelView(Class<T> panelClass) {
+        return null;
+    }
+
     /**
      * Translate k.LAB events into relevant UI events and dispatch them, routing through the view graph. If
      * overridden, most implementation should make sure that super is called.
@@ -209,7 +220,7 @@ public abstract class AbstractUIController implements UIController {
      * @param scope
      * @param message
      */
-    protected void processMessage(Scope scope, Message message) {
+    protected void processMessage(Channel scope, Message message) {
 
         switch (message.getMessageClass()) {
             case Void -> {
@@ -373,10 +384,11 @@ public abstract class AbstractUIController implements UIController {
     }
 
     @Override
-    public <T> void open(PanelController<T, ?> panel, T payload) {
+    public <T> void open(UIReactor.Type panelType, T payload) {
         // create and register the panel controller, which must unregister itself when the panel is closed.
         // This must be hooked into a view-side controller somehow, as we cannot create
-        // the view itself.
+        // the panel view itself.
+
     }
 
     /**

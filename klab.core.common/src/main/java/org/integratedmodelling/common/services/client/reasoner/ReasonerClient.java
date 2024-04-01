@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
@@ -37,7 +38,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner {
         super(Type.REASONER, identity, services);
     }
 
-    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Scope, Message>... listeners) {
+    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
         super(Type.REASONER, url, identity, services, listeners);
     }
 

@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.authentication;
 
+import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
 import org.integratedmodelling.common.distribution.DistributionImpl;
 import org.integratedmodelling.common.logging.Logging;
@@ -23,6 +25,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
@@ -216,8 +219,10 @@ public enum Authentication {
                                                  List<ServiceReference> availableServices,
                                                  boolean logFailures, boolean launchProduct) {
 
-        BiConsumer<Scope, Message>[] listeners = scope instanceof ClientScope clientScope ?
-                                                 clientScope.getListeners() : null;
+        BiConsumer<Channel, Message>[] listeners = scope instanceof ChannelImpl clientScope ?
+                                                   clientScope.listeners().toArray(BiConsumer[]::new) :
+                                                   (scope instanceof AbstractDelegatingScope ascope ?
+                                                    ascope.listeners() : null);
 
         for (var service : availableServices) {
             if (service.getServiceType() == serviceType && service.isPrimary()) {
@@ -287,7 +292,7 @@ public enum Authentication {
     public <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType, URL url,
                                                               Identity identity,
                                                               List<ServiceReference> services,
-                                                              BiConsumer<Scope, Message>... listeners) {
+                                                              BiConsumer<Channel, Message>... listeners) {
         T ret = switch (serviceType) {
             case REASONER -> {
                 yield (T) new ReasonerClient(url, identity, services, listeners);
