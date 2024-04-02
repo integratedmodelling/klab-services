@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 
 /**
@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
  * can be locally or remotely administrated. The main UI user action that must be supported is the choice of
  * one service per category as the "focal"/current service for the engine and for other views..
  */
-@UIView(value = UIReactor.Type.ServiceChooser, target = Engine.class)
+@UIViewController(value = UIReactor.Type.ServiceChooser, viewType = ServicesView.class, target = Engine.class)
 public interface ServicesViewController extends ViewController<ServicesView> {
 
     /**

@@ -6,6 +6,8 @@ package org.integratedmodelling.klab.api.view;
  */
 public interface PanelController<T, V extends PanelView> extends UIReactor {
 
+    PanelView panel();
+
     /**
      * Loading the object handled must also show the panel and bring it in focus, which should have an OK/Save
      * action associated that hides the panel if it's implemented as a modal.

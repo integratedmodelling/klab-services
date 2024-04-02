@@ -100,7 +100,7 @@ public class KimBehaviorImpl extends KimDocumentImpl<Action> implements KimBehav
     }
 
     @Override
-    public void visit(DocumentVisitor<Action> visitor) {
+    public void visit(DocumentVisitor visitor) {
 
     }
 }

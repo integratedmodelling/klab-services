@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
+import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
 import java.util.ArrayList;
@@ -46,6 +47,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     protected void createView() {
 
+        /*
+        pre-built view controllers. View implementations will self-register upon creation.
+         */
         registerViewController(new ServicesViewControllerImpl(this));
         registerViewController(new DistributionViewImplController(this));
         registerViewController(new ResourcesNavigatorControllerImpl(this));
@@ -54,6 +58,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         registerViewController(new ContextControllerImpl(this));
         // TODO etc.
 
+        /*
+        panel classes
+         */
+        registerPanelControllerClass(DocumentEditorControllerImpl.class);
     }
 
     @Override

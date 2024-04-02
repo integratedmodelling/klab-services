@@ -119,7 +119,7 @@ public class KimNamespaceImpl extends KimDocumentImpl<KlabStatement> implements 
     }
 
     @Override
-    public void visit(DocumentVisitor<KlabStatement> visitor) {
+    public void visit(DocumentVisitor visitor) {
 
     }
 }

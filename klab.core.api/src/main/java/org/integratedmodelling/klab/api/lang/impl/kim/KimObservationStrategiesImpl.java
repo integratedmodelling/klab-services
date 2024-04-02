@@ -28,7 +28,7 @@ public class KimObservationStrategiesImpl extends KimDocumentImpl<KimObservation
     }
 
     @Override
-    public void visit(DocumentVisitor<KimObservationStrategy> visitor) {
+    public void visit(DocumentVisitor visitor) {
 
     }
 }

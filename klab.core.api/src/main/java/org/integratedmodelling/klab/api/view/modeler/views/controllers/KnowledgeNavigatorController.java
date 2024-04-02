@@ -4,7 +4,7 @@ import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.views.KnowledgeNavigator;
 
 
@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.view.modeler.views.KnowledgeNavigator;
  * {@link org.integratedmodelling.klab.api.knowledge.Observable} and will dispatch it to other views as focal
  * knowledge event whenever the semantics under definition is consistent.
  */
-@UIView(value = UIReactor.Type.KnowledgeNavigator, target = Reasoner.class)
+@UIViewController(value = UIReactor.Type.KnowledgeNavigator, viewType = KnowledgeNavigator.class, target = Reasoner.class)
 public interface KnowledgeNavigatorController extends ViewController<KnowledgeNavigator> {
 
     void queryModified(String query);

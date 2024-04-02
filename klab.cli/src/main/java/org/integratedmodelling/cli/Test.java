@@ -2,6 +2,7 @@ package org.integratedmodelling.cli;
 
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.modeler.panels.DocumentEditorAdvisor;
 import picocli.CommandLine;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ public class Test implements Runnable {
         /*
         Generic method to put temporary stuff to test quickly or debug with.
          */
+       KlabCLI.INSTANCE.modeler().getController().openPanel(DocumentEditorAdvisor.class, null);
 
     }
 

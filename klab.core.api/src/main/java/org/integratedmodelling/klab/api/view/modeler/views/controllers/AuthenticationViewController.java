@@ -1,16 +1,12 @@
 package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
-import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.ViewController;
-import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.views.AuthenticationView;
-import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 
 import java.io.File;
 
@@ -20,7 +16,7 @@ import java.io.File;
  * can be locally or remotely administrated. The main UI user action that must be supported is the choice of
  * one service per category as the "focal"/current service for the engine and for other views..
  */
-@UIView(value = UIReactor.Type.AuthenticationView)
+@UIViewController(value = UIReactor.Type.AuthenticationView, viewType = AuthenticationView.class)
 public interface AuthenticationViewController extends ViewController<AuthenticationView> {
 
     /**

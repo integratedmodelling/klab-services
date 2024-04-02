@@ -12,9 +12,10 @@ import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>
-		extends NavigableKlabAsset<T> implements KlabDocument<E> {
+		extends NavigableKlabAsset<T> implements KlabDocument<E>, NavigableDocument {
 
 	private static final long serialVersionUID = 7741675272275189813L;
 

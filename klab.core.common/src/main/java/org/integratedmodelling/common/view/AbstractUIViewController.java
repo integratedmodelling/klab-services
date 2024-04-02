@@ -5,6 +5,9 @@ import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.View;
 import org.integratedmodelling.klab.api.view.ViewController;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -35,6 +38,18 @@ public abstract class AbstractUIViewController<T extends View> implements ViewCo
 
     public void registerView(T view) {
         this.view.set(view);
+        // schedule a one-time task waiting a couple second, then check with the controller for pending
+        // events accumulated before the view was available.
+        if (view != null && controller instanceof AbstractUIController) {
+            try (var exec = Executors.newScheduledThreadPool(1)) {
+                final ScheduledFuture<?> schedule = exec.schedule(this::checkPendingEvents, 2,
+                        TimeUnit.SECONDS);
+            }
+        }
+    }
+
+    private void checkPendingEvents() {
+        ((AbstractUIController)controller).dispatchPendingTasks(this);
     }
 
     /**

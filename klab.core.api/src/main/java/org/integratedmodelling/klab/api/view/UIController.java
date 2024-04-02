@@ -77,6 +77,17 @@ public interface UIController extends UIReactor {
     void registerViewController(ViewController<?> reactor);
 
     /**
+     * Register a panel controller class. Differently from views, panels are created and opened on demand, so
+     * the class needs to have a recognizable constructor - typically one taking the panel view (created at
+     * the view side before the panel is opened) and the payload if any. Argument reordering and injection of
+     * obvious other arguments will be done automatically.
+     *
+     * @param cls
+     */
+    void registerPanelControllerClass(Class<? extends PanelController<?, ?>> cls);
+
+
+    /**
      * Return the registered view controller for the passed class. Used in view implementations to register
      * themselves.
      *
@@ -86,14 +97,18 @@ public interface UIController extends UIReactor {
     <T extends ViewController<?>> T viewController(Class<T> controllerClass);
 
     /**
-     * Open a panel to display an object.
+     * Open a panel to display an object. This will create both the view and the controller, injecting
+     * arguments in their constructors, and return the view.
      *
-     * @param panel   a panel
-     * @param payload the object displayed in it.
-     * @param <T>     the type of the object handled by the panel. Must be assignable from the class set for
-     *                the panel.
+     * @param panelType a panel view class. The constructor will be handled intelligently to inject the
+     *                  controller or other arguments.
+     * @param payload   the object displayed in the panel. It will be passed after creation using
+     *                  {@link PanelView#load(P)}.
+     * @param <T>       the actual type of the panel view.
+     * @param <P>       the type of the object handled by the panel. Must be assignable from the class set for
+     *                  the panel.
      */
-    <T> void open(UIReactor.Type panelType, T payload);
+    <P, T extends PanelView<P>> T openPanel(Class<T> panelType, P payload);
 
     /**
      * Unregister the passed reactor.

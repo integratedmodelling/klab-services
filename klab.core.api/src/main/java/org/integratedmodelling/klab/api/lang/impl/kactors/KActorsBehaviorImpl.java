@@ -63,7 +63,7 @@ public class KActorsBehaviorImpl extends KimDocumentImpl<KActorsAction> implemen
     }
 
     @Override
-    public void visit(DocumentVisitor<KActorsAction> visitor) {
+    public void visit(DocumentVisitor visitor) {
 
     }
 

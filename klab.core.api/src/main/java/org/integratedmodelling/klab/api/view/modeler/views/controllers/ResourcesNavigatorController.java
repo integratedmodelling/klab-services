@@ -4,7 +4,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -18,15 +18,15 @@ import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
  * access to the workspaces published by the service in that scope, including the worldview if one is provided
  * by the service. The documents should be presented in a suitable organization and it should be possible to
  * select them for editing or visualization through a suitable action. If the service is owned by the user and
- * suitably insulated (local), the UI should invoke a {@link DocumentEditorController} with write permission upon
- * selection. Otherwise, it may choose a read-only editor or a specialized viewer/explorer (such as
+ * suitably insulated (local), the UI should invoke a {@link DocumentEditorController} with write permission
+ * upon selection. Otherwise, it may choose a read-only editor or a specialized viewer/explorer (such as
  * {@link KnowledgeEditorController}) according to implementation and type of document.
  * <p>
  * The modeler should remember the configuration of documents and editors in the workbench for each workspace
  * and service, and reconstruct the latest configuration at each workspace switch.
  */
-@UIView(value = UIReactor.Type.ResourceNavigator, label = "k.LAB Resource Navigator", target =
-        ResourcesService.class)
+@UIViewController(value = UIReactor.Type.ResourceNavigator, viewType = ResourcesNavigator.class, label = "k.LAB " +
+        "Resource Navigator", target = ResourcesService.class)
 public interface ResourcesNavigatorController extends ViewController<ResourcesNavigator> {
 
 

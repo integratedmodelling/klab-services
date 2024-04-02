@@ -1,37 +1,31 @@
 package org.integratedmodelling.common.view;
 
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.lang.kactors.beans.ViewPanel;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.view.PanelController;
-import org.integratedmodelling.klab.api.view.UIController;
-import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.ViewController;
+import org.integratedmodelling.klab.api.view.*;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIPanelController;
+import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.springframework.core.annotation.AnnotationUtils;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base abstract {@link UIController} class that implements annotation-driven (un)registration of
@@ -69,65 +63,21 @@ public abstract class AbstractUIController implements UIController {
             this.parameterClasses.addAll(Arrays.stream(method.getParameterTypes()).toList());
         }
 
-
-        /**
-         * TODO enable injection of sender and standard arguments such as scope, controller and service
-         *
-         * @param sender
-         * @param payload
-         * @return
-         */
-        public Object[] reorderArguments(@Nullable UIReactor sender, Object[] payload) {
-
-            // Must be same parameter number
-            if ((method.getParameterCount() == 0 && !(payload == null || payload.length == 0)) ||
-                    method.getParameterCount() > 0 && (payload == null || payload.length != method.getParameterCount())) {
-                return null;
+        public void dispatchPendingTasks() {
+            while (!messageQueue.isEmpty()) {
+                var message = messageQueue.remove();
+                callMessage(message.getFirst(), message.getSecond());
             }
-
-            if (method.getParameterCount() == 0) {
-                // do not return null
-                return new Object[0];
-            }
-
-            // 1+ parameters, same number, check for exact match
-            if (classesMatch(method.getParameterTypes(), payload)) {
-                return payload;
-            }
-
-            // no exact match, same number, reorder if possible
-            ArrayList<Object> reordered = new ArrayList<>();
-            for (var cls : method.getParameterTypes()) {
-                boolean found = false;
-                for (var arg : payload) {
-                    if (arg == null || cls.isAssignableFrom(arg.getClass())) {
-                        reordered.add(arg);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    // TODO check for standard injected arguments.
-                }
-            }
-
-            return reordered.size() == method.getParameterCount() ? reordered.toArray() : null;
         }
 
-        private boolean classesMatch(Class<?>[] parameterTypes, Object[] payload) {
-            for (int i = 0; i < parameterTypes.length; i++) {
-                if (payload[i] != null && !parameterTypes[i].isAssignableFrom(payload[i].getClass())) {
-                    return false;
-                }
-            }
-            return true;
-        }
 
         public Object call(UIReactor sender, Object... payload) {
 
             if (reactor instanceof AbstractUIViewController<?> viewController) {
                 if (viewController.view() == null) {
                     // put away the messages in the synchronous queue
+                    // FIXME it takes another message (with a non-null view) to empty a queue; messages
+                    //  pre-view creation get lost if there are no messages after
                     messageQueue.add(Pair.of(sender, payload));
                     return null;
                 } else {
@@ -142,7 +92,7 @@ public abstract class AbstractUIController implements UIController {
         }
 
         private Object callMessage(UIReactor sender, Object... payload) {
-            var args = reorderArguments(sender, payload);
+            var args = Utils.Collections.reorderArguments(method.getParameterTypes(), payload);
             if (args == null && payload != null) {
                 return null;
             }
@@ -158,8 +108,10 @@ public abstract class AbstractUIController implements UIController {
     /**
      * Reactors to each event are registered here
      */
-    Map<UIReactor.UIEvent, List<EventReactor>> reactors = new HashMap<>();
-    private Map<UIReactor.Type, ViewController> views = new HashMap<>();
+    Map<UIReactor.UIEvent, List<EventReactor>> reactors = Collections.synchronizedMap(new HashMap<>());
+    Map<UIReactor.Type, Class<? extends PanelController<?, ?>>> panelControllerClasses =
+            Collections.synchronizedMap(new HashMap<>());
+    private Map<UIReactor.Type, ViewController<?>> views = new HashMap<>();
     private Engine engine;
 
     protected AbstractUIController() {
@@ -208,10 +160,6 @@ public abstract class AbstractUIController implements UIController {
      * before boot, potentially in a hidden state.
      */
     protected abstract void createView();
-
-    protected  <T extends ViewPanel> T createPanelView(Class<T> panelClass) {
-        return null;
-    }
 
     /**
      * Translate k.LAB events into relevant UI events and dispatch them, routing through the view graph. If
@@ -328,10 +276,25 @@ public abstract class AbstractUIController implements UIController {
      */
     protected abstract Scope scope();
 
+
+    @Override
+    public void registerPanelControllerClass(Class<? extends PanelController<?, ?>> cls) {
+        var panelAnnotation = AnnotationUtils.findAnnotation(cls, UIPanelController.class);
+        if (panelAnnotation == null) {
+            throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " "
+                    + "is not annotated with UIPanel");
+        }
+        if (panelControllerClasses.containsKey(panelAnnotation.value())) {
+            throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " "
+                    + " adds duplicated panel type " + panelAnnotation.value());
+        }
+        panelControllerClasses.put(panelAnnotation.value(), cls);
+    }
+
     @Override
     public void registerViewController(ViewController<?> reactor) {
 
-        var viewAnnotation = AnnotationUtils.findAnnotation(reactor.getClass(), UIView.class);
+        var viewAnnotation = AnnotationUtils.findAnnotation(reactor.getClass(), UIViewController.class);
         if (viewAnnotation == null) {
             throw new KlabInternalErrorException("View class " + reactor.getClass().getCanonicalName() + " "
                     + "is not annotated with UIView");
@@ -384,11 +347,32 @@ public abstract class AbstractUIController implements UIController {
     }
 
     @Override
-    public <T> void open(UIReactor.Type panelType, T payload) {
+    public <P, T extends PanelView<P>> T openPanel(Class<T> panelType, P payload) {
         // create and register the panel controller, which must unregister itself when the panel is closed.
         // This must be hooked into a view-side controller somehow, as we cannot create
         // the panel view itself.
+        Class<?> controllerClass = null;
+        for (Class<?> cls : panelControllerClasses.values()) {
 
+
+            var panelViewClass =
+                    ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+            if (cls.isAssignableFrom(panelType)) {
+                try {
+                    controllerClass = Class.forName(panelViewClass.getTypeName());
+                } catch (ClassNotFoundException e) {
+                    // screw it
+                }
+            }
+        }
+
+        if (controllerClass != null) {
+            System.out.println("ME SPUPAZZO ER " + panelType + " CON " + controllerClass);
+        }
+
+
+        System.out.println("ME SPUPAZZO ER PAYLOAD " + panelType + ": " + payload);
+        return null;
     }
 
     /**
@@ -408,6 +392,17 @@ public abstract class AbstractUIController implements UIController {
         return null;
     }
 
+
+    public <T extends View> void dispatchPendingTasks(AbstractUIViewController<T> viewController) {
+
+        for (var reactorList : reactors.values()) {
+            for (var reactor : reactorList) {
+                if (reactor.reactor == viewController && !reactor.messageQueue.isEmpty()) {
+                    reactor.dispatchPendingTasks();
+                }
+            }
+        }
+    }
 
     /**
      * Empty implementation of storeView. Override to implement/

@@ -4,10 +4,10 @@ import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.UIReactor;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
 
-@UIView(UIReactor.Type.ContextView)
+@UIViewController(value = UIReactor.Type.ContextView, viewType = ContextView.class)
 public interface ContextViewController extends ViewController<ContextView> {
 
     /**

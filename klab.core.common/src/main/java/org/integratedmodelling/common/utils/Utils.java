@@ -696,6 +696,65 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     public static class Collections extends org.apache.commons.collections.CollectionUtils {
 
+
+        /**
+         * TODO enable injection of sender and standard arguments such as scope, controller and service
+         *
+         * @param required
+         * @param payload
+         * @return
+         */
+        public static Object[] reorderArguments(Class<?>[] required, Object[] payload) {
+
+            if (required == null) {
+                required = new Class<?>[]{};
+            }
+
+            // Must be same parameter number
+            if ((required.length == 0 && !(payload == null || payload.length == 0)) ||
+                    required.length > 0 && (payload == null || payload.length != required.length)) {
+                return null;
+            }
+
+            if (required.length == 0) {
+                // do not return null
+                return new Object[0];
+            }
+
+            // 1+ parameters, same number, check for exact match
+            if (classesMatch(required, payload)) {
+                return payload;
+            }
+
+            // no exact match, same number, reorder if possible
+            ArrayList<Object> reordered = new ArrayList<>();
+            for (var cls : required) {
+                boolean found = false;
+                for (var arg : payload) {
+                    if (arg == null || cls.isAssignableFrom(arg.getClass())) {
+                        reordered.add(arg);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    // TODO check for standard injected arguments.
+                }
+            }
+
+            return reordered.size() == required.length ? reordered.toArray() : null;
+        }
+
+        private static boolean classesMatch(Class<?>[] parameterTypes, Object[] payload) {
+            for (int i = 0; i < parameterTypes.length; i++) {
+                if (payload[i] != null && !parameterTypes[i].isAssignableFrom(payload[i].getClass())) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
         public static <T1, T2> List<T1> sortMatching(List<T1> toSort, List<T2> toMatch,
                                                      Comparator<T2> comparator) {
             MatchedSorter<T1, T2> sorter = new MatchedSorter<>(toSort, toMatch, comparator);

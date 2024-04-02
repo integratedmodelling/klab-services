@@ -27,7 +27,7 @@ public class KimOntologyImpl extends KimDocumentImpl<KimConceptStatement> implem
     }
 
     @Override
-    public void visit(DocumentVisitor<KimConceptStatement> visitor) {
+    public void visit(DocumentVisitor visitor) {
     }
 
     @Override

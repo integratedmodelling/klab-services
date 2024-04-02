@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIViewController;
 import org.integratedmodelling.klab.api.view.modeler.panels.DistributionView;
 
 /**
@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.view.modeler.panels.DistributionView;
  * distribution is loaded (selected), it should expose synchronize buttons and the like at the UI's
  * discretion. The main user event is {@link #selectDistribution(Distribution)} which
  */
-@UIView(value = UIReactor.Type.DistributionView, target = Distribution.class)
+@UIViewController(value = UIReactor.Type.DistributionView, viewType = DistributionView.class, target = Distribution.class)
 public interface DistributionViewController extends ViewController<DistributionView> {
 
     /**

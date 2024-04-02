@@ -4,11 +4,11 @@ import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.view.PanelController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
-import org.integratedmodelling.klab.api.view.annotations.UIView;
+import org.integratedmodelling.klab.api.view.annotations.UIPanelController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
 
-@UIView(value = UIReactor.Type.DocumentEditor, target = KlabDocument.class)
+@UIPanelController(value = UIReactor.Type.DocumentEditor, panelType = DocumentEditor.class, target = KlabDocument.class)
 public interface DocumentEditorController extends PanelController<NavigableDocument, DocumentEditor> {
 
     KlabDocument<?> getDocument();

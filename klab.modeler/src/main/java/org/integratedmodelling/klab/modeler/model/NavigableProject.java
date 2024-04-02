@@ -13,8 +13,9 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
-public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
+public class NavigableProject extends NavigableKlabAsset<Project> implements Project, NavigableContainer {
 
 	public NavigableProject(Project asset, NavigableKlabAsset<?> parent/*, IProject resource*/) {
 		super(asset, parent);
