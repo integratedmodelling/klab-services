@@ -17,11 +17,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.Service;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -704,7 +701,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          * @param payload
          * @return
          */
-        public static Object[] reorderArguments(Class<?>[] required, Object[] payload) {
+        public static Object[] matchArguments(Class<?>[] required, Object[] payload) {
 
             if (required == null) {
                 required = new Class<?>[]{};

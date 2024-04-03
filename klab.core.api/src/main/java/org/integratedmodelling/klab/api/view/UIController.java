@@ -86,6 +86,7 @@ public interface UIController extends UIReactor {
      */
     void registerPanelControllerClass(Class<? extends PanelController<?, ?>> cls);
 
+    void closePanel(PanelController<?,?> controller);
 
     /**
      * Return the registered view controller for the passed class. Used in view implementations to register

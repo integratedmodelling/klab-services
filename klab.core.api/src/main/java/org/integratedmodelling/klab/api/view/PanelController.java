@@ -4,9 +4,9 @@ package org.integratedmodelling.klab.api.view;
  * Panels are used to configure one specific object and are brought up and removed as needed, normally
  * occupying the central part of the UI or a modal window.
  */
-public interface PanelController<T, V extends PanelView> extends UIReactor {
+public interface PanelController<T, V extends PanelView<T>> extends UIReactor {
 
-    PanelView panel();
+    PanelView<T> panel();
 
     /**
      * Loading the object handled must also show the panel and bring it in focus, which should have an OK/Save
@@ -24,9 +24,17 @@ public interface PanelController<T, V extends PanelView> extends UIReactor {
     T submitOnSave();
 
     /**
-     * Close the panel, which removes if from any catalogue. The UIController should react appropriately,
-     * including ensuring that objects that have been edited get saved. The view must be told to close.
+     * Close the panel, which removes if from any catalogue. The UIController will remove the controller from
+     * the reactors so that it gets garbage collected. The view initiates the closing action by calling this
+     * method on the controller and should handle any dirty state appropriately before doing so.
      */
     void close();
+
+    /**
+     * Mandatory method for the controller to inject the view when the controller is created.
+     *
+     * @param panel
+     */
+    void setPanel(PanelView<T> panel);
 
 }

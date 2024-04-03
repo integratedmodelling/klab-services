@@ -21,8 +21,9 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.springframework.core.annotation.AnnotationUtils;
 
+import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -92,7 +93,7 @@ public abstract class AbstractUIController implements UIController {
         }
 
         private Object callMessage(UIReactor sender, Object... payload) {
-            var args = Utils.Collections.reorderArguments(method.getParameterTypes(), payload);
+            var args = Utils.Collections.matchArguments(method.getParameterTypes(), payload);
             if (args == null && payload != null) {
                 return null;
             }
@@ -109,8 +110,8 @@ public abstract class AbstractUIController implements UIController {
      * Reactors to each event are registered here
      */
     Map<UIReactor.UIEvent, List<EventReactor>> reactors = Collections.synchronizedMap(new HashMap<>());
-    Map<UIReactor.Type, Class<? extends PanelController<?, ?>>> panelControllerClasses =
-            Collections.synchronizedMap(new HashMap<>());
+    List<Pair<UIPanelController, Class<? extends PanelController<?, ?>>>> panelControllerClasses =
+            Collections.synchronizedList(new ArrayList<>());
     private Map<UIReactor.Type, ViewController<?>> views = new HashMap<>();
     private Engine engine;
 
@@ -284,11 +285,49 @@ public abstract class AbstractUIController implements UIController {
             throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " "
                     + "is not annotated with UIPanel");
         }
-        if (panelControllerClasses.containsKey(panelAnnotation.value())) {
-            throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " "
-                    + " adds duplicated panel type " + panelAnnotation.value());
+        //        if (panelControllerClasses.containsKey(panelAnnotation.value())) {
+        //            throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " "
+        //                    + " adds duplicated panel type " + panelAnnotation.value());
+        //        }
+        panelControllerClasses.add(Pair.of(panelAnnotation, cls));
+    }
+
+    public void closePanel(PanelController<?,?> reactor) {
+        for (var reactorList : reactors.values()) {
+            reactorList.removeIf(er -> er.reactor == reactor);
         }
-        panelControllerClasses.put(panelAnnotation.value(), cls);
+    }
+
+    // These must be in the reactor list but must be found easily for when the panel closes. All checks are
+    // made in advance.
+    private void registerPanelController(PanelController<?, ?> reactor) {
+
+        var viewAnnotation = AnnotationUtils.findAnnotation(reactor.getClass(), UIPanelController.class);
+        if (viewAnnotation == null) {
+            throw new KlabInternalErrorException("null panel annotation at registration");
+        }
+
+        //        panels.put(viewAnnotation.value(), reactor);
+
+        for (var method : reactor.getClass().getDeclaredMethods()) {
+            var eventHandlerDefinition = AnnotationUtils.findAnnotation(method, UIEventHandler.class);
+            if (eventHandlerDefinition != null) {
+                var key = eventHandlerDefinition.value();
+                var descriptor = new EventReactor(reactor, method);
+                descriptor.method = method;
+                descriptor.reactor = reactor;
+                relevantEvents.add(eventHandlerDefinition.value());
+                // TODO validate the argument list w.r.t. the event payload class!
+                this.reactors.computeIfAbsent(key, k -> new ArrayList<>()).add(descriptor);
+            }
+            var actionHandlerDefinition = AnnotationUtils.findAnnotation(method, UIActionHandler.class);
+            if (actionHandlerDefinition != null) {
+
+                // TODO update action graph
+
+            }
+        }
+
     }
 
     @Override
@@ -351,28 +390,74 @@ public abstract class AbstractUIController implements UIController {
         // create and register the panel controller, which must unregister itself when the panel is closed.
         // This must be hooked into a view-side controller somehow, as we cannot create
         // the panel view itself.
-        Class<?> controllerClass = null;
-        for (Class<?> cls : panelControllerClasses.values()) {
+        Class<PanelController<P, PanelView<P>>> controllerClass = null;
+        PanelView<P> ret = null;
+        for (var desc : panelControllerClasses) {
 
+            if (desc.getFirst().panelType().isAssignableFrom(panelType)) {
 
-            var panelViewClass =
-                    ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-            if (cls.isAssignableFrom(panelType)) {
-                try {
-                    controllerClass = Class.forName(panelViewClass.getTypeName());
-                } catch (ClassNotFoundException e) {
-                    // screw it
+                controllerClass = (Class<PanelController<P, PanelView<P>>>) desc.getSecond();
+                PanelController<P, PanelView<P>> controller = null;
+
+                /*
+                try creating the controller first. Likely choice of arguments is just (UIController)
+                because we will load() the payload later, and the panel view will register itself.
+
+                TODO make the arg matcher smarter for injection of optional parameters, e.g. scopes and
+                 services, to pass as varargs
+                 */
+                var args = new Object[]{this};
+                for (var constructor : controllerClass.getDeclaredConstructors()) {
+                    var argList = Utils.Collections.matchArguments(constructor.getParameterTypes(), args);
+                    if (argList != null) {
+                        // use this constructor
+                        try {
+                            controller = (PanelController<P, PanelView<P>>) constructor.newInstance(argList);
+                            break;
+                        } catch (Throwable t) {
+                            // just continue
+                            t.printStackTrace();
+                        }
+                    }
+                }
+
+                if (controller != null) {
+
+                    // try creating the view with just the controller as arguments (see below). If no luck, keep going.
+                    var viewArgs = new Object[]{controller};
+                    for (var constructor : panelType.getDeclaredConstructors()) {
+                        // TODO same as above
+                        var argList = Utils.Collections.matchArguments(constructor.getParameterTypes(),
+                                viewArgs);
+                        if (argList != null) {
+                            // use this constructor
+                            try {
+                                ret = (PanelView<P>) constructor.newInstance(argList);
+                                controller.setPanel((PanelView<P>) ret);
+                                break;
+                            } catch (Throwable t) {
+                                // just continue
+                            }
+                        }
+                        if (ret != null) {
+                            break;
+                        }
+                    }
+
+                    if (ret != null) {
+                        registerPanelController(controller);
+                        controller.load(payload);
+                        break;
+                    }
                 }
             }
         }
 
-        if (controllerClass != null) {
-            System.out.println("ME SPUPAZZO ER " + panelType + " CON " + controllerClass);
+        if (ret != null) {
+            ret.load(payload);
         }
 
-
-        System.out.println("ME SPUPAZZO ER PAYLOAD " + panelType + ": " + payload);
-        return null;
+        return (T)ret;
     }
 
     /**

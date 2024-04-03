@@ -1,15 +1,13 @@
 package org.integratedmodelling.klab.api.view;
 
 /**
- * A PanelView is a closeable view that handles a payload object. The implementing class constructors will
- * receive the controller if they are declared to receive one.
+ * A PanelView is a view that handles a payload object. It can be opened by the main {@link UIController} and
+ * is closed by a view-side action by calling the close() method on the {@link PanelController} that will be
+ * injected in its constructor. Implementing classes must receive an appropriately typed controller as a
+ * constructor parameter, or they won't be able to be closed at the controller side.
  */
 public interface PanelView<T> extends View {
 
-    /**
-     * Panels can close, which should completely dispose of the view and release any resources.
-     */
-    void close();
 
     /**
      * Panel is already open but a UI event has asked to open it. If appropriate, bring the panel view

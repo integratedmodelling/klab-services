@@ -1,7 +1,11 @@
 package org.integratedmodelling.cli;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.modeler.panels.DocumentEditorAdvisor;
 import picocli.CommandLine;
 
@@ -19,7 +23,32 @@ public class Test implements Runnable {
         /*
         Generic method to put temporary stuff to test quickly or debug with.
          */
-       KlabCLI.INSTANCE.modeler().getController().openPanel(DocumentEditorAdvisor.class, null);
+       KlabCLI.INSTANCE.modeler().getController().openPanel(DocumentEditorAdvisor.class, new NavigableDocument() {
+           @Override
+           public List<? extends NavigableAsset> children() {
+               return null;
+           }
+
+           @Override
+           public NavigableAsset parent() {
+               return null;
+           }
+
+           @Override
+           public NavigableContainer root() {
+               return null;
+           }
+
+           @Override
+           public String getUrn() {
+               return null;
+           }
+
+           @Override
+           public Metadata getMetadata() {
+               return null;
+           }
+       });
 
     }
 

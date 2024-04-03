@@ -11,9 +11,8 @@ public abstract class AbstractUIPanelController<T, V extends PanelView<T>> imple
     UIController controller;
     private final AtomicReference<V> panel = new AtomicReference<>();
 
-    protected AbstractUIPanelController(UIController controller, V panelView) {
+    protected AbstractUIPanelController(UIController controller) {
         this.controller = controller;
-        this.panel.set(panelView);
     }
 
     @Override
@@ -27,8 +26,13 @@ public abstract class AbstractUIPanelController<T, V extends PanelView<T>> imple
     }
 
     @Override
-    public void close() {
+    public void setPanel(PanelView<T> panel) {
+        this.panel.set((V) panel);
+    }
 
+    @Override
+    public void close() {
+        this.controller.closePanel(this);
     }
 
 }

@@ -5,9 +5,14 @@ import org.integratedmodelling.klab.api.view.PanelView;
 
 public abstract class BasePanelAdvisor<T> implements PanelView<T> {
 
-    @Override
-    public void close() {
+    private final PanelController<T, PanelView<T>> controller;
 
+    protected BasePanelAdvisor(PanelController<T, PanelView<T>> controller) {
+        this.controller = controller;
+    }
+
+    public PanelController<T, PanelView<T>> controller() {
+        return this.controller;
     }
 
     @Override

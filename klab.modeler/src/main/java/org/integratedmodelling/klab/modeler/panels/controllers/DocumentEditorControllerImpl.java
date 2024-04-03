@@ -11,8 +11,8 @@ import org.integratedmodelling.klab.api.view.modeler.panels.controllers.Document
 
 public class DocumentEditorControllerImpl extends AbstractUIPanelController<NavigableDocument, DocumentEditor> implements DocumentEditorController {
 
-    protected DocumentEditorControllerImpl(UIController controller, DocumentEditor documentEditor) {
-        super(controller, documentEditor);
+    public DocumentEditorControllerImpl(UIController controller) {
+        super(controller);
     }
 
     @Override
