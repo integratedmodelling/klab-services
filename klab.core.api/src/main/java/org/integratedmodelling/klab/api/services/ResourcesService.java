@@ -446,6 +446,17 @@ public interface ResourcesService extends KlabService {
         void updateOntology(String projectName, String ontologyContent);
 
         /**
+         * Resource must exist in project and be part of a file-based project. This operation makes the change
+         * in the filesystem; the service will react by readjusting the knowledge and sending any changes
+         * through the listening scopes. If a file is modified by an external process, the method will not *
+         * need to be called as the adjustment is consequent to the change, not the API call.
+         *
+         * @param projectName
+         * @param observationStrategiesContent
+         */
+        void updateObservationStrategies(String projectName, String observationStrategiesContent);
+
+        /**
          * Publish a project with the passed privileges. The project must have been added before this is
          * called. If the project is already published, update the permissions.
          *

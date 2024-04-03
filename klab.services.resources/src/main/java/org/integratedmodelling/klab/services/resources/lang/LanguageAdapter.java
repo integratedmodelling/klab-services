@@ -263,7 +263,7 @@ public enum LanguageAdapter {
     public KimObservationStrategyDocument adaptStrategies(ObservationStrategiesSyntax definition) {
 
         KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
-        ret.setUrn(definition.getUrn());
+        ret.setUrn(definition.getUrn()); // FIXME use the URN from the preamble name
         // we don't add source code here as each strategy has its own
         for (var strategy : definition.getStrategies()) {
             ret.getStatements().add(adaptStrategy(strategy));

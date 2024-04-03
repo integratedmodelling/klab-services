@@ -25,8 +25,8 @@ public interface DocumentEditorController extends PanelController<NavigableDocum
     }
 
     @UIActionHandler(UIAction.DocumentUpdate)
-    default void documentUpdated() {
-        getController().dispatch(this, UIEvent.AssetUpdateRequest, getDocument().getUrn(), getContents());
+    default void documentUpdated(String newContents) {
+        getController().dispatch(this, UIEvent.AssetUpdateRequest, getDocument().getUrn(), newContents);
     }
 
 }

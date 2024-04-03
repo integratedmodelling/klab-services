@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.modeler.panels.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIPanelController;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIPanelController;
@@ -9,7 +11,10 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocumen
 import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
 import org.integratedmodelling.klab.api.view.modeler.panels.controllers.DocumentEditorController;
 
-public class DocumentEditorControllerImpl extends AbstractUIPanelController<NavigableDocument, DocumentEditor> implements DocumentEditorController {
+public class DocumentEditorControllerImpl extends AbstractUIPanelController<NavigableDocument,
+        DocumentEditor> implements DocumentEditorController {
+
+    private NavigableDocument document;
 
     public DocumentEditorControllerImpl(UIController controller) {
         super(controller);
@@ -17,7 +22,22 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
 
     @Override
     public void load(NavigableDocument payload) {
+        this.document = payload;
+    }
 
+    public void documentUpdated(String newContents) {
+        var service = getController().engine().serviceScope().getService(ResourcesService.class);
+        if (service instanceof ResourcesService.Admin admin) {
+            switch (document) {
+                case KimOntology ontology -> admin.updateOntology(ontology.getProjectName(), newContents);
+                case KimNamespace namespace -> admin.updateNamespace(namespace.getProjectName(), newContents);
+                case KimObservationStrategyDocument strategyDocument -> admin.updateObservationStrategies(strategyDocument.getProjectName(), newContents);
+                case KActorsBehavior behavior -> admin.updateBehavior(behavior.getProjectName(), newContents);
+                default -> {
+                }
+            }
+        }
+//        getController().dispatch(this, UIEvent.AssetUpdateRequest, getDocument().getUrn(), newContents);
     }
 
     @Override

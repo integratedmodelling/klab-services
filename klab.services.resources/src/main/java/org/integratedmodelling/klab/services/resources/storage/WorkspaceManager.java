@@ -1693,6 +1693,26 @@ public class WorkspaceManager {
 
     }
 
+    public void updateObservationStrategies(String projectName, String ontologyContent) {
+
+        var pd = projectDescriptors.get(projectName);
+        if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
+            throw new KlabIllegalStateException("Cannot update an ontology that is not stored on the " +
+                    "service's filesystem");
+        }
+
+        /*
+        file storage: modify as specified
+         */
+        List<Notification> notifications = new ArrayList<>();
+        var parsed = strategyParser.parse(new StringReader(ontologyContent), notifications);
+
+        // do the update in the stored project and screw it
+        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.STRATEGY,
+                parsed.getPreamble().getName(), ontologyContent);
+
+    }
+
     public void updateNamespace(String projectName, String ontologyContent) {
 
         var pd = projectDescriptors.get(projectName);

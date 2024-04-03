@@ -275,6 +275,11 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
+    public void updateObservationStrategies(String projectName, String observationStrategiesContent) {
+
+    }
+
+    @Override
     public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
         return false;
     }

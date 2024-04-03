@@ -328,6 +328,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
+    public void updateObservationStrategies(String projectName, String ontologyContent) {
+        this.workspaceManager.updateObservationStrategies(projectName, ontologyContent);
+    }
+
+    @Override
     public void removeProject(String projectName) {
 
         updateLock.writeLock().lock();

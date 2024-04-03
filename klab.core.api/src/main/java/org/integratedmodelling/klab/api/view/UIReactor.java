@@ -92,7 +92,7 @@ public interface UIReactor {
          * Sent by document editors upon save, triggering engine update request. No target as the view must
          * own the document for this to be sent.
          */
-        DocumentUpdate,
+        DocumentUpdate(String.class),
         NewProject(String.class),
         ImportProject(String.class),
 
