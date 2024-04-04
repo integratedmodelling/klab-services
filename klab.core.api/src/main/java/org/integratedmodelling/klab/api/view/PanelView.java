@@ -21,4 +21,12 @@ public interface PanelView<T> extends View {
      * @param payload
      */
     void load(T payload);
+
+    /**
+     * This is called by the controller before the panel is closed through the {@link PanelController#close()}
+     * action. It is not intended to be called explicitly by clients. If the return value is
+     * <code>false</code>, the UIController will not close the panel (e.g. if a save is needed and the view
+     * asks for confirmation).
+     */
+    boolean close();
 }

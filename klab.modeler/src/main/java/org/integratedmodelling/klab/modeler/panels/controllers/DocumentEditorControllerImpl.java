@@ -14,21 +14,14 @@ import org.integratedmodelling.klab.api.view.modeler.panels.controllers.Document
 public class DocumentEditorControllerImpl extends AbstractUIPanelController<NavigableDocument,
         DocumentEditor> implements DocumentEditorController {
 
-    private NavigableDocument document;
-
     public DocumentEditorControllerImpl(UIController controller) {
         super(controller);
-    }
-
-    @Override
-    public void load(NavigableDocument payload) {
-        this.document = payload;
     }
 
     public void documentUpdated(String newContents) {
         var service = getController().engine().serviceScope().getService(ResourcesService.class);
         if (service instanceof ResourcesService.Admin admin) {
-            switch (document) {
+            switch (getPayload()) {
                 case KimOntology ontology -> admin.updateOntology(ontology.getProjectName(), newContents);
                 case KimNamespace namespace -> admin.updateNamespace(namespace.getProjectName(), newContents);
                 case KimObservationStrategyDocument strategyDocument -> admin.updateObservationStrategies(strategyDocument.getProjectName(), newContents);
@@ -42,11 +35,6 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
 
     @Override
     public NavigableDocument submitOnSave() {
-        return null;
-    }
-
-    @Override
-    public KlabDocument<?> getDocument() {
         return null;
     }
 

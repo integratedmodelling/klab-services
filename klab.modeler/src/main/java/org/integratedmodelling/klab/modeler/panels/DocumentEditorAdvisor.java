@@ -16,4 +16,9 @@ public class DocumentEditorAdvisor extends BasePanelAdvisor<NavigableDocument> i
     public void load(NavigableDocument payload) {
         System.out.println("CHUPA CHUPA");
     }
+
+    @Override
+    public boolean close() {
+        return true;
+    }
 }

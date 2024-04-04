@@ -11,8 +11,6 @@ import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
 @UIPanelController(value = UIReactor.Type.DocumentEditor, panelType = DocumentEditor.class, target = KlabDocument.class)
 public interface DocumentEditorController extends PanelController<NavigableDocument, DocumentEditor> {
 
-    KlabDocument<?> getDocument();
-
     String getContents();
 
     int getPosition();
@@ -21,12 +19,12 @@ public interface DocumentEditorController extends PanelController<NavigableDocum
 
     @UIActionHandler(UIAction.ChangeDocumentPosition)
     default void documentPositionChanged(int position) {
-        getController().dispatch(this, UIEvent.DocumentPositionChanged, getDocument(), position);
+        getController().dispatch(this, UIEvent.DocumentPositionChanged, getPayload(), position);
     }
 
     @UIActionHandler(UIAction.DocumentUpdate)
     default void documentUpdated(String newContents) {
-        getController().dispatch(this, UIEvent.AssetUpdateRequest, getDocument().getUrn(), newContents);
+        getController().dispatch(this, UIEvent.AssetUpdateRequest, getPayload().getUrn(), newContents);
     }
 
 }

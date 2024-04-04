@@ -113,6 +113,8 @@ public abstract class AbstractUIController implements UIController {
     List<Pair<UIPanelController, Class<? extends PanelController<?, ?>>>> panelControllerClasses =
             Collections.synchronizedList(new ArrayList<>());
     private Map<UIReactor.Type, ViewController<?>> views = new HashMap<>();
+
+    private Map<Object, PanelController<?, ?>> panelControllers = new HashMap<>();
     private Engine engine;
 
     protected AbstractUIController() {
@@ -183,14 +185,18 @@ public abstract class AbstractUIController implements UIController {
             }
             case ServiceLifecycle -> {
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable -> dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
-                            message.getPayload(Object.class));
-                    case ServiceAvailable -> dispatch(this, UIReactor.UIEvent.ServiceAvailable,
-                            message.getPayload(Object.class));
-                    case ServiceInitializing -> dispatch(this, UIReactor.UIEvent.ServiceStarting,
-                            message.getPayload(Object.class));
-                    case ServiceStatus -> dispatch(this, UIReactor.UIEvent.ServiceStatus,
-                            message.getPayload(KlabService.ServiceStatus.class));
+                    case ServiceUnavailable ->
+                            dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
+                                    message.getPayload(Object.class));
+                    case ServiceAvailable ->
+                            dispatch(this, UIReactor.UIEvent.ServiceAvailable,
+                                    message.getPayload(Object.class));
+                    case ServiceInitializing ->
+                            dispatch(this, UIReactor.UIEvent.ServiceStarting,
+                                    message.getPayload(Object.class));
+                    case ServiceStatus ->
+                            dispatch(this, UIReactor.UIEvent.ServiceStatus,
+                                    message.getPayload(KlabService.ServiceStatus.class));
                     default -> {
                     }
                 }
@@ -199,16 +205,13 @@ public abstract class AbstractUIController implements UIController {
                 // TODO engine ready event and status
                 switch (message.getMessageType()) {
                     case ServiceUnavailable -> {
-                        dispatch(this, UIReactor.UIEvent.EngineUnavailable,
-                                message.getPayload(Object.class));
+                        dispatch(this, UIReactor.UIEvent.EngineUnavailable, message.getPayload(Object.class));
                     }
                     case ServiceAvailable -> {
-                        dispatch(this, UIReactor.UIEvent.EngineAvailable,
-                                message.getPayload(Object.class));
+                        dispatch(this, UIReactor.UIEvent.EngineAvailable, message.getPayload(Object.class));
                     }
                     case ServiceInitializing -> {
-                        dispatch(this, UIReactor.UIEvent.EngineStarting,
-                                message.getPayload(Object.class));
+                        dispatch(this, UIReactor.UIEvent.EngineStarting, message.getPayload(Object.class));
                     }
                     case ServiceStatus -> {
                         dispatch(this, UIReactor.UIEvent.ServiceStatus,
@@ -282,19 +285,18 @@ public abstract class AbstractUIController implements UIController {
     public void registerPanelControllerClass(Class<? extends PanelController<?, ?>> cls) {
         var panelAnnotation = AnnotationUtils.findAnnotation(cls, UIPanelController.class);
         if (panelAnnotation == null) {
-            throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " "
-                    + "is not annotated with UIPanel");
+            throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " " + "is not " +
+                    "annotated with UIPanel");
         }
-        //        if (panelControllerClasses.containsKey(panelAnnotation.value())) {
-        //            throw new KlabInternalErrorException("Panel class " + cls.getCanonicalName() + " "
-        //                    + " adds duplicated panel type " + panelAnnotation.value());
-        //        }
         panelControllerClasses.add(Pair.of(panelAnnotation, cls));
     }
 
-    public void closePanel(PanelController<?,?> reactor) {
-        for (var reactorList : reactors.values()) {
-            reactorList.removeIf(er -> er.reactor == reactor);
+    public void closePanel(PanelController<?, ?> reactor) {
+        var payload = reactor.getPayload();
+        if (panelControllers.remove(payload) != null) {
+            for (var reactorList : reactors.values()) {
+                reactorList.removeIf(er -> er.reactor == reactor);
+            }
         }
     }
 
@@ -387,17 +389,25 @@ public abstract class AbstractUIController implements UIController {
 
     @Override
     public <P, T extends PanelView<P>> T openPanel(Class<T> panelType, P payload) {
+
+        var existing = panelControllers.get(payload);
+        if (existing != null) {
+            existing.bringForward();
+            return (T) existing.panel();
+        }
+
         // create and register the panel controller, which must unregister itself when the panel is closed.
         // This must be hooked into a view-side controller somehow, as we cannot create
         // the panel view itself.
         Class<PanelController<P, PanelView<P>>> controllerClass = null;
         PanelView<P> ret = null;
+        PanelController<P, PanelView<P>> controller = null;
+
         for (var desc : panelControllerClasses) {
 
             if (desc.getFirst().panelType().isAssignableFrom(panelType)) {
 
                 controllerClass = (Class<PanelController<P, PanelView<P>>>) desc.getSecond();
-                PanelController<P, PanelView<P>> controller = null;
 
                 /*
                 try creating the controller first. Likely choice of arguments is just (UIController)
@@ -406,6 +416,7 @@ public abstract class AbstractUIController implements UIController {
                 TODO make the arg matcher smarter for injection of optional parameters, e.g. scopes and
                  services, to pass as varargs
                  */
+
                 var args = new Object[]{this};
                 for (var constructor : controllerClass.getDeclaredConstructors()) {
                     var argList = Utils.Collections.matchArguments(constructor.getParameterTypes(), args);
@@ -423,7 +434,8 @@ public abstract class AbstractUIController implements UIController {
 
                 if (controller != null) {
 
-                    // try creating the view with just the controller as arguments (see below). If no luck, keep going.
+                    // try creating the view with just the controller as arguments (see below). If no luck,
+                    // keep going.
                     var viewArgs = new Object[]{controller};
                     for (var constructor : panelType.getDeclaredConstructors()) {
                         // TODO same as above
@@ -455,9 +467,10 @@ public abstract class AbstractUIController implements UIController {
 
         if (ret != null) {
             ret.load(payload);
+            this.panelControllers.put(payload, controller);
         }
 
-        return (T)ret;
+        return (T) ret;
     }
 
     /**

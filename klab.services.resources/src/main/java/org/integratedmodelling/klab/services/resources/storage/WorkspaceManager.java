@@ -1073,8 +1073,8 @@ public class WorkspaceManager {
              contents.
              */
             for (var resourceSet : result.values()) {
-                scope.send(Message.MessageClass.ResourceLifecycle, Message.MessageType.WorkspaceChanged
-                        , resourceSet);
+                scope.send(Message.MessageClass.ResourceLifecycle, Message.ForwardingPolicy.Forward,
+                        Message.MessageType.WorkspaceChanged, resourceSet);
             }
 
         }
