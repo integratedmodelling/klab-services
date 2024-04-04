@@ -48,7 +48,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.CREATE_PROJECT)
-    public Project createProject(@RequestParam String workspaceName, @RequestParam String projectName) {
+    public Project createProject(@RequestParam("workspaceName") String workspaceName, @RequestParam("projectName") String projectName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createProject(workspaceName, projectName);
         }
@@ -56,7 +56,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.UPDATE_PROJECT)
-    public Project updateProject(@RequestParam String projectName, @RequestBody Project.Manifest manifest,
+    public Project updateProject(@RequestParam("projectName") String projectName, @RequestBody Project.Manifest manifest,
                                  @RequestBody Metadata metadata) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.updateProject(projectName, manifest, metadata);
@@ -65,7 +65,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.CREATE_NAMESPACE)
-    public KimNamespace createNamespace(@RequestParam String projectName,
+    public KimNamespace createNamespace(@RequestParam("projectName") String projectName,
                                         @RequestBody String namespaceContent) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createNamespace(projectName, namespaceContent);
@@ -74,7 +74,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.UPDATE_NAMESPACE)
-    public void updateNamespace(@RequestParam String projectName, @RequestBody String namespaceContent) {
+    public void updateNamespace(@RequestParam("projectName") String projectName, @RequestBody String namespaceContent) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.updateNamespace(projectName, namespaceContent);
         }
@@ -82,7 +82,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.CREATE_BEHAVIOR)
-    public KActorsBehavior createBehavior(@RequestParam String projectName,
+    public KActorsBehavior createBehavior(@RequestParam("projectName") String projectName,
                                           @RequestBody String behaviorContent) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createBehavior(projectName, behaviorContent);
@@ -91,7 +91,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.UPDATE_BEHAVIOR)
-    public void updateBehavior(@RequestParam String projectName, @RequestBody String behaviorContent) {
+    public void updateBehavior(@RequestParam("projectName") String projectName, @RequestBody String behaviorContent) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.updateBehavior(projectName, behaviorContent);
         }
@@ -99,7 +99,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.CREATE_ONTOLOGY)
-    public KimOntology createOntology(@RequestParam String projectName, @RequestBody String ontologyContent) {
+    public KimOntology createOntology(@RequestParam("projectName") String projectName, @RequestBody String ontologyContent) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createOntology(projectName, ontologyContent);
         }
@@ -107,7 +107,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.UPDATE_ONTOLOGY)
-    public void updateOntology(@RequestParam String projectName, @RequestBody String ontologyContent) {
+    public void updateOntology(@RequestParam("projectName") String projectName, @RequestBody String ontologyContent) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.updateOntology(projectName, ontologyContent);
         }
@@ -115,7 +115,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.PUBLISH_PROJECT)
-    public boolean publishProject(@RequestParam String projectUrl,
+    public boolean publishProject(@RequestParam("projectUrl") String projectUrl,
                                   @RequestBody ResourcePrivileges permissions) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.publishProject(projectUrl, permissions);
@@ -124,7 +124,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.UNPUBLISH_PROJECT)
-    public boolean unpublishProject(@RequestParam String projectUrl) {
+    public boolean unpublishProject(@RequestParam("projectUrl") String projectUrl) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.unpublishProject(projectUrl);
         }
@@ -149,9 +149,9 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.CREATE_RESOURCE_FOR_PROJECT)
-    public Resource createResourceForProject(@RequestParam String projectName, @RequestParam String urnId,
-                                             @RequestParam String adapter,
-                                             @RequestParam Parameters<String> resourceData) {
+    public Resource createResourceForProject(@RequestParam("projectName") String projectName, @RequestParam("urnId") String urnId,
+                                             @RequestParam("adapter") String adapter,
+                                             @RequestBody Parameters<String> resourceData) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createResource(projectName, urnId, adapter, resourceData);
         }
@@ -159,7 +159,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.PUBLISH_RESOURCE)
-    public boolean publishResource(@RequestParam String resourceUrn,
+    public boolean publishResource(@RequestParam("resourceUrn") String resourceUrn,
                                    @RequestBody ResourcePrivileges permissions) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.publishResource(resourceUrn, permissions);
@@ -168,7 +168,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.UNPUBLISH_RESOURCE)
-    public boolean unpublishResource(@RequestParam String resourceUrn) {
+    public boolean unpublishResource(@RequestParam("resourceUrn") String resourceUrn) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.unpublishResource(resourceUrn);
         }
@@ -176,7 +176,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.REMOVE_PROJECT)
-    public void removeProject(@RequestParam String projectName) {
+    public void removeProject(@RequestParam("projectName") String projectName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.removeProject(projectName);
         }
@@ -184,7 +184,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.REMOVE_WORKSPACE)
-    public void removeWorkspace(@RequestParam String workspaceName) {
+    public void removeWorkspace(@RequestParam("workspaceName") String workspaceName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.removeWorkspace(workspaceName);
         }

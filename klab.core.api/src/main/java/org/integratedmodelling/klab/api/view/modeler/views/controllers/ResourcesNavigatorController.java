@@ -39,6 +39,9 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
     @UIEventHandler(UIEvent.ServiceAvailable)
     void loadService(ResourcesService.Capabilities service);
 
+    @UIEventHandler(UIReactor.UIEvent.WorkspaceModified)
+    void workspaceModified(ResourceSet changes);
+
     /**
      * Adapt the UI to any changes in the workspace coming from the service handled. If the workspace is the
      * currently focal one, the changeset should produce UI changes. The asset could be the entire workspace,

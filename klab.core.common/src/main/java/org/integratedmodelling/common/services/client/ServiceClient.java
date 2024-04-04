@@ -284,7 +284,7 @@ public abstract class ServiceClient implements KlabService {
                     scope.send(Message.MessageClass.ServiceLifecycle,
                             (connected.get() ? Message.MessageType.ServiceAvailable :
                              Message.MessageType.ServiceUnavailable), capabilities);
-                    if (Configuration.INSTANCE.pairServiceScopes() && local && connected.get()) {
+                    if (local && connected.get()) {
                         // establish whatever scope "entanglement" is allowed by the service
                         scope.connect(this);
                     }
@@ -300,8 +300,8 @@ public abstract class ServiceClient implements KlabService {
                         status.get());
             }
 
-        } catch (Throwable ziocan) {
-            scope.error(ziocan);
+        } catch (Throwable t) {
+            scope.error(t);
         }
 
     }

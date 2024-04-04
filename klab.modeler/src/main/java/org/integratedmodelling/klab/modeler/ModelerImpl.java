@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
@@ -35,6 +36,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     public ModelerImpl() {
         super();
+        // TODO read the workbench config - NAH this probably pertains to the IDE
+    }
+
+    public ModelerImpl(UI ui) {
+        super(ui);
         // TODO read the workbench config - NAH this probably pertains to the IDE
     }
 

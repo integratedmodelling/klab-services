@@ -48,7 +48,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         super(Type.RESOURCES, identity, services);
     }
 
-    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
+    public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
+            Message>... listeners) {
         super(Type.RESOURCES, url, identity, services, listeners);
     }
 
@@ -87,12 +88,13 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KimOntology resolveOntology(String urn, Scope scope) {
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN, KimOntology.class, "urn", urn);
     }
 
     @Override
     public KimObservationStrategyDocument resolveObservationStrategyDocument(String urn, Scope scope) {
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN,
+                KimObservationStrategyDocument.class, "urn", urn);
     }
 
     @Override
@@ -102,19 +104,17 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KActorsBehavior resolveBehavior(String urn, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_BEHAVIOR_URN, KActorsBehavior.class, "urn", urn);
     }
 
     @Override
     public Resource resolveResource(String urn, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_RESOURCE_URN, Resource.class, "urn", urn);
     }
 
     @Override
     public Workspace resolveWorkspace(String urn, Scope scope) {
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN, Workspace.class, "urn", urn);
     }
 
     @Override
@@ -125,7 +125,6 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KimObservable resolveObservable(String definition) {
-        // TODO Auto-generated method stub
         return null;
     }
 

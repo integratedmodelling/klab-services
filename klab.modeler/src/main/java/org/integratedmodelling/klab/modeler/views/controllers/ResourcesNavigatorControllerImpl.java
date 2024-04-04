@@ -40,6 +40,11 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     }
 
     @Override
+    public void workspaceModified(ResourceSet changes) {
+        view().workspaceModified(changes);
+    }
+
+    @Override
     public void assetChanged(NavigableAsset asset, ResourceSet changeset) {
 
     }

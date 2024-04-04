@@ -212,6 +212,11 @@ public interface UIReactor {
         DistributionSelected(EventDirection.ViewToView, Distribution.class),
 
         UserAuthenticated(EventDirection.Bidirectional, UserIdentity.class),
+
+        /**
+         * Resource services communicated that a workspace was modified
+         */
+        WorkspaceModified(EventDirection.EngineToView, ResourceSet.class),
         /**
          * Declaring a dependency on this event means that we want all events sent to the
          * annotated method.

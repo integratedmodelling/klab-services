@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.*;
@@ -39,12 +40,22 @@ public abstract class AbstractUIController implements UIController {
      * something is listening.
      */
     private Set<UIReactor.UIEvent> relevantEvents = EnumSet.noneOf(UIReactor.UIEvent.class);
+    /**
+     * Reactors to each event are registered here
+     */
+    private Map<UIReactor.UIEvent, List<EventReactor>> reactors =
+            Collections.synchronizedMap(new HashMap<>());
+    private List<Pair<UIPanelController, Class<? extends PanelController<?, ?>>>> panelControllerClasses =
+            Collections.synchronizedList(new ArrayList<>());
+    private Map<UIReactor.Type, Object> views = new HashMap<>();
+    private Map<Object, PanelController<?, ?>> panelControllers = new HashMap<>();
+    private Engine engine;
 
     private class EventReactor {
 
         List<Class<?>> parameterClasses = new ArrayList<>();
         Method method;
-        UIReactor reactor;
+        Object reactor;
         Queue<Pair<UIReactor, Object[]>> messageQueue = new LinkedBlockingDeque<>(128);
 
         class EventReactionEdge extends DefaultEdge {
@@ -58,7 +69,7 @@ public abstract class AbstractUIController implements UIController {
         Graph<UIReactor, EventReactionEdge> interactionGraph =
                 new DefaultDirectedGraph<>(EventReactionEdge.class);
 
-        public EventReactor(UIReactor reactor, Method method) {
+        public EventReactor(Object reactor, Method method) {
             this.reactor = reactor;
             this.method = method;
             this.parameterClasses.addAll(Arrays.stream(method.getParameterTypes()).toList());
@@ -106,18 +117,15 @@ public abstract class AbstractUIController implements UIController {
         }
     }
 
-    /**
-     * Reactors to each event are registered here
-     */
-    Map<UIReactor.UIEvent, List<EventReactor>> reactors = Collections.synchronizedMap(new HashMap<>());
-    List<Pair<UIPanelController, Class<? extends PanelController<?, ?>>>> panelControllerClasses =
-            Collections.synchronizedList(new ArrayList<>());
-    private Map<UIReactor.Type, ViewController<?>> views = new HashMap<>();
-
-    private Map<Object, PanelController<?, ?>> panelControllers = new HashMap<>();
-    private Engine engine;
-
     protected AbstractUIController() {
+        this(null);
+    }
+
+    protected AbstractUIController(UI mainApplication) {
+
+        if (mainApplication != null) {
+            registerViewController(mainApplication);
+        }
         createView();
         createViewGraph();
     }
@@ -185,18 +193,14 @@ public abstract class AbstractUIController implements UIController {
             }
             case ServiceLifecycle -> {
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable ->
-                            dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
-                                    message.getPayload(Object.class));
-                    case ServiceAvailable ->
-                            dispatch(this, UIReactor.UIEvent.ServiceAvailable,
-                                    message.getPayload(Object.class));
-                    case ServiceInitializing ->
-                            dispatch(this, UIReactor.UIEvent.ServiceStarting,
-                                    message.getPayload(Object.class));
-                    case ServiceStatus ->
-                            dispatch(this, UIReactor.UIEvent.ServiceStatus,
-                                    message.getPayload(KlabService.ServiceStatus.class));
+                    case ServiceUnavailable -> dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
+                            message.getPayload(Object.class));
+                    case ServiceAvailable -> dispatch(this, UIReactor.UIEvent.ServiceAvailable,
+                            message.getPayload(Object.class));
+                    case ServiceInitializing -> dispatch(this, UIReactor.UIEvent.ServiceStarting,
+                            message.getPayload(Object.class));
+                    case ServiceStatus -> dispatch(this, UIReactor.UIEvent.ServiceStatus,
+                            message.getPayload(KlabService.ServiceStatus.class));
                     default -> {
                     }
                 }
@@ -228,6 +232,10 @@ public abstract class AbstractUIController implements UIController {
             case KimLifecycle -> {
             }
             case ResourceLifecycle -> {
+                if (message.is(Message.MessageType.WorkspaceChanged)) {
+                    dispatch(this, UIEvent.WorkspaceModified,
+                            message.getPayload(ResourceSet.class));
+                }
             }
             case ProjectLifecycle -> {
             }
@@ -333,19 +341,19 @@ public abstract class AbstractUIController implements UIController {
     }
 
     @Override
-    public void registerViewController(ViewController<?> reactor) {
+    public void registerViewController(Object reactor) {
 
         var viewAnnotation = AnnotationUtils.findAnnotation(reactor.getClass(), UIViewController.class);
-        if (viewAnnotation == null) {
-            throw new KlabInternalErrorException("View class " + reactor.getClass().getCanonicalName() + " "
-                    + "is not annotated with UIView");
+        if (viewAnnotation != null) {
+            /*
+            We can only have one of each declared views.
+             */
+            if (views.containsKey(viewAnnotation.value())) {
+                throw new KlabInternalErrorException("View class " + reactor.getClass().getCanonicalName() + " "
+                        + " adds duplicated view type " + viewAnnotation.value());
+            }
+            views.put(viewAnnotation.value(), reactor);
         }
-        if (views.containsKey(viewAnnotation.value())) {
-            throw new KlabInternalErrorException("View class " + reactor.getClass().getCanonicalName() + " "
-                    + " adds duplicated view type " + viewAnnotation.value());
-        }
-
-        views.put(viewAnnotation.value(), reactor);
 
         for (var method : reactor.getClass().getDeclaredMethods()) {
             var eventHandlerDefinition = AnnotationUtils.findAnnotation(method, UIEventHandler.class);
@@ -489,7 +497,6 @@ public abstract class AbstractUIController implements UIController {
         }
         return null;
     }
-
 
     public <T extends View> void dispatchPendingTasks(AbstractUIViewController<T> viewController) {
 

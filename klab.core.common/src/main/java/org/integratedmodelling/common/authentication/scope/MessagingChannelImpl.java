@@ -128,7 +128,10 @@ public class MessagingChannelImpl extends ChannelImpl {
                 this.stompClient = getStompClient(split[0], split[1]);
             }
 
-            return this.stompClient != null;
+            if (this.stompClient != null) {
+                info("Client paired to remote " + service.status().getServiceType() + " service " + service.getServiceName());
+                return true;
+            }
         }
 
         return false;

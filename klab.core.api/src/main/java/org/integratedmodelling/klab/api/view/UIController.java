@@ -59,22 +59,27 @@ public interface UIController extends UIReactor {
     void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload);
 
     /**
-     * Register a view controller (implementing {@link ViewController}) so that it can be informed of all
-     * UI-relevant events. The view interfaces specify default methods that turn UI actions into events which
-     * go back to the modeler for wiring. This must be done for all views prior to booting the UI: views
-     * pre-exist although they may be invisible or inactive. Panels are opened but not registered.
+     * Register a view controller (normally implementing {@link UI} or {@link ViewController}) so that it can
+     * be informed of all UI-relevant events. The view interfaces specify default methods that turn UI actions
+     * into events which go back to the modeler for wiring. This must be done for all persistent reactive
+     * objects, including all views, prior to booting the UI: views pre-exist although they may be invisible
+     * or inactive. Panels are opened but not registered.
      * <p>
      * There can only be one view per view annotation declared. only {@link PanelController}s can be present
-     * in multiple instances.
+     * in multiple instances. If the
+     * {@link org.integratedmodelling.klab.api.view.annotations.UIViewController} annotation isn't present, no
+     * check for duplication is done.
      * <p>
-     * Registration should inspect the reactor for annotated event methods, which must take the parameters
+     * Registration inspects the reactor for annotated event methods, which must take the parameters
      * specified in the event. If source analysis is enabled (e.g. when the view is specified through k.Actors
      * or JSON), any of the actions defined in the interface and not called in the implementation should be
      * flagged as warning.
      *
-     * @param reactor
+     * @param reactor the reactor to register. Its methods will be scanned and connected to event handling.
+     *                The main UI object passed to the controller's constructor will be automatically
+     *                registered.
      */
-    void registerViewController(ViewController<?> reactor);
+    void registerViewController(Object reactor);
 
     /**
      * Register a panel controller class. Differently from views, panels are created and opened on demand, so
@@ -86,7 +91,7 @@ public interface UIController extends UIReactor {
      */
     void registerPanelControllerClass(Class<? extends PanelController<?, ?>> cls);
 
-    void closePanel(PanelController<?,?> controller);
+    void closePanel(PanelController<?, ?> controller);
 
     /**
      * Return the registered view controller for the passed class. Used in view implementations to register
