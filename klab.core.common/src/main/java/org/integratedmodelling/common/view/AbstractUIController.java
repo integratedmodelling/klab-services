@@ -35,6 +35,7 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public abstract class AbstractUIController implements UIController {
 
+    private final UI ui;
     /**
      * All events that the UI reacts to. Used to filter the engine events so they are not dispatched unless
      * something is listening.
@@ -85,6 +86,13 @@ public abstract class AbstractUIController implements UIController {
 
         public Object call(UIReactor sender, Object... payload) {
 
+            /*
+                this would be fun
+             */
+            if (sender == reactor || (sender == AbstractUIController.this && reactor == ui)) {
+                return null;
+            }
+
             if (reactor instanceof AbstractUIViewController<?> viewController) {
                 if (viewController.view() == null) {
                     // put away the messages in the synchronous queue
@@ -122,7 +130,7 @@ public abstract class AbstractUIController implements UIController {
     }
 
     protected AbstractUIController(UI mainApplication) {
-
+        this.ui = mainApplication;
         if (mainApplication != null) {
             registerViewController(mainApplication);
         }

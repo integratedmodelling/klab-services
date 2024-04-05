@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 //import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -42,6 +43,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements /*IAdap
 	protected NavigableAsset parent;
 	protected String path;
 
+	protected Metadata localMetadata = Metadata.create();
 
 	public NavigableKlabAsset(T asset, NavigableKlabAsset<?> parent) {
 		this.delegate = asset;
@@ -151,6 +153,14 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements /*IAdap
 
 	public void setParent(NavigableAsset parent) {
 		this.parent = parent;
+	}
+
+	public Metadata localMetadata() {
+		return localMetadata;
+	}
+
+	public void setLocalMetadata(Metadata localMetadata) {
+		this.localMetadata = localMetadata;
 	}
 
 }

@@ -3279,9 +3279,26 @@ public class Utils {
             return !path.isAbsolute();
         }
 
-        public static void writeStringToFile(String template, File file) {
+        public static File writeStringToFile(String template, File file) {
             try {
                 java.nio.file.Files.writeString(file.toPath(), template);
+                return file;
+            } catch (IOException e) {
+                throw new KlabIOException(e);
+            }
+        }
+
+
+        /**
+         * Silent temp file creation with smarter handling of extension.
+         *
+         * @param extension
+         * @return
+         */
+        public static File createTempFile(String extension) {
+            try {
+                return File.createTempFile("klab", (extension.startsWith(".") ? extension :
+                                                    ("." + extension)));
             } catch (IOException e) {
                 throw new KlabIOException(e);
             }

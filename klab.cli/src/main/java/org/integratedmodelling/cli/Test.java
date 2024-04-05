@@ -25,6 +25,11 @@ public class Test implements Runnable {
          */
        KlabCLI.INSTANCE.modeler().getController().openPanel(DocumentEditorAdvisor.class, new NavigableDocument() {
            @Override
+           public String getFileExtension() {
+               return null;
+           }
+
+           @Override
            public List<? extends NavigableAsset> children() {
                return null;
            }
@@ -36,6 +41,11 @@ public class Test implements Runnable {
 
            @Override
            public NavigableContainer root() {
+               return null;
+           }
+
+           @Override
+           public Metadata localMetadata() {
                return null;
            }
 

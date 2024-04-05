@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.view;
 
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 /**
  * The UI controller is a singleton that represents the engine when it's associated to a UI. It starts the
@@ -70,10 +71,10 @@ public interface UIController extends UIReactor {
      * {@link org.integratedmodelling.klab.api.view.annotations.UIViewController} annotation isn't present, no
      * check for duplication is done.
      * <p>
-     * Registration inspects the reactor for annotated event methods, which must take the parameters
-     * specified in the event. If source analysis is enabled (e.g. when the view is specified through k.Actors
-     * or JSON), any of the actions defined in the interface and not called in the implementation should be
-     * flagged as warning.
+     * Registration inspects the reactor for annotated event methods, which must take the parameters specified
+     * in the event. If source analysis is enabled (e.g. when the view is specified through k.Actors or JSON),
+     * any of the actions defined in the interface and not called in the implementation should be flagged as
+     * warning.
      *
      * @param reactor the reactor to register. Its methods will be scanned and connected to event handling.
      *                The main UI object passed to the controller's constructor will be automatically
@@ -131,4 +132,13 @@ public interface UIController extends UIReactor {
      * @param changedElements
      */
     void storeView(Object... changedElements);
+
+    /**
+     * Set the passed service into the engine as the "current" service to serve requests for the engine scope.
+     * This comes from the UI, defaulting at a previously selected service if that is remembered or
+     * configured, or, lacking that, the first service that reaches the controller.
+     *
+     * @param service
+     */
+    void setDefaultService(KlabService.ServiceCapabilities service);
 }

@@ -45,15 +45,15 @@ public interface ServicesViewController extends ViewController<ServicesView> {
     void serviceStatus(KlabService.ServiceStatus status);
 
     /**
-     * User action choosing a service to focus on. React and dispatch.
+     * User action choosing a service to focus on. The view handles all the UI implications and then calls
+     * this so that the engine connected to the main controller is set to use THAT service as default, then a
+     * {@link org.integratedmodelling.klab.api.view.UIReactor.UIEvent#ServiceSelected} message gets to all
+     * views that care for it. This should be also be done automatically upon "default" service availability.
      *
-     * @param service
+     * @param service the capabilities of the service selected
      */
-    @UIActionHandler(UIReactor.UIAction.SelectService)
-    void focusService(KlabService service);
-
-
-
+    @UIActionHandler(value = UIReactor.UIAction.SelectService, sends = UIEvent.ServiceSelected)
+    void focusService(KlabService.ServiceCapabilities service);
 
 
 }

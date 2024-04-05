@@ -1,5 +1,6 @@
-package org.integratedmodelling.klab.api.knowledge.impl;
+package org.integratedmodelling.common.knowledge;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 
 public class WorkspaceImpl implements Workspace {
 
+    @Serial
     private static final long serialVersionUID = -9221855512336458408L;
 
     private String urn;

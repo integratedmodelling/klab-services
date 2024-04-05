@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -79,6 +80,17 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     public UserScope user() {
         return ((EngineClient) engine()).getUser();
+    }
+
+    @Override
+    public void setDefaultService(KlabService.ServiceCapabilities service) {
+        if (engine() instanceof EngineClient engine) {
+            engine.setDefaultService(service);
+        } else {
+            engine().serviceScope().warn("Modeler: request to set default service wasn't honored because " +
+                    "the engine " +
+                    "implementation is overridden");
+        }
     }
 
     @Override

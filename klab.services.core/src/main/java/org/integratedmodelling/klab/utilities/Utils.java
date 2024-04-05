@@ -392,13 +392,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             }
         }
 
-        public static void writeStringToFile(String string, File file) {
-            try {
-                FileUtils.write(file, string, StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new KlabIOException(e);
-            }
-        }
+//        public static void writeStringToFile(String string, File file) {
+//            try {
+//                FileUtils.write(file, string, StandardCharsets.UTF_8);
+//            } catch (IOException e) {
+//                throw new KlabIOException(e);
+//            }
+//        }
 
     }
 

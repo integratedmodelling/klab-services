@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -15,149 +16,163 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>
-		extends NavigableKlabAsset<T> implements KlabDocument<E>, NavigableDocument {
+        extends NavigableKlabAsset<T> implements KlabDocument<E>, NavigableDocument {
 
-	private static final long serialVersionUID = 7741675272275189813L;
-
-
-	/**
-	 * Use to inject implementation-specific instrumentation
-	 * @return
-	 */
-	public Parameters<String> getParameters() {
-		return parameters;
-	}
-
-	public void setParameters(Parameters<String> parameters) {
-		this.parameters = parameters;
-	}
-
-	protected Parameters<String> parameters = Parameters.create();
+    private static final long serialVersionUID = 7741675272275189813L;
 
 
-	public NavigableKlabDocument(T document, NavigableKlabAsset<?> parent) {
-		super(document, parent);
-//		if (parent instanceof NavigableKlabAsset asset && asset.getResource() instanceof IContainer container) {
-//			this.resource = Eclipse.INSTANCE.findFileInContainer(container, getFileName());
-//		}
-	}
+    /**
+     * Use to inject implementation-specific instrumentation
+     *
+     * @return
+     */
+    public Parameters<String> getParameters() {
+        return parameters;
+    }
 
-	/**
-	 * Get a filename with the proper file name based on the URN, document type and
-	 * location.
-	 * 
-	 * @return
-	 */
-	public String getFileName() {
-		return delegate.getUrn() + switch (delegate) {
-		case KimOntology ontology -> ".kwv";
-		case KimNamespace namespace -> ".kim";
-		case KActorsBehavior behavior -> ".kactors";
-		case KimObservationStrategy strategy -> ".obs";
-		default -> throw new KlabIllegalStateException("poh");
-		};
-	}
+    public void setParameters(Parameters<String> parameters) {
+        this.parameters = parameters;
+    }
 
-	@Override
-	public long getCreationTimestamp() {
-		return delegate.getCreationTimestamp();
-	}
+    protected Parameters<String> parameters = Parameters.create();
 
-	@Override
-	public long getLastUpdateTimestamp() {
-		return delegate.getLastUpdateTimestamp();
-	}
 
-	@Override
-	public Collection<Notification> getNotifications() {
-		return delegate.getNotifications();
-	}
+    public NavigableKlabDocument(T document, NavigableKlabAsset<?> parent) {
+        super(document, parent);
+        //		if (parent instanceof NavigableKlabAsset asset && asset.getResource() instanceof IContainer
+        //		container) {
+        //			this.resource = Eclipse.INSTANCE.findFileInContainer(container, getFileName());
+        //		}
+    }
 
-	@Override
-	public String getProjectName() {
-		return delegate.getProjectName();
-	}
 
-	@Override
-	public String getSourceCode() {
-		return delegate.getSourceCode();
-	}
+    public String getFileExtension() {
+        return switch (getDelegate()) {
+            case KimOntology ontology -> "kwv";
+            case KimNamespace ontology -> "kim";
+            case KimObservationStrategyDocument ontology -> "obs";
+            case KActorsBehavior ontology -> "kactors";
+            default ->
+                    throw new KlabUnimplementedException("file extension for document of class " + getDelegate().getClass().getCanonicalName());
+        };
+    }
 
-	@Override
-	public List<E> getStatements() {
-		return delegate.getStatements();
-	}
 
-	@Override
-	public Version getVersion() {
-		return delegate.getVersion();
-	}
+    /**
+     * Get a filename with the proper file name based on the URN, document type and location.
+     *
+     * @return
+     */
+    public String getFileName() {
+        return delegate.getUrn() + switch (delegate) {
+            case KimOntology ontology -> ".kwv";
+            case KimNamespace namespace -> ".kim";
+            case KActorsBehavior behavior -> ".kactors";
+            case KimObservationStrategy strategy -> ".obs";
+            default -> throw new KlabIllegalStateException("poh");
+        };
+    }
 
-	public List<NavigableKlabAsset<?>> getAssetsAt(int offset) {
+    @Override
+    public long getCreationTimestamp() {
+        return delegate.getCreationTimestamp();
+    }
 
-		List<NavigableKlabAsset<?>> ret = new ArrayList<>();
+    @Override
+    public long getLastUpdateTimestamp() {
+        return delegate.getLastUpdateTimestamp();
+    }
 
-		if (offset == 0) {
-			ret.add(this);
-			return ret;
-		}
+    @Override
+    public Collection<Notification> getNotifications() {
+        return delegate.getNotifications();
+    }
 
-		for (var statement : children()) {
-			var path = getStatementsAt((NavigableKlabStatement) statement, offset, new ArrayList<>());
-			if (!path.isEmpty()) {
-				ret.add(this);
-				ret.addAll(path);
-			}
-		}
-		return ret;
-	}
+    @Override
+    public String getProjectName() {
+        return delegate.getProjectName();
+    }
 
-	private List<NavigableKlabAsset<?>> getStatementsAt(NavigableKlabStatement statement, int offset,
-			List<NavigableKlabAsset<?>> ret) {
+    @Override
+    public String getSourceCode() {
+        return delegate.getSourceCode();
+    }
 
-		int start = statement.getOffsetInDocument();
-		int end = start + statement.getLength();
-		if (offset >= start && offset < end) {
-			ret.add(statement);
-			for (var child : statement.children()) {
-				getStatementsAt((NavigableKlabStatement) child, offset, ret);
-			}
-		}
+    @Override
+    public List<E> getStatements() {
+        return delegate.getStatements();
+    }
 
-		return ret;
-	}
+    @Override
+    public Version getVersion() {
+        return delegate.getVersion();
+    }
 
-	@Override
-	public boolean isInactive() {
-		return delegate.isInactive();
-	}
+    public List<NavigableKlabAsset<?>> getAssetsAt(int offset) {
 
-	@Override
-	public List<? extends NavigableKlabStatement> children() {
-		return (List<? extends NavigableKlabStatement>) getStatements();
-	}
+        List<NavigableKlabAsset<?>> ret = new ArrayList<>();
 
-	public NavigableProject project() {
-		var parent = this.parent();
-		while (parent instanceof NavigableKlabAsset asset && !(parent instanceof NavigableProject)) {
-			parent = asset.parent();
-		}
-		return (NavigableProject) parent;
-	}
+        if (offset == 0) {
+            ret.add(this);
+            return ret;
+        }
 
-	public KnowledgeClass getType() {
-		return switch (this) {
-		case NavigableKimOntology doc -> KnowledgeClass.ONTOLOGY;
-		case NavigableKimNamespace doc -> KnowledgeClass.NAMESPACE;
-// TODO behaviors 		case NavigableKimOntology doc -> KlabAsset.KnowledgeClass.BEHAVIOR;
-		default -> throw new UnsupportedOperationException("unexpected resource type");
-		};
+        for (var statement : children()) {
+            var path = getStatementsAt((NavigableKlabStatement) statement, offset, new ArrayList<>());
+            if (!path.isEmpty()) {
+                ret.add(this);
+                ret.addAll(path);
+            }
+        }
+        return ret;
+    }
 
-	}
+    private List<NavigableKlabAsset<?>> getStatementsAt(NavigableKlabStatement statement, int offset,
+                                                        List<NavigableKlabAsset<?>> ret) {
 
-	@Override
-	public RepositoryMetadata getRepositoryMetadata() {
-		return delegate.getRepositoryMetadata();
-	}
+        int start = statement.getOffsetInDocument();
+        int end = start + statement.getLength();
+        if (offset >= start && offset < end) {
+            ret.add(statement);
+            for (var child : statement.children()) {
+                getStatementsAt((NavigableKlabStatement) child, offset, ret);
+            }
+        }
+
+        return ret;
+    }
+
+    @Override
+    public boolean isInactive() {
+        return delegate.isInactive();
+    }
+
+    @Override
+    public List<? extends NavigableKlabStatement> children() {
+        return (List<? extends NavigableKlabStatement>) getStatements();
+    }
+
+    public NavigableProject project() {
+        var parent = this.parent();
+        while (parent instanceof NavigableKlabAsset asset && !(parent instanceof NavigableProject)) {
+            parent = asset.parent();
+        }
+        return (NavigableProject) parent;
+    }
+
+    public KnowledgeClass getType() {
+        return switch (this) {
+            case NavigableKimOntology doc -> KnowledgeClass.ONTOLOGY;
+            case NavigableKimNamespace doc -> KnowledgeClass.NAMESPACE;
+            // TODO behaviors 		case NavigableKimOntology doc -> KlabAsset.KnowledgeClass.BEHAVIOR;
+            default -> throw new UnsupportedOperationException("unexpected resource type");
+        };
+
+    }
+
+    @Override
+    public RepositoryMetadata getRepositoryMetadata() {
+        return delegate.getRepositoryMetadata();
+    }
 
 }

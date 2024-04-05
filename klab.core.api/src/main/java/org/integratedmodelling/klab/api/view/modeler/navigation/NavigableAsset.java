@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.navigation;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 
 import java.util.List;
@@ -20,5 +21,13 @@ public interface NavigableAsset extends KlabAsset {
     NavigableAsset parent();
 
     NavigableContainer root();
+
+    /**
+     * View-side metadata that can be added and removed on the local instance and do not affect the delegate
+     * object. Can be used by the UI to store local info about each asset.
+     *
+     * @return
+     */
+    Metadata localMetadata();
 
 }

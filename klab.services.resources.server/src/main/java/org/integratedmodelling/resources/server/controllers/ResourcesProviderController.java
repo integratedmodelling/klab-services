@@ -104,8 +104,11 @@ public class ResourcesProviderController {
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN)
     public Workspace resolveWorkspace(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolveWorkspace(urn,
+        var ret = resourcesServer.klabService().resolveWorkspace(urn,
                 authenticationManager.resolveScope(principal));
+        // TODO only leave a file:// URL in project metadata if the principal is a local user and an
+        //  administrator
+        return ret;
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL)
@@ -178,6 +181,9 @@ public class ResourcesProviderController {
     public Project resolveProject(@PathVariable("projectName") String projectName, Principal principal) {
         return resourcesServer.klabService().resolveProject(projectName,
                 authenticationManager.resolveScope(principal));
+        // TODO only leave a file:// URL in project metadata if the principal is a local user and an
+        //  administrator
+
     }
 
     @GetMapping(ServicesAPI.RESOURCES.QUERY_MODELS)

@@ -4,10 +4,14 @@ import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 
+/**
+ * TODO implement data model to replicate the actions when the Eclipse modeler is done.
+ */
 public class ServicesViewAdvisor extends BaseViewAdvisor implements ServicesView {
 
     @Override
-    public void notifyService(KlabService.ServiceCapabilities service, RunningInstance.Status status) {
+    public void servicesConfigurationChanged(KlabService.ServiceCapabilities service,
+                                             RunningInstance.Status running) {
 
     }
 
@@ -15,4 +19,5 @@ public class ServicesViewAdvisor extends BaseViewAdvisor implements ServicesView
     public void notifyServiceStatus(KlabService.ServiceStatus status) {
 
     }
+
 }

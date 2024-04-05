@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
@@ -25,20 +26,33 @@ import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
  * The modeler should remember the configuration of documents and editors in the workbench for each workspace
  * and service, and reconstruct the latest configuration at each workspace switch.
  */
-@UIViewController(value = UIReactor.Type.ResourceNavigator, viewType = ResourcesNavigator.class, label = "k.LAB " +
+@UIViewController(value = UIReactor.Type.ResourceNavigator, viewType = ResourcesNavigator.class, label = "k" +
+        ".LAB " +
         "Resource Navigator", target = ResourcesService.class)
 public interface ResourcesNavigatorController extends ViewController<ResourcesNavigator> {
 
 
     /**
-     * Load the passed service in the UI. If the service is null, disable the UI. For changes relative to the
-     * current service, do not call this one but call {@link #assetChanged(NavigableKlabAsset, ResourceSet)}.
+     * Load the passed service in the UI. This is normally sent by the UI action
+     * {@link ServicesViewController#focusService(KlabService.ServiceCapabilities)} once determined that the
+     * service should be focused on, either because of first availability or user choice. The type of the
+     * argument ensures that only the {@link ResourcesService} capabilities get through. Upon receiving this,
+     * the view should set up appropriate navigation UI for the assets provided by the service.
+     * <p>
+     * If the service is null, disable the UI. For changes relative to the current service, do not call this
+     * one but call {@link #assetChanged(NavigableAsset, ResourceSet)}.
      *
-     * @param service
+     * @param service the capabilities of the selected services or bnull
      */
-    @UIEventHandler(UIEvent.ServiceAvailable)
-    void loadService(ResourcesService.Capabilities service);
+    @UIEventHandler(UIEvent.ServiceSelected)
+    void serviceSelected(ResourcesService.Capabilities service);
 
+    /**
+     * Invoked when a workspace needs to be reloaded in the UI. The workspace may or may not be the one
+     * currently shown.
+     *
+     * @param changes
+     */
     @UIEventHandler(UIReactor.UIEvent.WorkspaceModified)
     void workspaceModified(ResourceSet changes);
 

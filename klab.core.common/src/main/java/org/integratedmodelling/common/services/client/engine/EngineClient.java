@@ -135,7 +135,8 @@ public class EngineClient implements Engine, PropertyHolder {
         this.users.add(this.defaultUser);
         this.defaultUser.send(Message.MessageClass.EngineLifecycle,
                 Message.MessageType.ServiceInitializing, capabilities());
-        this.defaultUser.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized, authData.getFirst());
+        this.defaultUser.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized,
+                authData.getFirst());
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
         booted.set(true);
     }
@@ -295,5 +296,29 @@ public class EngineClient implements Engine, PropertyHolder {
 
     public String serviceId() {
         return serviceId;
+    }
+
+    public void setDefaultService(ServiceCapabilities service) {
+
+        boolean found = false;
+        var currentService = currentServices.get(service.getType());
+        if (currentService == null || !currentService.serviceId().equals(service.getServiceId())) {
+            for (var s : getServices(service.getType())) {
+                if (s.serviceId().equals(service.getServiceId())) {
+                    currentServices.put(service.getType(), s);
+                    found = true;
+                    break;
+                }
+            }
+        } else {
+            // no change needed, things are already as requested
+            found = true;
+        }
+
+        if (!found) {
+            serviceScope().error("EngineClient: cannot set unknown " + service.getType() + " service with ID " + service.getServiceId() +
+                    " as default: service is not available to the engine");
+        }
+
     }
 }

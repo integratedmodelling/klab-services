@@ -7,6 +7,9 @@ import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 
 import java.util.List;
 
+/**
+ * TODO implement data model to replicate the actions when the Eclipse modeler is done.
+ */
 public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements ResourcesNavigator {
 
     @Override
@@ -20,12 +23,12 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
     }
 
     @Override
-    public void highlightAsset(NavigableAsset asset) {
+    public void workspaceModified(ResourceSet changes) {
 
     }
 
     @Override
-    public void workspaceModified(ResourceSet changes) {
+    public void showAssetInfo(NavigableAsset asset) {
 
     }
 }

@@ -35,7 +35,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 //import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.api.knowledge.impl.ProjectImpl;
+import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
