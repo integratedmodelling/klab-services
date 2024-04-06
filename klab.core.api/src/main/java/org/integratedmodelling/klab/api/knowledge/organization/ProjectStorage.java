@@ -1,6 +1,10 @@
 package org.integratedmodelling.klab.api.knowledge.organization;
 
 
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kim.*;
+
 import java.net.URL;
 import java.util.List;
 
@@ -35,8 +39,8 @@ public interface ProjectStorage {
     URL getUrl();
 
     /**
-     * List all contained resources for the passed types. Use {@link URL#openStream()} to
-     * access their contents.
+     * List all contained resources for the passed types. Use {@link URL#openStream()} to access their
+     * contents.
      *
      * @param types
      * @return
@@ -69,4 +73,36 @@ public interface ProjectStorage {
      * @return
      */
     boolean isFilesystemBased();
+
+    public static String getFileExtension(KlabDocument<?> document) {
+        return switch (document) {
+            case KimOntology ontology -> "kwv";
+            case KimNamespace ontology -> "kim";
+            case KimObservationStrategyDocument ontology -> "obs";
+            case KActorsBehavior ontology -> "kactors";
+            default ->
+                    throw new KlabUnimplementedException("file extension for document of class " + document.getClass().getCanonicalName());
+        };
+    }
+
+
+    /**
+     * Return a slash-separated relative, canonical file path to the passed document file, including the
+     * expected extension. This is a static method and does not assume that a correspondent file exists in any
+     * project.
+     *
+     * @param document
+     * @return
+     */
+    public static String getRelativeFilePath(KlabDocument<?> document) {
+        if (document instanceof KimOntology || document instanceof KimNamespace) {
+            return "src/" + document.getUrn().replace('.', '/') + "." + getFileExtension(document);
+        } else if (document instanceof KimBehavior behavior) {
+//            switch (behavior.)
+            // TODO depends on the type
+        } else if (document instanceof KimObservationStrategyDocument) {
+            return "strategies/" + document.getUrn() + "." + getFileExtension(document);
+        }
+        return null;
+    }
 }

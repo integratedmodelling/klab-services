@@ -40,6 +40,11 @@ public class Test implements Runnable {
            }
 
            @Override
+           public <T extends NavigableAsset> T parent(Class<T> parentClass) {
+               return null;
+           }
+
+           @Override
            public NavigableContainer root() {
                return null;
            }

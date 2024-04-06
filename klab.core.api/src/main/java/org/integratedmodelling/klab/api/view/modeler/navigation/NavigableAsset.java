@@ -18,8 +18,28 @@ public interface NavigableAsset extends KlabAsset {
      */
     List<? extends NavigableAsset> children();
 
+    /**
+     * Return the direct parent of this asset.
+     *
+     * @return the asset's parent. If this is the root asset, return null.
+     */
     NavigableAsset parent();
 
+    /**
+     * Return the first parent of the requested class.
+     *
+     * @param parentClass
+     * @param <T>
+     * @return the requested parent or null.
+     */
+    <T extends NavigableAsset> T parent(Class<T> parentClass);
+
+    /**
+     * Return the root container for this asset, normally a workspace or worldview. If this is the root
+     * container, return this.
+     *
+     * @return the root container.
+     */
     NavigableContainer root();
 
     /**

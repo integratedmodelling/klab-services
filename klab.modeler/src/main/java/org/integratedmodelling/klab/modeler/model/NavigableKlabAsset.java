@@ -82,6 +82,17 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements /*IAdap
 	}
 
 	@Override
+	public <T extends NavigableAsset> T parent(Class<T> parentClass) {
+		if (this.parent == null) {
+			return null;
+		}
+		if (this.parent != null && parentClass.isAssignableFrom(this.parent.getClass())) {
+			return (T)this.parent;
+		}
+		return this.parent.parent(parentClass);
+	}
+
+	@Override
 	public String toString() {
 		return "<" + path + ">";
 	}
