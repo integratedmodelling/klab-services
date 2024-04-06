@@ -506,6 +506,11 @@ public abstract class AbstractUIController implements UIController {
         return null;
     }
 
+    @Override
+    public <P, T extends PanelController<P, ?>> T getPanelController(P payload, Class<T> panelControllerClass) {
+        return (T) panelControllers.get(payload);
+    }
+
     public <T extends View> void dispatchPendingTasks(AbstractUIViewController<T> viewController) {
 
         for (var reactorList : reactors.values()) {

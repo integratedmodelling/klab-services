@@ -141,4 +141,16 @@ public interface UIController extends UIReactor {
      * @param service
      */
     void setDefaultService(KlabService.ServiceCapabilities service);
+
+    /**
+     * If a panel of the requested class is handling the passed payload, return its controller.
+     *
+     * @param payload
+     * @param panelControllerClass
+     * @param <P>
+     * @param <T>
+     * @return the panel controller or null
+     */
+    public <P, T extends PanelController<P, ?>> T getPanelController(P payload,
+                                                                  Class<T> panelControllerClass);
 }

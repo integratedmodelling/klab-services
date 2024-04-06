@@ -57,7 +57,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     public void selectAsset(NavigableAsset asset) {
 
         if (asset instanceof NavigableDocument document) {
-            getController().openPanel(DocumentEditor.class, document);
+            openPanel(DocumentEditor.class, document);
             // TODO we may want to handle cursor position here on the return value
         } else if (asset instanceof NavigableWorldview worldview) {
             view().showResources(worldview);
@@ -70,18 +70,28 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     @Override
     public void focusAsset(NavigableAsset asset) {
+
         // any info panel should be updated
         view().showAssetInfo(asset);
-        if (asset instanceof NavigableKlabStatement navigableStatement) {
+        if (asset instanceof NavigableDocument document) {
+
+            var panel = getController().getPanelController(document, DocumentEditorController.class);
+            if (panel != null) {
+                panel.bringForward();
+            }
+
+        } else if (asset instanceof NavigableKlabStatement navigableStatement) {
             // TODO if editor is in view for the containing document, select the character position
             //  corresponding to its beginning line.
-//            var document = navigableStatement.parent(NavigableDocument.class);
-//            if (document != null ) {
-//                var panel = getController().getPanelController(document, DocumentEditorController.class);
-//                if (panel != null) {
-//                    // bring forward and highlight position
-//                }
-//            }
+
+            //            var document = navigableStatement.parent(NavigableDocument.class);
+            //            if (document != null ) {
+            //                var panel = getController().getPanelController(document,
+            //                DocumentEditorController.class);
+            //                if (panel != null) {
+            //                    // bring forward and highlight position
+            //                }
+            //            }
         }
     }
 
