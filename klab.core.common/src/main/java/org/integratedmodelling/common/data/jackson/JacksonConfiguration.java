@@ -3,6 +3,7 @@ package org.integratedmodelling.common.data.jackson;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -180,11 +182,23 @@ public class JacksonConfiguration {
         public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode node = p.getCodec().readTree(p);
             try {
-                return (T) deserialize(node, p, null);
+                return (T) deserialize(node, p, (Field)null);
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new KlabIOException(e);
             }
+        }
+
+        private Object deserialize(JsonNode node, JsonParser parser, Class<?> type) throws Exception {
+
+            if (node.isObject()) {
+                return deserializeObject(node, parser, Class.forName(node.has(CLASS_FIELD) ?
+                                                                     node.get(CLASS_FIELD).asText() :
+                                                                     LinkedHashMap.class.getName()));
+            } else if (node.isArray()) {
+                return deserializeArray(node, parser, null);
+            }
+            return parser.getCodec().treeToValue(node, type);
         }
 
         private Object deserialize(JsonNode node, JsonParser parser, Field field) throws Exception {
@@ -199,10 +213,22 @@ public class JacksonConfiguration {
             return parser.getCodec().treeToValue(node, Object.class);
         }
 
+        private Class<?> getGenericType(Field field, int n) {
+            Class<?> ret = Object.class;
+            if (field != null && field.getGenericType() instanceof ParameterizedType type) {
+                try {
+                    ret = Class.forName(type.getActualTypeArguments()[n].getTypeName());
+                } catch (ClassNotFoundException e) {
+                    // just return Object
+                }
+            }
+            return ret;
+        }
+
         private Object deserializeArray(JsonNode node, JsonParser parser, Field field) throws Exception {
             Collection<Object> ret = field == null ? new ArrayList<>() : newCollection(field.getType());
             for (var elementNode : node) {
-                ret.add(deserialize(elementNode, parser, null));
+                ret.add(deserialize(elementNode, parser, getGenericType(field, 0)));
             }
             return ret;
         }
@@ -222,7 +248,8 @@ public class JacksonConfiguration {
 
                 var declaredField = findField(cls, field);
                 if (declaredField == null && ret instanceof Map map) {
-                    map.put(field, deserialize(node.get(field), parser, null));
+                    // FIXME must pass the generic type for the field
+                    map.put(field, deserialize(node.get(field), parser, getGenericType(declaredField, 1)));
                 } else if (declaredField != null) {
                     declaredField.setAccessible(true);
                     declaredField.set(ret, checkField(declaredField.getType(), deserialize(node.get(field),
