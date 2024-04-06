@@ -4,4 +4,6 @@ import org.integratedmodelling.klab.api.view.PanelView;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 
 public interface DocumentEditor extends PanelView<NavigableDocument> {
+
+    void moveCaretTo(int position);
 }

@@ -108,7 +108,9 @@ public interface UIReactor {
          * Sent by a view that owns a document after each change in cursor position. No document in target as
          * the view must own one in order to send this.
          */
-        ChangeDocumentPosition(Integer.class),
+        ReportChangeOfPositionInDocument(Integer.class),
+
+        RequestChangeOfPositionInDocument(Integer.class),
 
         SelectDistribution(Distribution.class),
 

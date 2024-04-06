@@ -97,9 +97,11 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
      * The user has changed its current editing position within a document. The navigator should ensure that
      * the document is selected and adjust its UI to show the element under the caret.
      *
+     * FIXME change the Integer argument to int when the argument matcher becomes smarter.
+     *
      * @param document
      * @param position
      */
     @UIEventHandler(UIEvent.DocumentPositionChanged)
-    void handleDocumentPositionChange(NavigableDocument document, int position);
+    void handleDocumentPositionChange(NavigableDocument document, Integer position);
 }

@@ -1,8 +1,6 @@
 package org.integratedmodelling.klab.modeler.views.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIViewController;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -13,6 +11,7 @@ import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
 import org.integratedmodelling.klab.api.view.modeler.panels.controllers.DocumentEditorController;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
+import org.integratedmodelling.klab.modeler.model.NavigableKlabDocument;
 import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
 import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
 import org.integratedmodelling.klab.modeler.model.NavigableWorldview;
@@ -84,14 +83,15 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             // TODO if editor is in view for the containing document, select the character position
             //  corresponding to its beginning line.
 
-            //            var document = navigableStatement.parent(NavigableDocument.class);
-            //            if (document != null ) {
-            //                var panel = getController().getPanelController(document,
-            //                DocumentEditorController.class);
-            //                if (panel != null) {
-            //                    // bring forward and highlight position
-            //                }
-            //            }
+            var document = navigableStatement.parent(NavigableDocument.class);
+            if (document != null) {
+                var panel = getController().getPanelController(document,
+                        DocumentEditorController.class);
+                if (panel != null) {
+                    panel.bringForward();
+                    panel.moveCaretTo(navigableStatement.getOffsetInDocument());
+                }
+            }
         }
     }
 
@@ -101,8 +101,13 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     }
 
     @Override
-    public void handleDocumentPositionChange(NavigableDocument document, int position) {
-
+    public void handleDocumentPositionChange(NavigableDocument document, Integer position) {
+        if (document instanceof NavigableKlabDocument<?, ?> doc) {
+            var path = doc.getAssetsAt(position);
+            if (path != null && !path.isEmpty()) {
+                view().highlightAssetPath(path);
+            }
+        }
     }
 
     private void createNavigableAssets(ResourcesService service) {

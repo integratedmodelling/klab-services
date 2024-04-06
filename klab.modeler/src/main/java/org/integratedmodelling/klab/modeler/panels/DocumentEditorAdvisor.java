@@ -21,4 +21,9 @@ public class DocumentEditorAdvisor extends BasePanelAdvisor<NavigableDocument> i
     public boolean close() {
         return true;
     }
+
+    @Override
+    public void moveCaretTo(int position) {
+
+    }
 }

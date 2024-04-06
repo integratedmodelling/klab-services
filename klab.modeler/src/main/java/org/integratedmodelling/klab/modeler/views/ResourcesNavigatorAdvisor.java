@@ -31,4 +31,9 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
     public void showAssetInfo(NavigableAsset asset) {
 
     }
+
+    @Override
+    public void highlightAssetPath(List<NavigableAsset> path) {
+
+    }
 }

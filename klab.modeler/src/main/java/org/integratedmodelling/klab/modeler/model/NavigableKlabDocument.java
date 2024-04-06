@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>
@@ -108,9 +109,9 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         return delegate.getVersion();
     }
 
-    public List<NavigableKlabAsset<?>> getAssetsAt(int offset) {
+    public List<NavigableAsset> getAssetsAt(int offset) {
 
-        List<NavigableKlabAsset<?>> ret = new ArrayList<>();
+        List<NavigableAsset> ret = new ArrayList<>();
 
         if (offset == 0) {
             ret.add(this);

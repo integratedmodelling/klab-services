@@ -34,6 +34,11 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
     }
 
     @Override
+    public void moveCaretTo(int position) {
+        panel().moveCaretTo(position);
+    }
+
+    @Override
     public NavigableDocument submitOnSave() {
         return null;
     }

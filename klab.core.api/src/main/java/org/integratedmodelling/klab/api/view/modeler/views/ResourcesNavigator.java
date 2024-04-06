@@ -18,4 +18,6 @@ public interface ResourcesNavigator extends View {
     void workspaceModified(ResourceSet changes);
 
     void showAssetInfo(NavigableAsset asset);
+
+    void highlightAssetPath(List<NavigableAsset> path);
 }
