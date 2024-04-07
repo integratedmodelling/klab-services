@@ -6,4 +6,7 @@ package org.integratedmodelling.klab.api.view;
  * in its interface.
  */
 public interface UI {
+
+    void cleanWorkspace();
+
 }

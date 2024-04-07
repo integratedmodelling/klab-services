@@ -3,6 +3,10 @@ package org.integratedmodelling.klab.api.view;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
+
+import java.util.Collection;
 
 /**
  * The UI controller is a singleton that represents the engine when it's associated to a UI. It starts the
@@ -24,6 +28,14 @@ import org.integratedmodelling.klab.api.services.KlabService;
  * the target object(s) 1. implement the event reactors 2. call the action functions.
  */
 public interface UIController extends UIReactor {
+
+    /**
+     * The main controller <em>may</em> manage a main UI view object, which will be informed of
+     * high-level events and used for tasks like initializing or cleaning the workspace.
+     *
+     * @return the UI if one was installed. May be null.
+     */
+    UI getUI();
 
     /**
      * A controller runs under one user at a time. The authentication view may be used to authenticate new
@@ -118,11 +130,50 @@ public interface UIController extends UIReactor {
     <P, T extends PanelView<P>> T openPanel(Class<T> panelType, P payload);
 
     /**
+     * Retrieve all open panels whose controller is of the passed class.
+     *
+     * @param panelControllerClass panel controller class
+     * @return a collection of panel controllers, possibly empty.
+     * @param <T> the type of panel controller
+     */
+    <T extends PanelController<?,?>> Collection<T> getOpenPanels(Class<T> panelControllerClass);
+    /**
      * Unregister the passed reactor.
      *
      * @param reactor
      */
     void unregister(UIReactor reactor);
+
+    /**
+     * If the UI controller maintains workbench state, make the passed service the current one for future
+     * settings.
+     *
+     * @param requestingReactor
+     * @param service
+     */
+    void switchWorkbenchService(UIReactor requestingReactor,
+                                KlabService.ServiceCapabilities service);
+
+    /**
+     * If the UI contoller maintains workbench state, make the passed container (worldview or workspace) the
+     * one in sight and switch all views so that they reflect any previously shown state for it.
+     *
+     * @param requestingReactor
+     * @param container
+     */
+    void switchWorkbench(UIReactor requestingReactor, NavigableContainer container);
+
+    /**
+     * If the UI controller maintains workbench state, record show/hide of the passed document in the current
+     * service and workspace.
+     *
+     * @param requestingReactor
+     * @param document
+     * @param shown
+     */
+    void configureWorkbench(UIReactor requestingReactor, NavigableDocument document,
+                            boolean shown);
+
 
     /**
      * Called whenever something has changed that has the potential of changing the entire layout of the view.

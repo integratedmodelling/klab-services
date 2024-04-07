@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.modeler.views.controllers;
 
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIViewController;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -11,11 +13,13 @@ import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
 import org.integratedmodelling.klab.api.view.modeler.panels.controllers.DocumentEditorController;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
+import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
 import org.integratedmodelling.klab.modeler.model.NavigableKlabDocument;
 import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
 import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
 import org.integratedmodelling.klab.modeler.model.NavigableWorldview;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,12 +62,24 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
         if (asset instanceof NavigableDocument document) {
             openPanel(DocumentEditor.class, document);
             // TODO we may want to handle cursor position here on the return value
+            getController().configureWorkbench(this, document, true);
         } else if (asset instanceof NavigableWorldview worldview) {
+            getController().switchWorkbench(this, worldview);
             view().showResources(worldview);
         } else if (asset instanceof NavigableWorkspace workspace) {
+            getController().switchWorkbench(this,workspace);
             view().showResources(workspace);
-        } else {
-            // double click on statement, shouldn't do anything in the controller
+        } else if (asset instanceof NavigableKlabStatement navigableStatement) {
+            // double click on statement: if the containing document is not in view, show it; move to the statement
+            var document = asset.parent(NavigableDocument.class);
+            if (document != null) {
+                selectAsset(document);
+                var panel = getController().getPanelController(document,
+                        DocumentEditorController.class);
+                if (panel != null) {
+                    panel.moveCaretTo(navigableStatement.getOffsetInDocument());
+                }
+            }
         }
     }
 

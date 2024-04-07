@@ -17,13 +17,13 @@ import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIEventHandler;
 import org.integratedmodelling.klab.api.view.annotations.UIPanelController;
 import org.integratedmodelling.klab.api.view.annotations.UIViewController;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.springframework.core.annotation.AnnotationUtils;
 
-import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.List;
@@ -82,7 +82,6 @@ public abstract class AbstractUIController implements UIController {
                 callMessage(message.getFirst(), message.getSecond());
             }
         }
-
 
         public Object call(UIReactor sender, Object... payload) {
 
@@ -274,7 +273,6 @@ public abstract class AbstractUIController implements UIController {
             case ActorCommunication -> {
             }
         }
-
     }
 
     @Override
@@ -309,9 +307,13 @@ public abstract class AbstractUIController implements UIController {
 
     public void closePanel(PanelController<?, ?> reactor) {
         var payload = reactor.getPayload();
-        if (panelControllers.remove(payload) != null) {
-            for (var reactorList : reactors.values()) {
-                reactorList.removeIf(er -> er.reactor == reactor);
+        var controller = panelControllers.get(payload);
+        if (controller != null) {
+            if (controller.panel().close()) {
+                panelControllers.remove(payload);
+                for (var reactorList : reactors.values()) {
+                    reactorList.removeIf(er -> er.reactor == reactor);
+                }
             }
         }
     }
@@ -345,7 +347,6 @@ public abstract class AbstractUIController implements UIController {
 
             }
         }
-
     }
 
     @Override
@@ -489,6 +490,17 @@ public abstract class AbstractUIController implements UIController {
         return (T) ret;
     }
 
+    @Override
+    public <T extends PanelController<?, ?>> Collection<T> getOpenPanels(Class<T> panelControllerClass) {
+        List<T> ret = new ArrayList<>();
+        for (var pc : panelControllers.values()) {
+            if (panelControllerClass.isAssignableFrom(pc.getClass())) {
+                ret.add((T) pc);
+            }
+        }
+        return ret;
+    }
+
     /**
      * Convenience method used by inheritors
      *
@@ -507,7 +519,8 @@ public abstract class AbstractUIController implements UIController {
     }
 
     @Override
-    public <P, T extends PanelController<P, ?>> T getPanelController(P payload, Class<T> panelControllerClass) {
+    public <P, T extends PanelController<P, ?>> T getPanelController(P payload,
+                                                                     Class<T> panelControllerClass) {
         return (T) panelControllers.get(payload);
     }
 
@@ -520,6 +533,28 @@ public abstract class AbstractUIController implements UIController {
                 }
             }
         }
+    }
+
+    @Override
+    public void switchWorkbenchService(UIReactor requestingReactor,
+                                       KlabService.ServiceCapabilities service) {
+
+    }
+
+    @Override
+    public void switchWorkbench(UIReactor requestingReactor, NavigableContainer container) {
+
+    }
+
+    @Override
+    public void configureWorkbench(UIReactor requestingReactor, NavigableDocument document,
+                                   boolean shown) {
+
+    }
+
+    @Override
+    public UI getUI() {
+        return ui;
     }
 
     /**

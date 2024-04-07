@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.view;
 
-public interface View extends UI {
+public interface View {
 
     void show();
 

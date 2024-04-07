@@ -2,10 +2,9 @@ package org.integratedmodelling.common.view;
 
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.view.PanelView;
-import org.integratedmodelling.klab.api.view.UIController;
-import org.integratedmodelling.klab.api.view.View;
-import org.integratedmodelling.klab.api.view.ViewController;
+import org.integratedmodelling.klab.api.view.*;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
@@ -62,7 +61,7 @@ public abstract class AbstractUIViewController<T extends View> implements ViewCo
 
     @Override
     public <P, T1 extends PanelView<P>> T1 openPanel(Class<T1> panelType, P payload) {
-        var cls = (Class<? extends PanelView<P>>)getPanelViewClass(panelType);
+        var cls = (Class<? extends PanelView<P>>) getPanelViewClass(panelType);
         if (cls == null) {
             controller.engine().serviceScope().warn("cannot find panel class implementation for " + panelType.getCanonicalName() + ": ignoring panel open request");
         }

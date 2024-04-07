@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.configuration;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +12,9 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
  * of these will be stored in a map indexed by serviceId:workspaceId to remember
  * the workspace configuration.
  */
-public class WorkspaceConfiguration implements Serializable {
+public class WorkbenchConfiguration implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 3535564232433347626L;
 
 	public static class DocumentConfiguration {

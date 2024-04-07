@@ -1,7 +1,9 @@
 package org.integratedmodelling.klab.modeler;
 
 import org.integratedmodelling.common.services.client.engine.EngineClient;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -9,17 +11,17 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.api.view.UIController;
+import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiConsumer;
+import java.io.File;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
@@ -31,13 +33,17 @@ import java.util.function.BiConsumer;
  */
 public class ModelerImpl extends AbstractUIController implements Modeler, PropertyHolder {
 
-    EngineConfiguration workbench;
     private ContextScope currentContext;
     private SessionScope currentSession;
+    EngineConfiguration workbench;
+    File workbenchDefinition;
 
     public ModelerImpl() {
         super();
-        // TODO read the workbench config - NAH this probably pertains to the IDE
+        // read the workbench config
+        this.workbenchDefinition = Configuration.INSTANCE.getFileWithTemplate("modeler/workbench.yaml",
+                Utils.YAML.asString(new EngineConfiguration()));
+        this.workbench = Utils.YAML.load(workbenchDefinition, EngineConfiguration.class);
     }
 
     public ModelerImpl(UI ui) {
@@ -69,6 +75,28 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         panel classes
          */
         registerPanelControllerClass(DocumentEditorControllerImpl.class);
+    }
+
+    @Override
+    public void switchWorkbenchService(UIReactor requestingReactor, KlabService.ServiceCapabilities service) {
+        // TODO
+        super.switchWorkbenchService(requestingReactor, service);
+    }
+
+    @Override
+    public void switchWorkbench(UIReactor requestingReactor, NavigableContainer container) {
+        if (getUI() != null) {
+            // we assume that the workspace is mainly intended to show documents and focus on assets.
+            // Switching the focal container changes all that, so we first clean everything.
+            getUI().cleanWorkspace();
+        }
+        super.switchWorkbench(requestingReactor, container);
+    }
+
+    @Override
+    public void configureWorkbench(UIReactor requestingReactor, NavigableDocument document, boolean shown) {
+        // TODO
+        super.configureWorkbench(requestingReactor, document, shown);
     }
 
     @Override

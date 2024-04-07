@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.configuration;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,14 +8,16 @@ import java.util.Map;
  * Serializable engine configuration remembering the latest workspaces and
  * documents in focus.
  */
-public class EngineConfiguration {
+public class EngineConfiguration implements Serializable {
+
+
 
 	private String lastResourcesServiceSelected;
 	private String lastReasonerServiceSelected;
 	private String lastRuntimeServiceSelected;
 	private String lastResolverServiceSelected;
 	private Map<String, String> lastWorkspaceSelected = new HashMap<>();
-	private Map<String, WorkspaceConfiguration> workspaceConfigurations = new HashMap<>();
+	private Map<String, WorkbenchConfiguration> workspaceConfigurations = new HashMap<>();
 
 	public String getLastResourcesServiceSelected() {
 		return lastResourcesServiceSelected;
@@ -67,11 +70,11 @@ public class EngineConfiguration {
 	 * 
 	 * @return
 	 */
-	public Map<String, WorkspaceConfiguration> getWorkspaceConfigurations() {
+	public Map<String, WorkbenchConfiguration> getWorkspaceConfigurations() {
 		return workspaceConfigurations;
 	}
 
-	public void setWorkspaceConfigurations(Map<String, WorkspaceConfiguration> workspaceConfigurations) {
+	public void setWorkspaceConfigurations(Map<String, WorkbenchConfiguration> workspaceConfigurations) {
 		this.workspaceConfigurations = workspaceConfigurations;
 	}
 
