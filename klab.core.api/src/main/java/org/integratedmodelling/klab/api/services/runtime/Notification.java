@@ -69,6 +69,13 @@ public interface Notification {
     Mode getMode();
 
     /**
+     * Notifications build with Forward policy will be sent to paired scopes through websockets.
+     *
+     * @return
+     */
+    Message.ForwardingPolicy getForwardingPolicy();
+
+    /**
      * The document context or null.
      *
      * @return
@@ -93,6 +100,7 @@ public interface Notification {
         long timestamp = System.currentTimeMillis();
         Type type = Type.None;
         Mode mode = Mode.Normal;
+        Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
         if (objects != null) {
             for (Object o : objects) {
@@ -113,6 +121,8 @@ public interface Notification {
                     mode = mod;
                 } else if (o instanceof Type typ) {
                     type = typ;
+                } else if (o instanceof Message.ForwardingPolicy fwp) {
+                    forwardingPolicy = fwp;
                 }
             }
         }
@@ -122,6 +132,7 @@ public interface Notification {
         ret.setTimestamp(timestamp);
         ret.setMode(mode);
         ret.setType(type);
+        ret.setForwardingPolicy(forwardingPolicy);
 
         return ret;
     }

@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -82,6 +83,10 @@ public class WorkspaceManager {
      */
     private int DEFAULT_GIT_SYNC_INTERVAL_MINUTES = 15;
 
+    // project locks are mappings usertoken->projectName and enable remote updating of projects for one
+    // user at
+    // a time, while inhibiting file change logging in project storage
+    private Map<String, String> projectLocks = Collections.synchronizedMap(new HashMap<>());
     private AtomicBoolean loading = new AtomicBoolean(false);
     private List<Pair<ProjectStorage, Project>> _projectLoadOrder;
     private List<KimOntology> _ontologyOrder;
@@ -177,6 +182,47 @@ public class WorkspaceManager {
 
     public Collection<String> getBehaviorUrns() {
         return _behaviorMap == null ? Collections.emptySet() : _behaviorMap.keySet();
+    }
+
+    public URL lockProject(String urn, String token, boolean isLocal) {
+
+        var descriptor = projectDescriptors.get(urn);
+        if (descriptor == null || !(descriptor.storage instanceof FileProjectStorage)) {
+            return null;
+        }
+
+        // check and record lock
+        if (projectLocks.containsKey(urn) && !projectLocks.get(urn).equals(token)) {
+            scope.info("Lock attempt failed: project " + urn + " is already locked");
+            return null;
+        }
+
+        projectLocks.put(urn, token);
+        ((FileProjectStorage) descriptor.storage).lock(true);
+        scope.info("Project " + urn + " is locked");
+
+        if (isLocal) {
+            return ((FileProjectStorage) descriptor.storage).getUrl();
+        } else {
+            // TODO prepare a zip file and make it available through download area, return public URL
+        }
+
+        return null;
+    }
+
+    public boolean unlockProject(String urn, String token) {
+        if (projectLocks.containsKey(urn)) {
+
+            if (projectLocks.get(urn).equals(token)) {
+                var descriptor = projectDescriptors.get(urn);
+                ((FileProjectStorage) descriptor.storage).lock(false);
+                projectLocks.remove(urn);
+                scope.info("Project " + urn + " unlocked");
+
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -822,11 +868,20 @@ public class WorkspaceManager {
         return ret;
     }
 
-    private void handleFileChange(String project, ProjectStorage.ResourceType type, CRUDOperation change,
-                                  URL url) {
+    /**
+     * Either called automatically by the file watcher in {@link FileProjectStorage} or explicitly invoked in
+     * synchronous CRUD operations on projects when the project is locked by the requesting user.
+     *
+     * @param project
+     * @param type
+     * @param change
+     * @param url
+     */
+    public List<ResourceSet> handleFileChange(String project, ProjectStorage.ResourceType type,
+                                              CRUDOperation change, URL url) {
 
         if (loading.get()) {
-            return;
+            return Collections.emptyList();
         }
 
         /*
@@ -866,7 +921,7 @@ public class WorkspaceManager {
 
                 if (oldAsset == null) {
                     scope.error("Internal: cannot update a non-existing document: " + url);
-                    return;
+                    return Collections.emptyList();
                 }
 
                 /*
@@ -1013,8 +1068,7 @@ public class WorkspaceManager {
                         case KimOntology ontology -> {
                             if (_worldviewOntologies.stream().anyMatch(o -> newAsset.getUrn().equals(o.getUrn()))) {
                                 _worldviewOntologies =
-                                        _worldviewOntologies.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
-                                                                               ontology : o).collect(toList());
+                                        _worldviewOntologies.stream().map(o -> o.getUrn().equals(document.getUrn()) ? ontology : o).collect(toList());
                                 _worldview.setOntologies(_worldviewOntologies);
                             }
                             _ontologyOrder =
@@ -1025,8 +1079,8 @@ public class WorkspaceManager {
                         }
                         case KimNamespace namespace -> {
                             _namespaceOrder =
-                                    _namespaceOrder.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
-                                                                      namespace : o).collect(toList());
+                                    _namespaceOrder.stream().map(o -> o.getUrn().equals(document.getUrn())
+                                                                      ? namespace : o).collect(toList());
                             _namespaceMap.put(namespace.getUrn(), namespace);
                         }
                         case KActorsBehavior behavior -> {
@@ -1037,9 +1091,7 @@ public class WorkspaceManager {
                         }
                         case KimObservationStrategyDocument strategies -> {
                             _observationStrategyDocuments =
-                                    _observationStrategyDocuments.stream().map(o -> o.getUrn().equals(document.getUrn()) ?
-                                                                                    strategies :
-                                                                                    o).collect(toList());
+                                    _observationStrategyDocuments.stream().map(o -> o.getUrn().equals(document.getUrn()) ? strategies : o).collect(toList());
                             _observationStrategyDocumentMap.put(strategies.getUrn(), strategies);
                             _worldview.setObservationStrategies(_observationStrategyDocuments);
                         }
@@ -1077,7 +1129,11 @@ public class WorkspaceManager {
                         Message.MessageType.WorkspaceChanged, resourceSet);
             }
 
+            return new ArrayList<>(result.values());
+
         }
+
+        return Collections.emptyList();
     }
 
     /**
@@ -1099,8 +1155,8 @@ public class WorkspaceManager {
 
         ResourceSet ret = null;
 
-        boolean isWorldview = type == ProjectStorage.ResourceType.ONTOLOGY &&
-                _worldviewOntologies.stream().anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
+        boolean isWorldview =
+                type == ProjectStorage.ResourceType.ONTOLOGY && _worldviewOntologies.stream().anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
 
         if (isWorldview) {
             ret = new ResourceSet();
@@ -1195,15 +1251,13 @@ public class WorkspaceManager {
 
         CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<>(dependencyGraph);
         if (cycleDetector.detectCycles()) {
-            scope.error("Circular dependencies in workspace: cannot continue. Cyclic dependencies affect " + cycleDetector.findCycles(),
-                    Klab.ErrorCode.CIRCULAR_REFERENCES, errorContext);
+            scope.error("Circular dependencies in workspace: cannot continue. Cyclic dependencies affect " + cycleDetector.findCycles(), Klab.ErrorCode.CIRCULAR_REFERENCES, errorContext);
             return;
         }
 
         // finish building the ontologies in the given order using a new language validator
         documents.clear();
-        TopologicalOrderIterator<String, DefaultEdge> sort =
-                new TopologicalOrderIterator<>(dependencyGraph);
+        TopologicalOrderIterator<String, DefaultEdge> sort = new TopologicalOrderIterator<>(dependencyGraph);
         while (sort.hasNext()) {
             documents.add(documentMap.get(sort.next()));
         }
@@ -1444,9 +1498,7 @@ public class WorkspaceManager {
                         this._projectLoadOrder.add(Pair.of(pd.storage, null));
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.MISMATCHED_VERSION, "Project "
-                                + proj.getFirst() + "@" + proj.getSecond() + " is required" + " by other " +
-                                "projects in workspace but incompatible version " + pd.manifest.getVersion() +
-                                " is available in local workspace");
+                                + proj.getFirst() + "@" + proj.getSecond() + " is required" + " by other " + "projects in workspace but incompatible version " + pd.manifest.getVersion() + " is available in local workspace");
                         unresolvedProjects.add(proj);
                     }
                 } else {
@@ -1472,8 +1524,7 @@ public class WorkspaceManager {
                     } else {
                         scope.error(Klab.ErrorContext.PROJECT, Klab.ErrorCode.UNRESOLVED_REFERENCE,
                                 "Project " + proj.getFirst() + "@" + proj.getSecond() + " is required" + " "
-                                        + "by other projects in workspace but cannot be resolved from the " +
-                                        "network");
+                                        + "by other projects in workspace but cannot be resolved from the " + "network");
                         unresolvedProjects.add(proj);
                     }
                 }
@@ -1648,8 +1699,8 @@ public class WorkspaceManager {
             for (var ontology : _worldview.getOntologies()) {
                 if (Utils.Notifications.hasErrors(ontology.getNotifications())) {
                     _worldview.setEmpty(true);
-                    scope.error("Namespace " + ontology.getUrn() + " has fatal errors: worldview " +
-                            "is inconsistent");
+                    scope.error("Namespace " + ontology.getUrn() + " has fatal errors: worldview " + "is " +
+                            "inconsistent");
                 }
             }
 
@@ -1674,7 +1725,13 @@ public class WorkspaceManager {
     }
 
 
-    public void updateOntology(String projectName, String ontologyContent) {
+    public List<ResourceSet> updateOntology(String projectName, String ontologyContent,
+                                            String lockingAuthorization) {
+
+        if (lockingAuthorization == null || !lockingAuthorization.equals(projectLocks.get(projectName))) {
+            throw new KlabAuthorizationException("cannot update project " + projectName + " without " +
+                    "locking" + " it first");
+        }
 
         var pd = projectDescriptors.get(projectName);
         if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
@@ -1688,12 +1745,20 @@ public class WorkspaceManager {
         var parsed = ontologyParser.parse(new StringReader(ontologyContent), notifications);
 
         // do the update in the stored project and screw it
-        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.ONTOLOGY,
+        var url = ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.ONTOLOGY,
                 parsed.getNamespace().getName(), ontologyContent);
+
+        return handleFileChange(projectName, ProjectStorage.ResourceType.ONTOLOGY, CRUDOperation.UPDATE, url);
 
     }
 
-    public void updateObservationStrategies(String projectName, String ontologyContent) {
+    public List<ResourceSet> updateObservationStrategies(String projectName, String ontologyContent,
+                                                         String lockingAuthorization) {
+
+        if (lockingAuthorization == null || !lockingAuthorization.equals(projectLocks.get(projectName))) {
+            throw new KlabAuthorizationException("cannot update project " + projectName + " without " +
+                    "locking" + " it first");
+        }
 
         var pd = projectDescriptors.get(projectName);
         if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
@@ -1708,12 +1773,19 @@ public class WorkspaceManager {
         var parsed = strategyParser.parse(new StringReader(ontologyContent), notifications);
 
         // do the update in the stored project and screw it
-        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.STRATEGY,
+        var url = ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.STRATEGY,
                 parsed.getPreamble().getName(), ontologyContent);
 
+        return handleFileChange(projectName, ProjectStorage.ResourceType.STRATEGY, CRUDOperation.UPDATE, url);
     }
 
-    public void updateNamespace(String projectName, String ontologyContent) {
+    public List<ResourceSet> updateNamespace(String projectName, String ontologyContent,
+                                             String lockingAuthorization) {
+
+        if (lockingAuthorization == null || !lockingAuthorization.equals(projectLocks.get(projectName))) {
+            throw new KlabAuthorizationException("cannot update project " + projectName + " without " +
+                    "locking" + " it first");
+        }
 
         var pd = projectDescriptors.get(projectName);
         if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
@@ -1727,12 +1799,21 @@ public class WorkspaceManager {
         var parsed = namespaceParser.parse(new StringReader(ontologyContent), notifications);
 
         // do the update in the stored project and screw it
-        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.MODEL_NAMESPACE,
+        var url = ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.MODEL_NAMESPACE,
                 parsed.getNamespace().getName(), ontologyContent);
+
+        return handleFileChange(projectName, ProjectStorage.ResourceType.MODEL_NAMESPACE,
+                CRUDOperation.UPDATE, url);
 
     }
 
-    public void updateBehavior(String projectName, String ontologyContent) {
+    public List<ResourceSet> updateBehavior(String projectName, String ontologyContent,
+                                            String lockingAuthorization) {
+
+        if (lockingAuthorization == null || !lockingAuthorization.equals(projectLocks.get(projectName))) {
+            throw new KlabAuthorizationException("cannot update project " + projectName + " without " +
+                    "locking" + " it first");
+        }
 
         var pd = projectDescriptors.get(projectName);
         if (pd == null || !(pd.storage instanceof FileProjectStorage)) {
@@ -1743,11 +1824,13 @@ public class WorkspaceManager {
         file storage: modify as specified
          */
         List<Notification> notifications = new ArrayList<>();
-        //        var parsed = behaviorParser.parse(new StringReader(ontologyContent), notifications);
+        // var parsed =  behaviorParser.parse(new StringReader(ontologyContent), notifications);
         //
         //        // do the update in the stored project and screw it
-        //        ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.BEHAVIOR,
-        //                parsed.getNamespace().getName(), ontologyContent);
+        var url = ((FileProjectStorage) pd.storage).update(ProjectStorage.ResourceType.BEHAVIOR, null
+                /*parsed.getNamespace().getName()*/, ontologyContent);
+
+        return handleFileChange(projectName, ProjectStorage.ResourceType.STRATEGY, CRUDOperation.UPDATE, url);
 
     }
 

@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.modeler.views.controllers;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -14,10 +15,7 @@ import org.integratedmodelling.klab.api.view.modeler.panels.controllers.Document
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
-import org.integratedmodelling.klab.modeler.model.NavigableKlabDocument;
-import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
-import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
-import org.integratedmodelling.klab.modeler.model.NavigableWorldview;
+import org.integratedmodelling.klab.modeler.model.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -28,6 +26,8 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     Map<String, NavigableContainer> assetMap = new LinkedHashMap<>();
     ResourcesService currentService;
+    NavigableWorkspace currentWorkspace; // we keep it so we can unlock it when switching to another or
+    // exiting
 
     public ResourcesNavigatorControllerImpl(UIController controller) {
         super(controller);
@@ -35,6 +35,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     @Override
     public void serviceSelected(ResourcesService.Capabilities capabilities) {
+        releaseLocks();
         var service = service(capabilities, ResourcesService.class);
         if (service == null) {
             view().disable();
@@ -67,10 +68,12 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             getController().switchWorkbench(this, worldview);
             view().showResources(worldview);
         } else if (asset instanceof NavigableWorkspace workspace) {
-            getController().switchWorkbench(this,workspace);
+            negotiateLocking(workspace);
+            getController().switchWorkbench(this, workspace);
             view().showResources(workspace);
         } else if (asset instanceof NavigableKlabStatement navigableStatement) {
-            // double click on statement: if the containing document is not in view, show it; move to the statement
+            // double click on statement: if the containing document is not in view, show it; move to the
+            // statement
             var document = asset.parent(NavigableDocument.class);
             if (document != null) {
                 selectAsset(document);
@@ -78,6 +81,52 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                         DocumentEditorController.class);
                 if (panel != null) {
                     panel.moveCaretTo(navigableStatement.getOffsetInDocument());
+                }
+            }
+        }
+    }
+
+    private void negotiateLocking(NavigableWorkspace workspace) {
+        releaseLocks();
+        var service = getController().engine().serviceScope().getService(ResourcesService.class);
+        var anythingLocked = false;
+        if (service instanceof ResourcesService.Admin admin) {
+            for (var asset : workspace.children()) {
+                if (asset instanceof NavigableProject project && !project.isLocked()) {
+                    // attempt locking
+                    var url = admin.lockProject(project.getUrn(),
+                            getController().engine().serviceScope().getIdentity().getId());
+                    if (url != null) {
+                        if (url.getProtocol().equals("file")) {
+                            var file = new File(url.getFile());
+                            if (file.isDirectory()) {
+                                project.setLocked(true);
+                                project.setRootDirectory(file);
+                                anythingLocked = true;
+                            }
+                        } else {
+                            // TODO download contents from zip
+                            throw new KlabUnimplementedException("locked project synchronization from " +
+                                    "services");
+                        }
+                    }
+                }
+            }
+        }
+        if (anythingLocked) {
+            currentWorkspace = workspace;
+        }
+    }
+
+    private void releaseLocks() {
+        if (currentWorkspace != null) {
+            var service = getController().engine().serviceScope().getService(ResourcesService.class);
+            if (service instanceof ResourcesService.Admin admin) {
+                for (var asset : currentWorkspace.children()) {
+                    if (asset instanceof NavigableProject project && project.isLocked()) {
+                        admin.unlockProject(project.getUrn(),
+                                getController().engine().serviceScope().getIdentity().getId());
+                    }
                 }
             }
         }

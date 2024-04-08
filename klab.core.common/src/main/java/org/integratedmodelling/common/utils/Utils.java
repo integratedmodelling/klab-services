@@ -100,6 +100,50 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return null;
             }
 
+            public <T> List<T>  postCollection(String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+
+                var options = new Options();
+                var params = makeKeyMap(options, parameters);
+                var apiCall = substituteTemplateParameters(apiRequest, params);
+
+                try {
+                    var payloadText = payload instanceof String
+                                      ? (String) payload :
+                                      Json.asString(payload);
+                    var requestBuilder =
+                            HttpRequest.newBuilder()
+                                       .version(HttpClient.Version.HTTP_1_1)
+                                       .timeout(Duration.ofSeconds(10))
+                                       .uri(URI.create(uri + apiCall + encodeParameters(params)))
+                                       .header(HttpHeaders.CONTENT_TYPE, payload instanceof String ?
+                                                                         MediaType.PLAIN_TEXT_UTF_8.toString() : MediaType.JSON_UTF_8.toString())
+                                       .header(HttpHeaders.ACCEPT, getAcceptedMediaType(resultClass));
+
+                    if (authorization != null) {
+                        requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    var request =
+                            requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payloadText)).build();
+
+                    var response =
+                            client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                    if (response.statusCode() == 200) {
+                        return parseResponseList(response.body(), resultClass);
+                    }
+
+                } catch (Throwable e) {
+                    if (scope != null) {
+                        scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
+                    } else {
+                        //                        e.printStackTrace();
+                    }
+                }
+
+                return java.util.Collections.emptyList();
+            }
+
 
             private String getAcceptedMediaType(Class<?> resultClass) {
                 if (String.class == resultClass) {

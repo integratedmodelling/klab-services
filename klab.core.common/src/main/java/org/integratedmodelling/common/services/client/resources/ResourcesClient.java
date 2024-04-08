@@ -228,7 +228,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         request.setWorkspaceName(workspaceName);
         request.setProjectUrl(projectUrl);
         request.setOverwrite(overwriteIfExisting);
-        var result = client.post(ServicesAPI.RESOURCES.IMPORT_PROJECT, request, ResourceSet.class);
+        var result = client.post(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT, request, ResourceSet.class);
         // TODO log, events in scope
         return !result.isEmpty();
     }
@@ -239,43 +239,57 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata) {
+    public Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
+                                 String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public KimNamespace createNamespace(String projectName, String namespaceContent) {
+    public ResourceSet createNamespace(String projectName, String namespaceContent,
+                                       String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public void updateNamespace(String projectName, String namespaceContent) {
-
+    public List<ResourceSet> updateNamespace(String projectName, String namespaceContent,
+                                             String lockingAuthorization) {
+        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_NAMESPACE, namespaceContent,
+                ResourceSet.class, "projectName", projectName);
     }
 
     @Override
-    public KActorsBehavior createBehavior(String projectName, String behaviorContent) {
+    public ResourceSet createBehavior(String projectName, String behaviorContent,
+                                      String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public void updateBehavior(String projectName, String behaviorContent) {
-
+    public List<ResourceSet> updateBehavior(String projectName, String behaviorContent,
+                                            String lockingAuthorization) {
+        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_BEHAVIOR, behaviorContent,
+                ResourceSet.class, "projectName", projectName);
     }
 
     @Override
-    public KimOntology createOntology(String projectName, String ontologyContent) {
+    public ResourceSet createOntology(String projectName, String ontologyContent,
+                                      String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public void updateOntology(String projectName, String ontologyContent) {
-
+    public List<ResourceSet> updateOntology(String projectName, String ontologyContent,
+                                            String lockingAuthorization) {
+        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_ONTOLOGY, ontologyContent,
+                ResourceSet.class, "projectName", projectName);
     }
 
     @Override
-    public void updateObservationStrategies(String projectName, String observationStrategiesContent) {
-
+    public List<ResourceSet> updateObservationStrategies(String projectName,
+                                                         String observationStrategiesContent,
+                                                         String lockingAuthorization) {
+        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_STRATEGIES,
+                observationStrategiesContent,
+                ResourceSet.class, "projectName", projectName);
     }
 
     @Override
@@ -289,12 +303,12 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public String createResource(Resource resource) {
+    public ResourceSet createResource(Resource resource) {
         return null;
     }
 
     @Override
-    public String createResource(File resourcePath) {
+    public ResourceSet createResource(File resourcePath) {
         return null;
     }
 
@@ -332,6 +346,16 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     @Override
     public Collection<String> listResourceUrns() {
         return null;
+    }
+
+    @Override
+    public URL lockProject(String urn, String token) {
+        return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, URL.class, "urn", urn);
+    }
+
+    @Override
+    public boolean unlockProject(String urn, String token) {
+        return client.get(ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT, Boolean.class, "urn", urn);
     }
 
 }

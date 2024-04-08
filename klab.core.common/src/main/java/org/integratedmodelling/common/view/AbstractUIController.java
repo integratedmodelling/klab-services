@@ -566,4 +566,16 @@ public abstract class AbstractUIController implements UIController {
     public void storeView(Object... changedElements) {
         scope().debug("Storing view");
     }
+
+    @Override
+    public void shutdown() {
+        for (var view : views.values()) {
+            if (view instanceof UIReactor reactor) {
+                reactor.shutdown();
+            }
+        }
+        for (var panel : getOpenPanels(PanelController.class)) {
+            panel.shutdown();
+        }
+    }
 }

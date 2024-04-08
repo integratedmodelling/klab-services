@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
 import java.security.Principal;
 import java.util.Map;
 
@@ -39,6 +40,11 @@ public class KlabScopeController {
     @Autowired
     private SimpMessagingTemplate webSocket;
 
+    @PostConstruct
+    void configureService() {
+        service.setMessagingTemplate(webSocket);
+    }
+
     @MessageMapping(ServicesAPI.MESSAGE)
     //    @SendTo("/klab")
     public void handleMessage(Map<?, ?> payload) {
@@ -52,6 +58,10 @@ public class KlabScopeController {
         //  the template except when handshaking
         System.out.println("MESSAGE " + message);
 
+    }
+
+    public void send(Message message) {
+        webSocket.convertAndSend(message);
     }
 
     /**

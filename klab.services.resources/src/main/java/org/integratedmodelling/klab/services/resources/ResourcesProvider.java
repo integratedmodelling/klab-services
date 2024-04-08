@@ -63,9 +63,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Service
 public class ResourcesProvider extends BaseService implements ResourcesService, ResourcesService.Admin {
 
-    private static final long serialVersionUID = 6589150530995037678L;
-
-    private static boolean languagesInitialized;
 
     private String hardwareSignature = Utils.Names.getHardwareId();
 
@@ -294,42 +291,52 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public Project updateProject(String projectName, Manifest manifest, Metadata metadata) {
+    public Project updateProject(String projectName, Manifest manifest, Metadata metadata,
+                                 String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public KimNamespace createNamespace(String projectName, String namespaceContent) {
+    public ResourceSet createNamespace(String projectName, String namespaceContent,
+                                       String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public void updateNamespace(String projectName, String namespaceContent) {
-
-    }
-
-    @Override
-    public KActorsBehavior createBehavior(String projectName, String behaviorContent) {
+    public List<ResourceSet> updateNamespace(String projectName, String namespaceContent,
+                                             String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public void updateBehavior(String projectName, String behaviorContent) {
-    }
-
-    @Override
-    public KimOntology createOntology(String projectName, String ontologyContent) {
+    public ResourceSet createBehavior(String projectName, String behaviorContent,
+                                      String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public void updateOntology(String projectName, String ontologyContent) {
-        this.workspaceManager.updateOntology(projectName, ontologyContent);
+    public List<ResourceSet> updateBehavior(String projectName, String behaviorContent,
+                                            String lockingAuthorization) {
+        return null;
     }
 
     @Override
-    public void updateObservationStrategies(String projectName, String ontologyContent) {
-        this.workspaceManager.updateObservationStrategies(projectName, ontologyContent);
+    public ResourceSet createOntology(String projectName, String ontologyContent,
+                                      String lockingAuthorization) {
+        return null;
+    }
+
+    @Override
+    public List<ResourceSet> updateOntology(String projectName, String ontologyContent,
+                                            String lockingAuthorization) {
+        return this.workspaceManager.updateOntology(projectName, ontologyContent, lockingAuthorization);
+    }
+
+    @Override
+    public List<ResourceSet> updateObservationStrategies(String projectName, String ontologyContent,
+                                                         String lockingAuthorization) {
+        return this.workspaceManager.updateObservationStrategies(projectName, ontologyContent,
+                lockingAuthorization);
     }
 
     @Override
@@ -599,13 +606,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public String createResource(Resource resource) {
+    public ResourceSet createResource(Resource resource) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String createResource(File resourcePath) {
+    public ResourceSet createResource(File resourcePath) {
         // TODO Auto-generated method stub
         // Concept
         return null;
@@ -794,6 +801,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public Collection<String> listResourceUrns() {
         return localResources;
+    }
+
+    @Override
+    public URL lockProject(String urn, String token) {
+        return workspaceManager.lockProject(urn, token, token != null && token.equals(getServiceSecret()));
+    }
+
+    @Override
+    public boolean unlockProject(String urn, String token) {
+        return workspaceManager.unlockProject(urn, token);
     }
 
     @Override

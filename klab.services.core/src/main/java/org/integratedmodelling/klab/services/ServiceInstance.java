@@ -162,7 +162,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
         this.identity = authenticateService();
 
-        return new AbstractServiceDelegatingScope(new ChannelImpl(identity.getFirst())) {
+        return new AbstractServiceDelegatingScope(new ServiceChannelImpl(identity.getFirst())) {
             @Override
             public UserScope createUser(String username, String password) {
                 return createUserScope(username, password);

@@ -108,8 +108,16 @@ public abstract class ServiceClient implements KlabService {
          */
         if (!(identity instanceof UserIdentity user && user.isAnonymous())) {
             token = identity.getId();
-            if (token != null) {
+            if (token != null && !token.isEmpty()) {
                 authenticated.set(true);
+            }
+        }
+
+        if (token == null || token.isEmpty()) {
+            // even anonymous users can use local services
+            var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
+            if (secret != null) {
+                token = secret;
             }
         }
 
@@ -249,7 +257,7 @@ public abstract class ServiceClient implements KlabService {
                 };
 
         if (this.scopeListeners != null) {
-            for (var listener: scopeListeners) {
+            for (var listener : scopeListeners) {
                 this.scope.addListener(listener);
             }
         }
@@ -284,8 +292,9 @@ public abstract class ServiceClient implements KlabService {
                     scope.send(Message.MessageClass.ServiceLifecycle,
                             (connected.get() ? Message.MessageType.ServiceAvailable :
                              Message.MessageType.ServiceUnavailable), capabilities);
-                    if (local && connected.get()) {
-                        // establish whatever scope "entanglement" is allowed by the service
+                    if (Configuration.INSTANCE.pairServiceScopes() && local && connected.get()) {
+                        // establish whatever scope "entanglement" is allowed by the service. For now
+                        // disable, we try to do everything through REST and see if it's practical.
                         scope.connect(this);
                     }
                 }

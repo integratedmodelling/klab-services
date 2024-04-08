@@ -17,13 +17,6 @@ public interface PanelController<T, V extends PanelView<T>> extends UIReactor {
     void load(T payload);
 
     /**
-     * Submit the object after successful editing/saving. Not called if the panel is canceled.
-     *
-     * @return
-     */
-    T submitOnSave();
-
-    /**
      * Close the panel, which removes if from any catalogue. The UIController will remove the controller from
      * the reactors so that it gets garbage collected. The view initiates the closing action by calling this
      * method on the controller and should handle any dirty state appropriately before doing so.

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,9 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project, NavigableContainer {
+
+	private boolean locked;
+	private File rootDirectory;
 
 	public NavigableProject(Project asset, NavigableKlabAsset<?> parent/*, IProject resource*/) {
 		super(asset, parent);
@@ -101,5 +105,27 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 		}
 		return null;
 	}
+
+    public boolean isLocked() {
+		return this.locked;
+    }
+
+	public void setLocked(boolean locked) {
+		this.locked = locked;
+	}
+
+	/**
+	 * Local filesystem directory. Only available if project is locked, either by interacting with the
+	 * very files in the filesystem or through a mirror copy from the service.
+	 * @return
+	 */
+	public File getRootDirectory() {
+		return rootDirectory;
+	}
+
+	public void setRootDirectory(File rootDirectory) {
+		this.rootDirectory = rootDirectory;
+	}
+
 
 }

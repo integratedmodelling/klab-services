@@ -11,8 +11,10 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.resources.server.ResourcesServer;
@@ -22,8 +24,10 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @Secured(Role.ADMINISTRATOR)
@@ -35,7 +39,7 @@ public class ResourceAdminController {
     @Autowired
     private ServiceAuthorizationManager authenticationManager;
 
-    @PostMapping(ServicesAPI.RESOURCES.IMPORT_PROJECT)
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT)
     public ResourceSet importProject(@RequestBody ProjectRequest request, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             if (admin.importProject(request.getWorkspaceName(), request.getProjectUrl(),
@@ -47,69 +51,85 @@ public class ResourceAdminController {
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.CREATE_PROJECT)
-    public Project createProject(@RequestParam("workspaceName") String workspaceName, @RequestParam("projectName") String projectName) {
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT)
+    public Project createProject(@RequestParam("workspaceName") String workspaceName, @RequestParam(
+            "projectName") String projectName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createProject(workspaceName, projectName);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.UPDATE_PROJECT)
-    public Project updateProject(@RequestParam("projectName") String projectName, @RequestBody Project.Manifest manifest,
-                                 @RequestBody Metadata metadata) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.updateProject(projectName, manifest, metadata);
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_PROJECT)
+    public Project updateProject(@RequestParam("projectName") String projectName,
+                                 @RequestBody Project.Manifest manifest,
+                                 @RequestBody Metadata metadata, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.updateProject(projectName, manifest, metadata, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.CREATE_NAMESPACE)
-    public KimNamespace createNamespace(@RequestParam("projectName") String projectName,
-                                        @RequestBody String namespaceContent) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.createNamespace(projectName, namespaceContent);
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_NAMESPACE)
+    public ResourceSet createNamespace(@RequestParam("projectName") String projectName,
+                                       @RequestBody String namespaceContent, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.createNamespace(projectName, namespaceContent, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.UPDATE_NAMESPACE)
-    public void updateNamespace(@RequestParam("projectName") String projectName, @RequestBody String namespaceContent) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            admin.updateNamespace(projectName, namespaceContent);
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_NAMESPACE)
+    public List<ResourceSet> updateNamespace(@RequestParam("projectName") String projectName,
+                                             @RequestBody String namespaceContent, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.updateNamespace(projectName, namespaceContent, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.CREATE_BEHAVIOR)
-    public KActorsBehavior createBehavior(@RequestParam("projectName") String projectName,
-                                          @RequestBody String behaviorContent) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.createBehavior(projectName, behaviorContent);
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_BEHAVIOR)
+    public ResourceSet createBehavior(@RequestParam("projectName") String projectName,
+                                      @RequestBody String behaviorContent, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.createBehavior(projectName, behaviorContent, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.UPDATE_BEHAVIOR)
-    public void updateBehavior(@RequestParam("projectName") String projectName, @RequestBody String behaviorContent) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            admin.updateBehavior(projectName, behaviorContent);
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_BEHAVIOR)
+    public List<ResourceSet> updateBehavior(@RequestParam("projectName") String projectName,
+                                            @RequestBody String behaviorContent, Principal principal) {
+        // TODO check if user has locked the project
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.updateBehavior(projectName, behaviorContent, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.CREATE_ONTOLOGY)
-    public KimOntology createOntology(@RequestParam("projectName") String projectName, @RequestBody String ontologyContent) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.createOntology(projectName, ontologyContent);
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_ONTOLOGY)
+    public ResourceSet createOntology(@RequestParam("projectName") String projectName,
+                                      @RequestBody String ontologyContent, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.createOntology(projectName, ontologyContent, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.UPDATE_ONTOLOGY)
-    public void updateOntology(@RequestParam("projectName") String projectName, @RequestBody String ontologyContent) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            admin.updateOntology(projectName, ontologyContent);
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_ONTOLOGY)
+    public List<ResourceSet> updateOntology(@RequestParam("projectName") String projectName,
+                                            @RequestBody String ontologyContent, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.updateOntology(projectName, ontologyContent, auth.getToken());
+        }
+        throw new KlabInternalErrorException("Resources service is incapable of admin operation");
+    }
+
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_STRATEGIES)
+    public List<ResourceSet> updateStrategies(@RequestParam("projectName") String projectName,
+                                              @RequestBody String strategiesContent, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.updateObservationStrategies(projectName, strategiesContent, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -132,24 +152,26 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.CREATE_RESOURCE)
-    public String createResource(@RequestBody Resource resource) {
+    public @ResponseBody ResourceSet createResource(@RequestBody Resource resource) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.createResource(resource);
-
+            var urn = admin.createResource(resource);
+            return null; // TODO create ResourceSet
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.CREATE_RESOURCE_FROM_PATH)
-    public String createResourceFromPath(@RequestBody File resourcePath) {
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_RESOURCE_FROM_PATH)
+    public @ResponseBody ResourceSet createResourceFromPath(@RequestBody File resourcePath) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.createResource(resourcePath);
+            var urn = admin.createResource(resourcePath);
+            return null; // TODO create ResourceSet
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.CREATE_RESOURCE_FOR_PROJECT)
-    public Resource createResourceForProject(@RequestParam("projectName") String projectName, @RequestParam("urnId") String urnId,
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_RESOURCE_FOR_PROJECT)
+    public Resource createResourceForProject(@RequestParam("projectName") String projectName,
+                                             @RequestParam("urnId") String urnId,
                                              @RequestParam("adapter") String adapter,
                                              @RequestBody Parameters<String> resourceData) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
@@ -175,16 +197,16 @@ public class ResourceAdminController {
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.REMOVE_PROJECT)
-    public void removeProject(@RequestParam("projectName") String projectName) {
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT)
+    public List<ResourceSet> removeProject(@RequestParam("projectName") String projectName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.removeProject(projectName);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
-    @PostMapping(ServicesAPI.RESOURCES.REMOVE_WORKSPACE)
-    public void removeWorkspace(@RequestParam("workspaceName") String workspaceName) {
+    @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_WORKSPACE)
+    public List<ResourceSet> removeWorkspace(@RequestParam("workspaceName") String workspaceName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             admin.removeWorkspace(workspaceName);
         }
@@ -203,6 +225,22 @@ public class ResourceAdminController {
     public @ResponseBody Collection<String> listResourceUrns() {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.listResourceUrns();
+        }
+        throw new KlabInternalErrorException("Resources service is incapable of admin operation");
+    }
+
+    @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT)
+    public URL lockProject(@PathVariable("urn") String urn, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.lockProject(urn, auth.getToken());
+        }
+        throw new KlabInternalErrorException("Resources service is incapable of admin operation");
+    }
+
+    @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT)
+    public boolean unlockProject(@PathVariable("urn") String urn, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            return admin.unlockProject(urn, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }

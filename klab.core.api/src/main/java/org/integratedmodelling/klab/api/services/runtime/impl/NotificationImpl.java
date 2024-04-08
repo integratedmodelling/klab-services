@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
@@ -26,6 +27,8 @@ public class NotificationImpl implements Notification, Serializable {
     private String identity;
     private LexicalContext lexicalContext;
     private Mode mode;
+
+    private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
     public static class LexicalContextImpl implements LexicalContext {
         private URL url;
@@ -144,6 +147,15 @@ public class NotificationImpl implements Notification, Serializable {
 
     public void setMode(Mode mode) {
         this.mode = mode;
+    }
+
+    @Override
+    public Message.ForwardingPolicy getForwardingPolicy() {
+        return forwardingPolicy;
+    }
+
+    public void setForwardingPolicy(Message.ForwardingPolicy forwardingPolicy) {
+        this.forwardingPolicy = forwardingPolicy;
     }
 
     @Override

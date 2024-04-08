@@ -220,8 +220,7 @@ public interface UIReactor {
          */
         WorkspaceModified(EventDirection.EngineToView, ResourceSet.class),
         /**
-         * Declaring a dependency on this event means that we want all events sent to the
-         * annotated method.
+         * Declaring a dependency on this event means that we want all events sent to the annotated method.
          */
         AnyEvent(EventDirection.Bidirectional, Void.class);
 
@@ -236,6 +235,14 @@ public interface UIReactor {
                 }
             }
         }
+    }
+
+    /**
+     * Each reactor should deallocate resources or release locks at shutdown. This will be called by
+     * {@link UIController#shutdown()} on every open view and panel. Note that this is not called on
+     * {@link PanelController#close()}
+     */
+    default void shutdown() {
     }
 
     UIController getController();

@@ -106,6 +106,13 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
+                                            <id>org.glassfish.tyrus.bundles:tyrus-standalone-client:2.1.5</id>
+                                            <override>true</override>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
+                                        <artifact>
                                             <id>commons-collections:commons-collections:3.2.2</id>
                                             <override>true</override>
                                             <instructions>
@@ -487,6 +494,13 @@
                                         </artifact>
                                         <artifact>
                                             <id>org.springframework:spring-expression:6.1.4</id>
+                                            <override>true</override>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
+                                        <artifact>
+                                            <id>javax.websocket:javax.websocket-api:1.1</id>
                                             <override>true</override>
                                             <instructions>
                                                 <_noee>true</_noee>

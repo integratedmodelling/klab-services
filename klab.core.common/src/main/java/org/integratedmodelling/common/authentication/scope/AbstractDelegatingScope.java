@@ -27,6 +27,10 @@ public abstract class AbstractDelegatingScope implements Scope {
         this.delegateChannel = delegateChannel;
     }
 
+    public Channel getDelegateChannel() {
+        return delegateChannel;
+    }
+
     @Override
     public Parameters<String> getData() {
         return data;

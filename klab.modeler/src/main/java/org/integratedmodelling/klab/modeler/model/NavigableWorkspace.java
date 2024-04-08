@@ -1,12 +1,14 @@
 package org.integratedmodelling.klab.modeler.model;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 //import org.eclipse.core.resources.IFile;
 //import org.eclipse.core.resources.IWorkspace;
 //import org.eclipse.core.resources.IWorkspaceRoot;
+import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -20,36 +22,25 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContain
  * Workspaces should never be modified after creation: any change to the namespaces should create a new
  * workspace.
  */
-public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements Workspace, NavigableContainer {
+public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements Workspace,
+        NavigableContainer {
 
     @Serial
     private static final long serialVersionUID = -6967097462644821300L;
 
-    //	private BiMap<IFile, NavigableKlabDocument<?, ?>> fileResources = null;
+    // we keep the list of projects so that we can manage the locking status
+    List<NavigableProject> projects = new ArrayList<>();
 
-    public NavigableWorkspace(Workspace delegate/*, IWorkspace eclipseWorkspace*/) {
+    public NavigableWorkspace(Workspace delegate) {
         super(delegate, null);
         //		this.resource = eclipseWorkspace.getRoot();
+        this.projects.addAll(delegate.getProjects().stream()
+                                          .map(p -> new NavigableProject(p, this))
+                                          .toList());
     }
 
-    //	public Map<IFile, NavigableKlabDocument<?, ?>> getFileResources() {
-    //		if (fileResources == null) {
-    //			fileResources = HashBiMap.create();
-    //			for (var child : children()) {
-    //				if (child instanceof NavigableProject project) {
-    //					for (var doc : project.documents()) {
-    //						if (doc.getResource() instanceof IFile ifile) {
-    //							fileResources.put(ifile, doc);
-    //						}
-    //					}
-    //				}
-    //			}
-    //		}
-    //		return fileResources;
-    //	}
-
     public Collection<Project> getProjects() {
-        return delegate.getProjects();
+        return new Utils.Casts<NavigableProject, Project>().cast(projects);
     }
 
     /**
@@ -69,11 +60,7 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
 
     @Override
     public List<? extends NavigableAsset> children() {
-        return getProjects().stream()
-                            .map(p -> new NavigableProject(p, this/*,
-						this.resource instanceof IWorkspaceRoot wsroot ? wsroot.getProject(p.getUrn()) :
-						null*/))
-                            .toList();
+        return projects;
     }
 
     /**
@@ -85,10 +72,6 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
     public NavigableKlabAsset<?> findAsset(String path) {
         return null;
     }
-
-    //	public NavigableKlabDocument<?, ?> findDocument(IFile file) {
-    //		return getFileResources().get(file);
-    //	}
 
     /**
      * Find a document of the passed type by its URN

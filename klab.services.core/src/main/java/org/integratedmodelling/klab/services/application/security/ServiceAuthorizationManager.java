@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * Singleton containing all the JWT management and hanshaking with the hub that every k.LAB service uses.
+ * Singleton containing all the JWT management and handshaking with the hub that every k.LAB service uses.
  * Should also include a safe strategy to authorize the service and handle the JWT token w/o configuration
  * when the services are available (authenticated or anonymously) in a local configuration.
  */

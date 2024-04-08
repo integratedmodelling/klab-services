@@ -15,6 +15,7 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.RestTemplateXhrTransport;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
@@ -174,17 +175,17 @@ public class MessagingChannelImpl extends ChannelImpl {
 
             @Override
             public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-                info("New session established : " + session.getSessionId());
+                MessagingChannelImpl.super.info("New session established : " + session.getSessionId());
                 session.subscribe(channel, this);
-                info("Subscribed to " + channel);
-                session.send(channel + ServicesAPI.MESSAGE, getHandshakingMessage());
-                info("Message sent to websocket server");
+                MessagingChannelImpl.super.info("Subscribed to " + channel);
+                session.send(channel, getHandshakingMessage());
+                MessagingChannelImpl.super.info("Message sent to websocket server");
             }
 
             @Override
             public void handleException(StompSession session, StompCommand command, StompHeaders headers,
                                         byte[] payload, Throwable exception) {
-                error("Websockets transfer exception", exception);
+                MessagingChannelImpl.super.error("Websockets transfer exception", exception);
             }
 
             @Override
@@ -194,6 +195,7 @@ public class MessagingChannelImpl extends ChannelImpl {
 
             @Override
             public void handleFrame(StompHeaders headers, Object payload) {
+
                 // NAH this will be a Map diocane, must convert and add the forwarding nature
                 Message message = (Message) payload;
                 if (payload == null) {
@@ -203,20 +205,30 @@ public class MessagingChannelImpl extends ChannelImpl {
                 info("Received : " + message + " from : " + message.getIdentity());
                 if (message.is(Message.MessageClass.ServiceLifecycle, Message.MessageType.ConnectScope)) {
                     // TODO handshaking message must be received once, after which we're connected
-                    System.out.println("WE'RE FUCKING CONNECTED");
+                    System.out.println("WE'RE CONNECTED");
+                } else {
+                    // send through listeners, don't bounce back
+                    MessagingChannelImpl.super.send(message);
                 }
-                // message is forwarded so it won't be bounced back
-                send(message);
             }
         };
 
+        /*
+        TODO revise - currently this doesn't work very well, particularly 1) under classloading constraints
+         there are runtime load exceptions, and 2) the server messages don't get here for some reason
+         */
 
-        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024);
-        container.setDefaultMaxTextMessageBufferSize(1024 * 1024);
-        List<Transport> transports = new ArrayList<>(1);
-        transports.add(new WebSocketTransport(new StandardWebSocketClient(container)));
-        SockJsClient transport = new SockJsClient(transports);
+        List<Transport> transports = new ArrayList<>();
+        transports.add(new WebSocketTransport(new StandardWebSocketClient()));
+        transports.add(new RestTemplateXhrTransport());
+        var transport = new SockJsClient(transports);
+
+//        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+//        container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024);
+//        container.setDefaultMaxTextMessageBufferSize(1024 * 1024);
+//        List<Transport> transports = new ArrayList<>(1);
+//        transports.add(new WebSocketTransport(new StandardWebSocketClient(container)));
+//        SockJsClient transport = new SockJsClient(transports);
 
         /*
          * and three more for the next one
@@ -232,7 +244,7 @@ public class MessagingChannelImpl extends ChannelImpl {
                     paired.set(true);
                 }
                 if (exception != null) {
-                    error(exception);
+                    super.error(exception);
                     pairingError = exception;
                     paired.set(false);
                 }

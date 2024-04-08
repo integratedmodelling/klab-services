@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
+import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -21,8 +23,10 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.ServiceReference;
+import org.integratedmodelling.klab.services.ServiceChannelImpl;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.services.application.controllers.KlabScopeController;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.beans.factory.InitializingBean;
@@ -36,6 +40,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -95,6 +100,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     private Environment environment;
     @Autowired
     ServiceAuthorizationManager authorizationManager;
+    private SimpMessagingTemplate webSocket;
 
     @Override
     protected Pair<Identity, List<ServiceReference>> authenticateService() {
@@ -116,6 +122,9 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     @Override
     protected AbstractServiceDelegatingScope createServiceScope() {
         var ret = super.createServiceScope();
+        if (ret instanceof AbstractDelegatingScope dscope && dscope.getDelegateChannel() instanceof ServiceChannelImpl serviceChannel) {
+            serviceChannel.setWebsocketProvider(() -> webSocket);
+        }
         // TODO if we're certified, adjust the scope's locality and service discovery capabilities
         ret.setLocality(ServiceScope.Locality.LOCALHOST);
         if (ret.getIdentity() instanceof UserIdentity user && !user.isAnonymous()) {
@@ -190,9 +199,8 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     }
 
     protected Channel createChannel(UserIdentity identity) {
-        // Use a simple logging channel for now. TODO Notifications should be broadcast to subscribers that
-        //  ask for them (see options in subscriptions)
-        return new ChannelImpl(identity);
+        // this channel will be fed a Websockets template supplier for pairing with remote scopes
+        return new ServiceChannelImpl(identity);
     }
 
     private void setPropertiesFromEnvironment(Environment environment) {
@@ -254,4 +262,12 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Called by the scope controller after injection so we can send the handler to the channel.
+     * 
+     * @param webSocket
+     */
+    public void setMessagingTemplate(SimpMessagingTemplate webSocket) {
+        this.webSocket = webSocket;
+    }
 }

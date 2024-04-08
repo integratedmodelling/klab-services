@@ -28,6 +28,7 @@ public class FileProjectStorage implements ProjectStorage {
     private FileWatcher watcher;
     private final File rootFolder;
     private final String projectName;
+    private AtomicBoolean locked = new AtomicBoolean(false);
 
     public FileProjectStorage(File rootFolder, ChangeNotifier notifier) {
         this.rootFolder = rootFolder;
@@ -53,7 +54,7 @@ public class FileProjectStorage implements ProjectStorage {
                     operation = CRUDOperation.DELETE;
                 }
 
-                if (operation != null && type != null) {
+                if (operation != null && type != null && !locked.get()) {
                     try {
                         notifier.apply(projectName, type, operation, changedFile.toURI().toURL());
                     } catch (MalformedURLException e) {
@@ -77,6 +78,14 @@ public class FileProjectStorage implements ProjectStorage {
         } catch (MalformedURLException e) {
             throw new KlabIOException(e);
         }
+    }
+
+    public void lock(boolean locked) {
+        this.locked.set(locked);
+    }
+
+    public boolean isLocked() {
+        return this.locked.get();
     }
 
     public Repository getRepository() {
@@ -191,8 +200,9 @@ public class FileProjectStorage implements ProjectStorage {
         return true;
     }
 
-    public void update(ResourceType resourceType, String namespace, String ontologyContent) {
+    public URL update(ResourceType resourceType, String namespace, String ontologyContent) {
         // TODO overwrite the file. The file monitor does the rest
+        return null;
     }
 
     public class FileWatcher extends Thread {

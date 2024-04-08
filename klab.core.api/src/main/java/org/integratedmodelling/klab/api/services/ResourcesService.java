@@ -376,7 +376,7 @@ public interface ResourcesService extends KlabService {
          * @param metadata
          * @return the updated project with the new metadata and manifest.
          */
-        Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata);
+        Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata, String lockingAuthorization);
 
         /**
          * Project must exist; namespace must not. Namespace content is parsed and the results are returned.
@@ -387,7 +387,7 @@ public interface ResourcesService extends KlabService {
          * @param namespaceContent
          * @return
          */
-        KimNamespace createNamespace(String projectName, String namespaceContent);
+        ResourceSet createNamespace(String projectName, String namespaceContent, String lockingAuthorization);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -398,7 +398,7 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param namespaceContent
          */
-        void updateNamespace(String projectName, String namespaceContent);
+        List<ResourceSet> updateNamespace(String projectName, String namespaceContent, String lockingAuthorization);
 
         /**
          * Project must exist; behavior must not (throws TODO). Namespace content is parsed and the results
@@ -409,7 +409,7 @@ public interface ResourcesService extends KlabService {
          * @param behaviorContent
          * @return
          */
-        KActorsBehavior createBehavior(String projectName, String behaviorContent);
+        ResourceSet createBehavior(String projectName, String behaviorContent, String lockingAuthorization);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -421,7 +421,7 @@ public interface ResourcesService extends KlabService {
          * @param behaviorContent
          * @return
          */
-        void updateBehavior(String projectName, String behaviorContent);
+        List<ResourceSet> updateBehavior(String projectName, String behaviorContent, String lockingAuthorization);
 
         /**
          * Project must exist; ontology must not (throws TODO). Namespace content is parsed and the results
@@ -432,7 +432,7 @@ public interface ResourcesService extends KlabService {
          * @param ontologyContent
          * @return
          */
-        KimOntology createOntology(String projectName, String ontologyContent);
+        ResourceSet createOntology(String projectName, String ontologyContent, String lockingAuthorization);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -443,7 +443,7 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param ontologyContent
          */
-        void updateOntology(String projectName, String ontologyContent);
+        List<ResourceSet> updateOntology(String projectName, String ontologyContent, String lockingAuthorization);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -454,7 +454,8 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param observationStrategiesContent
          */
-        void updateObservationStrategies(String projectName, String observationStrategiesContent);
+        List<ResourceSet> updateObservationStrategies(String projectName,
+                                                      String observationStrategiesContent, String lockingAuthorization);
 
         /**
          * Publish a project with the passed privileges. The project must have been added before this is
@@ -481,7 +482,7 @@ public interface ResourcesService extends KlabService {
          * @param resource
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
-        String createResource(Resource resource);
+        ResourceSet createResource(Resource resource);
 
         /**
          * Add a resource with file content to those managed by this service. Resource is invisible from the
@@ -491,7 +492,7 @@ public interface ResourcesService extends KlabService {
          *                     file must be present, along with anything else required by the adapter.
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
-        String createResource(File resourcePath);
+        ResourceSet createResource(File resourcePath);
 
         Resource createResource(String projectName, String urnId, String adapter,
                                 Parameters<String> resourceData);
@@ -535,6 +536,32 @@ public interface ResourcesService extends KlabService {
          * @return
          */
         Collection<String> listResourceUrns();
+
+        /**
+         * Lock a project so that changes to it can be made exclusively through the explicit CRUD calls on its
+         * contents.
+         *
+         * @param urn   the URN of the project to lock
+         * @param token the ID of the user locking it
+         * @return a URL to access the contents of the project locally. If it's a file:/ URL, the requesting
+         * client has used the secret token only available to clients sharing the filesystem with the service.
+         * Otherwise it will be the http:// URL to a zip file containing the project's contents.
+         * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if the project is
+         *                                                                                 already locked or
+         *                                                                                 isn't accessible
+         *                                                                                 for any other
+         *                                                                                 reason
+         */
+        URL lockProject(String urn, String token);
+
+        /**
+         * Unlock a previously locked project.
+         *
+         * @param urn   the URN of the project to lock
+         * @param token the ID of the user locking it
+         * @return false if the project wasn't locked or wasn't locked by the same ID
+         */
+        boolean unlockProject(String urn, String token);
 
     }
 
