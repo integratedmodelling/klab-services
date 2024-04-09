@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
 import org.integratedmodelling.klab.rest.IdentityReference;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -117,7 +118,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     }
 
     public static EngineAuthorization anonymous(ServiceScope scope) {
-        var ret = EngineAuthorization.create(scope);
+        var ret = EngineAuthorization.create(scope, null);
         ret.setExpiration(Instant.now().plus(Duration.ofDays(1)));
         ret.setAuthenticated(true);
         // no roles, no groups
@@ -131,7 +132,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      * @param scope
      * @return
      */
-    public static EngineAuthorization create(Scope scope) {
+    public static EngineAuthorization create(Scope scope, String serviceSecret) {
 
         String partnerIdentity = null;
         String scopeIdentity = null;
@@ -156,6 +157,9 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         var ret = new EngineAuthorization(partnerIdentity, scopeIdentity, roles);
         ret.setAuthenticated(true);
         ret.setScope(scope);
+        if (serviceSecret != null) {
+            ret.setTokenString(serviceSecret);
+        }
         return ret;
     }
 
@@ -245,7 +249,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
 
     @Override
     public String getToken() {
-        return null;
+        return tokenString.value;
     }
 
     public void setGroups(List<Group> groups) {

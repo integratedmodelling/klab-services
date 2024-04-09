@@ -200,9 +200,16 @@ public class FileProjectStorage implements ProjectStorage {
         return true;
     }
 
-    public URL update(ResourceType resourceType, String namespace, String ontologyContent) {
+    public URL update(ResourceType resourceType, String urn, String content) {
         // TODO overwrite the file. The file monitor does the rest
-        return null;
+        try {
+            File resourceFile = new File(rootFolder + File.separator + ProjectStorage.getRelativeFilePath(urn,
+                    resourceType, File.separator));
+            Utils.Files.writeStringToFile(content, resourceFile);
+            return resourceFile.toURI().toURL();
+        } catch (Exception e) {
+            throw new KlabIOException(e);
+        }
     }
 
     public class FileWatcher extends Thread {

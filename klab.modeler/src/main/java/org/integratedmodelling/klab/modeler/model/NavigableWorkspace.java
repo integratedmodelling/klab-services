@@ -12,6 +12,9 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
@@ -28,19 +31,12 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
     @Serial
     private static final long serialVersionUID = -6967097462644821300L;
 
-    // we keep the list of projects so that we can manage the locking status
-    List<NavigableProject> projects = new ArrayList<>();
-
     public NavigableWorkspace(Workspace delegate) {
         super(delegate, null);
-        //		this.resource = eclipseWorkspace.getRoot();
-        this.projects.addAll(delegate.getProjects().stream()
-                                          .map(p -> new NavigableProject(p, this))
-                                          .toList());
     }
 
     public Collection<Project> getProjects() {
-        return new Utils.Casts<NavigableProject, Project>().cast(projects);
+        return new Utils.Casts<NavigableAsset, Project>().cast((Collection<NavigableAsset>) children());
     }
 
     /**
@@ -59,8 +55,10 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
     protected Parameters<String> parameters = Parameters.create();
 
     @Override
-    public List<? extends NavigableAsset> children() {
-        return projects;
+    protected List<? extends NavigableAsset> createChildren() {
+        return delegate.getProjects().stream()
+                       .map(p -> new NavigableProject(p, this))
+                       .toList();
     }
 
     /**
@@ -73,23 +71,5 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
         return null;
     }
 
-    /**
-     * Find a document of the passed type by its URN
-     *
-     * @param documentUrn
-     * @param documentType
-     * @return
-     */
-    public NavigableKlabDocument<?, ?> findAsset(String documentUrn, KnowledgeClass documentType) {
-        for (Object o : children()) {
-            if (o instanceof NavigableProject project) {
-                var doc = project.findDocument(documentUrn, documentType);
-                if (doc != null) {
-                    return doc;
-                }
-            }
-        }
-        return null;
-    }
 
 }

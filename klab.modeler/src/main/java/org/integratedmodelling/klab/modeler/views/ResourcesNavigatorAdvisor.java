@@ -23,7 +23,7 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
     }
 
     @Override
-    public void workspaceModified(ResourceSet changes) {
+    public void workspaceModified(NavigableContainer container) {
 
     }
 

@@ -7,6 +7,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
@@ -21,7 +22,9 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -194,10 +197,11 @@ public abstract class ServiceClient implements KlabService {
         File secretFile =
                 Configuration.INSTANCE.getFileWithTemplate("services/" + serviceType.name().toLowerCase() +
                         "/secret.key", org.integratedmodelling.klab.api.utils.Utils.Names.newName());
-        if (secretFile.isFile() && secretFile.canRead()) {
-            return Utils.Files.readFileIntoString(secretFile);
+        try {
+            return Files.readString(secretFile.toPath());
+        } catch (IOException e) {
+            throw new KlabIOException(e);
         }
-        return null;
     }
 
 

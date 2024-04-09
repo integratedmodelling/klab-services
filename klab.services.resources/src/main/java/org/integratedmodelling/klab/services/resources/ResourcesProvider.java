@@ -711,7 +711,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         resource.setKnowledgeClass(KnowledgeClass.NAMESPACE);
         resource.setResourceUrn(ns);
         resource.setResourceVersion(namespace.getVersion());
-        resource.setServiceId(getUrl() == null ? null : getUrl().toString());
+        resource.setServiceId(serviceId());
         storage.put(ns, resource);
 
         return true;

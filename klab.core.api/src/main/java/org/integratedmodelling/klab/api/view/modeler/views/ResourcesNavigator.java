@@ -15,7 +15,7 @@ public interface ResourcesNavigator extends View {
 
     void showResources(NavigableContainer workspace);
 
-    void workspaceModified(ResourceSet changes);
+    void workspaceModified(NavigableContainer changedContainer);
 
     void showAssetInfo(NavigableAsset asset);
 

@@ -26,17 +26,19 @@ public interface KlabAsset extends Serializable {
     public enum KnowledgeClass {
         CONCEPT, OBSERVABLE, MODEL, DEFINITION, INSTANCE, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE,
         APPLICATION, ONTOLOGY, OBSERVATION_STRATEGY, OBSERVATION_STRATEGY_DOCUMENT,
-        COMPONENT, PROJECT, WORLDVIEW
+        COMPONENT, PROJECT, WORLDVIEW;
+
+
     }
 
     public static KnowledgeClass classify(KlabAsset document) {
-        return switch(document) {
+        return switch (document) {
             case KimConcept c -> KnowledgeClass.CONCEPT;
             case KimObservable c -> KnowledgeClass.OBSERVABLE;
             case KimOntology o -> KnowledgeClass.ONTOLOGY;
             case KimObservationStrategyDocument s -> KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
             case KimNamespace n -> KnowledgeClass.NAMESPACE;
-            case KActorsBehavior behavior -> switch(behavior.getType()) {
+            case KActorsBehavior behavior -> switch (behavior.getType()) {
                 case BEHAVIOR, TASK, USER, TRAITS -> KnowledgeClass.BEHAVIOR;
                 case APP -> KnowledgeClass.APPLICATION;
                 case UNITTEST -> KnowledgeClass.TESTCASE;
@@ -45,7 +47,9 @@ public interface KlabAsset extends Serializable {
             };
             default -> throw new KlabUnimplementedException("Classification of asset " + document);
         };
+
     }
+
 
     /**
      * Anything that represents knowledge must return a stable, unique identifier that can be resolved back to

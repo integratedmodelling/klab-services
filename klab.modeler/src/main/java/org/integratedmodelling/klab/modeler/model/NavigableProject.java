@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.modeler.model;
 
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,11 +13,17 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
-public class NavigableProject extends NavigableKlabAsset<Project> implements Project, NavigableContainer {
+public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
+
+	@Serial
+	private static final long serialVersionUID = -6759189347982834877L;
 
 	private boolean locked;
 	private File rootDirectory;
@@ -25,8 +32,6 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 		super(asset, parent);
 //		this.resource = resource;
 	}
-
-	private static final long serialVersionUID = -6759189347982834877L;
 
 	@Override
 	public List<KActorsBehavior> getApps() {
@@ -84,7 +89,7 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	}
 
 	@Override
-	public List<? extends NavigableAsset> children() {
+	protected List<? extends NavigableAsset> createChildren() {
 		// TODO add everything else, including intermediate containers
 		return getOntologies().stream().map(p -> new NavigableKimOntology(p, this)).toList();
 	}
@@ -92,18 +97,6 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	@Override
 	public RepositoryMetadata getRepositoryMetadata() {
 		return delegate.getRepositoryMetadata();
-	}
-
-	public NavigableKlabDocument<?, ?> findDocument(String documentUrn, KnowledgeClass documentType) {
-		// TODO Auto-generated method stub
-		for (Object child : children()) {
-			// TODO handle the containers!
-			if (child instanceof NavigableKlabDocument document && KlabAsset.classify(document) == documentType
-					&& document.getUrn().equals(documentUrn)) {
-				return document;
-			}
-		}
-		return null;
 	}
 
     public boolean isLocked() {
@@ -126,6 +119,5 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	public void setRootDirectory(File rootDirectory) {
 		this.rootDirectory = rootDirectory;
 	}
-
 
 }

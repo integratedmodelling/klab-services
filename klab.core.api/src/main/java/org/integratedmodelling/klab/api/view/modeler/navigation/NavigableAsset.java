@@ -50,4 +50,5 @@ public interface NavigableAsset extends KlabAsset {
      */
     Metadata localMetadata();
 
+    <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> assetClass);
 }

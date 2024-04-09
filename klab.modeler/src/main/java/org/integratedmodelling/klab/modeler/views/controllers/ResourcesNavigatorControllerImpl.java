@@ -4,6 +4,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -27,6 +28,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     Map<String, NavigableContainer> assetMap = new LinkedHashMap<>();
     ResourcesService currentService;
     NavigableWorkspace currentWorkspace; // we keep it so we can unlock it when switching to another or
+    private ArrayList<NavigableContainer> workspaces;
     // exiting
 
     public ResourcesNavigatorControllerImpl(UIController controller) {
@@ -49,12 +51,18 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     @Override
     public void workspaceModified(ResourceSet changes) {
-        view().workspaceModified(changes);
-    }
-
-    @Override
-    public void assetChanged(NavigableAsset asset, ResourceSet changeset) {
-
+        if (!changes.isEmpty()) {
+            var container = assetMap.get(changes.getWorkspace());
+            if (container != null) {
+                if (container.mergeChanges(changes, getController().engine().serviceScope())) {
+                    view().workspaceModified(container);
+                    if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
+                        // TODO if the reasoner is exclusive and is using the same worldview, send the
+                        //  changes over, otherwise warn.
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -126,6 +134,8 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                     if (asset instanceof NavigableProject project && project.isLocked()) {
                         admin.unlockProject(project.getUrn(),
                                 getController().engine().serviceScope().getIdentity().getId());
+                        ((NavigableProject) asset).setLocked(false);
+                        ((NavigableProject) asset).setRootDirectory(null);
                     }
                 }
             }
@@ -179,7 +189,8 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
         assetMap.clear();
         var capabilities = service.capabilities();
         if (capabilities.isWorldviewProvider()) {
-            assetMap.put("Worldview", new NavigableWorldview(service.getWorldview()));
+            assetMap.put(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER,
+                    new NavigableWorldview(service.getWorldview()));
         }
         for (var workspaceId : capabilities.getWorkspaceNames()) {
             var workspace = service.resolveWorkspace(workspaceId, getController().user());
@@ -189,5 +200,9 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
         }
     }
 
-
+    @Override
+    public void shutdown() {
+        releaseLocks();
+        super.shutdown();
+    }
 }

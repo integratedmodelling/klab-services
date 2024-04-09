@@ -63,6 +63,6 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
     @Override
     public boolean isReadOnly() {
         var project = getPayload().parent(NavigableProject.class);
-        return project != null && project.isLocked();
+        return project == null || !project.isLocked();
     }
 }

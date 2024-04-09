@@ -8,21 +8,21 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
  */
 public interface ServicesAPI {
 
-    public static final String API_BASE = "/api/v2";
+    String API_BASE = "/api/v2";
 
-    public static String CAPABILITIES = "/public/capabilities";
-    public static String SHUTDOWN = "/shutdown";
-    public static String STATUS = "/public/status";
+    String CAPABILITIES = "/public/capabilities";
+    String SHUTDOWN = "/shutdown";
+    String STATUS = "/public/status";
 
-    public interface SCOPE {
+    interface SCOPE {
 
-        public static String REGISTER = "/scope/register/{scopeType}/{scopeId}";
+        String REGISTER = "/scope/register/{scopeType}/{scopeId}";
 
-        public static String DISPOSE = "/scope/dispose/{scopeId}";
+        String DISPOSE = "/scope/dispose/{scopeId}";
 
     }
 
-    public interface ENGINE {
+    interface ENGINE {
 
     }
 
@@ -31,19 +31,19 @@ public interface ServicesAPI {
      * STOMP endpoint for client/server notifications to session receivers. Handled through Websockets
      * protocol.
      */
-    public static final String MESSAGE = "/public/message";
+    String MESSAGE = "/public/message";
 
-    public interface HUB {
+    interface HUB {
         /**
          * Base URL path for engine resources on the hub.
          */
-        public static final String ENGINE_BASE = API_BASE + "/engines";
+        String ENGINE_BASE = API_BASE + "/engines";
 
-        public static final String AUTH_BASE = "/auth-cert";
+        String AUTH_BASE = "/auth-cert";
 
 
         // TODO rename /nodes to /services (?)
-        public static final String SERVICE_BASE = API_BASE + "/nodes";
+        String SERVICE_BASE = API_BASE + "/nodes";
 
         /**
          * Returns authenticated user details and network status with all nodes (including offline if
@@ -58,12 +58,12 @@ public interface ServicesAPI {
          * {@code org.integratedmodelling.klab.rest.resources.responses.AuthenticationResponse} <br/>
          * <b>Authentication:</b> open
          */
-        public static final String AUTHENTICATE_ENGINE = ENGINE_BASE + AUTH_BASE;
+        String AUTHENTICATE_ENGINE = ENGINE_BASE + AUTH_BASE;
 
         /**
          * Called by nodes on hubs when authenticating with them. Parameters like the engine version.
          */
-        public static final String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
+        String AUTHENTICATE_SERVICE = SERVICE_BASE + AUTH_BASE;
     }
 
     /**
@@ -71,9 +71,9 @@ public interface ServicesAPI {
      *
      * @author ferd
      */
-    public interface REASONER {
+    interface REASONER {
 
-        static String REASONER_BASE = API_BASE;
+        String REASONER_BASE = API_BASE;
 
         /**
          * Resolve a concept definition, returning a unique ID for the reasoner, the normalized URN form and
@@ -83,141 +83,141 @@ public interface ServicesAPI {
          * @service
          * @produces {@link Concept}
          */
-        public static String RESOLVE_CONCEPT = REASONER_BASE + "/resolve/concept/{definition}";
+        String RESOLVE_CONCEPT = REASONER_BASE + "/resolve/concept/{definition}";
 
         /**
          * @protocol GET
          * @produces {@link Observable}
          */
-        public static String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable/{definition}";
+        String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable/{definition}";
 
-        public static String SEMANTIC_SEARCH = REASONER_BASE + "/semantic-search";
+        String SEMANTIC_SEARCH = REASONER_BASE + "/semantic-search";
 
-        public static String HAS_TRAIT = REASONER_BASE + "/has-trait";
+        String HAS_TRAIT = REASONER_BASE + "/has-trait";
 
-        public static String RAW_OBSERVABLE = REASONER_BASE + "/raw-observable";
+        String RAW_OBSERVABLE = REASONER_BASE + "/raw-observable";
 
-        public static String SUBSUMES = REASONER_BASE + "/subsumes";
+        String SUBSUMES = REASONER_BASE + "/subsumes";
 
-        public static String OPERANDS = REASONER_BASE + "/operands";
+        String OPERANDS = REASONER_BASE + "/operands";
 
-        public static String CHILDREN = REASONER_BASE + "/children";
+        String CHILDREN = REASONER_BASE + "/children";
 
-        public static String PARENTS = REASONER_BASE + "/parents";
+        String PARENTS = REASONER_BASE + "/parents";
 
-        public static String PARENT = REASONER_BASE + "/parent";
+        String PARENT = REASONER_BASE + "/parent";
 
-        public static String ALL_CHILDREN = REASONER_BASE + "/all-children";
+        String ALL_CHILDREN = REASONER_BASE + "/all-children";
 
-        public static String ALL_PARENTS = REASONER_BASE + "/all-parents";
+        String ALL_PARENTS = REASONER_BASE + "/all-parents";
 
-        public static String CLOSURE = REASONER_BASE + "/closure";
+        String CLOSURE = REASONER_BASE + "/closure";
 
-        public static String CORE_OBSERVABLE = REASONER_BASE + "/core-observable";
+        String CORE_OBSERVABLE = REASONER_BASE + "/core-observable";
 
-        public static String SPLIT_OPERATORS = REASONER_BASE + "/split-operators";
+        String SPLIT_OPERATORS = REASONER_BASE + "/split-operators";
 
-        public static String DISTANCE = REASONER_BASE + "/distance";
+        String DISTANCE = REASONER_BASE + "/distance";
 
-        public static String ROLES = REASONER_BASE + "/roles";
+        String ROLES = REASONER_BASE + "/roles";
 
-        public static String HAS_ROLE = REASONER_BASE + "/has-role";
+        String HAS_ROLE = REASONER_BASE + "/has-role";
 
         //		public static String CONTEXT = REASONER_BASE + "/context";
 
-        public static String INHERENT = REASONER_BASE + "/inherent";
+        String INHERENT = REASONER_BASE + "/inherent";
 
-        public static String GOAL = REASONER_BASE + "/goal";
+        String GOAL = REASONER_BASE + "/goal";
 
-        public static String COOCCURRENT = REASONER_BASE + "/cooccurent";
+        String COOCCURRENT = REASONER_BASE + "/cooccurent";
 
-        public static String CAUSANT = REASONER_BASE + "/causant";
+        String CAUSANT = REASONER_BASE + "/causant";
 
-        public static String CAUSED = REASONER_BASE + "/caused";
+        String CAUSED = REASONER_BASE + "/caused";
 
-        public static String ADJACENT = REASONER_BASE + "/adjacent";
+        String ADJACENT = REASONER_BASE + "/adjacent";
 
-        public static String COMPRESENT = REASONER_BASE + "/compresent";
+        String COMPRESENT = REASONER_BASE + "/compresent";
 
-        public static String RELATIVE_TO = REASONER_BASE + "/relative-to";
+        String RELATIVE_TO = REASONER_BASE + "/relative-to";
 
-        public static String TRAITS = REASONER_BASE + "/traits";
+        String TRAITS = REASONER_BASE + "/traits";
 
-        public static String IDENTITIES = REASONER_BASE + "/identities";
+        String IDENTITIES = REASONER_BASE + "/identities";
 
-        public static String ATTRIBUTES = REASONER_BASE + "/attributes";
+        String ATTRIBUTES = REASONER_BASE + "/attributes";
 
-        public static String REALMS = REASONER_BASE + "/realms";
+        String REALMS = REASONER_BASE + "/realms";
 
-        public static String BASE_PARENT_TRAIT = REASONER_BASE + "/base-parent-trait";
+        String BASE_PARENT_TRAIT = REASONER_BASE + "/base-parent-trait";
 
-        public static String BASE_OBSERVABLE = REASONER_BASE + "/base-observable";
+        String BASE_OBSERVABLE = REASONER_BASE + "/base-observable";
 
-        public static String HAS_PARENT_ROLE = REASONER_BASE + "/has-parent-role";
+        String HAS_PARENT_ROLE = REASONER_BASE + "/has-parent-role";
 
-        public static String SEMANTIC_TYPE = REASONER_BASE + "/semantic-type";
+        String SEMANTIC_TYPE = REASONER_BASE + "/semantic-type";
 
-        public static String IMPLIED_ROLES = REASONER_BASE + "/implied-roles";
+        String IMPLIED_ROLES = REASONER_BASE + "/implied-roles";
 
-        public static String IMPLIED_ROLE = REASONER_BASE + "/implied-role";
+        String IMPLIED_ROLE = REASONER_BASE + "/implied-role";
 
-        public static String ROLES_FOR = REASONER_BASE + "/roles-for";
+        String ROLES_FOR = REASONER_BASE + "/roles-for";
 
-        public static String CREATED = REASONER_BASE + "/created";
+        String CREATED = REASONER_BASE + "/created";
 
-        public static String AFFECTED = REASONER_BASE + "/affected";
+        String AFFECTED = REASONER_BASE + "/affected";
 
-        public static String AFFECTED_OR_CREATED = REASONER_BASE + "/affected-or-created";
+        String AFFECTED_OR_CREATED = REASONER_BASE + "/affected-or-created";
 
-        public static String CREATED_BY = REASONER_BASE + "/created-by";
+        String CREATED_BY = REASONER_BASE + "/created-by";
 
-        public static String AFFECTED_BY = REASONER_BASE + "/affected-by";
+        String AFFECTED_BY = REASONER_BASE + "/affected-by";
 
-        public static String LGC = REASONER_BASE + "/least-generic-common";
+        String LGC = REASONER_BASE + "/least-generic-common";
 
-        public static String OCCURRENT = REASONER_BASE + "/occurrent";
+        String OCCURRENT = REASONER_BASE + "/occurrent";
 
-        public static String CONTEXTUALLY_COMPATIBLE = REASONER_BASE + "/contextually-compatible";
+        String CONTEXTUALLY_COMPATIBLE = REASONER_BASE + "/contextually-compatible";
 
-        public static String COMPATIBLE = REASONER_BASE + "/compatible";
+        String COMPATIBLE = REASONER_BASE + "/compatible";
 
-        public static String DESCRIBED = REASONER_BASE + "/described";
+        String DESCRIBED = REASONER_BASE + "/described";
 
-        public static String APPLICABLE = REASONER_BASE + "/applicable";
+        String APPLICABLE = REASONER_BASE + "/applicable";
 
-        public static String DOMAIN = REASONER_BASE + "/domain";
+        String DOMAIN = REASONER_BASE + "/domain";
 
-        public static String NEGATED = REASONER_BASE + "/negated";
+        String NEGATED = REASONER_BASE + "/negated";
 
-        public static String RELATIONSHIP_TARGETS = REASONER_BASE + "/relationship-targets";
+        String RELATIONSHIP_TARGETS = REASONER_BASE + "/relationship-targets";
 
-        public static String SATISFIABLE = REASONER_BASE + "/satisfiable";
+        String SATISFIABLE = REASONER_BASE + "/satisfiable";
 
-        public static String RELATIONSHIP_TARGET = REASONER_BASE + "/relationship-target";
+        String RELATIONSHIP_TARGET = REASONER_BASE + "/relationship-target";
 
-        public static String RELATIONSHIP_SOURCES = REASONER_BASE + "/relationship-sources";
+        String RELATIONSHIP_SOURCES = REASONER_BASE + "/relationship-sources";
 
-        public static String RELATIONSHIP_SOURCE = REASONER_BASE + "/relationship-source";
+        String RELATIONSHIP_SOURCE = REASONER_BASE + "/relationship-source";
 
         /**
          * Reasoner plug-ins can extend the observation strategies.
          *
          * @author Ferd
          */
-        public interface ADMIN extends PluginAPI {
+        interface ADMIN extends PluginAPI {
 
         }
 
     }
 
-    public interface RUNTIME {
+    interface RUNTIME {
 
         /**
          * Runtime plug-ins can extend the contextualizers and the storage infrastructure.
          *
          * @author Ferd
          */
-        public interface ADMIN extends PluginAPI {
+        interface ADMIN extends PluginAPI {
 
         }
     }
@@ -270,7 +270,7 @@ public interface ServicesAPI {
         public interface ADMIN extends PluginAPI {
 
             String IMPORT_PROJECT = "/importProject";
-            String CREATE_PROJECT = "/createProject/{projectName}";
+            String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
             String UPDATE_PROJECT = "/updateProject/{projectName}";
             String CREATE_NAMESPACE = "/createNamespace/{projectName}/{namespace}";
             String UPDATE_NAMESPACE = "/updateNamespace/{projectName}";
@@ -305,16 +305,16 @@ public interface ServicesAPI {
         }
     }
 
-    public interface RESOLVER {
+    interface RESOLVER {
 
-        public interface ADMIN extends PluginAPI {
+        interface ADMIN extends PluginAPI {
 
         }
     }
 
-    public interface COMMUNITY {
+    interface COMMUNITY {
 
-        public interface ADMIN {
+        interface ADMIN {
 
         }
     }

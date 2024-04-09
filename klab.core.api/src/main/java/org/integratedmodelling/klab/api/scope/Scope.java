@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabServiceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 
 /**
@@ -37,6 +38,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
  * @author Ferd
  */
 public abstract interface Scope extends Channel {
+
 
     enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, INTERRUPTED, EMPTY
@@ -80,6 +82,25 @@ public abstract interface Scope extends Channel {
     <T extends KlabService> T getService(Class<T> serviceClass);
 
     /**
+     * The service ID serves as a unique key into a specific service instance (or its clients). This is the
+     * equivalent of {@link #getService(String, Class)} when a serviceId is communicated and a specific
+     * service is wanted. Because this is a precise request, it is expected that the service exists; if not,
+     * this method should throw a
+     * {@link org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException} exception.
+     *
+     * @param serviceId
+     * @param serviceClass
+     * @param <T>
+     * @return the service of the passed class and ID.
+     * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if the service isn't
+     *                                                                                 among those listed by
+     *                                                                                 {@link
+     *                                                                                 #getServices(Class)}
+     *                                                                                 for serviceClass.
+     */
+    <T extends KlabService> T getService(String serviceId, Class<T> serviceClass);
+
+    /**
      * Retrieve all the currently available services corresponding to the passed class, including the default
      * one returned by {@link #getService(Class)} if applicable.
      *
@@ -88,6 +109,7 @@ public abstract interface Scope extends Channel {
      * @return
      */
     <T extends KlabService> Collection<T> getServices(Class<T> serviceClass);
+
 
     /**
      * Return the status of the scope at the time of the call.

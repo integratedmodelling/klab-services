@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -8,9 +9,11 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> implements KlabStatement {
 
+	@Serial
 	private static final long serialVersionUID = -6767482412135943192L;
 
 	public NavigableKlabStatement(KlabStatement asset, NavigableKlabAsset<?> parent) {
@@ -72,7 +75,7 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 	}
 
 	@Override
-	public List<NavigableKlabStatement> children() {
+	protected List<? extends NavigableAsset> createChildren() {
 		if (delegate instanceof KimConceptStatement concept) {
 			return concept.getChildren().stream().map(c -> new NavigableKlabStatement(c, this)).toList();
 		}

@@ -192,8 +192,7 @@ public class ServiceAuthorizationManager {
             TODO Extract username and groups, authorize service scope with
              UserScope identity and all privileges.
              */
-            return EngineAuthorization.create(klabService.get().serviceScope());
-
+            return EngineAuthorization.create(klabService.get().serviceScope(), klabService.get().getServiceSecret());
         }
 
         /*
@@ -230,6 +229,10 @@ public class ServiceAuthorizationManager {
             result = new EngineAuthorization(hubId, username,
                     Collections.unmodifiableList(filterRoles(roleStrings)));
 
+            if (klabService.get().getServiceSecret().equals(token)) {
+                result.setTokenString(token);
+            }
+
             /*
              * Audience (aud) - The "aud" (audience) claim identifies the recipients that
              * the JWT is intended for. Each principal intended to process the JWT must
@@ -240,10 +243,6 @@ public class ServiceAuthorizationManager {
             if (!claims.getAudience().contains(ENGINE_AUDIENCE)) {
 
             }
-
-            /*
-            TODO result should
-             */
 
             /*
              * Expiration time (exp) - The "exp" (expiration time) claim identifies the

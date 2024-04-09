@@ -39,10 +39,9 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
      * argument ensures that only the {@link ResourcesService} capabilities get through. Upon receiving this,
      * the view should set up appropriate navigation UI for the assets provided by the service.
      * <p>
-     * If the service is null, disable the UI. For changes relative to the current service, do not call this
-     * one but call {@link #assetChanged(NavigableAsset, ResourceSet)}.
+     * If the service is null, disable the UI.
      *
-     * @param service the capabilities of the selected services or bnull
+     * @param service the capabilities of the selected services or null
      */
     @UIEventHandler(UIEvent.ServiceSelected)
     void serviceSelected(ResourcesService.Capabilities service);
@@ -56,16 +55,6 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
     @UIEventHandler(UIReactor.UIEvent.WorkspaceModified)
     void workspaceModified(ResourceSet changes);
 
-    /**
-     * Adapt the UI to any changes in the workspace coming from the service handled. If the workspace is the
-     * currently focal one, the changeset should produce UI changes. The asset could be the entire workspace,
-     * a project, a document, a resource, a  or an internal element within a document.
-     *
-     * @param asset     the asset that has changed.
-     * @param changeset the detail of the changes (will trigger reload)
-     */
-    @UIEventHandler(UIEvent.AssetChanged)
-    void assetChanged(NavigableAsset asset, ResourceSet changeset);
 
     /**
      * "SELECT" class events are double-clicks - bring the target to the forefront.

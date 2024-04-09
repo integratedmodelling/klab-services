@@ -189,13 +189,13 @@ public class Utils {
          */
         public static ResourceSet create(ResourcesService service, KlabAsset... resources) {
             ResourceSet ret = new ResourceSet();
-            ret.getServices().put(service.getLocalName(), service.getUrl());
+            ret.getServices().put(service.serviceId(), service.getUrl());
             if (resources != null) {
                 for (KlabAsset resource : resources) {
                     ResourceSet.Resource descriptor = new ResourceSet.Resource();
                     descriptor.setResourceUrn(resource.getUrn());
-                    descriptor.setServiceId(service.getLocalName());
-                    if (resource instanceof KlabDocument document) {
+                    descriptor.setServiceId(service.serviceId());
+                    if (resource instanceof KlabDocument<?> document) {
                         descriptor.setResourceVersion(document.getVersion());
                     }
                     if (resource instanceof KimNamespace) {

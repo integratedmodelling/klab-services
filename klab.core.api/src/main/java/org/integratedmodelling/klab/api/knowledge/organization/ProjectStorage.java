@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 
+import java.io.File;
 import java.net.URL;
 import java.util.List;
 
@@ -26,7 +27,28 @@ public interface ProjectStorage {
         TESTCASE,
         BEHAVIOR_COMPONENT,
         RESOURCE,
-        RESOURCE_ASSET
+        RESOURCE_ASSET;
+
+        public String getFileExtension() {
+            return switch (this) {
+                case ONTOLOGY -> "kwv";
+                case MODEL_NAMESPACE -> "kim";
+                case STRATEGY -> "obs";
+                case BEHAVIOR, TESTCASE, SCRIPT -> "kactors";
+                default ->
+                        throw new KlabUnimplementedException("file extension for document of class " + this);
+            };
+        }
+
+        public static ResourceType classify(KlabDocument<?> document) {
+            return switch (document) {
+                case KimOntology o -> ONTOLOGY;
+                case KimNamespace o -> MODEL_NAMESPACE;
+                case KimObservationStrategyDocument o -> STRATEGY;
+                case KActorsBehavior o -> BEHAVIOR; // TODO check type
+                default -> throw new KlabUnimplementedException("no resource type for " + document);
+            };
+        }
     }
 
     String getProjectName();
@@ -74,35 +96,25 @@ public interface ProjectStorage {
      */
     boolean isFilesystemBased();
 
-    public static String getFileExtension(KlabDocument<?> document) {
-        return switch (document) {
-            case KimOntology ontology -> "kwv";
-            case KimNamespace ontology -> "kim";
-            case KimObservationStrategyDocument ontology -> "obs";
-            case KActorsBehavior ontology -> "kactors";
-            default ->
-                    throw new KlabUnimplementedException("file extension for document of class " + document.getClass().getCanonicalName());
-        };
+
+    public static String getRelativeFilePath(String urn, ResourceType type) {
+        return getRelativeFilePath(urn, type, File.separator);
     }
-
-
-    /**
-     * Return a slash-separated relative, canonical file path to the passed document file, including the
-     * expected extension. This is a static method and does not assume that a correspondent file exists in any
-     * project.
-     *
-     * @param document
-     * @return
-     */
-    public static String getRelativeFilePath(KlabDocument<?> document) {
-        if (document instanceof KimOntology || document instanceof KimNamespace) {
-            return "src/" + document.getUrn().replace('.', '/') + "." + getFileExtension(document);
-        } else if (document instanceof KimBehavior behavior) {
-//            switch (behavior.)
-            // TODO depends on the type
-        } else if (document instanceof KimObservationStrategyDocument) {
-            return "strategies/" + document.getUrn() + "." + getFileExtension(document);
-        }
-        return null;
+        /**
+         * Return a slash-separated relative, canonical file path to the passed document file, including the
+         * expected extension. This is a static method and does not assume that a correspondent file exists in any
+         * project.
+         *
+         * @return
+         */
+    public static String getRelativeFilePath(String urn, ResourceType type, String separator) {
+        return switch(type) {
+            case SCRIPT -> "scripts" + separator + urn + "." + type.getFileExtension();
+            case TESTCASE -> "tests" + separator + urn + "." + type.getFileExtension();
+            case APPLICATION ->  "apps" + separator +  urn + "." + type.getFileExtension();
+            case ONTOLOGY, MODEL_NAMESPACE, BEHAVIOR ->  "src" + separator + urn.replace('.', separator.charAt(0)) + "." + type.getFileExtension();
+            case STRATEGY -> "strategies" + separator + urn + "." + type.getFileExtension();
+            default -> null;
+        };
     }
 }

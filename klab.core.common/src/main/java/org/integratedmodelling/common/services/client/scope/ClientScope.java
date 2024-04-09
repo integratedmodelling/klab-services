@@ -3,6 +3,7 @@ package org.integratedmodelling.common.services.client.scope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -73,6 +74,17 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
             }
         }
     }
+
+    @Override
+    public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+        for (var service : getServices(serviceClass)) {
+            if (serviceId.equals(service.serviceId())) {
+                return service;
+            }
+        }
+        throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
+    }
+
 
     //	/**
     //	 * Obtain a message to an agent that is set up to intercept a response sent to

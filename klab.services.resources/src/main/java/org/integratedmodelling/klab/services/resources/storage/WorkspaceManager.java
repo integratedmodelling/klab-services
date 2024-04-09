@@ -889,6 +889,10 @@ public class WorkspaceManager {
          */
         Map<String, ResourceSet> result = new LinkedHashMap<>();
 
+        // this may or may not end up in the result set
+        var worldviewChange = new ResourceSet();
+        worldviewChange.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
+
         if (change == CRUDOperation.DELETE) {
             // TODO
         } else if (change == CRUDOperation.CREATE) {
@@ -979,10 +983,6 @@ public class WorkspaceManager {
                 ontology, worldview and namespace arrays for the modified and the affected in the order
                 specified by the resourcesets.
                  */
-                var worldviewChange = checkForWorldviewChanges(newAsset, type);
-                if (worldviewChange != null) {
-                    result.put("Worldview", worldviewChange);
-                }
 
                 /*
                  If dependency statements have changed in the modified file, a NEW order of everything is
@@ -1000,7 +1000,11 @@ public class WorkspaceManager {
                  */
                 for (var ontology : getOntologies(false)) {
                     if (affectedOntologies.contains(ontology.getUrn())) {
-                        addToResultSet(ontology, Workspace.EXTERNAL_WORKSPACE_URN, result);
+                        var descriptor = addToResultSet(ontology, Workspace.EXTERNAL_WORKSPACE_URN, result);
+                        if (_worldviewOntologies.stream().anyMatch(ont -> newAsset.getUrn().equals(ont.getUrn()))) {
+                            worldviewChange.getOntologies().add(descriptor);
+                            worldviewChange.getResources().add(descriptor);
+                        }
                     }
                 }
                 for (var namespace : getNamespaces()) {
@@ -1120,71 +1124,77 @@ public class WorkspaceManager {
                 }
             }
 
+            var ret = new ArrayList<ResourceSet>();
+            if (!worldviewChange.getResources().isEmpty()) {
+                ret.add(worldviewChange);
+            }
+            ret.addAll(result.values());
+
             /**
              Report a ResourceSet per workspace affected. The listening end(s) will have to request the
              contents.
              */
-            for (var resourceSet : result.values()) {
+            for (var resourceSet : ret) {
                 scope.send(Message.MessageClass.ResourceLifecycle, Message.ForwardingPolicy.Forward,
                         Message.MessageType.WorkspaceChanged, resourceSet);
             }
 
-            return new ArrayList<>(result.values());
-
+            return ret;
         }
 
         return Collections.emptyList();
     }
 
-    /**
-     * Substitute the document in the respective lists and containers. If this is an ontology and the
-     * worldview contains it, substitute it in the worldview only if there are no errors, otherwise remove it.
-     * In all other cases it goes in with any errors it may contain.
-     * <p>
-     * If the document is an ontology, recompute all concept descriptors in the language validator.
-     * <p>
-     * if it's an ontology and it's part of the worldview, the worldview must become empty if it has errors.
-     * In all situations the worldview resource must be in the ResourceSet to message that it must be
-     * reloaded.
-     *
-     * @param newAsset
-     * @param type
-     * @return
-     */
-    private ResourceSet checkForWorldviewChanges(KlabDocument<?> newAsset, ProjectStorage.ResourceType type) {
-
-        ResourceSet ret = null;
-
-        boolean isWorldview =
-                type == ProjectStorage.ResourceType.ONTOLOGY && _worldviewOntologies.stream().anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
-
-        if (isWorldview) {
-            ret = new ResourceSet();
-            ret.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
-            var resource = new ResourceSet.Resource();
-            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
-            ret.getResources().add(resource);
-            if (Utils.Notifications.hasErrors(newAsset.getNotifications())) {
-                ret.setEmpty(true);
-                ret.getNotifications().addAll(newAsset.getNotifications());
-            }
-        }
-
-        return ret;
-    }
+//    /**
+//     * Substitute the document in the respective lists and containers. If this is an ontology and the
+//     * worldview contains it, substitute it in the worldview only if there are no errors, otherwise remove it.
+//     * In all other cases it goes in with any errors it may contain.
+//     * <p>
+//     * If the document is an ontology, recompute all concept descriptors in the language validator.
+//     * <p>
+//     * if it's an ontology and it's part of the worldview, the worldview must become empty if it has errors.
+//     * In all situations the worldview resource must be in the ResourceSet to message that it must be
+//     * reloaded.
+//     *
+//     * @param newAsset
+//     * @param type
+//     * @return
+//     */
+//    private ResourceSet checkForWorldviewChanges(KlabDocument<?> newAsset, ProjectStorage.ResourceType type) {
+//
+//        ResourceSet ret = null;
+//
+//        boolean isWorldview =
+//                type == ProjectStorage.ResourceType.ONTOLOGY && _worldviewOntologies.stream().anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
+//
+//        if (isWorldview) {
+//            ret = new ResourceSet();
+//            ret.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
+//            var resource = new ResourceSet.Resource();
+//            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
+//            ret.getResources().add(resource);
+//            if (Utils.Notifications.hasErrors(newAsset.getNotifications())) {
+//                ret.setEmpty(true);
+//                ret.getNotifications().addAll(newAsset.getNotifications());
+//            }
+//        }
+//
+//        return ret;
+//    }
 
     /**
      * Add the document info to the result set that corresponds to the passed workspace in the passed result
      * map, creating whatever is needed. If the external workspace name is given, use that for an external
      * document, otherwise skip it.
      *
-     * @param ontology
+     * @param asset
      * @param result
      */
-    private void addToResultSet(KlabDocument<?> ontology, String externalWorkspaceId, Map<String,
+    private ResourceSet.Resource addToResultSet(KlabDocument<?> asset, String externalWorkspaceId, Map<String,
             ResourceSet> result) {
 
-        String workspace = getWorkspaceForProject(ontology.getProjectName());
+        String workspace = getWorkspaceForProject(asset.getProjectName());
+        ResourceSet.Resource resource = null;
         if (workspace == null) workspace = externalWorkspaceId;
 
         if (workspace != null) {
@@ -1196,11 +1206,15 @@ public class WorkspaceManager {
                 result.put(workspace, resourceSet);
             }
 
-            ResourceSet.Resource resource = new ResourceSet.Resource();
-            resource.setResourceUrn(ontology.getUrn());
-            resource.setResourceVersion(ontology.getVersion());
-            resource.setServiceId(configuration.getServicePath());
-            resource.setKnowledgeClass(KlabAsset.classify(ontology));
+            resource = new ResourceSet.Resource();
+            resource.setResourceUrn(asset.getUrn());
+            resource.setResourceVersion(asset.getVersion());
+            resource.setServiceId(configuration.getServiceId());
+            resource.setKnowledgeClass(KlabAsset.classify(asset));
+            resource.getNotifications().addAll(asset.getNotifications());
+            if (resourceSet.getServices().containsKey(configuration.getServiceId())) {
+                resourceSet.getServices().put(configuration.getServiceId(), service.getUrl());
+            }
 
             switch (resource.getKnowledgeClass()) {
                 case RESOURCE -> {
@@ -1223,6 +1237,8 @@ public class WorkspaceManager {
             resourceSet.getResources().add(resource);
 
         }
+
+        return resource;
     }
 
     /**

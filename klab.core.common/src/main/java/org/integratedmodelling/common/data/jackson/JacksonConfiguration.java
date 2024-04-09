@@ -31,7 +31,12 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -317,7 +322,9 @@ public class JacksonConfiguration {
                                       RepositoryMetadata.class, Project.Manifest.class,
                                       Triple.class, Unit.class, Project.class, KlabAsset.class,
                                       Currency.class, Message.class, Worldview.class, Workspace.class,
-                                      Concept.class, Observable.class, Resource.class,
+                                      Concept.class, Observable.class, Resource.class, KimOntology.class,
+                                      KimNamespace.class, KimObservationStrategyDocument.class,
+                                      KdlDataflow.class, KActorsBehavior.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());

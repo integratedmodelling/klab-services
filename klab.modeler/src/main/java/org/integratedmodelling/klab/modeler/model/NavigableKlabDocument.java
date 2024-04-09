@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.modeler.model;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.checkerframework.checker.units.qual.N;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
@@ -19,8 +21,8 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocumen
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>
         extends NavigableKlabAsset<T> implements KlabDocument<E>, NavigableDocument {
 
+    @Serial
     private static final long serialVersionUID = 7741675272275189813L;
-
 
     /**
      * Use to inject implementation-specific instrumentation
@@ -58,6 +60,10 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         };
     }
 
+    @Override
+    protected List<? extends NavigableAsset> createChildren() {
+        return (List<? extends NavigableKlabStatement>) getStatements();
+    }
 
     /**
      * Get a filename with the proper file name based on the URN, document type and location.
@@ -148,10 +154,6 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         return delegate.isInactive();
     }
 
-    @Override
-    public List<? extends NavigableKlabStatement> children() {
-        return (List<? extends NavigableKlabStatement>) getStatements();
-    }
 
     public NavigableProject project() {
         var parent = this.parent();

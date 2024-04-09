@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.resources;
 
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -7,6 +8,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.*;
@@ -15,16 +17,18 @@ import java.util.*;
  * The output of any resources GET endpoint that provides models, projects, worldview, behaviors or resources,
  * or reports the resources affected by a change. The returned resources should be matched with anything
  * already loaded and their versions; the order of each array is always the load dependency order if one is
- * defined.
+ * defined. The main descriptor includes a service ID so that we can establish whether the result comes from
+ * the current service or another.
  * <p>
- * Each resource descriptor lists a URN, its "knowledge class", a version and the URL of the service that
- * provides it. Metadata may be added to better describe the context of the result, provenance, authors, or
- * rationale when appropriate. The actual resources must be loaded independently; the service guarantees that
- * any URNs mentioned are served and available to the requesting identity. All ResourceSets (even if empty)
- * must contain the ID of the service that produced them. If the ResultSet is returned as the response for
- * querying a specific URN or a pattern, the result should contain the resource descriptor(s) in
- * {@link #getResults()}. All other fields contain the needed objects that must be loaded or reloaded before
- * any use of it is made.
+ * Each resource descriptor lists a URN, its "knowledge class", a version and the unique ID of the service
+ * that provides it, plus a {@link CRUDOperation} that details what happened to it. Each service ID should be
+ * matched with the correspondent URL in the main object. Metadata may be added to better describe the context
+ * of the result, provenance, authors, or rationale when appropriate. The actual resources must be loaded
+ * independently; the service guarantees that any URNs mentioned are served and available to the requesting
+ * identity. All ResourceSets (even if empty) must contain the ID of the service that produced them. If the
+ * ResultSet is returned as the response for querying a specific URN or a pattern, the result should contain
+ * the resource descriptor(s) in {@link #getResults()}. All other fields contain the needed objects that must
+ * be loaded or reloaded before any use of it is made.
  * <p>
  * A method isEmpty() is provided to streamline usage and possibly differentiate from a resource set that
  * contains no resources but actually represents as a non-empty result, or from an empty result that does
@@ -35,6 +39,7 @@ import java.util.*;
  */
 public class ResourceSet implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 6465699208972901806L;
 
     /**
@@ -43,14 +48,16 @@ public class ResourceSet implements Serializable {
      */
     public static class Resource implements Serializable {
 
+        @Serial
         private static final long serialVersionUID = 4391465185554063863L;
 
         private String serviceId;
         private String resourceUrn;
         private Version resourceVersion;
         private KnowledgeClass knowledgeClass;
-
+        private CRUDOperation operation = CRUDOperation.UPDATE;
         private Metadata metadata = Metadata.create();
+        private List<Notification> notifications = new ArrayList<>();
 
         public Resource() {
         }
@@ -101,12 +108,35 @@ public class ResourceSet implements Serializable {
             this.knowledgeClass = knowledgeClass;
         }
 
+        public CRUDOperation getOperation() {
+            return operation;
+        }
+
+        public void setOperation(CRUDOperation operation) {
+            this.operation = operation;
+        }
+
+        public Metadata getMetadata() {
+            return metadata;
+        }
+
+        public void setMetadata(Metadata metadata) {
+            this.metadata = metadata;
+        }
+
+        public List<Notification> getNotifications() {
+            return notifications;
+        }
+
+        public void setNotifications(List<Notification> notifications) {
+            this.notifications = notifications;
+        }
+
         @Override
         public String toString() {
             return Utils.Strings.capitalize(this.knowledgeClass.name().toLowerCase()) + " " + this.resourceUrn + " v"
                     + this.resourceVersion + " (" + this.serviceId + ")";
         }
-
     }
 
     private Map<String, URL> services = new HashMap<>();
@@ -204,7 +234,6 @@ public class ResourceSet implements Serializable {
     public void setWorkspace(String workspace) {
         this.workspace = workspace;
     }
-
 
     public List<Resource> getObservationStrategies() {
         return observationStrategies;

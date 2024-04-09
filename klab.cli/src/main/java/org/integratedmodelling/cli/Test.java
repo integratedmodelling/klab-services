@@ -2,6 +2,7 @@ package org.integratedmodelling.cli;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
@@ -51,6 +52,11 @@ public class Test implements Runnable {
 
            @Override
            public Metadata localMetadata() {
+               return null;
+           }
+
+           @Override
+           public <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> assetClass) {
                return null;
            }
 

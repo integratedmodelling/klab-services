@@ -40,7 +40,7 @@ public class NavigableKimOntology extends NavigableKlabDocument<KimConceptStatem
 	}
 
 	@Override
-	public List<? extends NavigableKlabStatement> children() {
+	protected List<? extends NavigableKlabStatement> createChildren() {
 		return getStatements().stream().map(s -> new NavigableKlabStatement(s, this)).toList();
 	}
 

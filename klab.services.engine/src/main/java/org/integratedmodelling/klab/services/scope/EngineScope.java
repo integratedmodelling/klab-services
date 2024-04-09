@@ -4,6 +4,7 @@ import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -288,6 +289,16 @@ public abstract class EngineScope extends ChannelImpl implements UserScope {
 	@Override
 	public void setData(String key, Object value) {
 		this.data.put(key, value);
+	}
+
+	@Override
+	public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+		for (var service : getServices(serviceClass)) {
+			if (serviceId.equals(service.serviceId())) {
+				return service;
+			}
+		}
+		throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
 	}
 
 //	@Override

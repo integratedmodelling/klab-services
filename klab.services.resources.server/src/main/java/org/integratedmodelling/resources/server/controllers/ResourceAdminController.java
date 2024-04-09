@@ -52,7 +52,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT)
-    public Project createProject(@RequestParam("workspaceName") String workspaceName, @RequestParam(
+    public Project createProject(@PathVariable("workspaceName") String workspaceName, @PathVariable(
             "projectName") String projectName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createProject(workspaceName, projectName);
@@ -61,7 +61,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_PROJECT)
-    public Project updateProject(@RequestParam("projectName") String projectName,
+    public Project updateProject(@PathVariable("projectName") String projectName,
                                  @RequestBody Project.Manifest manifest,
                                  @RequestBody Metadata metadata, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
@@ -71,7 +71,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_NAMESPACE)
-    public ResourceSet createNamespace(@RequestParam("projectName") String projectName,
+    public ResourceSet createNamespace(@PathVariable("projectName") String projectName,
                                        @RequestBody String namespaceContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.createNamespace(projectName, namespaceContent, auth.getToken());
@@ -80,7 +80,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_NAMESPACE)
-    public List<ResourceSet> updateNamespace(@RequestParam("projectName") String projectName,
+    public List<ResourceSet> updateNamespace(@PathVariable("projectName") String projectName,
                                              @RequestBody String namespaceContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.updateNamespace(projectName, namespaceContent, auth.getToken());
@@ -89,7 +89,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_BEHAVIOR)
-    public ResourceSet createBehavior(@RequestParam("projectName") String projectName,
+    public ResourceSet createBehavior(@PathVariable("projectName") String projectName,
                                       @RequestBody String behaviorContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.createBehavior(projectName, behaviorContent, auth.getToken());
@@ -98,7 +98,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_BEHAVIOR)
-    public List<ResourceSet> updateBehavior(@RequestParam("projectName") String projectName,
+    public List<ResourceSet> updateBehavior(@PathVariable("projectName") String projectName,
                                             @RequestBody String behaviorContent, Principal principal) {
         // TODO check if user has locked the project
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
@@ -108,7 +108,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_ONTOLOGY)
-    public ResourceSet createOntology(@RequestParam("projectName") String projectName,
+    public ResourceSet createOntology(@PathVariable("projectName") String projectName,
                                       @RequestBody String ontologyContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.createOntology(projectName, ontologyContent, auth.getToken());
@@ -117,7 +117,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_ONTOLOGY)
-    public List<ResourceSet> updateOntology(@RequestParam("projectName") String projectName,
+    public List<ResourceSet> updateOntology(@PathVariable("projectName") String projectName,
                                             @RequestBody String ontologyContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.updateOntology(projectName, ontologyContent, auth.getToken());
@@ -126,7 +126,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_STRATEGIES)
-    public List<ResourceSet> updateStrategies(@RequestParam("projectName") String projectName,
+    public List<ResourceSet> updateStrategies(@PathVariable("projectName") String projectName,
                                               @RequestBody String strategiesContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.updateObservationStrategies(projectName, strategiesContent, auth.getToken());
