@@ -12,12 +12,23 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.net.URL;
 import java.util.List;
 
-public class ResolverService implements Resolver, Resolver.Admin {
+public class ResolverService extends BaseService implements Resolver, Resolver.Admin {
+
+    public ResolverService(ServiceScope scope, Type serviceType, ServiceStartupOptions options) {
+        super(scope, serviceType, options);
+    }
+
+    @Override
+    public void initializeService() {
+
+    }
 
     @Override
     public URL getUrl() {
@@ -41,6 +52,7 @@ public class ResolverService implements Resolver, Resolver.Admin {
         // TODO Auto-generated method stub
         return null;
     }
+
 
     @Override
     public boolean shutdown() {

@@ -353,6 +353,14 @@ public abstract class ServiceClient implements KlabService {
     }
 
     @Override
+    public boolean isExclusive() {
+        /**
+         * TODO isLocal() could be a prerequisite but locking the service should precede returning true here.
+         */
+        return isLocal();
+    }
+
+    @Override
     public String serviceId() {
         return capabilities.getServiceId();
     }

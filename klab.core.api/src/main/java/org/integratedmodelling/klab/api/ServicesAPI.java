@@ -91,11 +91,11 @@ public interface ServicesAPI {
          */
         String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable/{definition}";
 
-        String SEMANTIC_SEARCH = REASONER_BASE + "/semantic-search";
+        String SEMANTIC_SEARCH = REASONER_BASE + "/semanticSearch";
 
-        String HAS_TRAIT = REASONER_BASE + "/has-trait";
+        String HAS_TRAIT = REASONER_BASE + "/hasTrait";
 
-        String RAW_OBSERVABLE = REASONER_BASE + "/raw-observable";
+        String RAW_OBSERVABLE = REASONER_BASE + "/rawObservable";
 
         String SUBSUMES = REASONER_BASE + "/subsumes";
 
@@ -107,23 +107,21 @@ public interface ServicesAPI {
 
         String PARENT = REASONER_BASE + "/parent";
 
-        String ALL_CHILDREN = REASONER_BASE + "/all-children";
+        String ALL_CHILDREN = REASONER_BASE + "/allChildren";
 
-        String ALL_PARENTS = REASONER_BASE + "/all-parents";
+        String ALL_PARENTS = REASONER_BASE + "/allParents";
 
         String CLOSURE = REASONER_BASE + "/closure";
 
-        String CORE_OBSERVABLE = REASONER_BASE + "/core-observable";
+        String CORE_OBSERVABLE = REASONER_BASE + "/coreObservable";
 
-        String SPLIT_OPERATORS = REASONER_BASE + "/split-operators";
+        String SPLIT_OPERATORS = REASONER_BASE + "/splitOperators";
 
         String DISTANCE = REASONER_BASE + "/distance";
 
         String ROLES = REASONER_BASE + "/roles";
 
-        String HAS_ROLE = REASONER_BASE + "/has-role";
-
-        //		public static String CONTEXT = REASONER_BASE + "/context";
+        String HAS_ROLE = REASONER_BASE + "/hasRole";
 
         String INHERENT = REASONER_BASE + "/inherent";
 
@@ -139,7 +137,7 @@ public interface ServicesAPI {
 
         String COMPRESENT = REASONER_BASE + "/compresent";
 
-        String RELATIVE_TO = REASONER_BASE + "/relative-to";
+        String RELATIVE_TO = REASONER_BASE + "/relativeTo";
 
         String TRAITS = REASONER_BASE + "/traits";
 
@@ -149,35 +147,35 @@ public interface ServicesAPI {
 
         String REALMS = REASONER_BASE + "/realms";
 
-        String BASE_PARENT_TRAIT = REASONER_BASE + "/base-parent-trait";
+        String BASE_PARENT_TRAIT = REASONER_BASE + "/baseParentTrait";
 
-        String BASE_OBSERVABLE = REASONER_BASE + "/base-observable";
+        String BASE_OBSERVABLE = REASONER_BASE + "/baseObservable";
 
-        String HAS_PARENT_ROLE = REASONER_BASE + "/has-parent-role";
+        String HAS_PARENT_ROLE = REASONER_BASE + "/hasParentRole";
 
-        String SEMANTIC_TYPE = REASONER_BASE + "/semantic-type";
+        String SEMANTIC_TYPE = REASONER_BASE + "/semanticType";
 
-        String IMPLIED_ROLES = REASONER_BASE + "/implied-roles";
+        String IMPLIED_ROLES = REASONER_BASE + "/impliedRoles";
 
-        String IMPLIED_ROLE = REASONER_BASE + "/implied-role";
+        String IMPLIED_ROLE = REASONER_BASE + "/impliedRole";
 
-        String ROLES_FOR = REASONER_BASE + "/roles-for";
+        String ROLES_FOR = REASONER_BASE + "/rolesFor";
 
         String CREATED = REASONER_BASE + "/created";
 
         String AFFECTED = REASONER_BASE + "/affected";
 
-        String AFFECTED_OR_CREATED = REASONER_BASE + "/affected-or-created";
+        String AFFECTED_OR_CREATED = REASONER_BASE + "/affectedOrCreated";
 
-        String CREATED_BY = REASONER_BASE + "/created-by";
+        String CREATED_BY = REASONER_BASE + "/createdBy";
 
-        String AFFECTED_BY = REASONER_BASE + "/affected-by";
+        String AFFECTED_BY = REASONER_BASE + "/affectedBy";
 
-        String LGC = REASONER_BASE + "/least-generic-common";
+        String LGC = REASONER_BASE + "/leastGenericCommon";
 
         String OCCURRENT = REASONER_BASE + "/occurrent";
 
-        String CONTEXTUALLY_COMPATIBLE = REASONER_BASE + "/contextually-compatible";
+        String CONTEXTUALLY_COMPATIBLE = REASONER_BASE + "/contextuallyCompatible";
 
         String COMPATIBLE = REASONER_BASE + "/compatible";
 
@@ -189,15 +187,15 @@ public interface ServicesAPI {
 
         String NEGATED = REASONER_BASE + "/negated";
 
-        String RELATIONSHIP_TARGETS = REASONER_BASE + "/relationship-targets";
+        String RELATIONSHIP_TARGETS = REASONER_BASE + "/relationshipTargets";
 
         String SATISFIABLE = REASONER_BASE + "/satisfiable";
 
-        String RELATIONSHIP_TARGET = REASONER_BASE + "/relationship-target";
+        String RELATIONSHIP_TARGET = REASONER_BASE + "/relationshipTarget";
 
-        String RELATIONSHIP_SOURCES = REASONER_BASE + "/relationship-sources";
+        String RELATIONSHIP_SOURCES = REASONER_BASE + "/relationshipSources";
 
-        String RELATIONSHIP_SOURCE = REASONER_BASE + "/relationship-source";
+        String RELATIONSHIP_SOURCE = REASONER_BASE + "/relationshipSource";
 
         /**
          * Reasoner plug-ins can extend the observation strategies.
@@ -206,6 +204,9 @@ public interface ServicesAPI {
          */
         interface ADMIN extends PluginAPI {
 
+            String LOAD_KNOWLEDGE = "/loadKnowledge";
+            String UPDATE_KNOWLEDGE = "/updateKnowledge";
+            String DEFINE_CONCEPT = "/defineConcept";
         }
 
     }

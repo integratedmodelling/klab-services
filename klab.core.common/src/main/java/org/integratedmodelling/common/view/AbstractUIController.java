@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -232,6 +233,11 @@ public abstract class AbstractUIController implements UIController {
                         dispatch(this, UIReactor.UIEvent.DistributionSelected,
                                 message.getPayload(Distribution.class));
                     }
+                    case ReasoningAvailable -> {
+                        dispatch(this, UIReactor.UIEvent.ReasoningAvailable,
+                                message.getPayload(Reasoner.Capabilities.class));
+                    }
+
                     default -> {
                     }
                 }

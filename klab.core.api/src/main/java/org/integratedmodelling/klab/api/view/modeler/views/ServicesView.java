@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.view.modeler.views;
 
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.view.View;
 
 public interface ServicesView extends View {
@@ -16,7 +17,8 @@ public interface ServicesView extends View {
      * as if the user had selected the service, so that the current service in the engine is guaranteed in
      * sync with what is shown in the view.
      */
-    void servicesConfigurationChanged(KlabService.ServiceCapabilities service, RunningInstance.Status running);
+    void servicesConfigurationChanged(KlabService.ServiceCapabilities service,
+                                      RunningInstance.Status running);
 
     /**
      * Called when any of the services in the engine scope reports its status. The view should react by
@@ -25,5 +27,13 @@ public interface ServicesView extends View {
      * @param status
      */
     void notifyServiceStatus(KlabService.ServiceStatus status);
+
+    /**
+     * Called when the reasoner successfully loads the worldview coming from the resources service. If the
+     * reasoner had knowledge to begin with, this is not called.
+     *
+     * @param reasonerCapabilities
+     */
+    void reasoningAvailable(Reasoner.Capabilities reasonerCapabilities);
 
 }

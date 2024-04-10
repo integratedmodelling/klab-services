@@ -11,11 +11,13 @@ import java.util.List;
 import java.util.Set;
 
 public class ReasonerCapabilitiesImpl implements Reasoner.Capabilities {
+
     private KlabService.Type type;
     private String localName;
     private String serviceName;
     private String serviceId;
     private String serverId;
+    private String worldviewId;
 
     @Override
     public KlabService.Type getType() {
@@ -62,4 +64,12 @@ public class ReasonerCapabilitiesImpl implements Reasoner.Capabilities {
         this.serverId = serverId;
     }
 
+    @Override
+    public String getWorldviewId() {
+        return worldviewId;
+    }
+
+    public void setWorldviewId(String worldviewId) {
+        this.worldviewId = worldviewId;
+    }
 }

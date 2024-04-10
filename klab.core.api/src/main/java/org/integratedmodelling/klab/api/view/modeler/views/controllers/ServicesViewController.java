@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.ViewController;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
@@ -43,6 +44,9 @@ public interface ServicesViewController extends ViewController<ServicesView> {
      */
     @UIEventHandler(UIEvent.ServiceStatus)
     void serviceStatus(KlabService.ServiceStatus status);
+
+    @UIEventHandler(UIEvent.ReasoningAvailable)
+    void reasoningAvailable(Reasoner.Capabilities capabilities);
 
     /**
      * User action choosing a service to focus on. The view handles all the UI implications and then calls

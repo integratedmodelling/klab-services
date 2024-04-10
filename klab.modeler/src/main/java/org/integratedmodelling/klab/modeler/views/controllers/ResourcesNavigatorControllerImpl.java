@@ -1,10 +1,9 @@
 package org.integratedmodelling.klab.modeler.views.controllers;
 
-import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIViewController;
-import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -15,7 +14,6 @@ import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
 import org.integratedmodelling.klab.api.view.modeler.panels.controllers.DocumentEditorController;
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
-import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
 import org.integratedmodelling.klab.modeler.model.*;
 
 import java.io.File;
@@ -56,10 +54,9 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             if (container != null) {
                 if (container.mergeChanges(changes, getController().engine().serviceScope())) {
                     view().workspaceModified(container);
-                    if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
-                        // TODO if the reasoner is exclusive and is using the same worldview, send the
-                        //  changes over, otherwise warn.
-                    }
+//                    if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
+//                        getController().engine().worldviewChanged(changes);
+//                    }
                 }
             }
         }

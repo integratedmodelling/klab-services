@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.engine;
 
+import com.fasterxml.jackson.databind.ser.Serializers;
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -13,6 +14,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.actors.KAgent.KAgentRef;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
@@ -32,7 +34,7 @@ import java.util.function.BiConsumer;
  *
  * @author Ferd
  */
-public class EngineService implements Engine {
+public class EngineService extends BaseService implements Engine {
 
     private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
     private ReActorSystem actorSystem;
@@ -42,14 +44,19 @@ public class EngineService implements Engine {
     private Resolver defaultResolver;
     private boolean booted;
 
-    public EngineService() {
-
+    public EngineService(ServiceScope scope, Type serviceType, ServiceStartupOptions options) {
+        super(scope, serviceType, options);
         /*
          * boot the actor system right away, so that we can call login() before boot().
          */
         this.actorSystem =
                 new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
                         .initReActorSystem();
+    }
+
+    @Override
+    public void initializeService() {
+
     }
 
     @Override
@@ -99,7 +106,7 @@ public class EngineService implements Engine {
                     if (service instanceof ResourcesService admin) {
                         worldview = admin.getWorldview();
                     } else if (service instanceof Reasoner.Admin admin && !worldview.isEmpty()) {
-                        admin.loadKnowledge(worldview, baseService.serviceScope());
+                        admin.loadKnowledge(worldview);
                     }
                 }
             }
@@ -246,17 +253,8 @@ public class EngineService implements Engine {
         return null;
     }
 
-    @Override
-    public Scope serviceScope() {
-        return null;
-    }
-
     public boolean shutdown() {
-        // fixme
-        this.defaultReasoner.shutdown();
-        this.defaultResourcesService.shutdown();
-        this.defaultReasoner.shutdown();
-        this.defaultRuntime.shutdown();
+        actorSystem.shutDown();
         return true;
     }
 

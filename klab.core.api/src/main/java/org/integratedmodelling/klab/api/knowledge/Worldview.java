@@ -28,6 +28,15 @@ public interface Worldview extends KlabAsset {
     public static final String WORLDVIEW_WORKSPACE_IDENTIFIER = "__WORLDVIEW__";
 
     /**
+     * A worldview must have a unique ID that reflects its full content. The ID is used to compare worldviews
+     * loaded in a service to assess if they can be updated by changes happening in other services. Once
+     * assigned upon worldview creation, the ID shouldn't be changed even if updates are merged.
+     *
+     * @return
+     */
+    String getWorldviewId();
+
+    /**
      * The ontologies are in the right order for loading and the first in the list is always the root
      * ontology, which will reference any upper ontologies it uses.
      *

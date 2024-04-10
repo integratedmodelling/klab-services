@@ -20,11 +20,8 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.impl.AnnotationImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.impl.kim.KimObservableImpl;
-import org.integratedmodelling.klab.api.lang.kim.KimConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -33,6 +30,7 @@ import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -122,6 +120,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private Map<String, Concept> concepts = Collections.synchronizedMap(new HashMap<>());
     private Map<String, Observable> observables = Collections.synchronizedMap(new HashMap<>());
     private ObservationReasoner observationReasoner;
+    private Worldview worldview;
 
     // /**
     // * Caches for concepts and observables, linked to the URI in the corresponding
@@ -310,7 +309,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public Concept defineConcept(KimConceptStatement statement, Scope scope) {
+    public Concept defineConcept(KimConceptStatement statement) {
         return build(statement, this.owl.requireOntology(statement.getNamespace(),
                 OWL.DEFAULT_ONTOLOGY_PREFIX), null, scope);
     }
@@ -1089,6 +1088,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public Capabilities capabilities() {
         return new Capabilities() {
+
+            @Override
+            public String getWorldviewId() {
+                return worldview == null ? null : worldview.getWorldviewId();
+            }
+
             @Override
             public Type getType() {
                 return Type.REASONER;
@@ -1275,7 +1280,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public boolean loadKnowledge(Worldview worldview, Scope scope) {
+    public boolean loadKnowledge(Worldview worldview) {
+
+        this.worldview = worldview;
 
         if (worldview.isEmpty()) {
             return false;
@@ -1285,19 +1292,32 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         for (KimOntology ontology : worldview.getOntologies()) {
             for (var statement : ontology.getStatements()) {
-                defineConcept(statement, scope);
+                defineConcept(statement);
             }
             this.owl.registerWithReasoner(ontology);
         }
         this.owl.flushReasoner();
-        for (var strategy : worldview.getObservationStrategies()) {
-            // TODO
+        for (var strategyDocument : worldview.getObservationStrategies()) {
+            for (var strategy : strategyDocument.getStatements()) {
+                defineStrategy(strategy);
+            }
         }
 
         // TODO set the loaded worldview as the one of reference
 
         return true;
     }
+
+    @Override
+    public boolean updateKnowledge(ResourceSet changes) {
+        // TODO
+        return false;
+    }
+
+    private ObservationStrategy defineStrategy(KimObservationStrategy strategy) {
+        return null;
+    }
+
 
     public void setLocalName(String localName) {
         this.localName = localName;

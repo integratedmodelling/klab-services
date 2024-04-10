@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.modeler.views.controllers;
 import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.views.ServicesView;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ServicesViewController;
@@ -38,6 +39,11 @@ public class ServicesViewControllerImpl extends AbstractUIViewController<Service
     public void serviceStatus(KlabService.ServiceStatus status) {
         // TODO add to engine, select if first or configured default
         view().notifyServiceStatus(status);
+    }
+
+    @Override
+    public void reasoningAvailable(Reasoner.Capabilities capabilities) {
+        view().reasoningAvailable(capabilities);
     }
 
     @Override

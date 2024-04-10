@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -51,6 +52,9 @@ public class EngineClient implements Engine, PropertyHolder {
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private boolean firstCall = true;
     String serviceId = Utils.Names.shortUUID();
+    private boolean reasoningAvailable;
+    private boolean reasonerDisabled;
+    private Worldview worldview;
 
     public UserScope getUser() {
         return this.users.size() > 0 ? users.get(0) : null;
@@ -125,6 +129,12 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     @Override
+    public boolean isExclusive() {
+        // the engine is just an orchestrator so we can assume every client is local.
+        return true;
+    }
+
+    @Override
     public void boot() {
         this.defaultUser = authenticate();
         if (this.defaultUser instanceof ChannelImpl channel) {
@@ -175,11 +185,41 @@ public class EngineClient implements Engine, PropertyHolder {
             firstCall = false;
         }
 
+        /**
+         * Check if we have reasoning
+         */
+        if (!reasoningAvailable && !reasonerDisabled) {
+            /**
+             * If we have a worldview from the resources service and the reasoner is exclusive and
+             * doesn't have a worldview,  load the worldview in the reasoner.
+             */
+            var reasoner = serviceScope().getService(Reasoner.class);
+            if (reasoner != null && reasoner.isExclusive() && reasoner.capabilities().getWorldviewId() == null) {
+                var resources = serviceScope().getService(ResourcesService.class);
+                if (resources != null && resources.capabilities().isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
+                    if (admin.loadKnowledge(this.worldview = resources.getWorldview())) {
+                        reasoningAvailable = true;
+                        serviceScope().send(Message.MessageClass.EngineLifecycle,
+                                Message.MessageType.ReasoningAvailable, reasoner.capabilities());
+                        serviceScope().info("Worldview loaded into local reasoner");
+                    } else {
+                        reasonerDisabled = true;
+                        serviceScope().warn("Worldview loading failed: reasoner is disabled");
+                    }
+                }
+            }
+
+        }
+
+
         // inform listeners
         if (wasAvailable != ok) {
             if (ok) {
+
                 serviceScope().send(Message.MessageClass.EngineLifecycle,
                         Message.MessageType.ServiceAvailable, capabilities());
+
+
             } else {
                 serviceScope().send(Message.MessageClass.EngineLifecycle,
                         Message.MessageType.ServiceUnavailable, capabilities());
@@ -316,7 +356,8 @@ public class EngineClient implements Engine, PropertyHolder {
         }
 
         if (!found) {
-            serviceScope().error("EngineClient: cannot set unknown " + service.getType() + " service with ID " + service.getServiceId() +
+            serviceScope().error("EngineClient: cannot set unknown " + service.getType() + " service with " +
+                    "ID " + service.getServiceId() +
                     " as default: service is not available to the engine");
         }
 

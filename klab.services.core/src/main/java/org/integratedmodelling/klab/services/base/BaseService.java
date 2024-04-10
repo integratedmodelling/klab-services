@@ -41,7 +41,8 @@ public abstract class BaseService implements KlabService {
         this.type = serviceType;
         this.startupOptions = options;
         try {
-            this.url = new URL(options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath());
+            this.url =
+                    new URL(options.getServiceHostUrl() + ":" + options.getPort() + options.getContextPath());
         } catch (MalformedURLException e) {
             throw new KlabIllegalStateException(e);
         }
@@ -150,5 +151,13 @@ public abstract class BaseService implements KlabService {
         return url;
     }
 
-
+    @Override
+    public boolean isExclusive() {
+        // TODO
+        // as a matter of principle, no service instance is exclusive by default. If a client is using the
+        // secret token it can assume the service is exclusive, although there should be some type of locking
+        // done to ensure that that is true. A way to do that could be to set busy status for any client
+        // that isn't  using the secret token, and only allow these clients to lock the service that way.
+        return false;
+    }
 }

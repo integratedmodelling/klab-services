@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.scope.UserScope;
@@ -212,6 +213,8 @@ public interface UIReactor {
         Notification(EventDirection.Bidirectional, Notification.class),
 
         DistributionSelected(EventDirection.ViewToView, Distribution.class),
+
+        ReasoningAvailable(EventDirection.EngineToView, Reasoner.Capabilities.class),
 
         UserAuthenticated(EventDirection.Bidirectional, UserIdentity.class),
 

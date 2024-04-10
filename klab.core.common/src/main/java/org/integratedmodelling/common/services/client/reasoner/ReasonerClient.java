@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -17,18 +18,20 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-public class ReasonerClient extends ServiceClient implements Reasoner {
+public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.Admin {
 
     public ReasonerClient() {
         super(Type.REASONER);
@@ -598,5 +601,26 @@ public class ReasonerClient extends ServiceClient implements Reasoner {
         return false;
     }
 
+
+    @Override
+    public boolean loadKnowledge(Worldview worldview) {
+        return client.post(ServicesAPI.REASONER.ADMIN.LOAD_KNOWLEDGE, worldview, Boolean.class);
+    }
+
+    @Override
+    public boolean updateKnowledge(ResourceSet changes) {
+        return client.post(ServicesAPI.REASONER.ADMIN.UPDATE_KNOWLEDGE, changes, Boolean.class);
+    }
+
+    @Override
+    public Concept defineConcept(KimConceptStatement statement) {
+        return client.post(ServicesAPI.REASONER.ADMIN.DEFINE_CONCEPT, statement, Concept.class);
+    }
+
+    @Override
+    public boolean exportNamespace(String namespace, File directory) {
+        // TODO
+        return false;
+    }
 
 }

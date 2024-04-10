@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
 import org.integratedmodelling.klab.api.lang.kactors.beans.TestStatistics;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
@@ -160,6 +161,7 @@ public interface Message extends Serializable {
          * Service messages, coming with service capabilities
          */
         ServiceInitializing(KlabService.ServiceCapabilities.class),
+        ReasoningAvailable(Reasoner.Capabilities.class),
         ServiceAvailable(KlabService.ServiceCapabilities.class),
         ServiceUnavailable(KlabService.ServiceCapabilities.class),
         ServiceStatus(KlabService.ServiceStatus.class),

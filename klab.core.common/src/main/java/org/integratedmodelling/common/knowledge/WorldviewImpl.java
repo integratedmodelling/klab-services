@@ -4,23 +4,25 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class WorldviewImpl implements Worldview {
+
     private String urn;
     private Metadata metadata = Metadata.create();
     private List<KimOntology> ontologies = new ArrayList<>();
     private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
     private boolean empty;
+    private String worldviewId = Utils.Names.newName("wv");
 
     @Override
     public String getUrn() {
         return this.urn;
     }
-
 
     @Override
     public Metadata getMetadata() {
@@ -56,6 +58,15 @@ public class WorldviewImpl implements Worldview {
 
     public void setObservationStrategies(List<KimObservationStrategyDocument> observationStrategies) {
         this.observationStrategies = observationStrategies;
+    }
+
+    @Override
+    public String getWorldviewId() {
+        return worldviewId;
+    }
+
+    public void setWorldviewId(String worldviewId) {
+        this.worldviewId = worldviewId;
     }
 
     public void setEmpty(boolean empty) {

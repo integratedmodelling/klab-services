@@ -35,6 +35,13 @@ public interface Reasoner extends KlabService {
      */
     interface Capabilities extends ServiceCapabilities {
 
+        /**
+         * Get the unique ID of the worldview loaded in this service. If this is null, the service knows
+         * nothing and is unusable for reasoning.
+         *
+         * @return
+         */
+        String getWorldviewId();
     }
 
     /**
@@ -241,14 +248,15 @@ public interface Reasoner extends KlabService {
      * @param concept
      * @return
      */
-//    Concept directContext(Semantics concept);
+    //    Concept directContext(Semantics concept);
 
-//    /**
-//     * Context is declared in the <code>within</code> clause in the worldview, but is no longer modifiable
-//     * @param concept
-//     * @return
-//     */
-//    Concept context(Semantics concept);
+    //    /**
+    //     * Context is declared in the <code>within</code> clause in the worldview, but is no longer
+    //     modifiable
+    //     * @param concept
+    //     * @return
+    //     */
+    //    Concept context(Semantics concept);
 
     /**
      * @param concept
@@ -767,10 +775,9 @@ public interface Reasoner extends KlabService {
      * <p>Inferring these is not a job for the AI, as most of the needed reasoning is contextual and
      * priority-driven, way beyond the scope of DL reasoning. For the time being, this function is expected to
      * hard-code the majority of the resolution rules, including ¶as a minimum those summarized below. Stubs
-     * exist for an experimental extension strategy based on
-     * {@link ObservationStrategy} but for the time being
-     * it's not specified or used. As we're talking about reproducible science, I do NOT think that this is a
-     * place for machine-learned correlative inference.</p>
+     * exist for an experimental extension strategy based on {@link ObservationStrategy} but for the time
+     * being it's not specified or used. As we're talking about reproducible science, I do NOT think that this
+     * is a place for machine-learned correlative inference.</p>
      *
      * <h3>Direct observation</h3>
      *
@@ -944,24 +951,36 @@ public interface Reasoner extends KlabService {
 
         /**
          * Load all usable knowledge from the ontologies returned by a resources server. The ontologies are
-         * assumed in correct load order, consistent and complete.
+         * assumed in correct load order, consistent and complete. This must be reentrant, enabling the bulk
+         * substitution of the entire knowledge base in one shot.
          *
-         * @param resources
+         * @param worldview
          * @return
          */
-        boolean loadKnowledge(Worldview worldview, Scope scope);
+        boolean loadKnowledge(Worldview worldview);
 
         /**
-         * The "port" to ingest an individual concept definition, called by
-         * {@link #loadKnowledge(ResourceSet, Scope)}. Provided separately to make it possible for a resolver
-         * service to declare individual local concepts, as long as it owns the semantic service. Definition
-         * must be made only in terms of known concepts (no forward declaration is allowed), so order of
-         * ingestion is critical.
+         * When a reasoner is registered with a resources service by an external orchestrator, changes in the
+         * worldview are communicated through this endpoint. This call should only be made after ensuring that
+         * the ID of the loaded worldview (reported by
+         * {@link org.integratedmodelling.klab.api.services.Reasoner.Capabilities#getWorldviewId()} is the
+         * same as the one where the changes have been made.
+         *
+         * @param changes the set of changed ontology and strategy resources with their URLs
+         * @return true if any change was made
+         */
+        boolean updateKnowledge(ResourceSet changes);
+
+        /**
+         * The "port" to ingest an individual concept definition, called by {@link #loadKnowledge(Worldview)}.
+         * Provided separately to make it possible for a resolver service to declare individual local
+         * concepts, as long as it owns the semantic service. Definition must be made only in terms of known
+         * concepts (no forward declaration is allowed), so order of ingestion is critical.
          *
          * @param statement
          * @return
          */
-        Concept defineConcept(KimConceptStatement statement, Scope scope);
+        Concept defineConcept(KimConceptStatement statement);
 
         /**
          * Export a namespace as an OWL ontology with all dependencies.

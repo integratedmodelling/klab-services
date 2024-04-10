@@ -62,4 +62,8 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements
         return null;
     }
 
+    @Override
+    public String getWorldviewId() {
+        return delegate.getWorldviewId();
+    }
 }

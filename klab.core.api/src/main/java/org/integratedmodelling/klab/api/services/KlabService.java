@@ -245,4 +245,20 @@ public interface KlabService extends Service {
      */
     boolean shutdown();
 
+    /**
+     * Exclusive status means that the service is either an application started by the requesting JVM or a
+     * client to a server exclusively dedicate to the running application. If a service is exclusive, we can
+     * be sure that all endpoints are available, including the administrative ones, and we should prepare to
+     * take care of all needed initialization and maintenance if we change content that are relevant to this
+     * service.
+     * <p>
+     * Exclusive status can be checked in clients when the access token used is the service secret only
+     * available on the same filesystem as the service. For services exposed to the network, it implies that
+     * some kind of locking has been done by an authorized client, or that the configuration guarantees
+     * exclusive use (including refusing connections from non-exclusive clients).
+     *
+     * @return true if exclusive
+     */
+    boolean isExclusive();
+
 }
