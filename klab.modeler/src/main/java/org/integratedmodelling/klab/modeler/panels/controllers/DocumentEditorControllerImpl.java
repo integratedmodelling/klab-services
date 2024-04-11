@@ -15,6 +15,8 @@ import java.util.Collections;
 public class DocumentEditorControllerImpl extends AbstractUIPanelController<NavigableDocument,
         DocumentEditor> implements DocumentEditorController {
 
+    private int position;
+
     public DocumentEditorControllerImpl(UIController controller) {
         super(controller);
     }
@@ -47,17 +49,12 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
 
     @Override
     public void moveCaretTo(int position) {
-        panel().moveCaretTo(position);
-    }
-
-    @Override
-    public String getContents() {
-        return null;
+        panel().moveCaretTo(this.position = position);
     }
 
     @Override
     public int getPosition() {
-        return 0;
+        return position;
     }
 
     @Override

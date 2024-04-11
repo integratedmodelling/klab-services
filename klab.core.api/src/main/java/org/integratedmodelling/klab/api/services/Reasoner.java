@@ -954,6 +954,8 @@ public interface Reasoner extends KlabService {
          * assumed in correct load order, consistent and complete. This must be reentrant, enabling the bulk
          * substitution of the entire knowledge base in one shot.
          *
+         * FIXME this must report NOTIFICATIONS not boolean
+         *
          * @param worldview
          * @return
          */
@@ -965,6 +967,8 @@ public interface Reasoner extends KlabService {
          * the ID of the loaded worldview (reported by
          * {@link org.integratedmodelling.klab.api.services.Reasoner.Capabilities#getWorldviewId()} is the
          * same as the one where the changes have been made.
+         *
+         * FIXME this must report NOTIFICATIONS not true/false
          *
          * @param changes the set of changed ontology and strategy resources with their URLs
          * @return true if any change was made

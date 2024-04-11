@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -72,11 +73,6 @@ public class EngineClient implements Engine, PropertyHolder {
     public ContextScope getCurrentContext(UserScope userScope) {
         return null;
     }
-
-    //    @Override
-    //    public void addEventListener(BiConsumer<Scope, Message> eventListener) {
-    //        listeners.add(eventListener);
-    //    }
 
     @Override
     public ServiceCapabilities capabilities() {
@@ -137,6 +133,22 @@ public class EngineClient implements Engine, PropertyHolder {
     @Override
     public void boot() {
         this.defaultUser = authenticate();
+        this.scopeListeners.add((channel, message) -> {
+
+            // basic listener for knowledge management
+            if (message.is(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged)) {
+                var changes = message.getPayload(ResourceSet.class);
+                var reasoner = defaultUser.getService(Reasoner.class);
+                if (reasoner.status().isAvailable() && reasoner.isExclusive() && reasoner instanceof Reasoner.Admin admin) {
+                    if (admin.updateKnowledge(changes)) {
+                        defaultUser.info("Worldview was updated in the reasoner");
+                    } else {
+                        defaultUser.warn("Worldview update in the reasoner returned a failure code");
+                    }
+                }
+            }
+
+        });
         if (this.defaultUser instanceof ChannelImpl channel) {
             for (var listener : scopeListeners) {
                 channel.addListener(listener);
@@ -186,7 +198,7 @@ public class EngineClient implements Engine, PropertyHolder {
         }
 
         /**
-         * Check if we have reasoning
+         * Check if we have reasoning until we do
          */
         if (!reasoningAvailable && !reasonerDisabled) {
             /**
@@ -194,9 +206,18 @@ public class EngineClient implements Engine, PropertyHolder {
              * doesn't have a worldview,  load the worldview in the reasoner.
              */
             var reasoner = serviceScope().getService(Reasoner.class);
-            if (reasoner != null && reasoner.isExclusive() && reasoner.capabilities().getWorldviewId() == null) {
+
+            if (reasoner != null && reasoner.status().isAvailable() && reasoner.capabilities().getWorldviewId() != null) {
+
+                // reasoner is online and able
+                reasoningAvailable = true;
+                serviceScope().send(Message.MessageClass.EngineLifecycle,
+                        Message.MessageType.ReasoningAvailable, reasoner.capabilities());
+
+            } else if (reasoner != null && reasoner.isExclusive() && reasoner.status().isAvailable() && reasoner.capabilities().getWorldviewId() == null) {
+
                 var resources = serviceScope().getService(ResourcesService.class);
-                if (resources != null && resources.capabilities().isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
+                if (resources != null && resources.status().isAvailable() && resources.capabilities().isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
                     if (admin.loadKnowledge(this.worldview = resources.getWorldview())) {
                         reasoningAvailable = true;
                         serviceScope().send(Message.MessageClass.EngineLifecycle,
@@ -208,7 +229,6 @@ public class EngineClient implements Engine, PropertyHolder {
                     }
                 }
             }
-
         }
 
 

@@ -12,8 +12,11 @@ import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
         KlabDocument.class)
 public interface DocumentEditorController extends PanelController<NavigableDocument, DocumentEditor> {
 
-    String getContents();
-
+    /**
+     * Current caret position in document. We keep it so we can save the state if wished.
+     *
+     * @return
+     */
     int getPosition();
 
     boolean isReadOnly();

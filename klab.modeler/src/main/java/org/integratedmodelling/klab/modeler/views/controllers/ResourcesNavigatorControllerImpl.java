@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
@@ -15,6 +16,7 @@ import org.integratedmodelling.klab.api.view.modeler.panels.controllers.Document
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
 import org.integratedmodelling.klab.modeler.model.*;
+import org.integratedmodelling.klab.rest.HubNotificationMessage;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -54,9 +56,10 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             if (container != null) {
                 if (container.mergeChanges(changes, getController().engine().serviceScope())) {
                     view().workspaceModified(container);
-//                    if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
-//                        getController().engine().worldviewChanged(changes);
-//                    }
+                    if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
+                        getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle,
+                                Message.MessageType.WorkspaceChanged, changes);
+                    }
                 }
             }
         }
@@ -152,9 +155,6 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             }
 
         } else if (asset instanceof NavigableKlabStatement navigableStatement) {
-            // TODO if editor is in view for the containing document, select the character position
-            //  corresponding to its beginning line.
-
             var document = navigableStatement.parent(NavigableDocument.class);
             if (document != null) {
                 var panel = getController().getPanelController(document,
@@ -175,7 +175,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     @Override
     public void handleDocumentPositionChange(NavigableDocument document, Integer position) {
         if (document instanceof NavigableKlabDocument<?, ?> doc) {
-            var path = doc.getAssetsAt(position);
+            var path = doc.getClosestAsset(position);
             if (path != null && !path.isEmpty()) {
                 view().highlightAssetPath(path);
             }

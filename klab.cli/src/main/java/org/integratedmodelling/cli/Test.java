@@ -31,8 +31,23 @@ public class Test implements Runnable {
            }
 
            @Override
+           public List<NavigableAsset> getAssetsAt(int offset) {
+               return List.of();
+           }
+
+           @Override
+           public List<NavigableAsset> getClosestAsset(int offset) {
+               return List.of();
+           }
+
+           @Override
+           public List<KlabAsset> getKlabAssetAt(int offset) {
+               return List.of();
+           }
+
+           @Override
            public List<? extends NavigableAsset> children() {
-               return null;
+               return List.of();
            }
 
            @Override

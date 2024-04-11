@@ -74,6 +74,7 @@ public interface Message extends Serializable {
 
         KimLifecycle,
 
+        KnowledgeLifecycle,
         /**
          *
          */

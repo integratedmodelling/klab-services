@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.checkerframework.checker.units.qual.N;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -115,6 +115,18 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         return delegate.getVersion();
     }
 
+    @Override
+    public List<NavigableAsset> getClosestAsset(int offset) {
+        // TODO
+        return getAssetsAt(offset);
+    }
+
+    @Override
+    public List<KlabAsset> getKlabAssetAt(int offset) {
+        return List.of();
+    }
+
+    @Override
     public List<NavigableAsset> getAssetsAt(int offset) {
 
         List<NavigableAsset> ret = new ArrayList<>();

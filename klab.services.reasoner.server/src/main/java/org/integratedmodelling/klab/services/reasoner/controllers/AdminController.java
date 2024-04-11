@@ -21,17 +21,22 @@ import java.util.List;
 
 @RestController
 @Secured(Role.ADMINISTRATOR)
-public class AdminController {
+public class AdminController implements ServicesAPI.REASONER.ADMIN {
 
     @Autowired
     private ReasonerServer reasoner;
 
-    @PostMapping(ServicesAPI.REASONER.ADMIN.LOAD_KNOWLEDGE)
+    @PostMapping(LOAD_KNOWLEDGE)
     public @ResponseBody boolean loadKnowledge(@RequestBody Worldview resources) {
         return reasoner.klabService().loadKnowledge(resources);
     }
 
-    @PostMapping(ServicesAPI.REASONER.ADMIN.DEFINE_CONCEPT)
+    @PostMapping(UPDATE_KNOWLEDGE)
+    public @ResponseBody boolean loadKnowledge(@RequestBody ResourceSet changes) {
+        return reasoner.klabService().updateKnowledge(changes);
+    }
+
+    @PostMapping(DEFINE_CONCEPT)
     public @ResponseBody Concept defineConcept(@RequestBody KimConceptStatement statement) {
         return reasoner.klabService().defineConcept(statement);
     }

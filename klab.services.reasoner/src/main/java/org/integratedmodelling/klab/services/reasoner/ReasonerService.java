@@ -1311,7 +1311,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public boolean updateKnowledge(ResourceSet changes) {
         // TODO
-        return false;
+        return true;
     }
 
     private ObservationStrategy defineStrategy(KimObservationStrategy strategy) {
