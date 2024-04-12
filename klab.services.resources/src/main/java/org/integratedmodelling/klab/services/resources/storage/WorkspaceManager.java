@@ -6,7 +6,7 @@ import com.google.inject.Injector;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
@@ -14,7 +14,9 @@ import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.collections.impl.RepositoryMetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -117,7 +119,64 @@ public class WorkspaceManager {
      * @return
      */
     public List<Project> getProjects() {
-        return new ArrayList<>(projects.values());
+        var ret = new ArrayList<Project>();
+        for (var project : projects.values()) {
+            ret.add(updateStatus(project));
+        }
+        return ret;
+    }
+
+    private <T extends KlabAsset> T updateStatus(T container) {
+
+        if (container instanceof Workspace workspace) {
+            for (var project : workspace.getProjects()) {
+                updateProjectStatus(project.getUrn());
+            }
+        } else if (container instanceof Project) {
+            updateProjectStatus(container.getUrn());
+        } else if (container instanceof KlabDocument<?> document) {
+            updateProjectStatus(document.getProjectName());
+        }
+
+        return container;
+    }
+
+    private void updateProjectStatus(String projectId) {
+
+        /**
+         * Report any changes in the project repository if there is one
+         */
+        var pd = projectDescriptors.get(projectId);
+        var prj = projects.get(projectId);
+        if (pd != null && prj instanceof ProjectImpl project && pd.repository != null
+                && project.getRepositoryMetadata() instanceof RepositoryMetadataImpl projectMetadata) {
+
+            if (pd.externalProject != null) {
+                return;
+            }
+
+            try {
+                projectMetadata.setCurrentBranch(pd.repository.getBranch());
+                try (var git = Git.wrap(pd.repository)) {
+                    var status = git.status().call();
+                    for (var changed : status.getModified()) {
+                        var document = project.findDocument(changed);
+                        if (document != null && document.getRepositoryMetadata() instanceof RepositoryMetadataImpl repositoryMetadata) {
+                            repositoryMetadata.setStatus(RepositoryMetadata.Status.MODIFIED);
+                        }
+                    }
+                    for (var changed : status.getUntracked()) {
+                        var document = project.findDocument(changed);
+                        if (document != null && document.getRepositoryMetadata() instanceof RepositoryMetadataImpl repositoryMetadata) {
+                            repositoryMetadata.setStatus(RepositoryMetadata.Status.UNTRACKED);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                scope.error(e);
+            }
+        }
+
     }
 
     public KimConcept.Descriptor describeConcept(String conceptUrn) {
@@ -395,7 +454,7 @@ public class WorkspaceManager {
         Project externalProject;
         Project.Manifest manifest;
         // if not external, this will be not null iif the project is a git repository
-        Git repository;
+        Repository repository;
         // Update interval in minutes, from configuration
         int updateInterval;
         // TODO permissions
@@ -490,7 +549,7 @@ public class WorkspaceManager {
                     if (projectStorage instanceof FileProjectStorage fileProjectStorage) {
                         var repository = fileProjectStorage.getRepository();
                         if (repository != null) {
-                            descriptor.repository = new Git(repository);
+                            descriptor.repository = repository;
                         }
                     }
                     projectDescriptors.put(project, descriptor);
@@ -769,10 +828,7 @@ public class WorkspaceManager {
             descriptor.name = ret.getProjectName();
             descriptor.updateInterval = configuration.getSyncIntervalMinutes();
             if (ret instanceof FileProjectStorage fileProjectStorage) {
-                var repository = fileProjectStorage.getRepository();
-                if (repository != null) {
-                    descriptor.repository = new Git(repository);
-                }
+                descriptor.repository = fileProjectStorage.getRepository();
             }
             projectDescriptors.put(ret.getProjectName(), descriptor);
 
@@ -797,6 +853,7 @@ public class WorkspaceManager {
             String projectName = Utils.URLs.getURLBaseName(projectUrl);
             ResourcesConfiguration.ProjectConfiguration config =
                     this.configuration.getProjectConfiguration().get(projectName);
+
             if (config == null) {
                 // throw exception
             }
@@ -1109,21 +1166,6 @@ public class WorkspaceManager {
                 // TODO report failure notification
             }
 
-            /**
-             * Report any changes in the project repository if there is one
-             */
-            var pd = projectDescriptors.get(project);
-            if (pd != null && pd.repository != null) {
-                try {
-                    var status = pd.repository.status().call();
-                    for (var changed : status.getModified()) {
-                        System.out.println("Modified " + changed);
-                    }
-                } catch (GitAPIException e) {
-                    scope.error(e);
-                }
-            }
-
             var ret = new ArrayList<ResourceSet>();
             if (!worldviewChange.getResources().isEmpty()) {
                 ret.add(worldviewChange);
@@ -1145,42 +1187,46 @@ public class WorkspaceManager {
         return Collections.emptyList();
     }
 
-//    /**
-//     * Substitute the document in the respective lists and containers. If this is an ontology and the
-//     * worldview contains it, substitute it in the worldview only if there are no errors, otherwise remove it.
-//     * In all other cases it goes in with any errors it may contain.
-//     * <p>
-//     * If the document is an ontology, recompute all concept descriptors in the language validator.
-//     * <p>
-//     * if it's an ontology and it's part of the worldview, the worldview must become empty if it has errors.
-//     * In all situations the worldview resource must be in the ResourceSet to message that it must be
-//     * reloaded.
-//     *
-//     * @param newAsset
-//     * @param type
-//     * @return
-//     */
-//    private ResourceSet checkForWorldviewChanges(KlabDocument<?> newAsset, ProjectStorage.ResourceType type) {
-//
-//        ResourceSet ret = null;
-//
-//        boolean isWorldview =
-//                type == ProjectStorage.ResourceType.ONTOLOGY && _worldviewOntologies.stream().anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
-//
-//        if (isWorldview) {
-//            ret = new ResourceSet();
-//            ret.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
-//            var resource = new ResourceSet.Resource();
-//            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
-//            ret.getResources().add(resource);
-//            if (Utils.Notifications.hasErrors(newAsset.getNotifications())) {
-//                ret.setEmpty(true);
-//                ret.getNotifications().addAll(newAsset.getNotifications());
-//            }
-//        }
-//
-//        return ret;
-//    }
+    //    /**
+    //     * Substitute the document in the respective lists and containers. If this is an ontology and the
+    //     * worldview contains it, substitute it in the worldview only if there are no errors, otherwise
+    //     remove it.
+    //     * In all other cases it goes in with any errors it may contain.
+    //     * <p>
+    //     * If the document is an ontology, recompute all concept descriptors in the language validator.
+    //     * <p>
+    //     * if it's an ontology and it's part of the worldview, the worldview must become empty if it has
+    //     errors.
+    //     * In all situations the worldview resource must be in the ResourceSet to message that it must be
+    //     * reloaded.
+    //     *
+    //     * @param newAsset
+    //     * @param type
+    //     * @return
+    //     */
+    //    private ResourceSet checkForWorldviewChanges(KlabDocument<?> newAsset, ProjectStorage
+    //    .ResourceType type) {
+    //
+    //        ResourceSet ret = null;
+    //
+    //        boolean isWorldview =
+    //                type == ProjectStorage.ResourceType.ONTOLOGY && _worldviewOntologies.stream()
+    //                .anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
+    //
+    //        if (isWorldview) {
+    //            ret = new ResourceSet();
+    //            ret.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
+    //            var resource = new ResourceSet.Resource();
+    //            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
+    //            ret.getResources().add(resource);
+    //            if (Utils.Notifications.hasErrors(newAsset.getNotifications())) {
+    //                ret.setEmpty(true);
+    //                ret.getNotifications().addAll(newAsset.getNotifications());
+    //            }
+    //        }
+    //
+    //        return ret;
+    //    }
 
     /**
      * Add the document info to the result set that corresponds to the passed workspace in the passed result
@@ -1629,7 +1675,7 @@ public class WorkspaceManager {
     }
 
     public WorkspaceImpl getWorkspace(String workspaceName) {
-        return this.workspaces.get(workspaceName);
+        return updateStatus(this.workspaces.get(workspaceName));
     }
 
     public Collection<Workspace> getWorkspaces() {
@@ -1646,7 +1692,7 @@ public class WorkspaceManager {
     }
 
 
-    private abstract class Parser<T extends EObject> {
+    private abstract static class Parser<T extends EObject> {
 
         @Inject
         protected IParser parser;

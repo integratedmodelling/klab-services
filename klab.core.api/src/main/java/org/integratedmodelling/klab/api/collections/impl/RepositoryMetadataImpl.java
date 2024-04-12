@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import java.net.URL;
 
 public class RepositoryMetadataImpl implements RepositoryMetadata {
-    private Status status = Status.UNTRACKED;
+    private Status status;
     private URL repositoryUrl;
     private String currentBranch;
 

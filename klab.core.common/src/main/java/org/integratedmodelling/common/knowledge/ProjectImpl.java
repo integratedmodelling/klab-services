@@ -8,11 +8,13 @@ import org.integratedmodelling.klab.api.data.MetadataConvention;
 import org.integratedmodelling.klab.api.data.RepositoryMetadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.ArrayList;
@@ -235,5 +237,46 @@ public class ProjectImpl implements Project {
 
     public void setRepositoryMetadata(RepositoryMetadata repositoryMetadata) {
         this.repositoryMetadata = repositoryMetadata;
+    }
+
+    // TODO lots
+    public KlabDocument<?> findDocument(String documentPath) {
+        var ddata = ProjectStorage.getDocumentData(documentPath);
+        if (ddata != null) {
+
+            return switch (ddata.getFirst()) {
+                case ONTOLOGY -> {
+                    for (var ontology : getOntologies()) {
+                        if (ontology.getUrn().equals(ddata.getSecond())) {
+                            yield ontology;
+                        }
+                    }
+                    yield null;
+                }
+                case MODEL_NAMESPACE -> {
+                    for (var namespace : getNamespaces()) {
+                        if (namespace.getUrn().equals(ddata.getSecond())) {
+                            yield namespace;
+                        }
+                    }
+                    yield null;
+                }
+                case MANIFEST -> null;
+                case DOCUMENTATION_NAMESPACE -> null;
+                case STRATEGY -> {
+                    for (var strategy : getObservationStrategies()) {
+                        if (strategy.getUrn().equals(ddata.getSecond())) {
+                            yield strategy;
+                        }
+                    }
+                    yield null;
+                }
+                case BEHAVIOR -> null;
+                case RESOURCE -> null;
+                case RESOURCE_ASSET -> null;
+                default -> null;
+            };
+        }
+        return null;
     }
 }
