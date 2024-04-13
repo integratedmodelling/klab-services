@@ -15,7 +15,7 @@ import java.util.*;
  * @author ferdinando.villa
  *
  */
-public class KimNamespaceImpl extends KimDocumentImpl<KlabStatement> implements KimNamespace {
+public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements KimNamespace {
 
     @Serial
     private static final long serialVersionUID = 6198296119075476515L;

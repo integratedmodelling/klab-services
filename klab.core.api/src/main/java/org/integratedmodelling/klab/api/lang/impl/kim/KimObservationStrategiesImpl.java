@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class KimObservationStrategiesImpl extends KimDocumentImpl<KimObservationStrategy> implements KimObservationStrategyDocument {
+public class KimObservationStrategiesImpl extends KlabDocumentImpl<KimObservationStrategy> implements KimObservationStrategyDocument {
 
     private List<KimObservationStrategy> statements = new ArrayList<>();
 

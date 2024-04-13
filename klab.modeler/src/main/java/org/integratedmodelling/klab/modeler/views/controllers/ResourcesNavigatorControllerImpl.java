@@ -43,6 +43,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             view().disable();
         } else {
             view().enable();
+            view().setServiceCapabilities(capabilities);
             getController().storeView(currentService);
             createNavigableAssets(service);
             view().showWorkspaces(new ArrayList<>(assetMap.values()));
@@ -199,7 +200,11 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     @Override
     public void shutdown() {
-        releaseLocks();
+        try {
+            releaseLocks();
+        } catch (Throwable t) {
+            // ignore. May happen during remote service shutdown
+        }
         super.shutdown();
     }
 }

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.modeler.views;
 
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
@@ -34,6 +35,11 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
 
     @Override
     public void highlightAssetPath(List<NavigableAsset> path) {
+
+    }
+
+    @Override
+    public void setServiceCapabilities(ResourcesService.Capabilities capabilities) {
 
     }
 }

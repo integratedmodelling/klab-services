@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.resources;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,8 @@ import java.util.List;
  */
 public class ProjectRequest {
 
+
+    private Repository.Operation operation;
     private String workspaceName;
     private String projectName;
     private String projectUrl;
@@ -18,6 +21,7 @@ public class ProjectRequest {
     private ResourcePrivileges projectPrivileges;
     private List<String> namespaceUrns = new ArrayList<>();
     private List<String> behaviorUrns = new ArrayList<>();
+    private List<String> parameters = new ArrayList<>();
     private boolean overwrite;
 
     public String getProjectName() {
@@ -82,5 +86,21 @@ public class ProjectRequest {
 
     public void setOverwrite(boolean overwrite) {
         this.overwrite = overwrite;
+    }
+
+    public Repository.Operation getOperation() {
+        return operation;
+    }
+
+    public void setOperation(Repository.Operation operation) {
+        this.operation = operation;
+    }
+
+    public List<String> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(List<String> parameters) {
+        this.parameters = parameters;
     }
 }

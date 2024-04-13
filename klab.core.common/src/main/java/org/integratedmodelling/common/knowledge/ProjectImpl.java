@@ -2,10 +2,10 @@ package org.integratedmodelling.common.knowledge;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.RepositoryMetadataImpl;
+import org.integratedmodelling.klab.api.collections.impl.RepositoryImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -25,7 +25,7 @@ import java.util.List;
 public class ProjectImpl implements Project {
 
     private static final long serialVersionUID = 7618524077068234748L;
-    private RepositoryMetadata repositoryMetadata = new RepositoryMetadataImpl();
+    private Repository repositoryMetadata = new RepositoryImpl();
 
     public static class ManifestImpl implements Manifest {
 
@@ -231,11 +231,11 @@ public class ProjectImpl implements Project {
         this.annotations = annotations;
     }
 
-    public RepositoryMetadata getRepositoryMetadata() {
+    public Repository getRepository() {
         return repositoryMetadata;
     }
 
-    public void setRepositoryMetadata(RepositoryMetadata repositoryMetadata) {
+    public void setRepositoryMetadata(Repository repositoryMetadata) {
         this.repositoryMetadata = repositoryMetadata;
     }
 

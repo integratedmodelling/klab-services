@@ -1,13 +1,13 @@
 package org.integratedmodelling.klab.api.lang.impl.kactors;
 
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.lang.impl.kim.KimDocumentImpl;
+import org.integratedmodelling.klab.api.lang.impl.kim.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 
 import java.util.*;
 
-public class KActorsBehaviorImpl extends KimDocumentImpl<KActorsAction> implements KActorsBehavior {
+public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction> implements KActorsBehavior {
 
     private static final long serialVersionUID = 6651874316547941092L;
 

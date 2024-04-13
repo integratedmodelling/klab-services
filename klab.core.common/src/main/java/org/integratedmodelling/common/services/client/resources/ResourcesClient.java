@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -33,7 +34,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
-import java.util.Scanner;
 import java.util.function.BiConsumer;
 
 public class ResourcesClient extends ServiceClient implements ResourcesService, ResourcesService.Admin {
@@ -216,12 +216,6 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         return null;
     }
 
-    public static void main(String[] args) {
-        var client = new ResourcesClient();
-        Utils.OS.pressAKeyToExit();
-        //        client.importProject("worldview", "https://github.com/integratedmodelling/imod.git", true);
-    }
-
     @Override
     public boolean importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting) {
         ProjectRequest request = new ProjectRequest();
@@ -300,6 +294,11 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     @Override
     public boolean unpublishProject(String projectUrl) {
         return false;
+    }
+
+    @Override
+    public ResourceSet manageRepository(String projectName, Repository.Operation operation, String... arguments) {
+        return null;
     }
 
     @Override

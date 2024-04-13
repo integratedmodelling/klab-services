@@ -1,8 +1,9 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -40,12 +41,13 @@ public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
     }
 
     /**
-     * Repository metadata should never be null even if there is no repository connected. The metadata of
-     * assets contained in this project should automatically synchronize with this.
+     * For a document, the repository record is used to check the status. It should never be null even if
+     * there is no repository connected: in that case, {@link Repository.Status#CLEAN} should be returned.
+     * Every other info about the repository is in {@link Project#getRepository()}.
      *
      * @return
      */
-    RepositoryMetadata getRepositoryMetadata();
+    Repository.Status getRepositoryStatus();
 
 
     /**

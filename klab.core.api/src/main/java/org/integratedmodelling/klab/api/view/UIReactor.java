@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -83,7 +84,15 @@ public interface UIReactor {
         Inactive
     }
 
+    /**
+     * Annotation for controller methods that can be called from the view. Controllers will work without using
+     * it, but using it will enable building the full UI call graph that enables exporting and documenting a
+     * UI.
+     */
     enum UIAction {
+
+        RefreshContents(Void.class),
+
         DocumentAdd(KlabAsset.KnowledgeClass.class, String.class,
                 Map.class),
         DocumentDelete(KlabDocument.class),
@@ -238,6 +247,15 @@ public interface UIReactor {
                 }
             }
         }
+    }
+
+    /**
+     * Views may call refresh() to ensure that the controller sends them whatever updated content they may be
+     * handling. This may be linked to the view coming into focus after potential changes.
+     */
+    @UIActionHandler(UIAction.RefreshContents)
+    default void refresh() {
+
     }
 
     /**

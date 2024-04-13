@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.view.modeler.views;
 
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.View;
@@ -20,4 +21,6 @@ public interface ResourcesNavigator extends View {
     void showAssetInfo(NavigableAsset asset);
 
     void highlightAssetPath(List<NavigableAsset> path);
+
+    void setServiceCapabilities(ResourcesService.Capabilities capabilities);
 }

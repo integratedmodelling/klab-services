@@ -18,7 +18,7 @@ import java.util.Set;
  * @author fvilla
  *
  */
-public class KimBehaviorImpl extends KimDocumentImpl<Action> implements KimBehavior {
+public class KimBehaviorImpl extends KlabDocumentImpl<Action> implements KimBehavior {
 
     @Serial
     private static final long serialVersionUID = 2701074196387350255L;

@@ -1,13 +1,17 @@
 package org.integratedmodelling.klab.api.collections.impl;
 
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
+import org.integratedmodelling.klab.api.data.Repository;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
-public class RepositoryMetadataImpl implements RepositoryMetadata {
+public class RepositoryImpl implements Repository {
+
     private Status status;
     private URL repositoryUrl;
     private String currentBranch;
+    private List<String> branches = new ArrayList<>();
 
     @Override
     public Status getStatus() {
@@ -34,5 +38,14 @@ public class RepositoryMetadataImpl implements RepositoryMetadata {
 
     public void setCurrentBranch(String currentBranch) {
         this.currentBranch = currentBranch;
+    }
+
+    @Override
+    public List<String> getBranches() {
+        return branches;
+    }
+
+    public void setBranches(List<String> branches) {
+        this.branches = branches;
     }
 }

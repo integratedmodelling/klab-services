@@ -4,19 +4,22 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.*;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
@@ -33,11 +36,9 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
-import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.common.logging.Logging;
@@ -300,6 +301,18 @@ public class JacksonConfiguration {
                 val = integer.intValue();
             } else if (val instanceof Map map && !Map.class.isAssignableFrom(type)) {
                 val = Utils.Json.convertMap(map, type);
+            } else if (val instanceof String && URL.class.isAssignableFrom(type)) {
+                try {
+                    val = new URI(val.toString()).toURL();
+                } catch (Exception e) {
+                    val = null;
+                }
+            } else if (val instanceof String && URI.class.isAssignableFrom(type)) {
+                try {
+                    val = new URI(val.toString());
+                } catch (Exception e) {
+                    val = null;
+                }
             }
 
             return val;
@@ -319,7 +332,7 @@ public class JacksonConfiguration {
         mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
         SimpleModule module = new SimpleModule();
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
-                                      RepositoryMetadata.class, Project.Manifest.class,
+                                      Repository.class, Project.Manifest.class,
                                       Triple.class, Unit.class, Project.class, KlabAsset.class,
                                       Currency.class, Message.class, Worldview.class, Workspace.class,
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,

@@ -304,7 +304,7 @@ public enum LanguageAdapter {
     public KimOntology adaptOntology(OntologySyntax ontology, String projectName,
                                      Collection<Notification> notifications) {
 
-        KimOntologyImpl ret = new KimOntologyImpl();
+        KlabOntologyImpl ret = new KlabOntologyImpl();
 
         ret.setUrn(ontology.getName());
         ret.getImportedOntologies().addAll(ontology.getImportedOntologies());

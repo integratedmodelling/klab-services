@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -376,7 +377,8 @@ public interface ResourcesService extends KlabService {
          * @param metadata
          * @return the updated project with the new metadata and manifest.
          */
-        Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata, String lockingAuthorization);
+        Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
+                              String lockingAuthorization);
 
         /**
          * Project must exist; namespace must not. Namespace content is parsed and the results are returned.
@@ -398,7 +400,8 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param namespaceContent
          */
-        List<ResourceSet> updateNamespace(String projectName, String namespaceContent, String lockingAuthorization);
+        List<ResourceSet> updateNamespace(String projectName, String namespaceContent,
+                                          String lockingAuthorization);
 
         /**
          * Project must exist; behavior must not (throws TODO). Namespace content is parsed and the results
@@ -421,7 +424,8 @@ public interface ResourcesService extends KlabService {
          * @param behaviorContent
          * @return
          */
-        List<ResourceSet> updateBehavior(String projectName, String behaviorContent, String lockingAuthorization);
+        List<ResourceSet> updateBehavior(String projectName, String behaviorContent,
+                                         String lockingAuthorization);
 
         /**
          * Project must exist; ontology must not (throws TODO). Namespace content is parsed and the results
@@ -443,7 +447,8 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param ontologyContent
          */
-        List<ResourceSet> updateOntology(String projectName, String ontologyContent, String lockingAuthorization);
+        List<ResourceSet> updateOntology(String projectName, String ontologyContent,
+                                         String lockingAuthorization);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -455,7 +460,8 @@ public interface ResourcesService extends KlabService {
          * @param observationStrategiesContent
          */
         List<ResourceSet> updateObservationStrategies(String projectName,
-                                                      String observationStrategiesContent, String lockingAuthorization);
+                                                      String observationStrategiesContent,
+                                                      String lockingAuthorization);
 
         /**
          * Publish a project with the passed privileges. The project must have been added before this is
@@ -474,6 +480,22 @@ public interface ResourcesService extends KlabService {
          * @return
          */
         boolean unpublishProject(String projectUrl);
+
+        /**
+         * Apply the passed operation to the remote repository associated with a project and return whatever
+         * has changed. If nothing has changed, the resulting {@link ResourceSet} will be
+         * {@link ResourceSet#isEmpty() empty}. If that happened because of errors, the errors will be in the
+         * associated {@link ResourceSet#getNotifications() notifications}.
+         * <p>
+         * The repository operations are (for now) limited to Git repositories and result in 1+ atomic Git
+         * operations, treating the various steps safely.
+         *
+         * @param projectName
+         * @param operation
+         * @param arguments
+         * @return a descriptor of what happened and what needs to be reloaded.
+         */
+        ResourceSet manageRepository(String projectName, Repository.Operation operation, String... arguments);
 
         /**
          * Add a resource fully specified by a resource object to those managed by this service. Resource is

@@ -6,7 +6,8 @@ import com.google.inject.Injector;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.api.ListBranchCommand;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
@@ -14,9 +15,9 @@ import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.collections.impl.RepositoryMetadataImpl;
+import org.integratedmodelling.klab.api.collections.impl.RepositoryImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -26,6 +27,7 @@ import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
+import org.integratedmodelling.klab.api.lang.impl.kim.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -61,6 +63,7 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
 import java.io.*;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -130,45 +133,82 @@ public class WorkspaceManager {
 
         if (container instanceof Workspace workspace) {
             for (var project : workspace.getProjects()) {
-                updateProjectStatus(project.getUrn());
+                updateProjectStatus(project.getUrn(), null);
             }
         } else if (container instanceof Project) {
-            updateProjectStatus(container.getUrn());
+            updateProjectStatus(container.getUrn(), null);
         } else if (container instanceof KlabDocument<?> document) {
-            updateProjectStatus(document.getProjectName());
+            updateProjectStatus(document.getProjectName(), document);
         }
 
         return container;
     }
 
-    private void updateProjectStatus(String projectId) {
+    private void updateProjectStatus(String projectId, KlabDocument<?> resource) {
 
         /**
          * Report any changes in the project repository if there is one
          */
         var pd = projectDescriptors.get(projectId);
         var prj = projects.get(projectId);
+
         if (pd != null && prj instanceof ProjectImpl project && pd.repository != null
-                && project.getRepositoryMetadata() instanceof RepositoryMetadataImpl projectMetadata) {
+                && project.getRepository() instanceof RepositoryImpl projectMetadata) {
 
             if (pd.externalProject != null) {
                 return;
             }
 
             try {
+                projectMetadata.setStatus(Repository.Status.TRACKED);
                 projectMetadata.setCurrentBranch(pd.repository.getBranch());
                 try (var git = Git.wrap(pd.repository)) {
+
                     var status = git.status().call();
-                    for (var changed : status.getModified()) {
-                        var document = project.findDocument(changed);
-                        if (document != null && document.getRepositoryMetadata() instanceof RepositoryMetadataImpl repositoryMetadata) {
-                            repositoryMetadata.setStatus(RepositoryMetadata.Status.MODIFIED);
+
+                    if (projectMetadata.getBranches().isEmpty()) {
+                        // TODO not doing this unless all branches are empty. When we add/remove branches
+                        //  we must change them manually
+                        var branches = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
+                        projectMetadata.getBranches().addAll(branches.stream().map(Ref::getName).toList());
+
+                        for (var remote : git.remoteList().call()) {
+                            if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
+                                projectMetadata.setRepositoryUrl(new URI(remote.getURIs().getFirst().toASCIIString()).toURL());
+                            }
                         }
                     }
-                    for (var changed : status.getUntracked()) {
-                        var document = project.findDocument(changed);
-                        if (document != null && document.getRepositoryMetadata() instanceof RepositoryMetadataImpl repositoryMetadata) {
-                            repositoryMetadata.setStatus(RepositoryMetadata.Status.UNTRACKED);
+
+                    if (resource != null) {
+                        if (resource instanceof KlabDocumentImpl<?> document) {
+                            var resourceType = ProjectStorage.ResourceType.classify(resource);
+                            if (resourceType != null) {
+
+                                var filePath = ProjectStorage.getRelativeFilePath(resource.getUrn(),
+                                        resourceType, "/");
+
+                                if (status.getModified().contains(filePath)) {
+                                    document.setRepositoryStatus(Repository.Status.MODIFIED);
+                                } else if (status.getUntracked().contains(filePath)) {
+                                    document.setRepositoryStatus(Repository.Status.UNTRACKED);
+                                } else {
+                                    document.setRepositoryStatus(Repository.Status.CLEAN);
+                                }
+                            }
+                        }
+
+                    } else {
+                        for (var changed : status.getModified()) {
+                            var document = project.findDocument(changed);
+                            if (document instanceof KlabDocumentImpl<?> doc) {
+                                doc.setRepositoryStatus(Repository.Status.MODIFIED);
+                            }
+                        }
+                        for (var changed : status.getUntracked()) {
+                            var document = project.findDocument(changed);
+                            if (document instanceof KlabDocumentImpl<?> doc) {
+                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+                            }
                         }
                     }
                 }
@@ -176,7 +216,6 @@ public class WorkspaceManager {
                 scope.error(e);
             }
         }
-
     }
 
     public KimConcept.Descriptor describeConcept(String conceptUrn) {
@@ -454,7 +493,7 @@ public class WorkspaceManager {
         Project externalProject;
         Project.Manifest manifest;
         // if not external, this will be not null iif the project is a git repository
-        Repository repository;
+        org.eclipse.jgit.lib.Repository repository;
         // Update interval in minutes, from configuration
         int updateInterval;
         // TODO permissions
@@ -1337,11 +1376,11 @@ public class WorkspaceManager {
     }
 
     public KimOntology getOntology(String urn) {
-        return _ontologyMap.get(urn);
+        return updateStatus(_ontologyMap.get(urn));
     }
 
     public KimNamespace getNamespace(String urn) {
-        return _namespaceMap.get(urn);
+        return updateStatus(_namespaceMap.get(urn));
     }
 
     public KActorsBehavior getBehavior(String urn) {

@@ -6,19 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 //import org.eclipse.core.resources.IProject;
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
 
@@ -95,8 +90,8 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	}
 
 	@Override
-	public RepositoryMetadata getRepositoryMetadata() {
-		return delegate.getRepositoryMetadata();
+	public Repository getRepository() {
+		return delegate.getRepository();
 	}
 
     public boolean isLocked() {

@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -186,8 +186,8 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
     }
 
     @Override
-    public RepositoryMetadata getRepositoryMetadata() {
-        return delegate.getRepositoryMetadata();
+    public Repository.Status getRepositoryStatus() {
+        return delegate.getRepositoryStatus();
     }
 
 }

@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -603,6 +604,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public boolean unpublishProject(String projectUrl) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public ResourceSet manageRepository(String projectName, Repository.Operation operation, String... arguments) {
+        return null;
     }
 
     @Override

@@ -1,8 +1,7 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
-import org.integratedmodelling.klab.api.collections.impl.RepositoryMetadataImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.RepositoryMetadata;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Statement;
@@ -14,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class KimDocumentImpl<T extends Statement> implements KlabDocument<T> {
+public abstract class KlabDocumentImpl<T extends Statement> implements KlabDocument<T> {
     private String urn;
     private Version version;
     private Metadata metadata = Metadata.create();
@@ -25,7 +24,7 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     private List<Notification> notifications = new ArrayList<>();
     private String projectName;
     private String sourceCode;
-    private RepositoryMetadata repositoryMetadata = new RepositoryMetadataImpl();
+    private Repository.Status repositoryStatus = Repository.Status.CLEAN;
 
     @Override
     public String getUrn() {
@@ -117,11 +116,11 @@ public abstract class KimDocumentImpl<T extends Statement> implements KlabDocume
     }
 
     @Override
-    public RepositoryMetadata getRepositoryMetadata() {
-        return repositoryMetadata;
+    public Repository.Status getRepositoryStatus() {
+        return repositoryStatus;
     }
 
-    public void setRepositoryMetadata(RepositoryMetadata repositoryMetadata) {
-        this.repositoryMetadata = repositoryMetadata;
+    public void setRepositoryStatus(Repository.Status repositoryStatus) {
+        this.repositoryStatus = repositoryStatus;
     }
 }
