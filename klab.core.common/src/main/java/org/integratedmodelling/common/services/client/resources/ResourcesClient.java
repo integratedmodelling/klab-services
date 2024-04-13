@@ -217,23 +217,21 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public boolean importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting) {
+    public ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting) {
         ProjectRequest request = new ProjectRequest();
         request.setWorkspaceName(workspaceName);
         request.setProjectUrl(projectUrl);
         request.setOverwrite(overwriteIfExisting);
-        var result = client.post(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT, request, ResourceSet.class);
-        // TODO log, events in scope
-        return !result.isEmpty();
+        return client.post(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT, request, ResourceSet.class);
     }
 
     @Override
-    public Project createProject(String workspaceName, String projectName) {
+    public ResourceSet createProject(String workspaceName, String projectName) {
         return null;
     }
 
     @Override
-    public Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
+    public ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
                                  String lockingAuthorization) {
         return null;
     }
@@ -297,8 +295,17 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet manageRepository(String projectName, Repository.Operation operation, String... arguments) {
-        return null;
+    public ResourceSet manageRepository(String projectName, Repository.Operation operation,
+                                        String... arguments) {
+        ProjectRequest request = new ProjectRequest();
+        request.setOperation(operation);
+        if (arguments != null) {
+            for (String argument : arguments) {
+                request.getParameters().add(argument);
+            }
+        }
+        return client.post(ServicesAPI.RESOURCES.ADMIN.MANAGE_PROJECT, request, ResourceSet.class, "urn",
+                projectName);
     }
 
     @Override
@@ -328,13 +335,13 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public void removeProject(String projectName) {
-
+    public ResourceSet removeProject(String projectName) {
+        return null;
     }
 
     @Override
-    public void removeWorkspace(String workspaceName) {
-
+    public ResourceSet removeWorkspace(String workspaceName) {
+        return null;
     }
 
     @Override

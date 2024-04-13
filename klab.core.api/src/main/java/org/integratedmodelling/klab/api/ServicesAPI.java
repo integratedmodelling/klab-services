@@ -285,11 +285,12 @@ public interface ServicesAPI {
             String CREATE_ONTOLOGY = "/createOntology/{projectName}/{ontology}";
             String UPDATE_ONTOLOGY = "/updateOntology/{projectName}";
             String UPDATE_STRATEGIES = "/updateStrategies/{projectName}";
-            String CREATE_RESOURCE_FROM_PATH = "/createResourceFromPath";
-            String CREATE_RESOURCE_FOR_PROJECT = "/createResourceForProject";
-            String REMOVE_PROJECT = "/removeProject/{projectName}";
-            String REMOVE_WORKSPACE = "/removeWorkspace/{projectName}";
-
+            String CREATE_RESOURCE = "/createResource";
+            String IMPORT_RESOURCE = "/importResource";
+            String UPLOAD_RESOURCE = "/uploadResource";
+            String REMOVE_PROJECT = "/removeProject/{urn}";
+            String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
+            String MANAGE_PROJECT = "/manageProject/{urn}";
             /**
              * If successful, stop automatic file management for the project and respond with a URL to either
              * the file:/ location of the project (if the request comes from a client sharing the same

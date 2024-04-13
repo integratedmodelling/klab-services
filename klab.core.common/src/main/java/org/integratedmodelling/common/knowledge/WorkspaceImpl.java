@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
@@ -19,6 +20,7 @@ public class WorkspaceImpl implements Workspace {
     private String urn;
     private Collection<Project> projects = new ArrayList<>();
     private Metadata metadata = Metadata.create();
+    private ResourcePrivileges privileges =  ResourcePrivileges.empty();
 
     @Override
     public String getUrn() {
@@ -45,5 +47,14 @@ public class WorkspaceImpl implements Workspace {
 
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
+    }
+
+    @Override
+    public ResourcePrivileges getPrivileges() {
+        return privileges;
+    }
+
+    public void setPrivileges(ResourcePrivileges privileges) {
+        this.privileges = privileges;
     }
 }

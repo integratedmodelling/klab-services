@@ -23,10 +23,10 @@ import java.io.PrintWriter;
 import java.net.URI;
 
 @Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-        "Commands to find, list, access and manipulate resources.", ""}, subcommands = {Resources.List.class,
-                                                                                        Resources.Query.class, Resources.Services.class, Resources.Workspace.class, Resources.Project.class,
-                                                                                        Resources.Components.class, Resources.Resolve.class})
-public class Resources  {
+        "Commands to find, list, access and manipulate resources.", ""}, subcommands =
+        {Resources.List.class, Resources.Query.class, Resources.Services.class, Resources.Workspace.class,
+         Resources.Project.class, Resources.Components.class, Resources.Resolve.class})
+public class Resources {
 
     @Command(name = "services", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "List and describe all the available resource services.", ""}, subcommands = {})
@@ -44,17 +44,17 @@ public class Resources  {
     public static class Query implements Runnable {
 
         @Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at null */,
-                description = {
-                        "Resource service to connect to"}, required = false)
+                description = {"Resource service to connect to"}, required = false)
         private String service;
 
-        @Option(names = {"-c", "--source-code"}, defaultValue = "false", description = {
-                "Print the original source code, if applicable, instead of the JSON specification"},
-                required = false)
+        @Option(names = {"-c", "--source-code"}, defaultValue = "false", description = {"Print the original" +
+                                                                                                " source " +
+                                                                                                "code, if " +
+                                                                                                "applicable, instead of the JSON specification"}, required = false)
         private boolean source;
 
-        @Option(names = {"-o", "--output"}, description = {
-                "File to output the results to"}, required = false, defaultValue = Parameters.NULL_VALUE)
+        @Option(names = {"-o", "--output"}, description = {"File to output the results to"}, required =
+                false, defaultValue = Parameters.NULL_VALUE)
         private File output;
 
         @Parameters
@@ -66,9 +66,8 @@ public class Resources  {
         @Override
         public void run() {
 
-            Observable observable = KlabCLI.INSTANCE.modeler().currentUser()
-                                                    .getService(org.integratedmodelling.klab.api.services.Reasoner.class)
-                                                    .resolveObservable(Utils.Strings.join(urns, ' '));
+            Observable observable =
+                    KlabCLI.INSTANCE.modeler().currentUser().getService(org.integratedmodelling.klab.api.services.Reasoner.class).resolveObservable(Utils.Strings.join(urns, ' '));
 
             var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
             ResourceSet result = service.queryModels(observable, KlabCLI.INSTANCE.modeler().currentContext());
@@ -99,17 +98,17 @@ public class Resources  {
     public static class Resolve implements Runnable {
 
         @Option(names = {"-s", "--service"}, defaultValue = "local" /* TODO initialize at null */,
-                description = {
-                        "Resource service to connect to"}, required = false)
+                description = {"Resource service to connect to"}, required = false)
         private String service;
 
-        @Option(names = {"-c", "--source-code"}, defaultValue = "false", description = {
-                "Print the original source code, if applicable, instead of the JSON specification"},
-                required = false)
+        @Option(names = {"-c", "--source-code"}, defaultValue = "false", description = {"Print the original" +
+                                                                                                " source " +
+                                                                                                "code, if " +
+                                                                                                "applicable, instead of the JSON specification"}, required = false)
         private boolean source;
 
-        @Option(names = {"-o", "--output"}, description = {
-                "File to output the results to"}, required = false, defaultValue = Parameters.NULL_VALUE)
+        @Option(names = {"-o", "--output"}, description = {"File to output the results to"}, required =
+                false, defaultValue = Parameters.NULL_VALUE)
         private File output;
 
         @Parameters
@@ -130,9 +129,7 @@ public class Resources  {
 
                     String text = result.getResourceUrn();
 
-                    out.println(Ansi.AUTO
-                            .string("   " + Utils.Strings.capitalize(result.getKnowledgeClass().name().toLowerCase())
-                                    + " @|green " + result.getResourceUrn() + "|@ listing:"));
+                    out.println(Ansi.AUTO.string("   " + Utils.Strings.capitalize(result.getKnowledgeClass().name().toLowerCase()) + " @|green " + result.getResourceUrn() + "|@ listing:"));
 
                     switch (result.getKnowledgeClass()) {
                         case APPLICATION:
@@ -179,40 +176,42 @@ public class Resources  {
             "List and describe local or remote resources.", ""}, subcommands = {})
     public static class List implements Runnable {
 
-        @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                "Resource service to connect to"}, required = false)
+        @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service to " +
+                                                                                            "connect to"},
+                required = false)
         private String service;
 
-        @Option(names = {"-n", "--namespaces"}, defaultValue = "false", description = {
-                "List namespaces"}, required = false)
+        @Option(names = {"-n", "--namespaces"}, defaultValue = "false", description = {"List namespaces"},
+                required = false)
         boolean namespaces;
 
-        @Option(names = {"-b", "--behaviors"}, defaultValue = "false", description = {
-                "List behaviors"}, required = false)
+        @Option(names = {"-b", "--behaviors"}, defaultValue = "false", description = {"List behaviors"},
+                required = false)
         boolean behaviors;
 
-        @Option(names = {"-t", "--tests"}, defaultValue = "false", description = {
-                "List test cases"}, required = false)
+        @Option(names = {"-t", "--tests"}, defaultValue = "false", description = {"List test cases"},
+                required = false)
         boolean tests;
 
-        @Option(names = {"-sc", "--scripts"}, defaultValue = "false", description = {
-                "List scripts"}, required = false)
+        @Option(names = {"-sc", "--scripts"}, defaultValue = "false", description = {"List scripts"},
+                required = false)
         boolean scripts;
 
-        @Option(names = {"-a", "--applications"}, defaultValue = "false", description = {
-                "List applications"}, required = false)
+        @Option(names = {"-a", "--applications"}, defaultValue = "false", description = {"List applications"
+        }, required = false)
         boolean applications;
 
-        @Option(names = {"-r", "--resources"}, defaultValue = "false", description = {
-                "List resources"}, required = false)
+        @Option(names = {"-r", "--resources"}, defaultValue = "false", description = {"List resources"},
+                required = false)
         boolean resources;
 
-        @Option(names = {"-c", "--components"}, defaultValue = "false", description = {
-                "List components"}, required = false)
+        @Option(names = {"-c", "--components"}, defaultValue = "false", description = {"List components"},
+                required = false)
         boolean components;
 
-        @Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {
-                "List projects in each workspace"}, required = false)
+        @Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {"List projects in each " +
+                                                                                            "workspace"},
+                required = false)
         private boolean verbose;
 
         @Parameters(description = "A query with wildcards. If not passed, all matches are returned.",
@@ -295,21 +294,23 @@ public class Resources  {
 
     }
 
-    @Command(name = "workspace", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "Workspace operations",
-            ""}, subcommands = {Workspace.List.class, Workspace.Remove.class})
+    @Command(name = "workspace", mixinStandardHelpOptions = true, version = Version.CURRENT, description =
+            {"Workspace operations", ""}, subcommands = {Workspace.List.class, Workspace.Remove.class})
     public static class Workspace {
 
         @Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
                 "List and describe local workspaces.", ""}, subcommands = {})
         public static class List implements Runnable {
 
-            @Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {
-                    "List projects in each workspace"}, required = false)
+            @Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {"List projects in " +
+                                                                                                "each " +
+                                                                                                "workspace"}, required = false)
             private boolean verbose;
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
 
             @Override
@@ -327,12 +328,14 @@ public class Resources  {
 
         }
 
-        @Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-                "Remove a workspace from this service.", ""}, subcommands = {})
+        @Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT, description =
+                {"Remove a workspace from this service.", ""}, subcommands = {})
         public static class Remove implements Runnable {
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
             @Parameters
             private String workspace;
@@ -349,8 +352,7 @@ public class Resources  {
     }
 
     @Command(name = "project", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "Workspace operations", ""}, subcommands = {Project.List.class,
-                                                        Project.Add.class,
+            "Workspace operations", ""}, subcommands = {Project.List.class, Project.Add.class,
                                                         Project.Remove.class})
     public static class Project {
 
@@ -361,12 +363,17 @@ public class Resources  {
             @CommandLine.Spec
             CommandLine.Model.CommandSpec commandSpec;
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
 
-            @Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {
-                    "List project contents and metadata"}, required = false)
+            @Option(names = {"-v", "--verbose"}, defaultValue = "false", description = {"List project " +
+                                                                                                "contents " +
+                                                                                                "and " +
+                                                                                                "metadata"}
+                    , required = false)
             private boolean verbose;
 
             @Override
@@ -428,16 +435,23 @@ public class Resources  {
                 "Add a new project to the scope of this service.", ""}, subcommands = {})
         public static class Add implements Runnable {
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
 
-            @Option(names = {"-w", "--workspace"}, defaultValue = "local", description = {
-                    "Workspace for the imported project"}, required = false)
+            @Option(names = {"-w", "--workspace"}, defaultValue = "local", description = {"Workspace for " +
+                                                                                                  "the " +
+                                                                                                  "imported" +
+                                                                                                  " project"
+            }, required = false)
             private String workspace;
 
-            @Option(names = {"-f", "--force"}, defaultValue = "false", description = {
-                    "Force reimport of an existing project"}, required = false)
+            @Option(names = {"-f", "--force"}, defaultValue = "false", description = {"Force reimport of an" +
+                                                                                              " existing " +
+                                                                                              "project"},
+                    required = false)
             private boolean force;
 
             @Parameters
@@ -451,23 +465,21 @@ public class Resources  {
                  just create it if not existing.
                  */
 
-                KlabCLI.INSTANCE.modeler().importProject(projectUrl, force);
+                KlabCLI.INSTANCE.modeler().importProject(workspace, projectUrl, force);
 
                 try {
                     var url = new File(projectUrl).isDirectory() ? new File(projectUrl).toURI().toURL() :
                               new URI(projectUrl).toURL();
                     var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-                    if (service instanceof ResourcesService.Admin) {
-                        if (!((ResourcesService.Admin) service).importProject(workspace,
-                                url.toString(), false)) {
-                            System.out.println("project " + projectUrl + " was present or in error, not " +
-                                    "added");
+                    if (service instanceof ResourcesService.Admin admin) {
+                        if (admin.importProject(workspace, url.toString(), false).isEmpty()) {
+                            System.out.println("project " + projectUrl + " was present or in error, not " + "added");
                         } else {
                             System.out.println("project " + projectUrl + " added to workspace " + workspace);
                         }
                     } else {
-                        System.out.println("service " + this.service + " does not have admin permissions in" +
-                                " this scope");
+                        System.out.println("service " + this.service + " does not have admin permissions " +
+                                "in" + " this scope");
                     }
                 } catch (Exception e) {
                     System.err.println("Invalid project URL entered");
@@ -475,12 +487,14 @@ public class Resources  {
             }
         }
 
-        @Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-                "Remove a project from this service.", ""}, subcommands = {})
+        @Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT, description =
+                {"Remove a project from this service.", ""}, subcommands = {})
         public static class Remove implements Runnable {
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
             @Parameters
             private String project;
@@ -495,18 +509,19 @@ public class Resources  {
         }
     }
 
-    @Command(name = "components", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-            "Components operations", ""}, subcommands = {Components.List.class,
-                                                         Components.Add.class,
-                                                         Components.Remove.class})
+    @Command(name = "components", mixinStandardHelpOptions = true, version = Version.CURRENT, description =
+            {"Components operations", ""}, subcommands = {Components.List.class, Components.Add.class,
+                                                          Components.Remove.class})
     public static class Components {
 
         @Command(name = "list", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
                 "List and describe service components.", ""}, subcommands = {})
         public static class List implements Runnable {
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
 
             @Override
@@ -520,8 +535,10 @@ public class Resources  {
                 "Add a new component to the scope of a service.", ""}, subcommands = {})
         public static class Add implements Runnable {
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
 
             @Parameters
@@ -535,12 +552,14 @@ public class Resources  {
 
         }
 
-        @Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
-                "Remove a component from a service.", ""}, subcommands = {})
+        @Command(name = "remove", mixinStandardHelpOptions = true, version = Version.CURRENT, description =
+                {"Remove a component from a service.", ""}, subcommands = {})
         public static class Remove implements Runnable {
 
-            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {
-                    "Resource service to connect to"}, required = false)
+            @Option(names = {"-s", "--service"}, defaultValue = "local", description = {"Resource service " +
+                                                                                                "to connect" +
+                                                                                                " to"},
+                    required = false)
             private String service;
 
             @Parameters
@@ -573,8 +592,7 @@ public class Resources  {
 
         KimNamespace namespace = service.resolveNamespace(ns, KlabCLI.INSTANCE.modeler().currentUser());
         for (KlabStatement statement : namespace.getStatements()) {
-            if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance
-                    && on.equals(((KimInstance) statement).getName())) {
+            if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance && on.equals(((KimInstance) statement).getName())) {
                 return source ? statement.sourceCode() : Utils.Json.printAsJson(statement);
             } /*else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
 					&& resourceUrn.equals(((KimModel) statement).getName())) {

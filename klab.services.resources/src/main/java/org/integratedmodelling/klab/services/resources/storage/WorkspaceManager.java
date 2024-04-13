@@ -152,62 +152,73 @@ public class WorkspaceManager {
         var pd = projectDescriptors.get(projectId);
         var prj = projects.get(projectId);
 
-        if (pd != null && prj instanceof ProjectImpl project && pd.repository != null
-                && project.getRepository() instanceof RepositoryImpl projectMetadata) {
+        if (pd != null && prj instanceof ProjectImpl project && project.getRepository() instanceof RepositoryImpl projectMetadata) {
 
             if (pd.externalProject != null) {
                 return;
             }
 
-            try {
-                projectMetadata.setStatus(Repository.Status.TRACKED);
-                projectMetadata.setCurrentBranch(pd.repository.getBranch());
-                try (var git = Git.wrap(pd.repository)) {
+            try (var repository = pd.storage instanceof FileProjectStorage fps ? fps.getRepository() : null) {
 
-                    var status = git.status().call();
+                if (repository != null) {
 
-                    if (projectMetadata.getBranches().isEmpty()) {
-                        // TODO not doing this unless all branches are empty. When we add/remove branches
-                        //  we must change them manually
-                        var branches = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
-                        projectMetadata.getBranches().addAll(branches.stream().map(Ref::getName).toList());
+                    projectMetadata.setStatus(Repository.Status.TRACKED);
+                    projectMetadata.setCurrentBranch(repository.getBranch());
+                    try (var git = Git.wrap(repository)) {
 
-                        for (var remote : git.remoteList().call()) {
-                            if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
-                                projectMetadata.setRepositoryUrl(new URI(remote.getURIs().getFirst().toASCIIString()).toURL());
+                        var status = git.status().call();
+
+                        if (projectMetadata.getBranches().isEmpty()) {
+                            // TODO not doing this unless all branches are empty. When we add/remove branches
+                            //  we must change them manually
+                            var branches =
+                                    git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
+
+                            Set<String> branchNames = new HashSet<>();
+                            for (var branchName : branches.stream().map(Ref::getName).toList()) {
+                                branchName = Utils.Paths.getLast(branchName, '/');
+                                branchNames.add(branchName);
                             }
-                        }
-                    }
 
-                    if (resource != null) {
-                        if (resource instanceof KlabDocumentImpl<?> document) {
-                            var resourceType = ProjectStorage.ResourceType.classify(resource);
-                            if (resourceType != null) {
+                            projectMetadata.getBranches().addAll(branchNames);
 
-                                var filePath = ProjectStorage.getRelativeFilePath(resource.getUrn(),
-                                        resourceType, "/");
-
-                                if (status.getModified().contains(filePath)) {
-                                    document.setRepositoryStatus(Repository.Status.MODIFIED);
-                                } else if (status.getUntracked().contains(filePath)) {
-                                    document.setRepositoryStatus(Repository.Status.UNTRACKED);
-                                } else {
-                                    document.setRepositoryStatus(Repository.Status.CLEAN);
+                            for (var remote : git.remoteList().call()) {
+                                if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
+                                    projectMetadata.setRepositoryUrl(new URI(remote.getURIs().getFirst().toASCIIString()).toURL());
                                 }
                             }
                         }
 
-                    } else {
-                        for (var changed : status.getModified()) {
-                            var document = project.findDocument(changed);
-                            if (document instanceof KlabDocumentImpl<?> doc) {
-                                doc.setRepositoryStatus(Repository.Status.MODIFIED);
+                        if (resource != null) {
+                            if (resource instanceof KlabDocumentImpl<?> document) {
+                                var resourceType = ProjectStorage.ResourceType.classify(resource);
+                                if (resourceType != null) {
+
+                                    var filePath = ProjectStorage.getRelativeFilePath(resource.getUrn(),
+                                            resourceType, "/");
+
+                                    if (status.getModified().contains(filePath)) {
+                                        document.setRepositoryStatus(Repository.Status.MODIFIED);
+                                    } else if (status.getUntracked().contains(filePath)) {
+                                        document.setRepositoryStatus(Repository.Status.UNTRACKED);
+                                    } else {
+                                        document.setRepositoryStatus(Repository.Status.CLEAN);
+                                    }
+                                }
                             }
-                        }
-                        for (var changed : status.getUntracked()) {
-                            var document = project.findDocument(changed);
-                            if (document instanceof KlabDocumentImpl<?> doc) {
-                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+
+                        } else {
+                            for (var changed : status.getModified()) {
+                                var document = project.findDocument(changed);
+                                if (document instanceof KlabDocumentImpl<?> doc) {
+                                    doc.setRepositoryStatus(Repository.Status.MODIFIED);
+                                }
+                            }
+                            for (var changed : status.getUntracked()) {
+                                var document = project.findDocument(changed);
+                                if (document instanceof KlabDocumentImpl<?> doc) {
+                                    doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+                                }
                             }
                         }
                     }
@@ -492,8 +503,8 @@ public class WorkspaceManager {
         ProjectStorage storage;
         Project externalProject;
         Project.Manifest manifest;
-        // if not external, this will be not null iif the project is a git repository
-        org.eclipse.jgit.lib.Repository repository;
+        //        // if not external, this will be not null iif the project is a git repository
+        //        org.eclipse.jgit.lib.Repository repository;
         // Update interval in minutes, from configuration
         int updateInterval;
         // TODO permissions
@@ -525,7 +536,7 @@ public class WorkspaceManager {
         synchronized (projectDescriptors) {
             for (var pd : projectDescriptors.values()) {
                 // configured interval == 0 disables update
-                if (pd.repository != null && pd.updateInterval > 0) {
+                if (pd.storage instanceof FileProjectStorage fpd && pd.updateInterval > 0) {
                     var now = System.currentTimeMillis();
                     var timeToUpdate = lastProjectUpdates.containsKey(pd.name) ?
                                        lastProjectUpdates.get(pd.name) + (pd.updateInterval * 1000 * 60) :
@@ -585,12 +596,13 @@ public class WorkspaceManager {
                     descriptor.workspace = workspace;
                     descriptor.name = project;
                     descriptor.updateInterval = projectConfiguration.getSyncIntervalMinutes();
-                    if (projectStorage instanceof FileProjectStorage fileProjectStorage) {
-                        var repository = fileProjectStorage.getRepository();
-                        if (repository != null) {
-                            descriptor.repository = repository;
-                        }
-                    }
+                    //                    if (projectStorage instanceof FileProjectStorage
+                    //                    fileProjectStorage) {
+                    //                        var repository = fileProjectStorage.getRepository();
+                    //                        if (repository != null) {
+                    //                            descriptor.repository = repository;
+                    //                        }
+                    //                    }
                     projectDescriptors.put(project, descriptor);
 
                 } else {
@@ -866,9 +878,9 @@ public class WorkspaceManager {
             descriptor.workspace = workspaceName;
             descriptor.name = ret.getProjectName();
             descriptor.updateInterval = configuration.getSyncIntervalMinutes();
-            if (ret instanceof FileProjectStorage fileProjectStorage) {
-                descriptor.repository = fileProjectStorage.getRepository();
-            }
+//            if (ret instanceof FileProjectStorage fileProjectStorage) {
+//                descriptor.repository = fileProjectStorage.getRepository();
+//            }
             projectDescriptors.put(ret.getProjectName(), descriptor);
 
         }

@@ -357,7 +357,7 @@ public interface ResourcesService extends KlabService {
          * @return true if operation succeeded and anything was done (false if project existed and wasn't
          * overwritten)
          */
-        boolean importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting);
+        ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting);
 
         /**
          * Create a new empty project. Use the update function to configure the manifest and the create/update
@@ -367,7 +367,7 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @return
          */
-        Project createProject(String workspaceName, String projectName);
+        ResourceSet createProject(String workspaceName, String projectName);
 
         /**
          * Update project manifest and metadata. Project must exist.
@@ -377,7 +377,7 @@ public interface ResourcesService extends KlabService {
          * @param metadata
          * @return the updated project with the new metadata and manifest.
          */
-        Project updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
+        ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
                               String lockingAuthorization);
 
         /**
@@ -536,14 +536,14 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @return true if operation was carried out
          */
-        void removeProject(String projectName);
+        ResourceSet removeProject(String projectName);
 
         /**
          * Remove an entire workspace and all the projects and resources in it.
          *
          * @param workspaceName
          */
-        void removeWorkspace(String workspaceName);
+        ResourceSet removeWorkspace(String workspaceName);
 
         /**
          * Return a list of all the projects available with their contents. Bound to produce a large payload.

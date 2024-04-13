@@ -5,16 +5,21 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.modeler.Modeler;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
@@ -106,6 +111,67 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     @Override
+    public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {
+
+        var resources = engine().serviceScope().getService(ResourcesService.class);
+        if (resources instanceof ResourcesService.Admin admin) {
+            Thread.ofVirtual().start(() -> {
+                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting);
+                if (ret != null && !ret.isEmpty()) {
+                    dispatch(this, UIEvent.WorkspaceModified, ret);
+                }
+            });
+        }
+
+    }
+
+    @Override
+    public void deleteProject(String projectUrl) {
+
+        if (getUI() != null) {
+            if (!getUI().confirm(Notification.create("Confirm unrecoverable deletion of project " + projectUrl +
+                    "?"))) {
+                return;
+            }
+        }
+
+        var resources = engine().serviceScope().getService(ResourcesService.class);
+        if (resources instanceof ResourcesService.Admin admin) {
+            Thread.ofVirtual().start(() -> {
+                var ret = admin.removeProject(projectUrl);
+                if (ret != null && !ret.isEmpty()) {
+                    dispatch(this, UIEvent.WorkspaceModified, ret);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void manageProject(String projectId, Repository.Operation operation, String... arguments) {
+
+        var resources = engine().serviceScope().getService(ResourcesService.class);
+        if (resources instanceof ResourcesService.Admin admin) {
+            Thread.ofVirtual().start(() -> {
+                var ret = ((ResourcesService.Admin) resources).manageRepository(projectId, operation,
+                        arguments);
+                if (ret != null && !ret.isEmpty()) {
+                    dispatch(this, UIEvent.WorkspaceModified, ret);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void editProperties(String projectId) {
+
+    }
+
+    @Override
+    public void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType) {
+
+    }
+
+    @Override
     public UserScope user() {
         return ((EngineClient) engine()).getUser();
     }
@@ -115,7 +181,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         if (engine() instanceof EngineClient engine) {
             engine.setDefaultService(service);
         } else {
-            engine().serviceScope().warn("Modeler: request to set default service wasn't honored because " +
+            engine().serviceScope().warn("Modeler: request to set default service wasn't honored " +
+                    "because " +
                     "the engine " +
                     "implementation is overridden");
         }

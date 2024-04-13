@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -103,7 +104,7 @@ public interface UIReactor {
          * own the document for this to be sent.
          */
         DocumentUpdate(String.class),
-        NewProject(String.class),
+        NewAsset(String.class),
         ImportProject(String.class),
 
         /**
@@ -113,6 +114,12 @@ public interface UIReactor {
          * enough information for the resource adapter to produce the resource.
          */
         ImportResource(List.class),
+
+        DeleteProject(Project.class),
+
+        ManageProject(Project.class),
+
+        EditProjectProperties(Project.Manifest.class),
 
         /**
          * Sent by a view that owns a document after each change in cursor position. No document in target as

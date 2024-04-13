@@ -9,6 +9,7 @@ import java.util.List;
 //import org.eclipse.core.resources.IWorkspace;
 //import org.eclipse.core.resources.IWorkspaceRoot;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -71,5 +72,8 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
         return null;
     }
 
+    public ResourcePrivileges getPrivileges() {
+        return delegate.getPrivileges();
+    }
 
 }

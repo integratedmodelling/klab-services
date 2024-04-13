@@ -280,19 +280,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * @return
      */
     @Override
-    public synchronized boolean importProject(String workspaceName, String projectUrl,
+    public synchronized ResourceSet importProject(String workspaceName, String projectUrl,
                                               boolean overwriteIfExisting) {
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
-        return storage != null/* && loadWorkspaces()*/;
+        return project(projectUrl, serviceScope());
     }
 
     @Override
-    public Project createProject(String workspaceName, String projectName) {
+    public ResourceSet createProject(String workspaceName, String projectName) {
         return null;
     }
 
     @Override
-    public Project updateProject(String projectName, Manifest manifest, Metadata metadata,
+    public ResourceSet updateProject(String projectName, Manifest manifest, Metadata metadata,
                                  String lockingAuthorization) {
         return null;
     }
@@ -341,7 +341,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public void removeProject(String projectName) {
+    public ResourceSet removeProject(String projectName) {
 
         updateLock.writeLock().lock();
         //
@@ -370,6 +370,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         //        }/* finally {*/
         updateLock.writeLock().unlock();
         /*}*/
+
+        return null;
     }
 
     //    private String getWorkspace(Project project) {
@@ -382,7 +384,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     //    }
 
     @Override
-    public void removeWorkspace(String workspaceName) {
+    public ResourceSet removeWorkspace(String workspaceName) {
         Workspace workspace = workspaceManager.getWorkspace(workspaceName);
         for (Project project : workspace.getProjects()) {
             removeProject(project.getUrn());
@@ -392,7 +394,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ////            this.localWorkspaces.remove(workspaceName);
         //        } finally {
         //            updateLock.writeLock().unlock();
-        //        }
+        //        }\
+        return null;
     }
 
     @Override
@@ -432,7 +435,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
         //        if (isLocal()) {
         // TODO capabilities are being asked from same machine as the one that runs the server. This call
-        //  should have a @Nullable scope
+        //  should have a @Nullable scope. The condition here is silly.
         if (ResourcesProvider.this instanceof ResourcesService.Admin) {
             ret.getPermissions().add(CRUDOperation.CREATE);
             ret.getPermissions().add(CRUDOperation.DELETE);

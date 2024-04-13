@@ -5,7 +5,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 /**
  * Tag interface for the top-level, view-side UI object. The main {@link UIController} representing the
  * top-level application will take the UI as parameter and dispatch any events that are registered by methods
- * in its interface.
+ * in its interface. The controller may not have a UI, in which case it should just assume that all choices
+ * are confirmed and user-level logging is not requested.
  */
 public interface UI {
 
@@ -16,6 +17,14 @@ public interface UI {
      * @param notification
      */
     void alert(Notification notification);
+
+    /**
+     * Respond yes/no/cancel to the passed notification.
+     *
+     * @param notification
+     * @return
+     */
+    boolean confirm(Notification notification);
 
     /**
      * Log is any other notification, which may or may not be logged or displayed but should be unobtrusively

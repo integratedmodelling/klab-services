@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
@@ -47,13 +47,17 @@ public interface Modeler extends UIController {
 
     @UIActionHandler(value = UIReactor.UIAction.ImportProject, label = "New project", tooltip =
             "Create a new k.LAB project in the current workspace and scope")
-    default void importProject(String projectUrl, boolean overwriteExisting) {
-        // dispatch(this, UIReactor.UIEvent.ImportProjectRequest, projectUrl);
-    }
+    void importProject(String workspaceName, String projectUrl, boolean overwriteExisting);
 
-    @UIActionHandler(value = UIReactor.UIAction.NewProject, label = "New project", tooltip =
-            "Create a new k.LAB asset of the passed type within its passed parent asset")
-    default void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType) {
-        // dispatch(this, UIReactor.UIEvent.NewProjectRequest, projectUrn);
-    }
+    @UIActionHandler(UIReactor.UIAction.DeleteProject)
+    void deleteProject(String projectUrl);
+
+    @UIActionHandler(UIReactor.UIAction.ManageProject)
+    void manageProject(String projectId, Repository.Operation operation, String... arguments);
+
+    @UIActionHandler(UIReactor.UIAction.EditProjectProperties)
+    void editProperties(String projectId);
+
+    @UIActionHandler(UIReactor.UIAction.NewAsset)
+    void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType);
 }
