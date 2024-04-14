@@ -8,6 +8,7 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
@@ -87,6 +88,7 @@ public class WorkspaceManager {
      * Default interval to check for changes in Git (15 minutes in milliseconds)
      */
     private int DEFAULT_GIT_SYNC_INTERVAL_MINUTES = 15;
+
 
     // project locks are mappings usertoken->projectName and enable remote updating of projects for one
     // user at

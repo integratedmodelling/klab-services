@@ -343,7 +343,7 @@ public abstract class ServiceClient implements KlabService {
         scope.disconnect(this);
         this.scheduler.shutdown();
         if (local) {
-            return client.put(ServicesAPI.SHUTDOWN);
+            return client.put(ServicesAPI.ADMIN.SHUTDOWN);
         }
         return false;
     }

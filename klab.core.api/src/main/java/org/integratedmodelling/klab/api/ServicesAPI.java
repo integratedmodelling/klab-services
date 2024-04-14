@@ -11,8 +11,18 @@ public interface ServicesAPI {
     String API_BASE = "/api/v2";
 
     String CAPABILITIES = "/public/capabilities";
-    String SHUTDOWN = "/shutdown";
     String STATUS = "/public/status";
+
+    /**
+     * General administration endpoints common to all services
+     */
+    interface ADMIN {
+
+        String SHUTDOWN = "/shutdown";
+        String CHECK_CREDENTIALS = "/checkCredentials";
+        String SET_CREDENTIALS = "/setCredentials";
+        String REMOVE_CREDENTIALS = "/removeCredentials";
+    }
 
     interface SCOPE {
 

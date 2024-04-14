@@ -1,5 +1,9 @@
 package org.integratedmodelling.common.authentication;
 
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.distribution.DevelopmentDistributionImpl;
@@ -48,6 +52,10 @@ public enum Authentication {
 
     private Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
     private DistributionImpl distribution;
+    /**
+     * any external credentials taken from the .klab/credentials.json file if any.
+     */
+    private Utils.FileCatalog<ExternalAuthenticationCredentials> externalCredentials;
 
     /**
      * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
@@ -323,4 +331,51 @@ public enum Authentication {
     public Distribution getDistribution() {
         return this.distribution;
     }
+
+    public void addExternalCredentials(String host, ExternalAuthenticationCredentials credentials) {
+        externalCredentials.put(host, credentials);
+        externalCredentials.write();
+    }
+
+    public ExternalAuthenticationCredentials getCredentials(String hostUrl) {
+        return externalCredentials.get(hostUrl);
+    }
+
+    /**
+     * Return a new credential provider that knows the credentials saved into the k.LAB database and will log
+     * appropriate messages when credentials aren't found.
+     *
+     * @return
+     */
+    public CredentialsProvider getCredentialProvider() {
+
+        return new CredentialsProvider() {
+
+            @Override
+            public void clear() {
+            }
+
+            @Override
+            public Credentials getCredentials(AuthScope arg0) {
+
+                String auth = arg0.getHost() + (arg0.getPort() == 80 ? "" : (":" + arg0.getPort()));
+
+                ExternalAuthenticationCredentials credentials = externalCredentials.get(auth);
+
+                if (credentials == null) {
+                    throw new KlabAuthorizationException(auth);
+                }
+
+                return new UsernamePasswordCredentials(credentials.getCredentials().get(0),
+                        credentials.getCredentials().get(1));
+            }
+
+            @Override
+            public void setCredentials(AuthScope arg0, org.apache.http.auth.Credentials arg1) {
+                // TODO Auto-generated method stub
+
+            }
+        };
+    }
+
 }
