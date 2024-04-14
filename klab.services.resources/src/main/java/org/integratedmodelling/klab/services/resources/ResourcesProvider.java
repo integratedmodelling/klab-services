@@ -645,6 +645,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return false;
     }
 
+    @Override
+    public ResourceSet removeAsset(String projectName, String assetUrn) {
+        return null;
+    }
+
     public void setLocalName(String localName) {
         this.localName = localName;
     }

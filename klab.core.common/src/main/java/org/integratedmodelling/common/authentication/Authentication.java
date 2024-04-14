@@ -332,13 +332,20 @@ public enum Authentication {
         return this.distribution;
     }
 
-    public void addExternalCredentials(String host, ExternalAuthenticationCredentials credentials) {
-        externalCredentials.put(host, credentials);
-        externalCredentials.write();
+    Utils.FileCatalog<ExternalAuthenticationCredentials> getExternalCredentialsCatalog(Scope scope) {
+        // TODO use separate catalog for services and user scopes
+        return externalCredentials;
     }
 
-    public ExternalAuthenticationCredentials getCredentials(String hostUrl) {
-        return externalCredentials.get(hostUrl);
+    public void addExternalCredentials(String host, ExternalAuthenticationCredentials credentials, Scope scope) {
+        var catalog = getExternalCredentialsCatalog(scope);
+        catalog.put(host, credentials);
+        catalog.write();
+    }
+
+    public ExternalAuthenticationCredentials getCredentials(String hostUrl, Scope scope) {
+        var catalog = getExternalCredentialsCatalog(scope);
+        return catalog.get(hostUrl);
     }
 
     /**
@@ -347,7 +354,7 @@ public enum Authentication {
      *
      * @return
      */
-    public CredentialsProvider getCredentialProvider() {
+    public CredentialsProvider getCredentialProvider(Scope scope) {
 
         return new CredentialsProvider() {
 
@@ -360,7 +367,7 @@ public enum Authentication {
 
                 String auth = arg0.getHost() + (arg0.getPort() == 80 ? "" : (":" + arg0.getPort()));
 
-                ExternalAuthenticationCredentials credentials = externalCredentials.get(auth);
+                ExternalAuthenticationCredentials credentials = getExternalCredentialsCatalog(scope).get(auth);
 
                 if (credentials == null) {
                     throw new KlabAuthorizationException(auth);

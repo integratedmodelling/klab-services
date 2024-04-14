@@ -23,15 +23,31 @@ public interface Repository {
     }
 
     /**
-     * Basic operations supported through server requests. For now just the simplest Git commands, meant to be
-     * usable by minimally schooled apes.
+     * Basic operations supported through server requests. For now implementing Git command sequences, meant
+     * to be usable easily and safely by untrained or minimally trained users. When these can't run due to
+     * conflict, they should report the problem without causing changes and advice users to use the full Git
+     * implementation.
+     *
      * <p>
-     * Only SWITCH_BRANCH expects a parameter, which will be passed in the parameters array.
+     * For now only COMMIT_AND_SWITCH expects a parameter, which will be passed in the parameters array.
      */
     public enum Operation {
+        /**
+         * Fetch any remote changes, if no conflicts merge them, then commit the current changes and pull
+         */
         FETCH_COMMIT_AND_PUSH,
-        PULL,
-        SWITCH_BRANCH,
+
+        /**
+         * Fetch remote changes and merge them if no conflicts arise
+         */
+        FETCH_AND_MERGE,
+        /**
+         * Switch to another branch (possibly new) after locally committing any pending changes
+         */
+        COMMIT_AND_SWITCH,
+        /**
+         * Hard reset head deleting all uncommitted changes
+         */
         HARD_RESET
     }
 

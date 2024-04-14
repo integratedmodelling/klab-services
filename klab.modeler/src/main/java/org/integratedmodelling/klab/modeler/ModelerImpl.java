@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
+import org.integratedmodelling.klab.modeler.model.NavigableProject;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
@@ -144,6 +146,29 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 }
             });
         }
+    }
+
+    @Override
+    public void deleteAsset(NavigableAsset asset) {
+
+        if (getUI() != null) {
+            if (!getUI().confirm(Notification.create("Confirm unrecoverable deletion of " + asset.getUrn() +
+                    "?"))) {
+                return;
+            }
+        }
+
+        var resources = engine().serviceScope().getService(ResourcesService.class);
+        if (resources instanceof ResourcesService.Admin admin) {
+            Thread.ofVirtual().start(() -> {
+                var project = asset.parent(NavigableProject.class);
+                var ret = admin.removeAsset(project.getUrn(), asset.getUrn());
+                if (ret != null && !ret.isEmpty()) {
+                    dispatch(this, UIEvent.WorkspaceModified, ret);
+                }
+            });
+        }
+
     }
 
     @Override

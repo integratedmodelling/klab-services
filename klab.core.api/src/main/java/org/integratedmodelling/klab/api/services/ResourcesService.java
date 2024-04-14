@@ -532,6 +532,9 @@ public interface ResourcesService extends KlabService {
          */
         boolean unpublishResource(String resourceUrn);
 
+
+        ResourceSet removeAsset(String projectName, String assetUrn);
+
         /**
          * @param projectName
          * @return true if operation was carried out

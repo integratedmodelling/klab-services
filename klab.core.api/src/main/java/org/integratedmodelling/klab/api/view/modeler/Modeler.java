@@ -52,12 +52,15 @@ public interface Modeler extends UIController {
     @UIActionHandler(UIReactor.UIAction.DeleteProject)
     void deleteProject(String projectUrl);
 
+    @UIActionHandler(UIReactor.UIAction.DeleteAsset)
+    void deleteAsset(NavigableAsset asset);
+
     @UIActionHandler(UIReactor.UIAction.ManageProject)
     void manageProject(String projectId, Repository.Operation operation, String... arguments);
 
     @UIActionHandler(UIReactor.UIAction.EditProjectProperties)
     void editProperties(String projectId);
 
-    @UIActionHandler(UIReactor.UIAction.NewAsset)
+    @UIActionHandler(UIReactor.UIAction.CreateAsset)
     void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType);
 }

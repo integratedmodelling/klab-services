@@ -223,17 +223,17 @@ public class Authorization {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        String endpoint = "https://openeo.vito.be/openeo/1.1.0";
-        ExternalAuthenticationCredentials crds = Authentication.INSTANCE.getCredentials(endpoint);
-        if (crds != null) {
-            Authorization authorization = new Authorization(crds, endpoint);
-            System.out.println(authorization.getAuthorization());
-            System.out.println("Sleeping 300 seconds: don't change the channel");
-            Thread.sleep(300000l);
-            System.out.println(authorization.getAuthorization());
-        } else {
-            throw new KlabAuthorizationException("no stored credentials for https://openeo.vito.be");
-        }
+//        String endpoint = "https://openeo.vito.be/openeo/1.1.0";
+//        ExternalAuthenticationCredentials crds = Authentication.INSTANCE.getCredentials(endpoint);
+//        if (crds != null) {
+//            Authorization authorization = new Authorization(crds, endpoint);
+//            System.out.println(authorization.getAuthorization());
+//            System.out.println("Sleeping 300 seconds: don't change the channel");
+//            Thread.sleep(300000l);
+//            System.out.println(authorization.getAuthorization());
+//        } else {
+//            throw new KlabAuthorizationException("no stored credentials for https://openeo.vito.be");
+//        }
     }
 
 }

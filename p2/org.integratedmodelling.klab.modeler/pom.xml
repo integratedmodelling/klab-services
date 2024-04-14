@@ -636,4 +636,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.modeler</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+    </dependencies>
+
 </project>

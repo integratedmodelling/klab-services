@@ -335,6 +335,11 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
+    public ResourceSet removeAsset(String projectName, String assetUrn) {
+        return null;
+    }
+
+    @Override
     public ResourceSet removeProject(String projectName) {
         return null;
     }

@@ -36,19 +36,48 @@ public interface KlabService extends Service {
      * one of these; if the field isn't there, LEGACY_NODE is assumed.
      */
     enum Type {
-        REASONER(8091),
-        RESOURCES(8092),
-        RESOLVER(8093),
-        RUNTIME(8094),
-        COMMUNITY(8095),
+
         /**
-         * Engine is not a k.LAB Service but has its own public observation API
+         *
+         */
+        REASONER(8091),
+
+        /**
+         *
+         */
+        RESOURCES(8092),
+
+        /**
+         *
+         */
+        RESOLVER(8093),
+
+        /**
+         *
+         */
+        RUNTIME(8094),
+
+        /**
+         *
+         */
+        COMMUNITY(8095),
+
+        /**
+         * The engine is an orchestrator of other k.LAB Services and a provider of scopes at user level and
+         * below. It serves the public observation API.
          */
         ENGINE(8283),
-        /*
-        Discovery service for services. To be implemented.
+
+        /**
+         * Discovery service for other services. To be implemented. When a certificate provides a discovery
+         * service, it should interact with the community service and used to supply the other services,
+         * including filtering by worldview and allowing global refactoring.
          */
         DISCOVERY(8096),
+
+        /**
+         * These are the pre-1.0 nodes and may or may not be used at some point in the transition to 1.0.
+         */
         LEGACY_NODE(8287);
 
         public int defaultPort;

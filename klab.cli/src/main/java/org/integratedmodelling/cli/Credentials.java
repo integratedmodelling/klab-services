@@ -121,7 +121,7 @@ public class Credentials {
                 credentials.getCredentials().add(arg);
             }
 
-            Authentication.INSTANCE.addExternalCredentials(host, credentials);
+            Authentication.INSTANCE.addExternalCredentials(host, credentials, KlabCLI.INSTANCE.engine().serviceScope());
         }
     }
 

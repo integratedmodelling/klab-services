@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.data.Notification;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -154,12 +155,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
         private static void collectAnnotations(KlabAsset object, Map<String, Annotation> collection) {
 
-//            for (Annotation annotation : object.getAnnotations()) {
-//                if (!collection.containsKey(annotation.getName())) {
-//                    Annotation a = new AnnotationImpl(annotation);
-//                    collection.put(a.getName(), a);
-//                }
-//            }
+            //            for (Annotation annotation : object.getAnnotations()) {
+            //                if (!collection.containsKey(annotation.getName())) {
+            //                    Annotation a = new AnnotationImpl(annotation);
+            //                    collection.put(a.getName(), a);
+            //                }
+            //            }
 
             if (object instanceof KimObservable) {
 
@@ -392,13 +393,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             }
         }
 
-//        public static void writeStringToFile(String string, File file) {
-//            try {
-//                FileUtils.write(file, string, StandardCharsets.UTF_8);
-//            } catch (IOException e) {
-//                throw new KlabIOException(e);
-//            }
-//        }
+        //        public static void writeStringToFile(String string, File file) {
+        //            try {
+        //                FileUtils.write(file, string, StandardCharsets.UTF_8);
+        //            } catch (IOException e) {
+        //                throw new KlabIOException(e);
+        //            }
+        //        }
 
     }
 
@@ -407,7 +408,73 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         public static final String MAIN_BRANCH = "master";
 
         /**
-         * Clone.
+         * Perform a fetch, if no issues do a merge, then commit any changes and push to origin. Use any
+         * credentials installed for the origin repository.
+         *
+         * @param localRepository
+         * @return notifications describing any error. Empty notifications means all OK. May have no errors
+         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         */
+        public static List<Notification> fetchCommitAndPush(File localRepository) {
+
+            List<Notification> ret = new ArrayList<>();
+
+            return ret;
+
+        }
+
+        /**
+         * Perform a safe pull operations from origin, using any installed credentials.
+         *
+         * @param localRepository
+         * @return notifications describing any error. Empty notifications means all OK. May have no errors
+         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         */
+        public static List<Notification> fetchAndMerge(File localRepository) {
+
+            List<Notification> ret = new ArrayList<>();
+
+            return ret;
+
+        }
+
+        /**
+         * Commit any current changes before switching to the passed branch (either remote or local). If the
+         * branch is new, create it based on current and instrument it for push/pull to/from origin.
+         *
+         * @param localRepository
+         * @param branch
+         * @return notifications describing any error. Empty notifications means all OK. May have no errors
+         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         */
+        public static List<Notification> commitAndSwitch(File localRepository, String branch) {
+
+            List<Notification> ret = new ArrayList<>();
+
+            return ret;
+
+        }
+
+        /**
+         * Perform a hard reset, bringing the current repository to the last commit.
+         *
+         * @param localRepository
+         * @return notifications describing any error. Empty notifications means all OK. May have no errors
+         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         */
+        public static List<Notification> hardReset(File localRepository) {
+
+            List<Notification> ret = new ArrayList<>();
+
+            return ret;
+
+        }
+
+
+        /**
+         * Clone repository.
+         * <p>
+         * TODO use authentication
          *
          * @param gitUrl           the git url
          * @param directory        the directory
@@ -444,13 +511,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             try (org.eclipse.jgit.api.Git result =
                          org.eclipse.jgit.api.Git.cloneRepository().setURI(url).setBranch(branch)
-                                 .setDirectory(pdir).call()) {
+                                                 .setDirectory(pdir).call()) {
 
                 Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 
                 if (!branch.equals(MAIN_BRANCH)) {
                     result.checkout().setName(branch).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
-                            .setStartPoint("origin/" + branch).call();
+                          .setStartPoint("origin/" + branch).call();
 
                     Logging.INSTANCE.info("switched repository: " + result.getRepository() + " to branch " + branch);
                 }
@@ -464,6 +531,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
         /**
          * Pull local repository in passed directory.
+         * <p>
+         * TODO use authentication
          *
          * @param localRepository main directory (containing .git/)
          */
@@ -493,6 +562,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * <p>
          * TODO: Assumes branch is already set correctly if repo is pulled. Should check branch and
          * checkout if necessary.
+         * <p>
+         * TODO use authentication
          *
          * @param gitUrl       the git url
          * @param gitDirectory the git directory

@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -104,7 +105,8 @@ public interface UIReactor {
          * own the document for this to be sent.
          */
         DocumentUpdate(String.class),
-        NewAsset(String.class),
+        CreateAsset(String.class),
+        DeleteAsset(NavigableAsset.class),
         ImportProject(String.class),
 
         /**
