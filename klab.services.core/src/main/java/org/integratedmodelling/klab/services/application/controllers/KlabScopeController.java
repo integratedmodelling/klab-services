@@ -94,7 +94,6 @@ public class KlabScopeController {
         return null;
     }
 
-
     @GetMapping(ServicesAPI.SCOPE.DISPOSE)
     public boolean disposeScope(@PathVariable("scopeId") String scopeId, Principal principal) {
         if (principal instanceof EngineAuthorization engineAuthorization) {

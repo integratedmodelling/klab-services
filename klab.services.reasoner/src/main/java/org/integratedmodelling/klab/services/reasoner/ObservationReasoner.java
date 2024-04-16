@@ -86,7 +86,7 @@ public class ObservationReasoner {
         }
 
         if (opDeferred != null) {
-            ret.add(ObservationStrategyObsolete.builder(observable).withStrategy(ObservationStrategyObsolete.Operation.DEFER, opDeferred).withCost(rank).build());
+            ret.add(ObservationStrategyObsolete.builder(observable).withStrategy(ObservationStrategyObsolete.Operation.RESOLVE, opDeferred).withCost(rank).build());
         }
 
         if (!traits.isEmpty()) {
@@ -195,7 +195,7 @@ public class ObservationReasoner {
             throw new KlabInternalErrorException("no base trait for " + toResolve);
         }
         deferred
-                .withOperation(ObservationStrategyObsolete.Operation.RESOLVE,
+                .withOperation(ObservationStrategyObsolete.Operation.OBSERVE,
                         Observable.promote(baseTrait).builder(scope).of(nakedObservable.getSemantics()).build());
 
         if (observable.is(SemanticType.QUALITY)) {
@@ -223,7 +223,7 @@ public class ObservationReasoner {
                             (ServiceCall) null)
                     // Explain the instantiated classification, deferring the resolution of the attributed
                     // trait within the instances
-                    .withStrategy(ObservationStrategyObsolete.Operation.DEFER,
+                    .withStrategy(ObservationStrategyObsolete.Operation.RESOLVE,
                             ObservationStrategyObsolete.builder(
                                             Observable.promote(toResolve).builder(scope)
                                                     .of(nakedObservable.getSemantics())
@@ -232,7 +232,7 @@ public class ObservationReasoner {
                                     .build());
         }
 
-        builder.withStrategy(ObservationStrategyObsolete.Operation.DEFER, deferred.build());
+        builder.withStrategy(ObservationStrategyObsolete.Operation.RESOLVE, deferred.build());
 
         ret.add(builder.build());
 
@@ -267,16 +267,16 @@ public class ObservationReasoner {
          */
         if (observable.is(SemanticType.RELATIONSHIP)) {
             for (var target : reasoner.relationshipTargets(observable)) {
-                builder.withOperation(ObservationStrategyObsolete.Operation.RESOLVE, Observable.promote(target));
+                builder.withOperation(ObservationStrategyObsolete.Operation.OBSERVE, Observable.promote(target));
             }
         }
 
         // main target
-        builder.withOperation(ObservationStrategyObsolete.Operation.RESOLVE, observable);
+        builder.withOperation(ObservationStrategyObsolete.Operation.OBSERVE, observable);
 
         // defer resolution of the instances
         if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
-            builder.withStrategy(ObservationStrategyObsolete.Operation.DEFER,
+            builder.withStrategy(ObservationStrategyObsolete.Operation.RESOLVE,
                     ObservationStrategyObsolete.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT)
                                     .optional(true).build())
                             .withCost(rank)

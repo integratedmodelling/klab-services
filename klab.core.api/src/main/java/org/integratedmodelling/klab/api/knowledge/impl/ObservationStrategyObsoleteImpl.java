@@ -2,10 +2,8 @@ package org.integratedmodelling.klab.api.knowledge.impl;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategyObsolete;
-import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -63,8 +61,8 @@ public class ObservationStrategyObsoleteImpl implements ObservationStrategyObsol
         for (var op : strategy) {
             ret.append(spacer + op.getFirst().name() + " ");
             ret.append(switch(op.getFirst()) {
-                case RESOLVE -> op.getSecond().observable() + "\n";
-                case DEFER -> op.getSecond().contextualStrategy().getOriginalObservable() + "\n" + toString(op.getSecond().contextualStrategy(), spaces + 3);
+                case OBSERVE -> op.getSecond().observable() + "\n";
+                case RESOLVE -> op.getSecond().contextualStrategy().getOriginalObservable() + "\n" + toString(op.getSecond().contextualStrategy(), spaces + 3);
                 case APPLY -> op.getSecond().serviceCall() + "\n";
                 case CONCRETIZE -> op.getSecond().observable() + "\n";
             });

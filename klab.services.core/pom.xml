@@ -393,6 +393,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>com.github.mwiede</groupId>
+            <artifactId>jsch</artifactId>
+            <version>0.2.17</version>
+        </dependency>
+        <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.common</artifactId>
             <version>${klab.version}</version>

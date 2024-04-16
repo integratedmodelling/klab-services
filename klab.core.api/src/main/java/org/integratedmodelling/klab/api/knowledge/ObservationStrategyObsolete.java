@@ -75,7 +75,7 @@ public interface ObservationStrategyObsolete extends Serializable, Knowledge,
          * or a previous observation, without going through the resolver for a strategy again. The 0-rank,
          * default strategy for any concrete observable X is always RESOLVE X.
          */
-        RESOLVE,
+        OBSERVE,
 
         /**
          * the operation implies deferral, i.e. further resolution of a different observable, finding the
@@ -85,7 +85,7 @@ public interface ObservationStrategyObsolete extends Serializable, Knowledge,
          * call. After the resolution of the deferring observable, the operations in the deferred strategy
          * build the original observations.
          */
-        DEFER,
+        RESOLVE,
 
         /**
          * The operation consists of the application of a contextualizer to the result of the previous

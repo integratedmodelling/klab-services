@@ -30,9 +30,10 @@ import java.util.function.BiConsumer;
 
 /**
  * The engine client uses client services and can be configured to use a local server for all services
- * (possibly as a downloaded product) and use the local services if so desired or if online services are not
- * available. The distribution up to this point should remain light so that it can be embedded in a IDE or
- * other product.
+ * (possibly as a downloaded product from a transparently maintained
+ * {@link org.integratedmodelling.klab.api.engine.distribution.Distribution}t) and use the local services if
+ * so desired or if online services are not available. The EngineClient is a lightweight implementation that
+ * can be embedded into applications such as command-line or graphical IDEs.
  */
 public class EngineClient implements Engine, PropertyHolder {
 

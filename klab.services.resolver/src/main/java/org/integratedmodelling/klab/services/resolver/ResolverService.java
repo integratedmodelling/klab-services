@@ -39,7 +39,6 @@ import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
 
@@ -67,7 +66,6 @@ public class ResolverService extends BaseService implements Resolver {
     // TODO link to configuration
     private String serviceId;
 
-    @Autowired
     public ResolverService(ServiceScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
     }
@@ -241,7 +239,7 @@ public class ResolverService extends BaseService implements Resolver {
 
         for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments> operation : strategy) {
             switch (operation.getFirst()) {
-                case RESOLVE -> {
+                case OBSERVE -> {
                     for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
                         ResolutionImpl resolution = resolveModel(model, strategy.getOriginalObservable(),
                                 scale,
@@ -262,7 +260,7 @@ public class ResolverService extends BaseService implements Resolver {
                         }
                     }
                 }
-                case DEFER -> {
+                case RESOLVE -> {
 
                 }
                 case APPLY -> {

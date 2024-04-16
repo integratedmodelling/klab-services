@@ -1,13 +1,11 @@
 package org.integratedmodelling.klab.utilities;
 
 import org.apache.commons.io.FileUtils;
-import org.eclipse.jgit.api.CreateBranchCommand;
-import org.eclipse.jgit.api.LsRemoteCommand;
-import org.eclipse.jgit.api.PullCommand;
-import org.eclipse.jgit.api.PullResult;
+import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Repository;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -18,7 +16,7 @@ import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.data.Notification;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -26,7 +24,6 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
@@ -407,17 +404,27 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
         public static final String MAIN_BRANCH = "master";
 
+
         /**
          * Perform a fetch, if no issues do a merge, then commit any changes and push to origin. Use any
          * credentials installed for the origin repository.
          *
          * @param localRepository
-         * @return notifications describing any error. Empty notifications means all OK. May have no errors
-         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
+         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static List<Notification> fetchCommitAndPush(File localRepository) {
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchCommitAndPush(File localRepository) {
 
-            List<Notification> ret = new ArrayList<>();
+            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
+                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+
+            try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+                try (var git = new org.eclipse.jgit.api.Git(repo)) {
+
+                }
+            } catch (IOException e) {
+                ret.getNotifications().add(Notification.create(e));
+            }
 
             return ret;
 
@@ -427,12 +434,29 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * Perform a safe pull operations from origin, using any installed credentials.
          *
          * @param localRepository
-         * @return notifications describing any error. Empty notifications means all OK. May have no errors
-         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
+         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static List<Notification> fetchAndMerge(File localRepository) {
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchAndMerge(File localRepository) {
 
-            List<Notification> ret = new ArrayList<>();
+            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
+                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+
+            try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+                try (var git = new org.eclipse.jgit.api.Git(repo)) {
+
+                    /*
+                    first fetch and if no conflicts arise, merge
+                     */
+
+                    /*
+                    report changes
+                     */
+                }
+            } catch (IOException e) {
+                ret.getNotifications().add(Notification.create(e));
+            }
+
 
             return ret;
 
@@ -444,12 +468,21 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          *
          * @param localRepository
          * @param branch
-         * @return notifications describing any error. Empty notifications means all OK. May have no errors
-         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
+         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static List<Notification> commitAndSwitch(File localRepository, String branch) {
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications commitAndSwitch(File localRepository, String branch) {
 
-            List<Notification> ret = new ArrayList<>();
+            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
+                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+
+            try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+                try (var git = new org.eclipse.jgit.api.Git(repo)) {
+
+                }
+            } catch (IOException e) {
+                ret.getNotifications().add(Notification.create(e));
+            }
 
             return ret;
 
@@ -459,15 +492,23 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * Perform a hard reset, bringing the current repository to the last commit.
          *
          * @param localRepository
-         * @return notifications describing any error. Empty notifications means all OK. May have no errors
-         * but warnings, no info. Use {@link Utils.Notifications#hasErrors(Collection)} to check.
+         * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
+         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static List<Notification> hardReset(File localRepository) {
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications hardReset(File localRepository) {
 
-            List<Notification> ret = new ArrayList<>();
+            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
+                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+
+            try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+                try (var git = new org.eclipse.jgit.api.Git(repo)) {
+                    var result = git.reset().setMode(ResetCommand.ResetType.HARD).call();
+                }
+            } catch (Exception e) {
+                ret.getNotifications().add(Notification.create(e));
+            }
 
             return ret;
-
         }
 
 
@@ -510,14 +551,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
             try (org.eclipse.jgit.api.Git result =
-                         org.eclipse.jgit.api.Git.cloneRepository().setURI(url).setBranch(branch)
-                                                 .setDirectory(pdir).call()) {
+                         org.eclipse.jgit.api.Git.cloneRepository().setURI(url).setBranch(branch).setDirectory(pdir).call()) {
 
                 Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 
                 if (!branch.equals(MAIN_BRANCH)) {
-                    result.checkout().setName(branch).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
-                          .setStartPoint("origin/" + branch).call();
+                    result.checkout().setName(branch).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).setStartPoint("origin/" + branch).call();
 
                     Logging.INSTANCE.info("switched repository: " + result.getRepository() + " to branch " + branch);
                 }
@@ -599,8 +638,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @return a boolean.
          */
         public static boolean isRemoteGitURL(String string) {
-            return string.startsWith("http:") || string.startsWith("git:") || string.startsWith("https:")
-                    || string.startsWith("git@");
+            return string.startsWith("http:") || string.startsWith("git:") || string.startsWith("https:") || string.startsWith("git@");
         }
 
         /**

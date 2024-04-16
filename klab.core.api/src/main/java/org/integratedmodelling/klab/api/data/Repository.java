@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,16 +20,17 @@ public interface Repository {
         UNTRACKED,
         MODIFIED,
         /**
-         * Just for entire projects, which report having a repository by returning this instead of null.
+         * Just used with entire projects, which report having a repository by returning this instead of
+         * null.
          */
         TRACKED
     }
 
     /**
-     * Basic operations supported through server requests. For now implementing Git command sequences, meant
-     * to be usable easily and safely by untrained or minimally trained users. When these can't run due to
-     * conflict, they should report the problem without causing changes and advice users to use the full Git
-     * implementation.
+     * Basic compound operations that should be supported through server requests. For now implementing Git
+     * command sequences, meant to be usable easily and safely by untrained or minimally trained users. When
+     * these can't run due to conflict, they should report the problem without causing changes and advice
+     * users to use the full Git implementation.
      *
      * <p>
      * For now only COMMIT_AND_SWITCH expects a parameter, which will be passed in the parameters array.
@@ -51,6 +55,54 @@ public interface Repository {
         HARD_RESET
     }
 
+    /**
+     * Compound repository operations (as implemented in Utils.Git in the common package) return one of these,
+     * which contains notifications (they should be checked for errors before anything else is done) and the
+     * relative paths that were affected. When changes affect a
+     * {@link org.integratedmodelling.klab.api.knowledge.organization.Workspace}, they can be converted into
+     * {@link org.integratedmodelling.klab.api.services.resources.ResourceSet} by a resources server that
+     * knows mutual dependencies.
+     */
+    public static class Modifications {
+
+        private List<String> addedPaths = new ArrayList<>();
+        private List<String> removedPaths = new ArrayList<>();
+        private List<String> modifiedPaths = new ArrayList<>();
+        private List<Notification> notifications = new ArrayList<>();
+
+        public List<String> getAddedPaths() {
+            return addedPaths;
+        }
+
+        public void setAddedPaths(List<String> addedPaths) {
+            this.addedPaths = addedPaths;
+        }
+
+        public List<String> getRemovedPaths() {
+            return removedPaths;
+        }
+
+        public void setRemovedPaths(List<String> removedPaths) {
+            this.removedPaths = removedPaths;
+        }
+
+        public List<String> getModifiedPaths() {
+            return modifiedPaths;
+        }
+
+        public void setModifiedPaths(List<String> modifiedPaths) {
+            this.modifiedPaths = modifiedPaths;
+        }
+
+        public List<Notification> getNotifications() {
+            return notifications;
+        }
+
+        public void setNotifications(List<Notification> notifications) {
+            this.notifications = notifications;
+        }
+    }
+
     Status getStatus();
 
     URL getRepositoryUrl();
@@ -58,4 +110,5 @@ public interface Repository {
     String getCurrentBranch();
 
     List<String> getBranches();
+
 }
