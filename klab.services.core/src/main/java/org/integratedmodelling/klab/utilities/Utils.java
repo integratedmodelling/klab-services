@@ -7,6 +7,7 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -460,7 +461,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                     if (result != null && result.isSuccessful()) {
                         var messages = result.getFetchResult().getMessages();
                         if (messages != null && !messages.isEmpty()) {
-                            ret.getNotifications().add(Notification.create(messages, Notification.Level.Info));
+                            ret.getNotifications().add(Notification.create(messages,
+                                    Notification.Level.Info));
                         }
                         if (result.getMergeResult().getConflicts() != null && !result.getMergeResult().getConflicts().isEmpty()) {
                             ret.getNotifications().add(Notification.create("Conflicts during merge of "
@@ -542,6 +544,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
                     ObjectId oldHead = repo.resolve("HEAD^{tree}");
+
+                    // TODO
+
                     compileDiff(repo, git, oldHead, ret);
                 }
             } catch (IOException e) {
@@ -620,8 +625,15 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             var credentials = Authentication.INSTANCE.getCredentials(url, scope);
 
+            CredentialsProvider credentialsProvider = null;
+            if (credentials != null) {
+                // TODO
+            }
+
             try (org.eclipse.jgit.api.Git result =
-                         org.eclipse.jgit.api.Git.cloneRepository().setURI(url).setBranch(branch).setDirectory(pdir).call()) {
+                         org.eclipse.jgit.api.Git.cloneRepository().setURI(url)
+                                                 .setCredentialsProvider(credentialsProvider)
+                                                 .setBranch(branch).setDirectory(pdir).call()) {
 
                 Logging.INSTANCE.info("cloned Git repository: " + result.getRepository());
 

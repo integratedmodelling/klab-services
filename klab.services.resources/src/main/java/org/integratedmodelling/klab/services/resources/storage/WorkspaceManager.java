@@ -990,6 +990,8 @@ public class WorkspaceManager {
      * Either called automatically by the file watcher in {@link FileProjectStorage} or explicitly invoked in
      * synchronous CRUD operations on projects when the project is locked by the requesting user.
      *
+     * TODO make the final parameter an array of URLs to handle multiple concurrent changes
+     *
      * @param project
      * @param type
      * @param change
@@ -1030,7 +1032,6 @@ public class WorkspaceManager {
                 default -> null;
             };
 
-
             if (newAsset != null) {
 
                 KlabDocument<?> oldAsset = switch (newAsset) {
@@ -1062,14 +1063,14 @@ public class WorkspaceManager {
                 Set<String> affectedOntologies = new HashSet<>();
                 affectedOntologies.add(oldAsset.getUrn());
                 for (var ontology : getOntologies(false)) {
-                    if (Sets.intersection(affectedOntologies, ontology.importedNamespaces(false)).size() > 0) {
+                    if (!Sets.intersection(affectedOntologies, ontology.importedNamespaces(false)).isEmpty()) {
                         affectedOntologies.add(ontology.getUrn());
                     }
                 }
 
                 Set<String> affectedNamespaces = new HashSet<>(affectedOntologies);
                 for (var namespace : getNamespaces()) {
-                    if (Sets.intersection(affectedNamespaces, namespace.importedNamespaces(false)).size() > 0) {
+                    if (!Sets.intersection(affectedNamespaces, namespace.importedNamespaces(false)).isEmpty()) {
                         affectedOntologies.add(namespace.getUrn());
                     }
                 }
@@ -1078,7 +1079,7 @@ public class WorkspaceManager {
                 // same for strategies and behaviors
                 Set<String> affectedBehaviors = new HashSet<>(affectedOntologies);
                 for (var behavior : getBehaviors()) {
-                    if (Sets.intersection(affectedBehaviors, behavior.importedNamespaces(false)).size() > 0) {
+                    if (!Sets.intersection(affectedBehaviors, behavior.importedNamespaces(false)).isEmpty()) {
                         affectedBehaviors.add(behavior.getUrn());
                     }
                 }
@@ -1247,47 +1248,6 @@ public class WorkspaceManager {
 
         return Collections.emptyList();
     }
-
-    //    /**
-    //     * Substitute the document in the respective lists and containers. If this is an ontology and the
-    //     * worldview contains it, substitute it in the worldview only if there are no errors, otherwise
-    //     remove it.
-    //     * In all other cases it goes in with any errors it may contain.
-    //     * <p>
-    //     * If the document is an ontology, recompute all concept descriptors in the language validator.
-    //     * <p>
-    //     * if it's an ontology and it's part of the worldview, the worldview must become empty if it has
-    //     errors.
-    //     * In all situations the worldview resource must be in the ResourceSet to message that it must be
-    //     * reloaded.
-    //     *
-    //     * @param newAsset
-    //     * @param type
-    //     * @return
-    //     */
-    //    private ResourceSet checkForWorldviewChanges(KlabDocument<?> newAsset, ProjectStorage
-    //    .ResourceType type) {
-    //
-    //        ResourceSet ret = null;
-    //
-    //        boolean isWorldview =
-    //                type == ProjectStorage.ResourceType.ONTOLOGY && _worldviewOntologies.stream()
-    //                .anyMatch(ontology -> newAsset.getUrn().equals(ontology.getUrn()));
-    //
-    //        if (isWorldview) {
-    //            ret = new ResourceSet();
-    //            ret.setWorkspace(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER);
-    //            var resource = new ResourceSet.Resource();
-    //            resource.setKnowledgeClass(KlabAsset.KnowledgeClass.WORLDVIEW);
-    //            ret.getResources().add(resource);
-    //            if (Utils.Notifications.hasErrors(newAsset.getNotifications())) {
-    //                ret.setEmpty(true);
-    //                ret.getNotifications().addAll(newAsset.getNotifications());
-    //            }
-    //        }
-    //
-    //        return ret;
-    //    }
 
     /**
      * Add the document info to the result set that corresponds to the passed workspace in the passed result
