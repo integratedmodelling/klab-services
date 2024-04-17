@@ -8,7 +8,6 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
 import org.integratedmodelling.klab.api.Klab;
@@ -538,10 +537,10 @@ public class WorkspaceManager {
         synchronized (projectDescriptors) {
             for (var pd : projectDescriptors.values()) {
                 // configured interval == 0 disables update
-                if (pd.storage instanceof FileProjectStorage fpd && pd.updateInterval > 0) {
+                if (pd.storage instanceof FileProjectStorage fpd && !fpd.isLocked() && pd.updateInterval > 0) {
                     var now = System.currentTimeMillis();
                     var timeToUpdate = lastProjectUpdates.containsKey(pd.name) ?
-                                       lastProjectUpdates.get(pd.name) + (pd.updateInterval * 1000 * 60) :
+                                       lastProjectUpdates.get(pd.name) + ((long) pd.updateInterval * 1000 * 60) :
                                        now;
                     if (timeToUpdate <= now) {
                         Thread.ofVirtual().start(() -> checkForProjectUpdates(pd));
@@ -554,7 +553,8 @@ public class WorkspaceManager {
 
     private void checkForProjectUpdates(ProjectDescriptor projectDescriptor) {
         // TODO fetch changes and react as configured; if anything must be reloaded, lock the workspace
-        scope.info("Checking for updates in " + projectDescriptor.name + ", scheduled each " + projectDescriptor.updateInterval + " minutes");
+        scope.info("TODO - Checking for updates in unlocked project " + projectDescriptor.name + ", " +
+                "scheduled each " + projectDescriptor.updateInterval + " minutes");
     }
 
     private void readConfiguration(ServiceStartupOptions options) {
@@ -850,27 +850,36 @@ public class WorkspaceManager {
         var ret = loadProject(projectUrl, workspaceName);
 
         if (ret != null) {
+            var configuration = this.configuration.getProjectConfiguration().get(ret.getProjectName());
+            if (configuration != null) {
 
-            ResourcesConfiguration.ProjectConfiguration configuration =
-                    new ResourcesConfiguration.ProjectConfiguration();
-            configuration.setSourceUrl(projectUrl);
-            configuration.setWorkspaceName(workspaceName);
-            configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
-            /*
-             * Default privileges are exclusive to the service
-             */
-            configuration.setPrivileges(ResourcePrivileges.empty());
-            // this must happen before loadProject is called.
-            this.configuration.getProjectConfiguration().put(ret.getProjectName(), configuration);
+                if (ret instanceof FileProjectStorage fps) {
+                    this.configuration.getProjectConfiguration().get(ret.getProjectName()).setLocalPath(fps.getRootFolder());
+                }
+
+            } else {
+
+                configuration = new ResourcesConfiguration.ProjectConfiguration();
+                configuration.setSourceUrl(projectUrl);
+                configuration.setWorkspaceName(workspaceName);
+                configuration.setSyncIntervalMinutes(DEFAULT_GIT_SYNC_INTERVAL_MINUTES);
+                /*
+                 * Default privileges are exclusive to the service, the API can be used to change them
+                 */
+                configuration.setPrivileges(ResourcePrivileges.empty());
+                this.configuration.getProjectConfiguration().put(ret.getProjectName(), configuration);
+                configuration.setWorldview(readManifest(ret).getDefinedWorldview() != null);
+            }
+
+            saveConfiguration();
 
             Set<String> projects = this.configuration.getWorkspaces().get(workspaceName);
             if (projects == null) {
                 projects = new LinkedHashSet<>();
                 this.configuration.getWorkspaces().put(workspaceName, projects);
             }
-            configuration.setWorldview(readManifest(ret).getDefinedWorldview() != null);
             projects.add(ret.getProjectName());
-            saveConfiguration();
+
 
             // create descriptor
             // FIXME extract this to a function - used also elsewhere
@@ -880,12 +889,9 @@ public class WorkspaceManager {
             descriptor.workspace = workspaceName;
             descriptor.name = ret.getProjectName();
             descriptor.updateInterval = configuration.getSyncIntervalMinutes();
-//            if (ret instanceof FileProjectStorage fileProjectStorage) {
-//                descriptor.repository = fileProjectStorage.getRepository();
-//            }
             projectDescriptors.put(ret.getProjectName(), descriptor);
-
         }
+
         return ret;
     }
 
@@ -920,17 +926,17 @@ public class WorkspaceManager {
                 if (projectHome.isDirectory()) {
 
                     scope.info("Pulling recent changes in " + projectHome);
-                    Utils.Git.pull(projectHome);
-                    ProjectStorage project = importProject(projectName, workspaceName);
+                    Utils.Git.fetchAndMerge(projectHome);
+                    ProjectStorage project = importProject(projectHome.toURI().toURL().toString(),
+                            workspaceName);
                     ret = new FileProjectStorage(projectHome, this::handleFileChange);
 
                 } else try {
 
                     /**
-                     * This should be the main use of project resources. TODO handle credentials
+                     * This should be the main use of project resources.
                      */
-
-                    projectName = Utils.Git.clone(projectUrl, workspace, false);
+                    projectName = Utils.Git.clone(projectUrl, workspace, false, scope);
                     if (projectHome.exists()) {
                         ret = new FileProjectStorage(projectHome, this::handleFileChange);
                     }
@@ -963,6 +969,8 @@ public class WorkspaceManager {
                     // TODO ret = read from archive
                 }
             }
+        } catch (Throwable t) {
+            scope.error(t);
         } finally {
             //            service.setBusy(false);
         }

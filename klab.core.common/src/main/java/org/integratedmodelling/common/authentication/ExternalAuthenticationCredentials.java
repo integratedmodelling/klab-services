@@ -18,6 +18,7 @@ public class ExternalAuthenticationCredentials {
         parameterKeys.put("oidc", new String[]{"grant_type", "client_id", "client_secrets", "provider_id"});
         parameterKeys.put("s3", new String[]{"accessKey", "secretKey"});
         parameterKeys.put("key", new String[]{"key"});
+        parameterKeys.put("ssh", new String[]{"passkey"});
     }
 
     /**

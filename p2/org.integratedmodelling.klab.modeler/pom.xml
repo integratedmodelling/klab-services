@@ -64,6 +64,13 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
+                                            <id>com.github.mwiede:jsch:0.2.17</id>
+                                            <override>true</override>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
+                                        <artifact>
                                             <id>com.google.inject:guice:jar:7.0.0</id>
                                             <override>true</override>
                                             <instructions>

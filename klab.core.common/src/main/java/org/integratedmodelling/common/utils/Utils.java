@@ -9,7 +9,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.Sets;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
+import com.jcraft.jsch.JSch;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
@@ -35,6 +37,32 @@ import java.time.Duration;
 import java.util.*;
 
 public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
+
+    public static class SSH {
+
+        public static Collection<String> readHostFile() {
+
+            var ret = new TreeSet<String>();
+            JSch jsch = new JSch();
+
+            String HOME = String.valueOf(System.getProperty("user.home"));
+            String knownHostsFileName = java.nio.file.Paths.get(HOME, ".ssh", "known_hosts").toString();
+
+            if (new File(knownHostsFileName).exists()) {
+                try {
+                    jsch.setKnownHosts(knownHostsFileName);
+                    for (var hostKey : jsch.getHostKeyRepository().getHostKey()) {
+                        java.util.Collections.addAll(ret, hostKey.getHost().split(","));
+                    }
+                } catch (Throwable e) {
+                    Logging.INSTANCE.error(e);
+                }
+            }
+
+            return ret;
+        }
+
+    }
 
     public static class Http {
 

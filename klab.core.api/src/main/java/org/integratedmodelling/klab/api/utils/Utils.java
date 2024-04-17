@@ -4448,6 +4448,10 @@ public class Utils {
          */
         public static String getURLBaseName(String s) {
 
+            if (s.startsWith("file:/")) {
+                return Files.getFileBaseName(getFileForURL(s));
+            }
+
             /* just in case */
             String ret = s.replace('\\', '/');
 

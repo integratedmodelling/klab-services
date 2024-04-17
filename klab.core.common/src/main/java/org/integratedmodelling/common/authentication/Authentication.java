@@ -36,10 +36,13 @@ import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
@@ -50,12 +53,26 @@ public enum Authentication {
 
     INSTANCE;
 
-    private Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
+    private final AtomicReference<Collection<String>> sshHosts = new AtomicReference<>();
+    private final Set<KlabService.Type> started = EnumSet.noneOf(KlabService.Type.class);
     private DistributionImpl distribution;
     /**
      * any external credentials taken from the .klab/credentials.json file if any.
      */
     private Utils.FileCatalog<ExternalAuthenticationCredentials> externalCredentials;
+
+    /**
+     * Credential information for display and choice by users
+     * @param host
+     * @param username
+     * @param schema
+     */
+    public record CredentialInfo(String host, String username, String schema) {}
+
+    Authentication() {
+        this.sshHosts.set(Utils.SSH.readHostFile());
+        // TODO re-read the file at regular intervals
+    }
 
     /**
      * Authenticate using the default certificate if present on the filesystem, or anonymously if not.
@@ -337,15 +354,50 @@ public enum Authentication {
         return externalCredentials;
     }
 
-    public void addExternalCredentials(String host, ExternalAuthenticationCredentials credentials, Scope scope) {
+    public void addExternalCredentials(String host, ExternalAuthenticationCredentials credentials,
+                                       Scope scope) {
         var catalog = getExternalCredentialsCatalog(scope);
-        catalog.put(host, credentials);
+        catalog.put(extractHost(host), credentials);
         catalog.write();
     }
 
     public ExternalAuthenticationCredentials getCredentials(String hostUrl, Scope scope) {
         var catalog = getExternalCredentialsCatalog(scope);
-        return catalog.get(hostUrl);
+
+        var ret = catalog.get(extractHost(hostUrl));
+
+        if (ret == null && sshHosts.get().contains(hostUrl)) {
+            ret = new ExternalAuthenticationCredentials();
+            ret.setScheme("ssh");
+            // save with no passkey, if it's needed in an interactive app we'll ask and save it.
+            ret.setCredentials(List.of(null));
+            externalCredentials.put(hostUrl, ret);
+            externalCredentials.write();
+        }
+
+        return ret;
+    }
+
+    private String extractHost(String hostUrl) {
+        if (hostUrl.contains(":/")) {
+            /**
+             * Only use the host:port part. If there are no credentials for this host but the host is known to
+             * the ssh authentication, insert credentials from there.
+             */
+            try {
+                var url = new URI(hostUrl);
+                var host = url.getHost();
+                if (host != null) {
+                    if (url.getPort() > 0) {
+                        host += ":" + url.getPort();
+                    }
+                    hostUrl = host;
+                }
+            } catch (URISyntaxException e) {
+                // leave hostUrl as is
+            }
+        }
+        return hostUrl;
     }
 
     /**
@@ -367,7 +419,8 @@ public enum Authentication {
 
                 String auth = arg0.getHost() + (arg0.getPort() == 80 ? "" : (":" + arg0.getPort()));
 
-                ExternalAuthenticationCredentials credentials = getExternalCredentialsCatalog(scope).get(auth);
+                ExternalAuthenticationCredentials credentials =
+                        getExternalCredentialsCatalog(scope).get(auth);
 
                 if (credentials == null) {
                     throw new KlabAuthorizationException(auth);
@@ -383,6 +436,14 @@ public enum Authentication {
 
             }
         };
+    }
+
+    public List<CredentialInfo> getCredentialInfo(Scope scope) {
+        var ret = new ArrayList<CredentialInfo>();
+        for (var host : getExternalCredentialsCatalog(scope).keySet()) {
+
+        }
+        return ret;
     }
 
 }

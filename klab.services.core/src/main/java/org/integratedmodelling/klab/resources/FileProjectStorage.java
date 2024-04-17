@@ -26,6 +26,8 @@ public class FileProjectStorage implements ProjectStorage {
     }
 
     private FileWatcher watcher;
+
+
     private final File rootFolder;
     private final String projectName;
     private AtomicBoolean locked = new AtomicBoolean(false);
@@ -100,6 +102,9 @@ public class FileProjectStorage implements ProjectStorage {
         return null;
     }
 
+    public File getRootFolder() {
+        return rootFolder;
+    }
 
     @Override
     public List<URL> listResources(ResourceType... types) {

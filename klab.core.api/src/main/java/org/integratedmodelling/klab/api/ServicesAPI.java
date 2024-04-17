@@ -22,6 +22,7 @@ public interface ServicesAPI {
         String CHECK_CREDENTIALS = "/checkCredentials";
         String SET_CREDENTIALS = "/setCredentials";
         String REMOVE_CREDENTIALS = "/removeCredentials";
+        String LIST_CREDENTIALS = "/listCredentials";
     }
 
     interface SCOPE {

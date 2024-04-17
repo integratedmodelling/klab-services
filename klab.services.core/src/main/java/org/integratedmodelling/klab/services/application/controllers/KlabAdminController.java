@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -46,6 +47,12 @@ public class KlabAdminController {
     public boolean removeCredentials(String scheme, String host) {
         // TODO remove credentials, report true if done
         return false;
+    }
+
+    @GetMapping(ServicesAPI.ADMIN.LIST_CREDENTIALS)
+    public List<Authentication.CredentialInfo> listCredentials(Principal principal) {
+        /* FIXME use the scope registered from the principal */
+        return Authentication.INSTANCE.getCredentialInfo(instance.klabService().serviceScope());
     }
 
 }

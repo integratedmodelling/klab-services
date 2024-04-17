@@ -4,8 +4,11 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
-import org.integratedmodelling.klab.api.collections.Pair;
+import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -16,6 +19,7 @@ import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
@@ -418,6 +422,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
+            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
 
@@ -442,24 +448,79 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
+            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
 
-                    /*
-                    first fetch and if no conflicts arise, merge
-                     */
+                    ObjectId oldHead = repo.resolve("HEAD^{tree}");
+
+                    PullCommand pullCmd = git.pull();
+                    PullResult result = pullCmd.call();
+                    if (result != null && result.isSuccessful()) {
+                        var messages = result.getFetchResult().getMessages();
+                        if (messages != null && !messages.isEmpty()) {
+                            ret.getNotifications().add(Notification.create(messages, Notification.Level.Info));
+                        }
+                        if (result.getMergeResult().getConflicts() != null && !result.getMergeResult().getConflicts().isEmpty()) {
+                            ret.getNotifications().add(Notification.create("Conflicts during merge of "
+                                            + Strings.join(result.getMergeResult().getConflicts().keySet(),
+                                            ", "),
+                                    Notification.Level.Error));
+                        } else {
+                            compileDiff(repo, git, oldHead, ret);
+                        }
+                    } else {
+                        ret.getNotifications().add(Notification.create("Pull from default remote of " +
+                                        "repository " + repo.getIdentifier() + " unsuccessful",
+                                Notification.Level.Error));
+                    }
 
                     /*
                     report changes
                      */
                 }
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 ret.getNotifications().add(Notification.create(e));
             }
 
 
             return ret;
 
+        }
+
+        private static void compileDiff(Repository repository, org.eclipse.jgit.api.Git git,
+                                        ObjectId oldHead,
+                                        org.integratedmodelling.klab.api.data.Repository.Modifications ret) {
+
+            try {
+                var head = repository.resolve("HEAD^{tree}");
+                ObjectReader reader = repository.newObjectReader();
+                CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
+                oldTreeIter.reset(reader, oldHead);
+                CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
+                newTreeIter.reset(reader, head);
+                for (var diff :
+                        git.diff().setNewTree(newTreeIter).setOldTree(oldTreeIter).call()) {
+                    switch (diff.getChangeType()) {
+                        case ADD -> {
+                            ret.getAddedPaths().add(diff.getNewPath());
+                        }
+                        case MODIFY -> {
+                            ret.getModifiedPaths().add(diff.getOldPath());
+                        }
+                        case DELETE -> {
+                            ret.getRemovedPaths().add(diff.getOldPath());
+                        }
+                        case COPY -> {
+                            ret.getAddedPaths().add(diff.getNewPath());
+                        }
+
+                    }
+                }
+            } catch (Exception e) {
+                ret.getNotifications().add(Notification.create(e));
+            }
         }
 
         /**
@@ -476,9 +537,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
+            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
-
+                    ObjectId oldHead = repo.resolve("HEAD^{tree}");
+                    compileDiff(repo, git, oldHead, ret);
                 }
             } catch (IOException e) {
                 ret.getNotifications().add(Notification.create(e));
@@ -500,9 +564,13 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
+            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
+                    ObjectId oldHead = repo.resolve("HEAD^{tree}");
                     var result = git.reset().setMode(ResetCommand.ResetType.HARD).call();
+                    compileDiff(repo, git, oldHead, ret);
                 }
             } catch (Exception e) {
                 ret.getNotifications().add(Notification.create(e));
@@ -522,7 +590,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @param removeIfExisting the remove if existing
          * @return the string
          */
-        public static String clone(String gitUrl, File directory, boolean removeIfExisting) {
+        public static String clone(String gitUrl, File directory, boolean removeIfExisting, Scope scope) {
 
             String dirname = URLs.getURLBaseName(gitUrl);
 
@@ -550,6 +618,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
+            var credentials = Authentication.INSTANCE.getCredentials(url, scope);
+
             try (org.eclipse.jgit.api.Git result =
                          org.eclipse.jgit.api.Git.cloneRepository().setURI(url).setBranch(branch).setDirectory(pdir).call()) {
 
@@ -557,7 +627,6 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
                 if (!branch.equals(MAIN_BRANCH)) {
                     result.checkout().setName(branch).setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).setStartPoint("origin/" + branch).call();
-
                     Logging.INSTANCE.info("switched repository: " + result.getRepository() + " to branch " + branch);
                 }
 
@@ -568,32 +637,35 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             return dirname;
         }
 
-        /**
-         * Pull local repository in passed directory.
-         * <p>
-         * TODO use authentication
-         *
-         * @param localRepository main directory (containing .git/)
-         */
-        public static void pull(File localRepository) {
-
-            try (Repository localRepo = new FileRepository(localRepository + File.separator + ".git")) {
-                try (org.eclipse.jgit.api.Git git = new org.eclipse.jgit.api.Git(localRepo)) {
-
-                    Logging.INSTANCE.info("fetch/merge changes in repository: " + git.getRepository());
-
-                    PullCommand pullCmd = git.pull();
-                    PullResult result = pullCmd.call();
-                    // return result != null && result.getFetchResult() != null &&
-                    // result.getFetchResult().
-
-                } catch (Throwable e) {
-                    throw new KlabIOException("error pulling repository " + localRepository + ": " + e.getLocalizedMessage());
-                }
-            } catch (IOException e) {
-                throw new KlabIOException(e);
-            }
-        }
+        //        /**
+        //         * Pull local repository in passed directory.
+        //         * <p>
+        //         * TODO use authentication
+        //         *
+        //         * @param localRepository main directory (containing .git/)
+        //         */
+        //        public static void pull(File localRepository) {
+        //
+        //            try (Repository localRepo = new FileRepository(localRepository + File.separator + "
+        //            .git")) {
+        //                try (org.eclipse.jgit.api.Git git = new org.eclipse.jgit.api.Git(localRepo)) {
+        //
+        //                    Logging.INSTANCE.info("fetch/merge changes in repository: " + git
+        //                    .getRepository());
+        //
+        //                    PullCommand pullCmd = git.pull();
+        //                    PullResult result = pullCmd.call();
+        //                    // return result != null && result.getFetchResult() != null &&
+        //                    // result.getFetchResult().
+        //
+        //                } catch (Throwable e) {
+        //                    throw new KlabIOException("error pulling repository " + localRepository + ":
+        //                    " + e.getLocalizedMessage());
+        //                }
+        //            } catch (IOException e) {
+        //                throw new KlabIOException(e);
+        //            }
+        //        }
 
         /**
          * If a Git repository with the repository name corresponding to the URL exists in gitDirectory, pull
@@ -608,16 +680,16 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @param gitDirectory the git directory
          * @return the string
          */
-        public static String requireUpdatedRepository(String gitUrl, File gitDirectory) {
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications requireUpdatedRepository(String gitUrl, File gitDirectory, Scope scope) {
 
+            org.integratedmodelling.klab.api.data.Repository.Modifications ret = null;
             String repositoryName = URLs.getURLBaseName(gitUrl);
-
             File repoDir = new File(gitDirectory + File.separator + repositoryName);
             File gitDir = new File(repoDir + File.separator + ".git");
 
             if (gitDir.exists() && gitDir.isDirectory() && gitDir.canRead() && repoDir.exists()) {
 
-                pull(repoDir);
+                ret = fetchAndMerge(repoDir);
                 /*
                  * TODO check branch and switch/pull if necessary
                  */
@@ -625,10 +697,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 if (gitDir.exists()) {
                     Files.deleteQuietly(gitDir);
                 }
-                clone(gitUrl, gitDirectory, true);
+                clone(gitUrl, gitDirectory, true, scope);
             }
 
-            return repositoryName;
+            return ret;
         }
 
         /**

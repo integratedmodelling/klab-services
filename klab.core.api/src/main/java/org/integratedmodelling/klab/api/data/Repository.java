@@ -65,6 +65,8 @@ public interface Repository {
      */
     public static class Modifications {
 
+        private String repositoryName;
+
         private List<String> addedPaths = new ArrayList<>();
         private List<String> removedPaths = new ArrayList<>();
         private List<String> modifiedPaths = new ArrayList<>();
@@ -100,6 +102,14 @@ public interface Repository {
 
         public void setNotifications(List<Notification> notifications) {
             this.notifications = notifications;
+        }
+
+        public String getRepositoryName() {
+            return repositoryName;
+        }
+
+        public void setRepositoryName(String repositoryName) {
+            this.repositoryName = repositoryName;
         }
     }
 
