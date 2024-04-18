@@ -40,7 +40,7 @@ public class ResourceAdminController {
     private ServiceAuthorizationManager authenticationManager;
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT)
-    public @ResponseBody ResourceSet importProject(@RequestBody ProjectRequest request, Principal principal) {
+    public @ResponseBody ResourceSet importNewProject(@RequestBody ProjectRequest request, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.importProject(request.getWorkspaceName(), request.getProjectUrl(),
                     request.isOverwrite());
@@ -49,7 +49,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT)
-    public @ResponseBody ResourceSet createProject(@PathVariable("workspaceName") String workspaceName, @PathVariable(
+    public @ResponseBody ResourceSet createNewProject(@PathVariable("workspaceName") String workspaceName, @PathVariable(
             "projectName") String projectName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createProject(workspaceName, projectName);
@@ -58,7 +58,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_PROJECT)
-    public @ResponseBody ResourceSet updateProject(@PathVariable("projectName") String projectName,
+    public @ResponseBody ResourceSet updateExistingProject(@PathVariable("projectName") String projectName,
                                  @RequestBody Project.Manifest manifest,
                                  @RequestBody Metadata metadata, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
@@ -68,7 +68,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_NAMESPACE)
-    public ResourceSet createNamespace(@PathVariable("projectName") String projectName,
+    public ResourceSet createNewNamespace(@PathVariable("projectName") String projectName, @PathVariable("namespace") String namespace,
                                        @RequestBody String namespaceContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.createNamespace(projectName, namespaceContent, auth.getToken());
@@ -77,7 +77,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.UPDATE_NAMESPACE)
-    public List<ResourceSet> updateNamespace(@PathVariable("projectName") String projectName,
+    public List<ResourceSet> updateNewNamespace(@PathVariable("projectName") String projectName,
                                              @RequestBody String namespaceContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.updateNamespace(projectName, namespaceContent, auth.getToken());
@@ -86,7 +86,7 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_BEHAVIOR)
-    public ResourceSet createBehavior(@PathVariable("projectName") String projectName,
+    public ResourceSet createNewBehavior(@PathVariable("projectName") String projectName,
                                       @RequestBody String behaviorContent, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.createBehavior(projectName, behaviorContent, auth.getToken());

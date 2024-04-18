@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.configuration;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 
 import java.io.File;
 import java.io.Serial;
@@ -78,6 +79,15 @@ public class ResourcesConfiguration implements Serializable {
         private int syncIntervalMinutes;
         private File localPath;
         private String workspaceName;
+        private ProjectStorage.Type storageType;
+
+        public ProjectStorage.Type getStorageType() {
+            return storageType;
+        }
+
+        public void setStorageType(ProjectStorage.Type storageType) {
+            this.storageType = storageType;
+        }
 
         public String getSourceUrl() {
             return sourceUrl;

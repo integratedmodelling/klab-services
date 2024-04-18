@@ -18,6 +18,23 @@ import java.util.List;
  */
 public interface ProjectStorage {
 
+    enum Type {
+        /**
+         * Project is stored in a directory on the filesystem. So far the only one supported for local
+         * projects.
+         */
+        FILE,
+        /**
+         * Project is a read-only Jar file that will be served without unpacking.
+         */
+        JAR,
+
+        /**
+         * Project is read-only online repository using the URL of another resources service.
+         */
+        ONLINE
+    }
+
     enum ResourceType {
         ONTOLOGY,
         MODEL_NAMESPACE,
@@ -63,6 +80,8 @@ public interface ProjectStorage {
             };
         }
     }
+
+    Type getType();
 
     String getProjectName();
 
@@ -137,7 +156,7 @@ public interface ProjectStorage {
 
             }
         } else {
-           if (relativeFilePath.startsWith("src" + separator)) {
+            if (relativeFilePath.startsWith("src" + separator)) {
                 type = ResourceType.forExtension(extension);
                 urn = path.substring("src".length() + 1).replace(separator, ".");
             } else if (relativeFilePath.startsWith("scripts" + separator)) {

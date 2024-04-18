@@ -1,16 +1,26 @@
 package org.integratedmodelling.klab.resources;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
-import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.Ref;
+import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.RepositoryImpl;
+import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.lang.impl.kim.KlabDocumentImpl;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.*;
 import java.util.*;
@@ -18,6 +28,78 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 public class FileProjectStorage implements ProjectStorage {
+
+    public void updateMetadata(Project project, KlabDocument<?> resource, Scope scope) {
+
+        if (isTracked() && project instanceof ProjectImpl pimpl && project.getRepository() instanceof RepositoryImpl projectMetadata) {
+
+            try (var repository = new FileRepository(rootFolder)) {
+
+                projectMetadata.setStatus(Repository.Status.TRACKED);
+                projectMetadata.setCurrentBranch(repository.getBranch());
+                try (var git = Git.wrap(repository)) {
+
+                    var status = git.status().call();
+
+                    if (projectMetadata.getBranches().isEmpty()) {
+                        // TODO not doing this unless all branches are empty. When we add/remove branches
+                        //  we must change them manually
+                        var branches =
+                                git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
+
+                        Set<String> branchNames = new HashSet<>();
+                        for (var branchName : branches.stream().map(Ref::getName).toList()) {
+                            branchName = Utils.Paths.getLast(branchName, '/');
+                            branchNames.add(branchName);
+                        }
+
+                        projectMetadata.getBranches().addAll(branchNames);
+
+                        for (var remote : git.remoteList().call()) {
+                            if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
+                                projectMetadata.setRepositoryUrl(new URI(remote.getURIs().getFirst().toASCIIString()).toURL());
+                            }
+                        }
+                    }
+
+                    if (resource != null) {
+                        if (resource instanceof KlabDocumentImpl<?> document) {
+                            var resourceType = ProjectStorage.ResourceType.classify(resource);
+                            if (resourceType != null) {
+
+                                var filePath = ProjectStorage.getRelativeFilePath(resource.getUrn(),
+                                        resourceType, "/");
+
+                                if (status.getModified().contains(filePath)) {
+                                    document.setRepositoryStatus(Repository.Status.MODIFIED);
+                                } else if (status.getUntracked().contains(filePath)) {
+                                    document.setRepositoryStatus(Repository.Status.UNTRACKED);
+                                } else {
+                                    document.setRepositoryStatus(Repository.Status.CLEAN);
+                                }
+                            }
+                        }
+
+                    } else {
+                        for (var changed : status.getModified()) {
+                            var document = pimpl.findDocument(changed);
+                            if (document instanceof KlabDocumentImpl<?> doc) {
+                                doc.setRepositoryStatus(Repository.Status.MODIFIED);
+                            }
+                        }
+                        for (var changed : status.getUntracked()) {
+                            var document = pimpl.findDocument(changed);
+                            if (document instanceof KlabDocumentImpl<?> doc) {
+                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                scope.error(e);
+            }
+        }
+    }
 
     @FunctionalInterface
     public interface ChangeNotifier {
@@ -30,7 +112,7 @@ public class FileProjectStorage implements ProjectStorage {
 
     private final File rootFolder;
     private final String projectName;
-    private AtomicBoolean locked = new AtomicBoolean(false);
+    private final AtomicBoolean locked = new AtomicBoolean(false);
 
     public FileProjectStorage(File rootFolder, ChangeNotifier notifier) {
         this.rootFolder = rootFolder;
@@ -69,6 +151,11 @@ public class FileProjectStorage implements ProjectStorage {
     }
 
     @Override
+    public Type getType() {
+        return Type.FILE;
+    }
+
+    @Override
     public String getProjectName() {
         return projectName;
     }
@@ -82,6 +169,13 @@ public class FileProjectStorage implements ProjectStorage {
         }
     }
 
+    public Repository.Modifications pullChanges() {
+        if (isTracked()) {
+            return Utils.Git.fetchAndMerge(rootFolder);
+        }
+        return new Repository.Modifications();
+    }
+
     public void lock(boolean locked) {
         this.locked.set(locked);
     }
@@ -90,16 +184,9 @@ public class FileProjectStorage implements ProjectStorage {
         return this.locked.get();
     }
 
-    public Repository getRepository() {
+    public boolean isTracked() {
         var gitDir = new File(rootFolder + File.separator + ".git");
-        if (gitDir.isDirectory()) {
-            try {
-                return new FileRepository(gitDir);
-            } catch (IOException e) {
-                //
-            }
-        }
-        return null;
+        return gitDir.isDirectory();
     }
 
     public File getRootFolder() {
@@ -220,8 +307,8 @@ public class FileProjectStorage implements ProjectStorage {
     public class FileWatcher extends Thread {
         private final File rootDirectory;
         private final BiConsumer<File, WatchEvent.Kind<?>> action;
-        private AtomicBoolean stop = new AtomicBoolean(false);
-        private static Map<WatchKey, Path> keyPathMap = new HashMap<>();
+        private final AtomicBoolean stop = new AtomicBoolean(false);
+        private static final Map<WatchKey, Path> keyPathMap = new HashMap<>();
 
         public FileWatcher(File rootDirectory, BiConsumer<File, WatchEvent.Kind<?>> actionOnChange) {
             this.rootDirectory = rootDirectory;

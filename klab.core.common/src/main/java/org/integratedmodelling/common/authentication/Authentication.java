@@ -63,13 +63,19 @@ public enum Authentication {
 
     /**
      * Credential information for display and choice by users
+     *
      * @param host
      * @param username
      * @param schema
      */
-    public record CredentialInfo(String host, String username, String schema) {}
+    public record CredentialInfo(String host, String username, String schema) {
+    }
 
     Authentication() {
+        this.externalCredentials =
+                new Utils.FileCatalog<>(Configuration.INSTANCE.getFile(
+                        "credentials.json"), ExternalAuthenticationCredentials.class,
+                        ExternalAuthenticationCredentials.class);
         this.sshHosts.set(Utils.SSH.readHostFile());
         // TODO re-read the file at regular intervals
     }
@@ -362,8 +368,8 @@ public enum Authentication {
     }
 
     public ExternalAuthenticationCredentials getCredentials(String hostUrl, Scope scope) {
-        var catalog = getExternalCredentialsCatalog(scope);
 
+        var catalog = getExternalCredentialsCatalog(scope);
         var ret = catalog.get(extractHost(hostUrl));
 
         if (ret == null && sshHosts.get().contains(hostUrl)) {

@@ -283,6 +283,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public synchronized ResourceSet importProject(String workspaceName, String projectUrl,
                                               boolean overwriteIfExisting) {
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
+        var project = workspaceManager.loadProject(storage, workspaceName);
         return project(projectUrl, serviceScope());
     }
 
@@ -426,8 +427,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public Capabilities capabilities() {
 
         var ret = new ResourcesCapabilitiesImpl();
-        ret.setWorldviewProvider(!getWorldview().isEmpty());
-        ret.setAdoptedWorldview(getWorldview().isEmpty() ? null : getWorldview().getUrn());
+        ret.setWorldviewProvider(workspaceManager.isWorldviewProvider());
+        ret.setAdoptedWorldview(workspaceManager.getAdoptedWorldview());
         ret.setWorkspaceNames(workspaceManager.getWorkspaceURNs());
         ret.setType(Type.RESOURCES);
         ret.setServiceName("Resources");
