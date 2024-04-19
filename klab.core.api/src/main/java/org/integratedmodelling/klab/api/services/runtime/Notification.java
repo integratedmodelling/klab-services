@@ -5,12 +5,13 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.awt.event.WindowStateListener;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.net.URL;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
-public interface Notification {
+public interface Notification extends Serializable {
 
     /**
      * Additional classification info. Can be used for display or other purposes. Will be filled as things

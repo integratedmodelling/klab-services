@@ -44,7 +44,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
     }
 

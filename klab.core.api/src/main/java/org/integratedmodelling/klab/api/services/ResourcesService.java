@@ -103,7 +103,13 @@ public interface ResourcesService extends KlabService {
         return "klab.resources.service";
     }
 
-    Capabilities capabilities();
+    /**
+     * Scope CAN be null for generic public capabilities.
+     *
+     * @param scope
+     * @return
+     */
+    Capabilities capabilities(Scope scope);
 
     /**
      * Get the contents of a set of projects. Assumes that the capabilities have been consulted and have
@@ -357,7 +363,7 @@ public interface ResourcesService extends KlabService {
          * @return true if operation succeeded and anything was done (false if project existed and wasn't
          * overwritten)
          */
-        ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting);
+        ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting, Scope scope);
 
         /**
          * Create a new empty project. Use the update function to configure the manifest and the create/update
@@ -367,7 +373,7 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @return
          */
-        ResourceSet createProject(String workspaceName, String projectName);
+        ResourceSet createProject(String workspaceName, String projectName, Scope scope);
 
         /**
          * Update project manifest and metadata. Project must exist.
@@ -463,23 +469,6 @@ public interface ResourcesService extends KlabService {
                                                       String observationStrategiesContent,
                                                       String lockingAuthorization);
 
-        /**
-         * Publish a project with the passed privileges. The project must have been added before this is
-         * called. If the project is already published, update the permissions.
-         *
-         * @param projectUrl
-         * @param permissions
-         * @return
-         */
-        boolean publishProject(String projectUrl, ResourcePrivileges permissions);
-
-        /**
-         * Unpublish a previously published project.
-         *
-         * @param projectUrl
-         * @return
-         */
-        boolean unpublishProject(String projectUrl);
 
         /**
          * Apply the passed operation to the remote repository associated with a project and return whatever
@@ -504,7 +493,7 @@ public interface ResourcesService extends KlabService {
          * @param resource
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
-        ResourceSet createResource(Resource resource);
+        ResourceSet createResource(Resource resource, Scope scope);
 
         /**
          * Add a resource with file content to those managed by this service. Resource is invisible from the
@@ -514,23 +503,10 @@ public interface ResourcesService extends KlabService {
          *                     file must be present, along with anything else required by the adapter.
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
-        ResourceSet createResource(File resourcePath);
+        ResourceSet createResource(File resourcePath, Scope scope);
 
         Resource createResource(String projectName, String urnId, String adapter,
-                                Parameters<String> resourceData);
-
-        /**
-         * @param resourceUrn
-         * @param permissions
-         * @return
-         */
-        boolean publishResource(String resourceUrn, ResourcePrivileges permissions);
-
-        /**
-         * @param resourceUrn
-         * @return
-         */
-        boolean unpublishResource(String resourceUrn);
+                                Parameters<String> resourceData, Scope scope);
 
 
         ResourceSet removeAsset(String projectName, String assetUrn);
@@ -553,21 +529,41 @@ public interface ResourcesService extends KlabService {
          *
          * @return
          */
-        Collection<Project> listProjects();
+        Collection<Project> listProjects(Scope scope);
 
         /**
          * Return the URNs of all the resources available locally.
          *
          * @return
          */
-        Collection<String> listResourceUrns();
+        Collection<String> listResourceUrns(Scope scope);
+
+        /**
+         * Get the access rights for the passed resource. If the resource does not exist or is inaccessible to the
+         * scope, return empty rights.
+         *
+         * @param resourceUrn
+         * @param scope
+         * @return
+         */
+        ResourcePrivileges getRights(String resourceUrn, Scope scope);
+
+        /**
+         * Set the access rights for the named resource.
+         *
+         * @param resourceUrn
+         * @param resourcePrivileges
+         * @param scope
+         * @return true if the resource was accessible and the rights were set.
+         */
+        boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope);
 
         /**
          * Lock a project so that changes to it can be made exclusively through the explicit CRUD calls on its
          * contents.
          *
          * @param urn   the URN of the project to lock
-         * @param token the ID of the user locking it
+         * @param token the ID of the user locking it. Must be a privileged local user.
          * @return a URL to access the contents of the project locally. If it's a file:/ URL, the requesting
          * client has used the secret token only available to clients sharing the filesystem with the service.
          * Otherwise it will be the http:// URL to a zip file containing the project's contents.

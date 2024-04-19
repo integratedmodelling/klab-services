@@ -33,8 +33,9 @@ public interface RuntimeService extends KlabService {
 
 
     /**
-     * All services publish capabilities and have a call to obtain them. Must list all the available contextualizers and
-     * verbs, with associated costs, so that they can be checked before sending a dataflow.
+     * All services publish capabilities and have a call to obtain them. Must list all the available
+     * contextualizers and verbs, with associated costs, so that they can be checked before sending a
+     * dataflow.
      *
      * @author Ferd
      */
@@ -42,7 +43,13 @@ public interface RuntimeService extends KlabService {
 
     }
 
-    Capabilities capabilities();
+    /**
+     * Scope CAN be null for generic public capabilities.
+     *
+     * @param scope
+     * @return
+     */
+    Capabilities capabilities(Scope scope);
 
     /**
      * Run the passed dataflow in the passed scope. The two must be valid for each other.
@@ -74,8 +81,8 @@ public interface RuntimeService extends KlabService {
     interface Admin {
 
         /**
-         * If runtime exceptions have caused the building of test cases, retrieve them as a map of case class->source
-         * code, with the option of deleting them after responding.
+         * If runtime exceptions have caused the building of test cases, retrieve them as a map of case
+         * class->source code, with the option of deleting them after responding.
          *
          * @param scope          if service scope, send all; otherwise send those pertaining to the scope
          * @param deleteExisting delete after sending

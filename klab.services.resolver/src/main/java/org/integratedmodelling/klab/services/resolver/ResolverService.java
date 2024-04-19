@@ -74,14 +74,14 @@ public class ResolverService extends BaseService implements Resolver {
     public boolean shutdown() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
-                capabilities());
+                capabilities(serviceScope()));
 
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
 // TODO Auto-generated method stub
         return new Capabilities() {
             @Override
@@ -658,7 +658,7 @@ public class ResolverService extends BaseService implements Resolver {
     public void initializeService() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities().toString());
+                capabilities(serviceScope()).toString());
 
         /*
          * Components
@@ -681,7 +681,7 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities());
+                capabilities(serviceScope()));
 
     }
 

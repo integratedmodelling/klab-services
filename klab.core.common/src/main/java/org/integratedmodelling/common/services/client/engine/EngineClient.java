@@ -76,7 +76,7 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     @Override
-    public ServiceCapabilities capabilities() {
+    public ServiceCapabilities capabilities(Scope scope) {
         return null;
     }
 
@@ -108,7 +108,7 @@ public class EngineClient implements Engine, PropertyHolder {
     public boolean shutdown() {
 
         serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.ServiceUnavailable,
-                capabilities());
+                capabilities(serviceScope()));
 
         /* shutdown all services that were launched in our scope */
         for (KlabService.Type type : new KlabService.Type[]{KlabService.Type.RUNTIME,
@@ -157,7 +157,7 @@ public class EngineClient implements Engine, PropertyHolder {
         }
         this.users.add(this.defaultUser);
         this.defaultUser.send(Message.MessageClass.EngineLifecycle,
-                Message.MessageType.ServiceInitializing, capabilities());
+                Message.MessageType.ServiceInitializing, capabilities(serviceScope()));
         this.defaultUser.send(Message.MessageClass.Authorization, Message.MessageType.UserAuthorized,
                 authData.getFirst());
         scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
@@ -208,21 +208,21 @@ public class EngineClient implements Engine, PropertyHolder {
              */
             var reasoner = serviceScope().getService(Reasoner.class);
 
-            if (reasoner != null && reasoner.status().isAvailable() && reasoner.capabilities().getWorldviewId() != null) {
+            if (reasoner != null && reasoner.status().isAvailable() && reasoner.capabilities(serviceScope()).getWorldviewId() != null) {
 
                 // reasoner is online and able
                 reasoningAvailable = true;
                 serviceScope().send(Message.MessageClass.EngineLifecycle,
-                        Message.MessageType.ReasoningAvailable, reasoner.capabilities());
+                        Message.MessageType.ReasoningAvailable, reasoner.capabilities(serviceScope()));
 
-            } else if (reasoner != null && reasoner.isExclusive() && reasoner.status().isAvailable() && reasoner.capabilities().getWorldviewId() == null) {
+            } else if (reasoner != null && reasoner.isExclusive() && reasoner.status().isAvailable() && reasoner.capabilities(serviceScope()).getWorldviewId() == null) {
 
                 var resources = serviceScope().getService(ResourcesService.class);
-                if (resources != null && resources.status().isAvailable() && resources.capabilities().isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
+                if (resources != null && resources.status().isAvailable() && resources.capabilities(serviceScope()).isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
                     if (admin.loadKnowledge(this.worldview = resources.getWorldview())) {
                         reasoningAvailable = true;
                         serviceScope().send(Message.MessageClass.EngineLifecycle,
-                                Message.MessageType.ReasoningAvailable, reasoner.capabilities());
+                                Message.MessageType.ReasoningAvailable, reasoner.capabilities(serviceScope()));
                         serviceScope().info("Worldview loaded into local reasoner");
                     } else {
                         reasonerDisabled = true;
@@ -238,12 +238,12 @@ public class EngineClient implements Engine, PropertyHolder {
             if (ok) {
 
                 serviceScope().send(Message.MessageClass.EngineLifecycle,
-                        Message.MessageType.ServiceAvailable, capabilities());
+                        Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
 
 
             } else {
                 serviceScope().send(Message.MessageClass.EngineLifecycle,
-                        Message.MessageType.ServiceUnavailable, capabilities());
+                        Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
             }
         }
 

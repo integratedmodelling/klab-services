@@ -266,14 +266,17 @@ public interface ServicesAPI {
         String QUERY_MODELS = "/queryModels";
         String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
         String READ_BEHAVIOR = "/readBehavior";
-        String PUBLISH_PROJECT = "/publishProject";
-        String UNPUBLISH_PROJECT = "/unpublishProject";
+//        String PUBLISH_PROJECT = "/publishProject";
+//        String UNPUBLISH_PROJECT = "/unpublishProject";
         String CREATE_RESOURCE = "/createResource";
-        String PUBLISH_RESOURCE = "/publishResource";
-        String UNPUBLISH_RESOURCE = "/unpublishResource";
+//        String PUBLISH_RESOURCE = "/publishResource";
+//        String UNPUBLISH_RESOURCE = "/unpublishResource";
         String LIST_PROJECTS = "/listProjects";
         String LIST_RESOURCE_URNS = "/listResourceUrns";
-
+        /**
+         * Set/get the access rights for the passed resource URN
+         */
+        String RESOURCE_RIGHTS = "/rights/{urn}";
         /**
          * Resource plug-ins provide resource adapters.
          *
@@ -315,6 +318,7 @@ public interface ServicesAPI {
              * Resume file management and disallow the user from updating project files for the project.
              */
             String UNLOCK_PROJECT = "/unlockProject/{urn}";
+
         }
     }
 

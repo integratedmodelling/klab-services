@@ -228,7 +228,7 @@ public class EngineService extends BaseService implements Engine {
     }
 
     @Override
-    public ServiceCapabilities capabilities() {
+    public ServiceCapabilities capabilities(Scope scope) {
         return null;
     }
 

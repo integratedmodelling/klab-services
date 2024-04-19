@@ -33,11 +33,12 @@ public interface Resolver extends KlabService {
     }
 
     /**
-     * Get the service capabilities.
-     * 
+     * Scope CAN be null for generic public capabilities.
+     *
+     * @param scope
      * @return
      */
-    Capabilities capabilities();
+    Capabilities capabilities(Scope scope);
 
     /**
      * The resolver holds the translation of the lexical {@link KlabAsset}s into resolvable

@@ -50,7 +50,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, ReasonerCapabilitiesImpl.class);
     }
 

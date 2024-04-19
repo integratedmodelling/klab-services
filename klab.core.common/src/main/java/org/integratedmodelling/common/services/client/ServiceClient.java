@@ -288,7 +288,7 @@ public abstract class ServiceClient implements KlabService {
                     status.set(s);
                     connected.set(true);
                     if (capabilities == null) {
-                        this.capabilities = capabilities();
+                        this.capabilities = capabilities(scope);
                     }
                 }
             } finally {

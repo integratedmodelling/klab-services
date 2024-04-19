@@ -271,7 +271,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public void initializeService() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities());
+                capabilities(serviceScope()));
 
         for (ProjectConfiguration authority : configuration.getAuthorities()) {
             loadAuthority(authority);
@@ -280,7 +280,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.observationReasoner = new ObservationReasoner(this);
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities());
+                capabilities(serviceScope()));
 
     }
 
@@ -1086,7 +1086,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
         return new Capabilities() {
 
             @Override
@@ -2440,7 +2440,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public boolean shutdown() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
-                capabilities());
+                capabilities(serviceScope()));
         // TODO Auto-generated method stub
         return false;
     }

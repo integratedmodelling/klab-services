@@ -65,14 +65,14 @@ public class ResolverService extends BaseService implements Resolver, Resolver.A
         // TODO Auto-generated method stub
         return false;
     }
-    public boolean isLocal() {
-        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-        return (capabilities().getServerId() == null && serverId == null) ||
-                (capabilities().getServerId() != null && capabilities().getServerId().equals("RESOLVER_" + serverId));
-    }
+//    public boolean isLocal() {
+//        String serverId = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
+//        return (capabilities(null).getServerId() == null && serverId == null) ||
+//                (capabilities(null).getServerId() != null && capabilities(null).getServerId().equals("RESOLVER_" + serverId));
+//    }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
         return null;
     }
 

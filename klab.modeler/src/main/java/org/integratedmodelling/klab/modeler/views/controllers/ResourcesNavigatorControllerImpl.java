@@ -185,7 +185,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     private void createNavigableAssets(ResourcesService service) {
         assetMap.clear();
-        var capabilities = service.capabilities();
+        var capabilities = service.capabilities(getController().engine().serviceScope());
         if (capabilities.isWorldviewProvider()) {
             assetMap.put(Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER,
                     new NavigableWorldview(service.getWorldview()));

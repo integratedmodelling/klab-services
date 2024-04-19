@@ -118,7 +118,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting);
+                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting, engine().serviceScope());
                 if (ret != null && !ret.isEmpty()) {
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }

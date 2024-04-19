@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.resources;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 
 /**
  * Resource status reports on availability (overall and/or in scope) and review
@@ -31,7 +33,8 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
  * @author Ferd
  *
  */
-public class ResourceStatus {
+public class ResourceStatus implements Serializable {
+
 
 	public enum Type {
 		AVAILABLE(true), DELAYED(true), UNAUTHORIZED(false), OFFLINE(false),
@@ -54,7 +57,8 @@ public class ResourceStatus {
 
 	private Type type;
 	private int retryTimeSeconds;
-	private List<Notification> notifications = new ArrayList<>();
+	// Must be Impl to keep it serializable without issues.
+	private List<NotificationImpl> notifications = new ArrayList<>();
 	private int reviewStatus;
 	private ResourcePrivileges privileges = ResourcePrivileges.empty();
 	private String owner;
@@ -96,11 +100,11 @@ public class ResourceStatus {
 		return ret;
 	}
 
-	public List<Notification> getNotifications() {
+	public List<NotificationImpl> getNotifications() {
 		return notifications;
 	}
 
-	public void setNotifications(List<Notification> notifications) {
+	public void setNotifications(List<NotificationImpl> notifications) {
 		this.notifications = notifications;
 	}
 

@@ -1,11 +1,14 @@
 package org.integratedmodelling.klab.api.authentication;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
@@ -18,7 +21,7 @@ import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
  * This class parses a permission string and has methods to establish authorization given a username and a set
  * of groups.
  */
-public class ResourcePrivileges {
+public class ResourcePrivileges implements Serializable {
 
     private boolean isPublic;
     private Set<String> allowedGroups = new HashSet<>();
@@ -88,24 +91,31 @@ public class ResourcePrivileges {
     }
 
     public boolean checkAuthorization(Scope scope) {
+
+        // Only way to get a ServiceScope here is if the same service is requesting the resource. This also
+        // covers scope == null, which is OK if the resource is public.
+        if (isPublic || scope instanceof ServiceScope) {
+            return true;
+        }
+
         @SuppressWarnings("unchecked")
         Collection<ResolutionConstraint> constraints = scope.getData()
                                                             .get(ResolutionConstraint.RESOLUTION_CONSTRAINTS_METADATA_KEY, Collection.class);
-        UserIdentity user = scope instanceof UserScope ? ((UserScope) scope).getUser() : null;
-
-        // TODO!
+        if (scope instanceof UserScope userScope) {
+            return checkAuthorization(userScope.getUser().getUsername(), userScope.getUser().getGroups());
+        }
 
         return true;
     }
 
-    public boolean checkAuthorization(String username, Collection<String> groups) {
+    public boolean checkAuthorization(String username, Collection<Group> groups) {
         boolean authorized = isPublic;
         if (!authorized) {
             authorized = allowedUsers.contains(username);
         }
         if (!authorized) {
-            for (String s : groups) {
-                if (allowedGroups.contains(s)) {
+            for (var group : groups) {
+                if (allowedGroups.contains(group.getName())) {
                     authorized = true;
                     break;
                 }
@@ -117,8 +127,8 @@ public class ResourcePrivileges {
             // check if prevented
             prevented = excludedUsers.contains(username);
             if (!prevented) {
-                for (String s : groups) {
-                    if (excludedGroups.contains(s)) {
+                for (var group : groups) {
+                    if (excludedGroups.contains(group.getName())) {
                         prevented = true;
                         break;
                     }

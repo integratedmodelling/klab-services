@@ -28,7 +28,7 @@ public class CommunityClient extends ServiceClient implements Community {
     }
 
     @Override
-    public ServiceCapabilities capabilities() {
+    public ServiceCapabilities capabilities(Scope scope) {
         return null;
     }
 

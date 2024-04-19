@@ -26,6 +26,7 @@ import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabException;
+import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.*;
@@ -33,6 +34,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.EngineAuthenticationRequest;
 import org.integratedmodelling.klab.rest.EngineAuthenticationResponse;
+import org.integratedmodelling.klab.rest.GroupImpl;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
@@ -202,6 +204,19 @@ public enum Authentication {
                 ret.setEmailAddress(authentication.getUserData().getIdentity().getEmail());
                 ret.setUsername(authentication.getUserData().getIdentity().getId());
 
+                for (Object ogroup : authentication.getUserData().getGroups()) {
+                    // FIXME these come w/o class info so our deserializer screws up
+                    Group group = null;
+                    if (ogroup instanceof Map map) {
+                        ogroup = Utils.Json.convertMap(map, GroupImpl.class);
+                    } else if (ogroup instanceof Group g) {
+                        group = g;
+                    }
+                    if (group != null) {
+                        ret.getGroups().add(group);
+                    }
+                }
+
                 Logging.INSTANCE.info("User " + ret.getUsername() + " logged in through hub " + hubNode.getId()
                         + " owned by " + hubNode.getPartner().getId());
 
@@ -211,8 +226,8 @@ public enum Authentication {
                 for (var service : authentication.getNodes()) {
                     if (service.getServiceType() == KlabService.Type.LEGACY_NODE) {
                         // TODO see if we need to adapt
-                        Logging.INSTANCE.info("Legacy service " + service.getId() + " from hub " + hubNode.getId()
-                                + " authorized, ignored");
+//                        Logging.INSTANCE.info("Legacy service " + service.getId() + " from hub " + hubNode.getId()
+//                                + " authorized, ignored");
                     } else {
                         services.add(service);
                     }
@@ -227,7 +242,6 @@ public enum Authentication {
 
         return Pair.of(new AnonymousUser(), Collections.emptyList());
     }
-
 
     /**
      * Strategy to locate a primary service in all possible ways. If there are primary service URLs for the

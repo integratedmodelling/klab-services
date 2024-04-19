@@ -58,7 +58,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);
     }
 
@@ -217,7 +217,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting) {
+    public ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting, Scope scope) {
         ProjectRequest request = new ProjectRequest();
         request.setWorkspaceName(workspaceName);
         request.setProjectUrl(projectUrl);
@@ -226,7 +226,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createProject(String workspaceName, String projectName) {
+    public ResourceSet createProject(String workspaceName, String projectName, Scope scope) {
         return null;
     }
 
@@ -284,15 +284,15 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
                 ResourceSet.class, "projectName", projectName);
     }
 
-    @Override
-    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
-        return false;
-    }
-
-    @Override
-    public boolean unpublishProject(String projectUrl) {
-        return false;
-    }
+//    @Override
+//    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean unpublishProject(String projectUrl) {
+//        return false;
+//    }
 
     @Override
     public ResourceSet manageRepository(String projectName, Repository.Operation operation,
@@ -309,30 +309,30 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createResource(Resource resource) {
+    public ResourceSet createResource(Resource resource, Scope scope) {
         return null;
     }
 
     @Override
-    public ResourceSet createResource(File resourcePath) {
+    public ResourceSet createResource(File resourcePath, Scope scope) {
         return null;
     }
 
     @Override
     public Resource createResource(String projectName, String urnId, String adapter,
-                                   Parameters<String> resourceData) {
+                                   Parameters<String> resourceData, Scope scope) {
         return null;
     }
-
-    @Override
-    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
-        return false;
-    }
-
-    @Override
-    public boolean unpublishResource(String resourceUrn) {
-        return false;
-    }
+//
+//    @Override
+//    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean unpublishResource(String resourceUrn) {
+//        return false;
+//    }
 
     @Override
     public ResourceSet removeAsset(String projectName, String assetUrn) {
@@ -350,12 +350,12 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public Collection<Project> listProjects() {
+    public Collection<Project> listProjects(Scope scope) {
         return client.getCollection(ServicesAPI.RESOURCES.LIST_PROJECTS, Project.class);
     }
 
     @Override
-    public Collection<String> listResourceUrns() {
+    public Collection<String> listResourceUrns(Scope scope) {
         return null;
     }
 
@@ -367,6 +367,16 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     @Override
     public boolean unlockProject(String urn, String token) {
         return client.get(ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT, Boolean.class, "urn", urn);
+    }
+
+    @Override
+    public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
+        return client.get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn", resourceUrn);
+    }
+
+    @Override
+    public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+        return client.put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
     }
 
 }

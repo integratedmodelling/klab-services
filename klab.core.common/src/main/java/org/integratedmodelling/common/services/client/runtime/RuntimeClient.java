@@ -46,7 +46,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
     }
 

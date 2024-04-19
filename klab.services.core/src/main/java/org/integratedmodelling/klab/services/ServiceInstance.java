@@ -282,12 +282,12 @@ public abstract class ServiceInstance<T extends BaseService> {
         if (wasAvailable != ok) {
             if (ok) {
                 if (initialized.get()) {
-                    serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, klabService().capabilities());
+                    serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
                 } else {
-                    serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, klabService().capabilities());
+                    serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, klabService().capabilities(serviceScope));
                 }
             } else {
-                serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, klabService().capabilities());
+                serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, klabService().capabilities(serviceScope));
             }
         }
 
@@ -299,7 +299,7 @@ public abstract class ServiceInstance<T extends BaseService> {
             setBusy(true);
             klabService().initializeService();
             initialized.set(true);
-            serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, klabService().capabilities());
+            serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
             setBusy(false);
         }
 

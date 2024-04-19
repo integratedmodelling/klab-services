@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -205,6 +206,19 @@ public class ResourcesProviderController {
     @GetMapping(ServicesAPI.RESOURCES.READ_BEHAVIOR)
     public @ResponseBody KActorsBehavior readBehavior(@RequestParam("url") URL url) {
         return resourcesServer.klabService().readBehavior(url);
+    }
+
+    @GetMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
+    public ResourcePrivileges getResourceRights(@PathVariable("urn") String urn, Principal principal) {
+        return resourcesServer.klabService().getRights(urn, authenticationManager.resolveScope(principal));
+    }
+
+    @PutMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
+    public boolean setResourceRights(@PathVariable("urn") String urn,
+                                     @RequestBody ResourcePrivileges resourcePrivileges,
+                                     Principal principal) {
+        return resourcesServer.klabService().setRights(urn, resourcePrivileges,
+                authenticationManager.resolveScope(principal));
     }
 
 }

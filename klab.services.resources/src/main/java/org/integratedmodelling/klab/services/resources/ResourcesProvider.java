@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -28,12 +29,14 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 //import org.integratedmodelling.klab.api.services.Authentication;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 //import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
+import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
@@ -120,7 +123,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public void initializeService() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
-                capabilities().toString());
+                capabilities(serviceScope()).toString());
 
         this.kbox = ModelKbox.create(localName, this.scope);
         this.workspaceManager.loadWorkspace();
@@ -128,7 +131,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          * TODO launch update service
          */
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities());
+                capabilities(serviceScope()));
     }
 
     /**
@@ -270,6 +273,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     /**
      * TODO improve logics: the main function should return the appropriate ProjectStorage for the URL in
      * all cases. Then call importProject (storage) when all the different storages are implemented.
+     * <p>
+     * TODO add scope so we can record the owner/importer in the project rights
      *
      * @param workspaceName
      * @param projectUrl          can be a file (zip, jar, existing folder, or anything supported by
@@ -281,20 +286,35 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      */
     @Override
     public synchronized ResourceSet importProject(String workspaceName, String projectUrl,
-                                              boolean overwriteIfExisting) {
+                                                  boolean overwriteIfExisting, Scope scope) {
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
         var project = workspaceManager.loadProject(storage, workspaceName);
+
+        // initial resource permissions
+        var status = new ResourceStatus();
+        if (scope.getIdentity() instanceof UserIdentity user) {
+            status.getPrivileges().getAllowedUsers().add(user.getUsername());
+            status.setOwner(user.getUsername());
+        }
+        status.setFileLocation(storage instanceof FileProjectStorage fps ? fps.getRootFolder() : null);
+        status.setKnowledgeClass(KnowledgeClass.PROJECT);
+        status.setReviewStatus(0);
+        status.setType(ResourceStatus.Type.AVAILABLE);
+        status.setLegacy(false);
+        catalog.put(project.getUrn(), status);
+        db.commit();
+
         return project(projectUrl, serviceScope());
     }
 
     @Override
-    public ResourceSet createProject(String workspaceName, String projectName) {
+    public ResourceSet createProject(String workspaceName, String projectName, Scope scope) {
         return null;
     }
 
     @Override
     public ResourceSet updateProject(String projectName, Manifest manifest, Metadata metadata,
-                                 String lockingAuthorization) {
+                                     String lockingAuthorization) {
         return null;
     }
 
@@ -412,7 +432,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public boolean shutdown(int secondsToWait) {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
-                capabilities());
+                capabilities(serviceScope()));
 
         // try {
         // projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
@@ -424,7 +444,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
 
         var ret = new ResourcesCapabilitiesImpl();
         ret.setWorldviewProvider(workspaceManager.isWorldviewProvider());
@@ -434,17 +454,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.setServiceName("Resources");
         ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
         ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
-        //        if (isLocal()) {
+
         // TODO capabilities are being asked from same machine as the one that runs the server. This call
         //  should have a @Nullable scope. The condition here is silly.
-        if (ResourcesProvider.this instanceof ResourcesService.Admin) {
-            ret.getPermissions().add(CRUDOperation.CREATE);
-            ret.getPermissions().add(CRUDOperation.DELETE);
-            ret.getPermissions().add(CRUDOperation.UPDATE);
-        }
-        //        } else {
-        //            // TODO check permissions of current userscope vs. configuration
-        //        }
+        ret.getPermissions().add(CRUDOperation.CREATE);
+        ret.getPermissions().add(CRUDOperation.DELETE);
+        ret.getPermissions().add(CRUDOperation.UPDATE);
 
         return ret;
 
@@ -598,22 +613,23 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
-    @Override
-    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+    //    @Override
+    //    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
+    //        // TODO Auto-generated method stub
+    //        return false;
+    //    }
+    //
+    //    @Override
+    //    public boolean unpublishProject(String projectUrl) {
+    //        // TODO Auto-generated method stub
+    //        return false;
+    //    }
 
     @Override
-    public boolean unpublishProject(String projectUrl) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+    public ResourceSet manageRepository(String projectName, Repository.Operation operation,
+                                        String... arguments) {
 
-    @Override
-    public ResourceSet manageRepository(String projectName, Repository.Operation operation, String... arguments) {
-
-        switch(operation) {
+        switch (operation) {
             case FETCH_COMMIT_AND_PUSH -> {
             }
             case FETCH_AND_MERGE -> {
@@ -629,13 +645,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createResource(Resource resource) {
+    public ResourceSet createResource(Resource resource, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ResourceSet createResource(File resourcePath) {
+    public ResourceSet createResource(File resourcePath, Scope scope) {
         // TODO Auto-generated method stub
         // Concept
         return null;
@@ -643,21 +659,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public Resource createResource(String projectName, String urnId, String adapter,
-                                   Parameters<String> resourceData) {
+                                   Parameters<String> resourceData, Scope scope) {
         return null;
     }
 
-    @Override
-    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean unpublishResource(String resourceUrn) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+    //    @Override
+    //    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
+    //        // TODO Auto-generated method stub
+    //        return false;
+    //    }
+    //
+    //    @Override
+    //    public boolean unpublishResource(String resourceUrn) {
+    //        // TODO Auto-generated method stub
+    //        return false;
+    //    }
 
     @Override
     public ResourceSet removeAsset(String projectName, String assetUrn) {
@@ -822,13 +838,29 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public Collection<Project> listProjects() {
+    public Collection<Project> listProjects(Scope scope) {
+        // FIXME filter by scope access
         return workspaceManager.getProjects();
     }
 
     @Override
-    public Collection<String> listResourceUrns() {
+    public Collection<String> listResourceUrns(Scope scope) {
         return localResources;
+    }
+
+    @Override
+    public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
+
+        var status = catalog.get(resourceUrn);
+        if (status != null && status.getPrivileges().checkAuthorization(scope)) {
+            return status.getPrivileges();
+        }
+        return ResourcePrivileges.empty();
+    }
+
+    @Override
+    public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+        return false;
     }
 
     @Override

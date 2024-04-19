@@ -321,7 +321,7 @@ public class Resources {
         public void listResources() {
             var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
             if (service instanceof ResourcesService.Admin) {
-                for (var urn : ((ResourcesService.Admin) service).listResourceUrns()) {
+                for (var urn : ((ResourcesService.Admin) service).listResourceUrns(KlabCLI.INSTANCE.engine().serviceScope())) {
                     System.out.println("   " + urn);
                 }
             }
@@ -419,7 +419,7 @@ public class Resources {
 
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
-                    for (var project : ((ResourcesService.Admin) service).listProjects()) {
+                    for (var project : ((ResourcesService.Admin) service).listProjects(KlabCLI.INSTANCE.engine().serviceScope())) {
                         out.println("   " + project.getUrn());
                         if (verbose) {
 

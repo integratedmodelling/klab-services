@@ -44,7 +44,7 @@ public class RuntimeService extends BaseService
     @Override
     public void initializeService() {
 
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities().toString());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities(serviceScope()).toString());
 
         /*
          * Components
@@ -66,20 +66,20 @@ public class RuntimeService extends BaseService
             Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
         }
 
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
 
     }
     @Override
     public boolean shutdown() {
 
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
 
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Capabilities capabilities() {
+    public Capabilities capabilities(Scope scope) {
         return new Capabilities() {
 
             @Override

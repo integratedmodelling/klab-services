@@ -33,11 +33,12 @@ public class FileProjectStorage implements ProjectStorage {
 
         if (isTracked() && project instanceof ProjectImpl pimpl && project.getRepository() instanceof RepositoryImpl projectMetadata) {
 
-            try (var repository = new FileRepository(rootFolder)) {
+            try (var repository = new FileRepository(rootFolder + File.separator + ".git")) {
 
-                projectMetadata.setStatus(Repository.Status.TRACKED);
-                projectMetadata.setCurrentBranch(repository.getBranch());
                 try (var git = Git.wrap(repository)) {
+
+                    projectMetadata.setStatus(Repository.Status.TRACKED);
+                    projectMetadata.setCurrentBranch(repository.getBranch());
 
                     var status = git.status().call();
 

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.community;
 
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Community;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -20,7 +21,7 @@ public class CommunityService extends BaseService implements Community {
     }
 
     @Override
-    public ServiceCapabilities capabilities() {
+    public ServiceCapabilities capabilities(Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }

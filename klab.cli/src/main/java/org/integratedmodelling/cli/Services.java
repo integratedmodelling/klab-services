@@ -113,7 +113,7 @@ public class Services  {
                                     + service.getUrl() + ServicesAPI.CAPABILITIES
                             );
                             if (verbose) {
-                                out.println(Utils.Strings.indent(service.capabilities().toString(), 6));
+                                out.println(Utils.Strings.indent(service.capabilities(KlabCLI.INSTANCE.engine().serviceScope()).toString(), 6));
                             }
                         }
                         first = false;

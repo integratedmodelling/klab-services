@@ -216,9 +216,11 @@ public interface KlabService extends Service {
     /**
      * Each service publishes capabilities, overridden to the specific capability class for each service.
      *
+     * @param scope the scope under which capabilities are computed. The scope can be null or generic, which
+     *              will return general capabilities without scope-specific resources or services.
      * @return
      */
-    ServiceCapabilities capabilities();
+    ServiceCapabilities capabilities(Scope scope);
 
     /**
      * The service status should be cheap to obtain and small enough to enable multiple and frequent polling.
