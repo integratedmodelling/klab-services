@@ -281,6 +281,9 @@ public enum LanguageAdapter {
         ret.setDescription(strategy.getDescription());
         ret.setOffsetInDocument(strategy.getCodeOffset());
         ret.setLength(strategy.getCodeLength());
+        ret.setDeprecation(strategy.getDeprecation());
+        ret.setDeprecated(strategy.getDeprecation() != null);
+
 
         for (var filter : strategy.getFilters()) {
             var f = new KimObservationStrategyImpl.FilterImpl();
@@ -347,6 +350,8 @@ public enum LanguageAdapter {
         ret.setAlias(definition.isAlias());
         ret.setOffsetInDocument(definition.getCodeOffset());
         ret.setLength(definition.getCodeLength());
+        ret.setDeprecation(definition.getDeprecation());
+        ret.setDeprecated(definition.getDeprecation() != null);
 
         ret.setType(adaptSemanticType(definition.getDeclaredType()));
         if (definition.isDeniable()) {
