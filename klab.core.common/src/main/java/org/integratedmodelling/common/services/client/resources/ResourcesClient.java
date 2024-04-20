@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
@@ -27,7 +28,6 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
@@ -237,62 +237,14 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createNamespace(String projectName, String namespaceContent,
-                                       String lockingAuthorization) {
-        return null;
+    public List<ResourceSet> createDocument(String projectName, String documentUrn, ProjectStorage.ResourceType documentType, String lockingAuthorization) {
+        return List.of();
     }
 
     @Override
-    public List<ResourceSet> updateNamespace(String projectName, String namespaceContent,
-                                             String lockingAuthorization) {
-        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_NAMESPACE, namespaceContent,
-                ResourceSet.class, "projectName", projectName);
+    public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType, String content, String lockingAuthorization) {
+        return List.of();
     }
-
-    @Override
-    public ResourceSet createBehavior(String projectName, String behaviorContent,
-                                      String lockingAuthorization) {
-        return null;
-    }
-
-    @Override
-    public List<ResourceSet> updateBehavior(String projectName, String behaviorContent,
-                                            String lockingAuthorization) {
-        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_BEHAVIOR, behaviorContent,
-                ResourceSet.class, "projectName", projectName);
-    }
-
-    @Override
-    public ResourceSet createOntology(String projectName, String ontologyContent,
-                                      String lockingAuthorization) {
-        return null;
-    }
-
-    @Override
-    public List<ResourceSet> updateOntology(String projectName, String ontologyContent,
-                                            String lockingAuthorization) {
-        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_ONTOLOGY, ontologyContent,
-                ResourceSet.class, "projectName", projectName);
-    }
-
-    @Override
-    public List<ResourceSet> updateObservationStrategies(String projectName,
-                                                         String observationStrategiesContent,
-                                                         String lockingAuthorization) {
-        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_STRATEGIES,
-                observationStrategiesContent,
-                ResourceSet.class, "projectName", projectName);
-    }
-
-//    @Override
-//    public boolean publishProject(String projectUrl, ResourcePrivileges permissions) {
-//        return false;
-//    }
-//
-//    @Override
-//    public boolean unpublishProject(String projectUrl) {
-//        return false;
-//    }
 
     @Override
     public ResourceSet manageRepository(String projectName, Repository.Operation operation,
@@ -323,29 +275,19 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
                                    Parameters<String> resourceData, Scope scope) {
         return null;
     }
-//
-//    @Override
-//    public boolean publishResource(String resourceUrn, ResourcePrivileges permissions) {
-//        return false;
-//    }
-//
-//    @Override
-//    public boolean unpublishResource(String resourceUrn) {
-//        return false;
-//    }
 
     @Override
-    public ResourceSet removeAsset(String projectName, String assetUrn) {
+    public List<ResourceSet> removeAsset(String projectName, String assetUrn) {
         return null;
     }
 
     @Override
-    public ResourceSet removeProject(String projectName) {
+    public List<ResourceSet> removeProject(String projectName) {
         return null;
     }
 
     @Override
-    public ResourceSet removeWorkspace(String workspaceName) {
+    public List<ResourceSet> removeWorkspace(String workspaceName) {
         return null;
     }
 

@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Ref;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -103,13 +104,27 @@ public class FileProjectStorage implements ProjectStorage {
         }
     }
 
+    public String getDocumentUrn(ResourceType type, URL url) {
+
+        File file = new File(url.getFile());
+        if (file.exists()) {
+            /*
+            relative path
+             */
+            var relativePath = file.toPath().relativize(rootFolder.toPath());
+            var data = ProjectStorage.getDocumentData(relativePath.toString(), File.separator);
+            return data != null && data.getFirst() == type ? data.getSecond() : null;
+        }
+
+        return null;
+    }
+
     @FunctionalInterface
     public interface ChangeNotifier {
         void apply(String projectName, List<Triple<ResourceType, CRUDOperation, URL>> changes);
     }
 
     private FileWatcher watcher;
-
 
     private final File rootFolder;
     private final String projectName;
@@ -278,9 +293,28 @@ public class FileProjectStorage implements ProjectStorage {
 
     @Override
     public URL create(String resourceId, ResourceType resourceType) {
+
         if (!rootFolder.exists()) {
             rootFolder.mkdirs();
         }
+
+        var relativePath = ProjectStorage.getRelativeFilePath(resourceId, resourceType);
+        File file = new File(rootFolder + File.separator + relativePath);
+
+        if (file.exists()) {
+            throw new KlabIOException("Cannot overwrite existing document " + file);
+        }
+
+        try {
+
+            URL ret = file.toURI().toURL();
+            Templates.createDocument(resourceType, resourceId, file);
+            return ret;
+
+        } catch (Throwable t) {
+            Logging.INSTANCE.error(t);
+        }
+
         return null;
     }
 
@@ -295,7 +329,6 @@ public class FileProjectStorage implements ProjectStorage {
     }
 
     public URL update(ResourceType resourceType, String urn, String content) {
-        // TODO overwrite the file. The file monitor does the rest
         try {
             File resourceFile = new File(rootFolder + File.separator + ProjectStorage.getRelativeFilePath(urn,
                     resourceType, File.separator));

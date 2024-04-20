@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
-import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -32,7 +31,7 @@ import java.io.File;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
- * k.Modeler application. Uses an {@link org.integratedmodelling.common.services.client.engine.EngineClient}
+ * k.Modeler application. Uses an {@link EngineClient}
  * which will connect to local services if available. Also handles one or more users and keeps a catalog of
  * sessions and contexts, tagging the "current" one in focus in the UI.
  * <p>
@@ -206,7 +205,28 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     @Override
     public void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType) {
-
+        var resources = engine().serviceScope().getService(ResourcesService.class);
+        if (resources instanceof ResourcesService.Admin admin) {
+            Thread.ofVirtual().start(() -> {
+//                var ret = switch (assetType) {
+//                    case NAMESPACE -> admin.createDocument();
+//                    case BEHAVIOR -> admin.crea;
+//                    case SCRIPT -> null;
+//                    case TESTCASE -> null;
+//                    case APPLICATION -> null;
+//                    case ONTOLOGY -> null;
+//                    case OBSERVATION_STRATEGY_DOCUMENT -> null;
+//                    case PROJECT -> null;
+//                    default -> throw new KlabIllegalStateException("Cannot create asset of type " + assetType);
+//                };
+//                if (ret != null && !ret.isEmpty()) {
+//                    dispatch(this, UIEvent.WorkspaceModified, ret);
+//                }
+            });
+        } else if (getUI() != null) {
+            getUI().alert(Notification.create("Service does not support this operation",
+                    Notification.Level.Warning));
+        }
     }
 
     @Override

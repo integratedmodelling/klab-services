@@ -266,17 +266,18 @@ public interface ServicesAPI {
         String QUERY_MODELS = "/queryModels";
         String MODEL_GEOMETRY = "/modelGeometry/{modelUrn}";
         String READ_BEHAVIOR = "/readBehavior";
-//        String PUBLISH_PROJECT = "/publishProject";
-//        String UNPUBLISH_PROJECT = "/unpublishProject";
+        //        String PUBLISH_PROJECT = "/publishProject";
+        //        String UNPUBLISH_PROJECT = "/unpublishProject";
         String CREATE_RESOURCE = "/createResource";
-//        String PUBLISH_RESOURCE = "/publishResource";
-//        String UNPUBLISH_RESOURCE = "/unpublishResource";
+        //        String PUBLISH_RESOURCE = "/publishResource";
+        //        String UNPUBLISH_RESOURCE = "/unpublishResource";
         String LIST_PROJECTS = "/listProjects";
         String LIST_RESOURCE_URNS = "/listResourceUrns";
         /**
          * Set/get the access rights for the passed resource URN
          */
         String RESOURCE_RIGHTS = "/rights/{urn}";
+
         /**
          * Resource plug-ins provide resource adapters.
          *
@@ -284,26 +285,35 @@ public interface ServicesAPI {
          */
         public interface ADMIN extends PluginAPI {
 
+            /**
+             * Import project. POST endpoint with ProjectRequest body.
+             */
             String IMPORT_PROJECT = "/importProject";
+            /**
+             * Create new empty project in passed workspace.
+             */
             String CREATE_PROJECT = "/createProject/{workspaceName}/{projectName}";
-            String UPDATE_PROJECT = "/updateProject/{projectName}";
-            String CREATE_NAMESPACE = "/createNamespace/{projectName}/{namespace}";
-            String UPDATE_NAMESPACE = "/updateNamespace/{projectName}";
-            String CREATE_BEHAVIOR = "/createBehavior/{projectName}/{behavior}";
-            String UPDATE_BEHAVIOR = "/updateBehavior/{projectName}";
-            String CREATE_STRATEGIES = "/createStrategies/{projectName}/{strategies}";
-            String DELETE_STRATEGIES = "/deleteStrategies/{projectName}/{strategies}";
-            String DELETE_NAMESPACE = "/deleteNamespace/{projectName}/{namespace}";
-            String DELETE_ONTOLOGY = "/deleteOntology/{projectName}/{ontology}";
-            String DELETE_BEHAVIOR = "/deleteBehavior/{projectName}/{behavior}";
-            String CREATE_ONTOLOGY = "/createOntology/{projectName}/{ontology}";
-            String UPDATE_ONTOLOGY = "/updateOntology/{projectName}";
-            String UPDATE_STRATEGIES = "/updateStrategies/{projectName}";
+
+            /**
+             * POST request to update an existing project's manifest
+             */
+            String UPDATE_PROJECT = "/createProject/{projectName}";
+
+            /**
+             * GET endpoint: create new document with passed URN. Return changes in each workspace affected.
+             */
+            String CREATE_DOCUMENT = "/createDocument/{projectName}/{documentType}/{urn}";
+            /**
+             * Update document with passed type. POST endpoint whose body is the document content. Return
+             * changes in each workspace affected.
+             */
+            String UPDATE_DOCUMENT = "/updateDocument/{projectName}/{documentType}";
             String CREATE_RESOURCE = "/createResource";
             String IMPORT_RESOURCE = "/importResource";
             String UPLOAD_RESOURCE = "/uploadResource";
             String REMOVE_PROJECT = "/removeProject/{urn}";
             String REMOVE_WORKSPACE = "/removeWorkspace/{urn}";
+            String REMOVE_DOCUMENT = "/removeDocument/{projectName}/{urn}";
             String MANAGE_PROJECT = "/manageProject/{urn}";
             /**
              * If successful, stop automatic file management for the project and respond with a URL to either

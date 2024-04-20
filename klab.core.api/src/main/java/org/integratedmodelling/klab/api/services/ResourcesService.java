@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
@@ -363,7 +364,8 @@ public interface ResourcesService extends KlabService {
          * @return true if operation succeeded and anything was done (false if project existed and wasn't
          * overwritten)
          */
-        ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting, Scope scope);
+        ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
+                                  Scope scope);
 
         /**
          * Create a new empty project. Use the update function to configure the manifest and the create/update
@@ -384,7 +386,7 @@ public interface ResourcesService extends KlabService {
          * @return the updated project with the new metadata and manifest.
          */
         ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
-                              String lockingAuthorization);
+                                  String lockingAuthorization);
 
         /**
          * Project must exist; namespace must not. Namespace content is parsed and the results are returned.
@@ -392,10 +394,11 @@ public interface ResourcesService extends KlabService {
          * exception (TODO).
          *
          * @param projectName
-         * @param namespaceContent
          * @return
          */
-        ResourceSet createNamespace(String projectName, String namespaceContent, String lockingAuthorization);
+        List<ResourceSet> createDocument(String projectName, String documentUrn,
+                                         ProjectStorage.ResourceType documentType,
+                                         String lockingAuthorization);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -404,71 +407,14 @@ public interface ResourcesService extends KlabService {
          * need to be called as the adjustment is consequent to the change, not the API call.
          *
          * @param projectName
-         * @param namespaceContent
+         * @param documentType
+         * @param content
+         * @param lockingAuthorization
+         * @return a {@link ResourceSet} per affected namespace
          */
-        List<ResourceSet> updateNamespace(String projectName, String namespaceContent,
-                                          String lockingAuthorization);
-
-        /**
-         * Project must exist; behavior must not (throws TODO). Namespace content is parsed and the results
-         * are returned. Errors are reported with the namespace itself; fatal errors will cause an unparseable
-         * namespace exception (TODO).
-         *
-         * @param projectName
-         * @param behaviorContent
-         * @return
-         */
-        ResourceSet createBehavior(String projectName, String behaviorContent, String lockingAuthorization);
-
-        /**
-         * Resource must exist in project and be part of a file-based project. This operation makes the change
-         * in the filesystem: the service will react by readjusting the knowledge and sending any changes
-         * through the listening scopes.  If a file is modified by an external process, the method will not *
-         * need to be called as the adjustment is consequent to the change, not the API call.
-         *
-         * @param projectName
-         * @param behaviorContent
-         * @return
-         */
-        List<ResourceSet> updateBehavior(String projectName, String behaviorContent,
+        List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
+                                         String content,
                                          String lockingAuthorization);
-
-        /**
-         * Project must exist; ontology must not (throws TODO). Namespace content is parsed and the results
-         * are returned. Errors are reported with the namespace itself; fatal errors will cause an unparseable
-         * namespace exception (TODO).
-         *
-         * @param projectName
-         * @param ontologyContent
-         * @return
-         */
-        ResourceSet createOntology(String projectName, String ontologyContent, String lockingAuthorization);
-
-        /**
-         * Resource must exist in project and be part of a file-based project. This operation makes the change
-         * in the filesystem; the service will react by readjusting the knowledge and sending any changes
-         * through the listening scopes. If a file is modified by an external process, the method will not *
-         * need to be called as the adjustment is consequent to the change, not the API call.
-         *
-         * @param projectName
-         * @param ontologyContent
-         */
-        List<ResourceSet> updateOntology(String projectName, String ontologyContent,
-                                         String lockingAuthorization);
-
-        /**
-         * Resource must exist in project and be part of a file-based project. This operation makes the change
-         * in the filesystem; the service will react by readjusting the knowledge and sending any changes
-         * through the listening scopes. If a file is modified by an external process, the method will not *
-         * need to be called as the adjustment is consequent to the change, not the API call.
-         *
-         * @param projectName
-         * @param observationStrategiesContent
-         */
-        List<ResourceSet> updateObservationStrategies(String projectName,
-                                                      String observationStrategiesContent,
-                                                      String lockingAuthorization);
-
 
         /**
          * Apply the passed operation to the remote repository associated with a project and return whatever
@@ -508,21 +454,20 @@ public interface ResourcesService extends KlabService {
         Resource createResource(String projectName, String urnId, String adapter,
                                 Parameters<String> resourceData, Scope scope);
 
-
-        ResourceSet removeAsset(String projectName, String assetUrn);
+        List<ResourceSet> removeAsset(String projectName, String assetUrn);
 
         /**
          * @param projectName
          * @return true if operation was carried out
          */
-        ResourceSet removeProject(String projectName);
+        List<ResourceSet> removeProject(String projectName);
 
         /**
          * Remove an entire workspace and all the projects and resources in it.
          *
          * @param workspaceName
          */
-        ResourceSet removeWorkspace(String workspaceName);
+        List<ResourceSet> removeWorkspace(String workspaceName);
 
         /**
          * Return a list of all the projects available with their contents. Bound to produce a large payload.
@@ -539,8 +484,8 @@ public interface ResourcesService extends KlabService {
         Collection<String> listResourceUrns(Scope scope);
 
         /**
-         * Get the access rights for the passed resource. If the resource does not exist or is inaccessible to the
-         * scope, return empty rights.
+         * Get the access rights for the passed resource. If the resource does not exist or is inaccessible to
+         * the scope, return empty rights.
          *
          * @param resourceUrn
          * @param scope

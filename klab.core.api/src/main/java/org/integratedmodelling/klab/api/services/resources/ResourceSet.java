@@ -4,7 +4,6 @@ import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -241,6 +240,12 @@ public class ResourceSet implements Serializable {
 
     public void setObservationStrategies(List<Resource> observationStrategies) {
         this.observationStrategies = observationStrategies;
+    }
+
+    public static ResourceSet empty() {
+        var ret = new ResourceSet();
+        ret.setEmpty(true);
+        return ret;
     }
 
 }

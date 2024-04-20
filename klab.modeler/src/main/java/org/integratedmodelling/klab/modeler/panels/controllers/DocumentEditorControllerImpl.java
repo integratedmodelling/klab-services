@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.modeler.panels.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIPanelController;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -30,14 +31,14 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
             var authToken = getController().engine().serviceScope().getIdentity().getId();
             var changes = switch (getPayload()) {
                 case KimOntology ontology ->
-                        admin.updateOntology(ontology.getProjectName(), newContents, authToken);
+                        admin.updateDocument(ontology.getProjectName(), ProjectStorage.ResourceType.ONTOLOGY, newContents, authToken);
                 case KimNamespace namespace ->
-                        admin.updateNamespace(namespace.getProjectName(), newContents, authToken);
+                        admin.updateDocument(namespace.getProjectName(), ProjectStorage.ResourceType.MODEL_NAMESPACE, newContents, authToken);
                 case KimObservationStrategyDocument strategyDocument ->
-                        admin.updateObservationStrategies(strategyDocument.getProjectName(), newContents,
+                        admin.updateDocument(strategyDocument.getProjectName(), ProjectStorage.ResourceType.STRATEGY, newContents,
                                 authToken);
                 case KActorsBehavior behavior ->
-                        admin.updateBehavior(behavior.getProjectName(), newContents, authToken);
+                        admin.updateDocument(behavior.getProjectName(), ProjectStorage.ResourceType.BEHAVIOR, newContents, authToken);
                 default -> Collections.emptyList();
             };
 

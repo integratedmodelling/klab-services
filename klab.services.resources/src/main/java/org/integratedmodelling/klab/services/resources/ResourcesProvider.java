@@ -8,6 +8,8 @@ package org.integratedmodelling.klab.services.resources;
 //import org.integratedmodelling.kim.model.KimLoader;
 //import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 
+import org.integratedmodelling.common.knowledge.ProjectImpl;
+import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -21,6 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
@@ -28,19 +31,14 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-//import org.integratedmodelling.klab.api.services.Authentication;
-import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-//import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.common.knowledge.ProjectImpl;
-import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
@@ -318,51 +316,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
+
     @Override
-    public ResourceSet createNamespace(String projectName, String namespaceContent,
-                                       String lockingAuthorization) {
-        return null;
+    public List<ResourceSet> createDocument(String projectName, String documentUrn, ProjectStorage.ResourceType documentType, String lockingAuthorization) {
+        return this.workspaceManager.createDocument(projectName, documentType, documentUrn, lockingAuthorization);
     }
 
     @Override
-    public List<ResourceSet> updateNamespace(String projectName, String namespaceContent,
-                                             String lockingAuthorization) {
-        return null;
+    public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType, String content, String lockingAuthorization) {
+        return this.workspaceManager.updateDocument(projectName, documentType, content, lockingAuthorization);
     }
 
     @Override
-    public ResourceSet createBehavior(String projectName, String behaviorContent,
-                                      String lockingAuthorization) {
-        return null;
-    }
-
-    @Override
-    public List<ResourceSet> updateBehavior(String projectName, String behaviorContent,
-                                            String lockingAuthorization) {
-        return null;
-    }
-
-    @Override
-    public ResourceSet createOntology(String projectName, String ontologyContent,
-                                      String lockingAuthorization) {
-        return null;
-    }
-
-    @Override
-    public List<ResourceSet> updateOntology(String projectName, String ontologyContent,
-                                            String lockingAuthorization) {
-        return this.workspaceManager.updateOntology(projectName, ontologyContent, lockingAuthorization);
-    }
-
-    @Override
-    public List<ResourceSet> updateObservationStrategies(String projectName, String ontologyContent,
-                                                         String lockingAuthorization) {
-        return this.workspaceManager.updateObservationStrategies(projectName, ontologyContent,
-                lockingAuthorization);
-    }
-
-    @Override
-    public ResourceSet removeProject(String projectName) {
+    public List<ResourceSet> removeProject(String projectName) {
 
         updateLock.writeLock().lock();
         //
@@ -395,17 +361,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return null;
     }
 
-    //    private String getWorkspace(Project project) {
-    //        for (String ret : this.configuration.getWorkspaces().keySet()) {
-    //            if (this.configuration.getWorkspaces().get(ret).contains(project.getName())) {
-    //                return ret;
-    //            }
-    //        }
-    //        return null;
-    //    }
-
     @Override
-    public ResourceSet removeWorkspace(String workspaceName) {
+    public List<ResourceSet> removeWorkspace(String workspaceName) {
         Workspace workspace = workspaceManager.getWorkspace(workspaceName);
         for (Project project : workspace.getProjects()) {
             removeProject(project.getUrn());
@@ -676,7 +633,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     //    }
 
     @Override
-    public ResourceSet removeAsset(String projectName, String assetUrn) {
+    public List<ResourceSet> removeAsset(String projectName, String assetUrn) {
         return null;
     }
 
