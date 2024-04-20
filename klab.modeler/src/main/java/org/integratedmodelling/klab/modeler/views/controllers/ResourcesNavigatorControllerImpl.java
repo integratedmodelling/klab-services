@@ -170,7 +170,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     @Override
     public void removeAsset(NavigableAsset asset) {
-
+        System.out.println("IMPLEMENT ME: remove asset " + asset);
     }
 
     @Override

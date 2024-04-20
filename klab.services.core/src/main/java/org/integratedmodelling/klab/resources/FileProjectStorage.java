@@ -7,6 +7,7 @@ import org.eclipse.jgit.lib.Ref;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.collections.impl.RepositoryImpl;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -104,8 +105,7 @@ public class FileProjectStorage implements ProjectStorage {
 
     @FunctionalInterface
     public interface ChangeNotifier {
-        void apply(String projectName, ProjectStorage.ResourceType resourceType, CRUDOperation changeType,
-                   URL newContent);
+        void apply(String projectName, List<Triple<ResourceType, CRUDOperation, URL>> changes);
     }
 
     private FileWatcher watcher;
@@ -141,7 +141,8 @@ public class FileProjectStorage implements ProjectStorage {
 
                 if (operation != null && type != null && !locked.get()) {
                     try {
-                        notifier.apply(projectName, type, operation, changedFile.toURI().toURL());
+                        notifier.apply(projectName, List.of(Triple.of(type, operation,
+                                changedFile.toURI().toURL())));
                     } catch (MalformedURLException e) {
                         throw new KlabIOException(e);
                     }

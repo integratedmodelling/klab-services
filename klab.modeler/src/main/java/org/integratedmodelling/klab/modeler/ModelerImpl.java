@@ -118,11 +118,15 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting, engine().serviceScope());
+                var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting,
+                        engine().serviceScope());
                 if (ret != null && !ret.isEmpty()) {
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }
             });
+        }  else if (getUI() != null) {
+            getUI().alert(Notification.create("Service does not support this operation",
+                    Notification.Level.Warning));
         }
 
     }
@@ -145,6 +149,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }
             });
+        }  else if (getUI() != null) {
+            getUI().alert(Notification.create("Service does not support this operation",
+                    Notification.Level.Warning));
         }
     }
 
@@ -167,6 +174,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }
             });
+        } else if (getUI() != null) {
+            getUI().alert(Notification.create("Service does not support this operation",
+                    Notification.Level.Warning));
         }
 
     }
@@ -183,6 +193,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }
             });
+        } else if (getUI() != null) {
+            getUI().alert(Notification.create("Service does not support this operation",
+                    Notification.Level.Warning));
         }
     }
 
