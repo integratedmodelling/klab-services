@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
 import org.integratedmodelling.klab.api.data.Repository;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
@@ -62,5 +62,5 @@ public interface Modeler extends UIController {
     void editProperties(String projectId);
 
     @UIActionHandler(UIReactor.UIAction.CreateAsset)
-    void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType);
+    void createDocument(String newDocumentUrn, String projectName, ProjectStorage.ResourceType documentType);
 }

@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 
 public abstract class KlabDocumentImpl<T extends Statement> implements KlabDocument<T> {
+
     private String urn;
     private Version version;
     private Metadata metadata = Metadata.create();

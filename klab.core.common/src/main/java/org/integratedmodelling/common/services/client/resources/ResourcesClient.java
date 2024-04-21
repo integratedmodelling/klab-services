@@ -125,7 +125,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KimObservable resolveObservable(String definition) {
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_OBSERVABLE, KimObservable.class, "definition",
+                definition);
     }
 
     @Override
@@ -135,8 +136,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KimConcept resolveConcept(String definition) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_CONCEPT, KimConcept.class, "definition", definition);
     }
 
     @Override
@@ -217,7 +217,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting, Scope scope) {
+    public ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
+                                     Scope scope) {
         ProjectRequest request = new ProjectRequest();
         request.setWorkspaceName(workspaceName);
         request.setProjectUrl(projectUrl);
@@ -232,17 +233,20 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
-                                 String lockingAuthorization) {
+                                     String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public List<ResourceSet> createDocument(String projectName, String documentUrn, ProjectStorage.ResourceType documentType, String lockingAuthorization) {
+    public List<ResourceSet> createDocument(String projectName, String documentUrn,
+                                            ProjectStorage.ResourceType documentType,
+                                            String lockingAuthorization) {
         return List.of();
     }
 
     @Override
-    public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType, String content, String lockingAuthorization) {
+    public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
+                                            String content, String lockingAuthorization) {
         return List.of();
     }
 
@@ -277,17 +281,18 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public List<ResourceSet> removeAsset(String projectName, String assetUrn) {
+    public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
+                                            String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public List<ResourceSet> removeProject(String projectName) {
+    public List<ResourceSet> deleteProject(String projectName, String lockingAuthorization) {
         return null;
     }
 
     @Override
-    public List<ResourceSet> removeWorkspace(String workspaceName) {
+    public List<ResourceSet> deleteWorkspace(String workspaceName) {
         return null;
     }
 
@@ -313,7 +318,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn", resourceUrn);
+        return client.get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn",
+                resourceUrn);
     }
 
     @Override

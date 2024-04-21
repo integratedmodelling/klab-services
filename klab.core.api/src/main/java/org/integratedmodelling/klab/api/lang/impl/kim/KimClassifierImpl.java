@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import java.io.Serial;
 import java.util.ArrayList;
 
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
@@ -18,7 +19,9 @@ import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
  */
 public class KimClassifierImpl /*extends KimStatementImpl*/ implements KimClassifier {
 
+    @Serial
     private static final long serialVersionUID = 8284840092691497201L;
+
     private boolean catchAll;
     private boolean catchAnything;
     private boolean negated;

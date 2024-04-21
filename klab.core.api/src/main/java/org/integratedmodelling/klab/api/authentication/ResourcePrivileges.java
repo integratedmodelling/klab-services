@@ -189,18 +189,29 @@ public class ResourcePrivileges implements Serializable {
         if (isPublic)
             buffer.append("*");
         for (String group : allowedGroups) {
-            buffer.append((buffer.length() == 0 ? "" : ",") + group);
+            buffer.append(buffer.isEmpty() ? "" : ",").append(group);
         }
         for (String user : allowedUsers) {
-            buffer.append((buffer.length() == 0 ? "" : ",") + user);
+            buffer.append(buffer.isEmpty() ? "" : ",").append(user);
         }
         for (String group : excludedGroups) {
-            buffer.append((buffer.length() == 0 ? "" : ",") + "!" + group);
+            buffer.append(buffer.isEmpty() ? "" : ",").append("!").append(group);
         }
         for (String user : excludedUsers) {
-            buffer.append((buffer.length() == 0 ? "" : ",") + "!" + user);
+            buffer.append(buffer.isEmpty() ? "" : ",").append("!").append(user);
         }
         return buffer.toString();
     }
 
+    /**
+     * This is returned by the API and should only show the privileges that are not beyond the passed scope's
+     * pay grade.
+     *
+     * @param scope
+     * @return
+     */
+    public ResourcePrivileges asSeenByScope(Scope scope) {
+        // TODO filter privileges to those visible by the scope
+        return this;
+    }
 }

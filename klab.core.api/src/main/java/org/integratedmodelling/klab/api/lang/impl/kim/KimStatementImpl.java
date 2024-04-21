@@ -19,6 +19,7 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
 
     @Serial
     private static final long serialVersionUID = -7273214821906819558L;
+
     private int offsetInDocument;
     private int length;
     private List<Annotation> annotations = new ArrayList<>();

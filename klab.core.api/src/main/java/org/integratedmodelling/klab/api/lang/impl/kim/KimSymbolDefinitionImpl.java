@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 
+import java.io.Serial;
+
 /**
  * The syntactic peer of a k.IM 'define' statement.
  * 
@@ -11,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
  */
 public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymbolDefinition {
 
+    @Serial
     private static final long serialVersionUID = -3605295215543099841L;
 
     private String urn;

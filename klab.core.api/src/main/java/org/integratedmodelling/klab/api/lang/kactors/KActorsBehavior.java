@@ -83,7 +83,7 @@ public interface KActorsBehavior extends KlabDocument<KActorsAction> {
      *
      * @author Ferd
      */
-    public interface Ref extends Serializable {
+    interface Ref extends Serializable {
 
         /**
          * Empty may mean that the response is null or that some agreed no-op value was set, according to

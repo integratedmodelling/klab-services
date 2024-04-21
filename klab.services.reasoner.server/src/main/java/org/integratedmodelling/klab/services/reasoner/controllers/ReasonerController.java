@@ -35,7 +35,7 @@ public class ReasonerController {
      * @return
      */
     @GetMapping(ServicesAPI.REASONER.RESOLVE_CONCEPT)
-    public @ResponseBody Concept resolveConcept(@PathVariable String definition) {
+    public @ResponseBody Concept resolveConcept(@PathVariable("definition") String definition) {
         return reasoner.klabService().resolveConcept(definition);
     }
 
@@ -46,7 +46,7 @@ public class ReasonerController {
      * @return
      */
     @GetMapping(ServicesAPI.REASONER.RESOLVE_OBSERVABLE)
-    public @ResponseBody Observable resolveObservable(@PathVariable String definition) {
+    public @ResponseBody Observable resolveObservable(@PathVariable("definition") String definition) {
         return reasoner.klabService().resolveObservable(definition);
     }
 

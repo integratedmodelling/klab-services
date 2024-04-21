@@ -3,11 +3,13 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstance {
 
+    @Serial
     private static final long serialVersionUID = -2269601151635547580L;
 
     private String urn;

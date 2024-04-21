@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.springframework.web.util.UriUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,6 +34,7 @@ import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
@@ -122,14 +124,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     if (scope != null) {
                         scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
                     } else {
-//                        e.printStackTrace();
+                        //                        e.printStackTrace();
                     }
                 }
 
                 return null;
             }
 
-            public <T> List<T>  postCollection(String apiRequest, Object payload, Class<T> resultClass, Object... parameters) {
+            public <T> List<T> postCollection(String apiRequest, Object payload, Class<T> resultClass,
+                                              Object... parameters) {
 
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
@@ -195,7 +198,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 for (String key : parameters.keySet()) {
                     var subst = "{" + key + "}";
                     if (request.contains(subst)) {
-                        ret = ret.replace(subst, parameters.get(key).toString());
+                        ret = ret.replace(subst, UriUtils.encodeQueryParam(parameters.get(key).toString(),
+                                StandardCharsets.UTF_8));
                         toRemove.add(key);
                     }
                 }
@@ -206,7 +210,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private String encodeParameters(Map<String, Object> parameters) {
                 StringBuilder ret = new StringBuilder();
                 for (var k : parameters.keySet()) {
-                    ret.append((ret.isEmpty()) ? "?" : "&").append(k).append("=").append(parameters.get(k));
+                    ret.append((ret.isEmpty()) ? "?" : "&").append(k).append("=")
+                       .append(UriUtils.encodeQueryParam(parameters.get(k).toString(), StandardCharsets.UTF_8));
                 }
                 return ret.toString();
             }
@@ -228,7 +233,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             continue;
                         }
                         if (i == parameters.length - 1) {
-                            throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched keys in " +
+                            throw new KlabIllegalArgumentException("Utils.Maps.makeKeyMap: unmatched keys " +
+                                    "in " +
                                     "argument list");
                         }
                         ret.put(parameters[i].toString(), parameters[++i]);
@@ -273,7 +279,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     if (scope != null) {
                         scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
                     } else {
-//                        e.printStackTrace();
+                        //                        e.printStackTrace();
                     }
 
                 }
@@ -304,7 +310,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     if (scope != null) {
                         scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
                     } else {
-//                        e.printStackTrace();
+                        //                        e.printStackTrace();
                     }
 
                 }
@@ -333,7 +339,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
                     }
 
-                    var response = client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.discarding());
+                    var response =
+                            client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.discarding());
 
                     if (response != null && response.statusCode() == 200) {
                         return true;
@@ -343,7 +350,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     if (scope != null) {
                         scope.error(e, options.silent ? Notification.Mode.Silent : Notification.Mode.Normal);
                     } else {
-//                        e.printStackTrace();
+                        //                        e.printStackTrace();
                     }
 
                 }
@@ -1657,16 +1664,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
 
     /**
-     * A catalog (simply a map String -> T) read from a JSON file and capable of
-     * resynchronizing intelligently on request.
+     * A catalog (simply a map String -> T) read from a JSON file and capable of resynchronizing intelligently
+     * on request.
      * <p>
-     * Any put/remove operations won't sync the contents to the backing file unless
-     * setSynchronization(true) is called first. Otherwise synchronize the file
-     * manually by calling write() when necessary.
+     * Any put/remove operations won't sync the contents to the backing file unless setSynchronization(true)
+     * is called first. Otherwise synchronize the file manually by calling write() when necessary.
      *
+     * @param <T> the type of the resource in the catalog
      * @author ferdinando.villa
      * @version $Id: $Id
-     * @param <T> the type of the resource in the catalog
      */
     public static class FileCatalog<T> extends LinkedHashMap<String, T> {
 
@@ -1681,12 +1687,12 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          *
          * @param <T>                 the main type for the collection
          * @param url                 the URL containing the JSON data catalog
-         * @param interfaceClass      the type of the interface returned (or the
-         *                            implementation type itself)
+         * @param interfaceClass      the type of the interface returned (or the implementation type itself)
          * @param implementationClass the class implementing the interface
          * @return a new URL-based catalog
          */
-        public static <T> FileCatalog<T> create(URL url, Class<T> interfaceClass, Class<? extends T> implementationClass) {
+        public static <T> FileCatalog<T> create(URL url, Class<T> interfaceClass,
+                                                Class<? extends T> implementationClass) {
             return new FileCatalog<T>(url, interfaceClass, implementationClass);
         }
 
@@ -1707,8 +1713,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          *
          * @param <T>                 the interface type
          * @param file                the containing the JSON data catalog
-         * @param interfaceClass      the type of the interface returned (or the
-         *                            implementation type itself)
+         * @param interfaceClass      the type of the interface returned (or the implementation type itself)
          * @param implementationClass the class implementing the interface
          * @return a new file-based catalog
          */
@@ -1833,8 +1838,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
          *
          * @param stream the stream
          * @return true if no errors. Non-existing file is not an error.
-         * @throws java.lang.ClassCastException if the data read are not of the type
-         *                                      configured
+         * @throws java.lang.ClassCastException if the data read are not of the type configured
          */
         public boolean synchronize(InputStream stream) {
 
@@ -1848,13 +1852,15 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
                 try {
-                    JavaType type = objectMapper.getTypeFactory().constructMapLikeType(Map.class, String.class, cls);
+                    JavaType type = objectMapper.getTypeFactory().constructMapLikeType(Map.class,
+                            String.class, cls);
                     Map<Object, T> data = objectMapper.reader(type).readValue(stream);
                     clear();
                     for (Object key : data.keySet()) {
                         put(key.toString(), (T) data.get(key));
                     }
-                    this.timestamp = this.file == null ? System.currentTimeMillis() : this.file.lastModified();
+                    this.timestamp = this.file == null ? System.currentTimeMillis() :
+                                     this.file.lastModified();
                 } catch (IOException e) {
                     ret = false;
                 }
@@ -1865,8 +1871,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
         }
 
         /**
-         * Write the map to the backing file. Call after making changes to the
-         * underlying map.
+         * Write the map to the backing file. Call after making changes to the underlying map.
          *
          * @throws IllegalStateException if the catalog was read from a URL.
          */

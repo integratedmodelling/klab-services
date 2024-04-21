@@ -5,11 +5,13 @@ import org.integratedmodelling.klab.api.lang.kim.KimClassifier;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimTable;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTable {
 
+    @Serial
     private static final long serialVersionUID = 1081054386576296191L;
 
     private Type lookupType;

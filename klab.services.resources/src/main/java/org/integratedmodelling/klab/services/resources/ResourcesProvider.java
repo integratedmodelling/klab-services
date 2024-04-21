@@ -318,17 +318,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
 
     @Override
-    public List<ResourceSet> createDocument(String projectName, String documentUrn, ProjectStorage.ResourceType documentType, String lockingAuthorization) {
-        return this.workspaceManager.createDocument(projectName, documentType, documentUrn, lockingAuthorization);
+    public List<ResourceSet> createDocument(String projectName, String documentUrn,
+                                            ProjectStorage.ResourceType documentType,
+                                            String lockingAuthorization) {
+        return this.workspaceManager.createDocument(projectName, documentType, documentUrn,
+                lockingAuthorization);
     }
 
     @Override
-    public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType, String content, String lockingAuthorization) {
+    public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
+                                            String content, String lockingAuthorization) {
         return this.workspaceManager.updateDocument(projectName, documentType, content, lockingAuthorization);
     }
 
     @Override
-    public List<ResourceSet> removeProject(String projectName) {
+    public List<ResourceSet> deleteProject(String projectName, String lockingAuthorization) {
 
         updateLock.writeLock().lock();
         //
@@ -362,10 +366,10 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public List<ResourceSet> removeWorkspace(String workspaceName) {
+    public List<ResourceSet> deleteWorkspace(String workspaceName) {
         Workspace workspace = workspaceManager.getWorkspace(workspaceName);
         for (Project project : workspace.getProjects()) {
-            removeProject(project.getUrn());
+            deleteProject(project.getUrn(), scope.getIdentity().getId());
         }
         //        try {
         //            updateLock.writeLock().lock();
@@ -633,7 +637,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     //    }
 
     @Override
-    public List<ResourceSet> removeAsset(String projectName, String assetUrn) {
+    public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
+                                            String lockingAuthorization) {
         return null;
     }
 
@@ -809,14 +814,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
 
         var status = catalog.get(resourceUrn);
-        if (status != null && status.getPrivileges().checkAuthorization(scope)) {
-            return status.getPrivileges();
+        if (status != null) {
+            return status.getPrivileges().asSeenByScope(scope);
         }
         return ResourcePrivileges.empty();
     }
 
     @Override
     public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+        var status = catalog.get(resourceUrn);
+        if (status != null) {
+            status.setPrivileges(resourcePrivileges);
+            catalog.put(resourceUrn, status);
+            db.commit();
+            return true;
+        }
         return false;
     }
 

@@ -11,11 +11,14 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
+import java.io.Serial;
 import java.util.*;
 
 public class KimObservableImpl extends KimStatementImpl implements KimObservable {
 
+	@Serial
 	private static final long serialVersionUID = -727467882879783393L;
+
 	private KimConcept semantics;
 	private NumericRangeImpl range;
 	private String unit;

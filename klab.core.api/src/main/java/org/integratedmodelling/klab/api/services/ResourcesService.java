@@ -454,20 +454,28 @@ public interface ResourcesService extends KlabService {
         Resource createResource(String projectName, String urnId, String adapter,
                                 Parameters<String> resourceData, Scope scope);
 
-        List<ResourceSet> removeAsset(String projectName, String assetUrn);
+        /**
+         * Remove a document in a project. May be a resource when it's exclusive to the project.
+         * @param projectName
+         * @param assetUrn
+         * @param lockingAuthorization
+         * @return
+         */
+        List<ResourceSet> deleteDocument(String projectName, String assetUrn, String lockingAuthorization);
 
         /**
          * @param projectName
+         * @param lockingAuthorization
          * @return true if operation was carried out
          */
-        List<ResourceSet> removeProject(String projectName);
+        List<ResourceSet> deleteProject(String projectName, String lockingAuthorization);
 
         /**
          * Remove an entire workspace and all the projects and resources in it.
          *
          * @param workspaceName
          */
-        List<ResourceSet> removeWorkspace(String workspaceName);
+        List<ResourceSet> deleteWorkspace(String workspaceName);
 
         /**
          * Return a list of all the projects available with their contents. Bound to produce a large payload.

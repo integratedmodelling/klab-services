@@ -3,11 +3,13 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ActionImpl extends KimStatementImpl implements Action {
 
+    @Serial
     private static final long serialVersionUID = -6208591665170784114L;
 
     private Type type;

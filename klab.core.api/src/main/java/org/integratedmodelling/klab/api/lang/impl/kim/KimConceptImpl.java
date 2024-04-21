@@ -5,10 +5,12 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 
+import java.io.Serial;
 import java.util.*;
 
 public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 
+    @Serial
     private static final long serialVersionUID = 8531431719010407385L;
 
     private SemanticRole semanticRole;

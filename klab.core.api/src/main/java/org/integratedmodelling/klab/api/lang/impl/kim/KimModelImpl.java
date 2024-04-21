@@ -8,12 +8,15 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 
+	@Serial
 	private static final long serialVersionUID = -6068429551009652469L;
+
 	private KimConcept reinterpretingRole;
 	private List<KimObservable> dependencies = new ArrayList<>();
 	private List<KimObservable> observables = new ArrayList<>();

@@ -11,7 +11,6 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
-import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -21,7 +20,6 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.net.URI;
 
 @Command(name = "resources", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, list, access and manipulate resources.", ""}, subcommands =
@@ -52,12 +50,12 @@ public class Resources {
         @Parameters(description = "The URN of the resource that we inquire or assign rights for")
         private String urn;
 
-        @Option(names = {"-g", "--groups"}, defaultValue = Parameters.NULL_VALUE, description = { "Comma" +
-                "-separated list of groups to set", "Use a +/- sign in front to define access type (+ is default)"})
+        @Option(names = {"-g", "--groups"}, defaultValue = Parameters.NULL_VALUE, description = {"Comma" +
+                                                                                                         "-separated list of groups to set", "Use a +/- sign in front to define access type (+ is default)"})
         private java.util.List<String> groups;
 
-        @Option(names = {"-u", "--users"}, defaultValue = Parameters.NULL_VALUE, description = { "Comma" +
-                "-separated list of users to set", "Use a +/- sign in front to define access type (+ is default)"})
+        @Option(names = {"-u", "--users"}, defaultValue = Parameters.NULL_VALUE, description = {"Comma" +
+                                                                                                        "-separated list of users to set", "Use a +/- sign in front to define access type (+ is default)"})
         private java.util.List<String> users;
 
         @Override
@@ -321,7 +319,8 @@ public class Resources {
         public void listResources() {
             var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
             if (service instanceof ResourcesService.Admin) {
-                for (var urn : ((ResourcesService.Admin) service).listResourceUrns(KlabCLI.INSTANCE.engine().serviceScope())) {
+                for (var urn :
+                        ((ResourcesService.Admin) service).listResourceUrns(KlabCLI.INSTANCE.engine().serviceScope())) {
                     System.out.println("   " + urn);
                 }
             }
@@ -379,7 +378,7 @@ public class Resources {
             public void run() {
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
-                    ((ResourcesService.Admin) service).removeWorkspace(workspace);
+                    ((ResourcesService.Admin) service).deleteWorkspace(workspace);
                 }
             }
         }
@@ -419,7 +418,8 @@ public class Resources {
 
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
-                    for (var project : ((ResourcesService.Admin) service).listProjects(KlabCLI.INSTANCE.engine().serviceScope())) {
+                    for (var project :
+                            ((ResourcesService.Admin) service).listProjects(KlabCLI.INSTANCE.engine().serviceScope())) {
                         out.println("   " + project.getUrn());
                         if (verbose) {
 
@@ -502,23 +502,29 @@ public class Resources {
 
                 KlabCLI.INSTANCE.modeler().importProject(workspace, projectUrl, force);
 
-//                try {
-//                    var url = new File(projectUrl).isDirectory() ? new File(projectUrl).toURI().toURL() :
-//                              new URI(projectUrl).toURL();
-//                    var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-//                    if (service instanceof ResourcesService.Admin admin) {
-//                        if (admin.importProject(workspace, url.toString(), false).isEmpty()) {
-//                            System.out.println("project " + projectUrl + " was present or in error, not " + "added");
-//                        } else {
-//                            System.out.println("project " + projectUrl + " added to workspace " + workspace);
-//                        }
-//                    } else {
-//                        System.out.println("service " + this.service + " does not have admin permissions " +
-//                                "in" + " this scope");
-//                    }
-//                } catch (Exception e) {
-//                    System.err.println("Invalid project URL entered");
-//                }
+                //                try {
+                //                    var url = new File(projectUrl).isDirectory() ? new File(projectUrl)
+                //                    .toURI().toURL() :
+                //                              new URI(projectUrl).toURL();
+                //                    var service = KlabCLI.INSTANCE.service(this.service, ResourcesService
+                //                    .class);
+                //                    if (service instanceof ResourcesService.Admin admin) {
+                //                        if (admin.importProject(workspace, url.toString(), false).isEmpty
+                //                        ()) {
+                //                            System.out.println("project " + projectUrl + " was present or
+                //                            in error, not " + "added");
+                //                        } else {
+                //                            System.out.println("project " + projectUrl + " added to
+                //                            workspace " + workspace);
+                //                        }
+                //                    } else {
+                //                        System.out.println("service " + this.service + " does not have
+                //                        admin permissions " +
+                //                                "in" + " this scope");
+                //                    }
+                //                } catch (Exception e) {
+                //                    System.err.println("Invalid project URL entered");
+                //                }
             }
         }
 
@@ -538,7 +544,8 @@ public class Resources {
             public void run() {
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
-                    ((ResourcesService.Admin) service).removeProject(project);
+                    ((ResourcesService.Admin) service).deleteProject(project,
+                            KlabCLI.INSTANCE.engine().serviceScope().getIdentity().getId());
                 }
             }
         }

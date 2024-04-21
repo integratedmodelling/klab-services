@@ -3,11 +3,13 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 import org.integratedmodelling.klab.api.lang.kim.KimClassifier;
 import org.integratedmodelling.klab.api.lang.kim.KimTable;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 public class KimTableImpl extends KimStatementImpl implements KimTable {
 
+    @Serial
     private static final long serialVersionUID = -8528877830924327222L;
 
     private List<String> headers = new ArrayList<>();

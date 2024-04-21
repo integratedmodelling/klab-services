@@ -28,7 +28,6 @@ public interface ServicesAPI {
     interface SCOPE {
 
         String REGISTER = "/scope/register/{scopeType}/{scopeId}";
-
         String DISPOSE = "/scope/dispose/{scopeId}";
 
     }

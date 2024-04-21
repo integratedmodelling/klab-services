@@ -19,6 +19,7 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
 
     @Serial
     private static final long serialVersionUID = 6198296119075476515L;
+
     private Set<String> disjointNamespaces = new HashSet<>();
     private List<PairImpl<String, String>> owlImports = new ArrayList<>();
     private List<PairImpl<String, List<String>>> vocabularyImports = new ArrayList<>();

@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Set;
 
 public class KimConceptStatementImpl extends KimStatementImpl implements KimConceptStatement {
 
+    @Serial
     private static final long serialVersionUID = 2640057106561346868L;
 
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);

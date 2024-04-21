@@ -22,6 +22,7 @@ public class KimBehaviorImpl extends KlabDocumentImpl<Action> implements KimBeha
 
     @Serial
     private static final long serialVersionUID = 2701074196387350255L;
+
     private List<Action> actions = new ArrayList<>();
     private boolean empty;
     private boolean dynamic;

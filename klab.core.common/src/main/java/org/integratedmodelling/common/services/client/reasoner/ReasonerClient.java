@@ -41,7 +41,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         super(Type.REASONER, identity, services);
     }
 
-    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
+    public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
+            Message>... listeners) {
         super(Type.REASONER, url, identity, services, listeners);
     }
 
@@ -56,14 +57,12 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Concept resolveConcept(String definition) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.REASONER.RESOLVE_CONCEPT, Concept.class, "definition", definition);
     }
 
     @Override
     public Observable resolveObservable(String definition) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, Observable.class, "definition", definition);
     }
 
     @Override

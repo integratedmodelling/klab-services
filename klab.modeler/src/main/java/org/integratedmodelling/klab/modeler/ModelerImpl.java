@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -31,9 +31,9 @@ import java.io.File;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
- * k.Modeler application. Uses an {@link EngineClient}
- * which will connect to local services if available. Also handles one or more users and keeps a catalog of
- * sessions and contexts, tagging the "current" one in focus in the UI.
+ * k.Modeler application. Uses an {@link EngineClient} which will connect to local services if available. Also
+ * handles one or more users and keeps a catalog of sessions and contexts, tagging the "current" one in focus
+ * in the UI.
  * <p>
  * Call {@link #boot()} in a separate thread when the view is initialized and let the UI events do the rest.
  */
@@ -123,7 +123,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }
             });
-        }  else if (getUI() != null) {
+        } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",
                     Notification.Level.Warning));
         }
@@ -143,12 +143,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-                var ret = admin.removeProject(projectUrl);
+                var ret = admin.deleteProject(projectUrl, scope().getIdentity().getId());
                 if (ret != null && !ret.isEmpty()) {
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }
             });
-        }  else if (getUI() != null) {
+        } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",
                     Notification.Level.Warning));
         }
@@ -168,7 +168,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
                 var project = asset.parent(NavigableProject.class);
-                var ret = admin.removeAsset(project.getUrn(), asset.getUrn());
+                var ret = admin.deleteDocument(project.getUrn(), asset.getUrn(), scope().getIdentity().getId());
                 if (ret != null && !ret.isEmpty()) {
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }
@@ -204,24 +204,18 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     @Override
-    public void createAsset(String urn, NavigableAsset parentAsset, KlabAsset.KnowledgeClass assetType) {
+    public void createDocument(String newDocumentUrn, String projectName,
+                               ProjectStorage.ResourceType documentType) {
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-//                var ret = switch (assetType) {
-//                    case NAMESPACE -> admin.createDocument();
-//                    case BEHAVIOR -> admin.crea;
-//                    case SCRIPT -> null;
-//                    case TESTCASE -> null;
-//                    case APPLICATION -> null;
-//                    case ONTOLOGY -> null;
-//                    case OBSERVATION_STRATEGY_DOCUMENT -> null;
-//                    case PROJECT -> null;
-//                    default -> throw new KlabIllegalStateException("Cannot create asset of type " + assetType);
-//                };
-//                if (ret != null && !ret.isEmpty()) {
-//                    dispatch(this, UIEvent.WorkspaceModified, ret);
-//                }
+                var changes = admin.createDocument(projectName, newDocumentUrn, documentType,
+                        scope().getIdentity().getId());
+                if (changes != null) {
+                    for (var change : changes) {
+                        dispatch(this, UIEvent.WorkspaceModified, change);
+                    }
+                }
             });
         } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",

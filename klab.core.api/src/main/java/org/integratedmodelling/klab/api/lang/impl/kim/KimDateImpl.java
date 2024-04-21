@@ -2,8 +2,11 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.lang.kim.KimDate;
 
+import java.io.Serial;
+
 public class KimDateImpl implements KimDate {
 
+    @Serial
     private static final long serialVersionUID = 7509585197877357307L;
     
     private int ms;

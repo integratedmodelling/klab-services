@@ -15,7 +15,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
  */
 public interface KActorsStatement extends KActorsCodeStatement {
 
-    public enum Type {
+    enum Type {
         ACTION_CALL,
         IF_STATEMENT,
         FOR_STATEMENT,
@@ -33,7 +33,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
         BREAK_STATEMENT
     }
 
-    public interface If extends KActorsStatement {
+    interface If extends KActorsStatement {
 
         KActorsValue getCondition();
 
@@ -50,12 +50,12 @@ public interface KActorsStatement extends KActorsCodeStatement {
      *
      * @author mario
      */
-    public interface Arguments extends Parameters<String> {
+    interface Arguments extends Parameters<String> {
 
         List<String> getMetadataKeys();
     }
 
-    public interface ConcurrentGroup extends KActorsStatement {
+    interface ConcurrentGroup extends KActorsStatement {
 
         public List<KActorsStatement> getStatements();
 
@@ -71,13 +71,13 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     }
 
-    public interface Sequence extends KActorsStatement {
+    interface Sequence extends KActorsStatement {
 
         public List<KActorsStatement> getStatements();
 
     }
 
-    public interface While extends KActorsStatement {
+    interface While extends KActorsStatement {
 
         KActorsValue getCondition();
 
@@ -85,7 +85,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     }
 
-    public interface Do extends KActorsStatement {
+    interface Do extends KActorsStatement {
 
         KActorsValue getCondition();
 
@@ -93,11 +93,11 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     }
 
-    public interface Fail extends KActorsStatement {
+    interface Fail extends KActorsStatement {
         String getMessage();
     }
 
-    public interface Break extends KActorsStatement {
+    interface Break extends KActorsStatement {
 
     }
 
@@ -106,14 +106,14 @@ public interface KActorsStatement extends KActorsCodeStatement {
      *
      * @author Ferd
      */
-    public interface Assert extends KActorsStatement {
+    interface Assert extends KActorsStatement {
 
         /**
          * Assertions are a chain of calls or an expression with an optional comparison value.
          *
          * @author Ferd
          */
-        public interface Assertion extends KActorsStatement {
+        interface Assertion extends KActorsStatement {
 
             /**
              * Call chain whose final result will be compared with the value.
@@ -160,7 +160,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
      *
      * @author Ferd
      */
-    public interface For extends KActorsStatement {
+    interface For extends KActorsStatement {
 
         String getVariable();
 
@@ -170,7 +170,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     }
 
-    public interface Assignment extends KActorsStatement {
+    interface Assignment extends KActorsStatement {
 
         public enum Scope {
             ACTOR,
@@ -211,19 +211,19 @@ public interface KActorsStatement extends KActorsCodeStatement {
         Scope getAssignmentScope();
     }
 
-    public interface FireValue extends KActorsStatement {
+    interface FireValue extends KActorsStatement {
 
         KActorsValue getValue();
 
     }
 
-    public interface TextBlock extends KActorsStatement {
+    interface TextBlock extends KActorsStatement {
 
         String getText();
 
     }
 
-    public interface Instantiation extends KActorsStatement {
+    interface Instantiation extends KActorsStatement {
 
         /**
          * The behavior for the new actor
@@ -262,7 +262,7 @@ public interface KActorsStatement extends KActorsCodeStatement {
 
     }
 
-    public interface Call extends KActorsStatement {
+    interface Call extends KActorsStatement {
 
         /**
          * @return

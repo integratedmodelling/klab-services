@@ -120,9 +120,9 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT)
-    public List<ResourceSet> removeProject(@RequestParam("projectName") String projectName) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            admin.removeProject(projectName);
+    public List<ResourceSet> removeProject(@RequestParam("projectName") String projectName, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            admin.deleteProject(projectName, auth.getToken());
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -130,7 +130,7 @@ public class ResourceAdminController {
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_WORKSPACE)
     public List<ResourceSet> removeWorkspace(@RequestParam("workspaceName") String workspaceName) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            admin.removeWorkspace(workspaceName);
+            admin.deleteWorkspace(workspaceName);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
