@@ -265,8 +265,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Concept compresent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.COMPRESENT, concept.asConcept(), Concept.class);
     }
 
     @Override
