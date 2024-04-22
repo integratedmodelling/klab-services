@@ -29,7 +29,7 @@ public class Reasoner {
 
     @Command(name = "parents", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "List the asserted parent hierarchy of a concept."}, subcommands = {})
-    public static class Parents {
+    public static class Parents implements Runnable {
 
         @Spec
         CommandSpec commandSpec;
@@ -37,7 +37,7 @@ public class Reasoner {
         @Parameters
         java.util.List<String> observables;
 
-        //        @Override
+        @Override
         public void run() {
 
             PrintWriter out = commandSpec.commandLine().getOut();

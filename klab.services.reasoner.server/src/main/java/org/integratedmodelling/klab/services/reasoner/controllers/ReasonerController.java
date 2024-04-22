@@ -215,22 +215,22 @@ public class ReasonerController {
     }
 
     @PostMapping(ServicesAPI.REASONER.TRAITS)
-    public Collection<Concept> traits(@RequestBody Concept concept, @RequestParam(defaultValue = "false") boolean direct) {
+    public Collection<Concept> traits(@RequestBody Concept concept, @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directTraits(concept) : reasoner.klabService().traits(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.IDENTITIES)
-    public Collection<Concept> identities(@RequestBody Concept concept, @RequestParam(defaultValue = "false") boolean direct) {
+    public Collection<Concept> identities(@RequestBody Concept concept, @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directIdentities(concept) : reasoner.klabService().identities(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.ATTRIBUTES)
-    public Collection<Concept> attributes(@RequestBody Concept concept, @RequestParam(defaultValue = "false") boolean direct) {
+    public Collection<Concept> attributes(@RequestBody Concept concept, @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directAttributes(concept) : reasoner.klabService().attributes(concept);
     }
 
     @PostMapping(ServicesAPI.REASONER.REALMS)
-    public Collection<Concept> realms(@RequestBody Concept concept, @RequestParam(defaultValue = "false") boolean direct) {
+    public Collection<Concept> realms(@RequestBody Concept concept, @RequestParam(name="direct", defaultValue = "false") boolean direct) {
         return direct ? reasoner.klabService().directRealms(concept) : reasoner.klabService().realms(concept);
     }
 

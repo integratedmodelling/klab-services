@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.reasoner;
 
+import com.google.common.collect.Lists;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -31,7 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+/**
+ * TODO the reasoner client should cache a configurable amount of info so to minimize the likely frequent
+ * back-and-forth with the server. Best candidates are the RESOLVE/DECLARE endpoints and the COMPATIBLE
+ * ones. We could also compile full info at x-level inheritance about each concept/observable and cache
+ * that instead of asking for frequent atomic ops, maybe even based on frequency and/or memory available to
+ * the client.
+ */
 public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.Admin {
+
 
     public ReasonerClient() {
         super(Type.REASONER);
@@ -62,7 +71,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Observable resolveObservable(String definition) {
-        return client.get(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, Observable.class, "definition", definition);
+        return client.get(ServicesAPI.REASONER.RESOLVE_OBSERVABLE, Observable.class, "definition",
+                definition);
     }
 
     @Override
@@ -79,26 +89,23 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public boolean subsumes(Semantics conceptImpl, Semantics other) {
-        // TODO Auto-generated method stub
-        return false;
+        return client.post(ServicesAPI.REASONER.SUBSUMES, List.of(conceptImpl.asConcept(),
+                other.asConcept()), Boolean.class);
     }
 
     @Override
     public Collection<Concept> operands(Semantics target) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.OPERANDS, target.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> children(Semantics target) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.CHILDREN, target.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> parents(Semantics target) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.PARENTS, target.asConcept(), Concept.class);
     }
 
     @Override
@@ -108,9 +115,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public Concept parent(Semantics c) {
-        // TODO Auto-generated method stub
-        return null;
+    public Concept parent(Semantics target) {
+        return client.post(ServicesAPI.REASONER.PARENTS, target.asConcept(), Concept.class);
     }
 
     @Override
@@ -120,38 +126,34 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Collection<Concept> allChildren(Semantics target) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.ALL_CHILDREN, target.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> allParents(Semantics target) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.ALL_PARENTS, target.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> closure(Semantics target) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.CLOSURE, target.asConcept(), Concept.class);
     }
 
     @Override
     public int semanticDistance(Semantics target, Semantics other) {
-        // TODO Auto-generated method stub
-        return 0;
+        return client.post(ServicesAPI.REASONER.DISTANCE, Lists.newArrayList(target.asConcept(),
+                other.asConcept(), null), Integer.class);
     }
 
     @Override
     public int semanticDistance(Semantics target, Semantics other, Semantics context) {
-        // TODO Auto-generated method stub
-        return 0;
+        return client.post(ServicesAPI.REASONER.DISTANCE, Lists.newArrayList(target.asConcept(),
+                other.asConcept(), context.asConcept()), Integer.class);
     }
 
     @Override
-    public Concept coreObservable(Semantics first) {
-        // TODO Auto-generated method stub
-        return null;
+    public Concept coreObservable(Semantics target) {
+        return client.post(ServicesAPI.REASONER.CORE_OBSERVABLE, target.asConcept(), Concept.class);
     }
 
     @Override
@@ -162,14 +164,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public int assertedDistance(Semantics from, Semantics to) {
-        // TODO Auto-generated method stub
+        // TODO
         return 0;
     }
 
     @Override
     public Collection<Concept> roles(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.ROLES, concept.asConcept(), Concept.class);
     }
 
     @Override
@@ -184,100 +185,82 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         return false;
     }
 
-    //	@Override
-    //	public Concept directContext(Semantics concept) {
-    //		// TODO Auto-generated method stub
-    //		return null;
-    //	}
-
-    //	@Override
-    //	public Concept context(Semantics concept) {
-    //		// TODO Auto-generated method stub
-    //		return null;
-    //	}
-
     @Override
     public Concept directInherent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.INHERENT, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept inherent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.INHERENT, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Concept directGoal(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.GOAL, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept goal(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.GOAL, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Concept directCooccurrent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.COOCCURRENT, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept directCausant(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.CAUSANT, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept directCaused(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.CAUSED, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept directAdjacent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.ADJACENT, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept directCompresent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.COMPRESENT, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept directRelativeTo(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.RELATIVE_TO, concept.asConcept(), Concept.class, "direct",
+                "true");
     }
 
     @Override
     public Concept cooccurrent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.COOCCURRENT, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Concept causant(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.CAUSANT, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Concept caused(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.CAUSED, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Concept adjacent(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.ADJACENT, concept.asConcept(), Concept.class);
     }
 
     @Override
@@ -288,68 +271,60 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Concept relativeTo(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.RELATIVE_TO, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> traits(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.TRAITS, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> identities(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.IDENTITIES, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> directIdentities(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.IDENTITIES, concept.asConcept(), Concept.class,
+                "direct", "true");
     }
 
     @Override
     public Collection<Concept> directAttributes(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.ATTRIBUTES, concept.asConcept(), Concept.class,
+                "direct", "true");
     }
 
     @Override
     public Collection<Concept> attributes(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.ATTRIBUTES, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> realms(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.REALMS, concept.asConcept(), Concept.class);
     }
 
     @Override
     public Collection<Concept> directRealms(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.REALMS, concept.asConcept(), Concept.class,
+                "direct", "true");
     }
 
     @Override
     public Concept baseParentTrait(Semantics trait) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.BASE_PARENT_TRAIT, trait.asConcept(), Concept.class);
     }
 
     @Override
     public Concept baseObservable(Semantics observable) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.BASE_OBSERVABLE, observable.asConcept(), Concept.class);
     }
 
     @Override
     public Concept rawObservable(Semantics observable) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.RAW_OBSERVABLE, observable.asConcept(), Concept.class);
     }
 
     @Override
@@ -372,14 +347,14 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Collection<Concept> directTraits(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.TRAITS, concept.asConcept(), Concept.class,
+                "direct", "true");
     }
 
     @Override
     public Collection<Concept> directRoles(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.ROLES, concept.asConcept(), Concept.class,
+                "direct", "true");
     }
 
     @Override
@@ -414,8 +389,8 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Collection<Concept> relationshipSources(Semantics relationship) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.RELATIONSHIP_SOURCES, relationship.asConcept(),
+                Concept.class);
     }
 
     @Override
@@ -426,38 +401,38 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Collection<Concept> relationshipTargets(Semantics relationship) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.postCollection(ServicesAPI.REASONER.RELATIONSHIP_TARGETS, relationship.asConcept(),
+                Concept.class);
     }
 
     @Override
     public Concept negated(Concept concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.NEGATED, concept.asConcept(),
+                Concept.class);
     }
 
     @Override
-    public boolean satisfiable(Semantics ret) {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean satisfiable(Semantics concept) {
+        return client.post(ServicesAPI.REASONER.SATISFIABLE, concept.asConcept(),
+                Boolean.class);
     }
 
     @Override
-    public Semantics domain(Semantics conceptImpl) {
-        // TODO Auto-generated method stub
-        return null;
+    public Semantics domain(Semantics concept) {
+        return client.post(ServicesAPI.REASONER.DOMAIN, concept.asConcept(),
+                Concept.class);
     }
 
     @Override
-    public Collection<Concept> applicableObservables(Concept main) {
-        // TODO Auto-generated method stub
-        return null;
+    public Collection<Concept> applicableObservables(Concept concept) {
+        return client.postCollection(ServicesAPI.REASONER.APPLICABLE, concept.asConcept(),
+                Concept.class);
     }
 
     @Override
     public Concept describedType(Semantics concept) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.DESCRIBED, concept.asConcept(),
+                Concept.class);
     }
 
     @Override
