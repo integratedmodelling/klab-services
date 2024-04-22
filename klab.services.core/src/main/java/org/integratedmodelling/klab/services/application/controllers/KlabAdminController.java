@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.Role;
+import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,9 @@ public class KlabAdminController {
     @Autowired
     ServiceNetworkedInstance<?> instance;
 
+    @Autowired
+    ServiceAuthorizationManager scopeManager;
+
     @PutMapping(ServicesAPI.ADMIN.SHUTDOWN)
     public boolean shutdown() {
         Logging.INSTANCE.info("Shutting down service instance " + instance.klabService().getLocalName());
@@ -37,22 +41,21 @@ public class KlabAdminController {
     }
 
     // FIXME use a dedicated POST payload
-    @PostMapping(ServicesAPI.ADMIN.SET_CREDENTIALS)
-    public boolean setCredentials(String scheme, String host, List<String> parameters) {
-        // TODO set credentials, report success
-        return false;
+    @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
+    public boolean setCredentials(String scheme, String host, List<String> parameters, Principal principal) {
+//        Authentication.INSTANCE.addExternalCredentials(host, );
+        return true;
     }
 
-    @DeleteMapping(ServicesAPI.ADMIN.REMOVE_CREDENTIALS)
+    @DeleteMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public boolean removeCredentials(String scheme, String host) {
         // TODO remove credentials, report true if done
         return false;
     }
 
-    @GetMapping(ServicesAPI.ADMIN.LIST_CREDENTIALS)
+    @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public List<Authentication.CredentialInfo> listCredentials(Principal principal) {
-        /* FIXME use the scope registered from the principal */
-        return Authentication.INSTANCE.getCredentialInfo(instance.klabService().serviceScope());
+        return Authentication.INSTANCE.getCredentialInfo(scopeManager.resolveScope(principal));
     }
 
 }

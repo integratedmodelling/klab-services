@@ -248,4 +248,10 @@ public class ResourceSet implements Serializable {
         return ret;
     }
 
+    public static ResourceSet empty(Notification notification) {
+        var ret = empty();
+        ret.getNotifications().add(notification);
+        return ret;
+    }
+
 }

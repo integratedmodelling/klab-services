@@ -20,9 +20,7 @@ public interface ServicesAPI {
 
         String SHUTDOWN = "/shutdown";
         String CHECK_CREDENTIALS = "/checkCredentials";
-        String SET_CREDENTIALS = "/setCredentials";
-        String REMOVE_CREDENTIALS = "/removeCredentials";
-        String LIST_CREDENTIALS = "/listCredentials";
+        String CREDENTIALS = "/credentials";
     }
 
     interface SCOPE {

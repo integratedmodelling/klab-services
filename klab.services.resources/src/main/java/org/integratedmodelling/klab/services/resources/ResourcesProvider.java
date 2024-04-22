@@ -587,22 +587,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     //    }
 
     @Override
-    public ResourceSet manageRepository(String projectName, Repository.Operation operation,
-                                        String... arguments) {
-
-        switch (operation) {
-            case FETCH_COMMIT_AND_PUSH -> {
-            }
-            case FETCH_AND_MERGE -> {
-            }
-            case COMMIT_AND_SWITCH -> {
-            }
-            case HARD_RESET -> {
-
-            }
-        }
-
-        return null;
+    public List<ResourceSet> manageRepository(String projectName, Repository.Operation operation,
+                                              String... arguments) {
+        return workspaceManager.manageRepository(projectName, operation, arguments);
     }
 
     @Override

@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.utilities;
 
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import org.apache.catalina.Host;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -7,9 +11,13 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.*;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.util.FS;
+import org.hsqldb.scriptio.ScriptReaderText;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -24,11 +32,13 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.*;
 
 public class Utils extends org.integratedmodelling.common.utils.Utils {
@@ -294,8 +304,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
         public static void extractKnowledgeFromClasspath(File destinationDirectory) {
             try {
                 PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-                org.springframework.core.io.Resource[] resources = resolver.getResources("/knowledge/**");
-                for (org.springframework.core.io.Resource resource : resources) {
+                Resource[] resources = resolver.getResources("/knowledge/**");
+                for (Resource resource : resources) {
 
                     String path = null;
                     if (resource instanceof FileSystemResource) {
@@ -339,8 +349,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             try {
                 PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-                org.springframework.core.io.Resource[] resources = resolver.getResources(resourcePattern);
-                for (org.springframework.core.io.Resource resource : resources) {
+                Resource[] resources = resolver.getResources(resourcePattern);
+                for (Resource resource : resources) {
 
                     String path = null;
                     if (resource instanceof FileSystemResource) {
@@ -416,24 +426,119 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          *
          * @param localRepository
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
-         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
+         * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchCommitAndPush(File localRepository) {
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchCommitAndPush(File localRepository, String commitMessage, Scope scope) {
 
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
-            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+            ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
+
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
 
+                    ObjectId oldHead = repo.resolve("HEAD^{tree}");
+
+                    PullCommand pullCmd = git.pull();
+                    PullResult result = pullCmd.call();
+                    if (result != null && result.isSuccessful()) {
+                        var messages = result.getFetchResult().getMessages();
+                        if (messages != null && !messages.isEmpty()) {
+                            ret.getNotifications().add(Notification.create(messages,
+                                    Notification.Level.Info));
+                        }
+                        if (result.getMergeResult().getConflicts() != null && !result.getMergeResult().getConflicts().isEmpty()) {
+                            ret.getNotifications().add(Notification.create("Conflicts during merge of "
+                                            + Strings.join(result.getMergeResult().getConflicts().keySet(),
+                                            ", "),
+                                    Notification.Level.Error));
+                        } else {
+
+                            // commit locally
+                            try {
+                                var commit = git.commit().setMessage(commitMessage).call();
+                                PushCommand pushCommand = git.push();
+                                pushCommand.setRemote("origin");
+                                setCredentialsProvider(pushCommand, git, scope);
+                                pushCommand.call();
+                            } catch (GitAPIException ex) {
+                                ret.getNotifications().add(Notification.create(ex));
+                            }
+                        }
+                    }
+                    compileDiff(repo, git, oldHead, ret);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 ret.getNotifications().add(Notification.create(e));
             }
-
             return ret;
+
+        }
+
+        private static void setCredentialsProvider(TransportCommand<?, ?> command,
+                                                                     org.eclipse.jgit.api.Git git,
+                                                                     Scope scope) {
+
+            CredentialsProvider ret = null;
+            ExternalAuthenticationCredentials credentials = null;
+            try {
+                for (RemoteConfig remoteConfig : git.remoteList().call()) {
+                    if ("origin".equals(remoteConfig.getName()) && !remoteConfig.getURIs().isEmpty()) {
+                        for (var uri : remoteConfig.getURIs()) {
+                            credentials =
+                                    Authentication.INSTANCE.getCredentials(uri.toString(), scope);
+                            if (credentials != null) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (GitAPIException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (credentials != null) {
+                ret = switch (credentials.getScheme()) {
+                    case ExternalAuthenticationCredentials.BASIC ->
+                            new UsernamePasswordCredentialsProvider(credentials.getCredentials().get(0),
+                                    credentials.getCredentials().get(1));
+                    case ExternalAuthenticationCredentials.KEY -> null;
+                    default -> null;
+                };
+
+                // check if we need to add a transport mechanism instead
+                if (ret == null && ExternalAuthenticationCredentials.SSH.equals(credentials.getScheme())) {
+
+//                    SshSessionFactory sshSessionFactory = new JschConfigSessionFactory() {
+//                        @Override
+//                        protected void configure(Host host, Session session) {
+//                            // do nothing
+//                        }
+//
+//                        @Override
+//                        protected JSch createDefaultJSch(FS fs) throws JSchException {
+//                            JSch defaultJSch = super.createDefaultJSch(fs);
+//                            defaultJSch.addIdentity("c:/path/to/my/private_key");
+//
+//                            // if key is protected with passphrase
+//                            // defaultJSch.addIdentity("c:/path/to/my/private_key", "my_passphrase");
+//
+//                            return defaultJSch;
+//                        }
+//                    };
+//
+//                    command.setTransportConfigCallback(transport -> {
+//                        SshTransport sshTransport = (SshTransport) transport;
+//                        sshTransport.setSshSessionFactory(sshSessionFactory);
+//                    });
+                }
+            }
+
+            if (ret != null) {
+                command.setCredentialsProvider(ret);
+            }
 
         }
 
@@ -442,14 +547,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          *
          * @param localRepository
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
-         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
+         * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
         public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchAndMerge(File localRepository) {
 
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
-            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+            ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
@@ -532,14 +637,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @param localRepository
          * @param branch
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
-         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
+         * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
         public static org.integratedmodelling.klab.api.data.Repository.Modifications commitAndSwitch(File localRepository, String branch) {
 
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
-            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+            ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {
@@ -562,14 +667,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          *
          * @param localRepository
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
-         * info. Use {@link Utils.Notifications#hasErrors(Collection)} on the notifications element to check.
+         * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
         public static org.integratedmodelling.klab.api.data.Repository.Modifications hardReset(File localRepository) {
 
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
 
-            ret.setRepositoryName(Utils.Files.getFileBaseName(localRepository));
+            ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
             try (var repo = new FileRepository(new File(localRepository + File.separator + ".git"))) {
                 try (var git = new org.eclipse.jgit.api.Git(repo)) {

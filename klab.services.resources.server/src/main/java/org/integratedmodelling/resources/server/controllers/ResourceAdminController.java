@@ -48,7 +48,8 @@ public class ResourceAdminController {
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.CREATE_PROJECT)
     public @ResponseBody ResourceSet createNewProject(@PathVariable("workspaceName") String workspaceName,
                                                       @PathVariable(
-            "projectName") String projectName, Principal principal) {
+                                                              "projectName") String projectName,
+                                                      Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createProject(workspaceName, projectName,
                     authenticationManager.resolveScope(principal));
@@ -120,7 +121,8 @@ public class ResourceAdminController {
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_PROJECT)
-    public List<ResourceSet> removeProject(@RequestParam("projectName") String projectName, Principal principal) {
+    public List<ResourceSet> removeProject(@RequestParam("projectName") String projectName,
+                                           Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             admin.deleteProject(projectName, auth.getToken());
         }
@@ -168,8 +170,9 @@ public class ResourceAdminController {
     }
 
     @PostMapping(value = ServicesAPI.RESOURCES.ADMIN.MANAGE_PROJECT)
-    public ResourceSet manageProject(@PathVariable("urn") String urn, @RequestBody ProjectRequest request,
-                                     Principal principal) {
+    public List<ResourceSet> manageProject(@PathVariable("urn") String urn,
+                                           @RequestBody ProjectRequest request,
+                                           Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.manageRepository(urn, request.getOperation(),
                     request.getParameters().toArray(new String[]{}));

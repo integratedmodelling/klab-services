@@ -430,7 +430,7 @@ public interface ResourcesService extends KlabService {
          * @param arguments
          * @return a descriptor of what happened and what needs to be reloaded.
          */
-        ResourceSet manageRepository(String projectName, Repository.Operation operation, String... arguments);
+        List<ResourceSet> manageRepository(String projectName, Repository.Operation operation, String... arguments);
 
         /**
          * Add a resource fully specified by a resource object to those managed by this service. Resource is

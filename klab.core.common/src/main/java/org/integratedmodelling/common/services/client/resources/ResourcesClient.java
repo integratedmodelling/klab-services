@@ -251,8 +251,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet manageRepository(String projectName, Repository.Operation operation,
-                                        String... arguments) {
+    public List<ResourceSet> manageRepository(String projectName, Repository.Operation operation,
+                                              String... arguments) {
         ProjectRequest request = new ProjectRequest();
         request.setOperation(operation);
         if (arguments != null) {
@@ -260,7 +260,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
                 request.getParameters().add(argument);
             }
         }
-        return client.post(ServicesAPI.RESOURCES.ADMIN.MANAGE_PROJECT, request, ResourceSet.class, "urn",
+        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.MANAGE_PROJECT, request, ResourceSet.class
+                , "urn",
                 projectName);
     }
 

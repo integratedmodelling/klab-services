@@ -7,6 +7,12 @@ import java.util.Map;
 
 public class ExternalAuthenticationCredentials {
 
+    public final static String BASIC = "basic";
+    public final static String OIDC = "oidc";
+    public final static String S3 = "s3";
+    public final static String KEY = "key";
+    public final static String SSH = "ssh";
+
     /**
      * "Legend" for parameter names in the different auth methods
      */
@@ -14,11 +20,11 @@ public class ExternalAuthenticationCredentials {
 
     static {
         parameterKeys = new HashMap<>();
-        parameterKeys.put("basic", new String[]{"username", "password"});
-        parameterKeys.put("oidc", new String[]{"grant_type", "client_id", "client_secrets", "provider_id"});
-        parameterKeys.put("s3", new String[]{"accessKey", "secretKey"});
-        parameterKeys.put("key", new String[]{"key"});
-        parameterKeys.put("ssh", new String[]{"passkey"});
+        parameterKeys.put(BASIC, new String[]{"username", "password"});
+        parameterKeys.put(OIDC, new String[]{"grant_type", "client_id", "client_secrets", "provider_id"});
+        parameterKeys.put(S3, new String[]{"accessKey", "secretKey"});
+        parameterKeys.put(KEY, new String[]{"key"});
+        parameterKeys.put(SSH, new String[]{"passkey"});
     }
 
     /**
