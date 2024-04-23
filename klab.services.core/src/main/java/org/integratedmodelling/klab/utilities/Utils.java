@@ -622,15 +622,20 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             }
         }
 
-        /**
-         * Commit any current changes before switching to the passed branch (either remote or local). If the
-         * branch is new, create it based on current and instrument it for push/pull to/from origin.
-         *
-         * @param localRepository
-         * @param branch
-         * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
-         * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
-         */
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications mergeChangesFrom(File localRepository, String branch) {
+            // TODO ziobue
+            return null;
+        }
+
+            /**
+             * Commit any current changes before switching to the passed branch (either remote or local). If the
+             * branch is new, create it based on current and instrument it for push/pull to/from origin.
+             *
+             * @param localRepository
+             * @param branch
+             * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
+             * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
+             */
         public static org.integratedmodelling.klab.api.data.Repository.Modifications commitAndSwitch(File localRepository, String branch) {
 
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =

@@ -52,7 +52,9 @@ public interface Repository {
         /**
          * Hard reset head deleting all uncommitted changes
          */
-        HARD_RESET
+        HARD_RESET,
+
+        MERGE_CHANGES_FROM
     }
 
     /**

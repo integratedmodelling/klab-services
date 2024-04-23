@@ -14,7 +14,7 @@ import java.util.function.BiConsumer;
 /**
  * <p>Holder of atomic "executors" that implement one or more contextualizers (sequential scalar ones are merged
  * into chains to avoid storage of intermediate products unless requested). In case of a scalar chain, the executor
- * function is optimized to avoid boxing when transfering data and storing them.</p>
+ * function is optimized to avoid boxing when transferring data and storing them.</p>
  *
  * <p>Has two separate and equivalent call sets, one with debugging and one without, to avoid constant checking in
  * time-critical contextualizers. The debugging scalar chain executor creates additional observations to hold

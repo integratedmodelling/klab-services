@@ -58,21 +58,17 @@ import java.util.stream.Collectors;
  * resources.</p>
  *
  * <p>The digital twin also holds a catalog of the dataflows resolved, keyed by their coverage  and context,
- * so that
- * successive resolutions of instances can reuse a previous dataflow when it is applicable instead of asking
- * the resolver again. This can be configured to be applied only above a certain threshold in the number of
- * instances, or turned off completely, in case speed and space occupation are no issue but maximum dataflow
- * "fit" to the resolved object and its scale must be ensured.</p>
+ * so that successive resolutions of instances can reuse a previous dataflow when it is applicable instead of
+ * asking the resolver again. This can be configured to be applied only above a certain threshold in the
+ * number of instances, or turned off completely, in case speed and space occupation are no issue but maximum
+ * dataflow "fit" to the resolved object and its scale must be ensured.</p>
  *
  * <p>Ideas for the DT API and interface:</p>
  * <ul>
  *     <li>Use GraphQL on the main DT GET endpoint for inquiries along the observation structure and
- *     possibly the
- *     dataflow. That could be just the URL of the runtime + /{observation|dataflow}/+ the ID of the
- *     DT/context,
- *     possibly starting at a non-root observation or actuator (their IDs are the same). This can be the
- *     basis for
- *     the remote digital twin API.</li>
+ *     possibly the dataflow. That could be just the URL of the runtime + /{observation|dataflow}/+ the ID of the
+ *     DT/context, possibly starting at a non-root observation or actuator (their IDs are the same). This can be the
+ *     basis for the remote digital twin API.</li>
  * </ul>
  *
  * @author Ferd
@@ -82,6 +78,11 @@ public class DigitalTwin implements Closeable {
     private final ContextScope scope;
     private long MAXIMUM_TASK_TIMEOUT_HOURS = 48l;
     private StorageScope storageScope;
+    private final Graph<Observation, DefaultEdge> logicalStructure = new DefaultDirectedGraph<Observation,
+            DefaultEdge>(DefaultEdge.class);
+    private final Graph<Observation, DefaultEdge> physicalStructure = new DefaultDirectedGraph<Observation,
+            DefaultEdge>(DefaultEdge.class);
+    private final Map<String, Process> derivedOccurrents = new HashMap<>();
 
     public boolean validate(ContextScope scope) {
         // check out all calls etc.
@@ -132,8 +133,7 @@ public class DigitalTwin implements Closeable {
      */
 
     private Executor createExecutor(Actuator actuator, Observation observation, ServiceCall computation,
-                                    ContextScope scope,
-                                    Executor previousExecutor) {
+                                    ContextScope scope, Executor previousExecutor) {
 
         var languageService = Configuration.INSTANCE.getService(Language.class);
         var functor = languageService.execute(computation, scope, Object.class);
@@ -142,8 +142,7 @@ public class DigitalTwin implements Closeable {
         return switch (functor) {
             case null ->
                     throw new KlabInternalErrorException("function call " + computation.getUrn() + " " +
-                            "produced a null" +
-                            " result");
+                            "produced a null" + " result");
             case Instantiator instantiator ->
                     new Executor(Executor.Type.OBSERVATION_INSTANTIATOR, parallelism) {
                         @Override
@@ -184,8 +183,8 @@ public class DigitalTwin implements Closeable {
                         }
                     } : previousExecutor.chain(cresolver);
             case BoxingValueResolver bresolver ->
-                    previousExecutor == null ? new Executor(Executor.Type.BOXING_VALUE_RESOLVER, parallelism,
-                            bresolver) {
+                    previousExecutor == null ? new Executor(Executor.Type.BOXING_VALUE_RESOLVER,
+                            parallelism, bresolver) {
                         @Override
                         public void accept(Observation observation, ContextScope contextScope) {
                             executeChain((State) observation, contextScope);
@@ -292,8 +291,7 @@ public class DigitalTwin implements Closeable {
         /*
          * Scheduler timestamps corresponding to this link having caused a change in the target
          * observation. The latest update timestamp is also stored in the ObservationData.
-         */
-        List<Long> actionTimestamps = new ArrayList<>();
+         */ List<Long> actionTimestamps = new ArrayList<>();
     }
 
     /**
@@ -313,7 +311,7 @@ public class DigitalTwin implements Closeable {
      * actuators and observations because the IDs are the same. The edges should keep the list of modification
      * timesteps.
      */
-    Graph<String, DefaultEdge> influenceDiagram = new DefaultDirectedGraph<>(DefaultEdge.class);
+    Graph<String, InfluenceEdge> influenceDiagram = new DefaultDirectedGraph<>(InfluenceEdge.class);
 
     /**
      * TODO if Javolution or something else eventually provides a fast map, use that here.
@@ -459,8 +457,7 @@ public class DigitalTwin implements Closeable {
                         }
                     };
             case SIMULATION -> new ProcessImpl(actuator.getObservable(), actuator.getId(), scope);
-            case CHARACTERIZATION,
-                    CLASSIFICATION -> null; // TODO
+            case CHARACTERIZATION, CLASSIFICATION -> null; // TODO
             case DETECTION -> new ConfigurationImpl(actuator.getObservable(), actuator.getId(), scope);
             default -> null;
         };
@@ -493,8 +490,8 @@ public class DigitalTwin implements Closeable {
             Map<String, Actuator> branch = new HashMap<>();
             collectActuators(Collections.singletonList(root), dataflow, scope, null, branch);
             var dependencyGraph = createDependencyGraph(branch);
-            TopologicalOrderIterator<Actuator, DefaultEdge> order = new TopologicalOrderIterator<>(
-                    dependencyGraph);
+            TopologicalOrderIterator<Actuator, DefaultEdge> order =
+                    new TopologicalOrderIterator<>(dependencyGraph);
 
             // group by dependency w.r.t. the previous group and assign the execution order based on the
             // group index, so that we know what we can execute in parallel
@@ -503,10 +500,9 @@ public class DigitalTwin implements Closeable {
                 Actuator next = order.next();
                 if (!next.isReference()) {
                     var data = observationData.get(next.getId());
-                    if (data.executors.size() > 0) {
+                    if (!data.executors.isEmpty()) {
                         ret.add(Pair.of(next, (executionOrder = checkExecutionOrder(executionOrder, next,
-                                dependencyGraph,
-                                group))));
+                                dependencyGraph, group))));
                     }
                 }
             }
@@ -605,13 +601,6 @@ public class DigitalTwin implements Closeable {
         return true;
     }
 
-    private Graph<Observation, DefaultEdge> logicalStructure = new DefaultDirectedGraph<Observation,
-            DefaultEdge>(
-            DefaultEdge.class);
-    private Graph<Observation, DefaultEdge> physicalStructure = new DefaultDirectedGraph<Observation,
-            DefaultEdge>(
-            DefaultEdge.class);
-    private Map<String, Process> derivedOccurrents = new HashMap<>();
 
     public Collection<Observation> getLogicalChildren(Observation parent) {
         List<Observation> ret = new ArrayList<>();

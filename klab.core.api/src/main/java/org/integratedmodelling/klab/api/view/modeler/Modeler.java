@@ -21,6 +21,9 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
  */
 public interface Modeler extends UIController {
 
+    /**
+     * TODO move into {@link org.integratedmodelling.klab.api.engine.distribution.Settings}
+     */
     public enum Option {
 
         UseAnsiEscapeSequences(Boolean.class);
@@ -44,7 +47,6 @@ public interface Modeler extends UIController {
      */
     void setOption(Option option, Object... payload);
 
-
     @UIActionHandler(value = UIReactor.UIAction.ImportProject, label = "New project", tooltip =
             "Create a new k.LAB project in the current workspace and scope")
     void importProject(String workspaceName, String projectUrl, boolean overwriteExisting);
@@ -63,4 +65,5 @@ public interface Modeler extends UIController {
 
     @UIActionHandler(UIReactor.UIAction.CreateAsset)
     void createDocument(String newDocumentUrn, String projectName, ProjectStorage.ResourceType documentType);
+
 }
