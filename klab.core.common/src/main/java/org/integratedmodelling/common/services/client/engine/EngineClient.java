@@ -4,6 +4,8 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.scope.ClientScope;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -129,6 +131,16 @@ public class EngineClient implements Engine, PropertyHolder {
     public boolean isExclusive() {
         // the engine is just an orchestrator so we can assume every client is local.
         return true;
+    }
+
+    @Override
+    public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
+        return null;
+    }
+
+    @Override
+    public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+        return false;
     }
 
     @Override
@@ -381,6 +393,10 @@ public class EngineClient implements Engine, PropertyHolder {
                     "ID " + service.getServiceId() +
                     " as default: service is not available to the engine");
         }
+    }
 
+    @Override
+    public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
+        return Authentication.INSTANCE.getCredentialInfo(scope);
     }
 }

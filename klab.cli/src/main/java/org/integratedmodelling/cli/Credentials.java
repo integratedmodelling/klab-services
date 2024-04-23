@@ -1,11 +1,10 @@
 package org.integratedmodelling.cli;
 
 import org.integratedmodelling.common.authentication.Authentication;
-import org.integratedmodelling.common.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 

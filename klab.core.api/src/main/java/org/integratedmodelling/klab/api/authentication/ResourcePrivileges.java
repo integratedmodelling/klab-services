@@ -28,6 +28,8 @@ public class ResourcePrivileges implements Serializable {
     private Set<String> excludedGroups = new HashSet<>();
     private Set<String> allowedUsers = new HashSet<>();
     private Set<String> excludedUsers = new HashSet<>();
+    private Set<String> allowedServices = new HashSet<>();
+
 
     /**
      * Use this constant instead of building an object to define publicly accessible resources.
@@ -201,6 +203,14 @@ public class ResourcePrivileges implements Serializable {
             buffer.append(buffer.isEmpty() ? "" : ",").append("!").append(user);
         }
         return buffer.toString();
+    }
+
+    public Set<String> getAllowedServices() {
+        return allowedServices;
+    }
+
+    public void setAllowedServices(Set<String> allowedServices) {
+        this.allowedServices = allowedServices;
     }
 
     /**

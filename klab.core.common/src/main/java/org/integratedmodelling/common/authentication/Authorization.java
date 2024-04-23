@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.authentication;
 
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;

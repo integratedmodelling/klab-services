@@ -5,6 +5,8 @@ import org.integratedmodelling.common.authentication.scope.AbstractServiceDelega
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -363,5 +365,23 @@ public abstract class ServiceClient implements KlabService {
     @Override
     public String serviceId() {
         return capabilities.getServiceId();
+    }
+
+
+    @Override
+    public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
+        return client.get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn",
+                resourceUrn);
+    }
+
+    @Override
+    public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+        return client.put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
+    }
+
+    @Override
+    public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
+        return client.getCollection(ServicesAPI.ADMIN.CREDENTIALS,
+                ExternalAuthenticationCredentials.CredentialInfo.class);
     }
 }

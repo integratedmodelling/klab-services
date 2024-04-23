@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;

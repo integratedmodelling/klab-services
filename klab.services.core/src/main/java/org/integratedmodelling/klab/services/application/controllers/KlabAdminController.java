@@ -3,7 +3,8 @@ package org.integratedmodelling.klab.services.application.controllers;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
@@ -42,8 +43,9 @@ public class KlabAdminController {
 
     // FIXME use a dedicated POST payload
     @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
-    public boolean setCredentials(String scheme, String host, List<String> parameters, Principal principal) {
-//        Authentication.INSTANCE.addExternalCredentials(host, );
+    public boolean setCredentials(@RequestBody ExternalAuthenticationCredentials credentials, Principal principal) {
+        credentials.setId(Utils.Names.shortUUID());
+        credentials.setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(scopeManager.resolveScope(principal)));
         return true;
     }
 
@@ -54,8 +56,8 @@ public class KlabAdminController {
     }
 
     @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
-    public List<Authentication.CredentialInfo> listCredentials(Principal principal) {
-        return Authentication.INSTANCE.getCredentialInfo(scopeManager.resolveScope(principal));
+    public List<ExternalAuthenticationCredentials.CredentialInfo> listCredentials(Principal principal) {
+        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal));
     }
 
 }

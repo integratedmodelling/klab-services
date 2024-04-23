@@ -492,26 +492,6 @@ public interface ResourcesService extends KlabService {
         Collection<String> listResourceUrns(Scope scope);
 
         /**
-         * Get the access rights for the passed resource. If the resource does not exist or is inaccessible to
-         * the scope, return empty rights.
-         *
-         * @param resourceUrn
-         * @param scope
-         * @return
-         */
-        ResourcePrivileges getRights(String resourceUrn, Scope scope);
-
-        /**
-         * Set the access rights for the named resource.
-         *
-         * @param resourceUrn
-         * @param resourcePrivileges
-         * @param scope
-         * @return true if the resource was accessible and the rights were set.
-         */
-        boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope);
-
-        /**
          * Lock a project so that changes to it can be made exclusively through the explicit CRUD calls on its
          * contents.
          *

@@ -1,7 +1,11 @@
 package org.integratedmodelling.klab.services.base;
 
+import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -14,6 +18,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -159,5 +164,22 @@ public abstract class BaseService implements KlabService {
         // done to ensure that that is true. A way to do that could be to set busy status for any client
         // that isn't  using the secret token, and only allow these clients to lock the service that way.
         return false;
+    }
+
+
+
+    @Override
+    public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
+        return null;
+    }
+
+    @Override
+    public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
+        return false;
+    }
+
+    @Override
+    public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
+        return Authentication.INSTANCE.getCredentialInfo(scope);
     }
 }

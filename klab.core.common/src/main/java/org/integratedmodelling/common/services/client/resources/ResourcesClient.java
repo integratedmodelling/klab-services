@@ -317,15 +317,5 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         return client.get(ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT, Boolean.class, "urn", urn);
     }
 
-    @Override
-    public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
-        return client.get(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, ResourcePrivileges.class, "urn",
-                resourceUrn);
-    }
-
-    @Override
-    public boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope) {
-        return client.put(ServicesAPI.RESOURCES.RESOURCE_RIGHTS, resourcePrivileges, "urn", resourceUrn);
-    }
 
 }

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.community;
 
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Community;
@@ -48,5 +49,6 @@ public class CommunityService extends BaseService implements Community {
         // TODO Auto-generated method stub
         return false;
     }
+
 
 }

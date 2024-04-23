@@ -15,12 +15,12 @@ import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
 import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
-import org.integratedmodelling.common.services.client.scope.ClientScope;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.engine.distribution.Product;
@@ -29,6 +29,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -62,16 +64,6 @@ public enum Authentication {
      * any external credentials taken from the .klab/credentials.json file if any.
      */
     private Utils.FileCatalog<ExternalAuthenticationCredentials> externalCredentials;
-
-    /**
-     * Credential information for display and choice by users
-     *
-     * @param host
-     * @param username
-     * @param schema
-     */
-    public record CredentialInfo(String host, String username, String schema) {
-    }
 
     Authentication() {
         this.externalCredentials =
@@ -226,8 +218,9 @@ public enum Authentication {
                 for (var service : authentication.getNodes()) {
                     if (service.getServiceType() == KlabService.Type.LEGACY_NODE) {
                         // TODO see if we need to adapt
-//                        Logging.INSTANCE.info("Legacy service " + service.getId() + " from hub " + hubNode.getId()
-//                                + " authorized, ignored");
+                        //                        Logging.INSTANCE.info("Legacy service " + service.getId()
+                        //                        + " from hub " + hubNode.getId()
+                        //                                + " authorized, ignored");
                     } else {
                         services.add(service);
                     }
@@ -458,12 +451,36 @@ public enum Authentication {
         };
     }
 
-    public List<CredentialInfo> getCredentialInfo(Scope scope) {
-        var ret = new ArrayList<CredentialInfo>();
+    public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
+        var ret = new ArrayList<ExternalAuthenticationCredentials.CredentialInfo>();
         for (var host : getExternalCredentialsCatalog(scope).keySet()) {
-
+            var credentials = getExternalCredentialsCatalog(scope).get(host);
+            if (credentials.getPrivileges().checkAuthorization(scope)) {
+                ret.add(credentials.info(host));
+            }
         }
         return ret;
     }
 
+    /**
+     * Return the default privileges for the passed scope.
+     *
+     * @param scope
+     * @return
+     */
+    public ResourcePrivileges getDefaultPrivileges(Scope scope) {
+
+        if (scope == null) {
+            return ResourcePrivileges.empty();
+        }
+
+        ResourcePrivileges ret = new ResourcePrivileges();
+        if (scope instanceof UserScope user) {
+            ret.getAllowedUsers().add(user.getUser().getUsername());
+        } else if (scope instanceof ServiceScope service) {
+            ret.getAllowedServices().add(service.getIdentity().getId());
+        }
+
+        return ret;
+    }
 }

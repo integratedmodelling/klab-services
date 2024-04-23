@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.services;
 
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -292,4 +294,31 @@ public interface KlabService extends Service {
      */
     boolean isExclusive();
 
+    /**
+     * Get the access rights for the passed resource. If the resource does not exist or is inaccessible to the
+     * scope, return empty rights.
+     *
+     * @param resourceUrn
+     * @param scope
+     * @return
+     */
+    ResourcePrivileges getRights(String resourceUrn, Scope scope);
+
+    /**
+     * Set the access rights for the named resource.
+     *
+     * @param resourceUrn
+     * @param resourcePrivileges
+     * @param scope
+     * @return true if the resource was accessible and the rights were set.
+     */
+    boolean setRights(String resourceUrn, ResourcePrivileges resourcePrivileges, Scope scope);
+
+    /**
+     * Retrieve all stored credential information for the passed scope.
+     *
+     * @param scope
+     * @return
+     */
+    List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope);
 }
