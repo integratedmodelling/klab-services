@@ -95,6 +95,9 @@ public class Credentials {
         }, required = true)
         private String host;
 
+        @CommandLine.Spec
+        CommandLine.Model.CommandSpec commandSpec;
+
         /**
          *
          */
@@ -120,7 +123,9 @@ public class Credentials {
                 credentials.getCredentials().add(arg);
             }
 
-            Authentication.INSTANCE.addExternalCredentials(host, credentials, KlabCLI.INSTANCE.engine().serviceScope());
+            if (Authentication.INSTANCE.addExternalCredentials(host, credentials, KlabCLI.INSTANCE.engine().serviceScope()) == null) {
+                commandSpec.commandLine().getErr().println("Failed to add external credentials");
+            }
         }
     }
 

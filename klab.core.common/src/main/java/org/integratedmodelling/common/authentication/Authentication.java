@@ -67,8 +67,8 @@ public enum Authentication {
 
     Authentication() {
         this.externalCredentials =
-                new Utils.FileCatalog<>(Configuration.INSTANCE.getFile(
-                        "credentials.json"), ExternalAuthenticationCredentials.class,
+                new Utils.FileCatalog<>(Configuration.INSTANCE.getFileWithTemplate(
+                        "credentials.json", "{}"), ExternalAuthenticationCredentials.class,
                         ExternalAuthenticationCredentials.class);
         this.sshHosts.set(Utils.SSH.readHostFile());
         // TODO re-read the file at regular intervals
@@ -367,11 +367,13 @@ public enum Authentication {
         return externalCredentials;
     }
 
-    public void addExternalCredentials(String host, ExternalAuthenticationCredentials credentials,
-                                       Scope scope) {
+    public ExternalAuthenticationCredentials.CredentialInfo addExternalCredentials(String host, ExternalAuthenticationCredentials credentials,
+                                                                                   Scope scope) {
         var catalog = getExternalCredentialsCatalog(scope);
+        // TODO improve key
         catalog.put(extractHost(host), credentials);
         catalog.write();
+        return credentials.info(host);
     }
 
     public ExternalAuthenticationCredentials getCredentials(String hostUrl, Scope scope) {

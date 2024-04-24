@@ -198,8 +198,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 for (String key : parameters.keySet()) {
                     var subst = "{" + key + "}";
                     if (request.contains(subst)) {
-                        ret = ret.replace(subst, UriUtils.encodeQueryParam(parameters.get(key).toString(),
-                                StandardCharsets.UTF_8));
+                        ret = ret.replace(subst, Escape.forURL(parameters.get(key).toString()));
                         toRemove.add(key);
                     }
                 }

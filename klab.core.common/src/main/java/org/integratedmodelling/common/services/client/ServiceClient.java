@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -383,5 +382,12 @@ public abstract class ServiceClient implements KlabService {
     public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
         return client.getCollection(ServicesAPI.ADMIN.CREDENTIALS,
                 ExternalAuthenticationCredentials.CredentialInfo.class);
+    }
+
+    @Override
+    public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
+                                                                           ExternalAuthenticationCredentials credentials, Scope scope) {
+        return client.post(ServicesAPI.ADMIN.SET_HOST_CREDENTIALS, credentials,
+                ExternalAuthenticationCredentials.CredentialInfo.class, "host", host);
     }
 }

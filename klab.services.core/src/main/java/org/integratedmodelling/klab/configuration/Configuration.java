@@ -843,11 +843,11 @@ public enum Configuration {
             directory = new File(directory + File.separator + path[i]);
             directory.mkdirs();
         }
-        directory = new File(directory + File.separator + path[path.length - 1]);
-        if (!directory.exists()) {
-            Utils.Files.writeStringToFile(template, directory);
+        File outfile = new File(directory + File.separator + path[path.length - 1]);
+        if (!outfile.exists()) {
+            Utils.Files.writeStringToFile(template, outfile);
         }
-        return directory;
+        return outfile;
     }
 
     public boolean forceResourcesOnline() {

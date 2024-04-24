@@ -321,4 +321,16 @@ public interface KlabService extends Service {
      * @return
      */
     List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope);
+
+    /**
+     * Add the passed credentials to the service's credential store. Scope determines what the credentials can
+     * apply to.
+     *
+     * @param host        stripped-down hostname (possibly with port and path), e.g. github.com/user
+     * @param credentials
+     * @param scope
+     * @return true if successful
+     */
+    ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
+                                                                    ExternalAuthenticationCredentials credentials, Scope scope);
 }

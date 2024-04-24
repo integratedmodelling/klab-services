@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.view;
 
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -7,6 +8,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContain
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * The UI controller is a singleton that represents the engine when it's associated to a UI. It starts the
@@ -30,8 +32,8 @@ import java.util.Collection;
 public interface UIController extends UIReactor {
 
     /**
-     * The main controller <em>may</em> manage a main UI view object, which will be informed of
-     * high-level events and used for tasks like initializing or cleaning the workspace.
+     * The main controller <em>may</em> manage a main UI view object, which will be informed of high-level
+     * events and used for tasks like initializing or cleaning the workspace.
      *
      * @return the UI if one was installed. May be null.
      */
@@ -133,10 +135,11 @@ public interface UIController extends UIReactor {
      * Retrieve all open panels whose controller is of the passed class.
      *
      * @param panelControllerClass panel controller class
+     * @param <T>                  the type of panel controller
      * @return a collection of panel controllers, possibly empty.
-     * @param <T> the type of panel controller
      */
-    <T extends PanelController<?,?>> Collection<T> getOpenPanels(Class<T> panelControllerClass);
+    <T extends PanelController<?, ?>> Collection<T> getOpenPanels(Class<T> panelControllerClass);
+
     /**
      * Unregister the passed reactor.
      *
@@ -203,5 +206,29 @@ public interface UIController extends UIReactor {
      * @return the panel controller or null
      */
     public <P, T extends PanelController<P, ?>> T getPanelController(P payload,
-                                                                  Class<T> panelControllerClass);
+                                                                     Class<T> panelControllerClass);
+
+    /**
+     * Retrieve the descriptors of any credentials known to the passed service (use (ENGINE, null) for locally
+     * stored credentials) and accessible to the scope we run under.
+     *
+     * @param serviceType
+     * @param serviceId
+     * @return credential informations with key for remote usage
+     */
+    List<ExternalAuthenticationCredentials.CredentialInfo> getCredentials(KlabService.Type serviceType,
+                                                                          String serviceId);
+
+    /**
+     * Add credentials to service. Return non-null result only if operation was successful.
+     *
+     * @param credentials
+     * @param serviceType
+     * @param serviceId
+     * @return info for just added credentials, or null
+     */
+    ExternalAuthenticationCredentials.CredentialInfo setCredentials(String host,
+                                                                    ExternalAuthenticationCredentials credentials,
+                                                                    KlabService.Type serviceType,
+                                                                    String serviceId);
 }

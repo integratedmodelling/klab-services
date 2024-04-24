@@ -1676,6 +1676,16 @@ public class Utils {
     public static class Strings {
 
         /**
+         * Produce a label from an identifier:  zio_polpettone -> "Zio polpettone"
+         *
+         * @param string
+         * @return
+         */
+        public static String labelizeIdentifier(String string) {
+            return capitalize(string.replace("_", " "));
+        }
+
+        /**
          * Base64-encoded Sha256 hash of the passed input
          *
          * @param input

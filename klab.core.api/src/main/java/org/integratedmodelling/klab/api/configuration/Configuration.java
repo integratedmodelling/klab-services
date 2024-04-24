@@ -494,7 +494,7 @@ public enum Configuration {
 
     /**
      * Retrieve the file with the passed relative path, creating subdirs as required. Must use forward slash
-     * as separator. File is created empty if not existing.
+     * as separator. File may not exist but the paths leading to it will be created.
      *
      * @param relativeFilePath
      * @return
@@ -506,15 +506,16 @@ public enum Configuration {
             directory = new File(directory + File.separator + path[i]);
             directory.mkdirs();
         }
-        directory = new File(directory + File.separator + path[path.length - 1]);
-        if (!directory.exists()) {
-            try {
-                directory.createNewFile();
-            } catch (IOException e) {
-                throw new KlabIOException(e);
-            }
-        }
-        return directory;
+        return new File(directory + File.separator + path[path.length - 1]);
+        //        directory = new File(directory + File.separator + path[path.length - 1]);
+        //        if (!directory.exists()) {
+        //            try {
+        //                directory.createNewFile();
+        //            } catch (IOException e) {
+        //                throw new KlabIOException(e);
+        //            }
+        //        }
+        //        return directory;
     }
 
     /**
@@ -610,11 +611,14 @@ public enum Configuration {
         File secretFile =
                 Configuration.INSTANCE.getFile("services/" + serviceType.name().toLowerCase() +
                         "/secret.key");
-        try {
-            return Files.readString(secretFile.toPath());
-        } catch (IOException e) {
-            return null;
+        if (secretFile.exists()) {
+            try {
+                return Files.readString(secretFile.toPath());
+            } catch (IOException e) {
+                return null;
+            }
         }
+        return null;
     }
 
     /**

@@ -1,11 +1,15 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
+
+import java.util.List;
 
 /**
  * A {@link UIController} that contains all the user actions relevant to a modeler IDE. Implement this to use
@@ -65,5 +69,6 @@ public interface Modeler extends UIController {
 
     @UIActionHandler(UIReactor.UIAction.CreateAsset)
     void createDocument(String newDocumentUrn, String projectName, ProjectStorage.ResourceType documentType);
+
 
 }

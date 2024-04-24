@@ -182,4 +182,9 @@ public abstract class BaseService implements KlabService {
     public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentialInfo(Scope scope) {
         return Authentication.INSTANCE.getCredentialInfo(scope);
     }
+
+    @Override
+    public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host, ExternalAuthenticationCredentials credentials, Scope scope) {
+        return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
+    }
 }

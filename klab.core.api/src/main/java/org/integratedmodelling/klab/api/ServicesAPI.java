@@ -21,6 +21,7 @@ public interface ServicesAPI {
         String SHUTDOWN = "/shutdown";
         String CHECK_CREDENTIALS = "/checkCredentials";
         String CREDENTIALS = "/credentials";
+        String SET_HOST_CREDENTIALS = "/addCredentials/{host}";
     }
 
     interface SCOPE {

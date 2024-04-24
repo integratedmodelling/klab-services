@@ -2,6 +2,7 @@ package org.integratedmodelling.common.view;
 
 import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.common.utils.Utils;
+import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
@@ -583,5 +584,34 @@ public abstract class AbstractUIController implements UIController {
         for (var panel : getOpenPanels(PanelController.class)) {
             panel.shutdown();
         }
+    }
+
+    @Override
+    public List<ExternalAuthenticationCredentials.CredentialInfo> getCredentials(KlabService.Type serviceType, String serviceId) {
+
+        if (serviceType == KlabService.Type.ENGINE && (serviceId == null || (engine.serviceId() != null && engine.serviceId().equals(serviceId)))) {
+            // TODO local credentials, no scope check
+            return List.of();
+        }
+        var service = serviceById(serviceId, serviceType.classify());
+        if (service != null) {
+            return service.getCredentialInfo(user());
+        }
+        return List.of();
+    }
+
+    @Override
+    public ExternalAuthenticationCredentials.CredentialInfo setCredentials(String host, ExternalAuthenticationCredentials credentials,
+                                                                           KlabService.Type serviceType, String serviceId) {
+        if (serviceType == KlabService.Type.ENGINE && (serviceId == null || (engine.serviceId() != null && engine.serviceId().equals(serviceId)))) {
+            // TODO add to local credentials, no scope check
+            return null;
+        }
+        var service = serviceById(serviceId, serviceType.classify());
+        if (service != null) {
+            return service.addCredentials(host, credentials, engine().serviceScope());
+        }
+        return null;
+
     }
 }
