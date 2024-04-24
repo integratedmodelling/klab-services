@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.application.controllers;
 import jakarta.servlet.http.HttpServletRequest;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -47,21 +48,18 @@ public class KlabAdminController {
         return false;
     }
 
-    // FIXME use a dedicated POST payload
-    @PostMapping(ServicesAPI.ADMIN.SET_HOST_CREDENTIALS)
-    public @ResponseBody ExternalAuthenticationCredentials.CredentialInfo setCredentials(@PathVariable(
-            "host") String host, @RequestBody ExternalAuthenticationCredentials credentials,
-                                                                                         Principal principal) {
+    @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
+    public @ResponseBody ExternalAuthenticationCredentials.CredentialInfo setCredentials(@RequestBody CredentialsRequest request, Principal principal) {
         var scope = scopeManager.resolveScope(principal);
-        credentials.setId(Utils.Names.shortUUID());
-        credentials.setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(scope));
-        return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
+        request.getCredentials().setId(Utils.Names.shortUUID());
+        request.getCredentials().setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(scope));
+        return Authentication.INSTANCE.addExternalCredentials(request.getHost(), request.getCredentials(),
+                scope);
     }
 
     @DeleteMapping(ServicesAPI.ADMIN.CREDENTIALS)
-    public boolean removeCredentials(String scheme, String host) {
-        // TODO remove credentials, report true if done
-        return false;
+    public boolean removeCredentials(@RequestParam("id") String id) {
+        return Authentication.INSTANCE.removeCredentials(id);
     }
 
     @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)

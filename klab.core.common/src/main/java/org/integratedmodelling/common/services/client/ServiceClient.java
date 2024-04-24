@@ -3,6 +3,7 @@ package org.integratedmodelling.common.services.client;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
@@ -387,7 +388,10 @@ public abstract class ServiceClient implements KlabService {
     @Override
     public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
                                                                            ExternalAuthenticationCredentials credentials, Scope scope) {
-        return client.post(ServicesAPI.ADMIN.SET_HOST_CREDENTIALS, credentials,
-                ExternalAuthenticationCredentials.CredentialInfo.class, "host", host);
+        var request = new CredentialsRequest();
+        request.setHost(host);
+        request.setCredentials(credentials);
+        return client.post(ServicesAPI.ADMIN.CREDENTIALS, request,
+                ExternalAuthenticationCredentials.CredentialInfo.class);
     }
 }

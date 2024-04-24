@@ -485,4 +485,9 @@ public enum Authentication {
 
         return ret;
     }
+
+    public boolean removeCredentials(String id) {
+        // TODO
+        return false;
+    }
 }

@@ -5,6 +5,9 @@ import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCre
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.utils.Utils;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -23,10 +26,22 @@ public class Credentials {
             ""}, subcommands = {})
     public static class List implements Runnable {
 
+        @CommandLine.Spec
+        CommandLine.Model.CommandSpec commandSpec;
+
+        @CommandLine.Option(names = {"-r", "--resources"}, defaultValue = "false", description = {
+                "Handle credentials in the resources service"
+        }, required = false)
+        private boolean resources = false;
+
+        // TODO other services
+
         @Override
         public void run() {
-            // TODO Auto-generated method stub
-            System.out.println("Hola");
+            for (var info :
+                    Authentication.INSTANCE.getCredentialInfo(KlabCLI.INSTANCE.engine().serviceScope())) {
+                commandSpec.commandLine().getOut().println(info);
+            }
         }
 
     }
@@ -67,6 +82,13 @@ public class Credentials {
         }, required = false)
         private String scheme;
 
+        @CommandLine.Option(names = {"-r", "--resources"}, defaultValue = "false", description = {
+                "Handle credentials in the resources service"
+        }, required = false)
+        private boolean resources = false;
+
+        // TODO other services
+
         @CommandLine.Option(names = {"-h", "--host"}, description = {
                 "The host URL that the credentials refer to"
         }, required = true)
@@ -95,6 +117,13 @@ public class Credentials {
         }, required = true)
         private String host;
 
+        @CommandLine.Option(names = {"-r", "--resources"}, defaultValue = "false", description = {
+                "Handle credentials in the resources service"
+        }, required = false)
+        private boolean resources = false;
+
+        // TODO other services
+
         @CommandLine.Spec
         CommandLine.Model.CommandSpec commandSpec;
 
@@ -116,15 +145,31 @@ public class Credentials {
                 throw new KlabValidationException("expecting " + params.length + " arguments for scheme " +
                         scheme);
             }
+
+            // TODO provision for interactive input of key params if no args are given
+
             ExternalAuthenticationCredentials credentials = new ExternalAuthenticationCredentials();
 
             credentials.setScheme(scheme);
+            credentials.setId(Utils.Names.shortUUID());
+            credentials.setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(KlabCLI.INSTANCE.engine().serviceScope()));
+
             for (String arg : arguments) {
                 credentials.getCredentials().add(arg);
             }
 
-            if (Authentication.INSTANCE.addExternalCredentials(host, credentials, KlabCLI.INSTANCE.engine().serviceScope()) == null) {
-                commandSpec.commandLine().getErr().println("Failed to add external credentials");
+            if (resources) {
+                var rs = KlabCLI.INSTANCE.engine().serviceScope().getService(ResourcesService.class);
+                if (rs != null) {
+                    if (rs.addCredentials(host, credentials, KlabCLI.INSTANCE.engine().serviceScope()) == null) {
+                        commandSpec.commandLine().getErr().println("Failed to add external credentials");
+                    }
+                }
+            } else {
+                if (Authentication.INSTANCE.addExternalCredentials(host, credentials,
+                        KlabCLI.INSTANCE.engine().serviceScope()) == null) {
+                    commandSpec.commandLine().getErr().println("Failed to add external credentials");
+                }
             }
         }
     }
