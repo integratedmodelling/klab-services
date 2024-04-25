@@ -504,6 +504,26 @@ public class Utils {
             }
             return false;
         }
+
+        /**
+         * Merge notifications of the passed level into a single one.
+         *
+         * @param notifications
+         * @return
+         */
+        public static Notification merge(List<Notification> notifications, Level level) {
+            String error = null;
+            int n = 0;
+            for (var notification : notifications) {
+                if (notification.getLevel() == level) {
+                    error = error == null ? notification.getMessage() : (error + ";\n" + notification.getMessage());
+                    n ++;
+                }
+            }
+
+            return error == null ? null : Notification.create(error, level);
+
+        }
     }
 
     public enum OS {

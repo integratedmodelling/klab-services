@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -28,6 +29,7 @@ import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorCon
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
@@ -120,11 +122,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting,
                         engine().serviceScope());
                 if (ret != null) {
-                    for (var changeset : ret) {
-                        if (!changeset.isEmpty()) {
-                            dispatch(this, UIEvent.WorkspaceModified, changeset);
-                        }
-                    }
+                    handleResultSets(ret);
                 }
             });
         } else if (getUI() != null) {
@@ -148,9 +146,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
                 var ret = admin.deleteProject(projectUrl, scope().getIdentity().getId());
-                if (ret != null && !ret.isEmpty()) {
-                    dispatch(this, UIEvent.WorkspaceModified, ret);
-                }
+                handleResultSets(ret);
             });
         } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",
@@ -174,9 +170,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 var project = asset.parent(NavigableProject.class);
                 var ret = admin.deleteDocument(project.getUrn(), asset.getUrn(),
                         scope().getIdentity().getId());
-                if (ret != null && !ret.isEmpty()) {
-                    dispatch(this, UIEvent.WorkspaceModified, ret);
-                }
+                handleResultSets(ret);
             });
         } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",
@@ -193,13 +187,26 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             Thread.ofVirtual().start(() -> {
                 var ret = ((ResourcesService.Admin) resources).manageRepository(projectId, operation,
                         arguments);
-                if (ret != null && !ret.isEmpty()) {
-                    dispatch(this, UIEvent.WorkspaceModified, ret);
-                }
+                handleResultSets(ret);
             });
         } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",
                     Notification.Level.Warning));
+        }
+    }
+
+    private void handleResultSets(List<ResourceSet> ret) {
+        if (ret != null && !ret.isEmpty()) {
+            for (var change : ret) {
+                if (Utils.Notifications.hasErrors(change.getNotifications())) {
+                    if (getUI() != null) {
+                        getUI().alert(Utils.Notifications.merge(change.getNotifications(),
+                                Notification.Level.Error));
+                    }
+                } else {
+                    dispatch(this, UIEvent.WorkspaceModified, change);
+                }
+            }
         }
     }
 
