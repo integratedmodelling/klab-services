@@ -119,8 +119,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             Thread.ofVirtual().start(() -> {
                 var ret = admin.importProject(workspaceName, projectUrl, overwriteExisting,
                         engine().serviceScope());
-                if (ret != null && !ret.isEmpty()) {
-                    dispatch(this, UIEvent.WorkspaceModified, ret);
+                if (ret != null) {
+                    for (var changeset : ret) {
+                        if (!changeset.isEmpty()) {
+                            dispatch(this, UIEvent.WorkspaceModified, changeset);
+                        }
+                    }
                 }
             });
         } else if (getUI() != null) {
@@ -168,7 +172,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
                 var project = asset.parent(NavigableProject.class);
-                var ret = admin.deleteDocument(project.getUrn(), asset.getUrn(), scope().getIdentity().getId());
+                var ret = admin.deleteDocument(project.getUrn(), asset.getUrn(),
+                        scope().getIdentity().getId());
                 if (ret != null && !ret.isEmpty()) {
                     dispatch(this, UIEvent.WorkspaceModified, ret);
                 }

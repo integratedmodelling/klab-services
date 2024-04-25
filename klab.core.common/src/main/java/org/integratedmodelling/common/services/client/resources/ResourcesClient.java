@@ -63,13 +63,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet projects(Collection<String> projects, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public ResourceSet project(String projectName, Scope scope) {
+    public List<ResourceSet> projects(Collection<String> projects, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -217,13 +211,14 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
-                                     Scope scope) {
+    public List<ResourceSet> importProject(String workspaceName, String projectUrl,
+                                           boolean overwriteIfExisting,
+                                           Scope scope) {
         ProjectRequest request = new ProjectRequest();
         request.setWorkspaceName(workspaceName);
         request.setProjectUrl(projectUrl);
         request.setOverwrite(overwriteIfExisting);
-        return client.post(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT, request, ResourceSet.class);
+        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT, request, ResourceSet.class);
     }
 
     @Override
@@ -247,7 +242,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     @Override
     public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
                                             String content, String lockingAuthorization) {
-        return List.of();
+        return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_DOCUMENT, content,
+                ResourceSet.class, "projectName", projectName, "documentType", documentType);
     }
 
     @Override

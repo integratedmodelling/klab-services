@@ -120,16 +120,7 @@ public interface ResourcesService extends KlabService {
      *              should include the optional parts due to the user's group selection.
      * @return an entire worldview managed by this service, or an empty resource set if not available.
      */
-    ResourceSet projects(Collection<String> projects, Scope scope);
-
-    /**
-     * Request all the contents of a given project.
-     *
-     * @param projectName
-     * @param scope
-     * @return
-     */
-    ResourceSet project(String projectName, Scope scope);
+    List<ResourceSet> projects(Collection<String> projects, Scope scope);
 
     /**
      * Request the namespaces containing a given model along with anything else required to run it properly.
@@ -364,7 +355,7 @@ public interface ResourcesService extends KlabService {
          * @return true if operation succeeded and anything was done (false if project existed and wasn't
          * overwritten)
          */
-        ResourceSet importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
+        List<ResourceSet> importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
                                   Scope scope);
 
         /**

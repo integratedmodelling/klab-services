@@ -46,22 +46,22 @@ public abstract class AbstractUIController implements UIController {
     /**
      * Reactors to each event are registered here
      */
-    private Map<UIReactor.UIEvent, List<EventReactor>> reactors =
+    private final Map<UIReactor.UIEvent, List<EventReactor>> reactors =
             Collections.synchronizedMap(new HashMap<>());
-    private List<Pair<UIPanelController, Class<? extends PanelController<?, ?>>>> panelControllerClasses =
+    private final List<Pair<UIPanelController, Class<? extends PanelController<?, ?>>>> panelControllerClasses =
             Collections.synchronizedList(new ArrayList<>());
-    private Map<UIReactor.Type, Object> views = new HashMap<>();
-    private Map<Object, PanelController<?, ?>> panelControllers = new HashMap<>();
+    private final Map<UIReactor.Type, Object> views = new HashMap<>();
+    private final Map<Object, PanelController<?, ?>> panelControllers = new HashMap<>();
     private Engine engine;
 
     private class EventReactor {
 
-        List<Class<?>> parameterClasses = new ArrayList<>();
+//        List<Class<?>> parameterClasses = new ArrayList<>();
         Method method;
         Object reactor;
         Queue<Pair<UIReactor, Object[]>> messageQueue = new LinkedBlockingDeque<>(128);
 
-        class EventReactionEdge extends DefaultEdge {
+        static class EventReactionEdge extends DefaultEdge {
             UIReactor.UIEvent event;
         }
 
@@ -75,7 +75,7 @@ public abstract class AbstractUIController implements UIController {
         public EventReactor(Object reactor, Method method) {
             this.reactor = reactor;
             this.method = method;
-            this.parameterClasses.addAll(Arrays.stream(method.getParameterTypes()).toList());
+//            this.parameterClasses.addAll(Arrays.stream(method.getParameterTypes()).toList());
         }
 
         public void dispatchPendingTasks() {
@@ -284,10 +284,14 @@ public abstract class AbstractUIController implements UIController {
 
     @Override
     public void dispatch(UIReactor sender, UIReactor.UIEvent event, Object... payload) {
+        // TODO handle reactors to UiEvent.Any
         if (relevantEvents.contains(event)) {
             var rs = reactors.get(event);
             if (rs != null) {
                 for (var desc : rs) {
+                    if (event != UIEvent.ServiceStatus) {
+                        System.out.println("Dispatching " + event + "(" + Arrays.toString(payload) + ") to " + desc.method);
+                    }
                     desc.call(sender, payload);
                 }
             }

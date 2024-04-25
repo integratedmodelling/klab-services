@@ -1,12 +1,8 @@
 package org.integratedmodelling.resources.server.controllers;
 
-import org.integratedmodelling.common.services.client.resources.ProjectRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
-import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
@@ -17,8 +13,6 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
@@ -29,8 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.RegEx;
-import java.io.File;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
@@ -47,16 +39,16 @@ public class ResourcesProviderController {
     private ServiceAuthorizationManager authenticationManager;
 
     @GetMapping(ServicesAPI.RESOURCES.PROJECTS)
-    public @ResponseBody ResourceSet getProjects(@RequestParam Collection<String> projects,
+    public @ResponseBody List<ResourceSet> getProjects(@RequestParam Collection<String> projects,
                                                  Principal principal) {
         return resourcesServer.klabService().projects(projects,
                 authenticationManager.resolveScope(principal));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.PROJECT)
-    public @ResponseBody ResourceSet getProject(@PathVariable("projectName") String projectName,
+    public @ResponseBody Project getProject(@PathVariable("projectName") String projectName,
                                                 Principal principal) {
-        return resourcesServer.klabService().project(projectName,
+        return resourcesServer.klabService().resolveProject(projectName,
                 authenticationManager.resolveScope(principal));
     }
 

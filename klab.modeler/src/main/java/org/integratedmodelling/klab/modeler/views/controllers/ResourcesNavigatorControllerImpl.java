@@ -52,6 +52,9 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
 
     @Override
     public void workspaceModified(ResourceSet changes) {
+
+        System.out.println("WS MODIFIED: " + changes);
+
         if (!changes.isEmpty()) {
             var container = assetMap.get(changes.getWorkspace());
             if (container != null) {

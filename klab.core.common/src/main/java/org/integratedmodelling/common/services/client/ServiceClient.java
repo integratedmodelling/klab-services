@@ -50,7 +50,7 @@ public abstract class ServiceClient implements KlabService {
     private AtomicBoolean connected = new AtomicBoolean(false);
     private AtomicBoolean authorized = new AtomicBoolean(false);
     private AtomicBoolean authenticated = new AtomicBoolean(false);
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private boolean usingLocalSecret;
     private AtomicReference<ServiceStatus> status = new AtomicReference<>(ServiceStatus.offline());
     private AbstractServiceDelegatingScope scope;
@@ -84,12 +84,13 @@ public abstract class ServiceClient implements KlabService {
         }
     }
 
+    @SafeVarargs
     protected ServiceClient(KlabService.Type serviceType, URL url, Identity identity,
                             List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
         this.authentication = Pair.of(identity, services);
         this.serviceType = serviceType;
         this.url = url;
-        this.local = url.equals(serviceType.localServiceUrl());
+        this.local = Utils.URLs.isLocalHost(url);
         this.scopeListeners = listeners;
         this.token = this.local ? Configuration.INSTANCE.getServiceSecret(serviceType) : identity.getId();
         establishConnection();
@@ -129,7 +130,7 @@ public abstract class ServiceClient implements KlabService {
         authorized.set(token != null);
 
         for (var service : services) {
-            if (service.getServiceType() == serviceType && service.isPrimary() && service.getUrls().size() > 0) {
+            if (service.getServiceType() == serviceType && service.isPrimary() && !service.getUrls().isEmpty()) {
                 for (var url : service.getUrls()) {
                     var status = readServiceStatus(url, scope);
                     if (status != null) {
@@ -275,12 +276,21 @@ public abstract class ServiceClient implements KlabService {
 
         try {
 
+            if (token == null || token.isEmpty() && Utils.URLs.isLocalHost(getUrl())) {
+
+                // may have gotten lost if the service was starting when we booted
+                var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
+                if (secret != null) {
+                    token = secret;
+                    local = true;
+                }
+            }
+
             boolean currentStatus = connected.get();
 
             /*
             TODO check for changes of status and send messages over
              */
-
             try {
                 var s = readServiceStatus(this.url, scope);
                 if (s == null) {

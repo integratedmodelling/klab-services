@@ -8,6 +8,7 @@ package org.integratedmodelling.klab.services.resources;
 //import org.integratedmodelling.kim.model.KimLoader;
 //import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 
+import com.google.common.collect.Sets;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
@@ -61,6 +62,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 @Service
 public class ResourcesProvider extends BaseService implements ResourcesService, ResourcesService.Admin {
@@ -101,9 +103,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         super(scope, Type.RESOURCES, options);
 
-        this.db =
-                DBMaker.fileDB(getConfigurationSubdirectory(options, "catalog") + File.separator +
-                        "resources.db").transactionEnable().closeOnJvmShutdown().make();
+        this.db = DBMaker.fileDB(getConfigurationSubdirectory(options, "catalog") + File.separator +
+                "resources.db").transactionEnable().closeOnJvmShutdown().make();
         this.catalog =
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
 
@@ -283,8 +284,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * @return
      */
     @Override
-    public synchronized ResourceSet importProject(String workspaceName, String projectUrl,
-                                                  boolean overwriteIfExisting, Scope scope) {
+    public synchronized List<ResourceSet> importProject(String workspaceName, String projectUrl,
+                                                        boolean overwriteIfExisting, Scope scope) {
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
         var project = workspaceManager.loadProject(storage, workspaceName);
 
@@ -302,7 +303,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         catalog.put(project.getUrn(), status);
         db.commit();
 
-        return project(projectUrl, serviceScope());
+        return collectProject(project.getUrn(), CRUDOperation.CREATE, workspaceName, scope);
     }
 
     @Override
@@ -473,7 +474,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet projects(Collection<String> projects, Scope scope) {
+    public List<ResourceSet> projects(Collection<String> projects, Scope scope) {
 
         ResourceSet ret = new ResourceSet();
 
@@ -488,7 +489,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         //            }
         //        }
 
-        return sort(ret, scope);
+        return List.of(); // sort(ret, scope);
     }
 
     private ResourceSet sort(ResourceSet ret, Scope scope) {
@@ -540,32 +541,45 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * @param scope
      * @return
      */
-    private ResourceSet collectProject(String projectName, Scope scope) {
-        List<KimNamespace> namespaces = new ArrayList<>();
-        for (String namespace : this.workspaceManager.getNamespaceUrns()) {
-            KimNamespace ns = resolveNamespace(namespace, scope);
-            if (projectName.equals(ns.getProjectName())) {
-                namespaces.add(ns);
-            }
-        }
-        List<KActorsBehavior> behaviors = new ArrayList<>();
-        for (String behaviorUrn : this.workspaceManager.getBehaviorUrns()) {
-            KActorsBehavior behavior = resolveBehavior(behaviorUrn, scope);
-            if (projectName.equals(behavior.getProjectId())) {
-                behaviors.add(behavior);
-            }
-        }
+    private List<ResourceSet> collectProject(String projectName, CRUDOperation operation, String workspace,
+                                             Scope scope) {
+
+        List<ResourceSet> ret = new ArrayList<>();
+
+        List<KimOntology> ontologies =
+                this.workspaceManager.getOntologies(false).stream().filter(o -> projectName.equals(o.getProjectName())).toList();
+        List<KimNamespace> namespaces =
+                this.workspaceManager.getNamespaces().stream().filter(o -> projectName.equals(o.getProjectName())).toList();
+        List<KimObservationStrategyDocument> strategies =
+                this.workspaceManager.getStrategyDocuments().stream().filter(o -> projectName.equals(o.getProjectName())).toList();
+        List<KActorsBehavior> behaviors =
+                this.workspaceManager.getBehaviors().stream().filter(o -> projectName.equals(o.getProjectName())).toList();
 
         // Resources work independently and do not come with the project data.
 
-        return Utils.Resources.create(this,
-                org.integratedmodelling.common.utils.Utils.Collections.shallowCollection(namespaces,
-                        behaviors).toArray(new KlabAsset[namespaces.size()]));
-    }
+        // check if the worldview is impacted, too
+        var worldviewOntologies =
+                getWorldview().getOntologies().stream().map(KlabAsset::getUrn).collect(Collectors.toSet());
+        var worldviewStrategies =
+                getWorldview().getObservationStrategies().stream().map(KlabAsset::getUrn).collect(Collectors.toSet());
 
-    @Override
-    public ResourceSet project(String projectName, Scope scope) {
-        return sort(collectProject(projectName, scope), scope);
+        var conts = Sets.intersection(worldviewOntologies,
+                ontologies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
+        var cstra = Sets.intersection(worldviewStrategies,
+                strategies.stream().map(KlabAsset::getUrn).collect(Collectors.toSet()));
+
+        if (!conts.isEmpty() || !cstra.isEmpty()) {
+            ret.add(Utils.Resources.create(this, Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER, operation,
+                    Utils.Collections.shallowCollection(
+                            ontologies.stream().filter(o -> conts.contains(o.getUrn())).toList(),
+                            strategies.stream().filter(o -> conts.contains(o.getUrn())).toList()).toArray(new KlabAsset[0])));
+        }
+
+        ret.add(Utils.Resources.create(this, workspace, operation, Utils.Collections.shallowCollection(ontologies,
+                strategies,
+                namespaces, behaviors).toArray(new KlabAsset[0])));
+
+        return ret;
     }
 
     @Override
@@ -770,8 +784,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public Project resolveProject(String projectName, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        // TODO check scope
+        return workspaceManager.getProject(projectName);
     }
 
     @Override
@@ -867,18 +881,16 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 for (KlabStatement statement : namespace.getStatements()) {
                     if (statement instanceof KimModel && urn.equals(((KimModel) statement).getUrn())) {
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
-                                namespace.getVersion()
-                                , KnowledgeClass.MODEL));
+                                namespace.getVersion(), KnowledgeClass.MODEL));
                     } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
-                                namespace.getVersion()
-                                , KnowledgeClass.INSTANCE));
+                                namespace.getVersion(), KnowledgeClass.INSTANCE));
                     }
                 }
 
                 if (ret.getResults().size() > 0) {
-                    ret.getNamespaces().add(new ResourceSet.Resource(getUrl().toString(), namespace.getUrn(),
-                            namespace.getVersion(), KnowledgeClass.NAMESPACE));
+                    ret.getNamespaces().add(new ResourceSet.Resource(getUrl().toString(),
+                            namespace.getUrn(), namespace.getVersion(), KnowledgeClass.NAMESPACE));
                 }
 
             }

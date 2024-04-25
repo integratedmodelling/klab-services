@@ -254,4 +254,18 @@ public class ResourceSet implements Serializable {
         return ret;
     }
 
+    @Override
+    public String toString() {
+        return "ResourceSet{" +
+                "workspace='" + workspace + '\'' +
+                ", results=" + results +
+                ", resources=" + resources +
+                ", ontologies=" + ontologies +
+                ", observationStrategies=" + observationStrategies +
+                ", notifications=" + notifications +
+                ", namespaces=" + namespaces +
+                ", empty=" + empty +
+                ", behaviors=" + behaviors +
+                '}';
+    }
 }

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.utils;
 
+import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -13,6 +14,8 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
+import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
@@ -187,23 +190,34 @@ public class Utils {
          *                  false.
          * @return
          */
-        public static ResourceSet create(ResourcesService service, KlabAsset... resources) {
+        public static ResourceSet create(ResourcesService service, String workspaceUrn,
+                                         CRUDOperation operation,
+                                         KlabAsset... resources) {
             ResourceSet ret = new ResourceSet();
             ret.getServices().put(service.serviceId(), service.getUrl());
             if (resources != null) {
                 for (KlabAsset resource : resources) {
+
                     ResourceSet.Resource descriptor = new ResourceSet.Resource();
                     descriptor.setResourceUrn(resource.getUrn());
                     descriptor.setServiceId(service.serviceId());
+                    descriptor.setOperation(operation);
+                    descriptor.setKnowledgeClass(KlabAsset.classify(resource));
+
                     if (resource instanceof KlabDocument<?> document) {
                         descriptor.setResourceVersion(document.getVersion());
                     }
+
                     if (resource instanceof KimNamespace) {
                         ret.getNamespaces().add(descriptor);
                     } else if (resource instanceof KActorsBehavior) {
                         ret.getBehaviors().add(descriptor);
                     } else if (resource instanceof Resource) {
                         ret.getResources().add(descriptor);
+                    } else if (resource instanceof KimOntology) {
+                        ret.getOntologies().add(descriptor);
+                    } else if (resource instanceof KimObservationStrategyDocument) {
+                        ret.getObservationStrategies().add(descriptor);
                     }
                 }
             } else {
@@ -289,7 +303,7 @@ public class Utils {
      * <pre>{@code
      * Collection<B> cb = new Cast<A,B>.cast(ca);
      * }</pre>
-     *
+     * <p>
      * and type safety be damned. This will not generate any warning and will avoid any silly copy. Works for
      * generic collections, arraylists and hashsets - add more if needed. Needs something else for maps.
      *
@@ -4106,6 +4120,29 @@ public class Utils {
          */
         public static boolean isCompliant(String urn) {
             return URN_PATTERN.matcher(urn).matches();
+        }
+
+        public static boolean isLocalHost(URL url) {
+
+            try {
+
+                var remoteAddress = InetAddress.getByName(url.getHost());
+                if (remoteAddress.isAnyLocalAddress() || remoteAddress.isLoopbackAddress()) {
+                    return true;
+                }
+
+                if (NetworkInterface.getByInetAddress(remoteAddress) != null) {
+                    return true;
+                }
+
+                var localHost = InetAddress.getLocalHost().getHostAddress();
+                var remoteHost = remoteAddress.getHostAddress();
+                return localHost.compareTo(remoteHost) == 0;
+
+            } catch (Exception e) {
+                // ignore and screw it
+            }
+            return false;
         }
 
         /**

@@ -36,7 +36,7 @@ public class ResourceAdminController {
     private ServiceAuthorizationManager authenticationManager;
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.IMPORT_PROJECT)
-    public @ResponseBody ResourceSet importNewProject(@RequestBody ProjectRequest request,
+    public @ResponseBody List<ResourceSet> importNewProject(@RequestBody ProjectRequest request,
                                                       Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.importProject(request.getWorkspaceName(), request.getProjectUrl(),

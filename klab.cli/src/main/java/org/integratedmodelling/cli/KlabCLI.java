@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -72,10 +73,10 @@ public enum KlabCLI {
 
     private CLIStartupOptions options;
     private CommandLine commandLine;
-
     public Engine engine() {
         return modeler.engine();
     }
+    public UserScope user() { return modeler.user(); }
 
     public ModelerImpl modeler() {
         return this.modeler;

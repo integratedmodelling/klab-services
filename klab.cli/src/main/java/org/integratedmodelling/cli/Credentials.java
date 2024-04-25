@@ -38,12 +38,21 @@ public class Credentials {
 
         @Override
         public void run() {
-            for (var info :
-                    Authentication.INSTANCE.getCredentialInfo(KlabCLI.INSTANCE.engine().serviceScope())) {
-                commandSpec.commandLine().getOut().println(info);
+
+            if (resources) {
+                var rs = KlabCLI.INSTANCE.engine().serviceScope().getService(ResourcesService.class);
+                if (rs != null) {
+                    for (var info : rs.getCredentialInfo(rs.serviceScope())) {
+                        commandSpec.commandLine().getOut().println(info);
+                    }
+                }
+            } else {
+                for (var info :
+                        Authentication.INSTANCE.getCredentialInfo(KlabCLI.INSTANCE.user())) {
+                    commandSpec.commandLine().getOut().println(info);
+                }
             }
         }
-
     }
 
     @Command(name = "describe", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
@@ -152,7 +161,7 @@ public class Credentials {
 
             credentials.setScheme(scheme);
             credentials.setId(Utils.Names.shortUUID());
-            credentials.setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(KlabCLI.INSTANCE.engine().serviceScope()));
+            credentials.setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(KlabCLI.INSTANCE.user()));
 
             for (String arg : arguments) {
                 credentials.getCredentials().add(arg);
@@ -161,13 +170,13 @@ public class Credentials {
             if (resources) {
                 var rs = KlabCLI.INSTANCE.engine().serviceScope().getService(ResourcesService.class);
                 if (rs != null) {
-                    if (rs.addCredentials(host, credentials, KlabCLI.INSTANCE.engine().serviceScope()) == null) {
+                    if (rs.addCredentials(host, credentials, rs.serviceScope()) == null) {
                         commandSpec.commandLine().getErr().println("Failed to add external credentials");
                     }
                 }
             } else {
                 if (Authentication.INSTANCE.addExternalCredentials(host, credentials,
-                        KlabCLI.INSTANCE.engine().serviceScope()) == null) {
+                        KlabCLI.INSTANCE.user()) == null) {
                     commandSpec.commandLine().getErr().println("Failed to add external credentials");
                 }
             }
