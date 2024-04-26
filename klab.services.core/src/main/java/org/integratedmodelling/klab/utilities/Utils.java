@@ -434,6 +434,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                     ObjectId oldHead = repo.resolve("HEAD^{tree}");
 
                     PullCommand pullCmd = git.pull();
+                    pullCmd.setCredentialsProvider(getCredentialsProvider(git, scope));
                     PullResult result = pullCmd.call();
                     if (result != null && result.isSuccessful()) {
                         var messages = result.getFetchResult().getMessages();
@@ -450,10 +451,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
                             // commit locally
                             try {
-                                var commit = git.commit().setMessage(commitMessage).call();
+
+                                var commit = git.commit().setMessage(commitMessage);
+                                commit.setAll(true);
+                                commit.setCredentialsProvider(getCredentialsProvider(git, scope));
+                                var commitResult = commit.call();
                                 PushCommand pushCommand = git.push();
                                 pushCommand.setRemote("origin");
-                                setCredentialsProvider(pushCommand, git, scope);
+                                pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
                                 pushCommand.call();
                             } catch (GitAPIException ex) {
                                 ret.getNotifications().add(Notification.create(ex));
@@ -469,9 +474,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
         }
 
-        private static void setCredentialsProvider(TransportCommand<?, ?> command,
-                                                                     org.eclipse.jgit.api.Git git,
-                                                                     Scope scope) {
+        private static CredentialsProvider getCredentialsProvider(org.eclipse.jgit.api.Git git,
+                                                                  Scope scope) {
 
             CredentialsProvider ret = null;
             ExternalAuthenticationCredentials credentials = null;
@@ -491,6 +495,12 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 throw new RuntimeException(e);
             }
 
+            return getCredentialsProvider(credentials);
+        }
+
+        public static CredentialsProvider getCredentialsProvider(ExternalAuthenticationCredentials credentials) {
+
+            CredentialsProvider ret = null;
             if (credentials != null) {
                 ret = switch (credentials.getScheme()) {
                     case ExternalAuthenticationCredentials.BASIC ->
@@ -503,35 +513,33 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 // check if we need to add a transport mechanism instead
                 if (ret == null && ExternalAuthenticationCredentials.SSH.equals(credentials.getScheme())) {
 
-//                    SshSessionFactory sshSessionFactory = new JschConfigSessionFactory() {
-//                        @Override
-//                        protected void configure(Host host, Session session) {
-//                            // do nothing
-//                        }
-//
-//                        @Override
-//                        protected JSch createDefaultJSch(FS fs) throws JSchException {
-//                            JSch defaultJSch = super.createDefaultJSch(fs);
-//                            defaultJSch.addIdentity("c:/path/to/my/private_key");
-//
-//                            // if key is protected with passphrase
-//                            // defaultJSch.addIdentity("c:/path/to/my/private_key", "my_passphrase");
-//
-//                            return defaultJSch;
-//                        }
-//                    };
-//
-//                    command.setTransportConfigCallback(transport -> {
-//                        SshTransport sshTransport = (SshTransport) transport;
-//                        sshTransport.setSshSessionFactory(sshSessionFactory);
-//                    });
+                    //                    SshSessionFactory sshSessionFactory = new
+                    //                    JschConfigSessionFactory() {
+                    //                        @Override
+                    //                        protected void configure(Host host, Session session) {
+                    //                            // do nothing
+                    //                        }
+                    //
+                    //                        @Override
+                    //                        protected JSch createDefaultJSch(FS fs) throws JSchException {
+                    //                            JSch defaultJSch = super.createDefaultJSch(fs);
+                    //                            defaultJSch.addIdentity("c:/path/to/my/private_key");
+                    //
+                    //                            // if key is protected with passphrase
+                    //                            // defaultJSch.addIdentity("c:/path/to/my/private_key",
+                    //                            "my_passphrase");
+                    //
+                    //                            return defaultJSch;
+                    //                        }
+                    //                    };
+                    //
+                    //                    command.setTransportConfigCallback(transport -> {
+                    //                        SshTransport sshTransport = (SshTransport) transport;
+                    //                        sshTransport.setSshSessionFactory(sshSessionFactory);
+                    //                    });
                 }
             }
-
-            if (ret != null) {
-                command.setCredentialsProvider(ret);
-            }
-
+            return ret;
         }
 
         /**
@@ -541,7 +549,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
          * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchAndMerge(File localRepository) {
+        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchAndMerge(File localRepository, Scope scope) {
 
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
                     new org.integratedmodelling.klab.api.data.Repository.Modifications();
@@ -554,6 +562,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                     ObjectId oldHead = repo.resolve("HEAD^{tree}");
 
                     PullCommand pullCmd = git.pull();
+                    pullCmd.setCredentialsProvider(getCredentialsProvider(git, scope));
                     PullResult result = pullCmd.call();
                     if (result != null && result.isSuccessful()) {
                         var messages = result.getFetchResult().getMessages();
@@ -627,15 +636,15 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             return null;
         }
 
-            /**
-             * Commit any current changes before switching to the passed branch (either remote or local). If the
-             * branch is new, create it based on current and instrument it for push/pull to/from origin.
-             *
-             * @param localRepository
-             * @param branch
-             * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
-             * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
-             */
+        /**
+         * Commit any current changes before switching to the passed branch (either remote or local). If the
+         * branch is new, create it based on current and instrument it for push/pull to/from origin.
+         *
+         * @param localRepository
+         * @param branch
+         * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
+         * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
+         */
         public static org.integratedmodelling.klab.api.data.Repository.Modifications commitAndSwitch(File localRepository, String branch) {
 
             org.integratedmodelling.klab.api.data.Repository.Modifications ret =
@@ -725,12 +734,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
-            var credentials = Authentication.INSTANCE.getCredentials(url, scope);
-
-            CredentialsProvider credentialsProvider = null;
-            if (credentials != null) {
-                // TODO
-            }
+            CredentialsProvider credentialsProvider = getCredentialsProvider(Authentication.INSTANCE.getCredentials(url, scope));
 
             try (org.eclipse.jgit.api.Git result =
                          org.eclipse.jgit.api.Git.cloneRepository().setURI(url)
@@ -803,7 +807,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             if (gitDir.exists() && gitDir.isDirectory() && gitDir.canRead() && repoDir.exists()) {
 
-                ret = fetchAndMerge(repoDir);
+                ret = fetchAndMerge(repoDir, scope);
                 /*
                  * TODO check branch and switch/pull if necessary
                  */

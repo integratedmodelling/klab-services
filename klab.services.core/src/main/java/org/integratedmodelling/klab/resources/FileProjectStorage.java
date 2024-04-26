@@ -186,9 +186,9 @@ public class FileProjectStorage implements ProjectStorage {
         }
     }
 
-    public Repository.Modifications pullChanges() {
+    public Repository.Modifications pullChanges(Scope scope) {
         if (isTracked()) {
-            return Utils.Git.fetchAndMerge(rootFolder);
+            return Utils.Git.fetchAndMerge(rootFolder, scope);
         }
         return new Repository.Modifications();
     }

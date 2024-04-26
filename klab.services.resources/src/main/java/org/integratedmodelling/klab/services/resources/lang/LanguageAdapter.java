@@ -119,6 +119,40 @@ public enum LanguageAdapter {
         return ret;
     }
 
+    public KimNamespace adaptNamespace(NamespaceSyntax namespace, String projectName,
+                                       Collection<Notification> notifications) {
+
+        var ret = new KimNamespaceImpl();
+        ret.setUrn(namespace.getUrn());
+
+        for (var statement : namespace.getStatements()) {
+            ret.getStatements().add(adaptStatement(statement));
+        }
+
+        return ret;
+    }
+
+    private KlabStatement adaptStatement(NamespaceStatementSyntax statement) {
+        return switch (statement) {
+            case InstanceSyntax instance -> adaptInstance(instance);
+            case ModelSyntax model -> adaptModel(model);
+            case DefineSyntax define -> adaptDefine(define);
+            default -> null;
+        };
+    }
+
+    private KlabStatement adaptDefine(DefineSyntax define) {
+        return null;
+    }
+
+    private KlabStatement adaptModel(ModelSyntax model) {
+        return null;
+    }
+
+    private KlabStatement adaptInstance(InstanceSyntax instance) {
+        return null;
+    }
+
     private KimConcept adaptSemantics(SemanticSyntax.ConceptData observable) {
         KimConceptImpl ret = new KimConceptImpl();
         ret.setUrn(observable.concept().namespace() + ":" + observable.concept().conceptName());
@@ -262,10 +296,14 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public KimObservationStrategyDocument adaptStrategies(ObservationStrategiesSyntax definition) {
+    public KimObservationStrategyDocument adaptStrategies(ObservationStrategiesSyntax definition,
+                                                          String projectName,
+                                                          Collection<Notification> notifications) {
 
         KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
         ret.setUrn(definition.getUrn()); // FIXME use the URN from the preamble name
+        ret.getNotifications().addAll(notifications);
+
         // we don't add source code here as each strategy has its own
         for (var strategy : definition.getStrategies()) {
             ret.getStatements().add(adaptStrategy(strategy));
@@ -284,13 +322,14 @@ public enum LanguageAdapter {
         ret.setDeprecation(strategy.getDeprecation());
         ret.setDeprecated(strategy.getDeprecation() != null);
 
-
         for (var filter : strategy.getFilters()) {
             var f = new KimObservationStrategyImpl.FilterImpl();
+            // TODO
             ret.getFilters().add(f);
         }
         for (var operation : strategy.getOperations()) {
             var o = new KimObservationStrategyImpl.OperationImpl();
+            o.setObservable(adaptObservable(operation.getObservable()));
             ret.getOperations().add(o);
         }
         for (var let : strategy.getMacroVariables().keySet()) {
