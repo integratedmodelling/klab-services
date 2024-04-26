@@ -19,7 +19,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private KimConcept observable;
     private KimConcept parent;
-    private KimConcept context;
+//    private KimConcept context;
     private KimConcept inherent;
     private KimConcept goal;
     private KimConcept causant;
@@ -76,7 +76,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.type = EnumSet.copyOf(other.type);
         this.observable = other.observable;
         this.parent = other.parent;
-        this.context = other.context;
+//        this.context = other.context;
         this.inherent = other.inherent;
         this.goal = other.goal;
         this.causant = other.causant;
@@ -274,9 +274,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.observable = observable;
     }
 
-    public void setContext(KimConcept context) {
-        this.context = context;
-    }
+//    public void setContext(KimConcept context) {
+//        this.context = context;
+//    }
 
     public void setInherent(KimConcept inherent) {
         this.inherent = inherent;
@@ -419,9 +419,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
                 case COMPRESENT:
                     ret.compresent = null;
                     break;
-                case CONTEXT:
-                    ret.context = null;
-                    break;
+//                case CONTEXT:
+//                    ret.context = null;
+//                    break;
                 case COOCCURRENT:
                     ret.cooccurrent = null;
                     break;
@@ -475,9 +475,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
                 case COMPRESENT:
                     ret.compresent = null;
                     break;
-                case CONTEXT:
-                    ret.context = null;
-                    break;
+//                case CONTEXT:
+//                    ret.context = null;
+//                    break;
                 case COOCCURRENT:
                     ret.cooccurrent = null;
                     break;
@@ -572,10 +572,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             complex = true;
         }
 
-        if (context != null) {
-            ret += " within " + ((KimConceptImpl) context).computeUrn();
-            complex = true;
-        }
+//        if (context != null) {
+//            ret += " within " + ((KimConceptImpl) context).computeUrn();
+//            complex = true;
+//        }
 
         if (causant != null) {
             ret += " caused by " + ((KimConceptImpl) causant).computeUrn();
@@ -705,9 +705,9 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             role.visit(visitor);
         }
 
-        if (context != null) {
-            context.visit(visitor);
-        }
+//        if (context != null) {
+//            context.visit(visitor);
+//        }
 
         if (inherent != null) {
             inherent.visit(visitor);

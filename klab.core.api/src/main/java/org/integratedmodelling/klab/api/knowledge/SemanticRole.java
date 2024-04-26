@@ -23,7 +23,7 @@ public enum SemanticRole {
      * individually. The SEMANTIC_MODIFIER role is added for correct use, referring
      * to all below.
      */
-    CONTEXT(true, "within"),
+//    CONTEXT(true, "within"),
     INHERENT(true, "of"),
     ADJACENT(true, "adjacent to"),
     CAUSED(true, "caused by"),
@@ -74,7 +74,7 @@ public enum SemanticRole {
                 break;
             case COMPRESENT:
                 break;
-            case CONTEXT, INHERENT:
+            case /*CONTEXT, */INHERENT:
                 return type != SemanticType.SUBJECT && type != SemanticType.AGENT;
             case COOCCURRENT:
                 break;

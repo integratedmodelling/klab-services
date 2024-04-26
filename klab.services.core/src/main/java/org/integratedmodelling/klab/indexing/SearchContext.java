@@ -543,7 +543,7 @@ public class SearchContext {
             ret.modifiers.add(SemanticLexicalElement.FOR);
             ret.modifiers.add(SemanticLexicalElement.OF);
             ret.modifiers.add(SemanticLexicalElement.WITH);
-            ret.modifiers.add(SemanticLexicalElement.WITHIN);
+//            ret.modifiers.add(SemanticLexicalElement.WITHIN);
 
             return ret;
         }
@@ -754,10 +754,10 @@ public class SearchContext {
                 ret.allow(Constraint.with(SemanticType.OBSERVABLE));
                 ret.allow(Constraint.allTraits(false));
                 break;
-            case WITHIN:
-                ret.allow(Constraint.with(SemanticType.COUNTABLE));
-                ret.allow(Constraint.allTraits(false).applyingTo(SemanticType.COUNTABLE));
-                break;
+//            case WITHIN:
+//                ret.allow(Constraint.with(SemanticType.COUNTABLE));
+//                ret.allow(Constraint.allTraits(false).applyingTo(SemanticType.COUNTABLE));
+//                break;
             case GREATER:
                 ret.allow(Constraint.with(SemanticType.CONTINUOUS_QUALITY_TYPES));
                 break;

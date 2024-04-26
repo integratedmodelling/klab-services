@@ -27,8 +27,6 @@ public interface KlabAsset extends Serializable {
         CONCEPT, OBSERVABLE, MODEL, DEFINITION, INSTANCE, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE,
         APPLICATION, ONTOLOGY, OBSERVATION_STRATEGY, OBSERVATION_STRATEGY_DOCUMENT,
         COMPONENT, PROJECT, WORLDVIEW;
-
-
     }
 
     public static KnowledgeClass classify(KlabAsset document) {
@@ -49,7 +47,6 @@ public interface KlabAsset extends Serializable {
         };
 
     }
-
 
     /**
      * Anything that represents knowledge must return a stable, unique identifier that can be resolved back to

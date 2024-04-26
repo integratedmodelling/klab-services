@@ -315,9 +315,9 @@ public class Indexer {
                     case COMPRESENT:
                         ret.add(new SemanticMatch(SemanticLexicalElement.WITH));
                         break;
-                    case CONTEXT:
-                        ret.add(new SemanticMatch(SemanticLexicalElement.WITHIN));
-                        break;
+//                    case CONTEXT:
+//                        ret.add(new SemanticMatch(SemanticLexicalElement.WITHIN));
+//                        break;
                     case COOCCURRENT:
                         ret.add(new SemanticMatch(SemanticLexicalElement.DURING));
                         break;
