@@ -41,6 +41,18 @@ public class ResourceSet implements Serializable {
     @Serial
     private static final long serialVersionUID = 6465699208972901806L;
 
+    private Map<String, URL> services = new HashMap<>();
+    private List<Resource> namespaces = new ArrayList<>();
+    private String workspace;
+    private List<Resource> ontologies = new ArrayList<>();
+    private List<Resource> behaviors = new ArrayList<>();
+    private List<Resource> resources = new ArrayList<>();
+    private List<Resource> observationStrategies = new ArrayList<>();
+    private Set<Resource> results = new HashSet<>();
+    private List<Notification> notifications = new ArrayList<>();
+
+    private boolean empty;
+
     /**
      * Each resource descriptor may contain metadata that describe what was done and where, or what prompted a
      * change.
@@ -57,17 +69,19 @@ public class ResourceSet implements Serializable {
         private CRUDOperation operation = CRUDOperation.UPDATE;
         private Metadata metadata = Metadata.create();
         private List<Notification> notifications = new ArrayList<>();
+        private String projectUrn;
 
         public Resource() {
         }
 
-        public Resource(String serviceId, String resourceUrn, Version resourceVersion,
+        public Resource(String serviceId, String resourceUrn, String projectUrn, Version resourceVersion,
                         KnowledgeClass knowledgeClass) {
             super();
             this.serviceId = serviceId;
             this.resourceUrn = resourceUrn;
             this.resourceVersion = resourceVersion;
             this.knowledgeClass = knowledgeClass;
+            this.projectUrn = projectUrn;
         }
 
         /**
@@ -131,24 +145,20 @@ public class ResourceSet implements Serializable {
             this.notifications = notifications;
         }
 
+        public String getProjectUrn() {
+            return projectUrn;
+        }
+
+        public void setProjectUrn(String projectUrn) {
+            this.projectUrn = projectUrn;
+        }
+
         @Override
         public String toString() {
             return Utils.Strings.capitalize(this.knowledgeClass.name().toLowerCase()) + " " + this.resourceUrn + " v"
-                    + this.resourceVersion + " (" + this.serviceId + ")";
+                    + this.resourceVersion + "/" + this.projectUrn + " (" + this.serviceId + ")";
         }
     }
-
-    private Map<String, URL> services = new HashMap<>();
-    private List<Resource> namespaces = new ArrayList<>();
-    private String workspace;
-    private List<Resource> ontologies = new ArrayList<>();
-    private List<Resource> behaviors = new ArrayList<>();
-    private List<Resource> resources = new ArrayList<>();
-    private List<Resource> observationStrategies = new ArrayList<>();
-    private Set<Resource> results = new HashSet<>();
-    private List<Notification> notifications = new ArrayList<>();
-
-    private boolean empty;
 
     public List<Resource> getNamespaces() {
         return namespaces;

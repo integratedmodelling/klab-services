@@ -193,8 +193,11 @@ public class Utils {
         public static ResourceSet create(ResourcesService service, String workspaceUrn,
                                          CRUDOperation operation,
                                          KlabAsset... resources) {
+
             ResourceSet ret = new ResourceSet();
             ret.getServices().put(service.serviceId(), service.getUrl());
+            ret.setWorkspace(workspaceUrn);
+
             if (resources != null) {
                 for (KlabAsset resource : resources) {
 
@@ -203,7 +206,8 @@ public class Utils {
                     descriptor.setServiceId(service.serviceId());
                     descriptor.setOperation(operation);
                     descriptor.setKnowledgeClass(KlabAsset.classify(resource));
-
+                    descriptor.setProjectUrn(resource instanceof KlabDocument<?> doc ?
+                                             doc.getProjectName() : null);
                     if (resource instanceof KlabDocument<?> document) {
                         descriptor.setResourceVersion(document.getVersion());
                     }
@@ -516,8 +520,9 @@ public class Utils {
             int n = 0;
             for (var notification : notifications) {
                 if (notification.getLevel() == level) {
-                    error = error == null ? notification.getMessage() : (error + ";\n" + notification.getMessage());
-                    n ++;
+                    error = error == null ? notification.getMessage() :
+                            (error + ";\n" + notification.getMessage());
+                    n++;
                 }
             }
 

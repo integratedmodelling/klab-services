@@ -74,6 +74,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private String authorization;
             private Scope scope; // may be null
 
+            public void setAuthorization(String token) {
+                this.authorization = token;
+            }
+
             static class Options {
                 public boolean silent = false;
                 // TODO

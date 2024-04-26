@@ -56,7 +56,7 @@ public abstract class ServiceClient implements KlabService {
     private AbstractServiceDelegatingScope scope;
     private URL url;
     private String token;
-    private long pollCycleSeconds = 1;
+    private long pollCycleSeconds = 2;
     protected Utils.Http.Client client;
     private ServiceCapabilities capabilities;
 
@@ -269,22 +269,12 @@ public abstract class ServiceClient implements KlabService {
             }
         }
 
-        scheduler.scheduleAtFixedRate(this::timedTasks, 0, pollCycleSeconds, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::timedTasks, 2, pollCycleSeconds, TimeUnit.SECONDS);
     }
 
     private void timedTasks() {
 
         try {
-
-            if (token == null || token.isEmpty() && Utils.URLs.isLocalHost(getUrl())) {
-
-                // may have gotten lost if the service was starting when we booted
-                var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
-                if (secret != null) {
-                    token = secret;
-                    local = true;
-                }
-            }
 
             boolean currentStatus = connected.get();
 
@@ -305,14 +295,32 @@ public abstract class ServiceClient implements KlabService {
                 }
             } finally {
                 if (connected.get() != currentStatus) {
+
                     scope.send(Message.MessageClass.ServiceLifecycle,
                             (connected.get() ? Message.MessageType.ServiceAvailable :
                              Message.MessageType.ServiceUnavailable), capabilities);
-                    if (Configuration.INSTANCE.pairServiceScopes() && local && connected.get()) {
-                        // establish whatever scope "entanglement" is allowed by the service. For now
-                        // disable, we try to do everything through REST and see if it's practical.
-                        scope.connect(this);
+
+                    if (connected.get()) {
+
+                        // see if we have a local service and change the token
+                        if ((token == null || token.isEmpty()) && Utils.URLs.isLocalHost(getUrl())) {
+                            // may have gotten lost if the service was starting when we booted
+                            var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
+                            if (secret != null) {
+                                token = secret;
+                                client.setAuthorization(token);
+                                local = true;
+                            }
+                        }
+
+                        if (Configuration.INSTANCE.pairServiceScopes() && local) {
+                            // establish whatever scope "entanglement" is allowed by the service. For now
+                            // disable, we try to do everything through REST and see if it's practical.
+                            scope.connect(this);
+                        }
+
                     }
+
                 }
             }
 

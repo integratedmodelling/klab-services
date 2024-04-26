@@ -65,6 +65,28 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                                 Message.MessageType.WorkspaceChanged, changes);
                     }
                 }
+            } else {
+
+                // new workspace!
+                var service = getController().engine().serviceScope().getService(ResourcesService.class);
+                NavigableContainer newContainer = null;
+                if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(changes.getWorkspace())) {
+                    var worldview = service.getWorldview();
+                    if (worldview != null) {
+                        newContainer = new NavigableWorldview(worldview);
+                    }
+                } else {
+                    var workspace = service.resolveWorkspace(changes.getWorkspace(), getController().user());
+                    if (workspace != null) {
+                        newContainer = new NavigableWorkspace(workspace);
+                    }
+                }
+
+                if (newContainer != null) {
+                    assetMap.put(newContainer.getUrn(), newContainer);
+                    view().workspaceCreated(newContainer);
+                }
+
             }
         }
     }

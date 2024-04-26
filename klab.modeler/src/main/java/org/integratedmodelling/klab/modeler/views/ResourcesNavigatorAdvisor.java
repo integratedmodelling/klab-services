@@ -42,4 +42,9 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
     public void setServiceCapabilities(ResourcesService.Capabilities capabilities) {
 
     }
+
+    @Override
+    public void workspaceCreated(NavigableContainer workspace) {
+
+    }
 }

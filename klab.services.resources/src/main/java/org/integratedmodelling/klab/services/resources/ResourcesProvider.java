@@ -575,7 +575,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                             strategies.stream().filter(o -> conts.contains(o.getUrn())).toList()).toArray(new KlabAsset[0])));
         }
 
-        ret.add(Utils.Resources.create(this, workspace, operation, Utils.Collections.shallowCollection(ontologies,
+        ret.add(Utils.Resources.create(this, workspace, operation,
+                Utils.Collections.shallowCollection(ontologies,
                 strategies,
                 namespaces, behaviors).toArray(new KlabAsset[0])));
 
@@ -654,7 +655,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ResourceSet results = new ResourceSet();
         for (ModelReference model : this.kbox.query(observable, scope)) {
             results.getResults().add(new ResourceSet.Resource(getUrl().toString(),
-                    model.getNamespaceId() + "." + model.getName(), model.getVersion(),
+                    model.getNamespaceId() + "." + model.getName(), model.getProjectUrn(), model.getVersion(),
                     KnowledgeClass.MODEL));
         }
 
@@ -881,16 +882,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 for (KlabStatement statement : namespace.getStatements()) {
                     if (statement instanceof KimModel && urn.equals(((KimModel) statement).getUrn())) {
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
+                                namespace.getProjectName(),
                                 namespace.getVersion(), KnowledgeClass.MODEL));
                     } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
+                                namespace.getProjectName(),
                                 namespace.getVersion(), KnowledgeClass.INSTANCE));
                     }
                 }
 
-                if (ret.getResults().size() > 0) {
+                if (!ret.getResults().isEmpty()) {
                     ret.getNamespaces().add(new ResourceSet.Resource(getUrl().toString(),
-                            namespace.getUrn(), namespace.getVersion(), KnowledgeClass.NAMESPACE));
+                            namespace.getUrn(), namespace.getProjectName(), namespace.getVersion(),
+                            KnowledgeClass.NAMESPACE));
                 }
 
             }
