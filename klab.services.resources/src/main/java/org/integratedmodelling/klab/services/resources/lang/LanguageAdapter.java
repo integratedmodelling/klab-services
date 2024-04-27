@@ -315,6 +315,7 @@ public enum LanguageAdapter {
 
         var ret = new KimObservationStrategyImpl(strategy.encode());
 
+        ret.setRank(strategy.getRank());
         ret.setUrn(strategy.getName());
         ret.setDescription(strategy.getDescription());
         ret.setOffsetInDocument(strategy.getCodeOffset());
@@ -329,9 +330,21 @@ public enum LanguageAdapter {
         }
         for (var operation : strategy.getOperations()) {
             var o = new KimObservationStrategyImpl.OperationImpl();
-            o.setObservable(adaptObservable(operation.getObservable()));
+            if (operation.getType() != null) {
+
+            }
+            if (operation.getObservable() != null) {
+                o.setObservable(adaptObservable(operation.getObservable()));
+            }
+            if (!operation.getFunctions().isEmpty()) {
+
+            }
+            if (!operation.getDeferredStrategies().isEmpty()) {
+
+            }
             ret.getOperations().add(o);
         }
+
         for (var let : strategy.getMacroVariables().keySet()) {
             var f = new KimObservationStrategyImpl.FilterImpl();
             // TODO
