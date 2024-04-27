@@ -51,6 +51,13 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     private List<? extends NavigableAsset> children;
     protected Metadata localMetadata = Metadata.create();
 
+    public NavigableKlabAsset(String pathElement, NavigableKlabAsset<?> parent) {
+        this.parent = parent;
+        this.path = (parent == null ? "" : (parent.path + ":")) + pathElement;
+        this.children = createChildren();
+    }
+
+
     public NavigableKlabAsset(T asset, NavigableKlabAsset<?> parent) {
         this.delegate = asset;
         this.parent = parent;

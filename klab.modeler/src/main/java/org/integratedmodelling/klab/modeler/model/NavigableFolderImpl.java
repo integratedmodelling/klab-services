@@ -5,7 +5,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContain
 
 public abstract class NavigableFolderImpl<T extends KlabAsset> extends NavigableKlabAsset<T> implements NavigableContainer {
 
-    public NavigableFolderImpl(T asset, NavigableKlabAsset<?> parent) {
-        super(asset, parent);
+    public NavigableFolderImpl(String name, NavigableKlabAsset<?> parent) {
+        super(name, parent);
     }
 }

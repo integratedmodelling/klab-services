@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.modeler.model;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 
 public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements Worldview,
         NavigableContainer {
@@ -50,7 +52,22 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements
 
     @Override
     public List<? extends NavigableAsset> createChildren() {
-        return delegate.getOntologies().stream().map(ontology -> new NavigableKimOntology(ontology, this)).toList();
+
+        var ret =
+                new ArrayList<NavigableAsset>(delegate.getOntologies().stream().map(ontology -> new NavigableKimOntology(ontology,
+                this)).toList());
+
+        if (!delegate.getObservationStrategies().isEmpty()) {
+            ret.add(new NavigableFolderImpl<NavigableDocument>("Observation strategies", this) {
+
+                @Override
+                protected List<? extends NavigableAsset> createChildren() {
+                    return ((Worldview) delegate).getObservationStrategies().stream().map(s -> new NavigableObservationStrategies(s,
+                            this)).toList();
+                }
+            });
+        }
+        return ret;
     }
 
     public NavigableKimOntology findOntology(String documentUrn) {
