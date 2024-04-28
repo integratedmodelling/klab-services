@@ -304,6 +304,7 @@ public enum LanguageAdapter {
         ret.setUrn(definition.getUrn()); // FIXME use the URN from the preamble name
         ret.getNotifications().addAll(notifications);
         ret.setSourceCode(definition.getSourceCode());
+        ret.setProjectName(projectName);
 
         // we don't add source code here as each strategy has its own
         for (var strategy : definition.getStrategies()) {

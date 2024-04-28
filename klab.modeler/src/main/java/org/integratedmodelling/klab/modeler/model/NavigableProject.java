@@ -7,6 +7,7 @@ import java.util.List;
 
 //import org.eclipse.core.resources.IProject;
 import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
 
@@ -85,8 +87,33 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 
 	@Override
 	protected List<? extends NavigableAsset> createChildren() {
+
 		// TODO add everything else, including intermediate containers
-		return getOntologies().stream().map(p -> new NavigableKimOntology(p, this)).toList();
+		var ret = new ArrayList<NavigableAsset>(getOntologies().stream().map(p -> new NavigableKimOntology(p, this)).toList());
+
+		final Project project = getDelegate();
+
+		// add namespaces and behaviors
+
+		// TODO apps, tests, scripts
+
+		// observation strategies
+		if (!delegate.getObservationStrategies().isEmpty()) {
+			ret.add(new NavigableFolderImpl<NavigableDocument>("Observation strategies", this) {
+
+				@Override
+				protected List<? extends NavigableAsset> createChildren() {
+					return project.getObservationStrategies().stream().map(s -> new NavigableObservationStrategies(s,
+							this)).toList();
+				}
+			});
+		}
+
+		// TODO local project resources
+
+		// TODO settings if editable
+
+		return ret;
 	}
 
 	@Override
