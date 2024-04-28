@@ -303,6 +303,7 @@ public enum LanguageAdapter {
         KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
         ret.setUrn(definition.getUrn()); // FIXME use the URN from the preamble name
         ret.getNotifications().addAll(notifications);
+        ret.setSourceCode(definition.getSourceCode());
 
         // we don't add source code here as each strategy has its own
         for (var strategy : definition.getStrategies()) {

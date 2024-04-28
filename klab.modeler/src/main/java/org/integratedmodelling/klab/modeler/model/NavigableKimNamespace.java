@@ -20,6 +20,11 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
 	}
 
 	@Override
+	protected List<? extends NavigableKlabStatement> createChildren() {
+		return getStatements().stream().map(s -> new NavigableKlabStatement(s, this)).toList();
+	}
+
+	@Override
 	public Map<String, Object> getDefines() {
 		return delegate.getDefines();
 	}

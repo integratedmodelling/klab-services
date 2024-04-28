@@ -57,12 +57,14 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements
                 new ArrayList<NavigableAsset>(delegate.getOntologies().stream().map(ontology -> new NavigableKimOntology(ontology,
                 this)).toList());
 
+        final Worldview worldview = getDelegate();
+
         if (!delegate.getObservationStrategies().isEmpty()) {
             ret.add(new NavigableFolderImpl<NavigableDocument>("Observation strategies", this) {
 
                 @Override
                 protected List<? extends NavigableAsset> createChildren() {
-                    return ((Worldview) delegate).getObservationStrategies().stream().map(s -> new NavigableObservationStrategies(s,
+                    return worldview.getObservationStrategies().stream().map(s -> new NavigableObservationStrategies(s,
                             this)).toList();
                 }
             });

@@ -22,6 +22,12 @@ public class NavigableObservationStrategies extends NavigableKlabDocument<KimObs
 	}
 
 	@Override
+	protected List<? extends NavigableKlabStatement> createChildren() {
+		return getStatements().stream().map(s -> new NavigableKlabStatement(s, this)).toList();
+	}
+
+
+	@Override
 	public Set<String> importedNamespaces(boolean withinType) {
 		return delegate.importedNamespaces(withinType);
 	}
