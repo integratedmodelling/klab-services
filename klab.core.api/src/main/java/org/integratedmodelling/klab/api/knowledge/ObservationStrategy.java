@@ -28,6 +28,11 @@ public interface ObservationStrategy extends Knowledge {
         ObjectsFilter,
         TypeUnion,
         TypeIntersection,
+        SplitPredicate,
+        SplitRole,
+        SplitIdentity,
+        SplitAttribute,
+        BaseObservable,
         // TODO extractors for all operands and semantic roles
         RelationshipSource,
         RelationshipTarget,
