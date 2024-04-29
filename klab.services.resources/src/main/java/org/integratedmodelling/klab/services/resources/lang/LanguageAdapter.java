@@ -301,7 +301,7 @@ public enum LanguageAdapter {
                                                           Collection<Notification> notifications) {
 
         KimObservationStrategiesImpl ret = new KimObservationStrategiesImpl();
-        ret.setUrn(definition.getUrn()); // FIXME use the URN from the preamble name
+        ret.setUrn(definition.getUrn());
         ret.getNotifications().addAll(notifications);
         ret.setSourceCode(definition.getSourceCode());
         ret.setProjectName(projectName);

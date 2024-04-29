@@ -153,22 +153,24 @@ public interface ProjectStorage {
         if ("json".equals(extension)) {
             // TODO manifest, docs, resource.
             if (relativeFilePath.startsWith("resources" + separator)) {
-
+                throw new KlabUnimplementedException("KAAAAAAAAKKKKKKKKKKKKKKKKKKK");
             }
         } else {
             if (relativeFilePath.startsWith("src" + separator)) {
                 type = ResourceType.forExtension(extension);
                 urn = path.substring("src".length() + 1).replace(separator, ".");
             } else if (relativeFilePath.startsWith("scripts" + separator)) {
-
+                throw new KlabUnimplementedException("POOOOOO");
             } else if (relativeFilePath.startsWith("tests" + separator)) {
-
+                throw new KlabUnimplementedException("PAAAAAAA");
             } else if (relativeFilePath.startsWith("apps" + separator) && "apps".equals(extension)) {
                 type = ResourceType.APPLICATION;
-                urn = path;
+                urn = path.substring("apps".length() + 1);
             } else if (relativeFilePath.startsWith("strategies" + separator) && "obs".equals(extension)) {
                 type = ResourceType.STRATEGY;
-                urn = path;
+                urn = path.substring("strategies".length() + 1);
+            } else {
+                throw new KlabUnimplementedException("PUUUUUU");
             }
         }
         return (type == null || urn == null) ? null : Pair.of(type, urn);

@@ -16,6 +16,11 @@ public abstract class NavigableFolderImpl<T extends KlabAsset> extends Navigable
     }
 
     @Override
+    protected boolean is(KlabAsset asset) {
+        return asset == this;
+    }
+
+    @Override
     public String getUrn() {
         return name;
     }

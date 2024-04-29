@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableFolder;
 //import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 //import org.integratedmodelling.klab.ide.Activator;
 //import org.integratedmodelling.klab.ide.KlabAdapterFactory;
@@ -129,11 +130,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     }
 
-    private boolean is(KlabAsset asset) {
+    protected boolean is(KlabAsset asset) {
         return this.delegate.getClass().isAssignableFrom(asset.getClass()) && delegate.getUrn().equals(asset.getUrn());
     }
 
     private boolean canContain(KlabAsset asset) {
+
+        if (this instanceof NavigableFolder) {
+            return true;
+        }
 
         switch (delegate) {
             case Project project -> {

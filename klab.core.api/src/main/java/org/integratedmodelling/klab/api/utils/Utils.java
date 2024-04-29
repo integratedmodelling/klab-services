@@ -254,6 +254,8 @@ public class Utils {
                 Map<String, ResourceSet.Resource> rsbh = new LinkedHashMap<>();
                 Map<String, ResourceSet.Resource> rsrs = new LinkedHashMap<>();
                 Map<String, ResourceSet.Resource> rrsl = new LinkedHashMap<>();
+                Map<String, ResourceSet.Resource> ront = new LinkedHashMap<>();
+                Map<String, ResourceSet.Resource> roob = new LinkedHashMap<>();
                 Set<String> rurn = new HashSet<>();
 
                 for (ResourceSet set : resourceSets) {
@@ -267,6 +269,8 @@ public class Utils {
                     collectNewerOrAbsent(set.getResults(), rrsl);
                     collectNewerOrAbsent(set.getNamespaces(), rsns);
                     collectNewerOrAbsent(set.getBehaviors(), rsbh);
+                    collectNewerOrAbsent(set.getOntologies(), ront);
+                    collectNewerOrAbsent(set.getObservationStrategies(), roob);
                     collectNewerOrAbsent(set.getResources(), rsrs);
                 }
 
@@ -274,14 +278,15 @@ public class Utils {
                 ret.getBehaviors().addAll(rsbh.values());
                 ret.getResources().addAll(rsrs.values());
                 ret.getResults().addAll(rrsl.values());
+                ret.getOntologies().addAll(ront.values());
+                ret.getObservationStrategies().addAll(roob.values());
             }
 
             return ret;
         }
 
         private static Map<String, ResourceSet.Resource> collectNewerOrAbsent(Collection<ResourceSet.Resource> resources,
-                                                                              Map<String,
-                                                                                      ResourceSet.Resource> destination) {
+                                                                              Map<String, ResourceSet.Resource> destination) {
             for (ResourceSet.Resource r : resources) {
                 boolean swap = !destination.containsKey(r.getResourceUrn());
                 if (!swap) {
