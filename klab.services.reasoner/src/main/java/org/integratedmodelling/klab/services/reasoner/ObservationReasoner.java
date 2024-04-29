@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -21,10 +22,27 @@ import java.util.*;
 public class ObservationReasoner {
 
     private Reasoner reasoner;
-    private Collection<ObservationStrategy> observationStrategies = new ArrayList<>();
+    private List<ObservationStrategy> observationStrategies = new ArrayList<>();
+
     public ObservationReasoner(ReasonerService reasonerService) {
         this.reasoner = reasonerService;
     }
+
+    public void loadWorldview(Worldview worldview) {
+        for (var strategyDocument : worldview.getObservationStrategies()) {
+            for (var strategy : strategyDocument.getStatements()) {
+                observationStrategies.add(createStrategy(strategy));
+            }
+        }
+
+        this.observationStrategies.sort(Comparator.comparingInt(ObservationStrategy::rank));
+    }
+
+    private ObservationStrategy createStrategy(KimObservationStrategy strategy) {
+        var ret = new ObservationStrategyImpl();
+        return ret;
+    }
+
 
     public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
 
