@@ -19,7 +19,7 @@ public interface ObservationStrategy extends Knowledge {
      * TODO each type must specify number/type of arguments, number/type of outputs, default parameter
      *  (this:This) and description
      */
-    enum CoreLibrary {
+    enum Functor {
         Concrete,
         AritySingle,
         ArityMulti,
