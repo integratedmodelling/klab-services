@@ -31,16 +31,11 @@ public class ObservationReasoner {
     public void loadWorldview(Worldview worldview) {
         for (var strategyDocument : worldview.getObservationStrategies()) {
             for (var strategy : strategyDocument.getStatements()) {
-                observationStrategies.add(createStrategy(strategy));
+                observationStrategies.add(new ObservationStrategyImpl(strategy, reasoner));
             }
         }
 
         this.observationStrategies.sort(Comparator.comparingInt(ObservationStrategy::rank));
-    }
-
-    private ObservationStrategy createStrategy(KimObservationStrategy strategy) {
-        var ret = new ObservationStrategyImpl();
-        return ret;
     }
 
 

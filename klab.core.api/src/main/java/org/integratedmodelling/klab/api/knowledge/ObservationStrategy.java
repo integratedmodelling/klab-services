@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  */
 public interface ObservationStrategy extends Knowledge {
 
+
     /**
      * Descriptors for all methods that must be implemented as strategy functors. The dot-separated lowercase
      * call IDs in the language will be turned into camelcase and matched to this enum.
@@ -36,6 +37,14 @@ public interface ObservationStrategy extends Knowledge {
         // TODO extractors for all operands and semantic roles
         RelationshipSource,
         RelationshipTarget,
+        // Operators taking another functor and an argument, translated from the infix notation in the
+        // language
+        EqualityOperator,
+        GTOperator,
+        GEOperator,
+        LTOperator,
+        LEOperator,
+        ISOperator
     }
 
 
@@ -48,8 +57,10 @@ public interface ObservationStrategy extends Knowledge {
      */
     boolean matches(Observable observable, ContextScope scope);
 
+
     /**
-     * An integer from 0 to 100. Only called if {@link #matches(Observable, ContextScope)} returns true.
+     * An integer from 0 to 100, used to rank strategies <em>in context</em> among groups of strategies with
+     * the same {@link #rank()}. Only called if {@link #matches(Observable, ContextScope)} returns true.
      *
      * @return
      */
