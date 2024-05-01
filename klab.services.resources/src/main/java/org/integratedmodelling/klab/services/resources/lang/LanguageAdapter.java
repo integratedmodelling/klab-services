@@ -112,10 +112,6 @@ public enum LanguageAdapter {
 
         ret.setUrn(ret.computeUrn());
 
-        if (!ret.getUrn().contains(":")) {
-            System.out.println("PORODIO");
-        }
-
         return ret;
     }
 
