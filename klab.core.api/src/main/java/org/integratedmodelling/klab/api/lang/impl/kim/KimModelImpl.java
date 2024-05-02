@@ -17,25 +17,15 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 	@Serial
 	private static final long serialVersionUID = -6068429551009652469L;
 
-	private KimConcept reinterpretingRole;
 	private List<KimObservable> dependencies = new ArrayList<>();
 	private List<KimObservable> observables = new ArrayList<>();
-	private List<KimObservable> attributeObservables = new ArrayList<>();
 	private Type type;
 	private List<String> resourceUrns = new ArrayList<>();
 	private boolean learningModel;
-	private boolean interpreter;
-	private boolean instantiator;
 	private String urn;
-	private Literal inlineValue;
 	private List<Contextualizable> contextualization = new ArrayList<>();
 	private String docstring;
 	private String projectName;
-
-	@Override
-	public KimConcept getReinterpretingRole() {
-		return this.reinterpretingRole;
-	}
 
 	@Override
 	public List<KimObservable> getDependencies() {
@@ -63,23 +53,8 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 	}
 
 	@Override
-	public boolean isInterpreter() {
-		return this.interpreter;
-	}
-
-	@Override
-	public boolean isInstantiator() {
-		return this.instantiator;
-	}
-
-	@Override
 	public String getUrn() {
 		return this.urn;
-	}
-
-	@Override
-	public Literal getInlineValue() {
-		return this.inlineValue;
 	}
 
 	@Override
@@ -90,15 +65,6 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 	@Override
 	public String getDocstring() {
 		return this.docstring;
-	}
-
-//    @Override
-//    public boolean isSemantic() {
-//        return this.semantic;
-//    }
-
-	public void setReinterpretingRole(KimConcept reinterpretingRole) {
-		this.reinterpretingRole = reinterpretingRole;
 	}
 
 	public void setDependencies(List<KimObservable> dependencies) {
@@ -121,20 +87,8 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 		this.learningModel = learningModel;
 	}
 
-	public void setInterpreter(boolean interpreter) {
-		this.interpreter = interpreter;
-	}
-
-	public void setInstantiator(boolean instantiator) {
-		this.instantiator = instantiator;
-	}
-
 	public void setUrn(String urn) {
 		this.urn = urn;
-	}
-
-	public void setInlineValue(Literal inlineValue) {
-		this.inlineValue = inlineValue;
 	}
 
 	public void setContextualization(List<Contextualizable> contextualization) {
@@ -143,15 +97,6 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 
 	public void setDocstring(String docstring) {
 		this.docstring = docstring;
-	}
-
-	@Override
-	public List<KimObservable> getAttributeObservables() {
-		return attributeObservables;
-	}
-
-	public void setAttributeObservables(List<KimObservable> attributeObservables) {
-		this.attributeObservables = attributeObservables;
 	}
 
 	@Override

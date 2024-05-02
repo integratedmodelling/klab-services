@@ -56,10 +56,10 @@ public interface Statement extends Serializable {
      */
     boolean isDeprecated();
 
-    /**
-     * @return the source code
-     */
-    String sourceCode();
+//    /**
+//     * @return the source code
+//     */
+//    String sourceCode();
 
     /**
      * Any errors, warnings or info are reported as notifications. Check error notifications to see if the

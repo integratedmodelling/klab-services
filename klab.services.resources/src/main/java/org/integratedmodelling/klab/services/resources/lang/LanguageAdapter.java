@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.impl.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -120,32 +121,59 @@ public enum LanguageAdapter {
 
         var ret = new KimNamespaceImpl();
         ret.setUrn(namespace.getUrn());
+        ret.setScenario(namespace.isScenario());
+        ret.setSourceCode(namespace.getSourceCode());
+        ret.setProjectName(projectName);
 
+ // TODO       ret.setImports(); and the rest
         for (var statement : namespace.getStatements()) {
-            ret.getStatements().add(adaptStatement(statement));
+            ret.getStatements().add(adaptStatement(statement, ret));
         }
 
         return ret;
     }
 
-    private KlabStatement adaptStatement(NamespaceStatementSyntax statement) {
+    private KlabStatement adaptStatement(NamespaceStatementSyntax statement, KimNamespace namespace) {
         return switch (statement) {
-            case InstanceSyntax instance -> adaptInstance(instance);
-            case ModelSyntax model -> adaptModel(model);
-            case DefineSyntax define -> adaptDefine(define);
+            case InstanceSyntax instance -> adaptInstance(instance, namespace);
+            case ModelSyntax model -> adaptModel(model, namespace);
+            case DefineSyntax define -> adaptDefine(define, namespace);
             default -> null;
         };
     }
 
-    private KlabStatement adaptDefine(DefineSyntax define) {
+    private KlabStatement adaptDefine(DefineSyntax define, KimNamespace namespace) {
         return null;
     }
 
-    private KlabStatement adaptModel(ModelSyntax model) {
+    private KlabStatement adaptModel(ModelSyntax model, KimNamespace namespace) {
+
+        KimModelImpl ret = new KimModelImpl();
+
+        ret.setNamespace(namespace.getUrn());
+        ret.setDeprecated(model.getDeprecation() != null);
+        ret.setDeprecation(model.getDeprecation());
+        // TODO docstring set through next-gen literate programming features
+
+        for (var observable : model.getObservables()) {
+            ret.getObservables().add(adaptObservable(observable));
+        }
+        for (var dependency : model.getDependencies()) {
+            ret.getDependencies().add(adaptObservable(dependency));
+        }
+
+        for (var contextualizable : model.getContextualizables()) {
+            ret.getContextualization().add(adaptContextualizable(contextualizable, namespace));
+        }
+
+        return ret;
+    }
+
+    private Contextualizable adaptContextualizable(ParsedObject contextualizable, KimNamespace namespace) {
         return null;
     }
 
-    private KlabStatement adaptInstance(InstanceSyntax instance) {
+    private KlabStatement adaptInstance(InstanceSyntax instance, KimNamespace namespace) {
         return null;
     }
 
@@ -311,7 +339,7 @@ public enum LanguageAdapter {
 
     private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy) {
 
-        var ret = new KimObservationStrategyImpl(strategy.encode());
+        var ret = new KimObservationStrategyImpl();
 
         ret.setRank(strategy.getRank());
         ret.setUrn(strategy.getName());
@@ -351,9 +379,13 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    private Literal adaptLiteral(ParsedLiteral let) {
-        var ret = new LiteralImpl();
-        return ret;
+    private KimLiteral adaptLiteral(ParsedLiteral let) {
+        if (let.getCurrency() != null) {
+            // TODO return a KimQuantity
+        } else if (let.getUnit() != null) {
+            // TODO return a KimQuantity
+        }
+        return KimLiteral.of(let.getPod());
     }
 
     public KimOntology adaptOntology(OntologySyntax ontology, String projectName,

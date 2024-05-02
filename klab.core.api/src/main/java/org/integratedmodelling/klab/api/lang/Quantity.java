@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.lang;
 
+import org.integratedmodelling.klab.api.collections.Literal;
+
 import java.io.Serializable;
 
 /**
@@ -8,7 +10,7 @@ import java.io.Serializable;
  * @author ferdinando.villa
  *
  */
-public interface Quantity extends Serializable {
+public interface Quantity extends Literal {
 	
 	/**
 	 * May be an integer or a double.

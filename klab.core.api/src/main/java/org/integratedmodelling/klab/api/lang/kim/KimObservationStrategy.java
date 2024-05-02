@@ -104,7 +104,7 @@ public interface KimObservationStrategy extends KlabStatement {
      *
      * @return
      */
-    Map<Literal, Filter> getMacroVariables();
+    Map<KimLiteral, Filter> getMacroVariables();
 
     /**
      * No strategy makes sense unless it has 1+ operations associated.

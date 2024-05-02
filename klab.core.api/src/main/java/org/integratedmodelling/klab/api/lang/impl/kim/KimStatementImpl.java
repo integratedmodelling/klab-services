@@ -15,16 +15,11 @@ import java.util.List;
  * @author Ferd
  *
  */
-public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabStatement {
+public abstract class KimStatementImpl extends KimAssetImpl implements KlabStatement {
 
     @Serial
     private static final long serialVersionUID = -7273214821906819558L;
 
-    private int offsetInDocument;
-    private int length;
-    private List<Annotation> annotations = new ArrayList<>();
-    private String deprecation;
-    private boolean deprecated;
     private Metadata metadata = Metadata.create();
     private String namespace;
     private Scope scope = Scope.PUBLIC;
@@ -34,11 +29,7 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
 
     }
     protected KimStatementImpl(KimStatementImpl other) {
-        this.offsetInDocument = other.offsetInDocument;
-        this.length = other.length;
-        this.annotations.addAll(other.annotations);
-        this.deprecated = other.deprecated;
-        this.deprecation = other.deprecation;
+        super(other);
         this.metadata = other.metadata;
 //        this.documentationMetadata = other.documentationMetadata;
         this.namespace = other.namespace;
@@ -46,25 +37,6 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
         this.notifications.addAll(other.notifications);
     }
 
-    @Override
-    public List<Annotation> getAnnotations() {
-        return this.annotations;
-    }
-
-    @Override
-    public String getDeprecation() {
-        return this.deprecation;
-    }
-
-    @Override
-    public boolean isDeprecated() {
-        return this.deprecated;
-    }
-
-    @Override
-    public String sourceCode() {
-        return "DIOCAN IMPLEMENTAMI";
-    }
     @Override
     public Metadata getMetadata() {
         return this.metadata;
@@ -91,17 +63,6 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
         return this.scope;
     }
 
-    public void setAnnotations(List<Annotation> annotations) {
-        this.annotations = annotations;
-    }
-
-    public void setDeprecation(String deprecation) {
-        this.deprecation = deprecation;
-    }
-
-    public void setDeprecated(boolean deprecated) {
-        this.deprecated = deprecated;
-    }
 
 //    public void setErrors(boolean errors) {
 //        this.errors = errors;
@@ -135,13 +96,13 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
 //        this.kimStatementClass = kimStatementClass;
 //    }
 
-    @Override
-    public String toString() {
-        if (sourceCode() != null) {
-            return sourceCode();
-        }
-        return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
-    }
+//    @Override
+//    public String toString() {
+//        if (sourceCode() != null) {
+//            return sourceCode();
+//        }
+//        return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
+//    }
 
     @Override
     public List<Notification> getNotifications() {
@@ -152,21 +113,4 @@ public abstract class KimStatementImpl /*extends KimScopeImpl*/ implements KlabS
         this.notifications = notifications;
     }
 
-    @Override
-    public int getOffsetInDocument() {
-        return offsetInDocument;
-    }
-
-    public void setOffsetInDocument(int offsetInDocument) {
-        this.offsetInDocument = offsetInDocument;
-    }
-
-    @Override
-    public int getLength() {
-        return length;
-    }
-
-    public void setLength(int length) {
-        this.length = length;
-    }
 }

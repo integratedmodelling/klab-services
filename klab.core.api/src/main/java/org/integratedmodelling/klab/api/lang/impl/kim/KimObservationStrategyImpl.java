@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -25,17 +26,17 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     private String namespace;
     private List<Operation> operations = new ArrayList<>();
-    private Map<Literal, Filter> macroVariables = new LinkedHashMap<>();
+    private Map<KimLiteral, Filter> macroVariables = new LinkedHashMap<>();
     private List<Filter> filters = new ArrayList<>();
     private int rank;
-
-    private String sourceCode;
+//
+//    private String sourceCode;
 
     public KimObservationStrategyImpl() {}
 
-    public KimObservationStrategyImpl(String sourceCode) {
-        this.sourceCode = sourceCode;
-    }
+//    public KimObservationStrategyImpl(String sourceCode) {
+//        this.sourceCode = sourceCode;
+//    }
 
     @Override
     public Metadata getMetadata() {
@@ -46,10 +47,10 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     public void visit(KlabStatementVisitor visitor) {
 
     }
-
-    public String toString() {
-        return sourceCode;
-    }
+//
+//    public String toString() {
+//        return sourceCode;
+//    }
 
     @Override
     public int getOffsetInDocument() {
@@ -76,10 +77,10 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         return this.deprecated;
     }
 
-    @Override
-    public String sourceCode() {
-        return sourceCode;
-    }
+//    @Override
+//    public String sourceCode() {
+//        return sourceCode;
+//    }
 
     @Override
     public Collection<Notification> getNotifications() {
@@ -107,7 +108,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     }
 
     @Override
-    public Map<Literal, Filter> getMacroVariables() {
+    public Map<KimLiteral, Filter> getMacroVariables() {
         return this.macroVariables;
     }
 
@@ -162,7 +163,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         this.operations = operations;
     }
 
-    public void setMacroVariables(Map<Literal, Filter> macroVariables) {
+    public void setMacroVariables(Map<KimLiteral, Filter> macroVariables) {
         this.macroVariables = macroVariables;
     }
 

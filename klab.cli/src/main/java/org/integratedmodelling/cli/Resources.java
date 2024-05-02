@@ -635,7 +635,7 @@ public class Resources {
         KimNamespace namespace = service.resolveNamespace(ns, KlabCLI.INSTANCE.modeler().currentUser());
         for (KlabStatement statement : namespace.getStatements()) {
             if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance && on.equals(((KimInstance) statement).getName())) {
-                return source ? statement.sourceCode() : Utils.Json.printAsJson(statement);
+                return source ? statement.toString() : Utils.Json.printAsJson(statement);
             } /*else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
 					&& resourceUrn.equals(((KimModel) statement).getName())) {
 				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);

@@ -6,17 +6,15 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 public abstract class KActorsCodeStatementImpl extends KimStatementImpl implements KActorsCodeStatement 	{
 
-	private static final long serialVersionUID = -3317041109502570786L;
-
     private String tag;
 
-    @Override
-    public String toString() {
-        if (sourceCode() != null) {
-            return sourceCode();
-        }
-        return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
-    }
+//    @Override
+//    public String toString() {
+//        if (sourceCode() != null) {
+//            return sourceCode();
+//        }
+//        return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
+//    }
 
     @Override
 	public String getTag() {

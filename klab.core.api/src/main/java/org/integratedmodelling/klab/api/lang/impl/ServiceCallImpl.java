@@ -59,7 +59,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	@Override
 	public String encode(String language) {
 
-		if (super.sourceCode() == null || super.sourceCode().trim().isEmpty()) {
+//		if (sourceCode() == null || sourceCode().trim().isEmpty()) {
 			String ret = urn + "(";
 			int i = 0;
 			for (String key : parameters.keySet()) {
@@ -76,9 +76,9 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 			}
 			ret += ")";
 			return ret;
-		}
-
-		return sourceCode();
+//		}
+//
+//		return sourceCode();
 	}
 
 	@Override
@@ -116,7 +116,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 			// TODO must also pass argument list to the same function...
 			return "{{" + ret + "}}";
 		} else if (val instanceof Contextualizable) {
-			return ((Contextualizable) val).sourceCode();
+//			return ((Contextualizable) val).sourceCode();
 		} else if (val instanceof Unit || val instanceof Currency) {
 			return "\"" + val + "\"";
 		}
@@ -173,4 +173,13 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	public void visit(KlabStatementVisitor visitor) {
 
 	}
+
+	public Set<String> getInteractiveParameterIds() {
+		return interactiveParameterIds;
+	}
+
+	public void setInteractiveParameterIds(Set<String> interactiveParameterIds) {
+		this.interactiveParameterIds = interactiveParameterIds;
+	}
+
 }

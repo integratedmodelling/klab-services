@@ -13,10 +13,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
-import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
-import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -171,6 +168,26 @@ public class Utils {
             return ret;
         }
 
+    }
+
+    /**
+     * Support utils for the various k.LAB languages.
+     */
+    public static class Lang {
+        public static String sourceCode(KimAsset asset, String documentSourceCode) {
+            return documentSourceCode.substring(asset.getOffsetInDocument(), asset.getLength());
+        }
+
+        /**
+         * TODO return any comment on top of the passed statement that matches the rules to be a literate
+         * programming comment, or null.
+         * @param statement
+         * @param document
+         * @return
+         */
+        public static String getLiteralProgrammingComment(KlabStatement statement, KlabDocument document) {
+            return null;
+        }
     }
 
     /**

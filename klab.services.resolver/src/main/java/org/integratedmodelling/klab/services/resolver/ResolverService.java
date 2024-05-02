@@ -605,12 +605,14 @@ public class ResolverService extends BaseService implements Resolver {
         var reasoner = scope.getService(Reasoner.class);
 
         ModelImpl model = new ModelImpl();
+        boolean isInstantiator =
+                !statement.getObservables().isEmpty() && statement.getObservables().getFirst().getSemantics().isCollective();
 
         model.getAnnotations().addAll(statement.getAnnotations());
         boolean first = true;
         for (KimObservable observable : statement.getObservables()) {
             var obs = reasoner.declareObservable(observable);
-            model.getObservables().add(first && statement.isInstantiator() ? obs :
+            model.getObservables().add(first && isInstantiator ? obs :
                                        obs.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
             first = false;
         }

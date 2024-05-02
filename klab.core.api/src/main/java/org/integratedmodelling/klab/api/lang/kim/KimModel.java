@@ -8,13 +8,9 @@ import java.util.List;
 
 public interface KimModel extends KimActiveStatement {
 
-    KimConcept getReinterpretingRole();
-
     List<KimObservable> getDependencies();
 
     List<KimObservable> getObservables();
-
-    List<KimObservable> getAttributeObservables();
 
     /**
      * Data type of primary observable meant to discriminate void and non-semantic models from the
@@ -28,13 +24,7 @@ public interface KimModel extends KimActiveStatement {
 
     boolean isLearningModel();
 
-    boolean isInterpreter();
-
-    boolean isInstantiator();
-
     String getUrn();
-
-    Literal getInlineValue();
 
     /**
      * Contextualizer or processor(s) given after 'using'

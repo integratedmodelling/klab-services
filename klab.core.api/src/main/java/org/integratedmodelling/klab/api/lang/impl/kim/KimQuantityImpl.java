@@ -1,21 +1,21 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.kim.KimQuantity;
 
 import java.io.Serial;
 
-public class KimQuantityImpl /*extends KimStatementImpl*/ implements KimQuantity {
+public class KimQuantityImpl extends KimLiteralImpl implements KimQuantity {
 
     @Serial
     private static final long serialVersionUID = -8532532479815240609L;
 
-    private Number value;
     private String unit;
     private String currency;
 
     @Override
     public Number getValue() {
-        return this.value;
+        return (Number)super.getValue();
     }
 
     @Override
@@ -28,10 +28,6 @@ public class KimQuantityImpl /*extends KimStatementImpl*/ implements KimQuantity
         return this.currency;
     }
 
-    public void setValue(Number value) {
-        this.value = value;
-    }
-
     public void setUnit(String unit) {
         this.unit = unit;
     }
@@ -40,4 +36,14 @@ public class KimQuantityImpl /*extends KimStatementImpl*/ implements KimQuantity
         this.currency = currency;
     }
 
+    @Override
+    public ValueType getValueType() {
+        // TODO classify which number
+        return ValueType.DOUBLE;
+    }
+
+    @Override
+    public <T> T get(Class<? extends T> valueClass) {
+        return Number.class.isAssignableFrom(valueClass) ? (T)getValue() : null;
+    }
 }

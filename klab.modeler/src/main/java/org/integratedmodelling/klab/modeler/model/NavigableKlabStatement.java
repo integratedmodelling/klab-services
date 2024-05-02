@@ -50,10 +50,10 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 		return delegate.isDeprecated();
 	}
 
-	@Override
-	public String sourceCode() {
-		return delegate.sourceCode();
-	}
+//	@Override
+//	public String sourceCode() {
+//		return delegate.sourceCode();
+//	}
 
 	@Override
 	public String getNamespace() {
@@ -63,7 +63,7 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 
 	public NavigableKlabDocument<?, ?> document() {
 		var parent = this.parent();
-		while (parent instanceof NavigableKlabAsset asset && !(parent instanceof NavigableKlabDocument)) {
+		while (parent instanceof NavigableKlabAsset<?> asset && !(parent instanceof NavigableKlabDocument)) {
 			parent = asset.parent();
 		}
 		return (NavigableKlabDocument<?,?>)parent;
