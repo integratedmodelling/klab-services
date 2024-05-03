@@ -162,7 +162,7 @@ public enum LanguageAdapter {
             ret.getDependencies().add(adaptObservable(dependency));
         }
 
-        for (var contextualizable : model.getContextualizables()) {
+        for (var contextualizable : model.getContextualizations()) {
             ret.getContextualization().add(adaptContextualizable(contextualizable, namespace));
         }
 
