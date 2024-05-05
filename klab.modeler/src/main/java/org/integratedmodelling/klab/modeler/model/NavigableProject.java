@@ -93,9 +93,19 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 
 		final Project project = getDelegate();
 
-		// add namespaces and behaviors
+		ret.addAll(getNamespaces().stream().map(n -> new NavigableKimNamespace(n, this)).toList());
 
-		// TODO apps, tests, scripts
+		// TODO behaviors
+
+		// TODO apps, tests, scripts in their folders
+		if (!delegate.getApps().isEmpty()) {
+
+		}
+
+		if (!delegate.getTestCases().isEmpty()) {
+
+		}
+
 
 		// observation strategies
 		if (!delegate.getObservationStrategies().isEmpty()) {
@@ -108,6 +118,7 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 				}
 			});
 		}
+
 
 		// TODO local project resources
 
