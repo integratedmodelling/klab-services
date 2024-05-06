@@ -33,6 +33,8 @@ public class Version implements Comparable<Version>, Serializable {
      * An empty version is the equivalent of "unversioned" when it's illegal to be unversioned.
      */
     public static final Version EMPTY_VERSION = new Version("0.0.0");
+    // any version matches anything
+    public static final Version ANY_VERSION = new Version("255.255.255");
     public static final String CURRENT = "0.12.0";
     public static final Version CURRENT_VERSION = new Version(CURRENT);
 
@@ -269,6 +271,9 @@ public class Version implements Comparable<Version>, Serializable {
         if (other == null) {
             return false;
         }
+        if (isAny(other) || isAny(this)) {
+            return true;
+        }
         if (major != other.major) {
             return false;
         }
@@ -282,6 +287,10 @@ public class Version implements Comparable<Version>, Serializable {
             return true;
         }
         return false;
+    }
+
+    public static boolean isAny(Version version) {
+        return version.major==255 && version.minor==255 && version.build==255 && version.modifier==null;
     }
 
     /**
