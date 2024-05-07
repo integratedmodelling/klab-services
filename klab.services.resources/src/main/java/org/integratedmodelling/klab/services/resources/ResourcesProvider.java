@@ -37,6 +37,7 @@ import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -286,7 +287,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public synchronized List<ResourceSet> importProject(String workspaceName, String projectUrl,
                                                         boolean overwriteIfExisting, Scope scope) {
+
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
+        if (storage == null) {
+            return List.of(Utils.Resources.createEmpty(Notification.create("Import failed for " + projectUrl,
+                    Notification.Level.Error)));
+        }
+
         var project = workspaceManager.loadProject(storage, workspaceName);
 
         // initial resource permissions
@@ -577,8 +584,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         ret.add(Utils.Resources.create(this, workspace, operation,
                 Utils.Collections.shallowCollection(ontologies,
-                strategies,
-                namespaces, behaviors).toArray(new KlabAsset[0])));
+                        strategies,
+                        namespaces, behaviors).toArray(new KlabAsset[0])));
 
         return ret;
     }

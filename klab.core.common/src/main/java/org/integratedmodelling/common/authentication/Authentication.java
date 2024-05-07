@@ -379,9 +379,25 @@ public enum Authentication {
     public ExternalAuthenticationCredentials getCredentials(String hostUrl, Scope scope) {
 
         var catalog = getExternalCredentialsCatalog(scope);
-        var ret = catalog.get(extractHost(hostUrl));
+        var host = extractHost(hostUrl);
 
-        if (ret == null && sshHosts.get().contains(hostUrl)) {
+        var candidateKeys = new ArrayList<String>();
+        for (var hostKey : catalog.keySet()) {
+            if (hostKey.startsWith(host) && hostUrl.contains(hostKey)) {
+                candidateKeys.add(hostKey);
+            }
+        }
+
+        if (!candidateKeys.isEmpty()) {
+            // sort longest first
+            candidateKeys.sort((s1, s2) -> Integer.compare(s2.length(), s1.length()));
+            return catalog.get(candidateKeys.getFirst());
+        }
+
+        // FIXME match hostname, then compare all keys that start with hostname, choosing the longest that is contained in the URL
+        var ret = catalog.get(host);
+
+        if (ret == null && sshHosts.get().contains(host)) {
             ret = new ExternalAuthenticationCredentials();
             ret.setScheme("ssh");
             // save with no passkey, if it's needed in an interactive app we'll ask and save it.

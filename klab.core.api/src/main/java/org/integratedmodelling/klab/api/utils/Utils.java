@@ -15,7 +15,6 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
@@ -25,7 +24,6 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.*;
-import java.net.http.HttpRequest;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -97,8 +95,8 @@ public class Utils {
         /**
          * Create a new local URN with the passed project instead of the original.
          *
-         * @param originalUrn
-         * @param name
+         * @param urn
+         * @param projectName
          * @return
          */
         public static String changeLocalProject(String urn, String projectName) {
@@ -196,6 +194,18 @@ public class Utils {
      * @author Ferd
      */
     public static class Resources {
+
+        /**
+         * Create an empty resources carrying the passed notification
+         * @param notification
+         * @return
+         */
+        public static ResourceSet createEmpty(Notification notification) {
+            ResourceSet ret = new ResourceSet();
+            ret.setEmpty(true);
+            ret.getNotifications().add(notification);
+            return ret;
+        }
 
         /**
          * Create a resource set describing the passed resources and automatically adding the passed service.

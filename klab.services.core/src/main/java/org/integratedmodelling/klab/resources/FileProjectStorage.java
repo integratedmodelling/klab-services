@@ -130,9 +130,9 @@ public class FileProjectStorage implements ProjectStorage {
     private final String projectName;
     private final AtomicBoolean locked = new AtomicBoolean(false);
 
-    public FileProjectStorage(File rootFolder, ChangeNotifier notifier) {
+    public FileProjectStorage(File rootFolder, String projectName, ChangeNotifier notifier) {
         this.rootFolder = rootFolder;
-        this.projectName = Utils.Files.getFileBaseName(rootFolder);
+        this.projectName = projectName;
         // install file monitor
         if (notifier != null) {
             this.watcher = new FileWatcher(this.rootFolder, (changedFile, action) -> {

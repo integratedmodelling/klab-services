@@ -170,7 +170,8 @@ public interface ProjectStorage {
                 type = ResourceType.STRATEGY;
                 urn = path.substring("strategies".length() + 1);
             } else {
-                throw new KlabUnimplementedException("PUUUUUU");
+//                just return null
+//                throw new KlabUnimplementedException("PUUUUUU " + relativeFilePath + " sep " + separator);
             }
         }
         return (type == null || urn == null) ? null : Pair.of(type, urn);

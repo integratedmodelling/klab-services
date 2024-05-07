@@ -153,6 +153,8 @@ public enum LanguageAdapter {
         ret.setNamespace(namespace.getUrn());
         ret.setDeprecated(model.getDeprecation() != null);
         ret.setDeprecation(model.getDeprecation());
+        ret.setUrn(model.getName());
+
         // TODO docstring set through next-gen literate programming features
 
         for (var observable : model.getObservables()) {
