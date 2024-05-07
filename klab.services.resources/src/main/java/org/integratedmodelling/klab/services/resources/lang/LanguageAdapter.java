@@ -154,6 +154,9 @@ public enum LanguageAdapter {
         ret.setDeprecated(model.getDeprecation() != null);
         ret.setDeprecation(model.getDeprecation());
         ret.setUrn(model.getName());
+        ret.setOffsetInDocument(model.getCodeOffset());
+        ret.setLength(model.getCodeLength());
+        ret.setProjectName(namespace.getProjectName());
 
         // TODO docstring set through next-gen literate programming features
 

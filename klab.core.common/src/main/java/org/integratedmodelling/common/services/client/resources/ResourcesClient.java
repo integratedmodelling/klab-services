@@ -76,8 +76,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public KimNamespace resolveNamespace(String urn, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.get(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN, KimNamespace.class, "urn", urn);
     }
 
     @Override
