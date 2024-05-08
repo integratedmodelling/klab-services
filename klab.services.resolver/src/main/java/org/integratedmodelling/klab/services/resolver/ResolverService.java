@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import org.apache.groovy.util.Maps;
+import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -41,6 +42,7 @@ import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
 import org.integratedmodelling.klab.utilities.Utils;
 
+import java.io.File;
 import java.util.*;
 
 public class ResolverService extends BaseService implements Resolver {
@@ -64,11 +66,31 @@ public class ResolverService extends BaseService implements Resolver {
     Map<String, Instance> instances = Collections.synchronizedMap(new HashMap<>());
     Parameters<String> defines = Parameters.createSynchronized();
     private String hardwareSignature = Utils.Names.getHardwareId();
-    // TODO link to configuration
-    private String serviceId;
+    private ResolverConfiguration configuration;
 
     public ResolverService(ServiceScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
+        readConfiguration(options);
+    }
+
+    private void readConfiguration(ServiceStartupOptions options) {
+        File config = BaseService.getFileInConfigurationDirectory(options, "resolver.yaml");
+        if (config.exists() && config.length() > 0 && !options.isClean()) {
+            this.configuration = Utils.YAML.load(config, ResolverConfiguration.class);
+        } else {
+            // make an empty config
+            this.configuration = new ResolverConfiguration();
+            //            this.configuration.setServicePath("resources");
+            //            this.configuration.setLocalResourcePath("local");
+            //            this.configuration.setPublicResourcePath("public");
+            this.configuration.setServiceId(UUID.randomUUID().toString());
+            saveConfiguration();
+        }
+    }
+
+    private void saveConfiguration() {
+        File config = BaseService.getFileInConfigurationDirectory(startupOptions, "resolver.yaml");
+        org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 
     @Override
@@ -84,7 +106,8 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public Capabilities capabilities(Scope scope) {
 // TODO Auto-generated method stub
-        return new Capabilities() {
+        return new ResolverCapabilitiesImpl()
+        {
             @Override
             public Type getType() {
                 return Type.RESOLVER;
@@ -102,7 +125,7 @@ public class ResolverService extends BaseService implements Resolver {
 
             @Override
             public String getServiceId() {
-                return serviceId;
+                return serviceId();
             }
 
             @Override
@@ -115,7 +138,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public String serviceId() {
-        return serviceId;
+        return configuration.getServiceId();
     }
 
     /**

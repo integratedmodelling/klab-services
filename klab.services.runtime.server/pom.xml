@@ -6,4 +6,34 @@
     <version>0.11.0-SNAPSHOT</version>
   </parent>
   <artifactId>klab.services.runtime.server</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.integratedmodelling</groupId>
+        <artifactId>klab.product</artifactId>
+        <version>1.0.1-SNAPSHOT</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>package-release</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <outputDirectory>target/build</outputDirectory>
+          <productName>klab.server.runtime</productName>
+          <productClass>RUNTIME_SERVICE</productClass>
+          <productMain>org.integratedmodelling.klab.services.runtime.server.RuntimeServer</productMain>
+          <productDescription>The reference implementation of the k.LAB Runtime server</productDescription>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.integratedmodelling</groupId>
+      <artifactId>klab.services.runtime</artifactId>
+      <version>${klab.version}</version>
+    </dependency>
+  </dependencies>
 </project>

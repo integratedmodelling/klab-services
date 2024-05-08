@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.runtime;
 
+import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -47,7 +48,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
+        return client.get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class);
     }
 
     @Override

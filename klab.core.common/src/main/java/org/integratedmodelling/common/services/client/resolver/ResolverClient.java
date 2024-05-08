@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.resolver;
 
+import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -45,7 +46,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return client.get(ServicesAPI.CAPABILITIES, Capabilities.class);
+        return client.get(ServicesAPI.CAPABILITIES, ResolverCapabilitiesImpl.class);
     }
 
     @Override

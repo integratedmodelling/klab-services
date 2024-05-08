@@ -327,10 +327,11 @@ public enum Authentication {
         return null;
     }
 
-    public <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType, URL url,
-                                                              Identity identity,
-                                                              List<ServiceReference> services,
-                                                              BiConsumer<Channel, Message>... listeners) {
+    @SafeVarargs
+    public final <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType, URL url,
+                                                                    Identity identity,
+                                                                    List<ServiceReference> services,
+                                                                    BiConsumer<Channel, Message>... listeners) {
         T ret = switch (serviceType) {
             case REASONER -> {
                 yield (T) new ReasonerClient(url, identity, services, listeners);

@@ -50,6 +50,16 @@
             <artifactId>klab.services.reasoner.server</artifactId>
             <version>${klab.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.resolver.server</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.services.runtime.server</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

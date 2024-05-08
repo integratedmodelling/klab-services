@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.reasoner;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
+import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -1088,7 +1089,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return new Capabilities() {
+        return new ReasonerCapabilitiesImpl() {
 
             @Override
             public String getWorldviewId() {

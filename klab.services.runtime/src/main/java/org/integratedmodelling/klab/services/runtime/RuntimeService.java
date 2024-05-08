@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
+import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
+import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -19,6 +21,7 @@ import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
 import org.integratedmodelling.klab.utilities.Utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -36,10 +39,31 @@ public class RuntimeService extends BaseService
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
     private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
     // TODO connect to runtime.yaml configuration
-    private String serviceId;
+    private RuntimeConfiguration configuration;
 
     public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
         super(scope, Type.RUNTIME, options);
+        readConfiguration(options);
+    }
+
+    private void readConfiguration(ServiceStartupOptions options) {
+        File config = BaseService.getFileInConfigurationDirectory(options, "resolver.yaml");
+        if (config.exists() && config.length() > 0 && !options.isClean()) {
+            this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
+        } else {
+            // make an empty config
+            this.configuration = new RuntimeConfiguration();
+            //            this.configuration.setServicePath("resources");
+            //            this.configuration.setLocalResourcePath("local");
+            //            this.configuration.setPublicResourcePath("public");
+            this.configuration.setServiceId(UUID.randomUUID().toString());
+            saveConfiguration();
+        }
+    }
+
+    private void saveConfiguration() {
+        File config = BaseService.getFileInConfigurationDirectory(startupOptions, "resolver.yaml");
+        org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 
     @Override
@@ -81,7 +105,8 @@ public class RuntimeService extends BaseService
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return new Capabilities() {
+
+        return new RuntimeCapabilitiesImpl() {
 
             @Override
             public Type getType() {
@@ -100,18 +125,19 @@ public class RuntimeService extends BaseService
 
             @Override
             public String getServiceId() {
-                return serviceId;
+                return serviceId();
             }
 
             @Override
             public String getServerId() {
-                return hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature);
+                return hardwareSignature == null ? null : ("REASONER_" + hardwareSignature);
             }
+
         };
     }
 
     public String serviceId() {
-        return serviceId;
+        return configuration.getServiceId();
     }
 
     @Override
