@@ -694,7 +694,8 @@ public class ResolverService extends BaseService implements Resolver {
         /*
          * Check for updates, load and scan all new plug-ins, returning the main packages to scan
          */
-        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
+        // FIXME update paths and simplify, put in BaseService
+//        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
         /*
          * Scan all packages registered under the parent package of all k.LAB services. TODO all

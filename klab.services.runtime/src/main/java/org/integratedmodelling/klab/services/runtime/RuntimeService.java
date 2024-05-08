@@ -77,10 +77,14 @@ public class RuntimeService extends BaseService
         Set<String> extensionPackages = new LinkedHashSet<>();
         extensionPackages.add("org.integratedmodelling.klab.runtime");
         extensionPackages.add("org.integratedmodelling.klab.runtime.temporary");
+
+
+
         /*
          * Check for updates, load and scan all new plug-ins, returning the main packages to scan
+         * FIXME update, put in BaseService
          */
-        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
+//        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
         /*
          * Scan all packages registered under the parent package of all k.LAB services. TODO all
