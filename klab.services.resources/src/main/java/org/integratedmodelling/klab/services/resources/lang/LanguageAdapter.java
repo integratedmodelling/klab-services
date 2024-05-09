@@ -31,6 +31,10 @@ public enum LanguageAdapter {
         ret.setUrn(observableSyntax.encode());
         ret.setSemantics(adaptSemantics(observableSyntax.getSemantics()));
         ret.setCodeName(observableSyntax.codeName());
+        ret.setReferenceName(observableSyntax.referenceName());
+        ret.setFormalName(observableSyntax.getStatedName());
+
+        // TODO value ops
 
         return ret;
     }
@@ -46,6 +50,7 @@ public enum LanguageAdapter {
         ret.setType(adaptSemanticType(semantics.getType()));
         ret.setNegated(semantics.isNegated());
         ret.setCollective(semantics.isDistributed());
+        ret.setCodeName(semantics.codeName());
         ret.setDeprecation(semantics.getDeprecation());
         ret.setDeprecated(semantics.getDeprecation() != null);
 

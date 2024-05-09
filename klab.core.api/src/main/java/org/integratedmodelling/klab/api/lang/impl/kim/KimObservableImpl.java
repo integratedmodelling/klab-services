@@ -34,6 +34,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	private Type nonSemanticType;
 	private String codeName;
 	private boolean generic;
+	private String referenceName;
 	private boolean global;
 	private boolean exclusive;
 	private String urn;
@@ -217,6 +218,15 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 
 	public void setVersion(Version version) {
 		this.version = version;
+	}
+
+	@Override
+	public String getReferenceName() {
+		return referenceName;
+	}
+
+	public void setReferenceName(String referenceName) {
+		this.referenceName = referenceName;
 	}
 
 	@Override
