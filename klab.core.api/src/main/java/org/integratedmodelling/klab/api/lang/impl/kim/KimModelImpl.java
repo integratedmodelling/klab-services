@@ -26,7 +26,16 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 	private List<Contextualizable> contextualization = new ArrayList<>();
 	private String docstring;
 	private String projectName;
+	private boolean inactive;
 
+	@Override
+	public boolean isInactive() {
+		return inactive;
+	}
+
+	public void setInactive(boolean inactive) {
+		this.inactive = inactive;
+	}
 	@Override
 	public List<KimObservable> getDependencies() {
 		return this.dependencies;

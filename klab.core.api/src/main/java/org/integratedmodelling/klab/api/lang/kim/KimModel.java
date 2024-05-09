@@ -13,9 +13,17 @@ public interface KimModel extends KimActiveStatement {
     List<KimObservable> getObservables();
 
     /**
-     * Data type of primary observable meant to discriminate void and non-semantic models from the
-     * semantic ones. Can be either of VOID, CONCEPT, NUMBER, TEXT or BOOLEAN.
-     * 
+     * True if any observable is NOTHING or there are other errors visible at the syntactic level. Does not
+     * guarantee that the model will be usable.
+     *
+     * @return true if inactive
+     */
+    boolean isInactive();
+
+    /**
+     * Data type of primary observable meant to discriminate void and non-semantic models from the semantic
+     * ones. Can be either of VOID, CONCEPT, NUMBER, TEXT or BOOLEAN.
+     *
      * @return
      */
     Artifact.Type getType();
@@ -28,7 +36,7 @@ public interface KimModel extends KimActiveStatement {
 
     /**
      * Contextualizer or processor(s) given after 'using'
-     * 
+     *
      * @return computables or an empty list
      */
     List<Contextualizable> getContextualization();

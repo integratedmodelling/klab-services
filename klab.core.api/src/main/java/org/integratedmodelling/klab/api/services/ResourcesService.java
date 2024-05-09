@@ -92,8 +92,10 @@ public interface ResourcesService extends KlabService {
         List<String> getWorkspaceNames();
 
         /**
-         * Return the current CRUD permissions for the authenticated user. None of these should be returned if
-         * the service does not implement ResourceService.Admin.
+         * Return the current CRUD permissions for the authenticated user. These are used as a mask when
+         * accessing resources, combined with the resource's own permissions so that resource permissions not
+         * available to the requesting identity on a service base are not returned. Only READ should be
+         * returned if the service does not implement ResourceService.Admin.
          *
          * @return
          */
@@ -356,7 +358,7 @@ public interface ResourcesService extends KlabService {
          * overwritten)
          */
         List<ResourceSet> importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
-                                  Scope scope);
+                                        Scope scope);
 
         /**
          * Create a new empty project. Use the update function to configure the manifest and the create/update
@@ -421,7 +423,8 @@ public interface ResourcesService extends KlabService {
          * @param arguments
          * @return a descriptor of what happened and what needs to be reloaded.
          */
-        List<ResourceSet> manageRepository(String projectName, Repository.Operation operation, String... arguments);
+        List<ResourceSet> manageRepository(String projectName, Repository.Operation operation,
+                                           String... arguments);
 
         /**
          * Add a resource fully specified by a resource object to those managed by this service. Resource is
@@ -447,6 +450,7 @@ public interface ResourcesService extends KlabService {
 
         /**
          * Remove a document in a project. May be a resource when it's exclusive to the project.
+         *
          * @param projectName
          * @param assetUrn
          * @param lockingAuthorization

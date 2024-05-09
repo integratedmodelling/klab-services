@@ -30,7 +30,9 @@ public enum LanguageAdapter {
 
         ret.setUrn(observableSyntax.encode());
         ret.setSemantics(adaptSemantics(observableSyntax.getSemantics()));
-        ret.setCodeName(observableSyntax.codeName());
+        ret.setCodeName(ret.getSemantics().getType().contains(SemanticType.NOTHING)
+                        ? "invalid_observable"
+                        : observableSyntax.codeName());
         ret.setReferenceName(observableSyntax.referenceName());
         ret.setFormalName(observableSyntax.getStatedName());
 
@@ -43,10 +45,6 @@ public enum LanguageAdapter {
 
         KimConceptImpl ret = new KimConceptImpl();
 
-        // NAH these should be done internally after generation
-        //        ret.setUrn(semantics.encode());
-        //        ret.setCodeName(semantics.codeName());
-
         ret.setType(adaptSemanticType(semantics.getType()));
         ret.setNegated(semantics.isNegated());
         ret.setCollective(semantics.isDistributed());
@@ -57,7 +55,12 @@ public enum LanguageAdapter {
         if (semantics.isLeafDeclaration()) {
             ret.setName(semantics.encode());
         } else {
-            ret.setObservable(adaptSemantics(semantics.getObservable()));
+            if (semantics.getType().is(SemanticSyntax.TypeCategory.VALID)) {
+                ret.setObservable(adaptSemantics(semantics.getObservable()));
+            } else {
+                ret.setObservable(KimConcept.nothing());
+                ret.setCodeName("invalid_concept");
+            }
             for (var cr : semantics.getConceptReferences()) {
                 var trait = adaptSemantics(cr);
                 if (trait.is(SemanticType.ROLE)) {
@@ -130,7 +133,7 @@ public enum LanguageAdapter {
         ret.setSourceCode(namespace.getSourceCode());
         ret.setProjectName(projectName);
 
- // TODO       ret.setImports(); and the rest
+        // TODO       ret.setImports(); and the rest
         for (var statement : namespace.getStatements()) {
             ret.getStatements().add(adaptStatement(statement, ret));
         }
@@ -165,12 +168,23 @@ public enum LanguageAdapter {
 
         // TODO docstring set through next-gen literate programming features
 
+        boolean inactive = false;
         for (var observable : model.getObservables()) {
-            ret.getObservables().add(adaptObservable(observable));
+            var obs = adaptObservable(observable);
+            ret.getObservables().add(obs);
+            if (obs.getSemantics().is(SemanticType.NOTHING)) {
+                inactive = true;
+            }
         }
         for (var dependency : model.getDependencies()) {
-            ret.getDependencies().add(adaptObservable(dependency));
+            var obs = adaptObservable(dependency);
+            ret.getDependencies().add(obs);
+            if (obs.getSemantics().is(SemanticType.NOTHING)) {
+                inactive = true;
+            }
         }
+
+        ret.setInactive(inactive);
 
         for (var contextualizable : model.getContextualizations()) {
             ret.getContextualization().add(adaptContextualizable(contextualizable, namespace));

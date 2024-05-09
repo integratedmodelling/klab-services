@@ -4,12 +4,10 @@ import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ResourcesCapabilitiesImpl implements ResourcesService.Capabilities {
+
     private KlabService.Type type;
     private String localName;
     private String serviceName;
@@ -18,7 +16,7 @@ public class ResourcesCapabilitiesImpl implements ResourcesService.Capabilities 
     private boolean worldviewProvider;
     private String adoptedWorldview;
     private List<String> workspaceNames = new ArrayList<>();
-    private Set<CRUDOperation> permissions = new HashSet<>();
+    private Set<CRUDOperation> permissions = EnumSet.of(CRUDOperation.READ);
 
     @Override
     public KlabService.Type getType() {

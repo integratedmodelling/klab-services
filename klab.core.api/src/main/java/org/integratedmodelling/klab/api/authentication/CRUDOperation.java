@@ -2,6 +2,6 @@ package org.integratedmodelling.klab.api.authentication;
 
 public enum CRUDOperation {
 
-    CREATE, DELETE, UPDATE
+    CREATE, DELETE, UPDATE, READ
 
 }

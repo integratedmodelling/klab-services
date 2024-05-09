@@ -4,7 +4,9 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+import org.integratedmodelling.klab.api.lang.impl.kim.KimConceptImpl;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -180,5 +182,14 @@ public interface KimConcept extends KlabStatement, KlabAsset {
      * @return
      */
     SemanticRole getDistributedInherent();
+
+
+    public static KimConcept nothing() {
+        var ret = new KimConceptImpl();
+        ret.setName("Nothing");
+        ret.setNamespace("klab");
+        ret.setType(EnumSet.of(SemanticType.NOTHING));
+        return ret;
+    }
 
 }
