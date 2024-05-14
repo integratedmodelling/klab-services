@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -90,7 +91,7 @@ public interface Resolution {
      *
      * @return
      */
-    Observable getResolvable();
+    Resolvable getResolvable();
 
     /**
      * Null at top-level, when present determines the scale, context semantics, and the actuator which will receive the
@@ -107,7 +108,7 @@ public interface Resolution {
      *
      * @return
      */
-    List<Pair<Knowledge, Coverage>> getResolution();
+    List<Pair<Resolvable, Coverage>> getResolution();
 
     /**
      * The resolution keeps tabs on anything that has been resolved already, either through models or pre-existing
@@ -116,7 +117,7 @@ public interface Resolution {
      * @param observable
      * @return
      */
-    Collection<Knowledge> getResolved(Observable observable);
+    Collection<Resolvable> getResolved(Observable observable);
 
     /**
      * Return the collection of whatever resolves the passed model using the passed strategy. The order is that of
@@ -126,7 +127,7 @@ public interface Resolution {
      * @param type
      * @return
      */
-    List<Triple<Knowledge, Observable, Coverage>> getResolving(Knowledge target, ResolutionType type);
+    List<Triple<Resolvable, Resolvable, Coverage>> getResolving(Resolvable target, ResolutionType type);
 
     /**
      * Empty means that resolution has failed. A non-empty graph may contain zero nodes, meaning that no

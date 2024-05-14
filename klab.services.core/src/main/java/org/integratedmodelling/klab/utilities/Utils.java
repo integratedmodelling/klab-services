@@ -211,8 +211,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 // TODO
             } else if (object instanceof Model) {
                 collectAnnotations(((Model) object).getObservables().get(0), collection);
-            } else if (object instanceof Instance) {
-                collectAnnotations(((Instance) object).getObservable(), collection);
+//            } else if (object instanceof Instance) {
+//                collectAnnotations(((Instance) object).getObservable(), collection);
             }
             //
             // if (getParent(object) != null) {

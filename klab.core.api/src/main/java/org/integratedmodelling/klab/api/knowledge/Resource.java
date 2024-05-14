@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
-public interface Resource extends KlabAsset {
+public interface Resource extends Knowledge, Resolvable {
 
 	/**
 	 * Get the geometry associated with the resource, without fetching the entire

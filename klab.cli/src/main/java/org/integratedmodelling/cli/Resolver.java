@@ -3,8 +3,8 @@ package org.integratedmodelling.cli;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -73,7 +73,7 @@ public class Resolver {
         boolean show;
 
         Resolution resolution;
-        Knowledge knowledge;
+        Resolvable knowledge;
 
 //        @Override
         public void run() {
@@ -96,7 +96,7 @@ public class Resolver {
 
                 var urn = Utils.Strings.join(observables, " ");
                 var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
-                this.knowledge = resolver.resolveKnowledge(urn, Knowledge.class, ctx);
+                this.knowledge = resolver.resolveKnowledge(urn, Resolvable.class, ctx);
 
                 if (knowledge == null) {
                     err.println("URN " + urn + " does not resolve to any type of knowledge");
@@ -188,7 +188,7 @@ public class Resolver {
                         ? KlabCLI.INSTANCE.modeler().currentContext()
                         : KlabCLI.INSTANCE.modeler().context(context);
 
-                ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
+//                ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
 
                 var runtime = ctx.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
                 var result = runtime.run(this.dataflow, ctx);

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -12,7 +13,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
+public class KimModelImpl extends KimStatementImpl implements KimModel {
 
 	@Serial
 	private static final long serialVersionUID = -6068429551009652469L;
@@ -27,6 +28,7 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 	private String docstring;
 	private String projectName;
 	private boolean inactive;
+	private Geometry coverage;
 
 	@Override
 	public boolean isInactive() {
@@ -115,6 +117,15 @@ public class KimModelImpl extends KimActiveStatementImpl implements KimModel {
 
 	public void setProjectName(String projectName) {
 		this.projectName = projectName;
+	}
+
+	@Override
+	public Geometry getCoverage() {
+		return coverage;
+	}
+
+	public void setCoverage(Geometry coverage) {
+		this.coverage = coverage;
 	}
 
 	@Override

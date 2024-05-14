@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -50,13 +51,13 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     @Override
-    public Resolution resolve(Knowledge resolvable, ContextScope scope) {
+    public Resolution resolve(Resolvable resolvable, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
+    public <T extends Resolvable> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -68,7 +69,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     @Override
-    public Dataflow<Observation> compile(Knowledge resolved, Resolution resolution, ContextScope scope) {
+    public Dataflow<Observation> compile(Resolvable resolved, Resolution resolution, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -171,7 +171,7 @@ public class Resources {
                         case TESTCASE:
                             text = listApplication(result.getResourceUrn(), source, service);
                             break;
-                        case INSTANCE:
+//                        case INSTANCE:
                         case MODEL:
                         case RESOURCE:
                             text = listObject(result.getResourceUrn(), source, service,
@@ -634,12 +634,12 @@ public class Resources {
 
         KimNamespace namespace = service.resolveNamespace(ns, KlabCLI.INSTANCE.modeler().currentUser());
         for (KlabStatement statement : namespace.getStatements()) {
-            if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance && on.equals(((KimInstance) statement).getName())) {
-                return source ? statement.toString() : Utils.Json.printAsJson(statement);
-            } /*else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
-					&& resourceUrn.equals(((KimModel) statement).getName())) {
-				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
-			}*/
+//            if (knowledgeClass == KnowledgeClass.INSTANCE && statement instanceof KimInstance && on.equals(((KimInstance) statement).getName())) {
+//                return source ? statement.toString() : Utils.Json.printAsJson(statement);
+//            } /*else if (knowledgeClass == KnowledgeClass.MODEL && statement instanceof KimModel
+//					&& resourceUrn.equals(((KimModel) statement).getName())) {
+//				return source ? statement.getSourceCode() : Utils.Json.printAsJson(statement);
+//			}*/
         }
 
         return null;

@@ -1,12 +1,14 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
 import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 
 import java.util.List;
 
-public interface KimModel extends KimActiveStatement {
+public interface KimModel extends KlabStatement, Resolvable {
 
     List<KimObservable> getDependencies();
 
@@ -40,6 +42,14 @@ public interface KimModel extends KimActiveStatement {
      * @return computables or an empty list
      */
     List<Contextualizable> getContextualization();
+
+    /**
+     * Extentual coverage of this specific model, if specified. If null, coverage defaults to any specified
+     * for the namespace. If even that is null, coverage is understood as universal.
+     *
+     * @return
+     */
+    Geometry getCoverage();
 
     String getDocstring();
 

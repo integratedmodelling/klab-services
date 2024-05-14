@@ -2,12 +2,14 @@ package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KimInstanceImpl extends KimActiveStatementImpl implements KimInstance {
+@Instance(value="observation", description = "")
+public class KimInstanceImpl extends KimStatementImpl implements KimInstance {
 
     @Serial
     private static final long serialVersionUID = -2269601151635547580L;

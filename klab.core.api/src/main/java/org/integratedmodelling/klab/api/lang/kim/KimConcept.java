@@ -18,7 +18,7 @@ import java.util.Set;
  *
  * @author ferdinando.villa
  */
-public interface KimConcept extends KlabStatement, KlabAsset {
+public interface KimConcept extends KlabStatement {
 
     enum Expression {
         SINGLETON, UNION, INTERSECTION

@@ -12,7 +12,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
-public interface Model extends Knowledge {
+public interface Model extends Knowledge, Resolvable {
 
     /**
      * Builders are used by the resolver when creating on-the-fly models when the observation strategy

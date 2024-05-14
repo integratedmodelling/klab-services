@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -29,7 +30,7 @@ import org.jgrapht.graph.DefaultEdge;
 import com.google.common.collect.Sets;
 
 /**
- * The resolution is the result of {@link Resolver#resolve(Knowledge, ContextScope)}. It contains the resolution
+ * The resolution is the result of {@link Resolver#resolve(Resolvable, ContextScope)}. It contains the resolution
  * strategy for the top-level observable, resolved by zero or more models that are connected to all their dependencies
  * in a graph. In the graph, each link reports the portion of the context covered by the incoming model (possibly
  * partial), the dependency observable resolved, and the type of resolution (direct or deferred to further observation
@@ -38,15 +39,15 @@ import com.google.common.collect.Sets;
  *
  * @author Ferd
  */
-public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionImpl.ResolutionEdge> implements Resolution {
+public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionImpl.ResolutionEdge> implements Resolution {
 
     private static final long serialVersionUID = 4088657660423175126L;
 
-    private Observable resolvable;
+    private Resolvable resolvable;
     private Coverage coverage;
     private Set<Observable> resolving = new HashSet<>();
-    private Map<Observable, Collection<Knowledge>> resolved = new HashMap<>();
-    private List<Pair<Knowledge, Coverage>> resolution = new ArrayList<>();
+    private Map<Observable, Collection<Resolvable>> resolved = new HashMap<>();
+    private List<Pair<Resolvable, Coverage>> resolution = new ArrayList<>();
     private DirectObservation resolutionContext;
 
     private boolean empty;
@@ -55,11 +56,11 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
 
         private static final long serialVersionUID = 5876676141844919004L;
 
-        private Observable observable;
+        private Resolvable observable;
         private ResolutionType type;
         private Coverage coverage;
 
-        public ResolutionEdge(Observable observable, Coverage coverage, ResolutionType type) {
+        public ResolutionEdge(Resolvable observable, Coverage coverage, ResolutionType type) {
             this.observable = observable;
             this.coverage = coverage;
             this.type = type;
@@ -72,7 +73,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
             return coverage;
         }
 
-        public Observable getObservable() {
+        public Resolvable getObservable() {
             return observable;
         }
 
@@ -102,13 +103,13 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
      * @param root
      * @param scope
      */
-    public ResolutionImpl(Observable root, Scale scale, ContextScope scope) {
+    public ResolutionImpl(Resolvable root, Scale scale, ContextScope scope) {
 
         super(ResolutionImpl.ResolutionEdge.class);
         this.resolvable = root;
         // pre-resolved observations. Can't use better idioms for apparent bug in Java type system.
         for (Observable o : scope.getCatalog().keySet()) {
-            Set<Knowledge> set = new HashSet<>();
+            Set<Resolvable> set = new HashSet<>();
             set.add(scope.getCatalog().get(o));
             resolved.put(o, set);
         }
@@ -122,7 +123,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
      * @param scope
      * @param parent
      */
-    public ResolutionImpl(Observable root, Scale scale, ContextScope scope, ResolutionImpl parent) {
+    public ResolutionImpl(Resolvable root, Scale scale, ContextScope scope, ResolutionImpl parent) {
 
         super(ResolutionImpl.ResolutionEdge.class);
         this.resolving.addAll(parent.resolving);
@@ -139,7 +140,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
      * @param resolutionType
      * @return
      */
-    public Coverage merge(Knowledge parentModel, ResolutionImpl child, ResolutionType resolutionType) {
+    public Coverage merge(Resolvable parentModel, ResolutionImpl child, ResolutionType resolutionType) {
 
         if (parentModel != null) {
             addVertex(parentModel);
@@ -158,7 +159,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
         }
 
         // link the child resolution's root nodes
-        for (Pair<Knowledge, Coverage> resolved : child.resolution) {
+        for (Pair<Resolvable, Coverage> resolved : child.resolution) {
             addVertex(resolved.getFirst());
             if (parentModel != null) {
                 addEdge(resolved.getFirst(), parentModel, new ResolutionEdge(child.resolvable, child.coverage,
@@ -193,7 +194,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     @Override
     public String toString() {
         StringBuffer ret = new StringBuffer(512);
-        for (Pair<Knowledge, Coverage> resolved : resolution) {
+        for (Pair<Resolvable, Coverage> resolved : resolution) {
             ret.append(resolved.getFirst() + " [" + NumberFormat.getPercentInstance().format(resolved.getSecond().getCoverage())
                     + "]\n");
             ret.append(printResolution(resolved.getFirst(), 3));
@@ -201,10 +202,10 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
         return ret.toString();
     }
 
-    private String printResolution(Knowledge first, int i) {
+    private String printResolution(Resolvable first, int i) {
         StringBuffer ret = new StringBuffer(512);
         for (ResolutionType type : ResolutionType.values()) {
-            for (Triple<Knowledge, Observable, Coverage> resolved : getResolving(first, type)) {
+            for (Triple<Resolvable, Resolvable, Coverage> resolved : getResolving(first, type)) {
                 ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": "
                         + Utils.Strings.capitalize(type.name().toLowerCase()) + ", "
                         + NumberFormat.getPercentInstance().format(resolved.getThird().getCoverage()) + "]\n");
@@ -238,8 +239,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     }
 
     @Override
-    public List<Triple<Knowledge, Observable, Coverage>> getResolving(Knowledge target, ResolutionType strategy) {
-        List<Triple<Knowledge, Observable, Coverage>> ret = new ArrayList<>();
+    public List<Triple<Resolvable, Resolvable, Coverage>> getResolving(Resolvable target, ResolutionType strategy) {
+        List<Triple<Resolvable, Resolvable, Coverage>> ret = new ArrayList<>();
         for (ResolutionEdge edge : incomingEdgesOf(target)) {
             if (edge.type == strategy) {
                 ret.add(Triple.of(getEdgeSource(edge), edge.getObservable(), edge.getCoverage()));
@@ -249,12 +250,12 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     }
 
     @Override
-    public Collection<Knowledge> getResolved(Observable observable) {
+    public Collection<Resolvable> getResolved(Observable observable) {
         return resolved.get(observable);
     }
 
     @Override
-    public Observable getResolvable() {
+    public Resolvable getResolvable() {
         return this.resolvable;
     }
 
@@ -264,7 +265,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Knowledge, ResolutionIm
     }
 
     @Override
-    public List<Pair<Knowledge, Coverage>> getResolution() {
+    public List<Pair<Resolvable, Coverage>> getResolution() {
         return resolution;
     }
 

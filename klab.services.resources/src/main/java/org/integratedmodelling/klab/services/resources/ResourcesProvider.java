@@ -772,9 +772,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (wanted.contains(KnowledgeClass.PROJECT)) {
 
         }
-        if (wanted.contains(KnowledgeClass.INSTANCE)) {
-
-        }
+//        if (wanted.contains(KnowledgeClass.INSTANCE)) {
+//
+//        }
 
         return ret;
     }
@@ -891,11 +891,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
                                 namespace.getProjectName(),
                                 namespace.getVersion(), KnowledgeClass.MODEL));
-                    } else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
+                    } /*else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
                                 namespace.getProjectName(),
                                 namespace.getVersion(), KnowledgeClass.INSTANCE));
-                    }
+                    }*/
                 }
 
                 if (!ret.getResults().isEmpty()) {
@@ -922,7 +922,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             if (Urn.classify(result.getResourceUrn()) == Urn.Type.KIM_OBJECT) {
                 if (result.getKnowledgeClass() == KnowledgeClass.NAMESPACE) {
                     namespaces.add(result.getResourceUrn());
-                } else if (result.getKnowledgeClass() == KnowledgeClass.MODEL || result.getKnowledgeClass() == KnowledgeClass.INSTANCE || result.getKnowledgeClass() == KnowledgeClass.DEFINITION) {
+                } else if (result.getKnowledgeClass() == KnowledgeClass.MODEL || result.getKnowledgeClass() == KnowledgeClass.DEFINITION) {
                     namespaces.add(Utils.Paths.getLeading(result.getResourceUrn(), '.'));
                 }
             }

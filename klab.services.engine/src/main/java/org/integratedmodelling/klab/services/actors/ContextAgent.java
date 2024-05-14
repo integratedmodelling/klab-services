@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Instance;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
@@ -54,7 +54,7 @@ public class ContextAgent extends KAgent {
     protected void observe(ReActorContext rctx, Observe message) {
 
         Status status = Status.EMPTY;
-        Knowledge resolvable = null;
+        Resolvable resolvable = null;
         Observation result = null;
 
         var resolver = scope.getService(Resolver.class);
@@ -63,7 +63,7 @@ public class ContextAgent extends KAgent {
 
         try {
 
-            resolvable = resolver.resolveKnowledge(message.getUrn(), Knowledge.class, scope);
+            resolvable = resolver.resolveKnowledge(message.getUrn(), Resolvable.class, scope);
             if (resolvable == null) {
                 scope.send(message.response(Status.ABORTED, AgentResponse.ERROR,
                         "Cannot resolve URN " + message.getUrn()));
@@ -71,8 +71,8 @@ public class ContextAgent extends KAgent {
             }
 
             ContextScope resolutionScope = message.getScope();
-            if (resolvable instanceof Instance instance) {
-                resolutionScope = resolutionScope.withGeometry(instance.getScale());
+            if (resolvable instanceof Observation instance) {
+                resolutionScope = resolutionScope.withGeometry(instance.getGeometry());
             }
 
             /*

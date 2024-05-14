@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -35,7 +36,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Observation extends Knowledge, Artifact {
+public interface Observation extends Knowledge, Artifact, Resolvable {
 
     /**
      * Return the observable.

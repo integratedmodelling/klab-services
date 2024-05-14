@@ -6,13 +6,14 @@ import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-public interface KimObservable extends KlabStatement, KlabAsset {
+public interface KimObservable extends KlabStatement, Resolvable {
 
     /**
      * @return the main concept

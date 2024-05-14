@@ -33,7 +33,6 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.common.knowledge.InstanceImpl;
 import org.integratedmodelling.common.knowledge.ModelImpl;
 //import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -63,7 +62,7 @@ public class ResolverService extends BaseService implements Resolver {
      */
     Map<String, Version> urnToVersion = Collections.synchronizedMap(new HashMap<>());
     Map<String, Model> models = Collections.synchronizedMap(new HashMap<>());
-    Map<String, Instance> instances = Collections.synchronizedMap(new HashMap<>());
+    Map<String, Observation> instances = Collections.synchronizedMap(new HashMap<>());
     Parameters<String> defines = Parameters.createSynchronized();
     private String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
@@ -150,14 +149,15 @@ public class ResolverService extends BaseService implements Resolver {
      * @param scope
      * @return
      */
-    public Resolution resolve(Knowledge knowledge, ContextScope scope) {
+    public Resolution resolve(Resolvable knowledge, ContextScope scope) {
 
         Scale scale = scope.getScale();
-        var observable = switch (knowledge) {
+        Resolvable observable = switch (knowledge) {
             case Concept concept -> Observable.promote(concept);
-            case Instance instance -> {
-                scale = instance.getScale();
-                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
+            case KimInstance instance -> {
+                // FIXME build the scale from the geometry
+//                scale = instance.getScale();
+//                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
                 yield instance.getObservable();
             }
             case Model model -> model.getObservables().get(0);
@@ -170,21 +170,21 @@ public class ResolverService extends BaseService implements Resolver {
                     " context");
         } else if (observable == null) {
             throw new KlabIllegalStateException("cannot establish an observable to resolve for " + knowledge);
-        } else if (!(knowledge instanceof Instance) && !observable.getDescriptionType().isInstantiation()
+        } /*else if (!(knowledge instanceof Instance) && !observable.getDescriptionType().isInstantiation()
                 && scope.getContextObservation() == null) {
             throw new KlabIllegalStateException(
                     "cannot resolve the non-autonomous observable " + knowledge + " without a context " +
                             "observation");
-        }
+        }*/
 
         ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
         if (knowledge instanceof Model) {
             resolveModel((Model) knowledge, observable, scale,
                     scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
                     ret);
-        } else {
-            resolveObservable(observable, scale, scope, ret, null);
-        }
+        } else if (observable instanceof Observable obs){
+            resolveObservable(obs, scale, scope, ret, null);
+        } // TODO the rest
 
         return ret;
 
@@ -307,7 +307,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @param parent
      * @return
      */
-    private ResolutionImpl resolveModel(Model model, Observable observable, Scale scale, ContextScope scope,
+    private ResolutionImpl resolveModel(Model model, Resolvable observable, Scale scale, ContextScope scope,
                                         ResolutionImpl parent) {
 
         ResolutionImpl ret = new ResolutionImpl(observable, scale, scope, parent);
@@ -326,18 +326,18 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     @Override
-    public Dataflow<Observation> compile(Knowledge knowledge, Resolution resolution, ContextScope scope) {
+    public Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope) {
 
         DataflowImpl ret = new DataflowImpl();
         Actuator rootActuator = null;
-        if (knowledge instanceof Instance) {
-            // create void actuator to wrap the instance
-            // add to dataflow
-        }
+//        if (knowledge instanceof Instance) {
+//            // create void actuator to wrap the instance
+//            // add to dataflow
+//        }
 
         Map<String, Actuator> compiled = new HashMap<>();
 
-        for (Pair<Knowledge, Coverage> root : resolution.getResolution()) {
+        for (Pair<Resolvable, Coverage> root : resolution.getResolution()) {
 
             if (root.getFirst() instanceof Model) {
                 var actuator = compileActuator((Model) root.getFirst(), resolution, root.getSecond(),
@@ -358,76 +358,82 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     private ActuatorImpl compileActuator(Model model, Resolution resolution, Coverage coverage,
-                                         Observable observable,
+                                         Resolvable resolvable,
                                          Actuator parentActuator, Dataflow dataflow,
                                          Map<String, Actuator> compiled, ContextScope scope) {
 
-        ActuatorImpl ret = null;
-        var id = createId(observable, scope);
+        if (resolvable instanceof  Observable observable) {
 
-        if (compiled.containsKey(observable.getReferenceName())) {
-            ret = compileReference(compiled.get(observable.getReferenceName()));
-        } else {
+            ActuatorImpl ret = null;
+            var id = createId(observable, scope);
 
-            ret = new ActuatorImpl();
+            if (compiled.containsKey(observable.getReferenceName())) {
+                ret = compileReference(compiled.get(observable.getReferenceName()));
+            } else {
 
-            // keep the coverage in the dataflow aux data if it's not full, so that the runtime doesn't
-            // have to
-            // recalculate it.
-            if (coverage.getCoverage() < 1) {
-                dataflow.getResources().put(id + "_coverage", coverage);
-            }
+                ret = new ActuatorImpl();
 
-            // dependencies first
-            for (ResolutionType type : new ResolutionType[]{ResolutionType.DIRECT,
-                                                            ResolutionType.DEFER_INHERENCY,
-                                                            ResolutionType.DEFER_SEMANTICS}) {
-                for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model,
-                        type)) {
-                    // alias is the dependency getName()
-                    if (resolved.getFirst() instanceof Model m) {
-                        var dependency = compileActuator(m, resolution, resolved.getThird(),
-                                resolved.getSecond(), ret, dataflow,
-                                compiled, scope);
-                        ret.getChildren().add(dependency);
-                        ret.setCoverage(((Model) resolved.getFirst()).getCoverage().as(Geometry.class));
-                    } else if (resolved.getFirst() instanceof Observable o) {
-                        //  ret.getDeferrals().add(Pair.of(type, o));
+                // keep the coverage in the dataflow aux data if it's not full, so that the runtime doesn't
+                // have to
+                // recalculate it.
+                if (coverage.getCoverage() < 1) {
+                    dataflow.getResources().put(id + "_coverage", coverage);
+                }
+
+                // dependencies first
+                for (ResolutionType type : new ResolutionType[]{ResolutionType.DIRECT,
+                                                                ResolutionType.DEFER_INHERENCY,
+                                                                ResolutionType.DEFER_SEMANTICS}) {
+                    for (Triple<Resolvable, Resolvable, Coverage> resolved : resolution.getResolving(model,
+                            type)) {
+                        // alias is the dependency getName()
+                        if (resolved.getFirst() instanceof Model m) {
+                            var dependency = compileActuator(m, resolution, resolved.getThird(),
+                                    resolved.getSecond(), ret, dataflow,
+                                    compiled, scope);
+                            ret.getChildren().add(dependency);
+                            ret.setCoverage(((Model) resolved.getFirst()).getCoverage().as(Geometry.class));
+                        } else if (resolved.getFirst() instanceof Observable o) {
+                            //  ret.getDeferrals().add(Pair.of(type, o));
+                        }
                     }
                 }
             }
+
+            // self
+            for (Contextualizable computation : model.getComputation()) {
+
+                /*
+                 * TODO establish which components are needed to satisfy the call, and make the
+                 * dataflow empty if the resource services in the scope do not locate a component.
+                 * (shouldn't happen as the models shouldn't be resolved in that case). Versions
+                 * should also be collected.
+                 */
+
+                ret.getComputation().add(getServiceCall(computation));
+            }
+
+            ret.setId(id);
+            ret.setName(observable.getName());
+            ret.setAlias(observable.getStatedName());
+
+            // add to hash
+            compiled.put(observable.getReferenceName(), ret);
+
+            // filters apply to references as well
+            for (Triple<Resolvable, Resolvable, Coverage> resolved : resolution.getResolving(model,
+                    ResolutionType.FILTER)) {
+                // TODO
+            }
+
+            ret.setObservable(observable);
+            ret.setAlias(observable.getName());
+
+            return ret;
         }
 
-        // self
-        for (Contextualizable computation : model.getComputation()) {
-
-            /*
-             * TODO establish which components are needed to satisfy the call, and make the
-             * dataflow empty if the resource services in the scope do not locate a component.
-             * (shouldn't happen as the models shouldn't be resolved in that case). Versions
-             * should also be collected.
-             */
-
-            ret.getComputation().add(getServiceCall(computation));
-        }
-
-        ret.setId(id);
-        ret.setName(observable.getName());
-        ret.setAlias(observable.getStatedName());
-
-        // add to hash
-        compiled.put(observable.getReferenceName(), ret);
-
-        // filters apply to references as well
-        for (Triple<Knowledge, Observable, Coverage> resolved : resolution.getResolving(model,
-                ResolutionType.FILTER)) {
-            // TODO
-        }
-
-        ret.setObservable(observable);
-        ret.setAlias(observable.getName());
-
-        return ret;
+        // TODO
+        return null;
     }
 
     private ServiceCall getServiceCall(Contextualizable computation) {
@@ -470,7 +476,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends Knowledge> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
+    public <T extends Resolvable> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
 
         Knowledge ret = null;
 
@@ -526,12 +532,12 @@ public class ResolverService extends BaseService implements Resolver {
         }
         for (Resource result : set.getResults()) {
             switch (result.getKnowledgeClass()) {
-                case INSTANCE:
-                    Instance instance = instances.get(result.getResourceUrn());
-                    if (instance != null) {
-                        ret.add(instance);
-                    }
-                    break;
+//                case INSTANCE:
+//                    Instance instance = instances.get(result.getResourceUrn());
+//                    if (instance != null) {
+//                        ret.add(instance);
+//                    }
+//                    break;
                 case MODEL:
                     Model model = models.get(result.getResourceUrn());
                     if (model != null) {
@@ -558,7 +564,7 @@ public class ResolverService extends BaseService implements Resolver {
                     Model model = loadModel((KimModel) statement, scope);
                     models.put(model.getUrn(), model);
                 } else if (statement instanceof KimInstance) {
-                    Instance instance = loadInstance((KimInstance) statement, scope);
+                    var instance = loadInstance((KimInstance) statement, scope);
                     instances.put(instance.getUrn(), instance);
                 }
             }
@@ -566,26 +572,27 @@ public class ResolverService extends BaseService implements Resolver {
         }
     }
 
-    private Instance loadInstance(KimInstance statement, Scope scope) {
+    private Observation loadInstance(KimInstance statement, Scope scope) {
 
         var reasoner = scope.getService(Reasoner.class);
-
-        InstanceImpl instance = new InstanceImpl();
-        instance.setNamespace(statement.getNamespace());
-        instance.getAnnotations().addAll(statement.getAnnotations());
-        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
-        instance.setUrn(statement.getNamespace() + "." + statement.getName());
-        instance.setMetadata(statement.getMetadata());
-        instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
-
-        for (KimObservable state : statement.getStates()) {
-            instance.getStates().add(reasoner.declareObservable(state));
-        }
-        for (var child : statement.getChildren()) {
-            instance.getChildren().add(loadInstance( child, scope));
-        }
-
-        return instance;
+////
+////        InstanceImpl instance = new InstanceImpl();
+////        instance.setNamespace(statement.getNamespace());
+////        instance.getAnnotations().addAll(statement.getAnnotations());
+////        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
+////        instance.setUrn(statement.getNamespace() + "." + statement.getName());
+////        instance.setMetadata(statement.getMetadata());
+////        instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
+////
+////        for (KimObservable state : statement.getStates()) {
+////            instance.getStates().add(reasoner.declareObservable(state));
+////        }
+////        for (var child : statement.getChildren()) {
+////            instance.getChildren().add(loadInstance( child, scope));
+////        }
+//
+//        return instance;
+        return null;
     }
 
     private Scale createScaleFromBehavior(KimBehavior behavior, Scope scope) {
@@ -649,8 +656,10 @@ public class ResolverService extends BaseService implements Resolver {
         model.getComputation().addAll(statement.getContextualization());
         model.setUrn(statement.getNamespace() + "." + statement.getUrn());
         model.setNamespace(statement.getNamespace());
-        model.getActions().addAll(statement.getBehavior().getStatements());
-        model.setCoverage(createScaleFromBehavior(statement.getBehavior(), scope));
+
+        // FIXME putaroja
+//        model.getActions().addAll(statement.getBehavior().getStatements());
+//        model.setCoverage(createScaleFromBehavior(statement.getBehavior(), scope));
 
         return model;
     }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
@@ -35,9 +36,14 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
 	}
 
 	@Override
-	public List<ServiceCall> getExtents() {
-		return delegate.getExtents();
+	public Geometry getCoverage() {
+		return delegate.getCoverage();
 	}
+
+	//	@Override
+//	public List<ServiceCall> getExtents() {
+//		return delegate.getExtents();
+//	}
 
 	@Override
 	public Map<String, List<String>> getImports() {

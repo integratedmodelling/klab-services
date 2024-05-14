@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
@@ -27,10 +28,12 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
     private String scriptId;
     private String testCaseId;
     private boolean worldviewBound;
-    private List<ServiceCall> extents = new ArrayList<>();
+//    private List<ServiceCall> extents = new ArrayList<>();
     private Map<String, Object> defines = new HashMap<>();
     private List<KlabStatement> statements = new ArrayList<>();
     private Map<String, List<String>> imports = new HashMap<>();
+
+    private Geometry coverage;
 
     @Override
     public Collection<String> getDisjointNamespaces() {
@@ -57,10 +60,10 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
         return this.worldviewBound;
     }
 
-    @Override
-    public List<ServiceCall> getExtents() {
-        return this.extents;
-    }
+//    @Override
+//    public List<ServiceCall> getExtents() {
+//        return this.extents;
+//    }
 
     @Override
     public Map<String, Object> getDefines() {
@@ -97,9 +100,9 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
         this.worldviewBound = worldviewBound;
     }
 
-    public void setExtents(List<ServiceCall> extents) {
-        this.extents = extents;
-    }
+//    public void setExtents(List<ServiceCall> extents) {
+//        this.extents = extents;
+//    }
 
     public void setDefines(Map<String, Object> defines) {
         this.defines = defines;
@@ -118,6 +121,16 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
         Set<String> ret = new HashSet<>();
         return ret;
     }
+
+    @Override
+    public Geometry getCoverage() {
+        return coverage;
+    }
+
+    public void setCoverage(Geometry coverage) {
+        this.coverage = coverage;
+    }
+
 
     @Override
     public void visit(DocumentVisitor visitor) {

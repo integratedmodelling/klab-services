@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @author Ferd
  */
-public interface Observable extends Semantics {
+public interface Observable extends Semantics, Resolvable {
 
     /**
      * Conditions stated in the observable that trigger the use of the default value. Only meaningful if a default value
