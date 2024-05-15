@@ -336,7 +336,8 @@ public class JacksonConfiguration {
                                       Currency.class, Message.class, Worldview.class, Workspace.class,
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,
                                       KimNamespace.class, KimObservationStrategyDocument.class,
-                                      KdlDataflow.class, KActorsBehavior.class,
+                                      KdlDataflow.class, KActorsBehavior.class, KimModel.class,
+                                      KimSymbolDefinition.class,
                                       KimConcept.class, KimObservable.class, KimInstance.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {

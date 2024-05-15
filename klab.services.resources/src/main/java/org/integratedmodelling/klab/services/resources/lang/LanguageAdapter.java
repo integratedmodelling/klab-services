@@ -1,10 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
-import io.swagger.models.auth.In;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -16,9 +13,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.languages.api.*;
-import org.springframework.security.core.parameters.P;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -189,40 +184,41 @@ public enum LanguageAdapter {
 
     private KlabStatement adaptDefine(DefineSyntax define, KimNamespace namespace) {
 
-        KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
-        ret.setDeprecated(define.getDeprecation() != null);
-        ret.setDefineClass(define.getInstanceClass());
-        ret.setUrn(namespace.getUrn() + "." + define.getName());
-        ret.setOffsetInDocument(define.getCodeOffset());
-        ret.setLength(define.getCodeLength());
-        ret.setValue(define.getValue());
-
-        Object value = null;
-        if (define.getInstanceClass() != null) {
-            var implementationClass = instanceImplementations.get(define.getInstanceClass());
-            if (implementationClass == null) {
-                namespace.getNotifications().add(Notification.create("", Notification.Level.Error,
-                        asLexicalContext(define)));
-            } else {
-                // TODO pass the object through the constructor
-                var constructor = ConstructorUtils.getMatchingAccessibleConstructor(implementationClass, define.getValue().getClass());
-                if (constructor != null) {
-                    try {
-                        value = constructor.newInstance(define.getValue());
-                    } catch (Throwable e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        } else {
-            value = adapt(define.getValue());
-        }
-
-        if (value != null) {
-           namespace.getDefines().put(define.getName(), value);
-        }
-
-        return ret;
+//        KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
+//        ret.setDeprecated(define.getDeprecation() != null);
+//        ret.setDefineClass(define.getInstanceClass());
+//        ret.setUrn(namespace.getUrn() + "." + define.getName());
+//        ret.setOffsetInDocument(define.getCodeOffset());
+//        ret.setLength(define.getCodeLength());
+//        ret.setValue(define.getValue());
+//
+//        Object value = null;
+//        if (define.getInstanceClass() != null) {
+//            var implementationClass = instanceImplementations.get(define.getInstanceClass());
+//            if (implementationClass == null) {
+//                namespace.getNotifications().add(Notification.create("", Notification.Level.Error,
+//                        asLexicalContext(define)));
+//            } else {
+//                // TODO pass the object through the constructor
+//                var constructor = ConstructorUtils.getMatchingAccessibleConstructor(implementationClass, define.getValue().getClass());
+//                if (constructor != null) {
+//                    try {
+//                        value = constructor.newInstance(define.getValue());
+//                    } catch (Throwable e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                }
+//            }
+//        } else {
+//            value = adapt(define.getValue());
+//        }
+//
+//        if (value != null) {
+//           namespace.getDefines().put(define.getName(), value);
+//        }
+//
+//        return ret;
+        return null;
     }
 
     private Notification.LexicalContext asLexicalContext(ParsedObject object) {
@@ -491,7 +487,7 @@ public enum LanguageAdapter {
     public KimOntology adaptOntology(OntologySyntax ontology, String projectName,
                                      Collection<Notification> notifications) {
 
-        KlabOntologyImpl ret = new KlabOntologyImpl();
+        KimOntologyImpl ret = new KimOntologyImpl();
 
         ret.setUrn(ontology.getName());
         ret.getImportedOntologies().addAll(ontology.getImportedOntologies());

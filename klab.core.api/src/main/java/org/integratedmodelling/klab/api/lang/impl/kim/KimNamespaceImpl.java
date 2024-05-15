@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -28,11 +29,9 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
     private String scriptId;
     private String testCaseId;
     private boolean worldviewBound;
-//    private List<ServiceCall> extents = new ArrayList<>();
-    private Map<String, Object> defines = new HashMap<>();
+//    private Parameters<String> defines = Parameters.create();
     private List<KlabStatement> statements = new ArrayList<>();
     private Map<String, List<String>> imports = new HashMap<>();
-
     private Geometry coverage;
 
     @Override
@@ -64,11 +63,11 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
 //    public List<ServiceCall> getExtents() {
 //        return this.extents;
 //    }
-
-    @Override
-    public Map<String, Object> getDefines() {
-        return this.defines;
-    }
+//
+//    @Override
+//    public Parameters<String> getDefines() {
+//        return this.defines;
+//    }
 
     @Override
     public List<KlabStatement> getStatements() {
@@ -100,13 +99,9 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
         this.worldviewBound = worldviewBound;
     }
 
-//    public void setExtents(List<ServiceCall> extents) {
-//        this.extents = extents;
+//    public void setDefines(Parameters<String> defines) {
+//        this.defines = defines;
 //    }
-
-    public void setDefines(Map<String, Object> defines) {
-        this.defines = defines;
-    }
 
     public void setStatements(List<KlabStatement> statements) {
         this.statements = statements;

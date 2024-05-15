@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -30,10 +31,10 @@ public interface KimNamespace extends KlabDocument<KlabStatement> {
      */
     Geometry getCoverage();
 
-    /**
-     * @return
-     */
-    Map<String, Object> getDefines();
+//    /**
+//     * @return
+//     */
+//    Parameters<String> getDefines();
 
     /**
      * True if declared as a scenario.

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
@@ -25,10 +26,10 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
 		return getStatements().stream().map(s -> new NavigableKlabStatement(s, this)).toList();
 	}
 
-	@Override
-	public Map<String, Object> getDefines() {
-		return delegate.getDefines();
-	}
+//	@Override
+//	public Parameters<String> getDefines() {
+//		return delegate.getDefines();
+//	}
 
 	@Override
 	public Collection<String> getDisjointNamespaces() {
@@ -39,11 +40,6 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
 	public Geometry getCoverage() {
 		return delegate.getCoverage();
 	}
-
-	//	@Override
-//	public List<ServiceCall> getExtents() {
-//		return delegate.getExtents();
-//	}
 
 	@Override
 	public Map<String, List<String>> getImports() {

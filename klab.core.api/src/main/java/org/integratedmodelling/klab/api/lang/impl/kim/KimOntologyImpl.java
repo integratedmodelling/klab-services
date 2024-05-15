@@ -7,7 +7,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 
 import java.util.*;
 
-public class KlabOntologyImpl extends KlabDocumentImpl<KimConceptStatement> implements KimOntology {
+public class KimOntologyImpl extends KlabDocumentImpl<KimConceptStatement> implements KimOntology {
 
     private List<KimConceptStatement> statements = new ArrayList<>();
     private List<String> importedOntologies = new ArrayList<>();
