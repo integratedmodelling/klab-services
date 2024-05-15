@@ -1,25 +1,36 @@
 package org.integratedmodelling.klab.services.base;
 
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
+import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.data.encoding.Encoding;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 /**
  * Base class for service implementations. A BaseService implements all the {@link KlabService} functions but
@@ -35,7 +46,7 @@ public abstract class BaseService implements KlabService {
     private URL url;
     protected AtomicBoolean online = new AtomicBoolean(false);
     protected AtomicBoolean available = new AtomicBoolean(false);
-
+    private final List<Notification> serviceNotifications = new ArrayList<>();
     protected ServiceScope scope;
     protected String localName = "Embedded";
     protected final ServiceStartupOptions startupOptions;
@@ -100,6 +111,47 @@ public abstract class BaseService implements KlabService {
         return ret;
     }
 
+    /**
+     * Scan the passed packages for classes annotated with <code>annotationClass</code> and call the consumer
+     * passing the annotation found and the class for each matching class..
+     * <p>
+     * This can be called with a pre-defined array of annotations using the similar method in
+     * {@link Configuration} for a quicker scan.
+     *
+     * @param annotationHandler
+     * @param annotationClass
+     * @param packages          if not passed, everything is scanned (highly NOT recommended).
+     * @param <T>
+     */
+    protected <T extends Annotation> void scanPackages(BiConsumer<T, Class<?>> annotationHandler,
+                                                       Class<T> annotationClass, String... packages) {
+
+        if (packages == null) {
+            packages = new String[]{"*"};
+        }
+
+        try (ScanResult scanResult =
+                     new ClassGraph()
+                             .enableAnnotationInfo()
+                             .acceptPackages(packages)
+                             .scan()) {
+            for (ClassInfo routeClassInfo : scanResult.getClassesWithAnnotation(annotationClass)) {
+                try {
+                    Class<?> cls = Class.forName(routeClassInfo.getName());
+                    T annotation = cls.getAnnotation(annotationClass);
+                    if (annotation != null) {
+                        annotationHandler.accept(annotation, cls);
+                    }
+                } catch (ClassNotFoundException e) {
+                    Logging.INSTANCE.error(e);
+                }
+            }
+        }
+    }
+
+    protected Collection<Notification> serviceNotifications() {
+        return this.serviceNotifications;
+    }
 
     public String getLocalName() {
         // TODO Auto-generated method stub
@@ -167,7 +219,6 @@ public abstract class BaseService implements KlabService {
     }
 
 
-
     @Override
     public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
         return null;
@@ -184,7 +235,8 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
-    public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host, ExternalAuthenticationCredentials credentials, Scope scope) {
+    public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
+                                                                           ExternalAuthenticationCredentials credentials, Scope scope) {
         return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
     }
 }

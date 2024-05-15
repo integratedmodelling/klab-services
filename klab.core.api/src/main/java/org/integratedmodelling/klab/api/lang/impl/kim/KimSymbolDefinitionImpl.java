@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.lang.impl.kim;
 
 import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 
 import java.io.Serial;
@@ -18,7 +19,7 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
 
     private String urn;
     private String defineClass;
-    private Literal value;
+    private Object value;
 
     @Override
     public String getUrn() {
@@ -31,7 +32,7 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
     }
 
     @Override
-    public Literal getValue() {
+    public Object getValue() {
         return value;
     }
 
@@ -43,7 +44,7 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
         this.defineClass = defineClass;
     }
 
-    public void setValue(Literal value) {
+    public void setValue(Object value) {
         this.value = value;
     }
 

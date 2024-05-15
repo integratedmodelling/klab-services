@@ -1,8 +1,10 @@
-package org.integratedmodelling.klab.api.lang.impl.kim;
+package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.klab.api.lang.impl.kim.KimStatementImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
+import org.integratedmodelling.languages.api.ParsedObject;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -20,6 +22,9 @@ public class KimInstanceImpl extends KimStatementImpl implements KimInstance {
     private List<KimObservable> states = new ArrayList<>();
     private String docstring;
     private List<KimInstance> children = new ArrayList<>();
+
+    public KimInstanceImpl(ParsedObject object) {
+    }
 
     @Override
     public String getUrn() {

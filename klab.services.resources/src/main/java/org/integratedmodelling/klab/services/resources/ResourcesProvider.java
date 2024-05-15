@@ -10,6 +10,7 @@ package org.integratedmodelling.klab.services.resources;
 
 import com.google.common.collect.Sets;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -38,6 +39,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -124,6 +126,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
+
+        /*
+        Find out any Instance-annotated classes before we read anything
+         */
+        scanPackages((annotation, annotated) -> {
+            if (!LanguageAdapter.INSTANCE.registerInstance(annotation, annotated)) {
+                Logging.INSTANCE.error("Configuration error: multiple definitions, cannot redefine instance" +
+                        " implementation " + annotation.value());
+                serviceNotifications().add(Notification.create("Configuration error: multiple definitions, " +
+                        "cannot redefine instance" +
+                        " implementation " + annotation.value(), Notification.Level.Error));
+            }
+        }, Instance.class);
 
         this.kbox = ModelKbox.create(localName, this.scope);
         this.workspaceManager.loadWorkspace();
@@ -423,7 +438,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.setServiceName("Resources");
         ret.setServerId(hardwareSignature == null ? null : ("RESOURCES_" + hardwareSignature));
         ret.setServiceId(workspaceManager.getConfiguration().getServiceId());
-
+        ret.getServiceNotifications().addAll(serviceNotifications());
         // TODO capabilities are being asked from same machine as the one that runs the server. This call
         //  should have a @Nullable scope. The condition here is silly.
         ret.getPermissions().add(CRUDOperation.CREATE);
@@ -772,9 +787,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         if (wanted.contains(KnowledgeClass.PROJECT)) {
 
         }
-//        if (wanted.contains(KnowledgeClass.INSTANCE)) {
-//
-//        }
+        //        if (wanted.contains(KnowledgeClass.INSTANCE)) {
+        //
+        //        }
 
         return ret;
     }
@@ -891,7 +906,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
                                 namespace.getProjectName(),
                                 namespace.getVersion(), KnowledgeClass.MODEL));
-                    } /*else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement).getName())) {
+                    } /*else if (statement instanceof KimInstance && nm.equals(((KimInstance) statement)
+                    .getName())) {
                         ret.getResults().add(new ResourceSet.Resource(getUrl().toString(), urn,
                                 namespace.getProjectName(),
                                 namespace.getVersion(), KnowledgeClass.INSTANCE));

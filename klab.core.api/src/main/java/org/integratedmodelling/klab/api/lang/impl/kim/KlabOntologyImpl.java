@@ -27,7 +27,7 @@ public class KlabOntologyImpl extends KlabDocumentImpl<KimConceptStatement> impl
     }
 
     @Override
-    public void visit(DocumentVisitor visitor) {
+    public void visit(DocumentVisitor<KimConceptStatement> visitor) {
     }
 
     @Override

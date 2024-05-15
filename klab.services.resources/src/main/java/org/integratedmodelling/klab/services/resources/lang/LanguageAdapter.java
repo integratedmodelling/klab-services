@@ -1,21 +1,25 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import io.swagger.models.auth.In;
+import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.impl.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.languages.api.*;
+import org.springframework.security.core.parameters.P;
 
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Set;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 /**
  * Adapter to substitute the current ones, based on older k.IM grammars.
@@ -23,6 +27,39 @@ import java.util.Set;
 public enum LanguageAdapter {
 
     INSTANCE;
+
+    Map<String, Instance> instanceAnnotations = new HashMap<>();
+    Map<String, Class<?>> instanceImplementations = new HashMap<>();
+
+    /**
+     * Generic adapter for values, normally literals but possibly other objects. Only handles specific cases
+     * and throws feces if abused.
+     *
+     * @param value
+     * @return
+     */
+    private Object adapt(ParsedObject value) {
+        return switch (value) {
+            case ParsedLiteral literal -> adaptLiteral(literal);
+            case ObservableSyntax observable -> adaptObservable(observable);
+            case SemanticSyntax semanticSyntax -> adaptSemantics(semanticSyntax);
+            case null -> null;
+            default ->
+                    throw new KlabIllegalArgumentException("Unexpected argument to LanguageAdapter:adapt: " + value.getClass().getCanonicalName());
+        };
+    }
+
+    public boolean registerInstance(Instance annotation, Class<?> annotated) {
+
+        if (instanceAnnotations.containsKey(annotation.value())) {
+            return false;
+        }
+
+        instanceAnnotations.put(annotation.value(), annotation);
+        instanceImplementations.put(annotation.value(), annotated);
+
+        return true;
+    }
 
     public KimObservable adaptObservable(ObservableSyntax observableSyntax) {
 
@@ -151,6 +188,45 @@ public enum LanguageAdapter {
     }
 
     private KlabStatement adaptDefine(DefineSyntax define, KimNamespace namespace) {
+
+        KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
+        ret.setDeprecated(define.getDeprecation() != null);
+        ret.setDefineClass(define.getInstanceClass());
+        ret.setUrn(namespace.getUrn() + "." + define.getName());
+        ret.setOffsetInDocument(define.getCodeOffset());
+        ret.setLength(define.getCodeLength());
+        ret.setValue(define.getValue());
+
+        Object value = null;
+        if (define.getInstanceClass() != null) {
+            var implementationClass = instanceImplementations.get(define.getInstanceClass());
+            if (implementationClass == null) {
+                namespace.getNotifications().add(Notification.create("", Notification.Level.Error,
+                        asLexicalContext(define)));
+            } else {
+                // TODO pass the object through the constructor
+                var constructor = ConstructorUtils.getMatchingAccessibleConstructor(implementationClass, define.getValue().getClass());
+                if (constructor != null) {
+                    try {
+                        value = constructor.newInstance(define.getValue());
+                    } catch (Throwable e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        } else {
+            value = adapt(define.getValue());
+        }
+
+        if (value != null) {
+           namespace.getDefines().put(define.getName(), value);
+        }
+
+        return ret;
+    }
+
+    private Notification.LexicalContext asLexicalContext(ParsedObject object) {
+        // TODO
         return null;
     }
 
