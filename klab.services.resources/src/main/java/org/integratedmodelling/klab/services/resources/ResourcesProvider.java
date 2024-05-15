@@ -106,6 +106,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         super(scope, Type.RESOURCES, options);
 
+        /*
+        Find out any Instance-annotated classes before we read anything
+         */
+        scanPackages((annotation, annotated) -> {
+            if (!LanguageAdapter.INSTANCE.registerInstance(annotation, annotated)) {
+                Logging.INSTANCE.error("Configuration error: multiple definitions, cannot redefine instance" +
+                        " implementation " + annotation.value());
+                serviceNotifications().add(Notification.create("Configuration error: multiple definitions, " +
+                        "cannot redefine instance" +
+                        " implementation " + annotation.value(), Notification.Level.Error));
+            }
+        }, Instance.class);
+
         this.db = DBMaker.fileDB(getConfigurationSubdirectory(options, "catalog") + File.separator +
                 "resources.db").transactionEnable().closeOnJvmShutdown().make();
         this.catalog =
@@ -126,19 +139,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
-
-        /*
-        Find out any Instance-annotated classes before we read anything
-         */
-        scanPackages((annotation, annotated) -> {
-            if (!LanguageAdapter.INSTANCE.registerInstance(annotation, annotated)) {
-                Logging.INSTANCE.error("Configuration error: multiple definitions, cannot redefine instance" +
-                        " implementation " + annotation.value());
-                serviceNotifications().add(Notification.create("Configuration error: multiple definitions, " +
-                        "cannot redefine instance" +
-                        " implementation " + annotation.value(), Notification.Level.Error));
-            }
-        }, Instance.class);
 
         this.kbox = ModelKbox.create(localName, this.scope);
         this.workspaceManager.loadWorkspace();

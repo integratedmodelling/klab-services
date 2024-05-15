@@ -337,7 +337,7 @@ public class JacksonConfiguration {
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,
                                       KimNamespace.class, KimObservationStrategyDocument.class,
                                       KdlDataflow.class, KActorsBehavior.class,
-                                      KimConcept.class, KimObservable.class,
+                                      KimConcept.class, KimObservable.class, KimInstance.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
