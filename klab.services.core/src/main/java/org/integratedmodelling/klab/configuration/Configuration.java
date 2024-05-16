@@ -35,7 +35,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projec
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
-import org.integratedmodelling.klab.api.lang.impl.PrototypeImpl;
+import org.integratedmodelling.common.lang.PrototypeImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.*;

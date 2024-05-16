@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
-import org.apache.commons.lang3.reflect.ConstructorUtils;
+import org.integratedmodelling.common.lang.kim.*;
+import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
@@ -8,7 +9,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.impl.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
@@ -33,8 +33,9 @@ public enum LanguageAdapter {
      * @param value
      * @return
      */
-    private Object adapt(ParsedObject value) {
-        return switch (value) {
+    private Object unparse(ParsedObject value) {
+
+        var ret = switch (value) {
             case ParsedLiteral literal -> adaptLiteral(literal);
             case ObservableSyntax observable -> adaptObservable(observable);
             case SemanticSyntax semanticSyntax -> adaptSemantics(semanticSyntax);
@@ -42,6 +43,12 @@ public enum LanguageAdapter {
             default ->
                     throw new KlabIllegalArgumentException("Unexpected argument to LanguageAdapter:adapt: " + value.getClass().getCanonicalName());
         };
+
+        if (ret instanceof KimLiteral literal) {
+            ret = literal.get(Object.class);
+        }
+
+        return ret;
     }
 
     public boolean registerInstance(Instance annotation, Class<?> annotated) {
@@ -90,7 +97,7 @@ public enum LanguageAdapter {
             if (semantics.getType().is(SemanticSyntax.TypeCategory.VALID)) {
                 ret.setObservable(adaptSemantics(semantics.getObservable()));
             } else {
-                ret.setObservable(KimConcept.nothing());
+                ret.setObservable(KimConceptImpl.nothing());
                 ret.setCodeName("invalid_concept");
             }
             for (var cr : semantics.getConceptReferences()) {
@@ -184,41 +191,40 @@ public enum LanguageAdapter {
 
     private KlabStatement adaptDefine(DefineSyntax define, KimNamespace namespace) {
 
-//        KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
-//        ret.setDeprecated(define.getDeprecation() != null);
-//        ret.setDefineClass(define.getInstanceClass());
-//        ret.setUrn(namespace.getUrn() + "." + define.getName());
-//        ret.setOffsetInDocument(define.getCodeOffset());
-//        ret.setLength(define.getCodeLength());
-//        ret.setValue(define.getValue());
-//
-//        Object value = null;
-//        if (define.getInstanceClass() != null) {
-//            var implementationClass = instanceImplementations.get(define.getInstanceClass());
-//            if (implementationClass == null) {
-//                namespace.getNotifications().add(Notification.create("", Notification.Level.Error,
-//                        asLexicalContext(define)));
-//            } else {
-//                // TODO pass the object through the constructor
-//                var constructor = ConstructorUtils.getMatchingAccessibleConstructor(implementationClass, define.getValue().getClass());
-//                if (constructor != null) {
-//                    try {
-//                        value = constructor.newInstance(define.getValue());
-//                    } catch (Throwable e) {
-//                        throw new RuntimeException(e);
+        KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
+        ret.setDeprecated(define.getDeprecation() != null);
+        ret.setDefineClass(define.getInstanceClass());
+        ret.setUrn(namespace.getUrn() + "." + define.getName());
+        ret.setOffsetInDocument(define.getCodeOffset());
+        ret.setName(define.getName());
+        ret.setLength(define.getCodeLength());
+        ret.setNamespace(namespace.getUrn());
+
+        var value = unparse(define.getValue());
+        if (value != null) {
+            // FIXME this should be done at the point of use
+//            if (define.getInstanceClass() != null) {
+//                var implementationClass = instanceImplementations.get(define.getInstanceClass());
+//                if (implementationClass == null) {
+//                    namespace.getNotifications().add(Notification.create("", Notification.Level.Error,
+//                            asLexicalContext(define)));
+//                } else {
+//                    // pass the object through the constructor
+//                    var constructor = ConstructorUtils.getMatchingAccessibleConstructor(implementationClass,
+//                            value.getClass());
+//                    if (constructor != null) {
+//                        try {
+//                            value = constructor.newInstance(value);
+//                        } catch (Throwable e) {
+//                            throw new RuntimeException(e);
+//                        }
 //                    }
 //                }
 //            }
-//        } else {
-//            value = adapt(define.getValue());
-//        }
-//
-//        if (value != null) {
-//           namespace.getDefines().put(define.getName(), value);
-//        }
-//
-//        return ret;
-        return null;
+            ret.setValue(Literal.of(value));
+        }
+
+        return ret;
     }
 
     private Notification.LexicalContext asLexicalContext(ParsedObject object) {
@@ -481,7 +487,7 @@ public enum LanguageAdapter {
         } else if (let.getUnit() != null) {
             // TODO return a KimQuantity
         }
-        return KimLiteral.of(let.getPod());
+        return KimLiteralImpl.of(let.getPod());
     }
 
     public KimOntology adaptOntology(OntologySyntax ontology, String projectName,

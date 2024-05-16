@@ -13,15 +13,15 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeDur
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimePeriod;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
-import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
 public class TimePeriodImpl implements TimePeriod {
 
+	@Serial
 	private static final long serialVersionUID = -3603666163320131572L;
 
 	@Override
@@ -315,15 +315,15 @@ public class TimePeriodImpl implements TimePeriod {
 		return 0;
 	}
 
-
-	protected ServiceCall encodeCall() {
-		ServiceCallImpl ret = new ServiceCallImpl();
-		// TODO
-		return ret;
-	}
+//
+//	protected ServiceCall encodeCall() {
+//		ServiceCallImpl ret = new ServiceCallImpl();
+//		// TODO
+//		return ret;
+//	}
 
 	@Override
 	public String encode(String language) {
-		return encodeCall().encode(language);
+		return /*encodeCall().encode(language)*/ "TIME-UNIMPLEMENTED";
 	}
 }

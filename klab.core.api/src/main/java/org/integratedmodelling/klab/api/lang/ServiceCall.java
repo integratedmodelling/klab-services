@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.lang;
 import java.util.Collection;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
 
 /**
  * A parsed function call. Parameters can be named by user or by default.
@@ -57,16 +56,6 @@ public interface ServiceCall extends Encodeable {
      */
     Collection<String> getInteractiveParameters();
 
-    /**
-     * Create a function call from the passed parameters. All parameters after the name must be
-     * given in pairs: (string, value)*
-     * 
-     * @param name
-     * @param parameters
-     * @return a new service call
-     */
-    public static ServiceCall create(String name, Object... parameters) {
-        return new ServiceCallImpl(name, parameters);
-    }
+
 
 }

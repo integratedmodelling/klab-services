@@ -3,8 +3,12 @@ package org.integratedmodelling.klab.api.collections.impl;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+
+import java.util.List;
+import java.util.Map;
 
 public class LiteralImpl implements Literal {
 
@@ -15,7 +19,7 @@ public class LiteralImpl implements Literal {
 
     /**
      * Classifies and returns a literal for the passed object.
-     * 
+     *
      * @param o
      * @return
      */
@@ -29,10 +33,10 @@ public class LiteralImpl implements Literal {
     public static ValueType classifyLiteral(Object o) {
         if (o instanceof Integer) {
             return ValueType.INTEGER;
-        } else if (o instanceof Double) {
-            return ValueType.DOUBLE;
-        } else if (o instanceof Number) {
-            return ValueType.NUMBER;
+        } else if (o instanceof Double d) {
+            return Double.isNaN(d) ? ValueType.NODATA : ValueType.DOUBLE;
+        } else if (o instanceof Number number) {
+            return Double.isNaN(number.doubleValue()) ? ValueType.NODATA : ValueType.NUMBER;
         } else if (o instanceof String) {
             return ValueType.STRING;
         } else if (o instanceof Boolean) {
@@ -43,8 +47,15 @@ public class LiteralImpl implements Literal {
             return ValueType.OBSERVABLE;
         } else if (o instanceof KimConcept) {
             return ValueType.CONCEPT;
-        } // TODO continue
-        return null;
+        } else if (o instanceof Map<?, ?>) {
+            return ValueType.MAP;
+        } else if (o instanceof List<?>) {
+            return ValueType.LIST;
+        } else if (o instanceof Observation) {
+            return ValueType.OBSERVATION;
+        }
+        // TODO continue
+        return o == null ? ValueType.NODATA : ValueType.OBJECT;
     }
 
     @Override

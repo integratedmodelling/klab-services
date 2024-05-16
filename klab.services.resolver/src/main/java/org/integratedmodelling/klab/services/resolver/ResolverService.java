@@ -595,40 +595,40 @@ public class ResolverService extends BaseService implements Resolver {
         return null;
     }
 
-    private Scale createScaleFromBehavior(KimBehavior behavior, Scope scope) {
-
-        Scale scale = null;
-        List<Extent<?>> extents = new ArrayList<>();
-        var languageService = Configuration.INSTANCE.getService(Language.class);
-
-        if (behavior != null) {
-            for (ServiceCall call : behavior.getExtentFunctions()) {
-                var ext = languageService.execute(call, scope, Object.class);
-                if (ext instanceof Scale) {
-                    scale = (Scale) ext;
-                } else if (ext instanceof Geometry) {
-                    scale = Scale.create((Geometry) ext);
-                } else if (ext instanceof Extent) {
-                    extents.add((Extent<?>) ext);
-                } else {
-                    throw new KlabIllegalStateException("the call to " + call.getUrn() + " did not produce a " +
-                            "scale or " +
-                            "an extent");
-                }
-            }
-        }
-        if (scale != null) {
-            for (Extent<?> extent : extents) {
-                scale = scale.mergeExtent(extent);
-            }
-        } else if (!extents.isEmpty()) {
-            scale = Scale.create(extents);
-        } else {
-            scale = Scale.empty();
-        }
-
-        return scale;
-    }
+//    private Scale createScaleFromBehavior(KimBehavior behavior, Scope scope) {
+//
+//        Scale scale = null;
+//        List<Extent<?>> extents = new ArrayList<>();
+//        var languageService = Configuration.INSTANCE.getService(Language.class);
+//
+//        if (behavior != null) {
+//            for (ServiceCall call : behavior.getExtentFunctions()) {
+//                var ext = languageService.execute(call, scope, Object.class);
+//                if (ext instanceof Scale) {
+//                    scale = (Scale) ext;
+//                } else if (ext instanceof Geometry) {
+//                    scale = Scale.create((Geometry) ext);
+//                } else if (ext instanceof Extent) {
+//                    extents.add((Extent<?>) ext);
+//                } else {
+//                    throw new KlabIllegalStateException("the call to " + call.getUrn() + " did not produce a " +
+//                            "scale or " +
+//                            "an extent");
+//                }
+//            }
+//        }
+//        if (scale != null) {
+//            for (Extent<?> extent : extents) {
+//                scale = scale.mergeExtent(extent);
+//            }
+//        } else if (!extents.isEmpty()) {
+//            scale = Scale.create(extents);
+//        } else {
+//            scale = Scale.empty();
+//        }
+//
+//        return scale;
+//    }
 
     private Model loadModel(KimModel statement, Scope scope) {
 

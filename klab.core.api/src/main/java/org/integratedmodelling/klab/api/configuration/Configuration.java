@@ -16,16 +16,8 @@ package org.integratedmodelling.klab.api.configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.lang.Prototype;
-import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
-import org.integratedmodelling.klab.api.lang.impl.PrototypeImpl;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
-import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Argument;
 import org.integratedmodelling.klab.api.services.runtime.extension.Verb;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.OS;
@@ -219,77 +211,6 @@ public enum Configuration {
         return null;
     }
 
-    public Prototype createContextualizerPrototype(String namespacePrefix, KlabFunction annotation,
-                                                   Class<?> clss,
-                                                   Method method) {
-
-        var ret = new PrototypeImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-        ret.setFilter(annotation.filter());
-        ret.setImplementation(clss);
-        ret.setExecutorMethod(method == null ? null : method.getName());
-        ret.setGeometry(annotation.geometry().isEmpty() ? null : Geometry.create(annotation.geometry()));
-        ret.setLabel(annotation.dataflowLabel());
-        ret.setReentrant(annotation.reentrant());
-        ret.setFunctionType(FunctionType.FUNCTION);
-
-        for (Artifact.Type a : annotation.type()) {
-            ret.getType().add(a);
-        }
-
-        for (Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-        for (Argument argument : annotation.exports()) {
-            var arg = createArgument(argument);
-            ret.getImports().add(arg);
-        }
-        for (Argument argument : annotation.imports()) {
-            var arg = createArgument(argument);
-            ret.getExports().add(arg);
-        }
-
-        return ret;
-    }
-
-    public Prototype createAnnotationPrototype(String namespacePrefix, KlabAnnotation annotation,
-                                               Class<?> clss,
-                                               Method method) {
-
-        var ret = new PrototypeImpl();
-
-        ret.setName(namespacePrefix + annotation.name());
-        ret.setDescription(annotation.description());
-        ret.setImplementation(clss);
-        ret.setExecutorMethod(method == null ? null : method.getName());
-        ret.setFunctionType(FunctionType.ANNOTATION);
-        for (KnowledgeClass kcl : annotation.targets()) {
-            ret.getTargets().add(kcl);
-        }
-
-        for (Argument argument : annotation.parameters()) {
-            var arg = createArgument(argument);
-            ret.getArguments().put(arg.getName(), arg);
-        }
-
-        return ret;
-    }
-
-    private PrototypeImpl.ArgumentImpl createArgument(Argument argument) {
-        var arg = new PrototypeImpl.ArgumentImpl();
-        arg.setName(argument.name());
-        arg.setDescription(argument.description());
-        arg.setOptional(argument.optional());
-        arg.setConst(argument.constant());
-        arg.setArtifact(argument.artifact());
-        for (Artifact.Type a : argument.type()) {
-            arg.getType().add(a);
-        }
-        return arg;
-    }
 
     public Properties getProperties() {
         return this.properties;

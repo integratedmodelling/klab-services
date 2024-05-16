@@ -27,9 +27,9 @@
 //import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 //import org.integratedmodelling.klab.api.lang.ValueOperator;
 //import org.integratedmodelling.klab.api.lang.*;
-//import org.integratedmodelling.klab.api.lang.impl.ContextualizableImpl;
-//import org.integratedmodelling.klab.api.lang.impl.QuantityImpl;
-//import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
+//import org.integratedmodelling.common.lang.ContextualizableImpl;
+//import org.integratedmodelling.common.lang.QuantityImpl;
+//import org.integratedmodelling.common.lang.ServiceCallImpl;
 //import org.integratedmodelling.klab.api.lang.impl.kim.*;
 //import org.integratedmodelling.klab.api.lang.kim.*;
 //import org.integratedmodelling.klab.api.lang.kim.KimConcept.Expression;

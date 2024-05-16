@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Mesh;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.impl.ServiceCallImpl;
 import org.locationtech.jts.geom.Geometry;
 
 import java.util.Collection;

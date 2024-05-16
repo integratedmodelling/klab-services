@@ -3,6 +3,7 @@ package org.integratedmodelling.common.tests.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.integratedmodelling.common.lang.AnnotationImpl;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -64,8 +65,8 @@ class SerializationTests {
 
     @Test
     void annotation() {
-        Annotation object = Annotation.create("belaCagada", "one", 1, "oneString", "one", "params",
-                Annotation.create("cazzarola", "one", 1));
+        Annotation object = AnnotationImpl.create("belaCagada", "one", 1, "oneString", "one", "params",
+                AnnotationImpl.create("cazzarola", "one", 1));
         String serialized = Utils.Json.asString(object);
         Annotation deserialized = Utils.Json.parseObject(serialized, Annotation.class);
         System.out.println(serialized);

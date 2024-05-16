@@ -13,7 +13,14 @@ import org.integratedmodelling.klab.api.collections.Literal;
 public interface KimSymbolDefinition extends KlabStatement {
 
     /**
-     * The name of the symbol. Can only be uppercase with underscores as separator.
+     * Name this is defined with. Lowercase identifier.
+     *
+     * @return
+     */
+    String getName();
+
+    /**
+     * The URN of the symbol, incorporating the namespace.
      *
      * @return the symbol name
      */
@@ -27,13 +34,11 @@ public interface KimSymbolDefinition extends KlabStatement {
     String getDefineClass();
 
     /**
-     * Can currently be a ParsedObject of various types. If getDefineClass returns a valid class, this will
-     * contain the <em>original</em> parsed value, but the value in the correspondent entry from
-     * {@link KimNamespace#getDefines()} will be the object correspondent to the installed implementation for
-     * that class.
+     * Can currently be the content of a  ParsedObject of various types. Converting to the object specified by
+     * {@link #getDefineClass()}, if any, if done at the point of use.
      *
      * @return the value defined in the code
      */
-    Object getValue();
+    Literal getValue();
 
 }

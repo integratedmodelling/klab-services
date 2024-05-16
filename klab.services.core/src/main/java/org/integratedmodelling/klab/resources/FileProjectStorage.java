@@ -14,7 +14,7 @@ import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.lang.impl.kim.KlabDocumentImpl;
+import org.integratedmodelling.common.lang.kim.KlabDocumentImpl;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.utilities.Utils;

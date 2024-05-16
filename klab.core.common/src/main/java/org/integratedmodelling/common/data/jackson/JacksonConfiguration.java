@@ -70,7 +70,7 @@ public class JacksonConfiguration {
                 case ANYVALUE:
                     break;
                 case BOOLEAN:
-                    ret.setValue(node.get("valueType").asBoolean());
+                    ret.setValue(node.get("value").asBoolean());
                     break;
                 case CALLCHAIN:
                     break;
@@ -94,14 +94,15 @@ public class JacksonConfiguration {
                 case REGEXP:
                 case NUMBERED_PATTERN:
                 case URN:
-                    ret.setValue(node.get("valueType").asText());
+                    ret.setValue(node.get("value").asText());
                     break;
                 case MAP:
+                    ret.setValue(Utils.Json.asMap(node.get("value")));
                     break;
                 case NODATA:
                     break;
-                case NUMBER:
-                    ret.setValue(node.get("valueType").asDouble());
+                case NUMBER, DOUBLE:
+                    ret.setValue(node.get("value").asDouble());
                     break;
                 case OBJECT:
                     break;
@@ -112,7 +113,7 @@ public class JacksonConfiguration {
                 case QUANTITY:
                     break;
                 case RANGE:
-                    ret.setValue(p.getCodec().treeToValue(node.get("valueType"), NumericRangeImpl.class));
+                    ret.setValue(p.getCodec().treeToValue(node.get("value"), NumericRangeImpl.class));
                     break;
                 case SET:
                     break;
@@ -124,11 +125,8 @@ public class JacksonConfiguration {
                     break;
                 case CONCEPT:
                     break;
-                case DOUBLE:
-                    ret.setValue(node.get("valueType").asDouble());
-                    break;
                 case INTEGER:
-                    ret.setValue(node.get("valueType").asInt());
+                    ret.setValue(node.get("value").asInt());
                     break;
                 default:
                     break;
