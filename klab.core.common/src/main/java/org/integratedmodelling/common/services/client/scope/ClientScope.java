@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
@@ -139,6 +140,20 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
     @Override
     public SessionScope runSession(String sessionName) {
 
+        /**
+         * Must have runtime
+         *
+         * Send REGISTER_SCOPE to runtime; returned ID becomes part of the token for requests
+         * Wait for result, set ID and data/permissions/metadata, expirations, quotas into metadata
+         * Create peer object and return
+         */
+
+        var runtime = getService(RuntimeService.class);
+        if (runtime == null) {
+            throw new KlabResourceAccessException("Runtime service is not accessible: cannot create session");
+        }
+
+
         //		final EngineSessionScope ret = new EngineSessionScope(this);
         //		ret.setStatus(Status.WAITING);
         //		Ref sessionAgent = this.agent.ask(new CreateSession(ret, sessionName), Ref.class);
@@ -155,6 +170,11 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
 
     @Override
     public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
+
+        /**
+         * Same as above plus:
+         * Send URN as URL or content as request body if available
+         */
 
         //		final EngineSessionScope ret = new EngineSessionScope(this);
         //		ret.setStatus(Status.WAITING);

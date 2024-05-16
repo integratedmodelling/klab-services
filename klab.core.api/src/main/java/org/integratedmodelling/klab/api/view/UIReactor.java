@@ -109,6 +109,8 @@ public interface UIReactor {
         DeleteAsset(NavigableAsset.class),
         ImportProject(String.class),
 
+        ObserveAsset(KlabAsset.class),
+
         /**
          * Resources can be imported with a project as a target or as a service-wide resource, so a project
          * may be passed in the target. If there is one remaining parameter and it's a file, ingestion of the

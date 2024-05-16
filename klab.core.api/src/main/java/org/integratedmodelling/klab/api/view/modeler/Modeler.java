@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.view.modeler;
 
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
@@ -50,6 +51,20 @@ public interface Modeler extends UIController {
      *                                                                                  option.
      */
     void setOption(Option option, Object... payload);
+
+    /**
+     * User action that selects an asset and tells the modeler to observe it, whatever that means. The asset
+     * should be classified and only valid contexts should be handled. The UI may alert for illegittimate use
+     * of this action.
+     *
+     * @param asset  a k.LAB asset of any type. May create a context, add to an existing one, or cause nothing
+     *               or an error.
+     * @param adding the user has activate a UI mode that forces an "add to existing" mode, such as keeping
+     *               the Ctrl key pressed. May be handled or ignored according to context.
+     */
+    @UIActionHandler(value = UIAction.ObserveAsset, label = "Observe asset", tooltip = "Select a k.LAB " +
+            "asset to create a new context or add to the current one.")
+    void observe(KlabAsset asset, boolean adding);
 
     @UIActionHandler(value = UIReactor.UIAction.ImportProject, label = "New project", tooltip =
             "Create a new k.LAB project in the current workspace and scope")

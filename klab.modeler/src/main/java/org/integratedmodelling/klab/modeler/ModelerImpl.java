@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -111,6 +112,39 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public void setOption(Option option, Object... payload) {
         // TODO validate option
         // TODO react
+    }
+
+    @Override
+    public void observe(KlabAsset asset, boolean adding) {
+
+        /**
+         * Use cases:
+         *
+         * Admitted with a current context or focal scale
+         *
+         *     Concept (from ontology, knowledge explorer/inspector or define)
+         *          Promote to observable (if countable becomes collective)
+         *     Observable (from define or knowledge inspector)
+         *          Observe as expected
+         *     Model (from namespace or search)
+         *          Observe as expected
+         *     Resource from catalog (local or remote)
+         *          Observe with non-semantic observable
+         *     Observation from define (can be inline, a URN#ID, other)
+         *          If adding==true, any existing context is preserved and added to
+         *          If adding==false, a new context is created and any previous goes out of focus
+         *      Observation from context tree
+         *          Just sets the target for the next observations
+         *
+         * Admitted w/o a current context or focal scale
+         *
+         *      Observation from define (can be inline, a URN#ID, other)
+         *
+         *      If there is no session, must create a default session & select it
+         *      If there is no context, must create a default empty context within the session & select it
+         */
+
+
     }
 
     @Override
