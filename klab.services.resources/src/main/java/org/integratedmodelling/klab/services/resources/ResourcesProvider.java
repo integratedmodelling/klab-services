@@ -110,7 +110,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         Find out any Instance-annotated classes before we read anything
          */
         scanPackages((annotation, annotated) -> {
-            if (!LanguageAdapter.INSTANCE.registerInstance(annotation, annotated)) {
+            if (!LanguageAdapter.INSTANCE.registerInstanceClass(annotation, annotated)) {
                 Logging.INSTANCE.error("Configuration error: multiple definitions, cannot redefine instance" +
                         " implementation " + annotation.value());
                 serviceNotifications().add(Notification.create("Configuration error: multiple definitions, " +

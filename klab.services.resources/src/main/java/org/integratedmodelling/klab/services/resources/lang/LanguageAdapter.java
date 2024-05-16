@@ -51,7 +51,7 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public boolean registerInstance(Instance annotation, Class<?> annotated) {
+    public boolean registerInstanceClass(Instance annotation, Class<?> annotated) {
 
         if (instanceAnnotations.containsKey(annotation.value())) {
             return false;
