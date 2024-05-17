@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.actors.messages.kactor;
+package org.integratedmodelling.klab.runtime.kactors.messages;
 
 import java.net.URL;
 

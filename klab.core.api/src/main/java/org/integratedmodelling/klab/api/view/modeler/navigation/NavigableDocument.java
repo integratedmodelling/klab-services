@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.view.modeler.navigation;
 
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 
@@ -32,6 +33,15 @@ public interface NavigableDocument extends NavigableAsset {
      * @return the navigable assets leading to either the offset or the closest asset.
      */
     List<NavigableAsset> getClosestAsset(int offset);
+
+    /**
+     * Use a visitor to return the hierarchy of statements that include the passed offset in the
+     * document, from the outermost to the innermost.
+     *
+     * @param offset
+     * @return
+     */
+    List<Statement> getStatementPath(int offset);
 
     /**
      * Return the k.LAB asset path at the position, if any, including inner concept references, observables

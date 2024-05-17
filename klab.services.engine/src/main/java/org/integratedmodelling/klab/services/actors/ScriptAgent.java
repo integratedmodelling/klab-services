@@ -2,8 +2,8 @@ package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent.Type;
+import org.integratedmodelling.klab.runtime.kactors.messages.ScriptEvent;
+import org.integratedmodelling.klab.runtime.kactors.messages.ScriptEvent.Type;
 
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.reactors.ReActions;

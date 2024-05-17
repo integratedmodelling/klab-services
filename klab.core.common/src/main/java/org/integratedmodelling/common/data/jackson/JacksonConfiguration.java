@@ -35,6 +35,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -335,8 +336,8 @@ public class JacksonConfiguration {
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,
                                       KimNamespace.class, KimObservationStrategyDocument.class,
                                       KdlDataflow.class, KActorsBehavior.class, KimModel.class,
-                                      KimSymbolDefinition.class,
-                                      KimConcept.class, KimObservable.class, KimInstance.class,
+                                      KimSymbolDefinition.class, Contextualizable.class,
+                                      KimConcept.class, KimObservable.class, /*KimInstance.class,*/
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());

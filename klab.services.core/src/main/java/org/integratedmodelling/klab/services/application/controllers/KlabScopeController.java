@@ -5,6 +5,7 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.rest.ScopeReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -35,7 +36,7 @@ public class KlabScopeController {
     ServiceNetworkedInstance<?> service;
 
     @Autowired
-    ServiceAuthorizationManager scopeManager;
+    ServiceAuthorizationManager authorizationManager;
 
     @Autowired
     private SimpMessagingTemplate webSocket;
@@ -84,7 +85,7 @@ public class KlabScopeController {
                                 @PathVariable("scopeId") String scopeId, Principal principal) {
 
         if (principal instanceof EngineAuthorization engineAuthorization) {
-            if (scopeManager.registerScope(scopeType, scopeId, engineAuthorization)) {
+            if (authorizationManager.registerScope(scopeType, scopeId, engineAuthorization)) {
                 // TODO (?) we may want to register a specific topic/channel linked to the scope using the
                 //  scope ID. Or if the channel is only one, its name should probably be generated on startup.
                 return service.klabService().getUrl().toString().replaceFirst(service.klabService().getUrl().getProtocol(), "ws")
@@ -94,10 +95,18 @@ public class KlabScopeController {
         return null;
     }
 
+    @GetMapping(ServicesAPI.SCOPE.CREATE)
+    public ScopeReference createScope(@PathVariable("scopeType") Scope.Type scopeType, Principal principal) {
+        if (principal instanceof EngineAuthorization engineAuthorization) {
+            return authorizationManager.getScopeManager().createScope(scopeType, engineAuthorization);
+        }
+        return null;
+    }
+
     @GetMapping(ServicesAPI.SCOPE.DISPOSE)
     public boolean disposeScope(@PathVariable("scopeId") String scopeId, Principal principal) {
         if (principal instanceof EngineAuthorization engineAuthorization) {
-            return scopeManager.unregisterScope(scopeId, engineAuthorization);
+            return authorizationManager.unregisterScope(scopeId, engineAuthorization);
         }
         return false;
     }

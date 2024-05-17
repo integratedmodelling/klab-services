@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.messages.core;
+package org.integratedmodelling.klab.runtime.kactors.messages;
 
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 

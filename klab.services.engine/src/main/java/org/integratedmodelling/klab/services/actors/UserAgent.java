@@ -3,8 +3,8 @@ package org.integratedmodelling.klab.services.actors;
 import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
-import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
+import org.integratedmodelling.klab.runtime.kactors.messages.CreateApplication;
+import org.integratedmodelling.klab.runtime.kactors.messages.CreateSession;
 
 import io.reacted.core.reactors.ReActions.Builder;
 import io.reacted.core.reactorsystem.ReActorContext;

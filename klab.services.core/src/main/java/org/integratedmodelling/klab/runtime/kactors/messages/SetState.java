@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.kactors.messages.core;
+package org.integratedmodelling.klab.runtime.kactors.messages;
 
 import java.io.Serializable;
 

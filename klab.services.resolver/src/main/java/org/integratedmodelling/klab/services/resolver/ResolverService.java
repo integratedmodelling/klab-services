@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.resolver;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -12,7 +11,6 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
@@ -34,7 +32,6 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.common.knowledge.ModelImpl;
-//import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
@@ -154,12 +151,12 @@ public class ResolverService extends BaseService implements Resolver {
         Scale scale = scope.getScale();
         Resolvable observable = switch (knowledge) {
             case Concept concept -> Observable.promote(concept);
-            case KimInstance instance -> {
-                // FIXME build the scale from the geometry
-//                scale = instance.getScale();
-//                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
-                yield instance.getObservable();
-            }
+//            case KimInstance instance -> {
+//                // FIXME build the scale from the geometry
+////                scale = instance.getScale();
+////                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
+//                yield instance.getObservable();
+//            }
             case Model model -> model.getObservables().get(0);
             case Observable obs -> obs;
             default -> throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
@@ -563,37 +560,37 @@ public class ResolverService extends BaseService implements Resolver {
                 if (statement instanceof KimModel) {
                     Model model = loadModel((KimModel) statement, scope);
                     models.put(model.getUrn(), model);
-                } else if (statement instanceof KimInstance) {
+                } /*else if (statement instanceof KimInstance) {
                     var instance = loadInstance((KimInstance) statement, scope);
                     instances.put(instance.getUrn(), instance);
-                }
+                }*/
             }
             // TODO defines
         }
     }
 
-    private Observation loadInstance(KimInstance statement, Scope scope) {
-
-        var reasoner = scope.getService(Reasoner.class);
-////
-////        InstanceImpl instance = new InstanceImpl();
-////        instance.setNamespace(statement.getNamespace());
-////        instance.getAnnotations().addAll(statement.getAnnotations());
-////        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
-////        instance.setUrn(statement.getNamespace() + "." + statement.getName());
-////        instance.setMetadata(statement.getMetadata());
-////        instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
-////
-////        for (KimObservable state : statement.getStates()) {
-////            instance.getStates().add(reasoner.declareObservable(state));
-////        }
-////        for (var child : statement.getChildren()) {
-////            instance.getChildren().add(loadInstance( child, scope));
-////        }
+//    private Observation loadInstance(KimInstance statement, Scope scope) {
 //
-//        return instance;
-        return null;
-    }
+//        var reasoner = scope.getService(Reasoner.class);
+//////
+//////        InstanceImpl instance = new InstanceImpl();
+//////        instance.setNamespace(statement.getNamespace());
+//////        instance.getAnnotations().addAll(statement.getAnnotations());
+//////        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
+//////        instance.setUrn(statement.getNamespace() + "." + statement.getName());
+//////        instance.setMetadata(statement.getMetadata());
+//////        instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
+//////
+//////        for (KimObservable state : statement.getStates()) {
+//////            instance.getStates().add(reasoner.declareObservable(state));
+//////        }
+//////        for (var child : statement.getChildren()) {
+//////            instance.getChildren().add(loadInstance( child, scope));
+//////        }
+////
+////        return instance;
+//        return null;
+//    }
 
 //    private Scale createScaleFromBehavior(KimBehavior behavior, Scope scope) {
 //

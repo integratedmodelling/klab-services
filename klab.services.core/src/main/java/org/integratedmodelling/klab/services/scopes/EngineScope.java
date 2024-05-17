@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.scope;
+package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
@@ -17,9 +17,9 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
-import org.integratedmodelling.klab.services.actors.messages.kactor.RunBehavior;
-import org.integratedmodelling.klab.services.actors.messages.user.CreateApplication;
-import org.integratedmodelling.klab.services.actors.messages.user.CreateSession;
+import org.integratedmodelling.klab.runtime.kactors.messages.CreateApplication;
+import org.integratedmodelling.klab.runtime.kactors.messages.CreateSession;
+import org.integratedmodelling.klab.runtime.kactors.messages.RunBehavior;
 
 import java.util.Collection;
 import java.util.Collections;

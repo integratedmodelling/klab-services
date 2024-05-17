@@ -70,10 +70,10 @@ import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library.CallDescriptor;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.Fire;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.ScriptEvent;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.SetState;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.ViewLayout;
+import org.integratedmodelling.klab.runtime.kactors.messages.Fire;
+import org.integratedmodelling.klab.runtime.kactors.messages.ScriptEvent;
+import org.integratedmodelling.klab.runtime.kactors.messages.SetState;
+import org.integratedmodelling.klab.runtime.kactors.messages.ViewLayout;
 import org.integratedmodelling.klab.utilities.Utils;
 
 /**

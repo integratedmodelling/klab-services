@@ -16,6 +16,8 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 /**
+ * FIXME all this is obsolete. Should be a light wrapper without all those methods.
+ *
  * A contextualizable is the declaration of a resource that can be compiled into a processing step for a
  * dataflow. In k.IM this can represent:
  * <p>
@@ -104,10 +106,12 @@ public interface Contextualizable extends KlabStatement {
         TRANSITION
     }
 
-
     /**
      * The data structure describing interactive parameters. It's a javabean with only strings for values, so
      * that it can be easily serialized for communication.
+     *
+     * FIXME we should just keep an annotation for this and use it if it's there. No reason for this to be
+     *  here, either.
      *
      * @author ferdinando.villa
      */
@@ -234,15 +238,6 @@ public interface Contextualizable extends KlabStatement {
 
     }
 
-    //	/**
-    //	 * Contextualizables carry the trigger that they were declared with. Those that
-    //	 * represent "default" computables for a model, such as resources, will report
-    //	 *
-    //	 *
-    //	 * @return
-    //	 */
-    //	IKimAction.Trigger getTrigger();
-
     /**
      * Return the type of the contained resource.
      *
@@ -267,18 +262,6 @@ public interface Contextualizable extends KlabStatement {
      * @return the target name
      */
     KimObservable getTarget();
-
-    //	/**
-    //	 * Give the resource a chance to adjust itself to the passed scope and target.
-    //	 * If nothing is needed, return self. This is called by the runtime before every
-    //	 * use of the resource in an actuator, and the result is notified to the
-    //	 * contextualizer that will use it.
-    //	 *
-    //	 * @param target
-    //	 * @param scope
-    //	 * @return self or a contextualized resource
-    //	 */
-    //	KContextualizable contextualize(KArtifact target, KContextScope scope);
 
     /**
      * The target artifact ID when this computation is a mediation. In this case the computation means "send
@@ -419,13 +402,6 @@ public interface Contextualizable extends KlabStatement {
      */
     boolean isMediation();
 
-    //	/**
-    //	 * This should QUICKLY find out if a resource is available for computation.
-    //	 *
-    //	 * @return
-    //	 */
-    //	boolean isAvailable();
-
     /**
      * This will return the geometry incarnated by the computable. It should normally return a scalar geometry
      * except for resources and services.
@@ -441,13 +417,6 @@ public interface Contextualizable extends KlabStatement {
      * @return
      */
     boolean isVariable();
-
-    //	/**
-    //	 * True if the resource needs no inputs to be contextualized.
-    //	 *
-    //	 * @return
-    //	 */
-    //	boolean isFinal();
 
     /**
      * If true, no need for this contextualization to proceed as nothing would happen. Can be set after

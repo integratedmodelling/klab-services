@@ -36,9 +36,9 @@ public class DefaultKimVisitor implements KlabStatement.KlabStatementVisitor {
     public void visitModel(KimModel kimNamespace) {
     }
 
-    @Override
-    public void visitObserver(KimInstance kimNamespace) {
-    }
+//    @Override
+//    public void visitObserver(KimInstance kimNamespace) {
+//    }
 
     @Override
     public void visitConceptStatement(KimConceptStatement kimNamespace) {

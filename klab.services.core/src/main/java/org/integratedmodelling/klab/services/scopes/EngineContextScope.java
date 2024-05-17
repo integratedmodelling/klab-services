@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.scope;
+package org.integratedmodelling.klab.services.scopes;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -17,7 +17,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
-import org.integratedmodelling.klab.services.actors.messages.context.Observe;
+import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 
 import java.io.Closeable;
 import java.net.URL;

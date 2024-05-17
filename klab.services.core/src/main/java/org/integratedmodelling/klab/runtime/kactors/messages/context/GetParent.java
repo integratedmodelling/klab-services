@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.actors.messages.context;
+package org.integratedmodelling.klab.runtime.kactors.messages.context;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;

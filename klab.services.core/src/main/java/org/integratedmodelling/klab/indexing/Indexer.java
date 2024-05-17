@@ -45,7 +45,7 @@ import org.integratedmodelling.klab.api.lang.SemanticLexicalElement;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
-import org.integratedmodelling.klab.api.lang.kim.KimInstance;
+//import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
@@ -168,7 +168,7 @@ public class Indexer {
             ret.setId(((KimModel) object).getUrn());
             semanticType = (((KimModel) object).getObservables().get(0).getSemantics().getType());
 
-        } else if (object instanceof KimInstance) {
+        } /*else if (object instanceof KimInstance) {
 
             ret = new SemanticMatch(SemanticMatch.Type.OBSERVATION,
                     ((KimInstance) object).getObservable().getSemantics().getType());
@@ -176,7 +176,7 @@ public class Indexer {
             ret.setName(((KimInstance) object).getName());
             ret.setId(((KimInstance) object).getName());
             semanticType = (((KimInstance) object).getObservable().getSemantics().getType());
-        }
+        }*/
 
         if (ret != null) {
 

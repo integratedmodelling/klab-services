@@ -13,121 +13,132 @@ import java.util.List;
 
 public class KimModelImpl extends KimStatementImpl implements KimModel {
 
-	@Serial
-	private static final long serialVersionUID = -6068429551009652469L;
+    @Serial
+    private static final long serialVersionUID = -6068429551009652469L;
 
-	private List<KimObservable> dependencies = new ArrayList<>();
-	private List<KimObservable> observables = new ArrayList<>();
-	private Type type;
-	private List<String> resourceUrns = new ArrayList<>();
-	private boolean learningModel;
-	private String urn;
-	private List<Contextualizable> contextualization = new ArrayList<>();
-	private String docstring;
-	private String projectName;
-	private boolean inactive;
-	private Geometry coverage;
+    private List<KimObservable> dependencies = new ArrayList<>();
+    private List<KimObservable> observables = new ArrayList<>();
+    private Type type;
+    private List<String> resourceUrns = new ArrayList<>();
+    private boolean learningModel;
+    private String urn;
+    private List<Contextualizable> contextualization = new ArrayList<>();
+    private String docstring;
+    private String projectName;
+    private boolean inactive;
+    private Geometry coverage;
+    private String name;
 
-	@Override
-	public boolean isInactive() {
-		return inactive;
-	}
+    @Override
+    public boolean isInactive() {
+        return inactive;
+    }
 
-	public void setInactive(boolean inactive) {
-		this.inactive = inactive;
-	}
-	@Override
-	public List<KimObservable> getDependencies() {
-		return this.dependencies;
-	}
+    public void setInactive(boolean inactive) {
+        this.inactive = inactive;
+    }
 
-	@Override
-	public List<KimObservable> getObservables() {
-		return this.observables;
-	}
+    @Override
+    public List<KimObservable> getDependencies() {
+        return this.dependencies;
+    }
 
-	@Override
-	public Artifact.Type getType() {
-		return this.type;
-	}
+    @Override
+    public List<KimObservable> getObservables() {
+        return this.observables;
+    }
 
-	@Override
-	public List<String> getResourceUrns() {
-		return this.resourceUrns;
-	}
+    @Override
+    public Artifact.Type getType() {
+        return this.type;
+    }
 
-	@Override
-	public boolean isLearningModel() {
-		return this.learningModel;
-	}
+    @Override
+    public List<String> getResourceUrns() {
+        return this.resourceUrns;
+    }
 
-	@Override
-	public String getUrn() {
-		return this.urn;
-	}
+    @Override
+    public boolean isLearningModel() {
+        return this.learningModel;
+    }
 
-	@Override
-	public List<Contextualizable> getContextualization() {
-		return this.contextualization;
-	}
+    @Override
+    public String getUrn() {
+        return this.urn;
+    }
 
-	@Override
-	public String getDocstring() {
-		return this.docstring;
-	}
+    @Override
+    public List<Contextualizable> getContextualization() {
+        return this.contextualization;
+    }
 
-	public void setDependencies(List<KimObservable> dependencies) {
-		this.dependencies = dependencies;
-	}
+    @Override
+    public String getDocstring() {
+        return this.docstring;
+    }
 
-	public void setObservables(List<KimObservable> observables) {
-		this.observables = observables;
-	}
+    public void setDependencies(List<KimObservable> dependencies) {
+        this.dependencies = dependencies;
+    }
 
-	public void setType(Type type) {
-		this.type = type;
-	}
+    public void setObservables(List<KimObservable> observables) {
+        this.observables = observables;
+    }
 
-	public void setResourceUrns(List<String> resourceUrns) {
-		this.resourceUrns = resourceUrns;
-	}
+    public void setType(Type type) {
+        this.type = type;
+    }
 
-	public void setLearningModel(boolean learningModel) {
-		this.learningModel = learningModel;
-	}
+    public void setResourceUrns(List<String> resourceUrns) {
+        this.resourceUrns = resourceUrns;
+    }
 
-	public void setUrn(String urn) {
-		this.urn = urn;
-	}
+    public void setLearningModel(boolean learningModel) {
+        this.learningModel = learningModel;
+    }
 
-	public void setContextualization(List<Contextualizable> contextualization) {
-		this.contextualization = contextualization;
-	}
+    public void setUrn(String urn) {
+        this.urn = urn;
+    }
 
-	public void setDocstring(String docstring) {
-		this.docstring = docstring;
-	}
+    public void setContextualization(List<Contextualizable> contextualization) {
+        this.contextualization = contextualization;
+    }
 
-	@Override
-	public String getProjectName() {
-		return projectName;
-	}
+    public void setDocstring(String docstring) {
+        this.docstring = docstring;
+    }
 
-	public void setProjectName(String projectName) {
-		this.projectName = projectName;
-	}
+    @Override
+    public String getProjectName() {
+        return projectName;
+    }
 
-	@Override
-	public Geometry getCoverage() {
-		return coverage;
-	}
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
 
-	public void setCoverage(Geometry coverage) {
-		this.coverage = coverage;
-	}
+    @Override
+    public Geometry getCoverage() {
+        return coverage;
+    }
 
-	@Override
-	public void visit(KlabStatementVisitor visitor) {
+    public void setCoverage(Geometry coverage) {
+        this.coverage = coverage;
+    }
 
-	}
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public void visit(KlabStatementVisitor visitor) {
+
+    }
 }

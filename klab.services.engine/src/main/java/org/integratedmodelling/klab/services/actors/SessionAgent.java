@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
+import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
 
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.messages.reactors.ReActorStop;

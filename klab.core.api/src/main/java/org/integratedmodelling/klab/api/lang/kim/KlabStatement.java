@@ -32,7 +32,7 @@ public interface KlabStatement extends Statement, KlabAsset {
 
 		void visitModel(KimModel kimNamespace);
 
-		void visitObserver(KimInstance kimNamespace);
+//		void visitObserver(KimInstance kimNamespace);
 
 		void visitConceptStatement(KimConceptStatement kimNamespace);
 

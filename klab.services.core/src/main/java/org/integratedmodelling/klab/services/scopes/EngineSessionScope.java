@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.scope;
+package org.integratedmodelling.klab.services.scopes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +11,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.services.actors.messages.user.CreateContext;
+import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
 
 public class EngineSessionScope extends EngineScope implements SessionScope {
 

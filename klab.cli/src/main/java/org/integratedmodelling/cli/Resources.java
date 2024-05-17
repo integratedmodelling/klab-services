@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kim.KimInstance;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.ResourcesService;

@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.actors.messages.user;
+package org.integratedmodelling.klab.runtime.kactors.messages;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.ContextScope;

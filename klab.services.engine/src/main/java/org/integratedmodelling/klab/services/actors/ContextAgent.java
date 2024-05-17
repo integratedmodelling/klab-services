@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -10,9 +9,9 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
-import org.integratedmodelling.klab.services.actors.messages.context.GetChildren;
-import org.integratedmodelling.klab.services.actors.messages.context.GetParent;
-import org.integratedmodelling.klab.services.actors.messages.context.Observe;
+import org.integratedmodelling.klab.runtime.kactors.messages.context.GetChildren;
+import org.integratedmodelling.klab.runtime.kactors.messages.context.GetParent;
+import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.messages.reactors.ReActorStop;

@@ -1,8 +1,8 @@
 package org.integratedmodelling.klab.services.actors;
 
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.ViewAction;
-import org.integratedmodelling.klab.runtime.kactors.messages.core.ViewLayout;
+import org.integratedmodelling.klab.runtime.kactors.messages.ViewAction;
+import org.integratedmodelling.klab.runtime.kactors.messages.ViewLayout;
 
 import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactorsystem.ReActorContext;

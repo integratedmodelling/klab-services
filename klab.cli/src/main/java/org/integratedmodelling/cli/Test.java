@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
@@ -37,6 +38,11 @@ public class Test implements Runnable {
 
            @Override
            public List<NavigableAsset> getClosestAsset(int offset) {
+               return List.of();
+           }
+
+           @Override
+           public List<Statement> getStatementPath(int offset) {
                return List.of();
            }
 

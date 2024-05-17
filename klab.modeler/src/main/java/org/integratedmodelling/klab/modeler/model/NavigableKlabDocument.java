@@ -166,6 +166,11 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         return delegate.isInactive();
     }
 
+    @Override
+    public List<Statement> getStatementPath(int offset) {
+        // TODO knowledge inspection will depend on this.
+        return List.of();
+    }
 
     public NavigableProject project() {
         var parent = this.parent();
