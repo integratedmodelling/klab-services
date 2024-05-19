@@ -338,7 +338,7 @@ public class CoverageImpl extends ScaleImpl implements Coverage {
      * 
      * Assumes to get and operate only on already collapsed extents.
      * 
-     * @param i
+     * @param type
      * @param other
      * @param how
      * @return

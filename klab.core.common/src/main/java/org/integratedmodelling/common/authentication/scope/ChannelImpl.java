@@ -112,4 +112,9 @@ public class ChannelImpl implements Channel {
     public boolean disconnect(KlabService service) {
         return false;
     }
+
+    @Override
+    public void close() throws Exception {
+        // TODO
+    }
 }

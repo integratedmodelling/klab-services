@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -41,6 +42,14 @@ public interface RuntimeService extends KlabService {
      */
     interface Capabilities extends ServiceCapabilities {
 
+        /**
+         * URL for the message broker. If null, the engine doesn't have messaging capabilities and will not
+         * enable distributed digital twin functionalities. If this isn't null, the context/DT ID is the
+         * channel for communication of that context.
+         *
+         * @return the broker URL or null
+         */
+        URL getBrokerURL();
     }
 
     /**

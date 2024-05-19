@@ -585,4 +585,8 @@ public class KActorsScope implements VM.BehaviorScope {
 		return false;
 	}
 
+	@Override
+	public void close() throws Exception {
+		// TODO
+	}
 }

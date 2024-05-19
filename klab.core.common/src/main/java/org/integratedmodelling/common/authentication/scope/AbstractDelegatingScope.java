@@ -128,6 +128,10 @@ public abstract class AbstractDelegatingScope implements Scope {
         throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
     }
 
+    @Override
+    public void close() throws Exception {
+        delegateChannel.close();
+    }
 
     public void addListener(BiConsumer<Channel, Message> listener) {
         if (delegateChannel instanceof ChannelImpl channel) {

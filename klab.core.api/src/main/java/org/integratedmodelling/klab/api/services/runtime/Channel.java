@@ -38,7 +38,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Channel {
+public interface Channel extends AutoCloseable {
 
     /**
      * All channels (and their children, the {@link org.integratedmodelling.klab.api.scope.Scope}s) are owned
@@ -62,7 +62,6 @@ public interface Channel {
      * message, according to implementation.
      *
      * @param info
-     * @param infoClass
      */
     void info(Object... info);
 
@@ -95,10 +94,9 @@ public interface Channel {
     void debug(Object... o);
 
     /**
-     * This is to send out serializable objects or other messages through any {@link MessageBus} registered
+     * This is to send out serializable objects or other messages through any messaging channel registered
      * with the runtime. Information sent through this channel will only be received by receivers that have
-     * subscribed with the {@link MessageBus}. The messages are signed with the monitor's
-     * {@link #getIdentity() identity string}.
+     * subscribed. The messages are signed with the monitor's {@link #getIdentity() identity string}.
      * </p>
      * If the channel is a channel to an agent, this should automatically dispatch any objects of
      * {@link VM.AgentMessage} class to the agent reference embedded in the scope.
@@ -149,7 +147,7 @@ public interface Channel {
      * manage the scope and returns the Websockets URL to establish the link, create the link. From that point
      * on, this scope receives for events posted at the server side, and the server-side scope receives events
      * posted here until disconnect is called or the scope ends.
-     *
+     * <p>
      * THis may be called multiple times with different services.
      *
      * @param service

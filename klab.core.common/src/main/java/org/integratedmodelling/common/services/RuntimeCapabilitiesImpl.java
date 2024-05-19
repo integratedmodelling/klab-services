@@ -5,17 +5,21 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class RuntimeCapabilitiesImpl implements RuntimeService.Capabilities {
+
     private KlabService.Type type;
     private String localName;
     private String serviceName;
     private String serviceId;
     private String serverId;
+    private URL brokerURL;
+
     @Override
     public KlabService.Type getType() {
         return type;
@@ -59,6 +63,15 @@ public class RuntimeCapabilitiesImpl implements RuntimeService.Capabilities {
 
     public void setServerId(String serverId) {
         this.serverId = serverId;
+    }
+
+    @Override
+    public URL getBrokerURL() {
+        return brokerURL;
+    }
+
+    public void setBrokerURL(URL brokerURL) {
+        this.brokerURL = brokerURL;
     }
 
 }
