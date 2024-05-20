@@ -47,7 +47,7 @@ public class RuntimeService extends BaseService
     }
 
     private void readConfiguration(ServiceStartupOptions options) {
-        File config = BaseService.getFileInConfigurationDirectory(options, "resolver.yaml");
+        File config = BaseService.getFileInConfigurationDirectory(options, "runtime.yaml");
         if (config.exists() && config.length() > 0 && !options.isClean()) {
             this.configuration = Utils.YAML.load(config, RuntimeConfiguration.class);
         } else {
@@ -62,7 +62,7 @@ public class RuntimeService extends BaseService
     }
 
     private void saveConfiguration() {
-        File config = BaseService.getFileInConfigurationDirectory(startupOptions, "resolver.yaml");
+        File config = BaseService.getFileInConfigurationDirectory(startupOptions, "runtime.yaml");
         org.integratedmodelling.common.utils.Utils.YAML.save(this.configuration, config);
     }
 
