@@ -10,6 +10,13 @@ public interface ServicesAPI {
 
     String API_BASE = "/api/v2";
 
+    /**
+     * Request header to communicate the "observer"
+     * <code>sessionId(.contextId)*('#' observerId)?</code>
+     * in digital twin API communication
+     */
+    String OBSERVER_HEADER = "Observer";
+
     String CAPABILITIES = "/public/capabilities";
     String STATUS = "/public/status";
 
