@@ -123,6 +123,17 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 
     @Override
     public List<KlabAsset> getKlabAssetAt(int offset) {
+
+        // call a private handler with an empty list
+
+        // add this to list if the offset is included in our range
+
+        /*
+         * If asset is visitable, use visitor to refine the choice going through all sub-assets;
+         * if one matches, add append the result of the lower-level call on it to the result and
+         * break.
+         */
+
         return List.of();
     }
 
