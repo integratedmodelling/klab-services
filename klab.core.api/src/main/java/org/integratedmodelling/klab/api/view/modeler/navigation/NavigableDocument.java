@@ -43,12 +43,12 @@ public interface NavigableDocument extends NavigableAsset {
      */
     List<Statement> getStatementPath(int offset);
 
-    /**
-     * Return the k.LAB asset path at the position, if any, including inner concept references, observables
-     * and the like.
-     *
-     * @param offset offset in document
-     * @return the k.LAB asset path to the smallest one defined at offset or the empty list.
-     */
-    List<KlabAsset> getKlabAssetAt(int offset);
+//    /**
+//     * Return the k.LAB asset path at the position, if any, including inner concept references, observables
+//     * and the like.
+//     *
+//     * @param offset offset in document
+//     * @return the k.LAB asset path to the smallest one defined at offset or the empty list.
+//     */
+//    List<KlabAsset> getKlabAssetAt(int offset);
 }

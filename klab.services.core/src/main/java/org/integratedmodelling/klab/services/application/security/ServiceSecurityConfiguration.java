@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Configuration
 @EnableWebSecurity
@@ -25,13 +24,14 @@ public class ServiceSecurityConfiguration {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // TODO reintegrate?       http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER);
+        // TODO reintegrate?       http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy
+        //  .NEVER);
         var authenticationManager =
                 authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**", "/actuator/**", "/swagger-ui").permitAll()
+                        .requestMatchers("/public/**", "/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new TokenAuthorizationFilter(authenticationManager, authorizationManager),
                         UsernamePasswordAuthenticationFilter.class)

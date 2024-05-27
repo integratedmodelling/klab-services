@@ -52,7 +52,7 @@ public class KActorsActionImpl extends KActorsStatementImpl implements KActorsAc
 	}
 
 	@Override
-	public void visit(KlabStatementVisitor visitor) {
+	public void visit(Visitor visitor) {
 
 	}
 }

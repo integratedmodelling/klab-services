@@ -46,13 +46,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
+
 
 import javax.annotation.PreDestroy;
 import java.io.File;
@@ -139,18 +133,18 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
         super.start(environment.getRequiredProperty("klab.service.options", ServiceStartupOptions.class));
     }
 
-    @Bean
-    public Docket api() {
-        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.basePackage(basePackage))
-                                                      .paths(PathSelectors.any()).build().directModelSubstitute(LocalDate.class, java.sql.Date.class)
-                                                      .directModelSubstitute(LocalDateTime.class,
-                                                              java.util.Date.class).apiInfo(apiInfo());
-    }
-
-    private ApiInfo apiInfo() {
-        return new ApiInfoBuilder().title(title).description(description).version(version)
-                                   .contact(new Contact(contactName, null, contactEmail)).build();
-    }
+//    @Bean
+//    public Docket api() {
+//        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.basePackage(basePackage))
+//                                                      .paths(PathSelectors.any()).build().directModelSubstitute(LocalDate.class, java.sql.Date.class)
+//                                                      .directModelSubstitute(LocalDateTime.class,
+//                                                              java.util.Date.class).apiInfo(apiInfo());
+//    }
+//
+//    private ApiInfo apiInfo() {
+//        return new ApiInfoBuilder().title(title).description(description).version(version)
+//                                   .contact(new Contact(contactName, null, contactEmail)).build();
+//    }
 
     /**
      * Call this in main() using the concrete subclass of ServiceNetworkedInstance and the desired startup

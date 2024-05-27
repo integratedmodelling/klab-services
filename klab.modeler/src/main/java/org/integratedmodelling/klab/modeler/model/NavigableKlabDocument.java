@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -122,22 +122,6 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
     }
 
     @Override
-    public List<KlabAsset> getKlabAssetAt(int offset) {
-
-        // call a private handler with an empty list
-
-        // add this to list if the offset is included in our range
-
-        /*
-         * If asset is visitable, use visitor to refine the choice going through all sub-assets;
-         * if one matches, add append the result of the lower-level call on it to the result and
-         * break.
-         */
-
-        return List.of();
-    }
-
-    @Override
     public List<NavigableAsset> getAssetsAt(int offset) {
 
         List<NavigableAsset> ret = new ArrayList<>();
@@ -179,9 +163,51 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 
     @Override
     public List<Statement> getStatementPath(int offset) {
-        // TODO knowledge inspection will depend on this.
-        return List.of();
+
+        List<Statement> path = new ArrayList<>();
+        if (offset >= 0 && offset < getSourceCode().length()) {
+            for (var statement : this.getStatements()) {
+                if (getStatementAt(offset, statement, path)) {
+                    return path;
+                }
+            }
+        }
+        return path;
     }
+
+
+    private boolean getStatementAt(int offset, Statement statement, List<Statement> path) {
+
+        if (statement.getOffsetInDocument() >= offset && offset < (statement.getOffsetInDocument() + statement.getLength())) {
+            path.add(statement);
+            statement.visit(new Statement.Visitor() {
+
+                boolean stop = false;
+
+                @Override
+                public void visitAnnotation(Annotation annotation) {
+
+                }
+
+                @Override
+                public void visitStatement(Statement statement) {
+                    if (!stop) {
+                        stop = getStatementAt(offset, statement, path);
+                    }
+                }
+            });
+            return true;
+        }
+
+        /*
+         * If statement is visitable, use visitor to refine the choice going through all sub-assets;
+         * if one matches, add append the result of the lower-level call on it to the result and
+         * break.
+         */
+
+        return false;
+    }
+
 
     public NavigableProject project() {
         var parent = this.parent();

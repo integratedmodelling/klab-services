@@ -38,7 +38,7 @@ public class KActorsStatementImpl extends KActorsCodeStatementImpl implements KA
     }
 
     @Override
-    public void visit(KlabStatement.KlabStatementVisitor visitor) {
+    public void visit(Visitor visitor) {
 
     }
 

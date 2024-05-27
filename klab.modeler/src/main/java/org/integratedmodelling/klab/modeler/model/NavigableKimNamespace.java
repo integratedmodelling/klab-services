@@ -70,10 +70,4 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
 	public Set<String> importedNamespaces(boolean withinType) {
 		return delegate.importedNamespaces(withinType);
 	}
-
-	@Override
-	public void visit(DocumentVisitor<KlabStatement> visitor) {
-		delegate.visit(visitor);
-	}
-	
 }

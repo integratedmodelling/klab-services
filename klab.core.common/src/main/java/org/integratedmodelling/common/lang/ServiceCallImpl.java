@@ -170,10 +170,6 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 		return null; // exts == null ? null : exts.getPrototype(name);
 	}
 
-	@Override
-	public void visit(KlabStatement.KlabStatementVisitor visitor) {
-
-	}
 
 	public Set<String> getInteractiveParameterIds() {
 		return interactiveParameterIds;
@@ -193,5 +189,10 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	 */
 	public static ServiceCall create(String name, Object... parameters) {
 		return new ServiceCallImpl(name, parameters);
+	}
+
+	@Override
+	public void visit(Visitor visitor) {
+
 	}
 }

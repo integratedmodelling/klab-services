@@ -41,6 +41,11 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 	}
 
 	@Override
+	public void visit(Visitor visitor) {
+		delegate.visit(visitor);
+	}
+
+	@Override
 	public int getOffsetInDocument() {
 		return delegate.getOffsetInDocument();
 	}
@@ -49,11 +54,6 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 	public boolean isDeprecated() {
 		return delegate.isDeprecated();
 	}
-
-//	@Override
-//	public String sourceCode() {
-//		return delegate.sourceCode();
-//	}
 
 	@Override
 	public String getNamespace() {
@@ -80,11 +80,6 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 			return concept.getChildren().stream().map(c -> new NavigableKlabStatement(c, this)).toList();
 		}
 		return Collections.emptyList();
-	}
-
-	@Override
-	public void visit(KlabStatementVisitor visitor) {
-		delegate.visit(visitor);
 	}
 	
 }

@@ -97,7 +97,7 @@ public class KimLookupTableImpl extends KimStatementImpl implements KimLookupTab
     }
 
     @Override
-    public void visit(KlabStatementVisitor visitor) {
+    public void visit(Visitor visitor) {
 
     }
 }

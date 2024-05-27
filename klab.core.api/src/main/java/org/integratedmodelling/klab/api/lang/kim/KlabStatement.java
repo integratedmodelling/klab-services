@@ -20,25 +20,23 @@ public interface KlabStatement extends Statement, KlabAsset {
 	 * Visitor allows traversing all concept declarations and references.
 	 * 
 	 */
-	interface KlabStatementVisitor {
+	interface KlabStatementVisitor extends Statement.Visitor {
 
-		void visitAuthority(String authority, String term);
-
-		void visitDeclaration(KimConcept declaration);
-
-		void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent);
-
-		void visitNamespace(KimNamespace kimNamespace);
-
-		void visitModel(KimModel kimNamespace);
-
-//		void visitObserver(KimInstance kimNamespace);
-
-		void visitConceptStatement(KimConceptStatement kimNamespace);
+//		void visitAuthority(String authority, String term);
+//
+//		void visitDeclaration(KimConcept declaration);
+//
+//		void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent);
+//
+//		void visitNamespace(KimNamespace kimNamespace);
+//
+//		void visitModel(KimModel kimNamespace);
+//
+////		void visitObserver(KimInstance kimNamespace);
+//
+//		void visitConceptStatement(KimConceptStatement kimNamespace);
 
 		void visitMetadata(Metadata metadata);
-
-		void visitAnnotations(List<Annotation> annotations);
 
 	}
 
@@ -83,10 +81,10 @@ public interface KlabStatement extends Statement, KlabAsset {
 	 */
 	Scope getScope();
 
-	/**
-	 *
-	 * @param visitor
-	 */
-	void visit(KlabStatementVisitor visitor);
+//	/**
+//	 *
+//	 * @param visitor
+//	 */
+//	void visit(KlabStatementVisitor visitor);
 
 }

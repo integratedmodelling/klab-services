@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.Action;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
 public interface Model extends Knowledge, Resolvable {
@@ -123,8 +122,8 @@ public interface Model extends Knowledge, Resolvable {
      * @return
      */
     List<Contextualizable> getComputation();
-
-    List<Action> getActions();
+//
+//    List<Action> getActions();
 
     /**
      * Create a builder for a model that will observe the passed observable.

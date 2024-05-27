@@ -247,7 +247,42 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	}
 
 	@Override
-	public void visit(KlabStatementVisitor visitor) {
+	public void visit(Visitor visitor) {
+
+		for (var annotation : getAnnotations()) {
+			visitor.visitAnnotation(annotation);
+		}
+
+		if (semantics != null) {
+			semantics.visit(visitor);
+		}
+
+		for (var vop : valueOperators) {
+			// TODO literal should be KimLiteral and be visited
+		}
+
+//		private KimConcept semantics;
+//		private NumericRangeImpl range;
+//		private String unit;
+//		private String currency;
+//		private String formalName;
+//		private Literal value;
+//		private Literal defaultValue;
+//		private List<Observable.ResolutionException> resolutionExceptions = new ArrayList<>();
+//		private List<Pair<ValueOperator, Literal>> valueOperators = new ArrayList<>();
+//		private String attributeIdentifier;
+//		private boolean optional;
+//		private String modelReference;
+//		private Type nonSemanticType;
+//		private String codeName;
+//		private boolean generic;
+//		private String referenceName;
+//		private boolean global;
+//		private boolean exclusive;
+//		private String urn;
+//		private Version version;
+
+		// TODO metadata etc.
 
 	}
 }

@@ -50,6 +50,7 @@ public interface UIReactor {
         DocumentationEditor(ViewCategory.Panel),
         DocumentEditor(ViewCategory.Panel, NavigableDocument.class),
         KnowledgeNavigator(ViewCategory.View),
+        KnowledgeInspector(ViewCategory.View),
         DistributionView(ViewCategory.Panel),
         KnowledgeEditor(ViewCategory.Panel),
         ResourceNavigator(ViewCategory.View),
@@ -226,16 +227,13 @@ public interface UIReactor {
         AssetFocused(EventDirection.ViewToEngine, KlabDocument.class),
 
         DocumentPositionChanged(EventDirection.ViewToEngine, KlabDocument.class, Integer.class),
-
+        ResourceFocused(EventDirection.ViewToEngine, Resource.class),
+        ServiceFocused(EventDirection.ViewToEngine, KlabService.ServiceCapabilities.class),
         NewProjectRequest(EventDirection.ViewToEngine, String.class),
         ImportProjectRequest(EventDirection.ViewToEngine, String.class),
-
         Notification(EventDirection.Bidirectional, Notification.class),
-
         DistributionSelected(EventDirection.ViewToView, Distribution.class),
-
         ReasoningAvailable(EventDirection.EngineToView, Reasoner.Capabilities.class),
-
         UserAuthenticated(EventDirection.Bidirectional, UserIdentity.class),
 
         /**

@@ -299,7 +299,8 @@ public class KimConceptStatementImpl extends KimStatementImpl implements KimConc
     }
 
     @Override
-    public void visit(KlabStatementVisitor visitor) {
+    public void visit(Visitor visitor) {
 
     }
+
 }

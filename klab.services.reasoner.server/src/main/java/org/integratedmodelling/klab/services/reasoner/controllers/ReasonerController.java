@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.ApiOperation;
-
 @RestController
 public class ReasonerController {
 
@@ -148,9 +146,9 @@ public class ReasonerController {
         return reasoner.klabService().splitOperators(concept);
     }
 
-    @ApiOperation("Asserted or semantic distance between two concepts. If asserted is false (default) the asserted "
-            + " distance will be returned as an integer. Otherwise, the semantic distance will be computed and "
-            + "the input data array may contain a third concept to compute the distance in its context.")
+//    @ApiOperation("Asserted or semantic distance between two concepts. If asserted is false (default) the asserted "
+//            + " distance will be returned as an integer. Otherwise, the semantic distance will be computed and "
+//            + "the input data array may contain a third concept to compute the distance in its context.")
     @PostMapping(ServicesAPI.REASONER.DISTANCE)
     public int assertedDistance(@RequestBody Concept[] concepts, @RequestParam(defaultValue = "false") boolean asserted) {
         return asserted

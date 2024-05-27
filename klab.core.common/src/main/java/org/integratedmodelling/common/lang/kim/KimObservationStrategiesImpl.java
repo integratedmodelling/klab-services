@@ -26,9 +26,4 @@ public class KimObservationStrategiesImpl extends KlabDocumentImpl<KimObservatio
         Set<String> ret = new HashSet<>();
         return ret;
     }
-
-    @Override
-    public void visit(DocumentVisitor visitor) {
-
-    }
 }

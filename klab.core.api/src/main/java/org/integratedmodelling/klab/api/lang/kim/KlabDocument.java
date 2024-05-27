@@ -23,22 +23,22 @@ import java.util.Set;
  */
 public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
 
-    interface DocumentVisitor<T extends Statement> extends KlabStatement.KlabStatementVisitor {
-
-        /**
-         * Visit the preamble of the document (not the statements, handled separately).
-         *
-         * @param document
-         */
-        void visitDocument(KlabDocument<T> document);
-
-        /**
-         * Visit an individual statement.
-         *
-         * @param statement
-         */
-        void visitStatement(T statement);
-    }
+//    interface DocumentVisitor<T extends Statement> extends KlabStatement.KlabStatementVisitor {
+//
+////        /**
+////         * Visit the preamble of the document (not the statements, handled separately).
+////         *
+////         * @param document
+////         */
+////        void visitDocument(KlabDocument<T> document);
+////
+//        /**
+//         * Visit an individual statement.
+//         *
+//         * @param statement
+//         */
+////        void visitStatement(T statement);
+//    }
 
     /**
      * For a document, the repository record is used to check the status. It should never be null even if
@@ -118,10 +118,10 @@ public abstract interface KlabDocument<T extends Statement> extends KlabAsset {
      */
     Set<String> importedNamespaces(boolean withinType);
 
-    /**
-     * Visit the document and each statement.
-     *
-     * @param visitor
-     */
-    void visit(DocumentVisitor<T> visitor);
+//    /**
+//     * Visit the document and each statement.
+//     *
+//     * @param visitor
+//     */
+//    void visit(DocumentVisitor<T> visitor);
 }

@@ -13,10 +13,10 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.impl.DefaultKimVisitor;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.common.lang.AnnotationImpl;
 import org.integratedmodelling.common.lang.kim.KimConceptImpl;
@@ -2460,8 +2460,18 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
         Set<Concept> ret = new HashSet<>();
         KimConcept peer = scope.getService(ResourcesService.class).resolveConcept(concept.getUrn());
-        peer.visit(new DefaultKimVisitor() {
+        peer.visit(new Statement.Visitor() {
             @Override
+            public void visitAnnotation(Annotation annotation) {
+                // TODO
+            }
+
+            @Override
+            public void visitStatement(Statement statement) {
+                // TODO call the method below with the ref if we have it
+            }
+
+            //            @Override
             public void visitReference(String conceptName, Set<SemanticType> type, KimConcept validParent) {
                 Concept cn = resolveConcept(conceptName);
                 if (cn != null && Sets.intersection(type,

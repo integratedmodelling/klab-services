@@ -119,11 +119,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         return this.observable;
     }
 
-//    @Override
-//    public KimConcept getContext() {
-//        return this.context;
-//    }
-
     @Override
     public KimConcept getInherent() {
         return this.inherent;
@@ -679,22 +674,60 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         // TODO should escape any internal double quotes, unlikely
         return ws ? ("\"" + term + "\"") : term;
     }
-//
-//    @Override
-//    public Version getVersion() {
-//        return this.version;
-//    }
-//
-//    public void setVersion(Version version) {
-//        this.version = version;
-//    }
 
     @Override
-    public void visit(KlabStatementVisitor visitor) {
+    public boolean isCollective() {
+        return collective;
+    }
 
+    public void setCollective(boolean collective) {
+        this.collective = collective;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(urn);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        KimConceptImpl other = (KimConceptImpl) obj;
+        return Objects.equals(urn, other.urn);
+    }
+
+    /**
+     * Call after making modifications to finalize the concept and update the URN
+     * <p>
+     * TODO check abstract state as well
+     */
+    public void finalizeDefinition() {
+        this.urn = computeUrn();
+    }
+
+
+    public static KimConcept nothing() {
+        var ret = new KimConceptImpl();
+        ret.setName("Nothing");
+        ret.setNamespace("klab");
+        ret.setType(EnumSet.of(SemanticType.NOTHING));
+        return ret;
+    }
+
+    @Override
+    public void visit(Visitor visitor) {
+
+        if (observable != null) {
+            observable.visit(visitor);
+        }
 
         if (authority != null) {
-            visitor.visitAuthority(authority, authorityTerm);
+//            visitor.visitAuthority(authority, authorityTerm);
         }
 
         for (KimConcept trait : traits) {
@@ -704,10 +737,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         for (KimConcept role : roles) {
             role.visit(visitor);
         }
-
-//        if (context != null) {
-//            context.visit(visitor);
-//        }
 
         if (inherent != null) {
             inherent.visit(visitor);
@@ -753,63 +782,5 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
             comparisonConcept.visit(visitor);
         }
 
-        if (name != null) {
-//            if (template) {
-//                visitor.visitTemplate(KimMacro.Field.valueOf(name.substring(1).toUpperCase()), parent,
-//                        name.startsWith("$"));
-//            } else {
-            visitor.visitReference(name, type, parent);
-//            }
-        } else if (observable != null) {
-            visitor.visitDeclaration(observable);
-        }
-
-        if (observable != null) {
-            observable.visit(visitor);
-        }
-    }
-
-    @Override
-    public boolean isCollective() {
-        return collective;
-    }
-
-    public void setCollective(boolean collective) {
-        this.collective = collective;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(urn);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        KimConceptImpl other = (KimConceptImpl) obj;
-        return Objects.equals(urn, other.urn);
-    }
-
-    /**
-     * Call after making modifications to finalize the concept and update the URN
-     * <p>
-     * TODO check abstract state as well
-     */
-    public void finalizeDefinition() {
-        this.urn = computeUrn();
-    }
-
-
-    public static KimConcept nothing() {
-        var ret = new KimConceptImpl();
-        ret.setName("Nothing");
-        ret.setNamespace("klab");
-        ret.setType(EnumSet.of(SemanticType.NOTHING));
-        return ret;
     }
 }

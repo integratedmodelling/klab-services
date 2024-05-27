@@ -32,8 +32,4 @@ public class NavigableObservationStrategies extends NavigableKlabDocument<KimObs
 		return delegate.importedNamespaces(withinType);
 	}
 
-	@Override
-	public void visit(DocumentVisitor<KimObservationStrategy> visitor) {
-		delegate.visit(visitor);
-	}
 }

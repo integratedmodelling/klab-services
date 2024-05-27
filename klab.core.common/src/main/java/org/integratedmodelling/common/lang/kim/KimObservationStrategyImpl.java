@@ -29,28 +29,13 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     private Map<KimLiteral, Filter> macroVariables = new LinkedHashMap<>();
     private List<Filter> filters = new ArrayList<>();
     private int rank;
-//
-//    private String sourceCode;
 
     public KimObservationStrategyImpl() {}
-
-//    public KimObservationStrategyImpl(String sourceCode) {
-//        this.sourceCode = sourceCode;
-//    }
 
     @Override
     public Metadata getMetadata() {
         return this.metadata;
     }
-
-    @Override
-    public void visit(KlabStatementVisitor visitor) {
-
-    }
-//
-//    public String toString() {
-//        return sourceCode;
-//    }
 
     @Override
     public int getOffsetInDocument() {
@@ -85,6 +70,11 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     @Override
     public Collection<Notification> getNotifications() {
         return this.notifications;
+    }
+
+    @Override
+    public void visit(Visitor visitor) {
+
     }
 
     @Override

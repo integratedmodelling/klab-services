@@ -47,11 +47,6 @@ public class Test implements Runnable {
            }
 
            @Override
-           public List<KlabAsset> getKlabAssetAt(int offset) {
-               return List.of();
-           }
-
-           @Override
            public List<? extends NavigableAsset> children() {
                return List.of();
            }

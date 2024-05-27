@@ -78,6 +78,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         registerViewController(new ContextInspectorControllerImpl(this));
         registerViewController(new AuthenticationViewControllerImpl(this));
         registerViewController(new ContextControllerImpl(this));
+        registerViewController(new KnowledgeInspectorControllerImpl(this));
         // TODO etc.
 
         /*

@@ -11,15 +11,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.ApiOperation;
-
 @RestController
 public class AssistController {
 
     @Autowired
     ReasonerServer reasoner;
 
-    @ApiOperation(value = "Perform guided semantic search, composing a valid logical expression incrementally")
+//    @ApiOperation(value = "Perform guided semantic search, composing a valid logical expression incrementally")
     @PostMapping(ServicesAPI.REASONER.SEMANTIC_SEARCH)
     SemanticSearchResponse semanticSearch(SemanticSearchRequest request) {
         return reasoner.klabService().semanticSearch(request);

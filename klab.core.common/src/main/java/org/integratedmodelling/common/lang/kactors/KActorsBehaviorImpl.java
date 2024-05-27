@@ -65,11 +65,6 @@ public class KActorsBehaviorImpl extends KlabDocumentImpl<KActorsAction> impleme
     }
 
     @Override
-    public void visit(DocumentVisitor visitor) {
-
-    }
-
-    @Override
     public String getStyle() {
         return this.style;
     }

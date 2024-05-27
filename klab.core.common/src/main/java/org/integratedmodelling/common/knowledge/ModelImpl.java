@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
-import org.integratedmodelling.klab.api.lang.Action;
 
 public class ModelImpl implements Model {
 
@@ -27,7 +26,6 @@ public class ModelImpl implements Model {
 	private List<Observable> dependencies = new ArrayList<>();
 	private Scale coverage;
 	private List<Contextualizable> computation = new ArrayList<>();
-	private List<Action> actions = new ArrayList<>();
 	private DescriptionType descriptionType;
 	private Concept observerType;
 
@@ -126,14 +124,14 @@ public class ModelImpl implements Model {
 		return "(M) " + urn;
 	}
 
-	@Override
-	public List<Action> getActions() {
-		return actions;
-	}
-
-	public void setActions(List<Action> actions) {
-		this.actions = actions;
-	}
+//	@Override
+//	public List<Action> getActions() {
+//		return actions;
+//	}
+//
+//	public void setActions(List<Action> actions) {
+//		this.actions = actions;
+//	}
 
 	@Override
 	public Concept getObserverType() {

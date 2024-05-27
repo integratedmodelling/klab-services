@@ -243,7 +243,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     }
 
     @Override
-    public void visit(KlabStatementVisitor visitor) {
+    public void visit(Visitor visitor) {
 
     }
 }

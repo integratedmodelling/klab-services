@@ -26,9 +26,6 @@ public class KimOntologyImpl extends KlabDocumentImpl<KimConceptStatement> imple
         return new HashSet<>(importedOntologies);
     }
 
-    @Override
-    public void visit(DocumentVisitor<KimConceptStatement> visitor) {
-    }
 
     @Override
     public Collection<String> getImportedOntologies() {

@@ -94,7 +94,7 @@ public class KimTableImpl extends KimStatementImpl implements KimTable {
     }
 
     @Override
-    public void visit(KlabStatementVisitor visitor) {
+    public void visit(Visitor visitor) {
 
     }
 }

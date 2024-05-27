@@ -57,7 +57,7 @@ public class KimSymbolDefinitionImpl extends KimStatementImpl implements KimSymb
     }
 
     @Override
-    public void visit(KlabStatementVisitor visitor) {
+    public void visit(Visitor visitor) {
 
     }
 }

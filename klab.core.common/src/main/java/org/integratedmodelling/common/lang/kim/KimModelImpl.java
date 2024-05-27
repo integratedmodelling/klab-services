@@ -138,7 +138,21 @@ public class KimModelImpl extends KimStatementImpl implements KimModel {
     }
 
     @Override
-    public void visit(KlabStatementVisitor visitor) {
+    public void visit(Visitor visitor) {
 
+        for (var annotation : getAnnotations()) {
+            visitor.visitAnnotation(annotation);
+        }
+
+        for (var observable : getObservables()) {
+            observable.visit(visitor);
+        }
+        for (var dependency : getDependencies()) {
+            dependency.visit(visitor);
+        }
+        for (var contextualizable : getContextualization()) {
+            contextualizable.visit(visitor);
+        }
+        // TODO metadata etc.
     }
 }

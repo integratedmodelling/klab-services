@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.runtime.storage;
 
-import net.bytebuddy.agent.builder.LambdaFactory;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
@@ -8,7 +7,6 @@ import org.ojalgo.array.BufferArray;
 import org.ojalgo.concurrent.Parallelism;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * There is one separate <code>StorageScope</code> in each {@link ContextScope}. It's built on demand based on the

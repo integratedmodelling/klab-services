@@ -24,14 +24,11 @@ import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.*;
 
-import io.swagger.models.auth.In;
-import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.AuthenticatedIdentity;
 import org.integratedmodelling.klab.rest.IdentityReference;
 import org.springframework.security.authentication.AbstractAuthenticationToken;

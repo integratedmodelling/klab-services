@@ -50,12 +50,4 @@ public class NavigableKimOntology extends NavigableKlabDocument<KimConceptStatem
 		return null;
 	}
 
-	@Override
-	public void visit(DocumentVisitor<KimConceptStatement> visitor) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	
-	
 }

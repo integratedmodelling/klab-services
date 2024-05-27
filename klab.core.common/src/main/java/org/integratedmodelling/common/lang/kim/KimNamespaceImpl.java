@@ -124,9 +124,4 @@ public class KimNamespaceImpl extends KlabDocumentImpl<KlabStatement> implements
         this.coverage = coverage;
     }
 
-
-    @Override
-    public void visit(DocumentVisitor visitor) {
-
-    }
 }
