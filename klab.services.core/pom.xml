@@ -212,7 +212,14 @@
             <version>2.5.0</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
+        <!-- this is to get the endpoints descriptions from javadoc -->
+        <dependency>
+            <groupId>com.github.therapi</groupId>
+            <artifactId>therapi-runtime-javadoc</artifactId>
+            <version>0.13.0</version>
+        </dependency>
+
+        <!-- hns ttps://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
