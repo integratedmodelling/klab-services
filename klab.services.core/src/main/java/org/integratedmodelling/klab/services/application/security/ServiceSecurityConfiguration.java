@@ -31,7 +31,7 @@ public class ServiceSecurityConfiguration {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**", "/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/public/**", "/actuator/**", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new TokenAuthorizationFilter(authenticationManager, authorizationManager),
                         UsernamePasswordAuthenticationFilter.class)
