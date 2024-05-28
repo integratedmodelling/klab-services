@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.modeler.views.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.views.ContextInspector;
 import org.integratedmodelling.klab.api.view.modeler.views.ContextView;
@@ -15,12 +16,16 @@ public class ContextControllerImpl extends AbstractUIViewController<ContextView>
     }
 
     @Override
+    public void setServiceCapabilities(RuntimeService.Capabilities capabilities) {
+        view().setServiceCapabilities(capabilities);
+    }
+
+    @Override
     public void knowledgeFocused(Knowledge observable) {
 
     }
 
     @Override
     public void knowledgeSelected(Knowledge observable) {
-
     }
 }
