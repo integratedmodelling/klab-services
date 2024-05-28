@@ -1,13 +1,12 @@
 package org.integratedmodelling.klab.services.actors;
 
+import io.reacted.core.messages.reactors.ReActorInit;
+import io.reacted.core.reactors.ReActions;
+import io.reacted.core.reactorsystem.ReActorContext;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 import org.integratedmodelling.klab.runtime.kactors.messages.ScriptEvent;
 import org.integratedmodelling.klab.runtime.kactors.messages.ScriptEvent.Type;
-
-import io.reacted.core.messages.reactors.ReActorInit;
-import io.reacted.core.reactors.ReActions;
-import io.reacted.core.reactorsystem.ReActorContext;
 
 public class TestCaseAgent extends SessionAgent {
 

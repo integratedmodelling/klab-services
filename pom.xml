@@ -9,7 +9,6 @@
     <artifactId>klab-services</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>klab.services.engine</module>
         <module>klab.services.reasoner</module>
         <module>klab.services.core</module>
         <module>klab.core.api</module>

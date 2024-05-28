@@ -14,8 +14,8 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.KActorsVM;
-import org.integratedmodelling.klab.runtime.kactors.messages.SetState;
 import org.integratedmodelling.klab.runtime.kactors.messages.RunBehavior;
+import org.integratedmodelling.klab.runtime.kactors.messages.SetState;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;

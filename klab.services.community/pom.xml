@@ -7,20 +7,16 @@
 	</parent>
 	<artifactId>klab.services.community</artifactId>
 	<dependencies>
-
-		<!-- https://mvnrepository.com/artifact/org.copper-engine/copper-coreengine -->
-		<dependency>
-			<groupId>org.copper-engine</groupId>
-			<artifactId>copper-coreengine</artifactId>
-			<version>5.4.2</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
 			<artifactId>klab.services.core</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.flowable</groupId>
+			<artifactId>flowable-spring-boot-starter</artifactId>
+			<version>7.0.1</version>
+		</dependency>
 
 	</dependencies>
 </project>

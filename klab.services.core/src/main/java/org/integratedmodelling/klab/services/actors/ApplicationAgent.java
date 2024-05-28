@@ -1,11 +1,10 @@
 package org.integratedmodelling.klab.services.actors;
 
+import io.reacted.core.reactors.ReActions;
+import io.reacted.core.reactorsystem.ReActorContext;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.runtime.kactors.messages.ViewAction;
 import org.integratedmodelling.klab.runtime.kactors.messages.ViewLayout;
-
-import io.reacted.core.reactors.ReActions;
-import io.reacted.core.reactorsystem.ReActorContext;
 
 /**
  * An application holds the view state as well as the application environment.

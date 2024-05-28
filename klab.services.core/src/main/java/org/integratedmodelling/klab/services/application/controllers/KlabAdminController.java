@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
@@ -27,6 +28,7 @@ import java.util.List;
  */
 @RestController
 @Secured(Role.ADMINISTRATOR)
+@Tag(name="General administration")
 public class KlabAdminController {
 
     @Autowired
@@ -36,7 +38,7 @@ public class KlabAdminController {
     ServiceAuthorizationManager scopeManager;
 
     /**
-     * Shut down the service. Returns status code (true/false) before the actual shutdown actually begins.
+     * Shut down the service. Returns status code (true/false) before the actual shutdown begins.
      *
      * @return true unless anything strange happened
      */

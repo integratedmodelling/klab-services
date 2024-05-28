@@ -1,12 +1,11 @@
 package org.integratedmodelling.klab.services.actors;
 
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
-
 import io.reacted.core.messages.reactors.ReActorInit;
 import io.reacted.core.messages.reactors.ReActorStop;
 import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactorsystem.ReActorContext;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
 
 public class SessionAgent extends KAgent {
 

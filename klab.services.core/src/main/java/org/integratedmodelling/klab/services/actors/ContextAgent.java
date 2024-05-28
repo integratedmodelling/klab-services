@@ -1,5 +1,9 @@
 package org.integratedmodelling.klab.services.actors;
 
+import io.reacted.core.messages.reactors.ReActorInit;
+import io.reacted.core.messages.reactors.ReActorStop;
+import io.reacted.core.reactors.ReActions;
+import io.reacted.core.reactorsystem.ReActorContext;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -12,11 +16,6 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.GetChildren;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.GetParent;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
-
-import io.reacted.core.messages.reactors.ReActorInit;
-import io.reacted.core.messages.reactors.ReActorStop;
-import io.reacted.core.reactors.ReActions;
-import io.reacted.core.reactorsystem.ReActorContext;
 
 public class ContextAgent extends KAgent {
 

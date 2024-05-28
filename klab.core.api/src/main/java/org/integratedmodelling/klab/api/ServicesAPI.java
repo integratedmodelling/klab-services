@@ -358,6 +358,8 @@ public interface ServicesAPI {
         interface ADMIN extends PluginAPI {
 
         }
+
+        String RESOLVE_KNOWLEDGE = "/resolve";
     }
 
     interface COMMUNITY {

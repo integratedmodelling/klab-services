@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -23,13 +24,13 @@ import java.security.Principal;
 import java.util.Map;
 
 /**
- * Handshaking after authentication, will notify a scope from the remote side and provide it with a peer at
- * the service side. If the scope is using the secret or the principal is an administrator and requests it,
- * the scopes will be linked using websockets so that send() at one side will trigger send() with the same
- * parameters at the other.
+ * These endpoints enable the mirroring of engine scopes into each service. Engines must register their
+ * scope(s) before operations that require one are invoked. The registration will return a scope ID that can
+ * be used in the  <code>Observer</code> header to select the scope.
  */
 @RestController
 @Secured(Role.USER)
+@Tag(name = "Scope management")
 public class KlabScopeController {
 
     @Autowired

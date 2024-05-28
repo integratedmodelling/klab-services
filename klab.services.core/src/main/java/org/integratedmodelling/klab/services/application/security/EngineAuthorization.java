@@ -36,11 +36,11 @@ import org.springframework.security.core.CredentialsContainer;
 
 /**
  * The authorization for any calls authenticated through an engine JWT.
- *
- * The field names represent the chosen vocabulary we're using in k.LAB; they might be different in
- * JWT and/or Spring parlance, and therefore the calls coming in and out of this class might feel a
- * bit awkward - for instance, a JWT "subject" is set here as a "username" and is returned using the
- * Spring method getPrincipal().
+ * <p>
+ * The field names represent the chosen vocabulary we're using in k.LAB; they might be different in JWT and/or
+ * Spring parlance, and therefore the calls coming in and out of this class might feel a bit awkward - for
+ * instance, a JWT "subject" is set here as a "username" and is returned using the Spring method
+ * getPrincipal().
  */
 public class EngineAuthorization extends AbstractAuthenticationToken implements AuthenticatedIdentity {
 
@@ -51,8 +51,8 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     protected Instant expiration;
 
     /**
-     * The time at which the token was issued - this would be the JWT token in the case of a typical
-     * login by either username or cert file.
+     * The time at which the token was issued - this would be the JWT token in the case of a typical login by
+     * either username or cert file.
      */
     private Instant issuedAt;
 
@@ -64,15 +64,15 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     /**
      * The ID of the Integrated Modelling partner which owns the directory containing the user being
      * authenticated. For example, "im" is the ID for the main directory
-     *
+     * <p>
      * Spring equivalent: [none] JWT equivalent: issuer ("iss" claim)
      */
     private final Credentials partnerId;
 
     /**
-     * A collection of partner-specific permissions being granted with this Authentication. For
-     * example, a PartnerAuthority [im, public-network] would indicate a "public-network" permission
-     * level granted by the "im" partner directory.
+     * A collection of partner-specific permissions being granted with this Authentication. For example, a
+     * PartnerAuthority [im, public-network] would indicate a "public-network" permission level granted by the
+     * "im" partner directory.
      */
     private Collection<Role> roles;
 
@@ -82,11 +82,16 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     private Credentials tokenString;
 
     /**
-     * The username of the logged in user. Usernames will be unique within a partner directory, but
-     * there may be duplicates between partners, so usernames should always be identified with
-     * respect to the directory in which they are stored.
+     * The username of the logged in user. Usernames will be unique within a partner directory, but there may
+     * be duplicates between partners, so usernames should always be identified with respect to the directory
+     * in which they are stored.
      */
     private final Credentials username;
+
+    /**
+     * ID of the current scope, held in the scope manager. Only service scopes have a null here.
+     */
+    private String scopeId;
 
     /**
      * A successful authorization should always result in a scope being obtained.
@@ -126,6 +131,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
 
     /**
      * Create an authorization principal in service scope with full privileges.
+     *
      * @param scope
      * @return
      */
@@ -143,7 +149,8 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         } // TODO partner identity, context, session etc
         if (scope instanceof ServiceScope serviceScope) {
             // TODO fix the actual roles we want
-            roles = EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER, Role.ROLE_DATA_MANAGER);
+            roles = EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
+                    Role.ROLE_DATA_MANAGER);
             if (scopeIdentity == null) {
 
             }
@@ -183,8 +190,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     }
 
     /**
-     * convenience method so that callers can retrieve authorities as a Collection<Role> generic
-     * type
+     * convenience method so that callers can retrieve authorities as a Collection<Role> generic type
      */
     //    @Override
     public Collection<Role> getRoles() {

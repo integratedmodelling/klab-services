@@ -1,5 +1,9 @@
 package org.integratedmodelling.resources.server.controllers;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.integratedmodelling.common.services.client.resources.ProjectRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -27,6 +31,7 @@ import java.util.List;
 
 @RestController
 @Secured(Role.ADMINISTRATOR)
+//@OpenAPIDefinition(security =  {@SecurityRequirement(name = "bearer", scopes = )})
 public class ResourceAdminController {
 
     @Autowired
