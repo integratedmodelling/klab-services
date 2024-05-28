@@ -16,6 +16,10 @@ public interface ServicesAPI {
      * in digital twin API communication
      */
     String OBSERVER_HEADER = "Observer";
+    /**
+     * Server secret key to match with the service secret to validate local or privileged connections.
+     */
+    String SERVER_KEY_HEADER = "Server-Key";
 
     String CAPABILITIES = "/public/capabilities";
     String STATUS = "/public/status";

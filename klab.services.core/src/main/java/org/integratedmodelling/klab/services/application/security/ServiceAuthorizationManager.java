@@ -195,9 +195,14 @@ public class ServiceAuthorizationManager {
      * Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups and roles as
      * expected.
      */
-    public EngineAuthorization validateToken(String token) {
+    public EngineAuthorization validateToken(String token, String serverKey, String observerId) {
 
         EngineAuthorization result = null;
+
+        /**
+         * NO - use the normal JWT in the client but add the token for the ServiceKey and Observer to the
+         * authentication.
+         */
 
         if (token.startsWith(klabService.get().getServiceSecret())) {
 
@@ -376,8 +381,6 @@ public class ServiceAuthorizationManager {
         // TODO uninstall any listeners and monitors if service; remove child scopes
         return true;
     }
-
-
 
 
 }

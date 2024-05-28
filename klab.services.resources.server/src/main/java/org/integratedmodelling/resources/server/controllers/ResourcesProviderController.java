@@ -38,6 +38,14 @@ public class ResourcesProviderController {
     @Autowired
     private ServiceAuthorizationManager authenticationManager;
 
+    /**
+     * Retrieve all the knowledge included in one or more projects. The return set contains all
+     * needed documnents with their versions, in order of dependency.
+     *
+     * @param projects
+     * @param principal
+     * @return the resources to load to ingest the knowledge included in the requested projects
+     */
     @GetMapping(ServicesAPI.RESOURCES.PROJECTS)
     public @ResponseBody List<ResourceSet> getProjects(@RequestParam Collection<String> projects,
                                                  Principal principal) {

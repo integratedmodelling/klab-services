@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,7 +16,8 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
 
     ServiceAuthorizationManager authorizationManager;
 
-    public TokenAuthorizationFilter(AuthenticationManager authManager, ServiceAuthorizationManager authorizationManager) {
+    public TokenAuthorizationFilter(AuthenticationManager authManager,
+                                    ServiceAuthorizationManager authorizationManager) {
         super(authManager);
         this.authorizationManager = authorizationManager;
     }
@@ -23,10 +25,15 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws IOException, ServletException {
+
         String tokenString = req.getHeader(HttpHeaders.AUTHORIZATION);
+        String observerToken = req.getHeader(ServicesAPI.OBSERVER_HEADER);
+        String serverKey = req.getHeader(ServicesAPI.SERVER_KEY_HEADER);
+
         if (tokenString != null) {
             try {
-                EngineAuthorization token = authorizationManager.validateToken(tokenString);
+                EngineAuthorization token = authorizationManager.validateToken(tokenString, serverKey,
+                        observerToken);
                 if (token != null && token.isAuthenticated()) {
                     SecurityContextHolder.getContext().setAuthentication(token);
                 }
