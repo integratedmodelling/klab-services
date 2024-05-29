@@ -488,29 +488,25 @@ public interface ResourcesService extends KlabService {
 
         /**
          * Lock a project so that changes to it can be made exclusively through the explicit CRUD calls on its
-         * contents.
+         * contents. User must be a privileged administrator.
          *
-         * @param urn   the URN of the project to lock
-         * @param token the ID of the user locking it. Must be a privileged local user.
-         * @return a URL to access the contents of the project locally. If it's a file:/ URL, the requesting
-         * client has used the secret token only available to clients sharing the filesystem with the service.
-         * Otherwise it will be the http:// URL to a zip file containing the project's contents.
+         * @param urn the URN of the project to lock
          * @throws org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException if the project is
          *                                                                                 already locked or
          *                                                                                 isn't accessible
          *                                                                                 for any other
          *                                                                                 reason
          */
-        URL lockProject(String urn, String token);
+        URL lockProject(String urn, Scope scope);
 
         /**
          * Unlock a previously locked project.
          *
          * @param urn   the URN of the project to lock
-         * @param token the ID of the user locking it
-         * @return false if the project wasn't locked or wasn't locked by the same ID
+         * @param scope the scope that originally locked it
+         * @return false if the project wasn't locked or wasn't locked by the same scope
          */
-        boolean unlockProject(String urn, String token);
+        boolean unlockProject(String urn, Scope scope);
 
     }
 

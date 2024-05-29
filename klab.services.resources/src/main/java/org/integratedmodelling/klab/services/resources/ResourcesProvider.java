@@ -857,12 +857,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public URL lockProject(String urn, String token) {
+    public URL lockProject(String urn, Scope scope) {
+        String token = scope.getIdentity().getId();
+        // FOCKME FIXME use proper scope management
         return workspaceManager.lockProject(urn, token, token != null && token.equals(getServiceSecret()));
     }
 
     @Override
-    public boolean unlockProject(String urn, String token) {
+    public boolean unlockProject(String urn, Scope scope) {
+        String token = scope.getIdentity().getId();
         return workspaceManager.unlockProject(urn, token);
     }
 

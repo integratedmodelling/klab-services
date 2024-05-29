@@ -330,7 +330,6 @@ public class EngineClient implements Engine, PropertyHolder {
         return Collections.emptyList();
     }
 
-
     @Override
     public boolean isAvailable() {
         return this.available.get();

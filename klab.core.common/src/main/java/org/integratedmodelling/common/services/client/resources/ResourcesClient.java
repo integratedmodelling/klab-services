@@ -303,12 +303,12 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public URL lockProject(String urn, String token) {
+    public URL lockProject(String urn, Scope scope) {
         return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, URL.class, "urn", urn);
     }
 
     @Override
-    public boolean unlockProject(String urn, String token) {
+    public boolean unlockProject(String urn, Scope scope) {
         return client.get(ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT, Boolean.class, "urn", urn);
     }
 

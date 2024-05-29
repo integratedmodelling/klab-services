@@ -61,8 +61,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                 if (container.mergeChanges(changes, getController().engine().serviceScope())) {
                     view().workspaceModified(container);
                     if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
-                        getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle,
-                                Message.MessageType.WorkspaceChanged, changes);
+                        getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged, changes);
                     }
                 }
             } else {
@@ -111,8 +110,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             var document = asset.parent(NavigableDocument.class);
             if (document != null) {
                 selectAsset(document);
-                var panel = getController().getPanelController(document,
-                        DocumentEditorController.class);
+                var panel = getController().getPanelController(document, DocumentEditorController.class);
                 if (panel != null) {
                     panel.moveCaretTo(navigableStatement.getOffsetInDocument());
                 }
@@ -128,8 +126,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             for (var asset : workspace.children()) {
                 if (asset instanceof NavigableProject project && !project.isLocked()) {
                     // attempt locking
-                    var url = admin.lockProject(project.getUrn(),
-                            getController().engine().serviceScope().getIdentity().getId());
+                    var url = admin.lockProject(project.getUrn(), getController().user());
                     if (url != null) {
                         if (url.getProtocol().equals("file")) {
                             var file = new File(url.getFile());
@@ -158,8 +155,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             if (service instanceof ResourcesService.Admin admin) {
                 for (var asset : currentWorkspace.children()) {
                     if (asset instanceof NavigableProject project && project.isLocked()) {
-                        admin.unlockProject(project.getUrn(),
-                                getController().engine().serviceScope().getIdentity().getId());
+                        admin.unlockProject(project.getUrn(), getController().user());
                         ((NavigableProject) asset).setLocked(false);
                         ((NavigableProject) asset).setRootDirectory(null);
                     }
@@ -183,8 +179,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
         } else if (asset instanceof NavigableKlabStatement navigableStatement) {
             var document = navigableStatement.parent(NavigableDocument.class);
             if (document != null) {
-                var panel = getController().getPanelController(document,
-                        DocumentEditorController.class);
+                var panel = getController().getPanelController(document, DocumentEditorController.class);
                 if (panel != null) {
                     panel.bringForward();
                     panel.moveCaretTo(navigableStatement.getOffsetInDocument());

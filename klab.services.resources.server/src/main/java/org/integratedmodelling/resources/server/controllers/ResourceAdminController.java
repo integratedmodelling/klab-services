@@ -161,7 +161,7 @@ public class ResourceAdminController {
     @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT)
     public URL lockProject(@PathVariable("urn") String urn, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            return admin.lockProject(urn, auth.getToken());
+            return admin.lockProject(urn, authenticationManager.resolveScope(principal));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -169,7 +169,7 @@ public class ResourceAdminController {
     @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT)
     public boolean unlockProject(@PathVariable("urn") String urn, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            return admin.unlockProject(urn, auth.getToken());
+            return admin.unlockProject(urn, authenticationManager.resolveScope(principal));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
