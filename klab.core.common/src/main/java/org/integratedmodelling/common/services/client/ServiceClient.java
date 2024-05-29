@@ -48,7 +48,7 @@ public abstract class ServiceClient implements KlabService {
     private Type serviceType;
     private Pair<Identity, List<ServiceReference>> authentication;
     private AtomicBoolean connected = new AtomicBoolean(false);
-    private AtomicBoolean authorized = new AtomicBoolean(false);
+    //    private AtomicBoolean authorized = new AtomicBoolean(false);
     private AtomicBoolean authenticated = new AtomicBoolean(false);
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private boolean usingLocalSecret;
@@ -68,8 +68,8 @@ public abstract class ServiceClient implements KlabService {
     protected ServiceClient(KlabService.Type serviceType) {
         this.authentication = Authentication.INSTANCE.authenticate(false);
         this.serviceType = serviceType;
-        if ((this.url =
-                discoverService(authentication.getFirst(), authentication.getSecond(), serviceType)) != null) {
+        this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
+        if (this.url != null) {
             establishConnection();
         }
     }
@@ -78,8 +78,8 @@ public abstract class ServiceClient implements KlabService {
                             List<ServiceReference> services) {
         this.authentication = Authentication.INSTANCE.authenticate(false);
         this.serviceType = serviceType;
-        if ((this.url =
-                discoverService(authentication.getFirst(), authentication.getSecond(), serviceType)) != null) {
+        this.url = discoverService(authentication.getFirst(), authentication.getSecond(), serviceType);
+        if (this.url != null) {
             establishConnection();
         }
     }
@@ -92,7 +92,6 @@ public abstract class ServiceClient implements KlabService {
         this.url = url;
         this.local = Utils.URLs.isLocalHost(url);
         this.scopeListeners = listeners;
-        this.token = this.local ? Configuration.INSTANCE.getServiceSecret(serviceType) : identity.getId();
         establishConnection();
     }
 
@@ -112,22 +111,12 @@ public abstract class ServiceClient implements KlabService {
         /*
         Connect to the default service of the passed type; if none is available, try the default local URL
          */
-        if (!(identity instanceof UserIdentity user && user.isAnonymous())) {
-            token = identity.getId();
-            if (token != null && !token.isEmpty()) {
+        if (identity instanceof UserIdentity user) {
+            token = user.isAnonymous() ? ServicesAPI.ANONYMOUS_TOKEN : identity.getId();
+            if (!user.isAnonymous()) {
                 authenticated.set(true);
             }
         }
-
-        if (token == null || token.isEmpty()) {
-            // even anonymous users can use local services
-            var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
-            if (secret != null) {
-                token = secret;
-            }
-        }
-
-        authorized.set(token != null);
 
         for (var service : services) {
             if (service.getServiceType() == serviceType && service.isPrimary() && !service.getUrls().isEmpty()) {
@@ -148,19 +137,7 @@ public abstract class ServiceClient implements KlabService {
 
         if (ret == null) {
 
-            if (token == null) {
-                String localServiceToken = readLocalServiceToken(serviceType);
-                if (localServiceToken != null) {
-                    token = localServiceToken;
-                    usingLocalSecret = true;
-                }
-            }
-
             url = serviceType.localServiceUrl();
-            var secret = readLocalServiceToken(serviceType);
-            if (secret != null) {
-                token = makeSecretToken(secret, identity);
-            }
             var status = readServiceStatus(url, scope);
 
             if (status != null) {
@@ -174,20 +151,20 @@ public abstract class ServiceClient implements KlabService {
         return ret;
     }
 
-    private String makeSecretToken(String secret, Identity identity) {
-        StringBuffer ret = new StringBuffer(secret);
-        if (identity instanceof UserIdentity userIdentity) {
-            ret.append("/");
-            ret.append(userIdentity.getUsername());
-            ret.append("/");
-            ret.append(userIdentity.getEmailAddress());
-            for (Group group : userIdentity.getGroups()) {
-                ret.append("/");
-                ret.append(group.getName());
-            }
-        }
-        return ret.toString();
-    }
+    //    private String makeSecretToken(String secret, Identity identity) {
+    //        StringBuffer ret = new StringBuffer(secret);
+    //        if (identity instanceof UserIdentity userIdentity) {
+    //            ret.append("/");
+    //            ret.append(userIdentity.getUsername());
+    //            ret.append("/");
+    //            ret.append(userIdentity.getEmailAddress());
+    //            for (Group group : userIdentity.getGroups()) {
+    //                ret.append("/");
+    //                ret.append(group.getName());
+    //            }
+    //        }
+    //        return ret.toString();
+    //    }
 
     /**
      * Find the token on the filesystem installed by a running service of the passed type. If found, we may
@@ -198,8 +175,7 @@ public abstract class ServiceClient implements KlabService {
      */
     private String readLocalServiceToken(Type serviceType) {
         File secretFile =
-                Configuration.INSTANCE.getFileWithTemplate("services/" + serviceType.name().toLowerCase() +
-                        "/secret.key", org.integratedmodelling.klab.api.utils.Utils.Names.newName());
+                Configuration.INSTANCE.getFileWithTemplate("services/" + serviceType.name().toLowerCase() + "/secret.key", org.integratedmodelling.klab.api.utils.Utils.Names.newName());
         try {
             return Files.readString(secretFile.toPath());
         } catch (IOException e) {
@@ -236,7 +212,15 @@ public abstract class ServiceClient implements KlabService {
      */
     private void establishConnection() {
 
+        this.token = this.authentication.getFirst().getId();
         this.client = Utils.Http.getServiceClient(token, this);
+        var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
+        if (secret != null) {
+            local = Utils.URLs.isLocalHost(getUrl());
+            if (local) {
+                client.setHeader(ServicesAPI.SERVER_KEY_HEADER, secret);
+            }
+        }
 
         /*
         TODO revise the websockets strategy by calling the scope controller if the conditions are there, and
@@ -296,9 +280,8 @@ public abstract class ServiceClient implements KlabService {
             } finally {
                 if (connected.get() != currentStatus) {
 
-                    scope.send(Message.MessageClass.ServiceLifecycle,
-                            (connected.get() ? Message.MessageType.ServiceAvailable :
-                             Message.MessageType.ServiceUnavailable), capabilities);
+                    scope.send(Message.MessageClass.ServiceLifecycle, (connected.get() ?
+                                                                       Message.MessageType.ServiceAvailable : Message.MessageType.ServiceUnavailable), capabilities);
 
                     if (connected.get()) {
 

@@ -31,11 +31,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 /**
- * The engine client uses client services and can be configured to use a local server for all services
- * (possibly as a downloaded product from a transparently maintained
- * {@link org.integratedmodelling.klab.api.engine.distribution.Distribution}t) and use the local services if
- * so desired or if online services are not available. The EngineClient is a lightweight implementation that
- * can be embedded into applications such as command-line or graphical IDEs.
+ * The engine runs under a user scope and uses clients for all services and in local configurations can use a
+ * local distribution and deploy local services as needed (downloading products from a transparently
+ * maintained {@link org.integratedmodelling.klab.api.engine.distribution.Distribution}) if so desired or if
+ * online services are not available. The local configuration is usable even if the engine runs in anonymous
+ * scope. This implementation is lightweight (depending only on the API and commons packages) and can be
+ * embedded into applications such as command-line or graphical IDEs.
  */
 public class EngineClient implements Engine, PropertyHolder {
 
@@ -61,7 +62,7 @@ public class EngineClient implements Engine, PropertyHolder {
     private Worldview worldview;
 
     public UserScope getUser() {
-        return this.users.size() > 0 ? users.get(0) : null;
+        return !this.users.isEmpty() ? users.getFirst() : null;
     }
 
     @Override
@@ -234,7 +235,8 @@ public class EngineClient implements Engine, PropertyHolder {
                     if (admin.loadKnowledge(this.worldview = resources.getWorldview())) {
                         reasoningAvailable = true;
                         serviceScope().send(Message.MessageClass.EngineLifecycle,
-                                Message.MessageType.ReasoningAvailable, reasoner.capabilities(serviceScope()));
+                                Message.MessageType.ReasoningAvailable,
+                                reasoner.capabilities(serviceScope()));
                         serviceScope().info("Worldview loaded into local reasoner");
                     } else {
                         reasonerDisabled = true;
@@ -292,7 +294,6 @@ public class EngineClient implements Engine, PropertyHolder {
                 return EngineClient.this.getServices(KlabService.Type.classify(serviceClass));
             }
         };
-
 
         if (Authentication.INSTANCE.getDistribution() != null) {
             serviceScope().send(Message.MessageClass.EngineLifecycle, Message.MessageType.UsingDistribution
@@ -401,7 +402,8 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     @Override
-    public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host, ExternalAuthenticationCredentials credentials, Scope scope) {
-        return Authentication.INSTANCE.addExternalCredentials(host , credentials, scope);
+    public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
+                                                                           ExternalAuthenticationCredentials credentials, Scope scope) {
+        return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
     }
 }

@@ -10,7 +10,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.integratedmodelling</groupId>
-			<artifactId>klab.services.core</artifactId>
+			<artifactId>klab.core.services</artifactId>
 			<version>${klab.version}</version>
 		</dependency>
 

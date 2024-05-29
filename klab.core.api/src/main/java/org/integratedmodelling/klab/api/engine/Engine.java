@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * The k.LAB engine is a service orchestrator that starts and maintains all services used by the scopes in its
- * purview. Its primary role is to provide {@link UserScope}s, of which it can handle one or more. The scopes
- * give access to all authorized services and expose a messaging system that enables listening to authorized
- * events from all services.
+ * The k.LAB engine is a service orchestrator that maintains scopes and the services used by these scopes. Its
+ * primary role is to provide {@link UserScope}s, of which it can handle one or more. The scopes give access
+ * to all authorized services and expose a messaging system that enables listening to authorized events from
+ * all services.
  * <p>
  * The engine instantiates user scopes upon authentication or anonymously. Access to services happens through
- * the services handled by the engine through its {@link UserScope#getService(Class)} and
- * {@link UserScope#getServices(Class)} methods. There is no API related to authentication except defining the
- * API model for {@link org.integratedmodelling.klab.api.authentication.KlabCertificate}s.
+ * the {@link UserScope#getService(Class)} and {@link UserScope#getServices(Class)} methods. There is no
+ * specific API related to authentication, except defining the model for
+ * {@link org.integratedmodelling.klab.api.authentication.KlabCertificate}s.
  * <p>
  * Methods are exposed for booting and shutting down the engine, for situations when implementations need to
  * control these phases. Those should operate harmlessly where a boot phase is not needed. The engine should
@@ -29,9 +29,10 @@ import java.util.function.BiConsumer;
  * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#EngineLifecycle}  and
  * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ServiceLifecycle} events.
  * <p>
- * The engine has a simple REST API defined in {@link org.integratedmodelling.klab.api.ServicesAPI.ENGINE} and
- * is authenticated with certificates, so it inherits from {@link KlabService} and it is one of the service
- * categories reported as {@link KlabService.Type}.
+ * Engine functions can be exposed through the simple REST API defined in
+ * {@link org.integratedmodelling.klab.api.ServicesAPI.ENGINE} and is a {@link KlabService} to ensure it can
+ * be implemented as a service; for this reason <code>ENGINE</code> is one of the service categories listed
+ * as {@link KlabService.Type}.
  */
 public interface Engine extends KlabService {
 

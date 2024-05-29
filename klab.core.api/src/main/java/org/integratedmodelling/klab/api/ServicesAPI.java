@@ -20,9 +20,15 @@ public interface ServicesAPI {
      * Server secret key to match with the service secret to validate local or privileged connections.
      */
     String SERVER_KEY_HEADER = "Server-Key";
+    /**
+     * this is used across the stack as a token for anonymous usage of the services. It enables access to all
+     * services with non-privileged read-only access,
+     */
+    String ANONYMOUS_TOKEN = "018fc355-c123-7608-be4a-89ea1059c33e";
 
     String CAPABILITIES = "/public/capabilities";
     String STATUS = "/public/status";
+
 
     /**
      * General administration endpoints common to all services

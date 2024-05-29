@@ -73,9 +73,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private URI uri;
             private String authorization;
             private Scope scope; // may be null
+            private Map<String, String> headers = new HashMap<>();
 
             public void setAuthorization(String token) {
                 this.authorization = token;
+            }
+
+            public void setHeader(String header, String value) {
+                this.headers.put(header, value);
             }
 
             static class Options {
@@ -112,6 +117,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    for (String header : headers.keySet()) {
+                        requestBuilder = requestBuilder.header(header, headers.get(header));
                     }
 
                     var request =
@@ -157,6 +166,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+
+                    for (String header : headers.keySet()) {
+                        requestBuilder = requestBuilder.header(header, headers.get(header));
                     }
 
                     var request =
@@ -266,6 +279,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
                     }
+                    for (String header : headers.keySet()) {
+                        requestBuilder = requestBuilder.header(header, headers.get(header));
+                    }
 
                     if (Void.class != resultClass) {
                         var response =
@@ -300,6 +316,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     var requestBuilder = HttpRequest.newBuilder().GET();
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+                    for (String header : headers.keySet()) {
+                        requestBuilder = requestBuilder.header(header, headers.get(header));
                     }
 
                     var response =
@@ -340,6 +359,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                     var requestBuilder = HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.noBody());
                     if (authorization != null) {
                         requestBuilder = requestBuilder.header(HttpHeaders.AUTHORIZATION, authorization);
+                    }
+                    for (String header : headers.keySet()) {
+                        requestBuilder = requestBuilder.header(header, headers.get(header));
                     }
 
                     var response =

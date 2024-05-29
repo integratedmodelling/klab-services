@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>klab.services.reasoner</module>
-        <module>klab.services.core</module>
+        <module>klab.core.services</module>
         <module>klab.core.api</module>
         <module>klab.services.resources</module>
         <module>klab.services.reasoner.server</module>
