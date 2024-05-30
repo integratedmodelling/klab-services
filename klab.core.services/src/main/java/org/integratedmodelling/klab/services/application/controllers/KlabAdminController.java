@@ -7,6 +7,7 @@ import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -71,7 +72,7 @@ public class KlabAdminController {
      */
     @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public @ResponseBody ExternalAuthenticationCredentials.CredentialInfo setCredentials(@RequestBody CredentialsRequest request, Principal principal) {
-        var scope = scopeManager.resolveScope(principal);
+        var scope = scopeManager.resolveScope(principal, Scope.class);
         request.getCredentials().setId(Utils.Names.shortUUID());
         request.getCredentials().setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(scope));
         return Authentication.INSTANCE.addExternalCredentials(request.getHost(), request.getCredentials(),
@@ -98,7 +99,7 @@ public class KlabAdminController {
      */
     @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public @ResponseBody List<ExternalAuthenticationCredentials.CredentialInfo> listCredentials(Principal principal) {
-        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal));
+        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal, Scope.class));
     }
 
 }

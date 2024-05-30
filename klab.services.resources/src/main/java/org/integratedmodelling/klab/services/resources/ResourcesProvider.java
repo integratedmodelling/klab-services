@@ -47,6 +47,7 @@ import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.jgrapht.Graph;
@@ -859,8 +860,9 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public URL lockProject(String urn, Scope scope) {
         String token = scope.getIdentity().getId();
-        // FOCKME FIXME use proper scope management
-        return workspaceManager.lockProject(urn, token, token != null && token.equals(getServiceSecret()));
+        boolean local =
+                scope instanceof ServiceScope || (scope instanceof ServiceUserScope userScope && userScope.isLocal());
+        return workspaceManager.lockProject(urn, token, local);
     }
 
     @Override

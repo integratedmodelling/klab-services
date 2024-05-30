@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
@@ -39,8 +40,8 @@ public class ResourcesProviderController {
     private ServiceAuthorizationManager authenticationManager;
 
     /**
-     * Retrieve all the knowledge included in one or more projects. The return set contains all
-     * needed documnents with their versions, in order of dependency.
+     * Retrieve all the knowledge included in one or more projects. The return set contains all needed
+     * documnents with their versions, in order of dependency.
      *
      * @param projects
      * @param principal
@@ -48,46 +49,48 @@ public class ResourcesProviderController {
      */
     @GetMapping(ServicesAPI.RESOURCES.PROJECTS)
     public @ResponseBody List<ResourceSet> getProjects(@RequestParam Collection<String> projects,
-                                                 Principal principal) {
+                                                       Principal principal) {
         return resourcesServer.klabService().projects(projects,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.PROJECT)
     public @ResponseBody Project getProject(@PathVariable("projectName") String projectName,
-                                                Principal principal) {
+                                            Principal principal) {
         return resourcesServer.klabService().resolveProject(projectName,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.MODEL)
     public @ResponseBody ResourceSet getModel(@PathVariable("modelName") String modelName,
                                               Principal principal) {
-        return resourcesServer.klabService().model(modelName, authenticationManager.resolveScope(principal));
+        return resourcesServer.klabService().model(modelName, authenticationManager.resolveScope(principal,
+                Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_URN)
     public @ResponseBody ResourceSet resolve(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().resolve(urn, authenticationManager.resolveScope(principal));
+        return resourcesServer.klabService().resolve(urn, authenticationManager.resolveScope(principal,
+                Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_NAMESPACE_URN)
     public @ResponseBody KimNamespace resolveNamespace(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveNamespace(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_ONTOLOGY_URN)
     public @ResponseBody KimOntology resolveOntology(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveOntology(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN)
     public @ResponseBody KimObservationStrategyDocument resolveObservationStrategyDocument(@PathVariable(
             "urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveObservationStrategyDocument(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.LIST_WORKSPACES)
@@ -99,33 +102,33 @@ public class ResourcesProviderController {
     public @ResponseBody KActorsBehavior resolveBehavior(@PathVariable("urn") String urn,
                                                          Principal principal) {
         return resourcesServer.klabService().resolveBehavior(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_RESOURCE_URN)
     public @ResponseBody Resource resolveResource(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveResource(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_WORKSPACE_URN)
     public @ResponseBody Workspace resolveWorkspace(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveWorkspace(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_SERVICE_CALL)
     public @ResponseBody ResourceSet resolveServiceCall(@PathVariable("name") String name,
                                                         Principal principal) {
         return resourcesServer.klabService().resolveServiceCall(name,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOURCE_STATUS)
     public @ResponseBody ResourceStatus resourceStatus(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resourceStatus(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_OBSERVABLE)
@@ -154,13 +157,13 @@ public class ResourcesProviderController {
     public @ResponseBody KlabData contextualize(@RequestBody Resource contextualizedResource,
                                                 Principal principal) {
         return resourcesServer.klabService().contextualize(contextualizedResource,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.RESOLVE_DATAFLOW_URN)
     public @ResponseBody KdlDataflow resolveDataflow(@PathVariable("urn") String urn, Principal principal) {
         return resourcesServer.klabService().resolveDataflow(urn,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.GET_WORLDVIEW)
@@ -188,7 +191,7 @@ public class ResourcesProviderController {
     public @ResponseBody Project resolveProject(@PathVariable("projectName") String projectName,
                                                 Principal principal) {
         return resourcesServer.klabService().resolveProject(projectName,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
     @GetMapping(ServicesAPI.RESOURCES.QUERY_MODELS)
@@ -210,7 +213,8 @@ public class ResourcesProviderController {
 
     @GetMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
     public ResourcePrivileges getResourceRights(@PathVariable("urn") String urn, Principal principal) {
-        return resourcesServer.klabService().getRights(urn, authenticationManager.resolveScope(principal));
+        return resourcesServer.klabService().getRights(urn, authenticationManager.resolveScope(principal,
+                Scope.class));
     }
 
     @PutMapping(ServicesAPI.RESOURCES.RESOURCE_RIGHTS)
@@ -218,7 +222,7 @@ public class ResourcesProviderController {
                                      @RequestBody ResourcePrivileges resourcePrivileges,
                                      Principal principal) {
         return resourcesServer.klabService().setRights(urn, resourcePrivileges,
-                authenticationManager.resolveScope(principal));
+                authenticationManager.resolveScope(principal, Scope.class));
     }
 
 }

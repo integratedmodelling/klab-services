@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
+import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -9,7 +10,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.rest.ScopeReference;
 import org.integratedmodelling.klab.runtime.kactors.messages.RunBehavior;
@@ -27,19 +27,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The scope manager maintains service-side scopes that are generated through the orchestrating engine.
+ * The scope manager maintains service-side scopes that are generated through the orchestrating engine. When
+ * actors are requested, the necessary chain is created as needed. The main strategy for resource maintenance
+ * and session expiration is here.
  */
 public class ScopeManager {
 
     private final ReActorSystem actorSystem;
     KlabService service;
-    private Map<String, EngineScope> userScopes = Collections.synchronizedMap(new HashMap<>());
-
     /**
      * Every scope managed by this service. The relationship between scopes is managed through the scope
      * graph, using only the IDs.
      */
-    private Map<String, Scope> scopes = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, ServiceUserScope> scopes = Collections.synchronizedMap(new HashMap<>());
     /**
      * ScopeID->ScopeID means that the scope with the source ID is a child scope of the target, and all are in
      * the scopes map. Closing one scope should recursively close all the children and free every bit of data
@@ -48,21 +48,21 @@ public class ScopeManager {
     private Graph<String, DefaultEdge> scopeGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
     public ScopeManager(KlabService service) {
+
         this.service = service;
         /*
          * boot the actor system right away, so that we can call login() before boot().
          */
         this.actorSystem =
-                new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build())
-                        .initReActorSystem();
+                new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build()).initReActorSystem();
     }
 
-    public UserScope login(UserIdentity user) {
+    public ServiceUserScope login(UserIdentity user) {
 
-        EngineScope ret = userScopes.get(user.getUsername());
+        ServiceUserScope ret = scopes.get(user.getUsername());
         if (ret == null) {
 
-            ret = new EngineScope(user) {
+            ret = new ServiceUserScope(user) {
 
                 @Override
                 public void switchService(KlabService service) {
@@ -81,10 +81,12 @@ public class ScopeManager {
             };
 
             String agentName = user.getUsername();
-            KActorsBehavior.Ref agent = KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName, ret)).get());
+            // TODO move to lazy logics
+            KActorsBehavior.Ref agent = KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName,
+                    ret)).get());
             ret.setAgent(agent);
 
-            userScopes.put(user.getUsername(), ret);
+            scopes.put(user.getUsername(), ret);
 
             File userBehavior = new File(Configuration.INSTANCE.getDataPath() + File.separator + "user" +
                     ".kactors");
@@ -103,32 +105,63 @@ public class ScopeManager {
     }
 
     /**
-     * Logout a previously logged in scope. Based on the ID, this will match a scope at any level and
-     * release any resources held by that scope or any scope at a lower level.
+     * Logout a previously logged in scope. Based on the ID, this will match a scope at any level and release
+     * any resources held by that scope or any scope at a lower level.
      *
      * @param scopeId
      * @return true if the scope existed and was released.
      */
     public boolean logout(String scopeId) {
-        // TODO
+        // TODO kill the actor if it's there, that should release all resources
+        var scope = scopes.get(scopeId);
         return false;
     }
 
-    public ScopeReference createScope(Scope.Type scopeType, EngineAuthorization engineAuthorization) {
+    public ServiceUserScope createScope(EngineAuthorization engineAuthorization) {
 
-        /*
-        This may be the service scope if the service is local. Otherwise it should be a user scope
-        matching the logged in user, which we create on demand.
+        String[] path = engineAuthorization.getScopeId().split("\\/");
+        ServiceUserScope ret = null;
+
+        /**
+         * The three physical scope levels are user/session/context. Below that, scopes are "virtual"
+         * incarnations of the context scope with modified state and
+         * their hierarchy is handled internally by the {@link ContextScope} implementation.
          */
-        Scope userScope = engineAuthorization.getScope();
-        if (userScope == null) {
-            engineAuthorization.setScope(userScope = newUserScope(engineAuthorization));
+        ServiceUserScope scope = null;
+        StringBuilder scopeId = new StringBuilder();
+        for (int i = 0; i < 3; i++) {
+            scopeId.append((scopeId.isEmpty()) ? path[i] : ("/" + path[i]));
+            var currentScope = scopes.get(scopeId.toString());
+            if (currentScope == null) {
+                // create from the previous scope according to level
+                currentScope = switch (i) {
+                    case 0 -> login(createUserIdentity(engineAuthorization));
+                    case 1 -> null; // currentScope.runSession();
+                    case 2 -> null; // ((SessionScope)currentScope)....
+                    default -> null; // should exist but we keep the scope and ask it to specialize
+                };
+            }
+
+            scope = currentScope;
         }
 
-        return switch (scopeType) {
-            default -> null;
-        };
+        ret = scope;
+        ret.setLocal(engineAuthorization.isLocal());
 
+        return ret;
+    }
+
+    private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
+        UserIdentityImpl ret = new UserIdentityImpl();
+        ret.setUsername(engineAuthorization.getUsername());
+        ret.setEmailAddress(engineAuthorization.getIdentity().getEmail());
+        // TODO continue
+        return ret;
+    }
+
+
+    public <T extends Scope> T getOrCreateScope(String scopeId) {
+        return null;
     }
 
     public SessionScope newSessionScope(UserScope scope) {
@@ -141,5 +174,11 @@ public class ScopeManager {
 
     public UserScope newUserScope(EngineAuthorization engineAuthorization) {
         return null;
+    }
+
+    public void register(EngineAuthorization ret) {
+        if (ret.getScopeId() != null) {
+            scopes.getOrDefault(ret.getScopeId(), createScope(ret));
+        }
     }
 }

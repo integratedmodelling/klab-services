@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
@@ -28,7 +29,8 @@ public class KlabServiceController {
     @GetMapping(ServicesAPI.CAPABILITIES)
     public KlabService.ServiceCapabilities capabilities(Principal principal) {
         return instance.klabService().capabilities(principal == null ? null :
-                                                   authenticationManager.resolveScope(principal));
+                                                   authenticationManager.resolveScope(principal,
+                                                           Scope.class));
     }
 
     @GetMapping(ServicesAPI.STATUS)

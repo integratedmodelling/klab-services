@@ -99,7 +99,7 @@ public class KlabScopeController {
     @GetMapping(ServicesAPI.SCOPE.CREATE)
     public ScopeReference createScope(@PathVariable("scopeType") Scope.Type scopeType, Principal principal) {
         if (principal instanceof EngineAuthorization engineAuthorization) {
-            return authorizationManager.getScopeManager().createScope(scopeType, engineAuthorization);
+//            return authorizationManager.getScopeManager().createScope(scopeType, engineAuthorization);
         }
         return null;
     }

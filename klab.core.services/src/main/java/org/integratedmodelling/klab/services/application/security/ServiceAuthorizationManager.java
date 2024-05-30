@@ -221,53 +221,54 @@ public class ServiceAuthorizationManager {
                                     "about " +
                                     "%s.", hubId,
                             jwksVerifiers.keySet().toString());
-                    // Exception e = new JwksNotFoundException(msg);
-                    // Logging.INSTANCE.error(msg, e);
+                     Exception e = new KlabAuthorizationException(msg);
+                     Logging.INSTANCE.error(msg, e);
                     // throw e;
+                } else {
+
+                    JwtClaims claims = jwtVerifier.processToClaims(token);
+                    String username = claims.getSubject();
+                    List<String> groupStrings = claims.getStringListClaimValue(JWT_CLAIM_KEY_PERMISSIONS);
+                    List<String> roleStrings = claims.getStringListClaimValue(JWT_CLAIM_KEY_ROLES);
+
+                    // didn't throw an exception, so token is valid. Update the result and validate
+                    // claims. This is an engine-only entry point so the role is obvious.
+                    ret = new EngineAuthorization(hubId, username,
+                            Collections.unmodifiableList(filterRoles(roleStrings)));
+
+                    if (klabService.get().getServiceSecret().equals(token)) {
+                        ret.setTokenString(token);
+                    }
+
+                    /*
+                     * Audience (aud) - The "aud" (audience) claim identifies the recipients that
+                     * the JWT is intended for. Each principal intended to process the JWT must
+                     * identify itself with a value in the audience claim. If the principal
+                     * processing the claim does not identify itself with a value in the aud claim
+                     * // when this claim is present, then the JWT must be rejected.
+                     */
+                    if (!claims.getAudience().contains(ENGINE_AUDIENCE)) {
+
+                    }
+
+                    /*
+                     * Expiration time (exp) - The "exp" (expiration time) claim identifies the
+                     * expiration time on or after which the JWT must not be accepted for
+                     * processing. The value should be in NumericDate[10][11] format.
+                     */
+                    NumericDate expirationTime = claims.getExpirationTime();
+                    long now = System.currentTimeMillis();
+                    if (expirationTime.isBefore(NumericDate.fromMilliseconds(now - ALLOWED_CLOCK_SKEW_MS))) {
+                        throw new KlabAuthorizationException("user " + username + " is using an expired " +
+                                "authorization");
+                    }
+
+                    long issuedAtUtcMs = claims.getIssuedAt().getValueInMillis();
+                    Instant issuedAt = Instant.ofEpochMilli(issuedAtUtcMs);
+                    ret.setIssuedAt(issuedAt);
+                    //            result.getGroups().addAll(filterGroups(groupStrings));
+                    ret.setAuthenticated(true);
                 }
-
-                JwtClaims claims = jwtVerifier.processToClaims(token);
-                String username = claims.getSubject();
-                List<String> groupStrings = claims.getStringListClaimValue(JWT_CLAIM_KEY_PERMISSIONS);
-                List<String> roleStrings = claims.getStringListClaimValue(JWT_CLAIM_KEY_ROLES);
-
-                // didn't throw an exception, so token is valid. Update the result and validate
-                // claims. This is an engine-only entry point so the role is obvious.
-                ret = new EngineAuthorization(hubId, username,
-                        Collections.unmodifiableList(filterRoles(roleStrings)));
-
-                if (klabService.get().getServiceSecret().equals(token)) {
-                    ret.setTokenString(token);
-                }
-
-                /*
-                 * Audience (aud) - The "aud" (audience) claim identifies the recipients that
-                 * the JWT is intended for. Each principal intended to process the JWT must
-                 * identify itself with a value in the audience claim. If the principal
-                 * processing the claim does not identify itself with a value in the aud claim
-                 * // when this claim is present, then the JWT must be rejected.
-                 */
-                if (!claims.getAudience().contains(ENGINE_AUDIENCE)) {
-
-                }
-
-                /*
-                 * Expiration time (exp) - The "exp" (expiration time) claim identifies the
-                 * expiration time on or after which the JWT must not be accepted for
-                 * processing. The value should be in NumericDate[10][11] format.
-                 */
-                NumericDate expirationTime = claims.getExpirationTime();
-                long now = System.currentTimeMillis();
-                if (expirationTime.isBefore(NumericDate.fromMilliseconds(now - ALLOWED_CLOCK_SKEW_MS))) {
-                    throw new KlabAuthorizationException("user " + username + " is using an expired " +
-                            "authorization");
-                }
-
-                long issuedAtUtcMs = claims.getIssuedAt().getValueInMillis();
-                Instant issuedAt = Instant.ofEpochMilli(issuedAtUtcMs);
-                ret.setIssuedAt(issuedAt);
-                //            result.getGroups().addAll(filterGroups(groupStrings));
-                ret.setAuthenticated(true);
 
             } catch (MalformedClaimException | InvalidJwtException e) {
                 // TODO see if we should reauthenticate and if so, try that before throwing an
@@ -290,20 +291,25 @@ public class ServiceAuthorizationManager {
             /*
             anonymous user case also intercepts JWT token failure
              */
-            ret = EngineAuthorization.anonymous(klabService.get().serviceScope());
-
+            ret = new EngineAuthorization("nohub", "anonymous", null);
         }
 
         if (privilegedLocalService) {
             // any user with local authority (including anonymous) gets all privileges
+            ret.setLocal(true);
             ret.setRoles(EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
                     Role.ROLE_DATA_MANAGER));
         }
 
         /*
-        this goes in no matter what. Will be null when sent from clients in service scope
+        this goes in no matter what. Will be null only when sent from clients in service scope
          */
         ret.setScopeId(observerId);
+
+        /**
+         * Build any scopes we need for this authorization
+         */
+        getScopeManager().register(ret);
 
         return ret;
     }
@@ -327,21 +333,28 @@ public class ServiceAuthorizationManager {
         return ret;
     }
 
-    @Deprecated // use the scopeId and the scope manager
-    public Scope resolveScope(Principal principal) {
-        if (principal instanceof EngineAuthorization authorization) {
-            return authorization.getScope();
-        }
-        return null;
-    }
+//    @Deprecated // use the scopeId and the scope manager
+//    public Scope resolveScope(Principal principal) {
+//        if (principal instanceof EngineAuthorization authorization) {
+//            return authorization.getScope();
+//        }
+//        return null;
+//    }
 
     public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass) {
-        if (principal instanceof EngineAuthorization authorization
-                && authorization.getScope() != null
-                && scopeClass.isAssignableFrom(authorization.getScope().getClass())) {
-            return (T) authorization.getScope();
+
+        T ret = null;
+        if (principal instanceof EngineAuthorization authorization) {
+                if (authorization.getScopeId() != null) {
+                    ret = getScopeManager().getOrCreateScope(authorization.getScopeId());
+                } else {
+
+                }
+                if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+                    return (T) ret;
+                }
         }
-        return null;
+        return ret;
     }
 
     private Set<Group> filterGroups(List<String> groupStrings) {

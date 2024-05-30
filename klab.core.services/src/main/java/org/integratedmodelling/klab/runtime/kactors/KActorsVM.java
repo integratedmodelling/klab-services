@@ -619,7 +619,7 @@ public class KActorsVM implements VM {
          * instance; it will be used as listener ID for the ComponentFire message sent when the
          * child fires.
          */
-        if (code.getActions().size() > 0) {
+        if (!code.getActions().isEmpty()) {
 
             MatchActions actions = new MatchActions(behavior, scope);
             for (Triple<KActorsValue, KActorsStatement, String> adesc : code.getActions()) {

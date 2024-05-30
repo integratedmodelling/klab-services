@@ -24,7 +24,13 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 
-public class EngineContextScope extends EngineSessionScope implements ContextScope {
+/**
+ * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service through the
+ * services chosen by the session scope. Uses agents as needed..
+ * <p>
+ * Maintained by the {@link ScopeManager}
+ */
+public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
 
     private Identity observer;
     private DirectObservation contextObservation;
@@ -36,10 +42,10 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     private Map<String, Observable> namedCatalog = new HashMap<>();
     private URL url;
 
-    protected EngineContextScope parent;
+    protected ServiceContextScope parent;
     private Dataflow<Observation> dataflow = Dataflow.empty(Observation.class);
 
-    EngineContextScope(EngineSessionScope parent) {
+    ServiceContextScope(ServiceSessionScope parent) {
         super(parent);
         this.setId(parent.getIdentity().getId() + "/c_" + org.integratedmodelling.klab.api.utils.Utils.Names.shortUUID());
         this.observer = parent.getUser();
@@ -53,7 +59,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
-    private EngineContextScope(EngineContextScope parent) {
+    private ServiceContextScope(ServiceContextScope parent) {
         super(parent);
         this.parent = parent;
         this.observer = parent.observer;
@@ -73,8 +79,8 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public EngineContextScope withScenarios(String... scenarios) {
-        EngineContextScope ret = new EngineContextScope(this);
+    public ServiceContextScope withScenarios(String... scenarios) {
+        ServiceContextScope ret = new ServiceContextScope(this);
         if (scenarios == null) {
             ret.resolutionScenarios = null;
         }
@@ -86,8 +92,8 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public EngineContextScope withObserver(Identity observer) {
-        EngineContextScope ret = new EngineContextScope(this);
+    public ServiceContextScope withObserver(Identity observer) {
+        ServiceContextScope ret = new ServiceContextScope(this);
         ret.observer = observer;
         ret.catalog = new HashMap<>(this.catalog);
         return ret;
@@ -206,11 +212,12 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
     }
 
     @Override
-    public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String, String> localNames) {
+    public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale,
+                                                  Map<String, String> localNames) {
         if (scale == null && localNames.isEmpty()) {
             return this;
         }
-        EngineContextScope ret = new EngineContextScope(this);
+        ServiceContextScope ret = new ServiceContextScope(this);
         ret.contextObservation = contextObservation;
         if (scale != null) {
             ret.geometry = scale;
@@ -237,7 +244,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
             return this;
         }
 
-        EngineContextScope ret = new EngineContextScope(this);
+        ServiceContextScope ret = new ServiceContextScope(this);
         ret.geometry = Scale.create(geometry);
         return ret;
     }
@@ -278,7 +285,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     @Override
     public ContextScope within(DirectObservation contextObservation) {
-        EngineContextScope ret = new EngineContextScope(this);
+        ServiceContextScope ret = new ServiceContextScope(this);
         ret.contextObservation = contextObservation;
         ret.catalog = new HashMap<>(this.catalog);
         return ret;
@@ -286,7 +293,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     @Override
     public ContextScope with(Concept abstractTrait, Concept concreteTrait) {
-        EngineContextScope ret = new EngineContextScope(this);
+        ServiceContextScope ret = new ServiceContextScope(this);
 
         // TODO
 
@@ -295,7 +302,7 @@ public class EngineContextScope extends EngineSessionScope implements ContextSco
 
     @Override
     public ContextScope withResolutionNamespace(String namespace) {
-        EngineContextScope ret = new EngineContextScope(this);
+        ServiceContextScope ret = new ServiceContextScope(this);
         ret.resolutionNamespace = namespace;
         return ret;
 

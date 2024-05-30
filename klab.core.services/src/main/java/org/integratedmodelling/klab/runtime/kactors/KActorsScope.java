@@ -224,7 +224,6 @@ public class KActorsScope implements VM.BehaviorScope {
 	 * Get a child scope for this action, which will create a panel viewscope if the
 	 * action has a view.
 	 * 
-	 * @param appId
 	 * @param action
 	 * @return
 	 */
@@ -237,8 +236,7 @@ public class KActorsScope implements VM.BehaviorScope {
 	/**
 	 * Copy of scope with specialized variable values in frame table.
 	 * 
-	 * @param variable
-	 * @param value
+	 * @param variables
 	 * @return
 	 */
 	public KActorsScope withValues(Map<String, Object> variables) {
