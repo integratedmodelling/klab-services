@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.scopes;
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -55,6 +56,9 @@ public class ScopeManager {
          */
         this.actorSystem =
                 new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build()).initReActorSystem();
+
+        Logging.INSTANCE.info("Actor system booted");
+
     }
 
     public ServiceUserScope login(UserIdentity user) {
