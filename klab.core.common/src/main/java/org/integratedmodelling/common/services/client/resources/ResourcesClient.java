@@ -227,20 +227,20 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
-                                     String lockingAuthorization) {
+                                     Scope scope) {
         return null;
     }
 
     @Override
     public List<ResourceSet> createDocument(String projectName, String documentUrn,
                                             ProjectStorage.ResourceType documentType,
-                                            String lockingAuthorization) {
+                                            Scope scope) {
         return List.of();
     }
 
     @Override
     public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
-                                            String content, String lockingAuthorization) {
+                                            String content, Scope scope) {
         return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_DOCUMENT, content,
                 ResourceSet.class, "projectName", projectName, "documentType", documentType);
     }
@@ -278,12 +278,12 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
-                                            String lockingAuthorization) {
+                                            Scope scope) {
         return null;
     }
 
     @Override
-    public List<ResourceSet> deleteProject(String projectName, String lockingAuthorization) {
+    public List<ResourceSet> deleteProject(String projectName, Scope scope) {
         return null;
     }
 

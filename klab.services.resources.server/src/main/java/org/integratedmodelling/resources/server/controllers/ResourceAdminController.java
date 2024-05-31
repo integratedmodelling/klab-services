@@ -69,7 +69,9 @@ public class ResourceAdminController {
                                                            @RequestBody Metadata metadata,
                                                            Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            return admin.updateProject(projectName, manifest, metadata, auth.getToken());
+            return admin.updateProject(projectName, manifest, metadata,
+                    authenticationManager.resolveScope(principal,
+                    Scope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -79,7 +81,9 @@ public class ResourceAdminController {
                                             @PathVariable("documentType") ProjectStorage.ResourceType documentType,
                                             @PathVariable("urn") String urn, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            return admin.createDocument(projectName, urn, documentType, auth.getToken());
+            return admin.createDocument(projectName, urn, documentType,
+                    authenticationManager.resolveScope(principal,
+                    Scope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -89,7 +93,9 @@ public class ResourceAdminController {
                                             @PathVariable("documentType") ProjectStorage.ResourceType documentType,
                                             @RequestBody String content, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            return admin.updateDocument(projectName, documentType, content, auth.getToken());
+            return admin.updateDocument(projectName, documentType, content,
+                    authenticationManager.resolveScope(principal,
+                    Scope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -132,7 +138,8 @@ public class ResourceAdminController {
     public List<ResourceSet> removeProject(@RequestParam("projectName") String projectName,
                                            Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            admin.deleteProject(projectName, auth.getToken());
+            admin.deleteProject(projectName, authenticationManager.resolveScope(principal,
+                    Scope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }

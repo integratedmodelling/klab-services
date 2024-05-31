@@ -221,8 +221,8 @@ public class ServiceAuthorizationManager {
                                     "about " +
                                     "%s.", hubId,
                             jwksVerifiers.keySet().toString());
-                     Exception e = new KlabAuthorizationException(msg);
-                     Logging.INSTANCE.error(msg, e);
+                    Exception e = new KlabAuthorizationException(msg);
+                    Logging.INSTANCE.error(msg, e);
                     // throw e;
                 } else {
 
@@ -299,6 +299,7 @@ public class ServiceAuthorizationManager {
             ret.setLocal(true);
             ret.setRoles(EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
                     Role.ROLE_DATA_MANAGER));
+            ret.setAuthenticated(true);
         }
 
         /*
@@ -309,7 +310,7 @@ public class ServiceAuthorizationManager {
         /**
          * Build any scopes we need for this authorization
          */
-        getScopeManager().register(ret);
+        //        getScopeManager().register(ret);
 
         return ret;
     }
@@ -333,26 +334,18 @@ public class ServiceAuthorizationManager {
         return ret;
     }
 
-//    @Deprecated // use the scopeId and the scope manager
-//    public Scope resolveScope(Principal principal) {
-//        if (principal instanceof EngineAuthorization authorization) {
-//            return authorization.getScope();
-//        }
-//        return null;
-//    }
-
     public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass) {
 
         T ret = null;
         if (principal instanceof EngineAuthorization authorization) {
-                if (authorization.getScopeId() != null) {
-                    ret = getScopeManager().getOrCreateScope(authorization.getScopeId());
-                } else {
-
-                }
-                if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
-                    return (T) ret;
-                }
+            if (authorization.getScopeId() != null) {
+                ret = getScopeManager().getOrCreateScope(authorization.getScopeId());
+            } else if (klabService.get() != null && scopeClass.isAssignableFrom(klabService.get().serviceScope().getClass())) {
+                ret = (T) klabService.get().serviceScope();
+            }
+            if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+                return (T) ret;
+            }
         }
         return ret;
     }

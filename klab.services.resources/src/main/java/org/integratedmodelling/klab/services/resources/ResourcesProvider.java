@@ -336,7 +336,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public ResourceSet updateProject(String projectName, Manifest manifest, Metadata metadata,
-                                     String lockingAuthorization) {
+                                     Scope scope) {
         return null;
     }
 
@@ -344,19 +344,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public List<ResourceSet> createDocument(String projectName, String documentUrn,
                                             ProjectStorage.ResourceType documentType,
-                                            String lockingAuthorization) {
+                                            Scope scope) {
         return this.workspaceManager.createDocument(projectName, documentType, documentUrn,
-                lockingAuthorization);
+                scope);
     }
 
     @Override
     public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
-                                            String content, String lockingAuthorization) {
-        return this.workspaceManager.updateDocument(projectName, documentType, content, lockingAuthorization);
+                                            String content, Scope scope) {
+        return this.workspaceManager.updateDocument(projectName, documentType, content, scope);
     }
 
     @Override
-    public List<ResourceSet> deleteProject(String projectName, String lockingAuthorization) {
+    public List<ResourceSet> deleteProject(String projectName, Scope scope) {
 
         updateLock.writeLock().lock();
         //
@@ -393,7 +393,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public List<ResourceSet> deleteWorkspace(String workspaceName) {
         Workspace workspace = workspaceManager.getWorkspace(workspaceName);
         for (Project project : workspace.getProjects()) {
-            deleteProject(project.getUrn(), scope.getIdentity().getId());
+            deleteProject(project.getUrn(), scope);
         }
         //        try {
         //            updateLock.writeLock().lock();
@@ -663,7 +663,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
-                                            String lockingAuthorization) {
+                                            Scope scope) {
         return null;
     }
 

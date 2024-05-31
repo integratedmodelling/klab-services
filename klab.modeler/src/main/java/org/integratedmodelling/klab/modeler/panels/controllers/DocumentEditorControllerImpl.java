@@ -28,17 +28,17 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
 
         if (service instanceof ResourcesService.Admin admin) {
 
-            var authToken = getController().engine().serviceScope().getIdentity().getId();
+            var scope = getController().engine().serviceScope();
             var changes = switch (getPayload()) {
                 case KimOntology ontology ->
-                        admin.updateDocument(ontology.getProjectName(), ProjectStorage.ResourceType.ONTOLOGY, newContents, authToken);
+                        admin.updateDocument(ontology.getProjectName(), ProjectStorage.ResourceType.ONTOLOGY, newContents, scope);
                 case KimNamespace namespace ->
-                        admin.updateDocument(namespace.getProjectName(), ProjectStorage.ResourceType.MODEL_NAMESPACE, newContents, authToken);
+                        admin.updateDocument(namespace.getProjectName(), ProjectStorage.ResourceType.MODEL_NAMESPACE, newContents, scope);
                 case KimObservationStrategyDocument strategyDocument ->
                         admin.updateDocument(strategyDocument.getProjectName(), ProjectStorage.ResourceType.STRATEGY, newContents,
-                                authToken);
+                                scope);
                 case KActorsBehavior behavior ->
-                        admin.updateDocument(behavior.getProjectName(), ProjectStorage.ResourceType.BEHAVIOR, newContents, authToken);
+                        admin.updateDocument(behavior.getProjectName(), ProjectStorage.ResourceType.BEHAVIOR, newContents, scope);
                 default -> Collections.emptyList();
             };
 

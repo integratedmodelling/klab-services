@@ -159,6 +159,7 @@ public class ScopeManager {
         UserIdentityImpl ret = new UserIdentityImpl();
         ret.setUsername(engineAuthorization.getUsername());
         ret.setEmailAddress(engineAuthorization.getIdentity().getEmail());
+        ret.setId(engineAuthorization.getToken());
         // TODO continue
         return ret;
     }

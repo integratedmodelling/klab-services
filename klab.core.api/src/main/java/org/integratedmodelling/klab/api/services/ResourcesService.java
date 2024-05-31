@@ -354,6 +354,7 @@ public interface ResourcesService extends KlabService {
          *                            branch name after a # sign) or a http URL from another resource
          *                            manager.
          * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
+         * @param scope a scope that must have previously locked the project
          * @return true if operation succeeded and anything was done (false if project existed and wasn't
          * overwritten)
          */
@@ -376,10 +377,11 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param manifest
          * @param metadata
+         * @param scope a scope that must have previously locked the project
          * @return the updated project with the new metadata and manifest.
          */
         ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
-                                  String lockingAuthorization);
+                                  Scope scope);
 
         /**
          * Project must exist; namespace must not. Namespace content is parsed and the results are returned.
@@ -387,11 +389,12 @@ public interface ResourcesService extends KlabService {
          * exception (TODO).
          *
          * @param projectName
+         * @param scope a scope that must have previously locked the project
          * @return
          */
         List<ResourceSet> createDocument(String projectName, String documentUrn,
                                          ProjectStorage.ResourceType documentType,
-                                         String lockingAuthorization);
+                                         Scope scope);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -402,12 +405,12 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param documentType
          * @param content
-         * @param lockingAuthorization
+         * @param scope a scope that must have previously locked the project
          * @return a {@link ResourceSet} per affected namespace
          */
         List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
                                          String content,
-                                         String lockingAuthorization);
+                                         Scope scope);
 
         /**
          * Apply the passed operation to the remote repository associated with a project and return whatever
@@ -456,14 +459,14 @@ public interface ResourcesService extends KlabService {
          * @param lockingAuthorization
          * @return
          */
-        List<ResourceSet> deleteDocument(String projectName, String assetUrn, String lockingAuthorization);
+        List<ResourceSet> deleteDocument(String projectName, String assetUrn, Scope scope);
 
         /**
          * @param projectName
          * @param lockingAuthorization
          * @return true if operation was carried out
          */
-        List<ResourceSet> deleteProject(String projectName, String lockingAuthorization);
+        List<ResourceSet> deleteProject(String projectName, Scope scope);
 
         /**
          * Remove an entire workspace and all the projects and resources in it.

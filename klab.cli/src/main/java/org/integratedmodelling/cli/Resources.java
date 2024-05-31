@@ -544,7 +544,7 @@ public class Resources {
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
                     ((ResourcesService.Admin) service).deleteProject(project,
-                            KlabCLI.INSTANCE.engine().serviceScope().getIdentity().getId());
+                            KlabCLI.INSTANCE.engine().serviceScope());
                 }
             }
         }
