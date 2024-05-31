@@ -134,8 +134,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          *     Observation from define (can be inline, a URN#ID, other)
          *          If adding==true, any existing context is preserved and added to
          *          If adding==false, a new context is created and any previous goes out of focus
-         *      Observation from context tree
+         *     Observation from context tree
          *          Just sets the target for the next observations
+         *
+         *     ALL can be either an object or a URN or DOI from inside or outside
          *
          * Admitted w/o a current context or focal scale
          *
