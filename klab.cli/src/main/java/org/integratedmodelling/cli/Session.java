@@ -41,10 +41,10 @@ public class Session {
                 name = Utils.Names.shortUUID();
             }
 
-            if (KlabCLI.INSTANCE.modeler().session(name) != null) {
+            if (KlabCLI.INSTANCE.modeler().session(name, false) != null) {
                 out.println(Ansi.AUTO.string("Session @|red " + name + "|@ already exists!"));
             } else {
-                SessionScope session = KlabCLI.INSTANCE.modeler().session(name);
+                SessionScope session = KlabCLI.INSTANCE.modeler().session(name, true);
                 out.println(Ansi.AUTO.string("Session @|green " + session.getName() + "|@ created and " +
                         "selected."));
             }
@@ -67,7 +67,7 @@ public class Session {
 
             PrintWriter out = commandSpec.commandLine().getOut();
 
-            SessionScope session = KlabCLI.INSTANCE.modeler().session(name);
+            SessionScope session = KlabCLI.INSTANCE.modeler().session(name, false);
             if (session == null) {
                 out.println(Ansi.AUTO.string("Session @|red " + name + "|@ does not exist!"));
             } else {

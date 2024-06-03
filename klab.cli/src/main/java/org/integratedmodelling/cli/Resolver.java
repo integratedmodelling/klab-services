@@ -82,7 +82,7 @@ public class Resolver {
             PrintWriter err = commandSpec.commandLine().getErr();
 
             ContextScope ctx = context == null ? KlabCLI.INSTANCE.modeler().currentContext() :
-                               KlabCLI.INSTANCE.modeler().context(context);
+                               KlabCLI.INSTANCE.modeler().context(context, true);
 
             if (ctx == null) {
                 out.println(Ansi.AUTO.string("No context for the observation! Create a context or choose among the " +
@@ -96,14 +96,14 @@ public class Resolver {
 
                 var urn = Utils.Strings.join(observables, " ");
                 var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
-                this.knowledge = resolver.resolveKnowledge(urn, Resolvable.class, ctx);
+//                this.knowledge = null; // resolver.resolveKnowledge(urn, Resolvable.class, ctx);
+//
+//                if (knowledge == null) {
+//                    err.println("URN " + urn + " does not resolve to any type of knowledge");
+//                    return;
+//                }
 
-                if (knowledge == null) {
-                    err.println("URN " + urn + " does not resolve to any type of knowledge");
-                    return;
-                }
-
-                this.resolution = resolver.resolve(knowledge, ctx);
+                this.resolution = resolver.resolve(urn, ctx);
 //                this.push(resolution);
 
                 out.println(Ansi.AUTO.string("Resolution of @|yellow " + resolution.getResolvable() + "|@ terminated " +
@@ -148,7 +148,7 @@ public class Resolver {
 
                 ContextScope ctx = context == null
                         ? KlabCLI.INSTANCE.modeler().currentContext()
-                        : KlabCLI.INSTANCE.modeler().context(context);
+                        : KlabCLI.INSTANCE.modeler().context(context, true);
 
                 PrintWriter out = commandSpec.commandLine().getOut();
                 PrintWriter err = commandSpec.commandLine().getErr();
@@ -186,7 +186,7 @@ public class Resolver {
 
                 ContextScope ctx = context == null
                         ? KlabCLI.INSTANCE.modeler().currentContext()
-                        : KlabCLI.INSTANCE.modeler().context(context);
+                        : KlabCLI.INSTANCE.modeler().context(context, true);
 
 //                ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
 

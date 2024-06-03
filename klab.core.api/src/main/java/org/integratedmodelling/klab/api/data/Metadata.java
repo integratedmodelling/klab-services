@@ -353,6 +353,8 @@ public interface Metadata extends Parameters<String> {
      * The Constant KLAB_OPACITY.
      */
     public static final String KLAB_OPACITY = "klab:opacity";
+    String KLAB_SERVICE_ID = "klab:service.id";
+    String KLAB_SERVICE_URL = "klab:service.url";
 
     @SuppressWarnings("unchecked")
     public static Metadata create(Object... o) {

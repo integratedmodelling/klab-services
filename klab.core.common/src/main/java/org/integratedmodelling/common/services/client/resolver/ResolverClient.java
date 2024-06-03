@@ -17,12 +17,16 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -51,15 +55,41 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     @Override
-    public Resolution resolve(Resolvable resolvable, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    public Resolution resolve(String resolvableUrn, ContextScope scope) {
 
-    @Override
-    public <T extends Resolvable> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        ResolutionRequest request = new ResolutionRequest();
+        if (resolvableUrn.contains("://")) {
+            /**
+             * Split the URN from the service. To avoid issues we just look for the {urn} part in the
+             * constant and decompile it from URL encoding.
+             */
+            String urnPart = ServicesAPI.RESOURCES.RESOLVE_URN.replace(ServicesAPI.URN_PARAMETER, "");
+            int callPos = resolvableUrn.indexOf(urnPart);
+            if (callPos <= 0) {
+                scope.error("Resolver client: malformed resolvable URL: " + resolvableUrn);
+                return null;
+            }
+            String host = resolvableUrn.substring(0, callPos);
+            callPos += urnPart.length() + 1;
+            String urn = Utils.Escape.fromURL(resolvableUrn.substring(callPos));
+
+            try {
+                request.setServiceUrl(new URI(host).toURL());
+            } catch (Throwable e) {
+                scope.error(e);
+                return null;
+            }
+            request.setUrn(urn);
+        } else {
+            request.setUrn(resolvableUrn);
+        }
+
+        /**
+         * TODO add all contingent info to rebuild the context beyond the root context: scenarios, observer,
+         *  metadata and anything remaining.
+         */
+
+        return client.post(ServicesAPI.RESOLVER.RESOLVE_KNOWLEDGE, request, Resolution.class);
     }
 
     @Override

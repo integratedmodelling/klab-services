@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -30,12 +31,12 @@ import org.jgrapht.graph.DefaultEdge;
 import com.google.common.collect.Sets;
 
 /**
- * The resolution is the result of {@link Resolver#resolve(Resolvable, ContextScope)}. It contains the resolution
- * strategy for the top-level observable, resolved by zero or more models that are connected to all their dependencies
- * in a graph. In the graph, each link reports the portion of the context covered by the incoming model (possibly
- * partial), the dependency observable resolved, and the type of resolution (direct or deferred to further observation
- * with later merging). Deferred resolutions will need further resolution after the dataflow has created the deferring
- * observations.
+ * The resolution is the result of {@link Resolver#resolve(Resolvable, ContextScope)}. It contains the
+ * resolution strategy for the top-level observable, resolved by zero or more models that are connected to all
+ * their dependencies in a graph. In the graph, each link reports the portion of the context covered by the
+ * incoming model (possibly partial), the dependency observable resolved, and the type of resolution (direct
+ * or deferred to further observation with later merging). Deferred resolutions will need further resolution
+ * after the dataflow has created the deferring observations.
  *
  * @author Ferd
  */
@@ -51,6 +52,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
     private DirectObservation resolutionContext;
 
     private boolean empty;
+    private List<Notification> notifications = new ArrayList<>();
 
     class ResolutionEdge extends DefaultEdge {
 
@@ -90,15 +92,14 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         }
 
         public String toString() {
-            return observable + "\n" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(this.type.name().toLowerCase()) + " ("
-                    + NumberFormat.getPercentInstance().format(coverage.getCoverage()) + ")";
+            return observable + "\n" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(this.type.name().toLowerCase()) + " (" + NumberFormat.getPercentInstance().format(coverage.getCoverage()) + ")";
         }
 
     }
 
     /**
-     * Create a root resolution graph for the passed knowledge, pre-loading whatever has been already resolved in the
-     * passed scope.
+     * Create a root resolution graph for the passed knowledge, pre-loading whatever has been already resolved
+     * in the passed scope.
      *
      * @param root
      * @param scope
@@ -132,8 +133,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
     }
 
     /**
-     * Merge in a successful model resolution with its original observable and coverage. Its root models become
-     * connected to the parent model passed, which is not part of the passed graph.
+     * Merge in a successful model resolution with its original observable and coverage. Its root models
+     * become connected to the parent model passed, which is not part of the passed graph.
      *
      * @param parentModel
      * @param child
@@ -162,8 +163,8 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         for (Pair<Resolvable, Coverage> resolved : child.resolution) {
             addVertex(resolved.getFirst());
             if (parentModel != null) {
-                addEdge(resolved.getFirst(), parentModel, new ResolutionEdge(child.resolvable, child.coverage,
-                        resolutionType));
+                addEdge(resolved.getFirst(), parentModel, new ResolutionEdge(child.resolvable,
+                        child.coverage, resolutionType));
             } else {
                 this.resolution.add(Pair.of(resolved.getFirst(), resolved.getSecond()));
             }
@@ -195,8 +196,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
     public String toString() {
         StringBuffer ret = new StringBuffer(512);
         for (Pair<Resolvable, Coverage> resolved : resolution) {
-            ret.append(resolved.getFirst() + " [" + NumberFormat.getPercentInstance().format(resolved.getSecond().getCoverage())
-                    + "]\n");
+            ret.append(resolved.getFirst() + " [" + NumberFormat.getPercentInstance().format(resolved.getSecond().getCoverage()) + "]\n");
             ret.append(printResolution(resolved.getFirst(), 3));
         }
         return ret.toString();
@@ -206,9 +206,7 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         StringBuffer ret = new StringBuffer(512);
         for (ResolutionType type : ResolutionType.values()) {
             for (Triple<Resolvable, Resolvable, Coverage> resolved : getResolving(first, type)) {
-                ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": "
-                        + Utils.Strings.capitalize(type.name().toLowerCase()) + ", "
-                        + NumberFormat.getPercentInstance().format(resolved.getThird().getCoverage()) + "]\n");
+                ret.append(org.integratedmodelling.common.utils.Utils.Strings.spaces(i) + resolved.getFirst() + " [" + resolved.getSecond() + ": " + Utils.Strings.capitalize(type.name().toLowerCase()) + ", " + NumberFormat.getPercentInstance().format(resolved.getThird().getCoverage()) + "]\n");
                 String child = printResolution(resolved.getFirst(), i + 3);
                 if (!child.isBlank()) {
                     ret.append(child);
@@ -219,8 +217,9 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
     }
 
     /**
-     * Call when starting to resolve an observable. If it's already being resolved, true will return and resolution
-     * should not take place. Otherwise it will be added to the resolving set for downstream resolutions.
+     * Call when starting to resolve an observable. If it's already being resolved, true will return and
+     * resolution should not take place. Otherwise it will be added to the resolving set for downstream
+     * resolutions.
      *
      * @param observable
      * @return
@@ -239,7 +238,13 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
     }
 
     @Override
-    public List<Triple<Resolvable, Resolvable, Coverage>> getResolving(Resolvable target, ResolutionType strategy) {
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    @Override
+    public List<Triple<Resolvable, Resolvable, Coverage>> getResolving(Resolvable target,
+                                                                       ResolutionType strategy) {
         List<Triple<Resolvable, Resolvable, Coverage>> ret = new ArrayList<>();
         for (ResolutionEdge edge : incomingEdgesOf(target)) {
             if (edge.type == strategy) {
@@ -292,4 +297,43 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
 
     }
 
+    public void setResolvable(Resolvable resolvable) {
+        this.resolvable = resolvable;
+    }
+
+    public void setCoverage(Coverage coverage) {
+        this.coverage = coverage;
+    }
+
+    public Set<Observable> getResolving() {
+        return resolving;
+    }
+
+    public void setResolving(Set<Observable> resolving) {
+        this.resolving = resolving;
+    }
+
+    public Map<Observable, Collection<Resolvable>> getResolved() {
+        return resolved;
+    }
+
+    public void setResolved(Map<Observable, Collection<Resolvable>> resolved) {
+        this.resolved = resolved;
+    }
+
+    public void setResolution(List<Pair<Resolvable, Coverage>> resolution) {
+        this.resolution = resolution;
+    }
+
+    public void setResolutionContext(DirectObservation resolutionContext) {
+        this.resolutionContext = resolutionContext;
+    }
+
+    public void setEmpty(boolean empty) {
+        this.empty = empty;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+        this.notifications = notifications;
+    }
 }

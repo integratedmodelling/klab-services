@@ -127,10 +127,10 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     /**
      * Make an observation. Must be called on a context scope, possibly focused on a given root observation
      * using {@link #within(DirectObservation)}}. If no root observation is present in the scope, the
-     * arguments must fully specify a subject, either through an
-     * {@link org.integratedmodelling.klab.api.knowledge.Instance} or a URN specifying a subject observable +
-     * a scale. If the parent session was focused on a scale, this is available through {@link #getScale()}
-     * and the context can decide to use it as a scale for the root subject.
+     * arguments must fully specify a subject, either through a direct definition from a passed object or a
+     * URN specifying a definition or a subject observation. If the observer is focused on a scale, this is
+     * available through {@link #getScale()} and the context can decide to use it as a scale for the root
+     * observation.
      * <p>
      * Observables will be routinely specified through URNs, which will be validated as any observable object
      * - concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a
@@ -146,9 +146,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * If the observation is at root level, or connecting two root-level subject through a relationship, the
      * overall geometry of the context will be automatically adjusted.
      *
-     * @param observables either a {@link Observable} (with a {@link Geometry} if root subject) or a
-     *                    {@link org.integratedmodelling.klab.api.knowledge.Instance} for a pre-specified root
-     *                    subject.
+     * @param observables URN(s) specifying resolvables, or direct objects that can be resolved and observed.
      * @return a future for the observation being contextualized.
      */
     Future<Observation> observe(Object... observables);

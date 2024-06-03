@@ -35,24 +35,30 @@ public interface Resolver extends KlabService {
      */
     Capabilities capabilities(Scope scope);
 
-    /**
-     * The resolver holds the translation of the lexical {@link KlabAsset}s into resolvable {@link Knowledge},
-     * using the {@link ResourcesService} in the scope to build them when necessary. This method resolves a
-     * {@link Model} or a {@link org.integratedmodelling.klab.api.lang.kim.KimInstance} from their syntactic
-     * peers in resources, efficiently loading and validating the closure of all other knowledge needed to
-     * understand it.
-     * <p>
-     * The search for models (by scale and semantics) should happen in the resource servers with help from the
-     * reasoner, yielding a {@link ResourceSet} from
-     * {@link ResourcesService#queryModels(Observable, ContextScope)}}. Models that are accessible to the
-     * Resolvers but invalid should generate an info message. Should cache the build {@link Model}s and
-     * refresh the cache based on version matching.
-     *
-     * @param urn
-     * @param scope
-     * @return
-     */
-    <T extends Resolvable> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope);
+    //    /**
+    //     * The resolver holds the translation of the lexical {@link KlabAsset}s into resolvable {@link
+    //     Knowledge},
+    //     * using the {@link ResourcesService} in the scope to build them when necessary. This method
+    //     resolves a
+    //     * {@link Model} or a {@link org.integratedmodelling.klab.api.lang.kim.KimInstance} from their
+    //     syntactic
+    //     * peers in resources, efficiently loading and validating the closure of all other knowledge
+    //     needed to
+    //     * understand it.
+    //     * <p>
+    //     * The search for models (by scale and semantics) should happen in the resource servers with help
+    //     from the
+    //     * reasoner, yielding a {@link ResourceSet} from
+    //     * {@link ResourcesService#queryModels(Observable, ContextScope)}}. Models that are accessible to
+    //     the
+    //     * Resolvers but invalid should generate an info message. Should cache the build {@link Model}s and
+    //     * refresh the cache based on version matching.
+    //     *
+    //     * @param urn
+    //     * @param scope
+    //     * @return
+    //     */
+    //    <T extends Resolvable> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope);
 
     /**
      * The main function of the resolver is to resolve knowledge to a dataflow in a context scope. This is
@@ -60,17 +66,20 @@ public interface Resolver extends KlabService {
      * in the scope) and compilatio of the resulting graph into a dataflow that can be stored or passed to a
      * runtime service for execution.
      * <p>
-     * Any {@link Knowledge} object can be resolved, compatibly with the observation scope and its current
-     * observation focus. If the scope is not focused on a direct observation, the resolvable must be a
-     * {@link org.integratedmodelling.klab.api.lang.kim.KimInstance} or an {@link Observation} unless the
-     * scope has a set focal scale, in which case it can be a countable observable with description type
+     * The resolvableUrn must specify a {@link Knowledge} object that can be resolved in the passed context
+     * scope. It can be a URL containing the service URL or a simple URN that will be resolved according to
+     * the scope passed. If the scope is not focused on a direct observation, the resolvable must be an
+     * {@link Observation} or a defined object specifying one. The Observer's focal scale in the scope will
+     * enable dependent observables as well if defined, with a default observation context built, if possible,
+     * accordingly.
+     * <p>
      * {@link DescriptionType#INSTANTIATION}.
      *
      * @param resolvable
      * @param scope
      * @return the dataflow that will create the observation in a runtime.
      */
-    Resolution resolve(Resolvable resolvable, ContextScope scope);
+    Resolution resolve(String resolvableUrn, ContextScope scope);
 
     /**
      * Compile a resolution graph into a dataflow. The scope passed must be the same that the resolution graph

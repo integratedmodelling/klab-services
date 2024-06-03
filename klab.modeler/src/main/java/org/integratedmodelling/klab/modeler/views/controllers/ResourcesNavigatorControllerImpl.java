@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.modeler.views.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIViewController;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -213,6 +214,12 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             if (workspace != null) {
                 assetMap.put(workspaceId, new NavigableWorkspace(workspace));
             }
+        }
+
+        // record service URL and ID in each root asset's metadata
+        for (var asset : assetMap.values()) {
+            asset.getMetadata().put(Metadata.KLAB_SERVICE_ID, service.serviceId());
+            asset.getMetadata().put(Metadata.KLAB_SERVICE_URL, service.getUrl());
         }
     }
 

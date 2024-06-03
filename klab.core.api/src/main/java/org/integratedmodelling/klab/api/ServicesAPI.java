@@ -29,6 +29,7 @@ public interface ServicesAPI {
     String CAPABILITIES = "/public/capabilities";
     String STATUS = "/public/status";
 
+    String URN_PARAMETER = "{urn}";
 
     /**
      * General administration endpoints common to all services
@@ -251,6 +252,14 @@ public interface ServicesAPI {
             String DEFINE_CONCEPT = "/defineConcept";
         }
 
+        /**
+         * Endpoints for authorities configuration, creation, discovery and use
+         */
+        interface AUTHORITIES extends PluginAPI {
+
+
+        }
+
     }
 
     interface RUNTIME {
@@ -263,11 +272,13 @@ public interface ServicesAPI {
         interface ADMIN extends PluginAPI {
 
         }
+
+        String createSession = "/createSession/{name}";
+        String createContext = "/createContext/{name}";
+
+        String runBehavior = "/runBehavior/{urn}";
     }
 
-    /*
-    TODO move admin endpoints to ADMIN
-     */
     public interface RESOURCES {
 
         String RESOLVE_PROJECT = "/resolveProject/{projectName}";
@@ -276,22 +287,22 @@ public interface ServicesAPI {
         String PROJECTS = "/projects";
         String PROJECT = "/project/{projectName}";
         String MODEL = "/model/{modelName}";
-        String RESOLVE_URN = "/resolve/{urn}";
-        String RESOLVE_NAMESPACE_URN = "/resolveNamespace/{urn}";
-        String RESOLVE_ONTOLOGY_URN = "/resolveOntology/{urn}";
-        String RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN = "/resolveObservationStrategyDocument/{urn}";
+        String RESOLVE_URN = "/resolve/"  + URN_PARAMETER;
+        String RESOLVE_NAMESPACE_URN = "/resolveNamespace/"  + URN_PARAMETER;
+        String RESOLVE_ONTOLOGY_URN = "/resolveOntology/" + URN_PARAMETER;
+        String RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN = "/resolveObservationStrategyDocument/" + URN_PARAMETER;
         String LIST_WORKSPACES = "/listWorkspaces";
-        String RESOLVE_BEHAVIOR_URN = "/resolveBehavior/{urn}";
-        String RESOLVE_RESOURCE_URN = "/resolveResource/{urn}";
-        String RESOLVE_WORKSPACE_URN = "/resolveWorkspace/{urn}";
+        String RESOLVE_BEHAVIOR_URN = "/resolveBehavior/" + URN_PARAMETER;
+        String RESOLVE_RESOURCE_URN = "/resolveResource/" + URN_PARAMETER;
+        String RESOLVE_WORKSPACE_URN = "/resolveWorkspace/" + URN_PARAMETER;
         String RESOLVE_SERVICE_CALL = "/resolveServiceCall/{name}";
-        String RESOURCE_STATUS = "/resourceStatus/{urn}";
+        String RESOURCE_STATUS = "/resourceStatus/" + URN_PARAMETER;
         String RESOLVE_OBSERVABLE = "/resolveObservable";
         String DESCRIBE_CONCEPT = "/describeConcept/{conceptUrn}";
         String RESOLVE_CONCEPT = "/resolveConcept/{definition}";
         String CONTEXTUALIZE_RESOURCE = "/contextualizeResource";
         String CONTEXTUALIZE = "/contextualize";
-        String RESOLVE_DATAFLOW_URN = "/resolveDataflow/{urn}";
+        String RESOLVE_DATAFLOW_URN = "/resolveDataflow/" + URN_PARAMETER;
         String GET_WORLDVIEW = "/getWorldview";
         String DEPENDENTS = "/dependents/{namespaceId}";
         String QUERY_MODELS = "/queryModels";

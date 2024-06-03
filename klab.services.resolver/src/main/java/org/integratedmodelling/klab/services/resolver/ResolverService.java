@@ -137,6 +137,12 @@ public class ResolverService extends BaseService implements Resolver {
         return configuration.getServiceId();
     }
 
+
+    @Override
+    public Resolution resolve(String resolvableUrn, ContextScope scope) {
+        return computeResolution(resolveKnowledge(resolvableUrn, scope), scope);
+    }
+
     /**
      * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
      * graph which will contain any observations that were already resolved within the context observation in
@@ -146,7 +152,7 @@ public class ResolverService extends BaseService implements Resolver {
      * @param scope
      * @return
      */
-    public Resolution resolve(Resolvable knowledge, ContextScope scope) {
+    public Resolution computeResolution(Resolvable knowledge, ContextScope scope) {
 
         Scale scale = scope.getScale();
         Resolvable observable = switch (knowledge) {
@@ -159,14 +165,15 @@ public class ResolverService extends BaseService implements Resolver {
 //            }
             case Model model -> model.getObservables().get(0);
             case Observable obs -> obs;
-            default -> throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
+            default -> null;
         };
 
-        if (scale == null || scale.isEmpty()) {
+        if (observable == null) {
+            // FIXME this should just set the resolution to an error state and return it
+            throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
+        } else if (scale == null || scale.isEmpty()) {
             throw new KlabIllegalStateException("cannot resolve " + knowledge + " without a focal scale in the" +
                     " context");
-        } else if (observable == null) {
-            throw new KlabIllegalStateException("cannot establish an observable to resolve for " + knowledge);
         } /*else if (!(knowledge instanceof Instance) && !observable.getDescriptionType().isInstantiation()
                 && scope.getContextObservation() == null) {
             throw new KlabIllegalStateException(
@@ -179,7 +186,7 @@ public class ResolverService extends BaseService implements Resolver {
             resolveModel((Model) knowledge, observable, scale,
                     scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
                     ret);
-        } else if (observable instanceof Observable obs){
+        } else if (observable instanceof Observable obs) {
             resolveObservable(obs, scale, scope, ret, null);
         } // TODO the rest
 
@@ -472,8 +479,7 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public <T extends Resolvable> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope) {
+    public <T extends Resolvable> T resolveKnowledge(String urn,Scope scope) {
 
         Knowledge ret = null;
 

@@ -53,9 +53,9 @@ public interface Modeler extends UIController {
     void setOption(Option option, Object... payload);
 
     /**
-     * User action that selects an asset and tells the modeler to observe it, whatever that means. The asset
-     * should be classified and only valid contexts should be handled. The UI may alert for illegittimate use
-     * of this action.
+     * User action that obtains or find an asset from a URN and tells the modeler to observe it, whatever that
+     * means. The asset should be classified and only valid contexts should be handled. The UI may alert for
+     * illegitimate use of this action.
      *
      * @param asset  a k.LAB asset of any type. May create a context, add to an existing one, or cause nothing
      *               or an error.
@@ -64,7 +64,7 @@ public interface Modeler extends UIController {
      */
     @UIActionHandler(value = UIAction.ObserveAsset, label = "Observe asset", tooltip = "Select a k.LAB " +
             "asset to create a new context or add to the current one.")
-    void observe(KlabAsset asset, boolean adding);
+    void observe(Object asset, boolean adding);
 
     @UIActionHandler(value = UIReactor.UIAction.ImportProject, label = "New project", tooltip =
             "Create a new k.LAB project in the current workspace and scope")

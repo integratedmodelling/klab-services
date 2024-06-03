@@ -59,9 +59,11 @@ public class ContextAgent extends KAgent {
 
         scope.send(message.statusResponse(Status.STARTED));
 
+        String resolvableUrn = null; // DIOCA' use the message
+
         try {
 
-            resolvable = resolver.resolveKnowledge(message.getUrn(), Resolvable.class, scope);
+            resolvable = null; // resolver.resolveKnowledge(message.getUrn(), Resolvable.class, scope);
             if (resolvable == null) {
                 scope.send(message.response(Status.ABORTED, AgentResponse.ERROR,
                         "Cannot resolve URN " + message.getUrn()));
@@ -76,7 +78,7 @@ public class ContextAgent extends KAgent {
             /*
              * Build the dataflow in the scope
              */
-            var resolution = resolver.resolve(resolvable, resolutionScope);
+            var resolution = resolver.resolve(resolvableUrn, resolutionScope);
 
             if (resolution.getCoverage().isRelevant()) {
 

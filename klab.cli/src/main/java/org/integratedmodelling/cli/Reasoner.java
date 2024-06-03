@@ -101,7 +101,8 @@ public class Reasoner {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            ContextScope ctx = context == null ? KlabCLI.INSTANCE.modeler().currentContext() : KlabCLI.INSTANCE.modeler().context(context);
+            ContextScope ctx = context == null ? KlabCLI.INSTANCE.modeler().currentContext() :
+                               KlabCLI.INSTANCE.modeler().context(context, true);
 
             if (within != null) {
                 // TODO find the context observation and switch the context to it. If a dot,

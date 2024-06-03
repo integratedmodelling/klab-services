@@ -5,16 +5,20 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
@@ -26,6 +30,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContain
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
 import org.integratedmodelling.klab.modeler.model.NavigableProject;
+import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
@@ -116,7 +121,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     @Override
-    public void observe(KlabAsset asset, boolean adding) {
+    public void observe(Object asset, boolean adding) {
 
         /**
          * Use cases:
@@ -147,6 +152,33 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          *      If there is no context, must create a default empty context within the session & select it
          */
 
+        if (currentSession == null) {
+
+        }
+
+        if (currentContext == null) {
+
+        }
+
+        ResolutionRequest request = null;
+
+        if (asset instanceof NavigableAsset navigableAsset) {
+            var workspace = navigableAsset.parent(NavigableWorkspace.class);
+            if (workspace != null) {
+                var serviceUrl = workspace.getMetadata().get(Metadata.KLAB_SERVICE_URL);
+                if (serviceUrl != null) {
+
+                }
+            }
+        } else if (asset instanceof String || asset instanceof Urn) {
+            String urn = asset.toString();
+        }
+
+        if (request != null) {
+            /*
+                send the request with the context, get a dataflow
+             */
+        }
 
     }
 
@@ -313,7 +345,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         return currentContext;
     }
 
-    public ContextScope context(String context) {
+    public ContextScope context(String context, boolean createIfAbsent) {
         // TODO named context
         return null;
     }
@@ -323,7 +355,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         return null;
     }
 
-    public SessionScope session(String session) {
+    public SessionScope session(String session, boolean createIfAbsent) {
         // TODO named session
         return null;
     }
