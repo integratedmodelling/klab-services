@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
+import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -32,7 +33,7 @@ import java.util.concurrent.Future;
  */
 public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
 
-    private Identity observer;
+    private Subject observer;
     private DirectObservation contextObservation;
     private Set<String> resolutionScenarios = new LinkedHashSet<>();
     private Scale geometry = Scale.empty();
@@ -48,7 +49,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     ServiceContextScope(ServiceSessionScope parent) {
         super(parent);
         this.setId(parent.getIdentity().getId() + "/c_" + org.integratedmodelling.klab.api.utils.Utils.Names.shortUUID());
-        this.observer = parent.getUser();
+        this.observer = null; // NAAH parent.getUser();
         this.data = Parameters.create();
         this.data.putAll(parent.data);
         this.catalog = new HashMap<>();
@@ -69,7 +70,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public Identity getObserver() {
+    public Subject getObserver() {
         return this.observer;
     }
 
@@ -92,7 +93,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ServiceContextScope withObserver(Identity observer) {
+    public ServiceContextScope withObserver(Subject observer) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.observer = observer;
         ret.catalog = new HashMap<>(this.catalog);

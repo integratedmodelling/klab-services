@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
+import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -32,7 +33,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Identity getObserver() {
+    public Subject getObserver() {
         return null;
     }
 
@@ -42,7 +43,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public ContextScope withObserver(Identity observer) {
+    public ContextScope withObserver(Subject observer) {
         return null;
     }
 

@@ -5,10 +5,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Comes with authentication and context scope (including observer) in the
@@ -22,9 +19,54 @@ public class ResolutionRequest {
     private URL serviceUrl;
     private String urn;
     private KlabAsset.KnowledgeClass resolvableType;
-    private List<String> scenarios = new ArrayList<>();
     private Map<String, Object> options = new HashMap<>();
-    private ContextScope specializedScope;
+
+    // from this point on, fields collect the options in the context scope tree
+    private List<String> scenarios = new ArrayList<>();
+    private String observerId;
+    private String contextObservationId;
+    private String resolutionNamespaceUrn;
+    private Map<String, String> traitResolution = new LinkedHashMap<>();
+
+    public String getContextObservationId() {
+        return contextObservationId;
+    }
+
+    public void setContextObservationId(String contextObservationId) {
+        this.contextObservationId = contextObservationId;
+    }
+
+    public String getObserverId() {
+        return observerId;
+    }
+
+    public void setObserverId(String observerId) {
+        this.observerId = observerId;
+    }
+
+    public String getResolutionNamespaceUrn() {
+        return resolutionNamespaceUrn;
+    }
+
+    public void setResolutionNamespaceUrn(String resolutionNamespaceUrn) {
+        this.resolutionNamespaceUrn = resolutionNamespaceUrn;
+    }
+
+    public List<String> getScenarios() {
+        return scenarios;
+    }
+
+    public void setScenarios(List<String> scenarios) {
+        this.scenarios = scenarios;
+    }
+
+    public Map<String, String> getTraitResolution() {
+        return traitResolution;
+    }
+
+    public void setTraitResolution(Map<String, String> traitResolution) {
+        this.traitResolution = traitResolution;
+    }
 
     /**
      * Controls the services used if they must be different from the default (services linked to the scope as
@@ -50,14 +92,6 @@ public class ResolutionRequest {
         this.urn = urn;
     }
 
-    public List<String> getScenarios() {
-        return scenarios;
-    }
-
-    public void setScenarios(List<String> scenarios) {
-        this.scenarios = scenarios;
-    }
-
     public Map<String, Object> getOptions() {
         return options;
     }
@@ -74,11 +108,4 @@ public class ResolutionRequest {
         this.resolvableType = resolvableType;
     }
 
-    public ContextScope getSpecializedScope() {
-        return specializedScope;
-    }
-
-    public void setSpecializedScope(ContextScope specializedScope) {
-        this.specializedScope = specializedScope;
-    }
 }

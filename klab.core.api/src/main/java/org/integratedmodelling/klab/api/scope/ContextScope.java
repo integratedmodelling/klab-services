@@ -4,10 +4,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
-import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.knowledge.observation.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -41,10 +38,13 @@ public interface ContextScope extends SessionScope, AutoCloseable {
 
     /**
      * Return the observer for this context. The original observation scope has the session user as observer.
+     * <p>
+     * TODO this should never been null and the {@link #getScale()} should become the same for the
+     *  observer, whose scale represents the observational "reach" of the context.
      *
      * @return
      */
-    Identity getObserver();
+    Subject getObserver();
 
     /**
      * If this scope is focused on a specific subject, return it.
@@ -59,7 +59,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observer
      * @return
      */
-    ContextScope withObserver(Identity observer);
+    ContextScope withObserver(Subject observer);
 
     /**
      * Return a new observation scope that sets the passed scenarios for any future observation.

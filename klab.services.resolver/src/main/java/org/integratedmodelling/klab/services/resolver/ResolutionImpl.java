@@ -31,11 +31,11 @@ import org.jgrapht.graph.DefaultEdge;
 import com.google.common.collect.Sets;
 
 /**
- * The resolution is the result of {@link Resolver#resolve(Resolvable, ContextScope)}. It contains the
- * resolution strategy for the top-level observable, resolved by zero or more models that are connected to all
- * their dependencies in a graph. In the graph, each link reports the portion of the context covered by the
- * incoming model (possibly partial), the dependency observable resolved, and the type of resolution (direct
- * or deferred to further observation with later merging). Deferred resolutions will need further resolution
+ * The resolution is the result of {@link Resolver#resolve(String, ContextScope)}. It contains the resolution
+ * strategy for the top-level observable, resolved by zero or more models that are connected to all their
+ * dependencies in a graph. In the graph, each link reports the portion of the context covered by the incoming
+ * model (possibly partial), the dependency observable resolved, and the type of resolution (direct or
+ * deferred to further observation with later merging). Deferred resolutions will need further resolution
  * after the dataflow has created the deferring observations.
  *
  * @author Ferd
