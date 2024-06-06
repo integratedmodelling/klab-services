@@ -16,12 +16,10 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
-import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * Implementations must fill in the getService() strategy. This is a scope that contains an agent ref. Any
@@ -30,10 +28,13 @@ import java.util.function.Consumer;
  * <p>
  * Each scope contains a hash of generic data. Creating "child" scopes will only build a new hash when the
  * scope is of a different class, otherwise the same data is passed to all children.
+ * <p>
+ * The scope classes inherit from each other, so use {@link #scopeType} instead of <code>instanceof</code> to
+ * discriminate if needed.
  *
  * @author Ferd
  */
-public abstract class ClientScope extends MessagingChannelImpl implements UserScope {
+public abstract class ClientUserScope extends MessagingChannelImpl implements UserScope {
 
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
@@ -52,7 +53,7 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
 
     private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
             Collections
-            .synchronizedMap(new HashMap<>());
+                    .synchronizedMap(new HashMap<>());
 
     //	private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
     //	Collections
@@ -64,7 +65,7 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ClientScope(Identity user, Scope.Type scopeType, BiConsumer<Scope, Message>... listeners) {
+    public ClientUserScope(Identity user, Scope.Type scopeType, BiConsumer<Scope, Message>... listeners) {
         super(user, null, scopeType);
         this.user = user;
         this.data = Parameters.create();

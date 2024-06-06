@@ -3,7 +3,7 @@ package org.integratedmodelling.common.services.client.engine;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
-import org.integratedmodelling.common.services.client.scope.ClientScope;
+import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -281,7 +281,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
-        var ret = new ClientScope(authData.getFirst(), Scope.Type.SERVICE,
+        var ret = new ClientUserScope(authData.getFirst(), Scope.Type.SERVICE,
                 (serviceScope() instanceof ChannelImpl channel) ?
                 channel.listeners().toArray(new BiConsumer[]{}) : new BiConsumer[]{}) {
             @Override

@@ -26,6 +26,10 @@ import java.util.concurrent.Future;
  */
 public interface ContextScope extends SessionScope, AutoCloseable {
 
+    @Override
+    default Type getType() {
+        return Type.CONTEXT;
+    }
     /**
      * Context scopes have a URL that enables communication with clients but also allows other contexts to
      * connect to them and become part of federated contexts to form distributed digital twins. When

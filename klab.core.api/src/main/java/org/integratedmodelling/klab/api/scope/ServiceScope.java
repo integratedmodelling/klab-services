@@ -40,6 +40,9 @@ public interface ServiceScope extends Scope {
         WAN
     }
 
+    default Type getType() {
+        return Type.SERVICE;
+    }
     /**
      * Create a user scope for authenticated users. Service must be able to authenticate the user through the
      * authenticating hub. The user scope, in addition to offering all functionalities if this service is an

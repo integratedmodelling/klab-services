@@ -1,7 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -23,7 +22,7 @@ import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
-    public ClientContextScope(ClientScope parent, String contextId, RuntimeService runtimeService) {
+    public ClientContextScope(ClientUserScope parent, String contextId, RuntimeService runtimeService) {
         super(parent, contextId, runtimeService);
     }
 

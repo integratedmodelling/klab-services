@@ -110,6 +110,12 @@ public abstract interface Scope extends Channel {
      */
     <T extends KlabService> Collection<T> getServices(Class<T> serviceClass);
 
+    /**
+     * The scope type is the only safe way to discriminate a scope type from another.
+     *
+     * @return
+     */
+    Type getType();
 
     /**
      * Return the status of the scope at the time of the call.

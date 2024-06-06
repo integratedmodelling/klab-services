@@ -10,6 +10,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  */
 public interface SessionScope extends UserScope {
 
+    @Override
+    default Type getType() {
+        return Type.SESSION;
+    }
+
     /**
      * The session scope's scale is the "focal" geometry of the user (where/when the user agent is looking);
      * the geometry in each {@link ContextScope} is the actual view during observation. If there is no current

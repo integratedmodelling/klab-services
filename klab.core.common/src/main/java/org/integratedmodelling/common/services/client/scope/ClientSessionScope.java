@@ -1,7 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -10,11 +9,11 @@ import org.integratedmodelling.klab.api.services.RuntimeService;
 /**
  * Client-side session scope
  */
-public abstract class ClientSessionScope extends ClientScope implements SessionScope {
+public abstract class ClientSessionScope extends ClientUserScope implements SessionScope {
 
     private final RuntimeService runtimeService;
 
-    public ClientSessionScope(ClientScope parent, String sessionId, RuntimeService runtimeService) {
+    public ClientSessionScope(ClientUserScope parent, String sessionId, RuntimeService runtimeService) {
         // FIXME use a copy constructor that inherits the environment from the parent
         super(parent.getIdentity(), Type.SESSION);
         this.runtimeService = runtimeService;

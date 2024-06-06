@@ -410,6 +410,11 @@ public class DistributionImpl extends AbstractDistributionImpl {
             public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
                 return null;
             }
+
+            @Override
+            public Type getType() {
+                return Type.SERVICE;
+            }
         });
         while (instance.getStatus() != RunningInstance.Status.STOPPED) {
             try {

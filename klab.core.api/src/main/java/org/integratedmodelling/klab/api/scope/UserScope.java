@@ -11,6 +11,10 @@ import org.integratedmodelling.klab.api.services.KlabService;
  */
 public interface UserScope extends Scope {
 
+    default Type getType() {
+        return Type.USER;
+    }
+
     /**
      * The scope is created for an authenticated user by the engine.
      *
