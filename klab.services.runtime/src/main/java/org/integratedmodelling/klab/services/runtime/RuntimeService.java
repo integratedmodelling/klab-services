@@ -7,9 +7,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -33,11 +31,12 @@ public class RuntimeService extends BaseService
         org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
     /**
-     * The runtime maintains a "digital twin" per each context ID in its purvey. The contexts must release resources in
-     * the runtime when they go out of scope.
+     * The runtime maintains a "digital twin" per each context ID in its purvey. The contexts must release
+     * resources in the runtime when they go out of scope.
      */
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
-    private String hardwareSignature = org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
+    private String hardwareSignature =
+            org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
     // TODO connect to runtime.yaml configuration
     private RuntimeConfiguration configuration;
 
@@ -69,7 +68,8 @@ public class RuntimeService extends BaseService
     @Override
     public void initializeService() {
 
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, capabilities(serviceScope()).toString());
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
+                capabilities(serviceScope()).toString());
 
         /*
          * Components
@@ -84,7 +84,7 @@ public class RuntimeService extends BaseService
          * Check for updates, load and scan all new plug-ins, returning the main packages to scan
          * FIXME update, put in BaseService
          */
-//        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
+        //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
         /*
          * Scan all packages registered under the parent package of all k.LAB services. TODO all
@@ -92,16 +92,20 @@ public class RuntimeService extends BaseService
          * annotations) that are exposed to the admin API.
          */
         for (String pack : extensionPackages) {
-            Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class, Configuration.INSTANCE.LIBRARY_LOADER));
+            Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+                    Configuration.INSTANCE.LIBRARY_LOADER));
         }
 
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, capabilities(serviceScope()));
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                capabilities(serviceScope()));
 
     }
+
     @Override
     public boolean shutdown() {
 
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, capabilities(serviceScope()));
+        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+                capabilities(serviceScope()));
 
         // TODO Auto-generated method stub
         return false;
@@ -152,7 +156,8 @@ public class RuntimeService extends BaseService
     @Override
     public Collection<Observation> children(ContextScope scope, Observation rootObservation) {
         var digitalTwin = getDigitalTwin(scope);
-        return digitalTwin == null ? Collections.emptyList() : digitalTwin.getLogicalChildren(rootObservation);
+        return digitalTwin == null ? Collections.emptyList() :
+               digitalTwin.getLogicalChildren(rootObservation);
     }
 
     @Override
@@ -177,10 +182,10 @@ public class RuntimeService extends BaseService
     }
 
     /**
-     * Ensure that we have the runtime support for the passed service call. If we need a component to serve it, check
-     * that the scope has access to it and load it if necessary as a background process. Return all the relevant
-     * notifications which will be passed to clients. If one or more error notifications are return, the service call is
-     * invalid and any dataflow it is part of is in error.
+     * Ensure that we have the runtime support for the passed service call. If we need a component to serve
+     * it, check that the scope has access to it and load it if necessary as a background process. Return all
+     * the relevant notifications which will be passed to clients. If one or more error notifications are
+     * return, the service call is invalid and any dataflow it is part of is in error.
      *
      * @param call
      * @param scope
@@ -193,7 +198,11 @@ public class RuntimeService extends BaseService
     }
 
     @Override
-    public boolean releaseScope(ContextScope scope) {
+    public boolean releaseScope(Scope scope) {
+
+        /**
+         * TODO fix based on the type of scope. Each should release every resource held below the scope.
+         */
         var dt = this.digitalTwins.remove(scope.getIdentity().getId());
         if (dt != null) {
             try {
@@ -203,6 +212,16 @@ public class RuntimeService extends BaseService
             }
         }
         return dt != null;
+    }
+
+    @Override
+    public String createSession(UserScope scope, String sessionName, String... urns) {
+        return "";
+    }
+
+    @Override
+    public String createContext(SessionScope scope, String sessionName) {
+        return "";
     }
 
 }

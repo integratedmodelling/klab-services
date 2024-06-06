@@ -18,7 +18,6 @@ public abstract class ClientSessionScope extends ClientScope implements SessionS
         // FIXME use a copy constructor that inherits the environment from the parent
         super(parent.getIdentity(), Type.SESSION);
         this.runtimeService = runtimeService;
-
     }
 
     @Override

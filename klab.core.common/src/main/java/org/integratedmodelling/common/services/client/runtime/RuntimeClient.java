@@ -6,9 +6,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -33,7 +31,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         super(Type.RUNTIME, identity, services);
     }
 
-    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners){
+    public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
+            Message>... listeners) {
         super(Type.RUNTIME, url, identity, services, listeners);
     }
 
@@ -42,8 +41,24 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public boolean releaseScope(ContextScope scope) {
+    public boolean releaseScope(Scope scope) {
         return false;
+    }
+
+    @Override
+    public String createSession(UserScope scope, String sessionName, String... urns) {
+        if (urns == null || urns.length == 0) {
+            return client.get(ServicesAPI.RUNTIME.createSession, String.class, "name", sessionName);
+        }
+
+        // TODO send POST request
+        return null;
+    }
+
+    @Override
+    public String createContext(SessionScope scope, String sessionName) {
+        // TODO
+        return "";
     }
 
     @Override

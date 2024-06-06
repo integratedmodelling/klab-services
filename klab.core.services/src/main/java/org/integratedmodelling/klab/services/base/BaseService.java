@@ -19,6 +19,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.Configuration;
 import org.integratedmodelling.klab.data.encoding.Encoding;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
+import org.integratedmodelling.klab.services.scopes.ScopeManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +51,7 @@ public abstract class BaseService implements KlabService {
     protected ServiceScope scope;
     protected String localName = "Embedded";
     protected final ServiceStartupOptions startupOptions;
+    private ScopeManager _scopeManager;
 
     protected BaseService(ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
         this.scope = scope;
@@ -81,6 +83,18 @@ public abstract class BaseService implements KlabService {
         } catch (IOException e) {
             throw new KlabIOException(e);
         }
+    }
+
+    /**
+     * The scope manager is created on demand as not all services need it.
+     *
+     * @return
+     */
+    public ScopeManager getScopeManager() {
+        if (_scopeManager == null) {
+            _scopeManager = new ScopeManager(this);
+        }
+        return _scopeManager;
     }
 
     /**

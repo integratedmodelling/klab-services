@@ -153,6 +153,7 @@ public abstract class ClientScope extends MessagingChannelImpl implements UserSc
             throw new KlabResourceAccessException("Runtime service is not accessible: cannot create session");
         }
 
+        var sessionId = runtime.createSession(this, sessionName);
 
         //		final EngineSessionScope ret = new EngineSessionScope(this);
         //		ret.setStatus(Status.WAITING);

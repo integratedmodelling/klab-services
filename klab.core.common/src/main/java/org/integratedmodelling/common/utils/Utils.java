@@ -227,7 +227,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 StringBuilder ret = new StringBuilder();
                 for (var k : parameters.keySet()) {
                     ret.append((ret.isEmpty()) ? "?" : "&").append(k).append("=")
-                       .append(UriUtils.encodeQueryParam(parameters.get(k).toString(), StandardCharsets.UTF_8));
+                       .append(UriUtils.encodeQueryParam(parameters.get(k).toString(),
+                               StandardCharsets.UTF_8));
                 }
                 return ret.toString();
             }
@@ -260,11 +261,13 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
-             * POST helper that sets all headers and automatically handles JSON marshalling.
+             * GET helper that sets all headers and automatically handles JSON marshalling.
              *
-             * @param apiRequest
+             * @param apiRequest  the request starting with "/" appended to the main service URL. Add any ?
+             *                    parameters here.
              * @param resultClass
-             * @param parameters  paired key, value sequence for URL options
+             * @param parameters  paired key, value sequence for URL <em>path</em> template options. Explicit
+             *                    ?... URL parameters should be added to the URL directly.
              * @param <T>
              * @return
              */

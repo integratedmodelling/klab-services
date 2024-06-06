@@ -8,6 +8,8 @@ import java.util.concurrent.Future;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 /**
@@ -30,7 +32,24 @@ public interface RuntimeService extends KlabService {
      * @param scope
      * @return
      */
-    boolean releaseScope(ContextScope scope);
+    boolean releaseScope(Scope scope);
+
+    /**
+     * Create a session with the passed name in the passed user scope. If urn(s) are passed, match them to the
+     * correspondent behaviors, test namespaces or scenarios and initialize the session accordingly.
+     * Return the unique session ID.
+     * @param sessionName
+     * @return
+     */
+    String createSession(UserScope scope, String sessionName, String... urns);
+
+    /**
+     * Create a context with the passed name in the passed session. Context starts empty and
+     * @param scope
+     * @param sessionName
+     * @return
+     */
+    String createContext(SessionScope scope, String sessionName);
 
 
     /**
