@@ -23,7 +23,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
@@ -135,7 +135,7 @@ public class DigitalTwin implements Closeable {
     private Executor createExecutor(Actuator actuator, Observation observation, ServiceCall computation,
                                     ContextScope scope, Executor previousExecutor) {
 
-        var languageService = Configuration.INSTANCE.getService(Language.class);
+        var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
         var functor = languageService.execute(computation, scope, Object.class);
         var parallelism = getParallelism(scope);
 

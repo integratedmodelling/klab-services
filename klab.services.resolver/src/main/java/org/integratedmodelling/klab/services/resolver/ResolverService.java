@@ -30,7 +30,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -715,8 +715,8 @@ public class ResolverService extends BaseService implements Resolver {
          * annotations) that are exposed to the admin API.
          */
         for (String pack : extensionPackages) {
-            Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
-                    Configuration.INSTANCE.LIBRARY_LOADER));
+            ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+                    ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,

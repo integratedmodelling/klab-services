@@ -11,8 +11,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.rest.ScopeReference;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.kactors.messages.RunBehavior;
 import org.integratedmodelling.klab.services.actors.KAgent;
 import org.integratedmodelling.klab.services.actors.UserAgent;
@@ -92,7 +91,7 @@ public class ScopeManager {
 
             scopes.put(user.getUsername(), ret);
 
-            File userBehavior = new File(Configuration.INSTANCE.getDataPath() + File.separator + "user" +
+            File userBehavior = new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user" +
                     ".kactors");
             if (userBehavior.isFile() && userBehavior.canRead()) {
                 try {

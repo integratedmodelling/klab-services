@@ -34,7 +34,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
@@ -294,7 +294,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 Class<? extends Authority> cls =
                         (Class<? extends Authority>) Class.forName(authority.getUrl().substring(("classpath" +
                                 ":").length()));
-                Configuration.INSTANCE.registerAuthority(cls.getDeclaredConstructor().newInstance());
+                ServiceConfiguration.INSTANCE.registerAuthority(cls.getDeclaredConstructor().newInstance());
                 Logging.INSTANCE.info("Authority " + authority.getProject() + " ready for " + (authority.isServe() ? "global" : "local") + " use");
             } catch (Exception e) {
                 Logging.INSTANCE.error(e);

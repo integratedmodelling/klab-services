@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.services.reasoner.configuration;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -218,7 +218,7 @@ public class ReasonerConfiguration {
         ret.getAuthorities().add(aut3);
         ret.setServiceId(UUID.randomUUID().toString());
 
-        Utils.YAML.save(ret, new File(Configuration.INSTANCE.getDataPath() + File.separator + "reasoner" +
+        Utils.YAML.save(ret, new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "reasoner" +
                 ".yaml"));
     }
 }

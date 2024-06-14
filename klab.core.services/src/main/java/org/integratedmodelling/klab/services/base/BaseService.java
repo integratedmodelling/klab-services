@@ -7,7 +7,6 @@ import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -16,8 +15,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.configuration.Configuration;
-import org.integratedmodelling.klab.data.encoding.Encoding;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 
@@ -76,7 +74,7 @@ public abstract class BaseService implements KlabService {
      */
     private void createServiceSecret() {
         File secretFile =
-                Configuration.INSTANCE.getFileWithTemplate("services/" + type.name().toLowerCase() +
+                ServiceConfiguration.INSTANCE.getFileWithTemplate("services/" + type.name().toLowerCase() +
                         "/secret.key", Utils.Names.newName());
         try {
             this.serviceSecret = Files.readString(secretFile.toPath());
@@ -130,7 +128,7 @@ public abstract class BaseService implements KlabService {
      * passing the annotation found and the class for each matching class..
      * <p>
      * This can be called with a pre-defined array of annotations using the similar method in
-     * {@link Configuration} for a quicker scan.
+     * {@link ServiceConfiguration} for a quicker scan.
      *
      * @param annotationHandler
      * @param annotationClass
@@ -180,7 +178,7 @@ public abstract class BaseService implements KlabService {
     public abstract void initializeService();
 
     public static File getDataDir(ServiceStartupOptions startupOptions) {
-        return startupOptions.getDataDir() == null ? Configuration.INSTANCE.getDataPath() :
+        return startupOptions.getDataDir() == null ? ServiceConfiguration.INSTANCE.getDataPath() :
                startupOptions.getDataDir();
     }
 

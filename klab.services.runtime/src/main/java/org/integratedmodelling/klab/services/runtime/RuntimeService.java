@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
-import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -12,7 +10,7 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
@@ -21,7 +19,6 @@ import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 
@@ -92,8 +89,8 @@ public class RuntimeService extends BaseService
          * annotations) that are exposed to the admin API.
          */
         for (String pack : extensionPackages) {
-            Configuration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
-                    Configuration.INSTANCE.LIBRARY_LOADER));
+            ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+                    ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,

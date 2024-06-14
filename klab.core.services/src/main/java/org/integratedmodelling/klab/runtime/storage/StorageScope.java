@@ -2,7 +2,7 @@ package org.integratedmodelling.klab.runtime.storage;
 
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.ojalgo.array.BufferArray;
 import org.ojalgo.concurrent.Parallelism;
 
@@ -33,7 +33,7 @@ public class StorageScope {
 
     public StorageScope(ContextScope scope) {
         // choose the mm files, parallelism level and the floating point representation
-        this.workspace = Configuration.INSTANCE.getScratchDataDirectory("ktmp");
+        this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory("ktmp");
         this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");
         this.doubleBackupFile = new File(this.workspace + File.separator + "dstorage.bin");
         this.intBackupFile = new File(this.workspace + File.separator + "istorage.bin");

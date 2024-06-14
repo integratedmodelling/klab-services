@@ -40,7 +40,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
 public enum NetworkKeyManager {
 
@@ -74,7 +74,7 @@ public enum NetworkKeyManager {
 		this.subjectDN = subjectDN;
 		boolean ret = false;
 		
-		File directory = Configuration.INSTANCE.getDataPath("hub");
+		File directory = ServiceConfiguration.INSTANCE.getDataPath("hub");
 		File certificate = new File(directory + File.separator + "certificate.pkcs12");
 		char[] password = serverKey.toCharArray();
 		if (certificate.exists()) {

@@ -18,7 +18,7 @@ import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.services.UnitService;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
 
 import java.io.Serial;
@@ -455,7 +455,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
     @Override
     public Unit getDimensionUnit() {
-        return Configuration.INSTANCE.getService(UnitService.class).milliseconds();
+        return ServiceConfiguration.INSTANCE.getService(UnitService.class).milliseconds();
     }
 
     @Override

@@ -52,7 +52,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabStorageException;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox.Schema;
 import org.integratedmodelling.klab.persistence.h2.H2Kbox.Serializer;
@@ -137,7 +137,7 @@ public class H2Database {
 	}
 
 	private H2Database(String kboxName) {
-		this(kboxName, Configuration.INSTANCE.useInMemoryDatabase());
+		this(kboxName, ServiceConfiguration.INSTANCE.useInMemoryDatabase());
 	}
 
 	public String toString() {
@@ -159,7 +159,7 @@ public class H2Database {
 
 			checkVersions(kboxName);
 
-			File directory = Configuration.INSTANCE.getDataPath("kbox/" + kboxName);
+			File directory = ServiceConfiguration.INSTANCE.getDataPath("kbox/" + kboxName);
 			directory.mkdirs();
 			File f1 = new File(directory + File.separator + kboxName + ".mv.db");
 			File f2 = new File(directory + File.separator + kboxName + ".h2.db");
@@ -498,9 +498,9 @@ public class H2Database {
 	private static synchronized void checkVersions(String kboxName) {
 
 		boolean refresh = false;
-		File directory = Configuration.INSTANCE.getDataPath("kbox/" + kboxName);
+		File directory = ServiceConfiguration.INSTANCE.getDataPath("kbox/" + kboxName);
 		if (directory.isDirectory()) {
-			File propfile = new File(Configuration.INSTANCE.getDataPath("kbox") + File.separator + "kbox.properties");
+			File propfile = new File(ServiceConfiguration.INSTANCE.getDataPath("kbox") + File.separator + "kbox.properties");
 			String knownVersion = null;
 			Properties properties = new Properties();
 			if (propfile.exists()) {

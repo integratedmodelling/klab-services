@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 
 import java.io.File;
@@ -300,7 +300,7 @@ public class CoreOntology {
     }
 
     public CoreOntology(List<Pair<String, String>> ontologies, OWL owl) {
-        this.root = Configuration.INSTANCE.getDataPath("knowledge");
+        this.root = ServiceConfiguration.INSTANCE.getDataPath("knowledge");
         this.owl = owl;
         for (var ontology : ontologies) {
             // TODO?

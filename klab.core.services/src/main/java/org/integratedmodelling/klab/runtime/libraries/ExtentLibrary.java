@@ -27,7 +27,7 @@ import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction.Argument;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.scale.space.GridImpl;
 import org.integratedmodelling.klab.runtime.scale.space.ShapeImpl;
 import org.integratedmodelling.klab.runtime.scale.space.TileImpl;
@@ -323,8 +323,8 @@ public class ExtentLibrary {
 		if (pd == null || pd.getFirst() == null || pd.getSecond() == null)
 			throw new KlabValidationException("wrong resolution specification: " + spec);
 
-		Unit uu = Configuration.INSTANCE.getService(UnitService.class).getUnit(pd.getSecond());
-		Unit mm = Configuration.INSTANCE.getService(UnitService.class).meters();
+		Unit uu = ServiceConfiguration.INSTANCE.getService(UnitService.class).getUnit(pd.getSecond());
+		Unit mm = ServiceConfiguration.INSTANCE.getService(UnitService.class).meters();
 
 		return mm.convert(pd.getFirst().doubleValue(), uu).doubleValue();
 	}

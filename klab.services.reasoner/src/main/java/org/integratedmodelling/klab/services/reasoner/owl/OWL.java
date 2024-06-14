@@ -45,7 +45,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
@@ -304,7 +304,7 @@ public class OWL {
 
         manager = OWLManager.createOWLOntologyManager();
         // this.loadPath = loadPath;
-        coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"), this);
+        coreOntology = new CoreOntology(ServiceConfiguration.INSTANCE.getDataPath("knowledge"), this);
         // coreOntology.load(monitor);
         load(coreOntology.getRoot());
 
@@ -344,7 +344,7 @@ public class OWL {
         // overall),
         // monitor);
         // }
-        if (Configuration.INSTANCE.useReasoner()) {
+        if (ServiceConfiguration.INSTANCE.useReasoner()) {
             this.reasoner =
                     new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
             reasonerActive = true;
@@ -397,7 +397,7 @@ public class OWL {
 
             if (Character.isUpperCase(st.getNamespace().charAt(0))) {
 
-                Authority authority = Configuration.INSTANCE.getAuthorities().get(st.getNamespace());
+                Authority authority = ServiceConfiguration.INSTANCE.getAuthorities().get(st.getNamespace());
                 if (authority != null) {
                     Identity identity = authority.resolveIdentity(removeTicks(st.getName()));
                     if (identity != null) {

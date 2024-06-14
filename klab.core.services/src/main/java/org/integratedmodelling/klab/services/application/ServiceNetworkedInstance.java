@@ -8,8 +8,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -18,15 +16,13 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.ServiceChannelImpl;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
-import org.integratedmodelling.klab.services.application.controllers.KlabScopeController;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.springframework.beans.factory.InitializingBean;
@@ -50,8 +46,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import javax.annotation.PreDestroy;
 import java.io.File;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -205,7 +199,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
                      .flatMap(Arrays::<String>stream)
                      .forEach(propName -> {
                          if (propName.contains("klab.")) {
-                             Configuration.INSTANCE.getProperties().setProperty(propName,
+                             ServiceConfiguration.INSTANCE.getProperties().setProperty(propName,
                                      environment.getProperty(propName));
                          }
                      });

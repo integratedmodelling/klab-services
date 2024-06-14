@@ -82,7 +82,7 @@ import java.util.logging.Level;
  * @author Ferd
  * @version $Id: $Id
  */
-public enum Configuration {
+public enum ServiceConfiguration {
 
     INSTANCE;
 
@@ -316,7 +316,7 @@ public enum Configuration {
      */
     public String KLAB_RELATIVE_WORK_PATH = ".klab";
 
-    private Configuration() {
+    private ServiceConfiguration() {
 
         if (System.getProperty(KLAB_DATA_DIRECTORY) != null) {
             this.dataPath = new File(System.getProperty(KLAB_DATA_DIRECTORY));
@@ -880,7 +880,7 @@ public enum Configuration {
     }
 
     public boolean isEchoEnabled() {
-        return !"true".equals(getProperty(Configuration.KLAB_DISABLE_CONSOLE_ECHO, "false"));
+        return !"true".equals(getProperty(ServiceConfiguration.KLAB_DISABLE_CONSOLE_ECHO, "false"));
     }
 
     /**
@@ -903,11 +903,11 @@ public enum Configuration {
     }
 
     public int getMaxWaitTime() {
-        return Integer.parseInt(getProperty(Configuration.KLAB_ACCEPTED_WAIT_TIME_SECONDS, "10"));
+        return Integer.parseInt(getProperty(ServiceConfiguration.KLAB_ACCEPTED_WAIT_TIME_SECONDS, "10"));
     }
 
     public String getProductsBranch() {
-        return getProperty(Configuration.KLAB_PRODUCTS_BRANCH, Configuration.DEFAULT_PRODUCTS_BRANCH);
+        return getProperty(ServiceConfiguration.KLAB_PRODUCTS_BRANCH, ServiceConfiguration.DEFAULT_PRODUCTS_BRANCH);
     }
 
     public URL getLocalComponentRepositoryURL(String servicePath) {

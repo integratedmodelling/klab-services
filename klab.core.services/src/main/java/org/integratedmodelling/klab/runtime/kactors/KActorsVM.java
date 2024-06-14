@@ -66,7 +66,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.api.services.runtime.kactors.WidgetActionExecutor;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library.CallDescriptor;
@@ -1671,7 +1671,7 @@ public class KActorsVM implements VM {
         Expression.Descriptor selectDescriptor;
         Expression selectExpression = null;
         Map<String, State> states = new HashMap<>();
-        Language languageService = Configuration.INSTANCE.getService(Language.class);
+        Language languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
 
         if (comparison != null) {
             if (comparison.getType() == ValueType.EXPRESSION) {

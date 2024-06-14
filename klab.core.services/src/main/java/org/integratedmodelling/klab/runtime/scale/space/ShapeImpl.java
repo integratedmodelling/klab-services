@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.klab.api.services.UnitService;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.locationtech.jts.algorithm.ConvexHull;
 import org.locationtech.jts.geom.*;
@@ -239,7 +239,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
     @Override
     public double getArea(Unit unit) {
         return unit.convert(getMeteredShape().getArea(),
-                        Configuration.INSTANCE.getService(UnitService.class).squareMeters())
+                        ServiceConfiguration.INSTANCE.getService(UnitService.class).squareMeters())
                 .doubleValue();
     }
 
@@ -705,7 +705,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     public Shape getSimplified(Quantity resolution) {
 
-        UnitService units = Configuration.INSTANCE.getService(UnitService.class);
+        UnitService units = ServiceConfiguration.INSTANCE.getService(UnitService.class);
 
         if (this.simplified) {
             return this;
@@ -1041,7 +1041,7 @@ public class ShapeImpl extends SpaceImpl implements Shape {
 
     @Override
     public Unit getDimensionUnit() {
-        return Configuration.INSTANCE.getService(UnitService.class).squareMeters();
+        return ServiceConfiguration.INSTANCE.getService(UnitService.class).squareMeters();
     }
     @Override
     public boolean matches(Collection<Constraint> constraints) {

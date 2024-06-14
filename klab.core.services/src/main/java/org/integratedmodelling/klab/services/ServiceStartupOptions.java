@@ -9,7 +9,7 @@ import java.util.List;
 import org.integratedmodelling.klab.api.authentication.KlabCertificate;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.configuration.Configuration;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -188,7 +188,7 @@ public class ServiceStartupOptions implements StartupOptions {
     public File getCertificateFile() {
         if (certificateFile == null) {
             certificateFile =
-                    new File(Configuration.INSTANCE.getDataPath() + File.separator + KlabCertificate.DEFAULT_NODE_CERTIFICATE_FILENAME);
+                    new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + KlabCertificate.DEFAULT_NODE_CERTIFICATE_FILENAME);
         }
         return certificateFile;
     }
@@ -200,7 +200,7 @@ public class ServiceStartupOptions implements StartupOptions {
     @Override
     public File getDataDirectory() {
         if (dataDir == null) {
-            dataDir = Configuration.INSTANCE.getDataPath();
+            dataDir = ServiceConfiguration.INSTANCE.getDataPath();
         }
         return dataDir;
     }
@@ -328,7 +328,7 @@ public class ServiceStartupOptions implements StartupOptions {
      */
     public File fileFromPath(String path) {
 
-        File configurationDirectory = dataDir == null ? Configuration.INSTANCE.getDataPath() : dataDir;
+        File configurationDirectory = dataDir == null ? ServiceConfiguration.INSTANCE.getDataPath() : dataDir;
         if (!configurationDirectory.exists()) {
             configurationDirectory.mkdirs();
         }
