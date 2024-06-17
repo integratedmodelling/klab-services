@@ -1,6 +1,9 @@
 package org.integratedmodelling.klab.api.view.modeler.views.controllers;
 
+import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
+import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.view.UIReactor;

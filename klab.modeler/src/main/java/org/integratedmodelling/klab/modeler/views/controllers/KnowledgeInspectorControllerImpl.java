@@ -1,12 +1,14 @@
 package org.integratedmodelling.klab.modeler.views.controllers;
 
 import org.integratedmodelling.common.view.AbstractUIViewController;
+import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
+import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.Resource;
+import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.views.KnowledgeInspector;
-import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.KnowledgeInspectorController;
 
 public class KnowledgeInspectorControllerImpl extends AbstractUIViewController<KnowledgeInspector> implements KnowledgeInspectorController  {
@@ -34,4 +36,5 @@ public class KnowledgeInspectorControllerImpl extends AbstractUIViewController<K
     public void focusService(KlabService.ServiceCapabilities capabilities) {
         view().showService(capabilities);
     }
+
 }

@@ -1,10 +1,13 @@
 package org.integratedmodelling.klab.api.view;
 
+import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.Expression;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -243,7 +246,9 @@ public interface UIReactor {
         /**
          * Declaring a dependency on this event means that we want all events sent to the annotated method.
          */
-        AnyEvent(EventDirection.Bidirectional, Void.class);
+        AnyEvent(EventDirection.Bidirectional, Void.class),
+        ;
+
 
         List<Class<?>> payloadClasses = new ArrayList<>();
         EventDirection direction;
