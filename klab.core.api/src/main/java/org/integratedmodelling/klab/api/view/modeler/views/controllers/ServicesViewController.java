@@ -57,7 +57,9 @@ public interface ServicesViewController extends ViewController<ServicesView> {
      * @param service the capabilities of the service selected
      */
     @UIActionHandler(value = UIReactor.UIAction.SelectService, sends = UIEvent.ServiceSelected)
-    void focusService(KlabService.ServiceCapabilities service);
+    void selectService(KlabService.ServiceCapabilities service);
 
+    @UIActionHandler(value = UIReactor.UIAction.FocusService, sends = UIEvent.ServiceFocused)
+    void focusService(KlabService.ServiceCapabilities service);
 
 }

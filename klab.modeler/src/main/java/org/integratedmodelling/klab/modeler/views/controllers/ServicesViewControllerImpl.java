@@ -47,13 +47,18 @@ public class ServicesViewControllerImpl extends AbstractUIViewController<Service
     }
 
     @Override
-    public void focusService(KlabService.ServiceCapabilities service) {
+    public void selectService(KlabService.ServiceCapabilities service) {
         // set the engine's current service. TODO call actions only if the service has changed (return
         //  a boolean). Currently not working with this logic as the current service may not have been
         /// notified.
         getController().setDefaultService(service);
-        // inform all other views
         getController().dispatch(this, UIEvent.ServiceSelected, service);
+    }
+
+    @Override
+    public void focusService(KlabService.ServiceCapabilities service) {
+        // inform all other views
+        getController().dispatch(this, UIEvent.ServiceFocused, service);
     }
 
 }

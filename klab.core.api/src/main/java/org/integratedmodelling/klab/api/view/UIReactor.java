@@ -134,12 +134,10 @@ public interface UIReactor {
          * the view must own one in order to send this.
          */
         ReportChangeOfPositionInDocument(Integer.class),
-
         RequestChangeOfPositionInDocument(Integer.class),
-
         SelectDistribution(Distribution.class),
-
-        SelectService(KlabService.class);
+        FocusService(KlabService.ServiceCapabilities.class),
+        SelectService(KlabService.ServiceCapabilities.class);
 
         List<Class<?>> targetClasses = new ArrayList<>();
 
