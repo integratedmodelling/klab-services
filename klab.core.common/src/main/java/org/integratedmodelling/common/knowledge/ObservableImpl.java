@@ -26,7 +26,7 @@ public class ObservableImpl implements Observable {
     private static final long serialVersionUID = 6188649888474774359L;
 
     private Concept semantics;
-    private DirectObservation observer;
+    private Concept observer;
     private DescriptionType descriptionType;
     private Artifact.Type artifactType;
     private boolean isAbstract;
@@ -269,7 +269,7 @@ public class ObservableImpl implements Observable {
     }
 
     @Override
-    public DirectObservation getObserver() {
+    public Concept getObserver() {
         return observer;
     }
 
@@ -285,7 +285,7 @@ public class ObservableImpl implements Observable {
         this.semantics = semantics;
     }
 
-    public void setObserver(DirectObservation observer) {
+    public void setObserver(Concept observer) {
         this.observer = observer;
     }
 

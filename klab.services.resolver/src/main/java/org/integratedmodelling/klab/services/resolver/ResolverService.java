@@ -101,9 +101,8 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public Capabilities capabilities(Scope scope) {
-// TODO Auto-generated method stub
-        return new ResolverCapabilitiesImpl()
-        {
+        // TODO Auto-generated method stub
+        return new ResolverCapabilitiesImpl() {
             @Override
             public Type getType() {
                 return Type.RESOLVER;
@@ -157,12 +156,12 @@ public class ResolverService extends BaseService implements Resolver {
         Scale scale = scope.getScale();
         Resolvable observable = switch (knowledge) {
             case Concept concept -> Observable.promote(concept);
-//            case KimInstance instance -> {
-//                // FIXME build the scale from the geometry
-////                scale = instance.getScale();
-////                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
-//                yield instance.getObservable();
-//            }
+            //            case KimInstance instance -> {
+            //                // FIXME build the scale from the geometry
+            ////                scale = instance.getScale();
+            ////                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
+            //                yield instance.getObservable();
+            //            }
             case Model model -> model.getObservables().get(0);
             case Observable obs -> obs;
             default -> null;
@@ -172,7 +171,8 @@ public class ResolverService extends BaseService implements Resolver {
             // FIXME this should just set the resolution to an error state and return it
             throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
         } else if (scale == null || scale.isEmpty()) {
-            throw new KlabIllegalStateException("cannot resolve " + knowledge + " without a focal scale in the" +
+            throw new KlabIllegalStateException("cannot resolve " + knowledge + " without a focal scale in " +
+                    "the" +
                     " context");
         } /*else if (!(knowledge instanceof Instance) && !observable.getDescriptionType().isInstantiation()
                 && scope.getContextObservation() == null) {
@@ -227,7 +227,8 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         // see what the reasoner thinks of this observable
-        for (ObservationStrategyObsolete strategy : scope.getService(Reasoner.class).inferStrategies(observable,
+        for (ObservationStrategyObsolete strategy :
+                scope.getService(Reasoner.class).inferStrategies(observable,
                 scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
@@ -258,14 +259,16 @@ public class ResolverService extends BaseService implements Resolver {
      * @param parentModel
      * @return
      */
-    private ResolutionImpl resolveStrategy(ObservationStrategyObsolete strategy, Scale scale, ContextScope scope,
+    private ResolutionImpl resolveStrategy(ObservationStrategyObsolete strategy, Scale scale,
+                                           ContextScope scope,
                                            ResolutionImpl parent,
                                            Model parentModel) {
 
         Coverage coverage = Coverage.create(scale, 0.0);
         ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope, parent);
 
-        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments> operation : strategy) {
+        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments> operation :
+                strategy) {
             switch (operation.getFirst()) {
                 case OBSERVE -> {
                     for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
@@ -334,10 +337,10 @@ public class ResolverService extends BaseService implements Resolver {
 
         DataflowImpl ret = new DataflowImpl();
         Actuator rootActuator = null;
-//        if (knowledge instanceof Instance) {
-//            // create void actuator to wrap the instance
-//            // add to dataflow
-//        }
+        //        if (knowledge instanceof Instance) {
+        //            // create void actuator to wrap the instance
+        //            // add to dataflow
+        //        }
 
         Map<String, Actuator> compiled = new HashMap<>();
 
@@ -366,7 +369,7 @@ public class ResolverService extends BaseService implements Resolver {
                                          Actuator parentActuator, Dataflow dataflow,
                                          Map<String, Actuator> compiled, ContextScope scope) {
 
-        if (resolvable instanceof  Observable observable) {
+        if (resolvable instanceof Observable observable) {
 
             ActuatorImpl ret = null;
             var id = createId(observable, scope);
@@ -462,7 +465,8 @@ public class ResolverService extends BaseService implements Resolver {
         return (scope.getContextObservation() == null ? "" : (scope.getContextObservation().getId() + "."))
                 + observable.getDescriptionType().name().toLowerCase() + "." + observable.getReferenceName() + "."
                 + (observable.getObserver() == null ? scope.getIdentity().getId() :
-                   observable.getObserver().getId());
+                   ("_as_" + observable.getObserver().codeName()));
+
     }
 
     /**
@@ -479,7 +483,7 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Resolvable> T resolveKnowledge(String urn,Scope scope) {
+    public <T extends Resolvable> T resolveKnowledge(String urn, Scope scope) {
 
         Knowledge ret = null;
 
@@ -535,12 +539,12 @@ public class ResolverService extends BaseService implements Resolver {
         }
         for (Resource result : set.getResults()) {
             switch (result.getKnowledgeClass()) {
-//                case INSTANCE:
-//                    Instance instance = instances.get(result.getResourceUrn());
-//                    if (instance != null) {
-//                        ret.add(instance);
-//                    }
-//                    break;
+                //                case INSTANCE:
+                //                    Instance instance = instances.get(result.getResourceUrn());
+                //                    if (instance != null) {
+                //                        ret.add(instance);
+                //                    }
+                //                    break;
                 case MODEL:
                     Model model = models.get(result.getResourceUrn());
                     if (model != null) {
@@ -575,63 +579,65 @@ public class ResolverService extends BaseService implements Resolver {
         }
     }
 
-//    private Observation loadInstance(KimInstance statement, Scope scope) {
-//
-//        var reasoner = scope.getService(Reasoner.class);
-//////
-//////        InstanceImpl instance = new InstanceImpl();
-//////        instance.setNamespace(statement.getNamespace());
-//////        instance.getAnnotations().addAll(statement.getAnnotations());
-//////        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder(scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
-//////        instance.setUrn(statement.getNamespace() + "." + statement.getName());
-//////        instance.setMetadata(statement.getMetadata());
-//////        instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
-//////
-//////        for (KimObservable state : statement.getStates()) {
-//////            instance.getStates().add(reasoner.declareObservable(state));
-//////        }
-//////        for (var child : statement.getChildren()) {
-//////            instance.getChildren().add(loadInstance( child, scope));
-//////        }
-////
-////        return instance;
-//        return null;
-//    }
+    //    private Observation loadInstance(KimInstance statement, Scope scope) {
+    //
+    //        var reasoner = scope.getService(Reasoner.class);
+    //////
+    //////        InstanceImpl instance = new InstanceImpl();
+    //////        instance.setNamespace(statement.getNamespace());
+    //////        instance.getAnnotations().addAll(statement.getAnnotations());
+    //////        instance.setObservable(reasoner.declareObservable(statement.getObservable()).builder
+    // (scope).as(DescriptionType.ACKNOWLEDGEMENT).build());
+    //////        instance.setUrn(statement.getNamespace() + "." + statement.getName());
+    //////        instance.setMetadata(statement.getMetadata());
+    //////        instance.setScale(createScaleFromBehavior(statement.getBehavior(), scope));
+    //////
+    //////        for (KimObservable state : statement.getStates()) {
+    //////            instance.getStates().add(reasoner.declareObservable(state));
+    //////        }
+    //////        for (var child : statement.getChildren()) {
+    //////            instance.getChildren().add(loadInstance( child, scope));
+    //////        }
+    ////
+    ////        return instance;
+    //        return null;
+    //    }
 
-//    private Scale createScaleFromBehavior(KimBehavior behavior, Scope scope) {
-//
-//        Scale scale = null;
-//        List<Extent<?>> extents = new ArrayList<>();
-//        var languageService = Configuration.INSTANCE.getService(Language.class);
-//
-//        if (behavior != null) {
-//            for (ServiceCall call : behavior.getExtentFunctions()) {
-//                var ext = languageService.execute(call, scope, Object.class);
-//                if (ext instanceof Scale) {
-//                    scale = (Scale) ext;
-//                } else if (ext instanceof Geometry) {
-//                    scale = Scale.create((Geometry) ext);
-//                } else if (ext instanceof Extent) {
-//                    extents.add((Extent<?>) ext);
-//                } else {
-//                    throw new KlabIllegalStateException("the call to " + call.getUrn() + " did not produce a " +
-//                            "scale or " +
-//                            "an extent");
-//                }
-//            }
-//        }
-//        if (scale != null) {
-//            for (Extent<?> extent : extents) {
-//                scale = scale.mergeExtent(extent);
-//            }
-//        } else if (!extents.isEmpty()) {
-//            scale = Scale.create(extents);
-//        } else {
-//            scale = Scale.empty();
-//        }
-//
-//        return scale;
-//    }
+    //    private Scale createScaleFromBehavior(KimBehavior behavior, Scope scope) {
+    //
+    //        Scale scale = null;
+    //        List<Extent<?>> extents = new ArrayList<>();
+    //        var languageService = Configuration.INSTANCE.getService(Language.class);
+    //
+    //        if (behavior != null) {
+    //            for (ServiceCall call : behavior.getExtentFunctions()) {
+    //                var ext = languageService.execute(call, scope, Object.class);
+    //                if (ext instanceof Scale) {
+    //                    scale = (Scale) ext;
+    //                } else if (ext instanceof Geometry) {
+    //                    scale = Scale.create((Geometry) ext);
+    //                } else if (ext instanceof Extent) {
+    //                    extents.add((Extent<?>) ext);
+    //                } else {
+    //                    throw new KlabIllegalStateException("the call to " + call.getUrn() + " did not
+    //                    produce a " +
+    //                            "scale or " +
+    //                            "an extent");
+    //                }
+    //            }
+    //        }
+    //        if (scale != null) {
+    //            for (Extent<?> extent : extents) {
+    //                scale = scale.mergeExtent(extent);
+    //            }
+    //        } else if (!extents.isEmpty()) {
+    //            scale = Scale.create(extents);
+    //        } else {
+    //            scale = Scale.empty();
+    //        }
+    //
+    //        return scale;
+    //    }
 
     private Model loadModel(KimModel statement, Scope scope) {
 
@@ -661,8 +667,8 @@ public class ResolverService extends BaseService implements Resolver {
         model.setNamespace(statement.getNamespace());
 
         // FIXME putaroja
-//        model.getActions().addAll(statement.getBehavior().getStatements());
-//        model.setCoverage(createScaleFromBehavior(statement.getBehavior(), scope));
+        //        model.getActions().addAll(statement.getBehavior().getStatements());
+        //        model.setCoverage(createScaleFromBehavior(statement.getBehavior(), scope));
 
         return model;
     }
@@ -707,7 +713,7 @@ public class ResolverService extends BaseService implements Resolver {
          * Check for updates, load and scan all new plug-ins, returning the main packages to scan
          */
         // FIXME update paths and simplify, put in BaseService
-//        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
+        //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
         /*
          * Scan all packages registered under the parent package of all k.LAB services. TODO all

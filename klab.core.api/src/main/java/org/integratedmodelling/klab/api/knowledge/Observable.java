@@ -21,23 +21,24 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Observables are concepts with additional information that specifies how they may be observed. This additional
- * information may include units of measurement, value ranges, currency, or expressions involving {@link ValueOperator}s
- * and their arguments. Observables may also be explicitly "named" by the user.
+ * Observables are concepts with additional information that specifies how they may be observed. This
+ * additional information may include units of measurement, value ranges, currency, or expressions involving
+ * {@link ValueOperator}s and their arguments. Observables may also be explicitly "named" by the user.
  * <p>
- * From the perspective of the k.LAB reasoner and engine, two observables are equal if and only if both the semantic and
- * the observational parts are equal. The stated name does not enter the comparison.
+ * From the perspective of the k.LAB reasoner and engine, two observables are equal if and only if both the
+ * semantic and the observational parts are equal. The stated name does not enter the comparison.
  * <p>
- * The reference name of an observable ({@link #getReferenceName()} is as unique and stable as its full URN but is a
- * valid identifier in k.LAB. It can be used as an unambiguous identifier in code that uses observables.
+ * The reference name of an observable ({@link #getReferenceName()} is as unique and stable as its full URN
+ * but is a valid identifier in k.LAB. It can be used as an unambiguous identifier in code that uses
+ * observables.
  *
  * @author Ferd
  */
 public interface Observable extends Semantics, Resolvable {
 
     /**
-     * Conditions stated in the observable that trigger the use of the default value. Only meaningful if a default value
-     * is given.
+     * Conditions stated in the observable that trigger the use of the default value. Only meaningful if a
+     * default value is given.
      *
      * @author Ferd
      */
@@ -46,16 +47,16 @@ public interface Observable extends Semantics, Resolvable {
     }
 
     /**
-     * The observable builder provides a uniform interface to create and declare concepts that incarnate all the
-     * possible features for an observable. The builder is smart and fast when concepts that already exist due to
-     * previous declarations are requested.
+     * The observable builder provides a uniform interface to create and declare concepts that incarnate all
+     * the possible features for an observable. The builder is smart and fast when concepts that already exist
+     * due to previous declarations are requested.
      * <p>
-     * NOTE: the builder's methods should return the same builder, not a child builder. This means that, for example,
-     * of(concept).withTrait(trait) will apply the trait to the <em>main</em> concept, not the inherent one. In most
-     * programmatical applications, this is the desired behavior for fluent observable specification and modification.
-     * We provide an ObservableComposer which acts as a stateful builder and implements the alternative behavior and
-     * validates each new specification against semantic constraints, meant to be used with interactive applications
-     * that build concepts incrementally.
+     * NOTE: the builder's methods should return the same builder, not a child builder. This means that, for
+     * example, of(concept).withTrait(trait) will apply the trait to the <em>main</em> concept, not the
+     * inherent one. In most programmatical applications, this is the desired behavior for fluent observable
+     * specification and modification. We provide an ObservableComposer which acts as a stateful builder and
+     * implements the alternative behavior and validates each new specification against semantic constraints,
+     * meant to be used with interactive applications that build concepts incrementally.
      *
      * @author ferdinando.villa
      */
@@ -75,11 +76,11 @@ public interface Observable extends Semantics, Resolvable {
          */
         Builder with(Concept compresent);
 
-//        /**
-//         * @param context
-//         * @return the same builder this was called on, for chaining calls
-//         */
-//        Builder within(Concept context);
+        //        /**
+        //         * @param context
+        //         * @return the same builder this was called on, for chaining calls
+        //         */
+        //        Builder within(Concept context);
 
         /**
          * @param goal
@@ -108,14 +109,14 @@ public interface Observable extends Semantics, Resolvable {
         Builder withRole(Concept role);
 
         /**
-         * Transform the original concept into its equivalent filtered by the passed semantic operator. For example,
-         * transform an original event into its probability by passing SemanticOperator.PROBABILITY. If the operator
-         * implies additional operands (for example a ratio) these should be passed after the semantic type. This one
-         * transforms the concept in the builder right away, leaving nothing to do for build() but return the
-         * transformed concept, unless more build actions are called after it. If the original concept cannot be
-         * transformed into the specified one, build() will return an informative exception, but no error will be
-         * reported when the method is called. The getErrors() call will report the exceptions accumulated if
-         * necessary.
+         * Transform the original concept into its equivalent filtered by the passed semantic operator. For
+         * example, transform an original event into its probability by passing SemanticOperator.PROBABILITY.
+         * If the operator implies additional operands (for example a ratio) these should be passed after the
+         * semantic type. This one transforms the concept in the builder right away, leaving nothing to do for
+         * build() but return the transformed concept, unless more build actions are called after it. If the
+         * original concept cannot be transformed into the specified one, build() will return an informative
+         * exception, but no error will be reported when the method is called. The getErrors() call will
+         * report the exceptions accumulated if necessary.
          *
          * @param type
          * @param participants
@@ -152,9 +153,9 @@ public interface Observable extends Semantics, Resolvable {
         Builder withTrait(Collection<Concept> concepts);
 
         /**
-         * Remove traits or roles from the concept being built. Do nothing if the concept so far does not have those
-         * traits or roles. Pair with (@link {@link #without(Concept...)} as Java is WriteEverythingTwice, not
-         * DontRepeatYourself.
+         * Remove traits or roles from the concept being built. Do nothing if the concept so far does not have
+         * those traits or roles. Pair with (@link {@link #without(Concept...)} as Java is
+         * WriteEverythingTwice, not DontRepeatYourself.
          *
          * @param concepts
          * @return the same builder this was called on, for chaining calls
@@ -162,9 +163,9 @@ public interface Observable extends Semantics, Resolvable {
         Builder without(Collection<Concept> concepts);
 
         /**
-         * Remove traits or roles from the concept being built. Do nothing if the concept so far does not have those
-         * traits or roles. Pair with (@link {@link #without(Collection)} as Java is WriteEverythingTwice, not
-         * DontRepeatYourself.
+         * Remove traits or roles from the concept being built. Do nothing if the concept so far does not have
+         * those traits or roles. Pair with (@link {@link #without(Collection)} as Java is
+         * WriteEverythingTwice, not DontRepeatYourself.
          *
          * @param concepts
          * @return the same builder this was called on, for chaining calls
@@ -172,8 +173,8 @@ public interface Observable extends Semantics, Resolvable {
         Builder without(Concept... concepts);
 
         /**
-         * Build the concept (if necessary) as specified in the configured ontology. If the concept as specified already
-         * exists, just return it.
+         * Build the concept (if necessary) as specified in the configured ontology. If the concept as
+         * specified already exists, just return it.
          *
          * @return the built concept
          * @throws KlabValidationException
@@ -181,8 +182,8 @@ public interface Observable extends Semantics, Resolvable {
         Concept buildConcept() throws KlabValidationException;
 
         /**
-         * Build an observable using the observable-specific options (currency, unit, classification and detail types).
-         * Use after constructing from an observable using {@link Observable#builder(Scope)}.
+         * Build an observable using the observable-specific options (currency, unit, classification and
+         * detail types). Use after constructing from an observable using {@link Observable#builder(Scope)}.
          *
          * @return the built concept
          * @throws KlabValidationException
@@ -190,9 +191,9 @@ public interface Observable extends Semantics, Resolvable {
         Observable build() throws KlabValidationException;
 
         /**
-         * Return any exceptions accumulated through the building process before build() is called. If build() is called
-         * when getErrors() returns a non-empty collection, it will throw an exception collecting the messages from all
-         * exception in the list.
+         * Return any exceptions accumulated through the building process before build() is called. If build()
+         * is called when getErrors() returns a non-empty collection, it will throw an exception collecting
+         * the messages from all exception in the list.
          *
          * @return any errors accumulated
          */
@@ -249,8 +250,8 @@ public interface Observable extends Semantics, Resolvable {
         Builder withValueOperator(ValueOperator operator, Object valueOperand);
 
         /**
-         * After any of the "without" functions get called, this can be checked on the resulting builder to see what
-         * exactly was removed.
+         * After any of the "without" functions get called, this can be checked on the resulting builder to
+         * see what exactly was removed.
          *
          * @return
          */
@@ -264,9 +265,9 @@ public interface Observable extends Semantics, Resolvable {
         Builder linking(Concept source, Concept target);
 
         /**
-         * Set the stated name for the observable, which will shadow the read-only "given" name based on the semantics
-         * (and make it inaccessible). The read-only reference name (uniquely linked to the semantics) remains
-         * unaltered.
+         * Set the stated name for the observable, which will shadow the read-only "given" name based on the
+         * semantics (and make it inaccessible). The read-only reference name (uniquely linked to the
+         * semantics) remains unaltered.
          *
          * @param name
          * @return
@@ -288,15 +289,17 @@ public interface Observable extends Semantics, Resolvable {
          */
         Builder withoutValueOperators();
 
-//        /**
-//         * Tags the classifier of an abstract attribute as targeting a specific concrete attribute, so that any
-//         * classified objects that won't have that specific attribute can be recognized as irrelevant to this
-//         * observation and hidden.
-//         *
-//         * @param targetPredicate
-//         * @return
-//         */
-//        Builder withTargetPredicate(Concept targetPredicate);
+        //        /**
+        //         * Tags the classifier of an abstract attribute as targeting a specific concrete
+        //         attribute, so that any
+        //         * classified objects that won't have that specific attribute can be recognized as
+        //         irrelevant to this
+        //         * observation and hidden.
+        //         *
+        //         * @param targetPredicate
+        //         * @return
+        //         */
+        //        Builder withTargetPredicate(Concept targetPredicate);
 
         /**
          * Set the observable resulting from buildObservable() as optional.
@@ -307,8 +310,8 @@ public interface Observable extends Semantics, Resolvable {
         Builder optional(boolean optional);
 
         /**
-         * Remove all the elements <em>directly</em> stated in the current concept corresponding to the passed role, if
-         * existing, and return a builder for the concept without them.
+         * Remove all the elements <em>directly</em> stated in the current concept corresponding to the passed
+         * role, if existing, and return a builder for the concept without them.
          *
          * @param roles
          * @return
@@ -324,8 +327,8 @@ public interface Observable extends Semantics, Resolvable {
         Builder withTemporalInherent(Concept concept);
 
         /**
-         * Add the dereified attribute to the observable. Will only affect the computations built from it after it's
-         * resolved.
+         * Add the dereified attribute to the observable. Will only affect the computations built from it
+         * after it's resolved.
          *
          * @param dereifiedAttribute
          * @return
@@ -358,7 +361,8 @@ public interface Observable extends Semantics, Resolvable {
         Builder withCurrency(String currency);
 
         /**
-         * Add an inline value to the observable (will check with the IArtifact.Type of the observable at build).
+         * Add an inline value to the observable (will check with the IArtifact.Type of the observable at
+         * build).
          *
          * @param value
          * @return
@@ -411,7 +415,8 @@ public interface Observable extends Semantics, Resolvable {
     }
 
     /**
-     * Return a builder to operate on this observable. A scope must be passed that references a valid reasoner.
+     * Return a builder to operate on this observable. A scope must be passed that references a valid
+     * reasoner.
      *
      * @return
      */
@@ -443,9 +448,10 @@ public interface Observable extends Semantics, Resolvable {
     List<Pair<ValueOperator, Literal>> getValueOperators();
 
     /**
-     * Each observable must be able to quickly assess the type of the description (observation activity) that will
-     * produce an IObservation of it. This is also used to instantiate storage for states. This is also a key in the
-     * equals() and hashcode functions, so that direct observables for instantiation and resolution are differentiated.
+     * Each observable must be able to quickly assess the type of the description (observation activity) that
+     * will produce an IObservation of it. This is also used to instantiate storage for states. This is also a
+     * key in the equals() and hashcode functions, so that direct observables for instantiation and resolution
+     * are differentiated.
      *
      * @return the necessary observation type
      */
@@ -467,17 +473,17 @@ public interface Observable extends Semantics, Resolvable {
     Artifact.Type getArtifactType();
 
     /**
-     * The stated name is either null or whatever was given in the 'named' clause, and will never be modified or
-     * redefined. It is meant to preserve the original name to capture references in models that are derived from
-     * others.
+     * The stated name is either null or whatever was given in the 'named' clause, and will never be modified
+     * or redefined. It is meant to preserve the original name to capture references in models that are
+     * derived from others.
      *
      * @return the stated name of this observable.
      */
     String getStatedName();
 
     /**
-     * Return any mediator in the state: unit, currency or range. These are also returned separately by other methods if
-     * we need to discriminate.
+     * Return any mediator in the state: unit, currency or range. These are also returned separately by other
+     * methods if we need to discriminate.
      *
      * @return
      */
@@ -491,8 +497,8 @@ public interface Observable extends Semantics, Resolvable {
     Literal getValue();
 
     /**
-     * If a default value was defined for a quality observable, it is returned here. It will be applied according to the
-     * stated resolution exceptions and the optional status.
+     * If a default value was defined for a quality observable, it is returned here. It will be applied
+     * according to the stated resolution exceptions and the optional status.
      *
      * @return
      */
@@ -507,46 +513,47 @@ public interface Observable extends Semantics, Resolvable {
 
 
     /**
-     * True if the observable was declared optional. This can only happen in model dependencies and for the observables
-     * of acknowledged subjects.
+     * True if the observable was declared optional. This can only happen in model dependencies and for the
+     * observables of acknowledged subjects.
      *
      * @return optional status
      */
     boolean isOptional();
 
     /**
-     * If this observable is the subjective point of view of a subject, return that subject. A null return value implies
-     * the observer is the owner of the session, i.e. what we can most legitimately call the "objective" observer for
-     * the observable.
+     * If this observable is the subjective point of view of a subject, return the subject's type. This limits
+     * the use of the observable to where the observer matches the type.
      *
      * @return
      */
-    DirectObservation getObserver();
+    Concept getObserver();
 
     /**
-     * Abstract status of an observable depends on having an abstract component in a defining place (e.g. not after
-     * <code>type of</code>) and/or having non-abstract generic components (introduced by <code>any</code> or another
-     * quantifier). {@link #isGeneric()} implies {@link #isAbstract()} but not the other way around. In both cases the
-     * abstract/generic components must be resolved in context to concrete components, whose cartesian product is used
-     * to incarnate concrete observables for deferred resolution.
+     * Abstract status of an observable depends on having an abstract component in a defining place (e.g. not
+     * after
+     * <code>type of</code>) and/or having non-abstract generic components (introduced by <code>any</code> or
+     * another quantifier). {@link #isGeneric()} implies {@link #isAbstract()} but not the other way around.
+     * In both cases the abstract/generic components must be resolved in context to concrete components, whose
+     * cartesian product is used to incarnate concrete observables for deferred resolution.
      *
      * @return
      */
     boolean isAbstract();
 
     /**
-     * Return all concepts that are generic or abstract within the statement of this observable. Generic means that
-     * their getQualifier() returns a non-null qualifier, therefore they must be resolved before the observable is
-     * usable. Abstract concepts in semantic roles that make the observable abstract (i.e., not where they're legitimate
-     * such as in <code>type of X</code>) are also returned here.
+     * Return all concepts that are generic or abstract within the statement of this observable. Generic means
+     * that their getQualifier() returns a non-null qualifier, therefore they must be resolved before the
+     * observable is usable. Abstract concepts in semantic roles that make the observable abstract (i.e., not
+     * where they're legitimate such as in <code>type of X</code>) are also returned here.
      *
      * @return
      */
     Collection<Concept> getGenericComponents();
 
     /**
-     * If the observable results from specializing a generic/abstract observable, return the pairs of matched generic ->
-     * specialized concepts substituted in this instance. The specialized concepts may have been generic or abstract.
+     * If the observable results from specializing a generic/abstract observable, return the pairs of matched
+     * generic -> specialized concepts substituted in this instance. The specialized concepts may have been
+     * generic or abstract.
      *
      * @return
      */
@@ -566,7 +573,8 @@ public interface Observable extends Semantics, Resolvable {
     public static Observable promote(Concept concept) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
-            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to observable");
+            throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to " +
+                    "observable");
         }
         return configuration.promoteConceptToObservable(concept);
     }
