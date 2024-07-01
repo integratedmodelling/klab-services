@@ -28,6 +28,15 @@ public interface Worldview extends KlabAsset {
     public static final String WORLDVIEW_WORKSPACE_IDENTIFIER = "__WORLDVIEW__";
 
     /**
+     * Properties for the worldview project that specify default semantics for spatial contexts and
+     * observers to support the explorer.
+     */
+    public static final String EXPLORER_OBSERVER_SEMANTICS = "klab.explorer.semantics.observer";
+    public static final String EXPLORER_LOCATION1D_SEMANTICS = "klab.explorer.semantics.location1d";
+    public static final String EXPLORER_LOCATION2D_SEMANTICS = "klab.explorer.semantics.location2d";
+    public static final String EXPLORER_LOCATION3D_SEMANTICS = "klab.explorer.semantics.location3d";
+
+    /**
      * A worldview must have a unique ID that reflects its full content. The ID is used to compare worldviews
      * loaded in a service to assess if they can be updated by changes happening in other services. Once
      * assigned upon worldview creation, the ID shouldn't be changed even if updates are merged.

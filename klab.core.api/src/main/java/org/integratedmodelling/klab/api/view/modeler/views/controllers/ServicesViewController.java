@@ -35,11 +35,10 @@ public interface ServicesViewController extends ViewController<ServicesView> {
     void serviceStarting(KlabService.ServiceCapabilities service);
 
     /**
-     * Will be called at least once after {@link #serviceAvailable(KlabService)} to report on service status,
-     * and possibly at regular intervals depending on the engine implementation. This may make the service
-     * available, unavailable, busy, and report on current load factor and state.
+     * Will be called at least once to report on service status, and possibly at regular intervals depending
+     * on the engine implementation. This may make the service available, unavailable, busy, and report on
+     * current load factor and state.
      *
-     * @param service
      * @param status
      */
     @UIEventHandler(UIEvent.ServiceStatus)
