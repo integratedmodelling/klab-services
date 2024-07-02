@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
+import java.net.URL;
 import java.util.List;
 import java.util.function.BiConsumer;
 

@@ -8,10 +8,8 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -35,7 +33,10 @@ import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorCon
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
 import java.io.File;
+import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A {@link UIController} specialized to provide and orchestrate the views and panels that compose the
@@ -51,6 +52,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     private SessionScope currentSession;
     EngineConfiguration workbench;
     File workbenchDefinition;
+    private Map<String, URL> serviceUrls = new HashMap<>();
 
     public ModelerImpl() {
         super();
@@ -63,6 +65,19 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public ModelerImpl(UI ui) {
         super(ui);
         // TODO read the workbench config - NAH this probably pertains to the IDE
+    }
+
+    @Override
+    public void dispatch(UIReactor sender, UIEvent event, Object... payload) {
+
+        // intercept some messages for bookkeeping
+        if (event == UIEvent.ServiceAvailable && payload.length > 0 && payload[0] instanceof KlabService.ServiceCapabilities capabilities) {
+            if (capabilities.getUrl() != null) {
+                serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
+            }
+        }
+
+        super.dispatch(sender, event, payload);
     }
 
     @Override
@@ -358,6 +373,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public SessionScope session(String session, boolean createIfAbsent) {
         // TODO named session
         return null;
+    }
+
+    @Override
+    public URL serviceUrl(String serviceId) {
+        return serviceUrls.get(serviceId);
     }
 
     @Override

@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.impl.AbstractServiceCapabilities;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -279,6 +280,11 @@ public abstract class ServiceClient implements KlabService {
                 }
             } finally {
                 if (connected.get() != currentStatus) {
+
+                    // add the URL to the capabilities.
+                    if (capabilities instanceof AbstractServiceCapabilities asc) {
+                        asc.setUrl(this.url);
+                    }
 
                     scope.send(Message.MessageClass.ServiceLifecycle, (connected.get() ?
                                                                        Message.MessageType.ServiceAvailable : Message.MessageType.ServiceUnavailable), capabilities);

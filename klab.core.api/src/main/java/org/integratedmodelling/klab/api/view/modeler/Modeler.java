@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -25,6 +26,8 @@ import java.util.List;
  * showing and hiding views.
  */
 public interface Modeler extends UIController {
+
+    URL serviceUrl(String serviceId);
 
     /**
      * TODO move into {@link org.integratedmodelling.klab.api.engine.distribution.Settings}

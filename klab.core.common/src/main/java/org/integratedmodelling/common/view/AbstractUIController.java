@@ -204,7 +204,7 @@ public abstract class AbstractUIController implements UIController {
                 switch (message.getMessageType()) {
                     case ServiceUnavailable -> dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
                             message.getPayload(Object.class));
-                    case ServiceAvailable -> dispatch(this, UIReactor.UIEvent.ServiceAvailable,
+                    case ServiceAvailable ->  dispatch(this, UIReactor.UIEvent.ServiceAvailable,
                             message.getPayload(Object.class));
                     case ServiceInitializing -> dispatch(this, UIReactor.UIEvent.ServiceStarting,
                             message.getPayload(Object.class));

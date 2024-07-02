@@ -51,7 +51,6 @@ public interface RuntimeService extends KlabService {
      */
     String createContext(SessionScope scope, String sessionName);
 
-
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available
      * contextualizers and verbs, with associated costs, so that they can be checked before sending a

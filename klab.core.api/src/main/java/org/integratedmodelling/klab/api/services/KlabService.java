@@ -213,6 +213,16 @@ public interface KlabService extends Service {
          * @return
          */
         String getServerId();
+
+        /**
+         * The URL may be null, which means that the service isn't accessible through a client. Any service
+         * that is accessible by clients should send the URL at least with the capabilities sent through the
+         * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageType#ServiceAvailable}
+         * message. The URL may be filled in by the server itself or, if empty, by the service orchestrator.
+         *
+         * @return
+         */
+        URL getUrl();
     }
 
     /**
