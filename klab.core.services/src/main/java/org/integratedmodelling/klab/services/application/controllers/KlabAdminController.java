@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
@@ -13,13 +12,8 @@ import org.integratedmodelling.klab.services.application.ServiceNetworkedInstanc
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
-import org.springframework.web.ErrorResponse;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.security.Principal;
 import java.util.List;
@@ -72,7 +66,7 @@ public class KlabAdminController {
      */
     @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public @ResponseBody ExternalAuthenticationCredentials.CredentialInfo setCredentials(@RequestBody CredentialsRequest request, Principal principal) {
-        var scope = scopeManager.resolveScope(principal, Scope.class);
+        var scope = scopeManager.resolveScope(principal, Scope.class, null);
         request.getCredentials().setId(Utils.Names.shortUUID());
         request.getCredentials().setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(scope));
         return Authentication.INSTANCE.addExternalCredentials(request.getHost(), request.getCredentials(),
@@ -99,7 +93,7 @@ public class KlabAdminController {
      */
     @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public @ResponseBody List<ExternalAuthenticationCredentials.CredentialInfo> listCredentials(Principal principal) {
-        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal, Scope.class));
+        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal, Scope.class, null));
     }
 
 }

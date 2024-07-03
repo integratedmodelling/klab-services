@@ -31,7 +31,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     ServiceSessionScope(ServiceUserScope parent) {
         super(parent);
-        this.setId(parent.getIdentity().getId() + "/s_" + name + Utils.Names.shortUUID());
+        this.setId(parent.getIdentity().getId() + "." + name + Utils.Names.shortUUID());
         this.data = Parameters.create();
         this.data.putAll(parent.data);
     }
@@ -42,18 +42,18 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     }
 
     @Override
-    public ContextScope createContext(String contextId, Geometry geometry) {
+    public ContextScope createContext(String contextName) {
 
         final ServiceContextScope ret = new ServiceContextScope(this);
-        ret.setName(contextId);
+        ret.setName(contextName);
         ret.setStatus(Status.WAITING);
         Ref contextAgent = this.getAgent()
-                               .ask(new CreateContext(ret, contextId, geometry == null ? this.geometry :
+                               .ask(new CreateContext(ret, contextName, geometry == null ? this.geometry :
                                                                       geometry), Ref.class);
         if (!contextAgent.isEmpty()) {
             ret.setStatus(Status.STARTED);
             ret.setAgent(contextAgent);
-            contexts.put(contextId, ret);
+//            contexts.put(contextId, ret);
         } else {
             ret.setStatus(Status.ABORTED);
         }

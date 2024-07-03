@@ -156,17 +156,32 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
 
         var sessionId = runtime.createSession(this, sessionName);
 
-        //		final EngineSessionScope ret = new EngineSessionScope(this);
-        //		ret.setStatus(Status.WAITING);
-        //		Ref sessionAgent = this.agent.ask(new CreateSession(ret, sessionName), Ref.class);
-        //		if (!sessionAgent.isEmpty()) {
-        //			ret.setName(sessionName);
-        //			ret.setStatus(Status.STARTED);
-        //			ret.setAgent(sessionAgent);
-        //		} else {
-        //			ret.setStatus(Status.ABORTED);
-        //		}
-        //		return ret;
+        if (sessionId != null) {
+
+            /**
+             * Registration with the runtime succeeded. Return a peer scope locked to the
+             * runtime service that hosts it.
+             */
+            return new ClientSessionScope(this, sessionId, runtime) {
+
+                @Override
+                public <T extends KlabService> T getService(Class<T> serviceClass) {
+                    if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+                        return (T)runtime;
+                    }
+                    return ClientUserScope.this.getService(serviceClass);
+                }
+
+                @Override
+                public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                    if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+                        return List.of((T)runtime);
+                    }
+                    return ClientUserScope.this.getServices(serviceClass);
+                }
+            };
+
+        }
         return null;
     }
 

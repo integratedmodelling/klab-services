@@ -91,7 +91,8 @@ public class ScopeManager {
 
             scopes.put(user.getUsername(), ret);
 
-            File userBehavior = new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator + "user" +
+            File userBehavior = new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator +
+                    "user" +
                     ".kactors");
             if (userBehavior.isFile() && userBehavior.canRead()) {
                 try {
@@ -126,7 +127,7 @@ public class ScopeManager {
         ServiceUserScope ret = null;
 
         /**
-         * The three physical scope levels are user/session/context. Below that, scopes are "virtual"
+         * The physical scope levels are user.session.context. Below that, scopes are "virtual"
          * incarnations of the context scope with modified state and
          * their hierarchy is handled internally by the {@link ContextScope} implementation.
          */
@@ -164,11 +165,12 @@ public class ScopeManager {
     }
 
 
-    public <T extends Scope> T getOrCreateScope(String scopeId) {
+    public <T extends Scope> T getOrCreateScope(EngineAuthorization authorization, String scopeId) {
         return null;
     }
 
     public SessionScope newSessionScope(UserScope scope) {
+
         return null;
     }
 

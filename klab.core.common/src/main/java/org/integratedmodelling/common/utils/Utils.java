@@ -12,6 +12,7 @@ import com.google.common.net.MediaType;
 import com.jcraft.jsch.JSch;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
@@ -19,7 +20,9 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -69,6 +72,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
     public static class Http {
 
         public static class Client implements AutoCloseable {
+
             private HttpClient client;
             private URI uri;
             private String authorization;
@@ -86,6 +90,32 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             static class Options {
                 public boolean silent = false;
                 // TODO
+            }
+
+            private Client() {}
+
+            private Client(Client other) {
+                this.client = other.client;
+                this.uri = other.uri;
+                this.scope = other.scope;
+                this.headers.putAll(other.headers);
+                this.authorization = other.authorization;
+            }
+
+            /**
+             * Localize the scope to another. Headers passed with the request will reflect the
+             * scope nesting.
+             *
+             * @param scope
+             * @return
+             */
+            public Client withScope(Scope scope) {
+                var ret = new Client(this);
+                ret.scope = scope;
+                if (scope instanceof ContextScope || scope instanceof SessionScope) {
+                    headers.put(ServicesAPI.OBSERVER_HEADER, scope.getIdentity().getId());
+                }
+                return ret;
             }
 
             /**

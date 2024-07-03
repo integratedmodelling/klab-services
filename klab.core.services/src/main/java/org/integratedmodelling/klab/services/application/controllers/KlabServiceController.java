@@ -30,7 +30,7 @@ public class KlabServiceController {
     public KlabService.ServiceCapabilities capabilities(Principal principal) {
         return instance.klabService().capabilities(principal == null ? null :
                                                    authenticationManager.resolveScope(principal,
-                                                           Scope.class));
+                                                           Scope.class, null));
     }
 
     @GetMapping(ServicesAPI.STATUS)

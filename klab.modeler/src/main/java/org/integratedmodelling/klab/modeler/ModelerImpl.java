@@ -8,6 +8,8 @@ import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.engine.Engine;
+import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -16,6 +18,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -53,7 +56,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     EngineConfiguration workbench;
     File workbenchDefinition;
     private Map<String, URL> serviceUrls = new HashMap<>();
-
+    private Geometry focalGeometry = Geometry.EMPTY;
+    
     public ModelerImpl() {
         super();
         // read the workbench config
@@ -138,6 +142,10 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     @Override
     public void observe(Object asset, boolean adding) {
 
+        if (currentUser() == null) {
+            throw new KlabAuthorizationException("Cannot make observations with an invalid user");
+        }
+
         /**
          * Use cases:
          *
@@ -168,11 +176,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          */
 
         if (currentSession == null) {
-
+            currentSession = currentUser().runSession("Default session");
         }
 
-        if (currentContext == null) {
-
+        if (currentContext == null && currentSession != null) {
+            currentContext = currentSession.createContext("");
         }
 
         ResolutionRequest request = null;
@@ -195,6 +203,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
              */
         }
 
+    }
+
+    private SessionScope createSession(String sessionName) {
+        var runtime = engine().serviceScope().getService(RuntimeService.class);
+        var sessionId = runtime.createSession(currentUser(), sessionName);
+        return null;
     }
 
     @Override

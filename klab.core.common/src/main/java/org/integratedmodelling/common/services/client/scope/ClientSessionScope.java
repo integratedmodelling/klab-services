@@ -30,7 +30,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
     }
 
     @Override
-    public ContextScope createContext(String urn, Geometry geometry) {
+    public ContextScope createContext(String contextName) {
         return null;
     }
 

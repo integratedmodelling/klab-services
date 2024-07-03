@@ -36,20 +36,27 @@ public interface RuntimeService extends KlabService {
 
     /**
      * Create a session with the passed name in the passed user scope. If urn(s) are passed, match them to the
-     * correspondent behaviors, test namespaces or scenarios and initialize the session accordingly.
-     * Return the unique session ID.
-     * @param sessionName
-     * @return
+     * correspondent behaviors, test namespaces or scenarios and initialize the session accordingly. Return
+     * the unique session ID.
+     *
+     * @param scope       the user who will own the session
+     * @param sessionName a name for the session. The name is not unique and a new session is always returned,
+     *                    even when passing the same name as a previous call.
+     * @return the ID of the new session created
      */
     String createSession(UserScope scope, String sessionName, String... urns);
 
     /**
-     * Create a context with the passed name in the passed session. Context starts empty and
-     * @param scope
-     * @param sessionName
+     * Create a context with the passed name in the passed session. Context starts empty with the default
+     * observer for the worldview.
+     *
+     * @param scope       the session that will hold this context. The default observer will be created and
+     *                    configured based on the user of the {@link UserScope} that owns the session.
+     * @param contextName a name for the context. The name is not unique and a new context is always returned,
+     *                    even when passing the same name as a previous call
      * @return
      */
-    String createContext(SessionScope scope, String sessionName);
+    String createContext(SessionScope scope, String contextName);
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available

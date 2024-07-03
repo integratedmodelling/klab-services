@@ -70,6 +70,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
+    public String getId() {
+        // add the observer if any, plus any remaining params
+        var ret = super.getId();
+        if (getObserver() != null) {
+            ret += "#" + observer.getId();
+        }
+        return ret;
+    }
+
+    @Override
     public Subject getObserver() {
         return this.observer;
     }

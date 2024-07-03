@@ -9,17 +9,9 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.rest.ScopeReference;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.scopes.ScopeManager;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
@@ -327,12 +319,25 @@ public class ServiceAuthorizationManager {
         return ret;
     }
 
-    public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass) {
+    /**
+     * Resolve or create the scope correspondent to the passed principal. A scopeHeader (from the header
+     * {@link ServicesAPI#OBSERVER_HEADER}) may be passed to create or retrieve a scope below the user level,
+     * which will only be relevant in runtime and resolver services.
+     *
+     * @param principal
+     * @param scopeClass
+     * @param scopeHeader if not null, use to establish a scope below
+     *                    {@link org.integratedmodelling.klab.api.scope.UserScope}, possibly with a given
+     *                    observer and other parameters.
+     * @param <T>
+     * @return
+     */
+    public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass, String scopeHeader) {
 
         T ret = null;
         if (principal instanceof EngineAuthorization authorization) {
             if (authorization.getScopeId() != null) {
-                ret = klabService.get().getScopeManager().getOrCreateScope(authorization.getScopeId());
+                ret = klabService.get().getScopeManager().getOrCreateScope(authorization, scopeHeader);
             } else if (klabService.get() != null && scopeClass.isAssignableFrom(klabService.get().serviceScope().getClass())) {
                 ret = (T) klabService.get().serviceScope();
             }

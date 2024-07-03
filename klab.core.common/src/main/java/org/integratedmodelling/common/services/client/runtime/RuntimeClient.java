@@ -47,6 +47,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public String createSession(UserScope scope, String sessionName, String... urns) {
+
         if (urns == null || urns.length == 0) {
             return client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", sessionName);
         }
@@ -57,7 +58,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public String createContext(SessionScope scope, String contextName) {
-        return client.get(ServicesAPI.RUNTIME.CREATE_CONTEXT, String.class, "name", contextName);
+        return client.withScope(scope).get(ServicesAPI.RUNTIME.CREATE_CONTEXT, String.class, "name", contextName);
     }
 
     @Override

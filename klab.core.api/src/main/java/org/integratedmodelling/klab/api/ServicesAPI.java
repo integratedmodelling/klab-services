@@ -274,7 +274,7 @@ public interface ServicesAPI {
         }
 
         String CREATE_SESSION = "/createSession/{name}";
-        String CREATE_CONTEXT = "/createContext/{sessionId}/{name}";
+        String CREATE_CONTEXT = "/createContext/{name}";
 
         String runBehavior = "/runBehavior/{urn}";
     }

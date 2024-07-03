@@ -40,12 +40,10 @@ public interface SessionScope extends UserScope {
      * session was focused on at the time of the call (also empty by default). Because of this, only direct
      * observables may be observed in it initially.
      *
-     * @param urn the context URN, which will be the ID in its URL for external reference. Must be unique
-     *            within the session. Optionally this can be the http-based URL of a remote context, which
-     *            will create a "proxy" for the remote.
-     * @return
+     * @param contextName a name for the context. Can be anything and does not uniquely identify the context.
+     * @return a new context, or null if the request failed
      */
-    ContextScope createContext(String urn, Geometry geometry);
+    ContextScope createContext(String contextName);
 
     /**
      * Return the existing context scope with the passed name, or null.
