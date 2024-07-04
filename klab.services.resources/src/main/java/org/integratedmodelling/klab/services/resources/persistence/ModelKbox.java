@@ -282,14 +282,14 @@ public class ModelKbox extends ObservableKbox {
 
         query += "(" + scopeQuery(context, observable) + ")";
         query += " AND (" + typequery + ")";
-        if (context.getScale().getSpace() != null) {
-            String sq = spaceQuery(context.getScale().getSpace());
+        if (context.getContextObservation().getGeometry().getSpace() != null) {
+            String sq = spaceQuery(context.getContextObservation().getGeometry().getSpace());
             if (!sq.isEmpty()) {
                 query += " AND (" + sq + ")";
             }
         }
 
-        String tquery = timeQuery(context.getScale().getTime());
+        String tquery = timeQuery(context.getContextObservation().getGeometry().getTime());
         if (!tquery.isEmpty()) {
             query += " AND (" + tquery + ");";
         }
@@ -303,7 +303,7 @@ public class ModelKbox extends ObservableKbox {
             if (model != null) {
                 if (model.getPermissions().checkAuthorization(context)) {
                     Coverage coverage = resourceService.modelGeometry(model.getName());
-                    if (coverage != null && !coverage.checkConstraints(context.getScale())) {
+                    if (coverage != null && !coverage.checkConstraints(context.getContextObservation().getGeometry())) {
                         resourceService.serviceScope().debug("model " + model.getName() + " of " + observable
                                 + " discarded because of coverage constraints mismatch");
                         continue;

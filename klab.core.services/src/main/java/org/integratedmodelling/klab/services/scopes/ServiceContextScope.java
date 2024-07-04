@@ -84,10 +84,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return this.observer;
     }
 
-    @Override
-    public Scale getScale() {
-        return geometry;
-    }
+//    @Override
+//    public Scale getScale() {
+//        return geometry;
+//    }
 
     @Override
     public ServiceContextScope withScenarios(String... scenarios) {

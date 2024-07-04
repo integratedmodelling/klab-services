@@ -19,11 +19,11 @@ import java.security.Principal;
 import java.util.List;
 
 /**
- * Common administration endpoints. Secured with administrator role.
+ * Administration endpoints common to all k.LAB services. Accessible only to administrators.
  */
 @RestController
 @Secured(Role.ADMINISTRATOR)
-@Tag(name="General administration")
+@Tag(name = "Generic service administration")
 public class KlabAdminController {
 
     @Autowired
@@ -35,7 +35,7 @@ public class KlabAdminController {
     /**
      * Shut down the service. Returns status code (true/false) before the actual shutdown begins.
      *
-     * @return true unless anything strange happened
+     * @return true if the shutdown request is accepted and shutdown has begun.
      */
     @PutMapping(ServicesAPI.ADMIN.SHUTDOWN)
     public boolean shutdown() {
@@ -45,7 +45,10 @@ public class KlabAdminController {
     }
 
     /**
-     * Check if we have credentials for the passed scheme and host.
+     * Check if we have credentials for the passed scheme and host. Credentials are maintained in a locally
+     * accessible encrypted database; each credential is identified by a tag that can be referred to within
+     * resource metadata. The credential system is not related to service authentication; it merely exists to
+     * store and manage credentials used to communicate with external services or resources.
      *
      * @param scheme one of the supported k.LAB authentication schemes
      * @param host   the host name (possibly with port and path)
@@ -58,10 +61,12 @@ public class KlabAdminController {
     }
 
     /**
-     * Set credentials for a specified host.
+     * Set credentials for a specified host. Credentials are maintained in a locally accessible encrypted
+     * database; each credential is identified by a tag that can be referred to within resource metadata. The
+     * credential system is not related to service authentication; it merely exists to store and manage
+     * credentials used to communicate with external services or resources.
      *
-     * @param request   contains the host and the credential data
-     * @param principal
+     * @param request contains the host and the credential data
      * @return the information relative to the added credentials, including the credential identifier
      */
     @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
@@ -86,14 +91,17 @@ public class KlabAdminController {
 
     /**
      * Return all the credentials known to the service in the form of a list of credential information
-     * objects.
+     * objects. Credentials are maintained in a locally accessible encrypted database; each credential is
+     * identified by a tag that can be referred to within resource metadata. The credential system is not
+     * related to service authentication; it merely exists to store and manage credentials used to
+     * communicate with external services or resources.
      *
-     * @param principal
      * @return the list of credentials, possibly empty
      */
     @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public @ResponseBody List<ExternalAuthenticationCredentials.CredentialInfo> listCredentials(Principal principal) {
-        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal, Scope.class, null));
+        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal, Scope.class,
+                null));
     }
 
 }

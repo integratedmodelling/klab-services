@@ -27,7 +27,7 @@ public class ContextAgent extends KAgent {
 
     public ContextAgent(String name, ContextScope scope, Geometry geometry) {
         super(name, scope);
-        this.focalGeometry = geometry == null ? scope.getScale() : geometry;
+        this.focalGeometry = geometry == null ? scope.getContextObservation().getGeometry() : geometry;
     }
 
     protected ReActions.Builder setBehavior() {

@@ -23,7 +23,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     private String name;
     private Map<String, ContextScope> contexts = new HashMap<>();
-    private Scale geometry;
+//    private Scale geometry;
 
     public void setName(String name) {
         this.name = name;
@@ -36,20 +36,20 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         this.data.putAll(parent.data);
     }
 
-    @Override
-    public Scale getScale() {
-        return geometry;
-    }
+//    @Override
+//    public Scale getScale() {
+//        return geometry;
+//    }
 
     @Override
-    public ContextScope createContext(String contextName) {
+    public ContextScope createContext(String contextName, Object... observerData) {
 
+        Geometry geometry = null; // TODO check in observerData
         final ServiceContextScope ret = new ServiceContextScope(this);
         ret.setName(contextName);
         ret.setStatus(Status.WAITING);
         Ref contextAgent = this.getAgent()
-                               .ask(new CreateContext(ret, contextName, geometry == null ? this.geometry :
-                                                                      geometry), Ref.class);
+                               .ask(new CreateContext(ret, contextName, geometry), Ref.class);
         if (!contextAgent.isEmpty()) {
             ret.setStatus(Status.STARTED);
             ret.setAgent(contextAgent);

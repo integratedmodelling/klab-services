@@ -1719,7 +1719,7 @@ public class KActorsVM implements VM {
 
             states.put("self", (State) target);
 
-            for (Locator locator : ((ContextScope) runtimeScope).getScale()) {
+            for (Locator locator : ((ContextScope) runtimeScope).getContextObservation().getGeometry()) {
 
                 args.clear();
                 for (String key : states.keySet()) {

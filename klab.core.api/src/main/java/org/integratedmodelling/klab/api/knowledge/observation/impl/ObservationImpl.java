@@ -44,7 +44,7 @@ public class ObservationImpl implements Observation {
     protected ObservationImpl(Observable observable, String id, ContextScope scope) {
         this.observable = observable;
         this.id = id;
-        this.scale = scope.getScale();
+//        this.scale = scope.getScale();
     }
 
     @Override

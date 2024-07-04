@@ -153,7 +153,7 @@ public class ResolverService extends BaseService implements Resolver {
      */
     public Resolution computeResolution(Resolvable knowledge, ContextScope scope) {
 
-        Scale scale = scope.getScale();
+        Scale scale = scope.getContextObservation().getGeometry();
         Resolvable observable = switch (knowledge) {
             case Concept concept -> Observable.promote(concept);
             //            case KimInstance instance -> {

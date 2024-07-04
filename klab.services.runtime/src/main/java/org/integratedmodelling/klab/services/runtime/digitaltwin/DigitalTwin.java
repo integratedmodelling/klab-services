@@ -223,7 +223,7 @@ public class DigitalTwin implements Closeable {
             data = new ObservationData();
             data.actuator = actuator;
             data.observation = createObservation(actuator, contextObservation, scope);
-            data.scale = scope.getScale();
+            data.scale = scope.getContextObservation().getGeometry();
             data.contextObservation = contextObservation;
 
             var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
@@ -346,7 +346,7 @@ public class DigitalTwin implements Closeable {
         var groups = executionOrder.stream().collect(Collectors.groupingBy(s -> s.getSecond()));
         var lastOrder = executionOrder.getLast().getSecond();
         var parallelism = getParallelism(scope);
-        var initializationScope = scope.withGeometry(scope.getScale().initialization());
+        var initializationScope = scope.withGeometry(scope.getContextObservation().getGeometry().initialization());
 
         for (var i = 0; i <= lastOrder; i++) {
             var actuatorGroup = groups.get(i);
@@ -422,9 +422,9 @@ public class DigitalTwin implements Closeable {
     private Storage createStorage(Observable observable, ContextScope scope) {
         // TODO use options from the scope for parallelization and choice float/double
         var storage = switch (observable.getDescriptionType()) {
-            case QUANTIFICATION -> new DoubleStorage(scope.getScale(), storageScope);
-            case CATEGORIZATION -> new KeyedStorage(scope.getScale(), storageScope);
-            case VERIFICATION -> new BooleanStorage(scope.getScale(), storageScope);
+            case QUANTIFICATION -> new DoubleStorage(scope.getContextObservation().getGeometry(), storageScope);
+            case CATEGORIZATION -> new KeyedStorage(scope.getContextObservation().getGeometry(), storageScope);
+            case VERIFICATION -> new BooleanStorage(scope.getContextObservation().getGeometry(), storageScope);
             default ->
                     throw new KlabIllegalStateException("Unexpected value: " + observable.getDescriptionType());
         };

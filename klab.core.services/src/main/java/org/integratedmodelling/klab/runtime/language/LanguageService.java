@@ -155,11 +155,11 @@ public class LanguageService implements Language {
                 ret[i] = scope;
             } else if (ServiceCall.class.isAssignableFrom(cls)) {
                 ret[i] = call;
-            } else if (Geometry.class.isAssignableFrom(cls)) {
+            } /*else if (Geometry.class.isAssignableFrom(cls)) {
                 ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getScale() : null;
             } else if (Scale.class.isAssignableFrom(cls)) {
                 ret[i] = scope instanceof SessionScope ? ((SessionScope) scope).getScale() : null;
-            } else if (Parameters.class.isAssignableFrom(cls)) {
+            }*/ else if (Parameters.class.isAssignableFrom(cls)) {
                 ret[i] = call.getParameters();
             } else if (DirectObservation.class.isAssignableFrom(cls)) {
                 ret[i] = scope instanceof ContextScope ? ((ContextScope) scope).getContextObservation() :

@@ -20,17 +20,12 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
     }
 
     @Override
-    public Scale getScale() {
-        return null;
-    }
-
-    @Override
     public String getName() {
         return "";
     }
 
     @Override
-    public ContextScope createContext(String contextName) {
+    public ContextScope createContext(String contextName, Object... observerData) {
         return null;
     }
 

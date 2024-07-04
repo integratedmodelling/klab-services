@@ -180,7 +180,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         }
 
         if (currentContext == null && currentSession != null) {
-            currentContext = currentSession.createContext("");
+
+            currentContext = currentSession.createContext("Default context", focalGeometry);
+
         }
 
         ResolutionRequest request = null;

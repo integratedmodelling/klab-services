@@ -1,5 +1,6 @@
 package org.integratedmodelling.resources.server.controllers;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.KlabData;
@@ -31,6 +32,7 @@ import java.util.List;
 
 @RestController
 @Secured(Role.USER)
+@Tag(name = "Resources service core API")
 public class ResourcesProviderController {
 
     @Autowired
