@@ -337,7 +337,7 @@ public class ServiceAuthorizationManager {
         T ret = null;
         if (principal instanceof EngineAuthorization authorization) {
             if (authorization.getScopeId() != null) {
-                ret = klabService.get().getScopeManager().getOrCreateScope(authorization, scopeHeader);
+                ret = (T) klabService.get().getScopeManager().getOrCreateScope(authorization, scopeClass, scopeHeader);
             } else if (klabService.get() != null && scopeClass.isAssignableFrom(klabService.get().serviceScope().getClass())) {
                 ret = (T) klabService.get().serviceScope();
             }

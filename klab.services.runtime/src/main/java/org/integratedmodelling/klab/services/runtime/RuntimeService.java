@@ -49,9 +49,6 @@ public class RuntimeService extends BaseService
         } else {
             // make an empty config
             this.configuration = new RuntimeConfiguration();
-            //            this.configuration.setServicePath("resources");
-            //            this.configuration.setLocalResourcePath("local");
-            //            this.configuration.setPublicResourcePath("public");
             this.configuration.setServiceId(UUID.randomUUID().toString());
             saveConfiguration();
         }
@@ -213,11 +210,13 @@ public class RuntimeService extends BaseService
 
     @Override
     public String createSession(UserScope scope, String sessionName, String... urns) {
+        // TODO
         return "";
     }
 
     @Override
-    public String createContext(SessionScope scope, String sessionName) {
+    public String createContext(SessionScope scope, String sessionName, Object... contextData) {
+        // TODO
         return "";
     }
 

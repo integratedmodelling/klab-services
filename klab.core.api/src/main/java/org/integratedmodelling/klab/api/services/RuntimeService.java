@@ -54,9 +54,12 @@ public interface RuntimeService extends KlabService {
      *                    configured based on the user of the {@link UserScope} that owns the session.
      * @param contextName a name for the context. The name is not unique and a new context is always returned,
      *                    even when passing the same name as a previous call
+     * @param contextData anything that may affect the initial status of the context, including other context
+     *                    scopes to link to, a geometry, semantics and/or roles for the observer, or some
+     *                    initial scenario URLs
      * @return
      */
-    String createContext(SessionScope scope, String contextName);
+    String createContext(SessionScope scope, String contextName, Object... contextData);
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available

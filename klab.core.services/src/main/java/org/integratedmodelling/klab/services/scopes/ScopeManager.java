@@ -2,8 +2,10 @@ package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
+import org.apache.catalina.User;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -164,17 +166,57 @@ public class ScopeManager {
         return ret;
     }
 
+    public UserScope getOrCreateUserScope(EngineAuthorization authorization) {
 
-    public <T extends Scope> T getOrCreateScope(EngineAuthorization authorization, String scopeId) {
+        var ret = scopes.get(authorization.getUsername());
+        if (ret instanceof UserScope userScope) {
+            return userScope;
+        }
+        if (ret != null) {
+            throw new KlabInternalErrorException("Pre-existing user scope with wrong identifier");
+        }
+
+        return login(createUserIdentity(authorization));
+
+    }
+
+    public <T extends Scope> T getOrCreateScope(EngineAuthorization authorization, Class<T> scopeClass, String scopeId) {
+
+        var scope = getOrCreateUserScope(authorization);
+        if (scopeId == null && scopeClass.isAssignableFrom(scope.getClass())) {
+            return (T)scope;
+        }
+
+        var result = scopes.get(scopeId);
+
+        if (result != null && scopeClass.isAssignableFrom(result.getClass())) {
+            return (T)result;
+        }
+
+        ServiceUserScope ret = (ServiceUserScope) scope;
+        if (ret == null) {
+            String[] path = scopeId.split("\\.");
+            if (path.length > 1) {
+                String pathSoFar = path[0];
+                for (int i = 1; i < path.length; i++) {
+                    pathSoFar += "." + path[i];
+                    ret = scopes.get(pathSoFar);
+                    if (ret == null) {
+
+                    }
+                }
+            }
+        }
+
         return null;
     }
 
-    public SessionScope newSessionScope(UserScope scope) {
+    public SessionScope newSessionScope(UserScope scope, String sessionName) {
 
         return null;
     }
 
-    public ContextScope newContextScope(SessionScope scope) {
+    public ContextScope newContextScope(SessionScope scope, String contextName) {
         return null;
     }
 
@@ -182,9 +224,9 @@ public class ScopeManager {
         return null;
     }
 
-    public void register(EngineAuthorization ret) {
-        if (ret.getScopeId() != null) {
-            scopes.getOrDefault(ret.getScopeId(), createScope(ret));
-        }
-    }
+//    public void register(EngineAuthorization ret) {
+//        if (ret.getScopeId() != null) {
+//            scopes.getOrDefault(ret.getScopeId(), createScope(ret));
+//        }
+//    }
 }
