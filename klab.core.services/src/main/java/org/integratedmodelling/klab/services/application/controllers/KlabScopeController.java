@@ -39,32 +39,32 @@ public class KlabScopeController {
     @Autowired
     ServiceAuthorizationManager authorizationManager;
 
-    @Autowired
-    private SimpMessagingTemplate webSocket;
+//    @Autowired
+//    private SimpMessagingTemplate webSocket;
+//
+//    @PostConstruct
+//    void configureService() {
+//        service.setMessagingTemplate(webSocket);
+//    }
 
-    @PostConstruct
-    void configureService() {
-        service.setMessagingTemplate(webSocket);
-    }
+//    @MessageMapping(ServicesAPI.MESSAGE)
+//    //    @SendTo("/klab")
+//    public void handleMessage(Map<?, ?> payload) {
+//
+//        var message = Utils.Json.convertMessage(payload, Message.ForwardingPolicy.DoNotForward);
+//        // TODO serviceScope().post() - find the scope for the ID and post it there. Scope must exist.
+//        //        scopeManager.
+//
+//
+//        // TODO IF RESPONSE IS RETURNED IT GOES BACK TO THE CHANNEL. Should be done asynchronously using
+//        //  the template except when handshaking
+//        System.out.println("MESSAGE " + message);
+//
+//    }
 
-    @MessageMapping(ServicesAPI.MESSAGE)
-    //    @SendTo("/klab")
-    public void handleMessage(Map<?, ?> payload) {
-
-        var message = Utils.Json.convertMessage(payload, Message.ForwardingPolicy.DoNotForward);
-        // TODO serviceScope().post() - find the scope for the ID and post it there. Scope must exist.
-        //        scopeManager.
-
-
-        // TODO IF RESPONSE IS RETURNED IT GOES BACK TO THE CHANNEL. Should be done asynchronously using
-        //  the template except when handshaking
-        System.out.println("MESSAGE " + message);
-
-    }
-
-    public void send(Message message) {
-        webSocket.convertAndSend(message);
-    }
+//    public void send(Message message) {
+//        webSocket.convertAndSend(message);
+//    }
 
     /**
      * This gets called before scope pairing is attempted at client side. If a valid "Websockets URL,Channel"

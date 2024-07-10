@@ -262,6 +262,10 @@ public interface ServicesAPI {
 
     }
 
+    /**
+     * The runtime API uses GraphQL on the context URL (runtime URL + / + contextId) to access
+     * anything in the context.
+     */
     interface RUNTIME {
 
         /**
@@ -273,10 +277,19 @@ public interface ServicesAPI {
 
         }
 
+        /**
+         * The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a
+         * specified behavior. The POST endpoint can be fed k.Actors behavior code to run.
+         */
         String CREATE_SESSION = "/createSession/{name}";
+
+        /**
+         * The createContext GET endpoint must have the OBSERVER_HEADER set to the ID of a valid
+         * session returned by CREATE_SESSION. With POST the user can send the definition of the
+         * observer, which in the GET case will be generated using worldview defaults.
+         */
         String CREATE_CONTEXT = "/createContext/{name}";
 
-        String runBehavior = "/runBehavior/{urn}";
     }
 
     public interface RESOURCES {

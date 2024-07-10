@@ -1,0 +1,24 @@
+type Query {
+    contexts(id: ID): [Context]!
+}
+
+type Context {
+    id: ID!
+    name: String!
+    geometry: Geometry!
+    observer: Observation!
+}
+
+
+type Geometry {
+    multiplicity: Int!
+}
+
+type Observation {
+    id: ID!
+    observable: String!
+}
+
+type Notification {
+    message: String
+}
