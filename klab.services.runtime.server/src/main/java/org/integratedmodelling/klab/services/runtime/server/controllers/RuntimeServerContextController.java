@@ -1,7 +1,10 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
+import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.server.objects.Context;
+import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,7 +29,7 @@ public class RuntimeServerContextController {
     }
 
     @QueryMapping
-    List<Context> contexts(String id) {
+    public List<Context> query(@Argument String id) {
         return id == null ? demoContexts :
                demoContexts.stream().filter(context -> context.id().equals(id)).toList();
     }

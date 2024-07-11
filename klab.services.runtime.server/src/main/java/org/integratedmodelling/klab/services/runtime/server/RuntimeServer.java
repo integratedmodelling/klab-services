@@ -18,7 +18,7 @@ import java.util.List;
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
                                "org.integratedmodelling.klab.services.messaging",
                                "org.integratedmodelling.klab.services.application.controllers",
-                               "org.integratedmodelling.runtime.server.controllers"})
+                               "org.integratedmodelling.klab.services.runtime.server.controllers"})
 public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
 
     @Override
@@ -28,7 +28,7 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
 
     @Override
     protected RuntimeService createPrimaryService(ServiceScope serviceScope,
-                                                   ServiceStartupOptions options) {
+                                                  ServiceStartupOptions options) {
         return new RuntimeService(serviceScope, options);
     }
 

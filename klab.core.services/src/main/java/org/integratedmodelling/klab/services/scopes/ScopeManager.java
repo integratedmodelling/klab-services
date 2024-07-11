@@ -166,10 +166,10 @@ public class ScopeManager {
         return ret;
     }
 
-    public UserScope getOrCreateUserScope(EngineAuthorization authorization) {
+    public ServiceUserScope getOrCreateUserScope(EngineAuthorization authorization) {
 
         var ret = scopes.get(authorization.getUsername());
-        if (ret instanceof UserScope userScope) {
+        if (ret instanceof ServiceUserScope userScope) {
             return userScope;
         }
         if (ret != null) {
@@ -211,12 +211,11 @@ public class ScopeManager {
         return null;
     }
 
-    public SessionScope newSessionScope(UserScope scope, String sessionName) {
-
+    public ServiceSessionScope newSessionScope(UserScope scope, String sessionName) {
         return null;
     }
 
-    public ContextScope newContextScope(SessionScope scope, String contextName) {
+    public ServiceContextScope newContextScope(SessionScope scope, String contextName) {
         return null;
     }
 
