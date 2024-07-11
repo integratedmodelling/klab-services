@@ -23,9 +23,9 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
-import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.QualifiedName;
 
@@ -82,7 +82,7 @@ public class ObservableBuilder implements Observable.Builder {
     private Literal defaultValue = null;
     private Set<Observable.ResolutionException> resolutionExceptions = EnumSet
             .noneOf(Observable.ResolutionException.class);
-    private OWL owl;
+    private ReasonerService reasoner;
     // this gets set to true if a finished declaration is set using
     // withDeclaration() and the
     // builder is merely building it.
@@ -100,16 +100,16 @@ public class ObservableBuilder implements Observable.Builder {
     private Observable deferredTarget;
     private DescriptionType descriptionType;
 
-    public static ObservableBuilder getBuilder(Concept concept, Scope scope, OWL owl) {
-        return new ObservableBuilder(concept, scope, owl);
+    public static ObservableBuilder getBuilder(Concept concept, Scope scope, ReasonerService reasoner) {
+        return new ObservableBuilder(concept, scope, reasoner);
     }
 
-    public static ObservableBuilder getBuilder(Observable observable, Scope scope, OWL owl) {
-        return new ObservableBuilder(observable, scope, owl);
+    public static ObservableBuilder getBuilder(Observable observable, Scope scope, ReasonerService reasoner) {
+        return new ObservableBuilder(observable, scope, reasoner);
     }
 
-    public ObservableBuilder(Concept main, Ontology ontology, Scope scope, OWL owl) {
-        this.owl = owl;
+    public ObservableBuilder(Concept main, Ontology ontology, Scope scope, ReasonerService reasoner) {
+        this.reasoner = reasoner;
         this.main = main;
         this.scope = scope;
         this.ontology = ontology;
@@ -117,11 +117,11 @@ public class ObservableBuilder implements Observable.Builder {
         this.type = main.getType();
     }
 
-    public ObservableBuilder(Concept main, Scope scope, OWL owl) {
-        this.owl = owl;
+    public ObservableBuilder(Concept main, Scope scope, ReasonerService reasoner) {
+        this.reasoner = reasoner;
         this.main = main;
         this.scope = scope;
-        this.ontology = owl.getOntology(main.getNamespace());
+        this.ontology = reasoner.owl().getOntology(main.getNamespace());
         this.declaration = getDeclaration(main);
         this.type.addAll(main.getType());
     }
@@ -133,20 +133,20 @@ public class ObservableBuilder implements Observable.Builder {
      *
      * @param observable
      */
-    public ObservableBuilder(Observable observable, Scope scope, OWL owl) {
-        this.owl = owl;
-        this.main = owl.reasoner().rawObservable(observable.getSemantics());
+    public ObservableBuilder(Observable observable, Scope scope, ReasonerService reasoner) {
+        this.reasoner = reasoner;
+        this.main = reasoner.rawObservable(observable.getSemantics());
         this.scope = scope;
         this.type = this.main.getType();
-        this.ontology = owl.getOntology(observable.getSemantics().getNamespace());
-//        this.context = owl.reasoner().directContext(observable.getSemantics());
-        this.adjacent = owl.reasoner().directAdjacent(observable.getSemantics());
-        this.inherent = owl.reasoner().directInherent(observable.getSemantics());
-        this.causant = owl.reasoner().directCausant(observable.getSemantics());
-        this.caused = owl.reasoner().directCaused(observable.getSemantics());
-        this.cooccurrent = owl.reasoner().directCooccurrent(observable.getSemantics());
-        this.goal = owl.reasoner().directGoal(observable.getSemantics());
-        this.compresent = owl.reasoner().directCompresent(observable.getSemantics());
+        this.ontology = reasoner.owl().getOntology(observable.getSemantics().getNamespace());
+//        this.context = reasoner.directContext(observable.getSemantics());
+        this.adjacent = reasoner.directAdjacent(observable.getSemantics());
+        this.inherent = reasoner.directInherent(observable.getSemantics());
+        this.causant = reasoner.directCausant(observable.getSemantics());
+        this.caused = reasoner.directCaused(observable.getSemantics());
+        this.cooccurrent = reasoner.directCooccurrent(observable.getSemantics());
+        this.goal = reasoner.directGoal(observable.getSemantics());
+        this.compresent = reasoner.directCompresent(observable.getSemantics());
         this.declaration = getDeclaration(observable.getSemantics());
         // this.mustContextualize = observable.isMustContextualizeAtResolution();
         // this.temporalInherent = observable.temporalInherent();
@@ -157,10 +157,10 @@ public class ObservableBuilder implements Observable.Builder {
         this.defaultValue = observable.getDefaultValue();
         this.resolutionExceptions.addAll(observable.getResolutionExceptions());
 
-        for (Concept role : owl.reasoner().directRoles(observable.getSemantics())) {
+        for (Concept role : reasoner.directRoles(observable.getSemantics())) {
             this.roles.add(role);
         }
-        for (Concept trait : owl.reasoner().directTraits(observable.getSemantics())) {
+        for (Concept trait : reasoner.directTraits(observable.getSemantics())) {
             this.traits.add(trait);
         }
 
@@ -208,7 +208,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.incarnatedAbstractObservable = other.incarnatedAbstractObservable;
         this.deferredTarget = other.deferredTarget;
         this.url = other.url;
-        this.owl = other.owl;
+        this.reasoner = other.reasoner;
         this.defaultValue = other.defaultValue;
         this.resolutionExceptions.addAll(other.resolutionExceptions);
 
@@ -369,55 +369,55 @@ public class ObservableBuilder implements Observable.Builder {
             try {
                 switch (type) {
                     case CHANGE:
-                        reset(owl.makeChange(argument), type);
+                        reset(reasoner.owl().makeChange(argument), type);
                         break;
                     case CHANGED:
-                        reset(owl.makeChanged(argument), type);
+                        reset(reasoner.owl().makeChanged(argument), type);
                         break;
                     case COUNT:
-                        reset(owl.makeCount(argument), type);
+                        reset(reasoner.owl().makeCount(argument), type);
                         break;
                     case DISTANCE:
-                        reset(owl.makeDistance(argument), type);
+                        reset(reasoner.owl().makeDistance(argument), type);
                         break;
                     case OCCURRENCE:
-                        reset(owl.makeOccurrence(argument), type);
+                        reset(reasoner.owl().makeOccurrence(argument), type);
                         break;
                     case PRESENCE:
-                        reset(owl.makePresence(argument), type);
+                        reset(reasoner.owl().makePresence(argument), type);
                         break;
                     case PROBABILITY:
-                        reset(owl.makeProbability(argument), type);
+                        reset(reasoner.owl().makeProbability(argument), type);
                         break;
                     case PROPORTION:
-                        reset(owl.makeProportion(argument, this.comparison, false), type);
+                        reset(reasoner.owl().makeProportion(argument, this.comparison, false), type);
                         break;
                     case PERCENTAGE:
-                        reset(owl.makeProportion(argument, this.comparison, true), type);
+                        reset(reasoner.owl().makeProportion(argument, this.comparison, true), type);
                         break;
                     case RATIO:
-                        reset(owl.makeRatio(argument, this.comparison), type);
+                        reset(reasoner.owl().makeRatio(argument, this.comparison), type);
                         break;
                     case RATE:
-                        reset(owl.makeRate(argument), type);
+                        reset(reasoner.owl().makeRate(argument), type);
                         break;
                     case UNCERTAINTY:
-                        reset(owl.makeUncertainty(argument), type);
+                        reset(reasoner.owl().makeUncertainty(argument), type);
                         break;
                     case VALUE:
                     case MONETARY_VALUE:
-                        reset(owl.makeValue(argument, this.comparison,
+                        reset(reasoner.owl().makeValue(argument, this.comparison,
                                         type == UnarySemanticOperator.MONETARY_VALUE),
                                 type);
                         break;
                     case MAGNITUDE:
-                        reset(owl.makeMagnitude(argument), type);
+                        reset(reasoner.owl().makeMagnitude(argument), type);
                         break;
                     case LEVEL:
-                        reset(owl.makeLevel(argument), type);
+                        reset(reasoner.owl().makeLevel(argument), type);
                         break;
                     case TYPE:
-                        reset(owl.makeType(argument), type);
+                        reset(reasoner.owl().makeType(argument), type);
                         break;
                     default:
                         break;
@@ -478,8 +478,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         KimConcept newDeclaration = ((KimConceptImpl) this.declaration).removeComponents(roles);
-        ObservableBuilder ret = new ObservableBuilder(owl.reasoner().declareConcept(newDeclaration), scope,
-                owl);
+        ObservableBuilder ret = new ObservableBuilder(reasoner.declareConcept(newDeclaration), scope,
+                reasoner);
 
         /*
          * copy the rest unless excluded
@@ -570,7 +570,7 @@ public class ObservableBuilder implements Observable.Builder {
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.COOCCURRENT);
             }
-            if (ret.temporalInherent != null && owl.reasoner().subsumes(ret.temporalInherent, concept)) {
+            if (ret.temporalInherent != null && reasoner.subsumes(ret.temporalInherent, concept)) {
                 ret.temporalInherent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
@@ -685,47 +685,47 @@ public class ObservableBuilder implements Observable.Builder {
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.ROLE);
             }
-//            if (ret.context != null && owl.reasoner().subsumes(ret.context, concept)) {
+//            if (ret.context != null && reasoner.subsumes(ret.context, concept)) {
 //                ret.context = null;
 //                ret.removed.add(concept);
 //                removedRoles.add(SemanticRole.CONTEXT);
 //            }
-            if (ret.inherent != null && owl.reasoner().subsumes(ret.inherent, concept)) {
+            if (ret.inherent != null && reasoner.subsumes(ret.inherent, concept)) {
                 ret.inherent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.INHERENT);
             }
-            if (ret.adjacent != null && owl.reasoner().subsumes(ret.adjacent, concept)) {
+            if (ret.adjacent != null && reasoner.subsumes(ret.adjacent, concept)) {
                 ret.adjacent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.ADJACENT);
             }
-            if (ret.caused != null && owl.reasoner().subsumes(ret.caused, concept)) {
+            if (ret.caused != null && reasoner.subsumes(ret.caused, concept)) {
                 ret.caused = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.CAUSED);
             }
-            if (ret.causant != null && owl.reasoner().subsumes(ret.causant, concept)) {
+            if (ret.causant != null && reasoner.subsumes(ret.causant, concept)) {
                 ret.causant = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.CAUSANT);
             }
-            if (ret.compresent != null && owl.reasoner().subsumes(ret.compresent, concept)) {
+            if (ret.compresent != null && reasoner.subsumes(ret.compresent, concept)) {
                 ret.compresent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.COMPRESENT);
             }
-            if (ret.goal != null && owl.reasoner().subsumes(ret.goal, concept)) {
+            if (ret.goal != null && reasoner.subsumes(ret.goal, concept)) {
                 ret.goal = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.GOAL);
             }
-            if (ret.cooccurrent != null && owl.reasoner().subsumes(ret.cooccurrent, concept)) {
+            if (ret.cooccurrent != null && reasoner.subsumes(ret.cooccurrent, concept)) {
                 ret.cooccurrent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.COOCCURRENT);
             }
-            if (ret.temporalInherent != null && owl.reasoner().subsumes(ret.temporalInherent, concept)) {
+            if (ret.temporalInherent != null && reasoner.subsumes(ret.temporalInherent, concept)) {
                 ret.temporalInherent = null;
                 ret.removed.add(concept);
                 removedRoles.add(SemanticRole.TEMPORAL_INHERENT);
@@ -761,7 +761,7 @@ public class ObservableBuilder implements Observable.Builder {
             } else {
                 traits.add(concept);
                 if (!declarationIsComplete) {
-                    this.declaration.getTraits().add(owl.resources().resolveConcept(concept.getUrn()));
+                    this.declaration.getTraits().add(reasoner.owl().resources().resolveConcept(concept.getUrn()));
                 }
             }
         }
@@ -784,7 +784,7 @@ public class ObservableBuilder implements Observable.Builder {
             if (mainId != null) {
                 if (mainId.contains(":")) {
                     QualifiedName st = new QualifiedName(mainId);
-                    ontology = owl.getOntology(st.getNamespace());
+                    ontology = reasoner.owl().getOntology(st.getNamespace());
                     mainId = st.getName();
                     if ((main = ontology.getConcept(mainId)) != null) {
                         mainId = null;
@@ -871,8 +871,8 @@ public class ObservableBuilder implements Observable.Builder {
          * preload any base traits we already have. If any of them is abstract, take
          * notice so we can see if they are all concretized later.
          */
-        for (Concept c : owl.reasoner().traits(main)) {
-            Concept base = owl.reasoner().baseParentTrait(c);
+        for (Concept c : reasoner.traits(main)) {
+            Concept base = reasoner.baseParentTrait(c);
             baseTraits.add(base);
             if (c.isAbstract()) {
                 abstractTraitBases.add(base);
@@ -900,7 +900,7 @@ public class ObservableBuilder implements Observable.Builder {
                     continue;
                 }
 
-                if (owl.reasoner().traits(main).contains(t)) {
+                if (reasoner.traits(main).contains(t)) {
                     continue;
                     // monitor.error("concept " + Concepts.INSTANCE.getDisplayName(main) + " already
                     // adopts trait "
@@ -915,7 +915,7 @@ public class ObservableBuilder implements Observable.Builder {
                     attributes.add(t);
                 }
 
-                Concept base = owl.reasoner().baseParentTrait(t);
+                Concept base = reasoner.baseParentTrait(t);
 
                 if (base == null) {
                     scope.error("base declaration for trait " + t + " could not be found", declaration);
@@ -965,12 +965,12 @@ public class ObservableBuilder implements Observable.Builder {
          * handle context, inherency etc.
          */
         if (inherent != null) {
-            Concept other = owl.reasoner().inherent(main);
-            if (other != null && !owl.reasoner().compatible(inherent, other)) {
+            Concept other = reasoner.inherent(main);
+            if (other != null && !reasoner.compatible(inherent, other)) {
                 scope.error("cannot set the inherent type of " + main.displayName() + " to " + inherent.displayName()
                                 + " as it already has an incompatible inherency: " + other.displayName(),
                         declaration);
-                var removeme = owl.reasoner().compatible(inherent, other);
+                var removeme = reasoner.compatible(inherent, other);
             }
             cleanId = getCleanId(inherent);
             cId += (distributedInherency ? "OfEach" : "Of") + cleanId;
@@ -979,12 +979,12 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
 //        if (context != null) {
-//            Concept other = owl.reasoner().context(main);
+//            Concept other = reasoner.context(main);
 //            // use the version of isCompatible that allows for observations that are
 //            // compatible with
 //            // the context's context if the context is an occurrent (e.g. Precipitation of
 //            // Storm)
-//            if (other != null && !owl.reasoner().contextuallyCompatible(main, context, other)) {
+//            if (other != null && !reasoner.contextuallyCompatible(main, context, other)) {
 //                scope.error("cannot set the context type of " + main.displayName() + " to " + context
 //                .displayName()
 //                        + " as it already has an incompatible context: " + other.displayName(),
@@ -998,8 +998,8 @@ public class ObservableBuilder implements Observable.Builder {
 //        }
 
         if (compresent != null) {
-            Concept other = owl.reasoner().compresent(main);
-            if (other != null && !owl.reasoner().compatible(compresent, other)) {
+            Concept other = reasoner.compresent(main);
+            if (other != null && !reasoner.compatible(compresent, other)) {
                 scope.error(
                         "cannot set the compresent type of " + main.displayName() + " to " + compresent.displayName()
                                 + " as it already has an incompatible compresent type: " + other.displayName(),
@@ -1013,8 +1013,8 @@ public class ObservableBuilder implements Observable.Builder {
 
         if (goal != null) {
             // TODO transform as necessary
-            Concept other = owl.reasoner().goal(main);
-            if (other != null && !owl.reasoner().compatible(goal, other)) {
+            Concept other = reasoner.goal(main);
+            if (other != null && !reasoner.compatible(goal, other)) {
                 scope.error("cannot set the goal type of " + main.displayName() + " to " + goal.displayName()
                                 + " as it already has an incompatible goal type: " + other.displayName(),
                         declaration);
@@ -1026,8 +1026,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (caused != null) {
-            Concept other = owl.reasoner().caused(main);
-            if (other != null && !owl.reasoner().compatible(caused, other)) {
+            Concept other = reasoner.caused(main);
+            if (other != null && !reasoner.compatible(caused, other)) {
                 scope.error(
                         "cannot set the caused type of " + main.displayName() + " to " + caused.displayName()
                                 + " as it already has an incompatible caused type: " + other.displayName(),
@@ -1040,8 +1040,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (causant != null) {
-            Concept other = owl.reasoner().causant(main);
-            if (other != null && !owl.reasoner().compatible(causant, other)) {
+            Concept other = reasoner.causant(main);
+            if (other != null && !reasoner.compatible(causant, other)) {
                 scope.error(
                         "cannot set the causant type of " + main.displayName() + " to " + causant.displayName()
                                 + " as it already has an incompatible causant type: " + other.displayName(),
@@ -1054,8 +1054,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (adjacent != null) {
-            Concept other = owl.reasoner().adjacent(main);
-            if (other != null && !owl.reasoner().compatible(adjacent, other)) {
+            Concept other = reasoner.adjacent(main);
+            if (other != null && !reasoner.compatible(adjacent, other)) {
                 scope.error(
                         "cannot set the adjacent type of " + main.displayName() + " to " + adjacent.displayName()
                                 + " as it already has an incompatible adjacent type: " + other.displayName(),
@@ -1068,8 +1068,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (cooccurrent != null) {
-            Concept other = owl.reasoner().cooccurrent(main);
-            if (other != null && !owl.reasoner().compatible(cooccurrent, other)) {
+            Concept other = reasoner.cooccurrent(main);
+            if (other != null && !reasoner.compatible(cooccurrent, other)) {
                 scope.error(
                         "cannot set the co-occurrent type of " + main.displayName() + " to " + cooccurrent.displayName()
                                 + " as it already has an incompatible co-occurrent type: " + other.displayName(),
@@ -1082,15 +1082,15 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (relationshipSource != null) {
-            Concept other = owl.reasoner().relationshipSource(main);
-            if (other != null && !owl.reasoner().compatible(relationshipSource, other)) {
+            Concept other = reasoner.relationshipSource(main);
+            if (other != null && !reasoner.compatible(relationshipSource, other)) {
                 scope.error("cannot set the relationship source type of " + main.displayName() + " to "
                         + relationshipSource.displayName() + " as it already has an incompatible source " +
                         "type: "
                         + other.displayName(), declaration);
             }
-            Concept other2 = owl.reasoner().relationshipTarget(main);
-            if (other2 != null && !owl.reasoner().compatible(relationshipTarget, other2)) {
+            Concept other2 = reasoner.relationshipTarget(main);
+            if (other2 != null && !reasoner.compatible(relationshipTarget, other2)) {
                 scope.error("cannot set the relationship target type of " + main.displayName() + " to "
                         + relationshipTarget.displayName() + " as it already has an incompatible target " +
                         "type: "
@@ -1112,7 +1112,7 @@ public class ObservableBuilder implements Observable.Builder {
 
         if (roles != null && roles.size() > 0) {
             for (Concept role : roles) {
-                if (owl.reasoner().roles(main).contains(role)) {
+                if (reasoner.roles(main).contains(role)) {
                     scope.error("concept " + main.displayName() + " already has role " + role.displayName(),
                             declaration);
                 }
@@ -1191,53 +1191,53 @@ public class ObservableBuilder implements Observable.Builder {
          */
 
         if (identities.size() > 0) {
-            owl.restrict(ret, owl.getProperty(NS.HAS_IDENTITY_PROPERTY), LogicalConnector.UNION, identities
+            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_IDENTITY_PROPERTY), LogicalConnector.UNION, identities
                     , ontology);
         }
         if (realms.size() > 0) {
-            owl.restrict(ret, owl.getProperty(NS.HAS_REALM_PROPERTY), LogicalConnector.UNION, realms,
+            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_REALM_PROPERTY), LogicalConnector.UNION, realms,
                     ontology);
         }
         if (attributes.size() > 0) {
-            owl.restrict(ret, owl.getProperty(NS.HAS_ATTRIBUTE_PROPERTY), LogicalConnector.UNION,
+            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_ATTRIBUTE_PROPERTY), LogicalConnector.UNION,
                     attributes, ontology);
         }
         if (acceptedRoles.size() > 0) {
-            owl.restrictSome(ret, owl.getProperty(NS.HAS_ROLE_PROPERTY), LogicalConnector.UNION,
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_ROLE_PROPERTY), LogicalConnector.UNION,
                     acceptedRoles,
                     ontology);
         }
         if (inherent != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.IS_INHERENT_TO_PROPERTY), inherent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IS_INHERENT_TO_PROPERTY), inherent, ontology);
         }
 //        if (context != null) {
-//            owl.restrictSome(ret, owl.getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
+//            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
 //        }
         if (caused != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.HAS_CAUSED_PROPERTY), caused, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CAUSED_PROPERTY), caused, ontology);
         }
         if (causant != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.HAS_CAUSANT_PROPERTY), causant, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CAUSANT_PROPERTY), causant, ontology);
         }
         if (compresent != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.HAS_COMPRESENT_PROPERTY), compresent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_COMPRESENT_PROPERTY), compresent, ontology);
         }
         if (goal != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.HAS_PURPOSE_PROPERTY), goal, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_PURPOSE_PROPERTY), goal, ontology);
         }
         if (cooccurrent != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.OCCURS_DURING_PROPERTY), cooccurrent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.OCCURS_DURING_PROPERTY), cooccurrent, ontology);
         }
         if (adjacent != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.IS_ADJACENT_TO_PROPERTY), adjacent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IS_ADJACENT_TO_PROPERTY), adjacent, ontology);
         }
         if (relationshipSource != null) {
-            owl.restrictSome(ret, owl.getProperty(NS.IMPLIES_SOURCE_PROPERTY), relationshipSource, ontology);
-            owl.restrictSome(ret, owl.getProperty(NS.IMPLIES_DESTINATION_PROPERTY), relationshipTarget,
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IMPLIES_SOURCE_PROPERTY), relationshipSource, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IMPLIES_DESTINATION_PROPERTY), relationshipTarget,
                     ontology);
         }
 
-        if (scope != null && !owl.reasoner().satisfiable(ret)) {
+        if (scope != null && !reasoner.satisfiable(ret)) {
             scope.error("this declaration has logical errors and is inconsistent", declaration);
         }
 
@@ -1286,7 +1286,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     private Ontology getTargetOntology() {
-        return owl.getTargetOntology(ontology, main, traits, roles, inherent, /*context,*/ caused, causant,
+        return reasoner.owl().getTargetOntology(ontology, main, traits, roles, inherent, /*context,*/ caused, causant,
                 compresent,
                 goal, cooccurrent, adjacent);
     }
@@ -1349,9 +1349,9 @@ public class ObservableBuilder implements Observable.Builder {
              * reference name
              */
             if (valueOperand instanceof KimObservable) {
-                valueOperand = owl.reasoner().declareObservable((KimObservable) valueOperand);
+                valueOperand = reasoner.declareObservable((KimObservable) valueOperand);
             } else if (valueOperand instanceof KimConcept) {
-                valueOperand = owl.reasoner().declareConcept((KimConcept) valueOperand);
+                valueOperand = reasoner.declareConcept((KimConcept) valueOperand);
             }
 
             if (valueOperand instanceof Concept) {
@@ -1466,11 +1466,11 @@ public class ObservableBuilder implements Observable.Builder {
         } else if (o instanceof Integer || o instanceof Long) {
             return ("i" + o).replaceAll("-", "_");
         } else if (o instanceof KimConcept) {
-            return reference ? owl.reasoner().declareConcept((KimConcept) o).getReferenceName()
-                             : owl.reasoner().declareConcept((KimConcept) o).getName();
+            return reference ? reasoner.declareConcept((KimConcept) o).getReferenceName()
+                             : reasoner.declareConcept((KimConcept) o).getName();
         } else if (o instanceof KimObservable) {
-            return reference ? owl.reasoner().declareObservable((KimObservable) o).getReferenceName()
-                             : owl.reasoner().declareObservable((KimObservable) o).getName();
+            return reference ? reasoner.declareObservable((KimObservable) o).getReferenceName()
+                             : reasoner.declareObservable((KimObservable) o).getName();
         }
         return ("h" + o.hashCode()).replaceAll("-", "_");
     }
@@ -1626,7 +1626,7 @@ public class ObservableBuilder implements Observable.Builder {
         Set<Concept> ret = new HashSet<>();
         Set<Concept> rem = new HashSet<>();
         for (Concept c : concepts) {
-            if (!owl.reasoner().subsumes(c, concept)) {
+            if (!reasoner.subsumes(c, concept)) {
                 ret.add(c);
             } else {
                 rem.add(c);

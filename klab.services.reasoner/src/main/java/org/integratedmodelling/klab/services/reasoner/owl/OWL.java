@@ -1485,8 +1485,6 @@ public class OWL {
      * operator.
      *
      * @param concept       the untransformed concept
-     * @param addDefinition add the {@link NS#CONCEPT_DEFINITION_PROPERTY} annotation; pass true if used from
-     *                      outside the builder
      * @return the transformed concept
      */
     public Concept makeChange(Concept concept) {

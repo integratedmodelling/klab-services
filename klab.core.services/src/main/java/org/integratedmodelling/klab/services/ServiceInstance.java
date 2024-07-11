@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.ServiceReference;
+import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
 
 /**
@@ -39,7 +40,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * Once a {@link ServiceInstance} has successfully booted, the wrapped {@link KlabService} can be used through
  * its API and is available through {@link #klabService()}. The {@link ServiceInstance} does not provide
  * network controllers, which can be provided through the outer wrapper
- * {@link org.integratedmodelling.klab.services.application.ServiceNetworkedInstance} after defining the
+ * {@link ServiceNetworkedInstance} after defining the
  * controllers using Spring.
  * <p>
  *  TODO move all startup/shutdown notifications to the wrapper
@@ -155,6 +156,7 @@ public abstract class ServiceInstance<T extends BaseService> {
         this.identity = authenticateService();
 
         return new AbstractServiceDelegatingScope(new ServiceChannelImpl(identity.getFirst())) {
+
             @Override
             public UserScope createUser(String username, String password) {
                 return createUserScope(username, password);
@@ -183,8 +185,8 @@ public abstract class ServiceInstance<T extends BaseService> {
                     }
                     case ENGINE -> Collections.emptyList();
                     case LEGACY_NODE, DISCOVERY ->
-                            throw new KlabIllegalArgumentException("Cannot ask a scope for a legacy service" +
-                                    " ");
+                            throw new KlabIllegalArgumentException("Cannot ask a scope for a legacy " +
+                                    "service" + " ");
                 };
             }
         };
@@ -196,8 +198,36 @@ public abstract class ServiceInstance<T extends BaseService> {
     }
 
     public boolean start(ServiceStartupOptions options) {
+
         setEnvironment(options);
         this.service = createPrimaryService(this.serviceScope = createServiceScope(), options);
+
+        /**
+         * Must do this now
+         */
+        switch (this.service) {
+            case Reasoner reasoner -> {
+                currentServices.put(KlabService.Type.REASONER, reasoner);
+                availableReasoners.add(reasoner);
+            }
+            case RuntimeService runtime -> {
+                currentServices.put(KlabService.Type.RUNTIME, runtime);
+                availableRuntimeServices.add(runtime);
+            }
+            case ResourcesService resources -> {
+                currentServices.put(KlabService.Type.RESOURCES, resources);
+                availableResourcesServices.add(resources);
+            }
+            case Resolver resolver -> {
+                currentServices.put(KlabService.Type.RESOLVER, resolver);
+                availableResolvers.add(resolver);
+            }
+            case Community community -> {
+                currentServices.put(KlabService.Type.COMMUNITY, community);
+            }
+            default -> {}
+        }
+
         bootTime = System.currentTimeMillis();
         serviceScope.setStatus(Scope.Status.STARTED);
         serviceScope.setMaintenanceMode(true);
@@ -274,12 +304,16 @@ public abstract class ServiceInstance<T extends BaseService> {
         if (wasAvailable != ok) {
             if (ok) {
                 if (initialized.get()) {
-                    serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
+                    serviceScope.send(Message.MessageClass.ServiceLifecycle,
+                            Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
                 } else {
-                    serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing, klabService().capabilities(serviceScope));
+                    serviceScope.send(Message.MessageClass.ServiceLifecycle,
+                            Message.MessageType.ServiceInitializing,
+                            klabService().capabilities(serviceScope));
                 }
             } else {
-                serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable, klabService().capabilities(serviceScope));
+                serviceScope.send(Message.MessageClass.ServiceLifecycle,
+                        Message.MessageType.ServiceUnavailable, klabService().capabilities(serviceScope));
             }
         }
 
@@ -291,7 +325,8 @@ public abstract class ServiceInstance<T extends BaseService> {
             setBusy(true);
             klabService().initializeService();
             initialized.set(true);
-            serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
+            serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                    klabService().capabilities(serviceScope));
             setBusy(false);
         }
 

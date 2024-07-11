@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api.services.impl;
 import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.net.URL;
+import java.util.EnumSet;
+import java.util.Set;
 
 public abstract class AbstractServiceCapabilities implements KlabService.ServiceCapabilities {
 
@@ -11,6 +13,7 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
     private String serviceId;
     private String serverId;
     private URL url;
+    private Set<KlabService.Type> availableServices = EnumSet.noneOf(KlabService.Type.class);
 
     @Override
     public String getLocalName() {

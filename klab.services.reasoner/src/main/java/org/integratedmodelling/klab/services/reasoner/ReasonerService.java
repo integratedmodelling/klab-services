@@ -166,6 +166,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return internalConceptPattern.matcher(c.getName()).matches();
     }
 
+    public OWL owl() {
+        return owl;
+    }
+
     /**
      * An emergence is the appearance of an observation triggered by another, under the assumptions stated in
      * the worldview. It applies to processes and relationships and its emergent observable can be a
@@ -1672,7 +1676,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Builder observableBuilder(Observable observableImpl) {
-        return ObservableBuilder.getBuilder(observableImpl, scope, owl);
+        return ObservableBuilder.getBuilder(observableImpl, scope, this);
     }
 
     /*
@@ -2080,7 +2084,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
 
         ObservableBuilder builder =
-                new ObservableBuilder(main, ontology, monitor, owl).withDeclaration(concept);
+                new ObservableBuilder(main, ontology, monitor, this).withDeclaration(concept);
 
         if (concept.getSemanticModifier() != null) {
             Concept other = null;
@@ -2256,7 +2260,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         Concept observable = main;
 
-        Observable.Builder builder = new ObservableBuilder(observable, monitor, owl);
+        Observable.Builder builder = new ObservableBuilder(observable, monitor, this);
 
         // ret.setUrl(concept.getURI());
         // builder.withUrl(concept.getURI());
@@ -2511,14 +2515,14 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Concept buildConcept(ObservableBuildStrategy builder) {
-        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
+        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, this);
         ret = defineBuilder(builder, ret);
         return ret.buildConcept();
     }
 
     @Override
     public Observable buildObservable(ObservableBuildStrategy builder) {
-        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, owl);
+        Observable.Builder ret = new ObservableBuilder(builder.getBaseObservable(), scope, this);
         ret = defineBuilder(builder, ret);
         return ret.build();
     }
