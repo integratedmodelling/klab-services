@@ -7,12 +7,13 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.runtime.RuntimeService;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component
+@SpringBootApplication
 // TODO remove the argument when all gson dependencies are the same (never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",

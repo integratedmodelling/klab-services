@@ -29,7 +29,7 @@ public class RuntimeServerContextController {
     }
 
     @QueryMapping
-    public List<Context> query(@Argument String id) {
+    public List<Context> contexts(@Argument String id) {
         return id == null ? demoContexts :
                demoContexts.stream().filter(context -> context.id().equals(id)).toList();
     }
