@@ -1,9 +1,9 @@
 type Query {
-    contexts(id: ID): [Context]!
+    contexts: [Context]!
 }
 
 type Context {
-    id: ID!
+    id: String!
     name: String!
     geometry: Geometry!
     observer: Observation!

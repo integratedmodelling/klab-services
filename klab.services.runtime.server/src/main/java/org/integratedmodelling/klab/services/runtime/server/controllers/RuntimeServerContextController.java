@@ -8,6 +8,7 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,9 +30,10 @@ public class RuntimeServerContextController {
     }
 
     @QueryMapping
-    public List<Context> contexts(@Argument String id) {
-        return id == null ? demoContexts :
-               demoContexts.stream().filter(context -> context.id().equals(id)).toList();
+    public List<Context> contexts(Principal principal) {
+        System.out.println("PRINCIPAL IS " + principal);
+        return /*id == null ?*/ demoContexts/* :
+               demoContexts.stream().filter(context -> context.id().equals(id)).toList()*/;
     }
 
 }
