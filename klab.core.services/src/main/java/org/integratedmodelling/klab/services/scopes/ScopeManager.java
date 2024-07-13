@@ -27,6 +27,10 @@ import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The scope manager maintains service-side scopes that are generated through the orchestrating engine. When
@@ -48,6 +52,9 @@ public class ScopeManager {
      * associated with each of them.
      */
     private Graph<String, DefaultEdge> scopeGraph = new DefaultDirectedGraph<>(DefaultEdge.class);
+    private Map<String, Long> idleScopeTime = Collections.synchronizedMap(new HashMap<>());
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
 
     public ScopeManager(KlabService service) {
 
@@ -60,6 +67,12 @@ public class ScopeManager {
 
         Logging.INSTANCE.info("Actor system booted");
 
+        executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
+    }
+
+    private void expiredScopeCheck() {
+
+        // send each scope closing to a virtual thread after removing from the scope map
     }
 
     public ServiceUserScope login(UserIdentity user) {
@@ -180,17 +193,18 @@ public class ScopeManager {
 
     }
 
-    public <T extends Scope> T getOrCreateScope(EngineAuthorization authorization, Class<T> scopeClass, String scopeId) {
+    public <T extends Scope> T getOrCreateScope(EngineAuthorization authorization, Class<T> scopeClass,
+                                                String scopeId) {
 
         var scope = getOrCreateUserScope(authorization);
         if (scopeId == null && scopeClass.isAssignableFrom(scope.getClass())) {
-            return (T)scope;
+            return (T) scope;
         }
 
         var result = scopes.get(scopeId);
 
         if (result != null && scopeClass.isAssignableFrom(result.getClass())) {
-            return (T)result;
+            return (T) result;
         }
 
         ServiceUserScope ret = (ServiceUserScope) scope;
@@ -223,9 +237,9 @@ public class ScopeManager {
         return null;
     }
 
-//    public void register(EngineAuthorization ret) {
-//        if (ret.getScopeId() != null) {
-//            scopes.getOrDefault(ret.getScopeId(), createScope(ret));
-//        }
-//    }
+    //    public void register(EngineAuthorization ret) {
+    //        if (ret.getScopeId() != null) {
+    //            scopes.getOrDefault(ret.getScopeId(), createScope(ret));
+    //        }
+    //    }
 }
