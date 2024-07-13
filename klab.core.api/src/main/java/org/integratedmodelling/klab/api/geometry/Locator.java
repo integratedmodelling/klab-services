@@ -59,7 +59,7 @@ public interface Locator {
      * that extent. For example, geometry.as(ISpace.class) will return a locator reflecting only the
      * spatial dimension. Such partial locators should not be used for further location.
      * 
-     * @param type
+     * @param cls
      * @return
      */
     <T extends Locator> T as(Class<T> cls);
