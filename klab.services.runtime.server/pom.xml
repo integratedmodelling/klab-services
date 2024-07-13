@@ -10,6 +10,10 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.integratedmodelling</groupId>
                 <artifactId>klab.product</artifactId>
                 <version>1.0.1-SNAPSHOT</version>
@@ -41,27 +45,27 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-<!--
-            <plugin>
-                <groupId>com.graphql-java-generator</groupId>
-                <artifactId>graphql-maven-plugin</artifactId>
-                <version>2.7</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generateClientCode</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <packageName>org.integratedmodelling.klab.services.runtime.server.objects</packageName>
-                    <copyRuntimeSources>false</copyRuntimeSources>
-                    <targetSourceFolder>./src/main/java</targetSourceFolder>
-                    <generateDeprecatedRequestResponse>false</generateDeprecatedRequestResponse>
-                    <separateUtilityClasses>true</separateUtilityClasses>
-                </configuration>
-            </plugin>
--->
+            <!--
+                        <plugin>
+                            <groupId>com.graphql-java-generator</groupId>
+                            <artifactId>graphql-maven-plugin</artifactId>
+                            <version>2.7</version>
+                            <executions>
+                                <execution>
+                                    <goals>
+                                        <goal>generateClientCode</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                            <configuration>
+                                <packageName>org.integratedmodelling.klab.services.runtime.server.objects</packageName>
+                                <copyRuntimeSources>false</copyRuntimeSources>
+                                <targetSourceFolder>./src/main/java</targetSourceFolder>
+                                <generateDeprecatedRequestResponse>false</generateDeprecatedRequestResponse>
+                                <separateUtilityClasses>true</separateUtilityClasses>
+                            </configuration>
+                        </plugin>
+            -->
         </plugins>
     </build>
     <dependencies>
@@ -77,6 +81,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- needs to be forced for some reason, or GraphQL won't initialize -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>context-propagation</artifactId>
+            <version>1.1.1</version>
         </dependency>
     </dependencies>
 </project>

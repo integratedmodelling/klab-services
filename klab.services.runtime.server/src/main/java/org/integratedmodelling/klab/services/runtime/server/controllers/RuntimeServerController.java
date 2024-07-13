@@ -1,14 +1,9 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.Service;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
-import org.integratedmodelling.klab.services.runtime.RuntimeService;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
-import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
@@ -43,7 +38,7 @@ public class RuntimeServerController {
 
     @GetMapping(ServicesAPI.RUNTIME.CREATE_CONTEXT)
     public String createContext(@PathVariable(name = "name") String contextName, Principal principal,
-                                @Header(name = ServicesAPI.OBSERVER_HEADER) String sessionHeader) {
+                                @Header(name = ServicesAPI.SCOPE_HEADER) String sessionHeader) {
         if (principal instanceof EngineAuthorization authorization) {
             var sessionScope = runtimeService.klabService().getScopeManager().getOrCreateScope(authorization,
                     ServiceSessionScope.class, sessionHeader);

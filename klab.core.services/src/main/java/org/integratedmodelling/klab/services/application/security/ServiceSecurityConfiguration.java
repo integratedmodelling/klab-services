@@ -33,7 +33,7 @@ public class ServiceSecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**", "/graphql", "/graphiql", "/actuator/**",
                                 "/swagger-ui/**", "/v3/api" +
-                                "-docs/**", "/v3/api-docs.yaml", "/api.html").permitAll()
+                                        "-docs/**", "/v3/api-docs.yaml", "/api.html").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new TokenAuthorizationFilter(authenticationManager, authorizationManager),
                         UsernamePasswordAuthenticationFilter.class)

@@ -15,7 +15,7 @@ public interface ServicesAPI {
      * <code>sessionId(.contextId)*('#' observerId)?</code>
      * in digital twin API communication
      */
-    String OBSERVER_HEADER = "Observer";
+    String SCOPE_HEADER = "Klab-Scope";
     /**
      * Server secret key to match with the service secret to validate local or privileged connections.
      */

@@ -7,13 +7,12 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.runtime.RuntimeService;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@SpringBootApplication
+@Component
 // TODO remove the argument when all gson dependencies are the same (never)
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
@@ -27,6 +26,7 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
         return List.of(KlabService.Type.RESOLVER, KlabService.Type.REASONER, KlabService.Type.RESOURCES);
     }
 
+
     @Override
     protected RuntimeService createPrimaryService(ServiceScope serviceScope,
                                                   ServiceStartupOptions options) {
@@ -37,4 +37,5 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
         ServiceNetworkedInstance.start(RuntimeServer.class,
                 ServiceStartupOptions.create(KlabService.Type.RUNTIME, args));
     }
+
 }

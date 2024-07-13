@@ -1,5 +1,8 @@
 type Query {
+    # all contexts, for admins
     contexts: [Context]!
+    # one context, no parameters as the context ID must be in the scope header
+    context: Context
 }
 
 type Context {

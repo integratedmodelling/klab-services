@@ -27,7 +27,7 @@ public class TokenAuthorizationFilter extends BasicAuthenticationFilter {
             throws IOException, ServletException {
 
         String tokenString = req.getHeader(HttpHeaders.AUTHORIZATION);
-        String observerToken = req.getHeader(ServicesAPI.OBSERVER_HEADER);
+        String observerToken = req.getHeader(ServicesAPI.SCOPE_HEADER);
         String serverKey = req.getHeader(ServicesAPI.SERVER_KEY_HEADER);
 
         if (tokenString != null) {

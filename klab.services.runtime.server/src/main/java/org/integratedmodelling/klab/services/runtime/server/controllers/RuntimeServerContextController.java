@@ -1,12 +1,11 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
-import org.integratedmodelling.klab.services.application.security.Role;
+import jakarta.servlet.http.HttpServletRequest;
+import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.services.runtime.server.objects.Context;
-import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -19,6 +18,8 @@ import java.util.List;
 public class RuntimeServerContextController {
 
     private List<Context> demoContexts = new ArrayList<>();
+    @Autowired
+    private HttpServletRequest request;
 
     public RuntimeServerContextController() {
         demoContexts.add(new Context("dio1", "dio uno", null, null));
@@ -29,11 +30,18 @@ public class RuntimeServerContextController {
         demoContexts.add(new Context("dio6", "dio sei", null, null));
     }
 
-    @QueryMapping
+    @SchemaMapping(typeName="Query", value="contexts")
     public List<Context> contexts(Principal principal) {
         System.out.println("PRINCIPAL IS " + principal);
         return /*id == null ?*/ demoContexts/* :
                demoContexts.stream().filter(context -> context.id().equals(id)).toList()*/;
+    }
+
+    @SchemaMapping(typeName="Query", value="context")
+    public Context context(Principal principal) {
+        var scopeHeader = request.getHeader(ServicesAPI.SCOPE_HEADER);
+        System.out.println("PRINCIPAL IS " + principal + ", SCOPE IS " + scopeHeader);
+        return demoContexts.get(2);
     }
 
 }

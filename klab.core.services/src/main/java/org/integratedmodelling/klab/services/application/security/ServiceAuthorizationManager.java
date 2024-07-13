@@ -321,7 +321,7 @@ public class ServiceAuthorizationManager {
 
     /**
      * Resolve or create the scope correspondent to the passed principal. A scopeHeader (from the header
-     * {@link ServicesAPI#OBSERVER_HEADER}) may be passed to create or retrieve a scope below the user level,
+     * {@link ServicesAPI#SCOPE_HEADER}) may be passed to create or retrieve a scope below the user level,
      * which will only be relevant in runtime and resolver services.
      *
      * @param principal
