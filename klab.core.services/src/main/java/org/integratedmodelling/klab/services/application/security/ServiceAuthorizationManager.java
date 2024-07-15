@@ -181,7 +181,7 @@ public class ServiceAuthorizationManager {
      * Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups and roles as
      * expected.
      */
-    public EngineAuthorization validateToken(String token, String serverKey, String observerId) {
+    public EngineAuthorization validateToken(String token, String serverKey, String scopeId) {
 
         EngineAuthorization ret = null;
 
@@ -290,7 +290,12 @@ public class ServiceAuthorizationManager {
         /*
         this goes in no matter what. Will be null only when sent from clients in service scope
          */
-        ret.setScopeId(observerId);
+        ret.setScopeId(scopeId);
+
+        /**
+         * TODO if we have a scope header, the scope manager must know the scope or it's an error
+         *  (non-existent or expired scope)
+         */
 
         /**
          * Build any scopes we need for this authorization

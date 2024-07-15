@@ -5,6 +5,11 @@ type Query {
     context: Context
 }
 
+type Mutation {
+    # submit the data for an observation and obtain the observation ID, also the task ID of its resolution
+    observe(observation: ObservationInput): String
+}
+
 type Context {
     id: String!
     name: String!
@@ -40,4 +45,14 @@ type Observation {
 
 type Notification {
     message: String
+}
+
+# The silly input types, identical to the output types but they all must be duplicated
+
+input ObservationInput {
+    name: String
+    observable: String!
+    space: String
+    start: Float
+    end: Float
 }

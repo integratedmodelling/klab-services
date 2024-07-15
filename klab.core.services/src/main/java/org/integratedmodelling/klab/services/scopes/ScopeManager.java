@@ -55,7 +55,6 @@ public class ScopeManager {
     private Map<String, Long> idleScopeTime = Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-
     public ScopeManager(KlabService service) {
 
         this.service = service;
@@ -73,6 +72,23 @@ public class ScopeManager {
     private void expiredScopeCheck() {
 
         // send each scope closing to a virtual thread after removing from the scope map
+    }
+
+    /**
+     * Result of parsing a scope ID into all its possible components
+     *
+     * @param type the scope type, based on the path length
+     * @param scopeId the ID with which the scope should be registered
+     * @param observationPath if there is a focal observation ID, the path to the observation
+     * @param observerId if there is an observer field after #, the path to the observer
+     */
+    public record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String[] observerId) {
+
+    }
+
+    public static ScopeData parseScopeId(String scopeId) {
+        // TODO
+        return null;
     }
 
     public ServiceUserScope login(UserIdentity user) {
