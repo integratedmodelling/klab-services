@@ -38,12 +38,18 @@ type Time {
     end: Float
 }
 
+enum Status { STARTED, FINISHED, ABORTED }
+enum Level { DEBUG, INFO, WARNING, ERROR }
+
 type Observation {
-    id: ID!
+    id: String!
     observable: String!
+    resolution: Status!
+    notifications: [Notification]
 }
 
 type Notification {
+    level: Level
     message: String
 }
 

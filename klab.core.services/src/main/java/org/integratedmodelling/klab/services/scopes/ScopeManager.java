@@ -75,20 +75,32 @@ public class ScopeManager {
     }
 
     /**
-     * Result of parsing a scope ID into all its possible components
+     * Result of parsing a scope ID into all its possible components. Empty means the passed token wasn't
+     * there.
      *
-     * @param type the scope type, based on the path length
-     * @param scopeId the ID with which the scope should be registered
+     * @param type            the scope type, based on the path length
+     * @param scopeId         the ID with which the scope should be registered
      * @param observationPath if there is a focal observation ID, the path to the observation
-     * @param observerId if there is an observer field after #, the path to the observer
+     * @param observerId      if there is an observer field after #, the path to the observer
      */
     public record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String[] observerId) {
-
+        public boolean empty() {
+            return scopeId() == null;
+        }
     }
 
-    public static ScopeData parseScopeId(String scopeId) {
-        // TODO
-        return null;
+    public static ScopeData parseScopeId(String scopeToken) {
+
+        Scope.Type type = null;
+        String scopeId = null;
+        String[] observationPath = null;
+        String[] observerId = null;
+
+        if (scopeToken != null) {
+            // TODO
+        }
+
+        return new ScopeData(type, scopeId, observationPath, observerId);
     }
 
     public ServiceUserScope login(UserIdentity user) {
