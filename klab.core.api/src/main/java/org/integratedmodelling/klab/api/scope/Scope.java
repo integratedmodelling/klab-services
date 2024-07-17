@@ -45,13 +45,24 @@ public abstract interface Scope extends Channel {
     }
 
     enum Type {
+
         SERVICE, // service-level scope
         USER, // root-level scope
         SCRIPT, // session-level scope
         API, // session for the REST API through a client
         APPLICATION, // session for an application, including the Explorer
         SESSION, // raw session for direct use within Java code
-        CONTEXT // context, on which observe() can be called
+        CONTEXT; // context, on which observe() can be called
+
+        public Class<? extends Scope> classify() {
+
+            return switch(this) {
+                case SERVICE -> ServiceScope.class;
+                case USER -> UserScope.class;
+                case SESSION, APPLICATION, API, SCRIPT -> SessionScope.class;
+                case CONTEXT -> ContextScope.class;
+            };
+        }
     }
 
 

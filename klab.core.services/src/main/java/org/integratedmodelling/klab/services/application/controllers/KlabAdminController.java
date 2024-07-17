@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCre
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +72,8 @@ public class KlabAdminController {
      */
     @PostMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public @ResponseBody ExternalAuthenticationCredentials.CredentialInfo setCredentials(@RequestBody CredentialsRequest request, Principal principal) {
-        var scope = scopeManager.resolveScope(principal, Scope.class, null);
+        var scope = principal instanceof EngineAuthorization authorization ?
+                    authorization.getScope() : null;
         request.getCredentials().setId(Utils.Names.shortUUID());
         request.getCredentials().setPrivileges(Authentication.INSTANCE.getDefaultPrivileges(scope));
         return Authentication.INSTANCE.addExternalCredentials(request.getHost(), request.getCredentials(),
@@ -93,15 +95,15 @@ public class KlabAdminController {
      * Return all the credentials known to the service in the form of a list of credential information
      * objects. Credentials are maintained in a locally accessible encrypted database; each credential is
      * identified by a tag that can be referred to within resource metadata. The credential system is not
-     * related to service authentication; it merely exists to store and manage credentials used to
-     * communicate with external services or resources.
+     * related to service authentication; it merely exists to store and manage credentials used to communicate
+     * with external services or resources.
      *
      * @return the list of credentials, possibly empty
      */
     @GetMapping(ServicesAPI.ADMIN.CREDENTIALS)
     public @ResponseBody List<ExternalAuthenticationCredentials.CredentialInfo> listCredentials(Principal principal) {
-        return instance.klabService().getCredentialInfo(scopeManager.resolveScope(principal, Scope.class,
-                null));
+        return instance.klabService().getCredentialInfo(principal instanceof EngineAuthorization authorization ?
+                                                        authorization.getScope() : null);
     }
 
 }

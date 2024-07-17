@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
-import org.apache.catalina.User;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -28,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -96,7 +94,7 @@ public class ScopeManager {
 
     public static ScopeData parseScopeId(String scopeToken) {
 
-        Scope.Type type =  Scope.Type.USER;
+        Scope.Type type = Scope.Type.USER;
         String scopeId = null;
         String[] observationPath = null;
         String[] observerId = null;
@@ -182,39 +180,39 @@ public class ScopeManager {
         return false;
     }
 
-    public ServiceUserScope createScope(EngineAuthorization engineAuthorization) {
-
-        String[] path = engineAuthorization.getScopeId().split("\\/");
-        ServiceUserScope ret = null;
-
-        /**
-         * The physical scope levels are user.session.context. Below that, scopes are "virtual"
-         * incarnations of the context scope with modified state and
-         * their hierarchy is handled internally by the {@link ContextScope} implementation.
-         */
-        ServiceUserScope scope = null;
-        StringBuilder scopeId = new StringBuilder();
-        for (int i = 0; i < 3; i++) {
-            scopeId.append((scopeId.isEmpty()) ? path[i] : ("/" + path[i]));
-            var currentScope = scopes.get(scopeId.toString());
-            if (currentScope == null) {
-                // create from the previous scope according to level
-                currentScope = switch (i) {
-                    case 0 -> login(createUserIdentity(engineAuthorization));
-                    case 1 -> null; // currentScope.runSession();
-                    case 2 -> null; // ((SessionScope)currentScope)....
-                    default -> null; // should exist but we keep the scope and ask it to specialize
-                };
-            }
-
-            scope = currentScope;
-        }
-
-        ret = scope;
-        ret.setLocal(engineAuthorization.isLocal());
-
-        return ret;
-    }
+//    public ServiceUserScope createScope(EngineAuthorization engineAuthorization) {
+//
+//        String[] path = engineAuthorization.getScopeId().split("\\/");
+//        ServiceUserScope ret = null;
+//
+//        /**
+//         * The physical scope levels are user.session.context. Below that, scopes are "virtual"
+//         * incarnations of the context scope with modified state and
+//         * their hierarchy is handled internally by the {@link ContextScope} implementation.
+//         */
+//        ServiceUserScope scope = null;
+//        StringBuilder scopeId = new StringBuilder();
+//        for (int i = 0; i < 3; i++) {
+//            scopeId.append((scopeId.isEmpty()) ? path[i] : ("/" + path[i]));
+//            var currentScope = scopes.get(scopeId.toString());
+//            if (currentScope == null) {
+//                // create from the previous scope according to level
+//                currentScope = switch (i) {
+//                    case 0 -> login(createUserIdentity(engineAuthorization));
+//                    case 1 -> null; // currentScope.runSession();
+//                    case 2 -> null; // ((SessionScope)currentScope)....
+//                    default -> null; // should exist but we keep the scope and ask it to specialize
+//                };
+//            }
+//
+//            scope = currentScope;
+//        }
+//
+//        ret = scope;
+//        ret.setLocal(engineAuthorization.isLocal());
+//
+//        return ret;
+//    }
 
     private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
         UserIdentityImpl ret = new UserIdentityImpl();
@@ -239,53 +237,42 @@ public class ScopeManager {
 
     }
 
-    public <T extends Scope> T getOrCreateScope(EngineAuthorization authorization, Class<T> scopeClass,
-                                                String scopeId) {
+    /**
+     * Assuming a valid rootScope is passed corresponding to the scope ID in the contextualization, create the
+     * child scopes as specified by the other elements of the scope token.
+     *
+     * @param rootScope
+     * @param contextualization
+     * @return
+     */
+    public ContextScope contextualizeScope(ServiceContextScope rootScope, ScopeData contextualization) {
+        // TODO
+        return rootScope;
+    }
+
+    /**
+     * Get the scope for the passed parameters. If the scope isn't there or has expired,
+     * @param authorization
+     * @param scopeClass
+     * @param scopeId
+     * @return
+     * @param <T>
+     */
+    public <T extends Scope> T getScope(EngineAuthorization authorization, Class<T> scopeClass,
+                                        String scopeId) {
 
         var scope = getOrCreateUserScope(authorization);
-        if (scopeId == null && scopeClass.isAssignableFrom(scope.getClass())) {
+        if (scopeId == null && scope != null && scopeClass.isAssignableFrom(scope.getClass())) {
             return (T) scope;
         }
 
-        var result = scopes.get(scopeId);
-
-        if (result != null && scopeClass.isAssignableFrom(result.getClass())) {
-            return (T) result;
-        }
-
-        ServiceUserScope ret = (ServiceUserScope) scope;
-        if (ret == null) {
-            String[] path = scopeId.split("\\.");
-            if (path.length > 1) {
-                String pathSoFar = path[0];
-                for (int i = 1; i < path.length; i++) {
-                    pathSoFar += "." + path[i];
-                    ret = scopes.get(pathSoFar);
-                    if (ret == null) {
-
-                    }
-                }
+        if (scopeId != null) {
+            var ret = scopes.get(scopeId);
+            if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+                return (T) ret;
             }
         }
-
         return null;
     }
 
-    public ServiceSessionScope newSessionScope(UserScope scope, String sessionName) {
-        return null;
-    }
-
-    public ServiceContextScope newContextScope(SessionScope scope, String contextName) {
-        return null;
-    }
-
-    public UserScope newUserScope(EngineAuthorization engineAuthorization) {
-        return null;
-    }
-
-    //    public void register(EngineAuthorization ret) {
-    //        if (ret.getScopeId() != null) {
-    //            scopes.getOrDefault(ret.getScopeId(), createScope(ret));
-    //        }
-    //    }
 }

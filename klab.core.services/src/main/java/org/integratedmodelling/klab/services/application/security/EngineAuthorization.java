@@ -86,20 +86,13 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      */
     private final Credentials username;
 
-    /**
-     * ID of the current scope, held in the scope manager. Only service scopes have a null here.
-     */
-    private String scopeId;
+
     private boolean local;
 
-    //    /**
-//     * A successful authorization should always result in a scope being obtained.
-//     */
-//    private Scope scope;
-
-//    public EngineAuthorization(String partnerId, String username) {
-//        this(partnerId, username, null);
-//    }
+    /**
+     * A successful authorization should always result in a scope being obtained.
+     */
+    private Scope scope;
 
     public EngineAuthorization(String partnerId, String username, Collection<Role> roles) {
         super(roles);
@@ -118,15 +111,15 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         }
     }
 
-//    public static EngineAuthorization anonymous(/*ServiceScope scope*/) {
-//        var ret = EngineAuthorization.create(/*scope, null*/);
-//        ret.setExpiration(Instant.now().plus(Duration.ofDays(1)));
-//        ret.setAuthenticated(true);
-//        // no roles, no groups
-//        ret.roles = EnumSet.noneOf(Role.class);
-//        ret.groups = Collections.emptyList();
-//        return ret;
-//    }
+    //    public static EngineAuthorization anonymous(/*ServiceScope scope*/) {
+    //        var ret = EngineAuthorization.create(/*scope, null*/);
+    //        ret.setExpiration(Instant.now().plus(Duration.ofDays(1)));
+    //        ret.setAuthenticated(true);
+    //        // no roles, no groups
+    //        ret.roles = EnumSet.noneOf(Role.class);
+    //        ret.groups = Collections.emptyList();
+    //        return ret;
+    //    }
 
     /**
      * Create an authorization principal in service scope with full privileges.
@@ -134,38 +127,37 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      * @param scope
      * @return
      */
-//    public static EngineAuthorization create(/*Scope scope, String serviceSecret*/) {
-//
-//        String partnerIdentity = null;
-//        String scopeIdentity = null;
-//
-//        Identity identity = scope.getIdentity();
-//
-//        Set<Role> roles = EnumSet.noneOf(Role.class);
-//        if (identity instanceof UserIdentity user) {
-//            scopeIdentity = user.getUsername();
-//            // TODO find out the partner for the user, set partner identity
-//        } // TODO partner identity, context, session etc
-////        if (scope instanceof ServiceScope serviceScope) {
-////            // TODO fix the actual roles we want
-////            roles = EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
-////                    Role.ROLE_DATA_MANAGER);
-////            if (scopeIdentity == null) {
-////
-////            }
-////        }
-//        if (partnerIdentity == null) {
-//            partnerIdentity = scopeIdentity;
-//        }
-//        var ret = new EngineAuthorization(partnerIdentity, scopeIdentity, roles);
-//        ret.setAuthenticated(true);
-////        ret.setScope(scope);
-////        if (serviceSecret != null) {
-////            ret.setTokenString(serviceSecret);
-////        }
-//        return ret;
-//    }
-
+    //    public static EngineAuthorization create(/*Scope scope, String serviceSecret*/) {
+    //
+    //        String partnerIdentity = null;
+    //        String scopeIdentity = null;
+    //
+    //        Identity identity = scope.getIdentity();
+    //
+    //        Set<Role> roles = EnumSet.noneOf(Role.class);
+    //        if (identity instanceof UserIdentity user) {
+    //            scopeIdentity = user.getUsername();
+    //            // TODO find out the partner for the user, set partner identity
+    //        } // TODO partner identity, context, session etc
+    ////        if (scope instanceof ServiceScope serviceScope) {
+    ////            // TODO fix the actual roles we want
+    ////            roles = EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
+    ////                    Role.ROLE_DATA_MANAGER);
+    ////            if (scopeIdentity == null) {
+    ////
+    ////            }
+    ////        }
+    //        if (partnerIdentity == null) {
+    //            partnerIdentity = scopeIdentity;
+    //        }
+    //        var ret = new EngineAuthorization(partnerIdentity, scopeIdentity, roles);
+    //        ret.setAuthenticated(true);
+    ////        ret.setScope(scope);
+    ////        if (serviceSecret != null) {
+    ////            ret.setTokenString(serviceSecret);
+    ////        }
+    //        return ret;
+    //    }
     @Override
     public Credentials getCredentials() {
         return tokenString;
@@ -200,9 +192,9 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         return roles;
     }
 
-//    public String getTokenString() {
-//        return tokenString.value;
-//    }
+    //    public String getTokenString() {
+    //        return tokenString.value;
+    //    }
 
     public String getUsername() {
         return username.value;
@@ -210,10 +202,6 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
 
     public boolean isAdministrator() {
         return getAuthorities().contains(Role.ROLE_ADMINISTRATOR);
-    }
-
-    public String getScopeId() {
-        return scopeId;
     }
 
     /**
@@ -274,24 +262,28 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         this.tokenString = tokenString;
     }
 
-//    public Scope getScope() {
-//        return scope;
-//    }
-//
-//    public void setScope(Scope scope) {
-//        this.scope = scope;
-//    }
-
     public void setRoles(Collection<Role> roles) {
         this.roles = roles;
     }
 
-    public void setScopeId(String scopeId) {
-        this.scopeId = scopeId;
-    }
-
     public void setLocal(boolean b) {
         this.local = b;
+    }
+
+    public Scope getScope() {
+        return scope;
+    }
+
+    public <T extends Scope> T getScope(Class<T> scopeClass) {
+        var ret = getScope();
+        if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+            return (T) ret;
+        }
+        return null;
+    }
+
+    public void setScope(Scope scope) {
+        this.scope = scope;
     }
 
     public class Credentials implements CredentialsContainer {

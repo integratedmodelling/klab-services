@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,9 +37,8 @@ public class KlabServiceController {
      */
     @GetMapping(ServicesAPI.CAPABILITIES)
     public KlabService.ServiceCapabilities capabilities(Principal principal) {
-        return instance.klabService().capabilities(principal == null ? null :
-                                                   authenticationManager.resolveScope(principal,
-                                                           Scope.class, null));
+        return instance.klabService().capabilities(principal instanceof EngineAuthorization authorization ?
+                                                   authorization.getScope() : null);
     }
 
     /**

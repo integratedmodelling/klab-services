@@ -12,6 +12,8 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.scopes.ScopeManager;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
@@ -181,7 +183,7 @@ public class ServiceAuthorizationManager {
      * Otherwise the hub makes the decision and the JWT is parsed to obtain username, groups and roles as
      * expected.
      */
-    public EngineAuthorization validateToken(String token, String serverKey, String scopeId) {
+    public EngineAuthorization validateToken(String token, String serverKey, String scopeHeader) {
 
         EngineAuthorization ret = null;
 
@@ -287,10 +289,24 @@ public class ServiceAuthorizationManager {
             ret.setAuthenticated(true);
         }
 
+
+        /**
+         * User scope is created anyway.
+         */
+        Scope scope = klabService.get().getScopeManager().getOrCreateUserScope(ret);
+        if (scopeHeader != null) {
+            // ...then contextualized as needed
+            var scopeData = ScopeManager.parseScopeId(scopeHeader);
+            scope = klabService.get().getScopeManager().getScope(ret, scopeData.type().classify(), scopeData.scopeId());
+            if (scope != null) {
+                scope = klabService.get().getScopeManager().contextualizeScope((ServiceContextScope) scope, scopeData);
+            }
+        }
+
         /*
         this goes in no matter what. Will be null only when sent from clients in service scope
          */
-        ret.setScopeId(scopeId);
+        ret.setScope(scope);
 
         /**
          * TODO if we have a scope header, the scope manager must know the scope or it's an error
@@ -324,34 +340,34 @@ public class ServiceAuthorizationManager {
         return ret;
     }
 
-    /**
-     * Resolve or create the scope correspondent to the passed principal. A scopeHeader (from the header
-     * {@link ServicesAPI#SCOPE_HEADER}) may be passed to create or retrieve a scope below the user level,
-     * which will only be relevant in runtime and resolver services.
-     *
-     * @param principal
-     * @param scopeClass
-     * @param scopeHeader if not null, use to establish a scope below
-     *                    {@link org.integratedmodelling.klab.api.scope.UserScope}, possibly with a given
-     *                    observer and other parameters.
-     * @param <T>
-     * @return
-     */
-    public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass, String scopeHeader) {
-
-        T ret = null;
-        if (principal instanceof EngineAuthorization authorization) {
-            if (authorization.getScopeId() != null) {
-                ret = (T) klabService.get().getScopeManager().getOrCreateScope(authorization, scopeClass, scopeHeader);
-            } else if (klabService.get() != null && scopeClass.isAssignableFrom(klabService.get().serviceScope().getClass())) {
-                ret = (T) klabService.get().serviceScope();
-            }
-            if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
-                return (T) ret;
-            }
-        }
-        return ret;
-    }
+//    /**
+//     * Resolve or create the scope correspondent to the passed principal. A scopeHeader (from the header
+//     * {@link ServicesAPI#SCOPE_HEADER}) may be passed to create or retrieve a scope below the user level,
+//     * which will only be relevant in runtime and resolver services.
+//     *
+//     * @param principal
+//     * @param scopeClass
+//     * @param scopeHeader if not null, use to establish a scope below
+//     *                    {@link org.integratedmodelling.klab.api.scope.UserScope}, possibly with a given
+//     *                    observer and other parameters.
+//     * @param <T>
+//     * @return
+//     */
+//    public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass, String scopeHeader) {
+//
+//        T ret = null;
+//        if (principal instanceof EngineAuthorization authorization) {
+//            if (authorization.getScopeId() != null) {
+//                ret = (T) klabService.get().getScopeManager().getScope(authorization, scopeClass, scopeHeader);
+//            } else if (klabService.get() != null && scopeClass.isAssignableFrom(klabService.get().serviceScope().getClass())) {
+//                ret = (T) klabService.get().serviceScope();
+//            }
+//            if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
+//                return (T) ret;
+//            }
+//        }
+//        return ret;
+//    }
 
     private Set<Group> filterGroups(List<String> groupStrings) {
         Set<Group> ret = new HashSet<>();

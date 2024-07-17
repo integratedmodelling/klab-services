@@ -39,8 +39,10 @@ public class RuntimeServerController {
     @GetMapping(ServicesAPI.RUNTIME.CREATE_CONTEXT)
     public String createContext(@PathVariable(name = "name") String contextName, Principal principal,
                                 @Header(name = ServicesAPI.SCOPE_HEADER) String sessionHeader) {
+
         if (principal instanceof EngineAuthorization authorization) {
-            var sessionScope = runtimeService.klabService().getScopeManager().getOrCreateScope(authorization,
+
+            var sessionScope = runtimeService.klabService().getScopeManager().getScope(authorization,
                     ServiceSessionScope.class, sessionHeader);
 
             if (sessionScope != null) {
