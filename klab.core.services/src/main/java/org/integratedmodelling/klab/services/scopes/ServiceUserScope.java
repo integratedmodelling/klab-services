@@ -49,13 +49,13 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
     private Collection<Role> roles;
     private String id;
     private boolean local;
+    protected ScopeManager manager;
     private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
-            Collections
-                    .synchronizedMap(new HashMap<>());
+            Collections.synchronizedMap(new HashMap<>());
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ServiceUserScope(UserIdentity user) {
+    public ServiceUserScope(UserIdentity user, ScopeManager manager) {
         super(user);
         this.user = user;
         this.data = Parameters.create();
@@ -116,6 +116,7 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
         this.user = parent.user;
         this.parentScope = parent;
         this.data = parent.data;
+        this.manager = parent.manager;
     }
 
     @Override
@@ -131,6 +132,9 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
         } else {
             ret.setStatus(Status.ABORTED);
         }
+
+        this.manager.registerScope(ret);
+
         return ret;
     }
 
@@ -148,6 +152,9 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
         } else {
             ret.setStatus(Status.ABORTED);
         }
+
+        this.manager.registerScope(ret);
+
         return ret;
     }
 

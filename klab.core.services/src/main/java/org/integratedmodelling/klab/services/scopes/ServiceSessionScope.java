@@ -57,6 +57,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         } else {
             ret.setStatus(Status.ABORTED);
         }
+
+        manager.registerScope(ret);
+
         return ret;
     }
 

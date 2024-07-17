@@ -53,7 +53,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.data = Parameters.create();
         this.data.putAll(parent.data);
         this.catalog = new HashMap<>();
-
         /*
          * TODO choose the services if this context or user requires specific ones
          */

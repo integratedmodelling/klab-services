@@ -24,6 +24,7 @@ import org.jgrapht.graph.DefaultEdge;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -74,6 +75,10 @@ public class ScopeManager {
         // send each scope closing to a virtual thread after removing from the scope map
     }
 
+    public void registerScope(ServiceUserScope serviceScope) {
+        scopes.put(serviceScope.getId(), serviceScope);
+    }
+
     /**
      * Result of parsing a scope ID into all its possible components. Empty means the passed token wasn't
      * there.
@@ -91,13 +96,26 @@ public class ScopeManager {
 
     public static ScopeData parseScopeId(String scopeToken) {
 
-        Scope.Type type = null;
+        Scope.Type type =  Scope.Type.USER;
         String scopeId = null;
         String[] observationPath = null;
         String[] observerId = null;
 
         if (scopeToken != null) {
-            // TODO
+
+            // Separate out observer path if any
+            if (scopeToken.contains("#")) {
+                String[] split = scopeToken.split("#");
+                scopeToken = split[0];
+                observerId = split[1].split("\\.");
+            }
+
+            var path = scopeToken.split("\\.");
+            type = path.length > 1 ? Scope.Type.CONTEXT : Scope.Type.SESSION;
+            scopeId = path.length == 1 ? path[0] : path[0];
+            if (path.length > 2) {
+                observationPath = Arrays.copyOfRange(path, 2, path.length);
+            }
         }
 
         return new ScopeData(type, scopeId, observationPath, observerId);
@@ -108,7 +126,7 @@ public class ScopeManager {
         ServiceUserScope ret = scopes.get(user.getUsername());
         if (ret == null) {
 
-            ret = new ServiceUserScope(user) {
+            ret = new ServiceUserScope(user, this) {
 
                 @Override
                 public void switchService(KlabService service) {

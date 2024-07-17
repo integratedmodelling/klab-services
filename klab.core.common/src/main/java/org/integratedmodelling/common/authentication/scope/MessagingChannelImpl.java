@@ -120,20 +120,20 @@ public class MessagingChannelImpl extends ChannelImpl {
 
         this.scopeId = Utils.Names.shortUUID();
 
-        String response = client.get(ServicesAPI.SCOPE.REGISTER, String.class, "scopeType", scopeType,
-                "scopeId", scopeId);
-
-        if (response != null) {
-            String[] split = response.split(",");
-            if (this.stompClient == null) {
-                this.stompClient = getStompClient(split[0], split[1]);
-            }
-
-            if (this.stompClient != null) {
-                info("Client paired to remote " + service.status().getServiceType() + " service " + service.getServiceName());
-                return true;
-            }
-        }
+//        String response = client.get(ServicesAPI.SCOPE.REGISTER, String.class, "scopeType", scopeType,
+//                "scopeId", scopeId);
+//
+//        if (response != null) {
+//            String[] split = response.split(",");
+//            if (this.stompClient == null) {
+//                this.stompClient = getStompClient(split[0], split[1]);
+//            }
+//
+//            if (this.stompClient != null) {
+//                info("Client paired to remote " + service.status().getServiceType() + " service " + service.getServiceName());
+//                return true;
+//            }
+//        }
 
         return false;
     }
@@ -142,9 +142,9 @@ public class MessagingChannelImpl extends ChannelImpl {
     public boolean disconnect(KlabService service) {
         if (isPaired() && session.isConnected()) {
             paired.set(false);
-            var ret = client.get(ServicesAPI.SCOPE.DISPOSE, Boolean.class, "scopeId", scopeId);
-            session.disconnect();
-            return ret != null && ret;
+//            var ret = client.get(ServicesAPI.SCOPE.DISPOSE, Boolean.class, "scopeId", scopeId);
+//            session.disconnect();
+//            return ret != null && ret;
         }
         return false;
     }
