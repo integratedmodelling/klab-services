@@ -22,7 +22,7 @@ import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
 public class ServiceSessionScope extends ServiceUserScope implements SessionScope {
 
     private String name;
-    private Map<String, ContextScope> contexts = new HashMap<>();
+//    private Map<String, ContextScope> contexts = new HashMap<>();
 //    private Scale geometry;
 
     public void setName(String name) {
@@ -42,14 +42,13 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 //    }
 
     @Override
-    public ContextScope createContext(String contextName, Object... observerData) {
+    public ContextScope createContext(String contextName) {
 
-        Geometry geometry = null; // TODO check in observerData
         final ServiceContextScope ret = new ServiceContextScope(this);
         ret.setName(contextName);
         ret.setStatus(Status.WAITING);
         Ref contextAgent = this.getAgent()
-                               .ask(new CreateContext(ret, contextName, geometry), Ref.class);
+                               .ask(new CreateContext(ret, contextName), Ref.class);
         if (!contextAgent.isEmpty()) {
             ret.setStatus(Status.STARTED);
             ret.setAgent(contextAgent);
@@ -74,10 +73,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         return parentScope.getService(serviceClass);
     }
 
-    @Override
-    public ContextScope getContext(String urn) {
-        return contexts.get(urn);
-    }
 
     @Override
     public void logout() {

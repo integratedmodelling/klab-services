@@ -25,12 +25,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
     }
 
     @Override
-    public ContextScope createContext(String contextName, Object... observerData) {
-        return null;
-    }
-
-    @Override
-    public ContextScope getContext(String urn) {
+    public ContextScope createContext(String contextName) {
         return null;
     }
 

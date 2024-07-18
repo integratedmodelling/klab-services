@@ -244,20 +244,20 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return null;
     }
 
-    @Override
-    public ContextScope withGeometry(Geometry geometry) {
-
-        // CHECK this may be unexpected behavior, but it should never be right to pass
-        // null, except when a geometry is unset in the parent but may be set in the
-        // child.
-        if (geometry == null) {
-            return this;
-        }
-
-        ServiceContextScope ret = new ServiceContextScope(this);
-        ret.geometry = Scale.create(geometry);
-        return ret;
-    }
+//    @Override
+//    public ContextScope withGeometry(Geometry geometry) {
+//
+//        // CHECK this may be unexpected behavior, but it should never be right to pass
+//        // null, except when a geometry is unset in the parent but may be set in the
+//        // child.
+//        if (geometry == null) {
+//            return this;
+//        }
+//
+//        ServiceContextScope ret = new ServiceContextScope(this);
+//        ret.geometry = Scale.create(geometry);
+//        return ret;
+//    }
 
     @Override
     public void runTransitions() {

@@ -22,6 +22,11 @@ import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
+    private Subject observer;
+    private DirectObservation contextObservation;
+    private String[] scenarios;
+    private String resolutionNamespace;
+
     public ClientContextScope(ClientUserScope parent, String contextId, RuntimeService runtimeService) {
         super(parent, contextId, runtimeService);
     }
@@ -33,33 +38,33 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public Subject getObserver() {
-        return null;
+        return this.observer;
     }
 
     @Override
     public DirectObservation getContextObservation() {
-        return null;
+        return this.contextObservation;
     }
 
     @Override
     public ContextScope withObserver(Subject observer) {
-        return null;
+        return this;
     }
 
     @Override
     public ContextScope withScenarios(String... scenarios) {
-        return null;
+        return this;
     }
 
     @Override
     public ContextScope withResolutionNamespace(String namespace) {
-        return null;
+        return this;
     }
 
-    @Override
-    public ContextScope withGeometry(Geometry geometry) {
-        return null;
-    }
+//    @Override
+//    public ContextScope withGeometry(Geometry geometry) {
+//        return this.;
+//    }
 
     @Override
     public ContextScope within(DirectObservation contextObservation) {

@@ -30,6 +30,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     default Type getType() {
         return Type.CONTEXT;
     }
+
     /**
      * Context scopes have a URL that enables communication with clients but also allows other contexts to
      * connect to them and become part of federated contexts to form distributed digital twins. When
@@ -41,10 +42,8 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     URL getUrl();
 
     /**
-     * Return the observer for this context. The original observation scope has the session user as observer.
-     * <p>
-     * TODO this should never been null and the {@link #getScale()} should become the same for the
-     *  observer, whose scale represents the observational "reach" of the context.
+     * Return the observer for this context. This will never be null. The scale of the observer implies the
+     * default context of observation.
      *
      * @return
      */
@@ -82,24 +81,13 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      */
     ContextScope withResolutionNamespace(String namespace);
 
-    /**
-     * Create a context with the passed geometry to replace the one currently active. Any observations made in
-     * it must be consistent with the overall geometry and context observations; if observations of direct
-     * observables are made, the parent's geometry should be updated to reflect it.
-     *
-     * <p>This does not reinitialize the catalog, as it's meant to focus on a subset of an overall scale.</p>
-     *
-     * @param geometry
-     * @return
-     */
-    ContextScope withGeometry(Geometry geometry);
 
     /**
-     * Return a scope focused on a specific context observation. The catalog will be reinitialized to empty,
-     * and there is no guarantee that passing the same observation as the current context will not do so.
+     * Return a scope focused on a specific context observation. The focus determines the observations found
+     * and made, and filters the dataflow and provenance returned.
      *
      * @param contextObservation
-     * @return
+     * @return a scope focused on the passed observation.
      */
     ContextScope within(DirectObservation contextObservation);
 

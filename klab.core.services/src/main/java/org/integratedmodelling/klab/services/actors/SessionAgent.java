@@ -36,7 +36,7 @@ public class SessionAgent extends KAgent {
 //            rctx.reply(ReActorRef.NO_REACTOR_REF);
 //        } else {
 //
-            rctx.spawnChild(new ContextAgent(message.getContextId(), message.getScope(), message.getGeometry())).ifSuccess((ref) -> rctx.reply(ref));
+            rctx.spawnChild(new ContextAgent(message.getContextId(), message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
 //        }
     }
 }

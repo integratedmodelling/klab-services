@@ -22,12 +22,12 @@ public class ContextAgent extends KAgent {
     /**
      * The geometry of focus when the context was created.
      */
-    private final Geometry focalGeometry;
-    private Geometry currentGeometry;
+//    private final Geometry focalGeometry;
+//    private Geometry currentGeometry;
 
-    public ContextAgent(String name, ContextScope scope, Geometry geometry) {
+    public ContextAgent(String name, ContextScope scope) {
         super(name, scope);
-        this.focalGeometry = geometry == null ? scope.getContextObservation().getGeometry() : geometry;
+//        this.focalGeometry = geometry == null ? scope.getContextObservation().getGeometry() : geometry;
     }
 
     protected ReActions.Builder setBehavior() {
@@ -72,7 +72,7 @@ public class ContextAgent extends KAgent {
 
             ContextScope resolutionScope = message.getScope();
             if (resolvable instanceof Observation instance) {
-                resolutionScope = resolutionScope.withGeometry(instance.getGeometry());
+//                resolutionScope = resolutionScope.withGeometry(instance.getGeometry());
             }
 
             /*

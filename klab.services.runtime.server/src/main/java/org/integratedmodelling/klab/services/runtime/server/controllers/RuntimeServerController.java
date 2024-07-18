@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
+import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
@@ -28,9 +30,8 @@ public class RuntimeServerController {
         if (principal instanceof EngineAuthorization authorization) {
 
             ServiceUserScope userScope = runtimeService.klabService().getScopeManager().getOrCreateUserScope(authorization);
-            var session = userScope.runSession(name);
-            if (session instanceof ServiceSessionScope sessionScope) {
-                return sessionScope.getId();
+            if (userScope != null) {
+                return runtimeService.klabService().createSession(userScope, name);
             }
         }
         return null;
@@ -42,13 +43,15 @@ public class RuntimeServerController {
 
         if (principal instanceof EngineAuthorization authorization) {
 
-            var sessionScope = runtimeService.klabService().getScopeManager().getScope(authorization,
-                    ServiceSessionScope.class, sessionHeader);
+            var scopeData = ScopeManager.parseScopeId(sessionHeader);
 
-            if (sessionScope != null) {
-                var contextScope = sessionScope.createContext(contextName);
-                if (contextScope instanceof ServiceContextScope serviceContextScope) {
-                    return serviceContextScope.getId();
+            if (scopeData.type() == Scope.Type.SESSION) {
+
+                var sessionScope = runtimeService.klabService().getScopeManager().getScope(authorization,
+                        ServiceSessionScope.class, scopeData.scopeId());
+
+                if (sessionScope != null) {
+                    return runtimeService.klabService().createContext(sessionScope, contextName);
                 }
             }
         }

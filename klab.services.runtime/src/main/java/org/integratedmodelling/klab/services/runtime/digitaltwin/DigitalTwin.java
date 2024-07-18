@@ -346,7 +346,7 @@ public class DigitalTwin implements Closeable {
         var groups = executionOrder.stream().collect(Collectors.groupingBy(s -> s.getSecond()));
         var lastOrder = executionOrder.getLast().getSecond();
         var parallelism = getParallelism(scope);
-        var initializationScope = scope.withGeometry(scope.getContextObservation().getGeometry().initialization());
+        var initializationScope = scope; // FIXME CHECK .withGeometry(scope.getContextObservation().getGeometry().initialization());
 
         for (var i = 0; i <= lastOrder; i++) {
             var actuatorGroup = groups.get(i);

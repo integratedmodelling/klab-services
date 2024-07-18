@@ -5,7 +5,11 @@ import io.reacted.core.reactorsystem.ReActorSystem;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -23,10 +27,7 @@ import org.jgrapht.graph.DefaultEdge;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -79,14 +80,21 @@ public class ScopeManager {
 
     /**
      * Result of parsing a scope ID into all its possible components. Empty means the passed token wasn't
-     * there.
+     * there. Tokens must appear in the header content in the order below.
      *
      * @param type            the scope type, based on the path length
      * @param scopeId         the ID with which the scope should be registered
      * @param observationPath if there is a focal observation ID, the path to the observation
      * @param observerId      if there is an observer field after #, the path to the observer
+     * @param scenarioUrns    any scenario URNS, passed as a comma-separated list after the @ marker, if
+     *                        present
+     * @param traitIncarnations traits incarnated, passed after a & marker as =-separated strings
+     * @param resolutionNamespace passed after a $ sign
+     *
+     *  TODO add the resolution namespace and any abstract->concrete trait incarnations
      */
-    public record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String[] observerId) {
+    public record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId,
+                            String[] scenarioUrns, Map<String, String> traitIncarnations, String resolutionNamespace) {
         public boolean empty() {
             return scopeId() == null;
         }
@@ -97,26 +105,53 @@ public class ScopeManager {
         Scope.Type type = Scope.Type.USER;
         String scopeId = null;
         String[] observationPath = null;
-        String[] observerId = null;
+        String observerId = null;
+        String[] scenarioUrns = null;
+        String resolutionNamespace = null;
+        Map<String, String> traitIncarnations = null;
 
         if (scopeToken != null) {
+
+            if (scopeToken.contains("$")) {
+                String[] split = scopeToken.split("\\@");
+                scopeToken = split[0];
+                resolutionNamespace = split[1];
+            }
+
+            if (scopeToken.contains("&")) {
+                String[] split = scopeToken.split("\\@");
+                scopeToken = split[0];
+                traitIncarnations = new LinkedHashMap<>();
+                for (var pair : split[1].split(",")) {
+                    String[] pp = pair.split("=");
+                    traitIncarnations.put(pp[0], pp[1]);
+                }
+            }
+
+
+            // separate out scenarios
+            if (scopeToken.contains("@")) {
+                String[] split = scopeToken.split("@");
+                scopeToken = split[0];
+                scenarioUrns = split[1].split(",");
+            }
 
             // Separate out observer path if any
             if (scopeToken.contains("#")) {
                 String[] split = scopeToken.split("#");
                 scopeToken = split[0];
-                observerId = split[1].split("\\.");
+                observerId = split[1];
             }
 
             var path = scopeToken.split("\\.");
             type = path.length > 1 ? Scope.Type.CONTEXT : Scope.Type.SESSION;
-            scopeId = path.length == 1 ? path[0] : path[0];
+            scopeId = path.length == 1 ? path[0] : (path[0] + "." + path[1]);
             if (path.length > 2) {
                 observationPath = Arrays.copyOfRange(path, 2, path.length);
             }
         }
 
-        return new ScopeData(type, scopeId, observationPath, observerId);
+        return new ScopeData(type, scopeId, observationPath, observerId, scenarioUrns, traitIncarnations, resolutionNamespace);
     }
 
     public ServiceUserScope login(UserIdentity user) {
@@ -180,39 +215,39 @@ public class ScopeManager {
         return false;
     }
 
-//    public ServiceUserScope createScope(EngineAuthorization engineAuthorization) {
-//
-//        String[] path = engineAuthorization.getScopeId().split("\\/");
-//        ServiceUserScope ret = null;
-//
-//        /**
-//         * The physical scope levels are user.session.context. Below that, scopes are "virtual"
-//         * incarnations of the context scope with modified state and
-//         * their hierarchy is handled internally by the {@link ContextScope} implementation.
-//         */
-//        ServiceUserScope scope = null;
-//        StringBuilder scopeId = new StringBuilder();
-//        for (int i = 0; i < 3; i++) {
-//            scopeId.append((scopeId.isEmpty()) ? path[i] : ("/" + path[i]));
-//            var currentScope = scopes.get(scopeId.toString());
-//            if (currentScope == null) {
-//                // create from the previous scope according to level
-//                currentScope = switch (i) {
-//                    case 0 -> login(createUserIdentity(engineAuthorization));
-//                    case 1 -> null; // currentScope.runSession();
-//                    case 2 -> null; // ((SessionScope)currentScope)....
-//                    default -> null; // should exist but we keep the scope and ask it to specialize
-//                };
-//            }
-//
-//            scope = currentScope;
-//        }
-//
-//        ret = scope;
-//        ret.setLocal(engineAuthorization.isLocal());
-//
-//        return ret;
-//    }
+    //    public ServiceUserScope createScope(EngineAuthorization engineAuthorization) {
+    //
+    //        String[] path = engineAuthorization.getScopeId().split("\\/");
+    //        ServiceUserScope ret = null;
+    //
+    //        /**
+    //         * The physical scope levels are user.session.context. Below that, scopes are "virtual"
+    //         * incarnations of the context scope with modified state and
+    //         * their hierarchy is handled internally by the {@link ContextScope} implementation.
+    //         */
+    //        ServiceUserScope scope = null;
+    //        StringBuilder scopeId = new StringBuilder();
+    //        for (int i = 0; i < 3; i++) {
+    //            scopeId.append((scopeId.isEmpty()) ? path[i] : ("/" + path[i]));
+    //            var currentScope = scopes.get(scopeId.toString());
+    //            if (currentScope == null) {
+    //                // create from the previous scope according to level
+    //                currentScope = switch (i) {
+    //                    case 0 -> login(createUserIdentity(engineAuthorization));
+    //                    case 1 -> null; // currentScope.runSession();
+    //                    case 2 -> null; // ((SessionScope)currentScope)....
+    //                    default -> null; // should exist but we keep the scope and ask it to specialize
+    //                };
+    //            }
+    //
+    //            scope = currentScope;
+    //        }
+    //
+    //        ret = scope;
+    //        ret.setLocal(engineAuthorization.isLocal());
+    //
+    //        return ret;
+    //    }
 
     private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
         UserIdentityImpl ret = new UserIdentityImpl();
@@ -246,17 +281,45 @@ public class ScopeManager {
      * @return
      */
     public ContextScope contextualizeScope(ServiceContextScope rootScope, ScopeData contextualization) {
-        // TODO
-        return rootScope;
+
+        ContextScope ret = rootScope;
+
+        if (contextualization.observationPath() != null) {
+            for (String observationId : contextualization.observationPath()) {
+                var observation = ret.getObservation(observationId, DirectObservation.class);
+                if (observation == null) {
+                    throw new KlabResourceAccessException("Observation with ID " + observationId + " not " +
+                            "found in context " + ret.getName());
+                }
+                ret = ret.within(observation);
+            }
+        }
+
+        if (contextualization.observerId() != null) {
+            Subject observer = null;
+            observer = ret.getObservation(contextualization.observerId(), Subject.class);
+            if (observer == null) {
+                throw new KlabResourceAccessException("Subject with ID " + contextualization.observerId() + " not found in " +
+                        "context " + ret.getName());
+            }
+            ret = ret.withObserver(observer);
+        }
+
+        if (contextualization.scenarioUrns() != null) {
+            ret = ret.withScenarios(contextualization.scenarioUrns());
+        }
+
+        return ret;
     }
 
     /**
      * Get the scope for the passed parameters. If the scope isn't there or has expired,
+     *
      * @param authorization
      * @param scopeClass
      * @param scopeId
-     * @return
      * @param <T>
+     * @return
      */
     public <T extends Scope> T getScope(EngineAuthorization authorization, Class<T> scopeClass,
                                         String scopeId) {

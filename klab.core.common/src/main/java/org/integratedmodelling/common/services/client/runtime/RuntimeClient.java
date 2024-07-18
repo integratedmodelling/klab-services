@@ -46,23 +46,13 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public String createSession(UserScope scope, String sessionName, String... urns) {
-
-        if (urns == null || urns.length == 0) {
-            return client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", sessionName);
-        }
-
-        // TODO send POST request
-        return null;
+    public String createSession(UserScope scope, String sessionName) {
+        return client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", sessionName);
     }
 
     @Override
-    public String createContext(SessionScope scope, String contextName, Object... contextData) {
-        if (contextData == null || contextData.length == 0) {
-            return client.withScope(scope).get(ServicesAPI.RUNTIME.CREATE_CONTEXT, String.class, "name", contextName);
-        }
-        // TODO use POST request with the initial data after scanning the array
-        return null;
+    public String createContext(SessionScope scope, String contextName) {
+        return client.withScope(scope).get(ServicesAPI.RUNTIME.CREATE_CONTEXT, String.class, "name", contextName);
     }
 
     @Override

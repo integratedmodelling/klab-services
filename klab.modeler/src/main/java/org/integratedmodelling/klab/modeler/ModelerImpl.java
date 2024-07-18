@@ -181,7 +181,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
         if (currentContext == null && currentSession != null) {
 
-            currentContext = currentSession.createContext("Default context", focalGeometry);
+            currentContext = currentSession.createContext("Default context");
+
+            /*
+            TODO make observer and set it into the context
+             */
 
         }
 

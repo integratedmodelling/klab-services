@@ -15,6 +15,8 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
@@ -209,15 +211,21 @@ public class RuntimeService extends BaseService
     }
 
     @Override
-    public String createSession(UserScope scope, String sessionName, String... urns) {
-        // TODO
-        return "";
+    public String createSession(UserScope scope, String sessionName) {
+        var sessionScope = scope.runSession(sessionName);
+        if (sessionScope instanceof ServiceSessionScope sscope) {
+            return sscope.getId();
+        }
+        return null;
     }
 
     @Override
-    public String createContext(SessionScope scope, String sessionName, Object... contextData) {
-        // TODO
-        return "";
+    public String createContext(SessionScope sessionScope, String contextName) {
+        var contextScope = sessionScope.createContext(contextName);
+        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+            return serviceContextScope.getId();
+        }
+        return null;
     }
 
 }
