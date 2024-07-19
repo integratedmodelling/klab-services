@@ -112,7 +112,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             public Client withScope(Scope scope) {
                 var ret = new Client(this);
                 ret.scope = scope;
-                if (scope instanceof ContextScope || scope instanceof SessionScope) {
+                if (scope instanceof ContextScope contextScope) {
+                    headers.put(ServicesAPI.SCOPE_HEADER, ContextScope.getScopeId(contextScope));
+                } else if (scope instanceof SessionScope) {
                     headers.put(ServicesAPI.SCOPE_HEADER, scope.getIdentity().getId());
                 }
                 return ret;

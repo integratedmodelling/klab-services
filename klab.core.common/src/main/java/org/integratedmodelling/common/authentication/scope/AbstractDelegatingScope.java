@@ -23,6 +23,7 @@ public abstract class AbstractDelegatingScope implements Scope {
     Channel delegateChannel;
     Parameters<String> data = Parameters.create();
     Status status = Status.EMPTY;
+    Scope parentScope;
 
     public AbstractDelegatingScope(Channel delegateChannel) {
         this.delegateChannel = delegateChannel;
@@ -126,6 +127,14 @@ public abstract class AbstractDelegatingScope implements Scope {
             }
         }
         throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
+    }
+
+    public Scope getParentScope() {
+        return parentScope;
+    }
+
+    public void setParentScope(Scope parentScope) {
+        this.parentScope = parentScope;
     }
 
     @Override

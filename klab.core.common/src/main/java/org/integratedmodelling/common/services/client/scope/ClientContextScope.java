@@ -61,18 +61,13 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         return this;
     }
 
-//    @Override
-//    public ContextScope withGeometry(Geometry geometry) {
-//        return this.;
-//    }
-
     @Override
     public ContextScope within(DirectObservation contextObservation) {
         return null;
     }
 
     @Override
-    public ContextScope with(Concept abstractTrait, Concept concreteTrait) {
+    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
         return null;
     }
 

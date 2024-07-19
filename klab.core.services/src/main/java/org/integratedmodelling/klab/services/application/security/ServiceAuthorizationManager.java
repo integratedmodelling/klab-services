@@ -9,11 +9,13 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
@@ -220,7 +222,7 @@ public class ServiceAuthorizationManager {
 
                     // didn't throw an exception, so token is valid. Update the result and validate
                     // claims. This is an engine-only entry point so the role is obvious.
-                    ret = new EngineAuthorization(hubId, username,
+                    ret = new EngineAuthorization(hubId, username, groupStrings,
                             Collections.unmodifiableList(filterRoles(roleStrings)));
 
                     if (klabService.get().getServiceSecret().equals(token)) {
@@ -273,12 +275,11 @@ public class ServiceAuthorizationManager {
             }
         }
 
-
         if (ret == null) {
             /*
             anonymous user case also intercepts JWT token failure
              */
-            ret = new EngineAuthorization("nohub", "anonymous", null);
+            ret = new EngineAuthorization("nohub", "anonymous", List.of(), null);
         }
 
         if (privilegedLocalService) {
@@ -287,6 +288,7 @@ public class ServiceAuthorizationManager {
             ret.setRoles(EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
                     Role.ROLE_DATA_MANAGER));
             ret.setAuthenticated(true);
+            ret.setTokenString(serverKey);
         }
 
 
@@ -294,29 +296,21 @@ public class ServiceAuthorizationManager {
          * User scope is created anyway.
          */
         Scope scope = klabService.get().getScopeManager().getOrCreateUserScope(ret);
+        ((ServiceUserScope) scope).setLocal(ret.isLocal());
         if (scopeHeader != null) {
             // ...then contextualized as needed
-            var scopeData = ScopeManager.parseScopeId(scopeHeader);
+            var scopeData = ContextScope.parseScopeId(scopeHeader);
             scope = klabService.get().getScopeManager().getScope(ret, scopeData.type().classify(), scopeData.scopeId());
             if (scope != null) {
                 scope = klabService.get().getScopeManager().contextualizeScope((ServiceContextScope) scope, scopeData);
             }
         }
 
-        /*
-        this goes in no matter what. Will be null only when sent from clients in service scope
-         */
+        if (scope == null) {
+            Logging.INSTANCE.error("Internal error: user " + ret.getUsername() + " was authorized with null scope");
+        }
+
         ret.setScope(scope);
-
-        /**
-         * TODO if we have a scope header, the scope manager must know the scope or it's an error
-         *  (non-existent or expired scope)
-         */
-
-        /**
-         * Build any scopes we need for this authorization
-         */
-        //        getScopeManager().register(ret);
 
         return ret;
     }

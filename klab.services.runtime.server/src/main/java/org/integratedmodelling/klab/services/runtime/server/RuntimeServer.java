@@ -23,7 +23,13 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
 
     @Override
     protected List<KlabService.Type> getEssentialServices() {
-        return List.of(KlabService.Type.RESOLVER, KlabService.Type.REASONER, KlabService.Type.RESOURCES);
+        /**
+         * This runtime gets resolvers and resource services from the observation requests, so does not need
+         * its own services besides reasoning.
+         *
+         * TODO the context request should contain the service URLs actually.
+         */
+        return List.of(KlabService.Type.REASONER);
     }
 
 

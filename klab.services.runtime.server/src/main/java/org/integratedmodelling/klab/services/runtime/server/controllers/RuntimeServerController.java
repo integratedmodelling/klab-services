@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
@@ -37,13 +38,26 @@ public class RuntimeServerController {
         return null;
     }
 
+    /**
+     * Create a server-side context scope with an empty digital twin and the authorized services for the
+     * requesting user.
+     *
+     * TODO this must contain the URLs of the resolver and resource services, and ensure they can be used
+     *  with this runtime, creating the clients within the context scope. Any local service URL passed to
+     *  a remote runtime should cause an error.
+     *
+     * @param contextName
+     * @param principal
+     * @param sessionHeader
+     * @return the ID of the new context scope
+     */
     @GetMapping(ServicesAPI.RUNTIME.CREATE_CONTEXT)
     public String createContext(@PathVariable(name = "name") String contextName, Principal principal,
                                 @Header(name = ServicesAPI.SCOPE_HEADER) String sessionHeader) {
 
         if (principal instanceof EngineAuthorization authorization) {
 
-            var scopeData = ScopeManager.parseScopeId(sessionHeader);
+            var scopeData = ContextScope.parseScopeId(sessionHeader);
 
             if (scopeData.type() == Scope.Type.SESSION) {
 

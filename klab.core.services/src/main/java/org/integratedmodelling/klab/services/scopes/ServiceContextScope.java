@@ -41,14 +41,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     private String resolutionProject;
     private Map<Observable, Observation> catalog;
     private Map<String, Observable> namedCatalog = new HashMap<>();
+    private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
     private URL url;
 
     protected ServiceContextScope parent;
     private Dataflow<Observation> dataflow = Dataflow.empty(Observation.class);
 
     ServiceContextScope(ServiceSessionScope parent) {
-        super(parent);
-        this.setId(parent.getIdentity().getId() + "/c_" + org.integratedmodelling.klab.api.utils.Utils.Names.shortUUID());
+        super(parent, true);
         this.observer = null; // NAAH parent.getUser();
         this.data = Parameters.create();
         this.data.putAll(parent.data);
@@ -60,22 +60,15 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private ServiceContextScope(ServiceContextScope parent) {
-        super(parent);
+        super(parent, false);
         this.parent = parent;
         this.observer = parent.observer;
         this.contextObservation = parent.contextObservation;
         this.catalog = parent.catalog;
         this.namedCatalog.putAll(parent.namedCatalog);
-    }
-
-    @Override
-    public String getId() {
-        // add the observer if any, plus any remaining params
-        var ret = super.getId();
-        if (getObserver() != null) {
-            ret += "#" + observer.getId();
-        }
-        return ret;
+        this.contextualizedPredicates.putAll(parent.contextualizedPredicates);
+        this.resolutionScenarios.addAll(parent.resolutionScenarios);
+        this.resolutionNamespace = parent.resolutionNamespace;
     }
 
     @Override
@@ -182,6 +175,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
+    public Map<Concept, Concept> getContextualizedPredicates() {
+        return contextualizedPredicates;
+    }
+
+    @Override
     public Collection<Relationship> getOutgoingRelationships(DirectObservation observation) {
         // TODO Auto-generated method stub
         return null;
@@ -244,21 +242,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return null;
     }
 
-//    @Override
-//    public ContextScope withGeometry(Geometry geometry) {
-//
-//        // CHECK this may be unexpected behavior, but it should never be right to pass
-//        // null, except when a geometry is unset in the parent but may be set in the
-//        // child.
-//        if (geometry == null) {
-//            return this;
-//        }
-//
-//        ServiceContextScope ret = new ServiceContextScope(this);
-//        ret.geometry = Scale.create(geometry);
-//        return ret;
-//    }
-
     @Override
     public void runTransitions() {
         // TODO Auto-generated method stub
@@ -302,11 +285,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ContextScope with(Concept abstractTrait, Concept concreteTrait) {
+    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
         ServiceContextScope ret = new ServiceContextScope(this);
-
-        // TODO
-
+        ret.contextualizedPredicates.put(abstractTrait, concreteTrait);
         return ret;
     }
 

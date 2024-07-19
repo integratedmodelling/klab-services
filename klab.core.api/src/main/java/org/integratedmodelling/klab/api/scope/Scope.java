@@ -56,7 +56,7 @@ public abstract interface Scope extends Channel {
 
         public Class<? extends Scope> classify() {
 
-            return switch(this) {
+            return switch (this) {
                 case SERVICE -> ServiceScope.class;
                 case USER -> UserScope.class;
                 case SESSION, APPLICATION, API, SCRIPT -> SessionScope.class;
@@ -65,6 +65,13 @@ public abstract interface Scope extends Channel {
         }
     }
 
+    /**
+     * All scope except a {@link UserScope} have a non-null parent scope. A {@link ContextScope} is the only
+     * one that can have another scope of its same class as parent.
+     *
+     * @return the parent scope, null for {@link UserScope}s.
+     */
+    Scope getParentScope();
 
     /**
      * Each scope can carry arbitrary data linked to it.

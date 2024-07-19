@@ -78,82 +78,6 @@ public class ScopeManager {
         scopes.put(serviceScope.getId(), serviceScope);
     }
 
-    /**
-     * Result of parsing a scope ID into all its possible components. Empty means the passed token wasn't
-     * there. Tokens must appear in the header content in the order below.
-     *
-     * @param type            the scope type, based on the path length
-     * @param scopeId         the ID with which the scope should be registered
-     * @param observationPath if there is a focal observation ID, the path to the observation
-     * @param observerId      if there is an observer field after #, the path to the observer
-     * @param scenarioUrns    any scenario URNS, passed as a comma-separated list after the @ marker, if
-     *                        present
-     * @param traitIncarnations traits incarnated, passed after a & marker as =-separated strings
-     * @param resolutionNamespace passed after a $ sign
-     *
-     *  TODO add the resolution namespace and any abstract->concrete trait incarnations
-     */
-    public record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId,
-                            String[] scenarioUrns, Map<String, String> traitIncarnations, String resolutionNamespace) {
-        public boolean empty() {
-            return scopeId() == null;
-        }
-    }
-
-    public static ScopeData parseScopeId(String scopeToken) {
-
-        Scope.Type type = Scope.Type.USER;
-        String scopeId = null;
-        String[] observationPath = null;
-        String observerId = null;
-        String[] scenarioUrns = null;
-        String resolutionNamespace = null;
-        Map<String, String> traitIncarnations = null;
-
-        if (scopeToken != null) {
-
-            if (scopeToken.contains("$")) {
-                String[] split = scopeToken.split("\\@");
-                scopeToken = split[0];
-                resolutionNamespace = split[1];
-            }
-
-            if (scopeToken.contains("&")) {
-                String[] split = scopeToken.split("\\@");
-                scopeToken = split[0];
-                traitIncarnations = new LinkedHashMap<>();
-                for (var pair : split[1].split(",")) {
-                    String[] pp = pair.split("=");
-                    traitIncarnations.put(pp[0], pp[1]);
-                }
-            }
-
-
-            // separate out scenarios
-            if (scopeToken.contains("@")) {
-                String[] split = scopeToken.split("@");
-                scopeToken = split[0];
-                scenarioUrns = split[1].split(",");
-            }
-
-            // Separate out observer path if any
-            if (scopeToken.contains("#")) {
-                String[] split = scopeToken.split("#");
-                scopeToken = split[0];
-                observerId = split[1];
-            }
-
-            var path = scopeToken.split("\\.");
-            type = path.length > 1 ? Scope.Type.CONTEXT : Scope.Type.SESSION;
-            scopeId = path.length == 1 ? path[0] : (path[0] + "." + path[1]);
-            if (path.length > 2) {
-                observationPath = Arrays.copyOfRange(path, 2, path.length);
-            }
-        }
-
-        return new ScopeData(type, scopeId, observationPath, observerId, scenarioUrns, traitIncarnations, resolutionNamespace);
-    }
-
     public ServiceUserScope login(UserIdentity user) {
 
         ServiceUserScope ret = scopes.get(user.getUsername());
@@ -252,7 +176,6 @@ public class ScopeManager {
     private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
         UserIdentityImpl ret = new UserIdentityImpl();
         ret.setUsername(engineAuthorization.getUsername());
-        ret.setEmailAddress(engineAuthorization.getIdentity().getEmail());
         ret.setId(engineAuthorization.getToken());
         // TODO continue
         return ret;
@@ -280,7 +203,7 @@ public class ScopeManager {
      * @param contextualization
      * @return
      */
-    public ContextScope contextualizeScope(ServiceContextScope rootScope, ScopeData contextualization) {
+    public ContextScope contextualizeScope(ServiceContextScope rootScope, ContextScope.ScopeData contextualization) {
 
         ContextScope ret = rootScope;
 

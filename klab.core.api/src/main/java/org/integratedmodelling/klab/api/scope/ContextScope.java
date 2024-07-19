@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.scope;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.*;
@@ -9,18 +7,22 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
+import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 
 /**
- * The scope for a context and any observations made within it. The context scope is the "digital twin" of the
- * observations made in it. A scope is also passed around during resolution and carries scope info (namespace,
- * project, scenarios) that is relevant to the resolver.
+ * The scope for a context and any observations made within it. The context scope is the door to the "digital
+ * twin" of the observations made in it. The scope always has an observer that can be switched to another. A
+ * scope is also passed around during resolution and carries scope information (namespace, project, scenarios)
+ * that is relevant to the resolver. Scopes can be specialized to customize resolution before
+ * {@link #observe(Object...)} is called, and their status is passed across network boundaries, encoded in the
+ * scope header added to requests that trigger resolution.
  * <p>
- * The context scope has a URL and can be connected to another to become part of a larger scope.
+ * The context scope carries the URL of the digital twin (a GraphQL endpoint) and can be connected to another
+ * to form larger, multi-observer, distributed scopes.
  *
  * @author Ferd
  */
@@ -94,8 +96,8 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     /**
      * Contextualize to a specific subclass of a trait, which is observed within the current context
      * observation, and defaults to the passed value overall if the resolution fails. The trait becomes a
-     * constraint in the iteration of the scale returned by {@link #getScale()}, making the iterators skip any
-     * state where the trait may be different from the one set through this method.
+     * constraint in the iteration of the scale, making the iterators skip any state where the trait may be
+     * different from the one set through this method.
      * <p>
      * Using this method will trigger resolution and computation for each new base trait subsuming
      * abstractTrait. Implementations may make its resolution lazy or not.
@@ -105,7 +107,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param concreteTrait the fill value, may be abstract as long as it's subsumed by abstractTrait
      * @return a new context scope that only considers the passed incarnation of the trait.
      */
-    ContextScope with(Concept abstractTrait, Concept concreteTrait);
+    ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait);
 
     /**
      * Add another context to this one to build a higher-level one. Authentication details will define what is
@@ -120,9 +122,8 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * Make an observation. Must be called on a context scope, possibly focused on a given root observation
      * using {@link #within(DirectObservation)}}. If no root observation is present in the scope, the
      * arguments must fully specify a subject, either through a direct definition from a passed object or a
-     * URN specifying a definition or a subject observation. If the observer is focused on a scale, this is
-     * available through {@link #getScale()} and the context can decide to use it as a scale for the root
-     * observation.
+     * URN specifying a definition or a subject observation. If the observer is focused on a scale,  the
+     * context can decide to use it as a scale for the root observation.
      * <p>
      * Observables will be routinely specified through URNs, which will be validated as any observable object
      * - concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a
@@ -168,13 +169,10 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     void runTransitions();
 
     /**
-     * <p>
-     * getProvenance.
-     * </p>
+     * The provenance graph. Empty in an empty context, never null. Provenance will be relative to the context
+     * observation this scope focuses on.
      *
-     * @return the provenance graph. Empty in an empty context, never null. Each observation in the same
-     * context will report the same provenance graph for now (TODO may turn into provenance as the "root" node
-     * or have a focus field).
+     * @return the provenance graph for this scope
      */
     Provenance getProvenance();
 
@@ -215,6 +213,14 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @return the parent, or an empty collection if no children
      */
     Collection<Observation> getChildrenOf(Observation observation);
+
+    /**
+     * Return mappings for any predicates contextualized with
+     * {@link #withContextualizedPredicate(Concept, Concept)} at context creation.
+     *
+     * @return the contextualized predicates mapping
+     */
+    Map<Concept, Concept> getContextualizedPredicates();
 
     /**
      * Inspect the network graph of the current context, returning all relationships that have the passed
@@ -292,4 +298,143 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      */
     ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String,
             String> localNames);
+
+
+    /**
+     * A data structure incorporating the results of parsing a scope token string into all its possible
+     * components. The scope token is added to requests that need a scope below UserScope through the
+     * {@link org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} HTTP request header. Empty means the
+     * passed token was null. Tokens must appear in the header content in the order below. All fields may be
+     * null, including the arrays, if not passed in the token.
+     *
+     * @param type                the scope type, based on the path length
+     * @param scopeId             the ID with which the scope should be registered
+     * @param observationPath     if there is a focal observation ID, the path to the observation
+     * @param observerId          if there is an observer field after #, the path to the observer
+     * @param scenarioUrns        any scenario URNS, passed as a comma-separated list after the @ marker, if
+     *                            present
+     * @param traitIncarnations   traits incarnated, passed after a & marker as =-separated strings
+     * @param resolutionNamespace passed after a $ sign
+     */
+    public record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId,
+                            String[] scenarioUrns, Map<String, String> traitIncarnations,
+                            String resolutionNamespace) {
+        public boolean empty() {
+            return scopeId() == null;
+        }
+    }
+
+    /**
+     * Obtain the properly formatted scope token for the
+     * {@link org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} to use in a request. The root context
+     * scope must have been registered by the runtime service, which is done automatically by client scopes..
+     *
+     * @param scope
+     * @return
+     */
+    public static String getScopeId(ContextScope scope) {
+
+        StringBuffer ret = new StringBuffer(512);
+        if (scope.getContextObservation() != null) {
+
+            var cobs = new ArrayList<Observation>();
+            ContextScope rootContext = scope;
+            cobs.add(scope.getContextObservation());
+            while (rootContext.getParentScope() instanceof ContextScope parentContext) {
+                if (parentContext.getContextObservation() == null) {
+                    break;
+                } else {
+                    cobs.add(parentContext.getContextObservation());
+                }
+                rootContext = parentContext;
+            }
+
+            for (var obs : cobs.reversed()) {
+                ret.append("." + obs.getId());
+            }
+        }
+
+        if (scope.getObserver() != null) {
+            ret.append("#").append(scope.getObserver().getId());
+        }
+
+        if (!scope.getResolutionScenarios().isEmpty()) {
+            ret.append("@").append(Utils.Strings.join(scope.getResolutionScenarios(), ","));
+        }
+
+        if (!scope.getContextualizedPredicates().isEmpty()) {
+            ret.append("&");
+            StringBuffer buf = new StringBuffer();
+            for (Concept key : scope.getContextualizedPredicates().keySet()) {
+                buf.append((buf.isEmpty() ? "" : ",") + key.getUrn() + "=" + scope.getContextualizedPredicates().get(key).getUrn());
+            }
+            ret.append(buf);
+        }
+
+        if (scope.getResolutionNamespace() != null) {
+            ret.append("$").append(scope.getResolutionNamespace());
+        }
+
+        return ret.toString();
+    }
+
+    /**
+     * Parse a scope token into the corresponding data structure
+     *
+     * @param scopeToken
+     * @return
+     */
+    public static ScopeData parseScopeId(String scopeToken) {
+
+        Scope.Type type = Scope.Type.USER;
+        String scopeId = null;
+        String[] observationPath = null;
+        String observerId = null;
+        String[] scenarioUrns = null;
+        String resolutionNamespace = null;
+        Map<String, String> traitIncarnations = null;
+
+        if (scopeToken != null) {
+
+            if (scopeToken.contains("$")) {
+                String[] split = scopeToken.split("\\@");
+                scopeToken = split[0];
+                resolutionNamespace = split[1];
+            }
+
+            if (scopeToken.contains("&")) {
+                String[] split = scopeToken.split("\\@");
+                scopeToken = split[0];
+                traitIncarnations = new LinkedHashMap<>();
+                for (var pair : split[1].split(",")) {
+                    String[] pp = pair.split("=");
+                    traitIncarnations.put(pp[0], pp[1]);
+                }
+            }
+
+            // separate out scenarios
+            if (scopeToken.contains("@")) {
+                String[] split = scopeToken.split("@");
+                scopeToken = split[0];
+                scenarioUrns = split[1].split(",");
+            }
+
+            // Separate out observer path if any
+            if (scopeToken.contains("#")) {
+                String[] split = scopeToken.split("#");
+                scopeToken = split[0];
+                observerId = split[1];
+            }
+
+            var path = scopeToken.split("\\.");
+            type = path.length > 1 ? Scope.Type.CONTEXT : Scope.Type.SESSION;
+            scopeId = path.length == 1 ? path[0] : (path[0] + "." + path[1]);
+            if (path.length > 2) {
+                observationPath = Arrays.copyOfRange(path, 2, path.length);
+            }
+        }
+
+        return new ScopeData(type, scopeId, observationPath, observerId, scenarioUrns, traitIncarnations,
+                resolutionNamespace);
+    }
 }

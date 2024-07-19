@@ -40,6 +40,7 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     protected Parameters<String> data;
     private Identity user;
     private Ref agent;
+
     protected Scope parentScope;
     private Status status = Status.STARTED;
 
@@ -261,6 +262,15 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     @Override
     public void switchService(KlabService service) {
         // TODO, or just avoid in this implementation.
+    }
+
+    @Override
+    public Scope getParentScope() {
+        return parentScope;
+    }
+
+    public void setParentScope(Scope parentScope) {
+        this.parentScope = parentScope;
     }
 
 }

@@ -29,9 +29,11 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         this.name = name;
     }
 
-    ServiceSessionScope(ServiceUserScope parent) {
+    ServiceSessionScope(ServiceUserScope parent, boolean createNewId) {
         super(parent);
-        this.setId(parent.getIdentity().getId() + "." + name + Utils.Names.shortUUID());
+        if (createNewId) {
+            this.setId(parent.getIdentity().getId() + "." + name + Utils.Names.shortUUID());
+        }
         this.data = Parameters.create();
         this.data.putAll(parent.data);
     }

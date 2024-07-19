@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -52,7 +53,6 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
     protected ScopeManager manager;
     private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
             Collections.synchronizedMap(new HashMap<>());
-
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     public ServiceUserScope(UserIdentity user, ScopeManager manager) {
@@ -116,13 +116,14 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
         this.user = parent.user;
         this.parentScope = parent;
         this.data = parent.data;
+        this.local = parent.local;
         this.manager = parent.manager;
     }
 
     @Override
     public SessionScope runSession(String sessionName) {
 
-        final ServiceSessionScope ret = new ServiceSessionScope(this);
+        final ServiceSessionScope ret = new ServiceSessionScope(this, true);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateSession(ret, sessionName), Ref.class);
         if (!sessionAgent.isEmpty()) {
@@ -141,7 +142,7 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
     @Override
     public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
 
-        final ServiceSessionScope ret = new ServiceSessionScope(this);
+        final ServiceSessionScope ret = new ServiceSessionScope(this, true);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
         if (!sessionAgent.isEmpty()) {
@@ -337,4 +338,15 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
     public void setLocal(boolean local) {
         this.local = local;
     }
+
+
+    @Override
+    public ServiceUserScope getParentScope() {
+        return parentScope;
+    }
+
+    public void setParentScope(ServiceUserScope parentScope) {
+        this.parentScope = parentScope;
+    }
+
 }

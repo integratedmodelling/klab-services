@@ -31,6 +31,10 @@ import java.net.URL;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+/**
+ * TODO/CHECK this should only be used by the runtime, unless in a testing configuration. The resolve() call is
+ *  all wrong.
+ */
 public class ResolverClient extends ServiceClient implements Resolver {
 
     public ResolverClient() {
@@ -74,7 +78,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
             String urn = Utils.Escape.fromURL(resolvableUrn.substring(callPos));
 
             try {
-                request.setServiceUrl(new URI(host).toURL());
+                request.setResolverUrl(new URI(host).toURL());
             } catch (Throwable e) {
                 scope.error(e);
                 return null;

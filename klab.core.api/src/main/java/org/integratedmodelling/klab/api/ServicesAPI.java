@@ -41,29 +41,34 @@ public interface ServicesAPI {
         String CREDENTIALS = "/credentials";
     }
 
-//    interface SCOPE {
-//
-////        /**
-////         * Create a new scope of the passed type as a precondition for creation of a client scope. Returns the
-////         * scope ID and any other data such as quotas or permissions, possibly including a Websockets or other
-////         * channel info for duplex communication.
-////         */
-////        String CREATE = "/scope/create/{scopeType}";
-//
-////        /**
-////         * Register an existing scope with a service so that the service can associate it to successive
-////         * requests and potentially open a communication channel for pairing. Implied in CREATE as well, but
-////         * only for cases when the scope is already fully functional at the client side. May respond with
-////         * channel details for duplex communication.
-////         */
-////        String REGISTER = "/scope/register/{scopeType}/{scopeId}";
-//
-////        /**
-////         * Dispose of a previously created or registered scope.
-////         */
-////        String DISPOSE = "/scope/dispose/{scopeId}";
-//
-//    }
+    //    interface SCOPE {
+    //
+    ////        /**
+    ////         * Create a new scope of the passed type as a precondition for creation of a client scope.
+    // Returns the
+    ////         * scope ID and any other data such as quotas or permissions, possibly including a
+    // Websockets or other
+    ////         * channel info for duplex communication.
+    ////         */
+    ////        String CREATE = "/scope/create/{scopeType}";
+    //
+    ////        /**
+    ////         * Register an existing scope with a service so that the service can associate it to
+    // successive
+    ////         * requests and potentially open a communication channel for pairing. Implied in CREATE as
+    // well, but
+    ////         * only for cases when the scope is already fully functional at the client side. May
+    // respond with
+    ////         * channel details for duplex communication.
+    ////         */
+    ////        String REGISTER = "/scope/register/{scopeType}/{scopeId}";
+    //
+    ////        /**
+    ////         * Dispose of a previously created or registered scope.
+    ////         */
+    ////        String DISPOSE = "/scope/dispose/{scopeId}";
+    //
+    //    }
 
     interface ENGINE {
 
@@ -263,8 +268,8 @@ public interface ServicesAPI {
     }
 
     /**
-     * The runtime API uses GraphQL on the context URL (runtime URL + / + contextId) to access
-     * anything in the context.
+     * The runtime API uses GraphQL on the context URL (runtime URL + / + contextId) to access anything in the
+     * context.
      */
     interface RUNTIME {
 
@@ -278,17 +283,17 @@ public interface ServicesAPI {
         }
 
         /**
-         * The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a
-         * specified behavior. The POST endpoint can be fed k.Actors behavior code to run.
+         * The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a specified
+         * behavior. The POST endpoint can be fed k.Actors behavior code to run.
          */
         String CREATE_SESSION = "/createSession/{name}";
 
         /**
-         * The createContext GET endpoint must have the OBSERVER_HEADER set to the ID of a valid
-         * session returned by CREATE_SESSION. With POST the user can send the definition of the
-         * observer, which in the GET case will be generated using worldview defaults.
+         * The createContext is a POST endpoint must have the OBSERVER_HEADER set to the ID of a valid session
+         * returned by CREATE_SESSION. The context is created empty and without observer, unless the POST data
+         * contain the definition of one.
          */
-        String CREATE_CONTEXT = "/createContext/{name}";
+        String CREATE_CONTEXT = "/createContext";
 
     }
 
@@ -300,10 +305,11 @@ public interface ServicesAPI {
         String PROJECTS = "/projects";
         String PROJECT = "/project/{projectName}";
         String MODEL = "/model/{modelName}";
-        String RESOLVE_URN = "/resolve/"  + URN_PARAMETER;
-        String RESOLVE_NAMESPACE_URN = "/resolveNamespace/"  + URN_PARAMETER;
+        String RESOLVE_URN = "/resolve/" + URN_PARAMETER;
+        String RESOLVE_NAMESPACE_URN = "/resolveNamespace/" + URN_PARAMETER;
         String RESOLVE_ONTOLOGY_URN = "/resolveOntology/" + URN_PARAMETER;
-        String RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN = "/resolveObservationStrategyDocument/" + URN_PARAMETER;
+        String RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN =
+                "/resolveObservationStrategyDocument/" + URN_PARAMETER;
         String LIST_WORKSPACES = "/listWorkspaces";
         String RESOLVE_BEHAVIOR_URN = "/resolveBehavior/" + URN_PARAMETER;
         String RESOLVE_RESOURCE_URN = "/resolveResource/" + URN_PARAMETER;

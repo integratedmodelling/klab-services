@@ -94,7 +94,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      */
     private Scope scope;
 
-    public EngineAuthorization(String partnerId, String username, Collection<Role> roles) {
+    public EngineAuthorization(String partnerId, String username, Collection<String> groups, Collection<Role> roles) {
         super(roles);
         this.partnerId = new Credentials(partnerId);
         this.username = new Credentials(username);
