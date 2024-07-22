@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -9,37 +11,39 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
+import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.kactors.messages.CreateApplication;
 import org.integratedmodelling.klab.runtime.kactors.messages.CreateSession;
 import org.integratedmodelling.klab.runtime.kactors.messages.RunBehavior;
 import org.integratedmodelling.klab.services.application.security.Role;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * Service-side user scope, created and maintained on request upon authentication. Uses the actor system in a
- * lazy fashion, with actors created only upon first necessity at all scope levels.
+ * Service-side user scope and parent class for other scopes, created and maintained on request upon
+ * authentication. The services exposed are the ones authorized passed explicitly from the client side after
+ * authentication, except for the service hosting the scope, which is the one and only provided for its class.
+ * In this implementation (currently) the only scope that has services is the context scope, and the other
+ * scopes have empty service maps. The {@link ScopeManager} contains the logic.
+ * <p>
+ * Uses the actor system in a lazy fashion, with actors created only upon first necessity at all scope
+ * levels.
  * <p>
  * Maintained by the {@link ScopeManager}
  *
  * @author Ferd
  */
-public abstract class ServiceUserScope extends ChannelImpl implements UserScope {
+public class ServiceUserScope extends ChannelImpl implements UserScope {
 
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
@@ -50,16 +54,53 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
     private Collection<Role> roles;
     private String id;
     private boolean local;
-    protected ScopeManager manager;
     private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
             Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ServiceUserScope(UserIdentity user, ScopeManager manager) {
+    private Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
+    private Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
+
+    public ServiceUserScope(UserIdentity user) {
         super(user);
         this.user = user;
         this.data = Parameters.create();
-        this.id = user.getId();
+    }
+
+    /**
+     * Must be called with clients for all services accessible from the client's environment, plus the
+     * singleton of the hosting service. If this is called on a scope with non-empty services, the scope will
+     * use these services instead of the default.
+     *
+     * @param resources
+     * @param resolvers
+     * @param reasoners
+     * @param runtimes
+     */
+    public void setServices(List<ResourcesService> resources, List<Resolver> resolvers,
+                            List<Reasoner> reasoners, List<RuntimeService> runtimes) {
+
+        serviceMap.clear();
+        defaultServiceMap.clear();
+
+        serviceMap.put(KlabService.Type.REASONER, reasoners);
+        serviceMap.put(KlabService.Type.RESOLVER, resolvers);
+        serviceMap.put(KlabService.Type.RESOURCES, resources);
+        serviceMap.put(KlabService.Type.RUNTIME, runtimes);
+
+
+        if (reasoners.size() > 0) {
+            defaultServiceMap.put(KlabService.Type.REASONER, reasoners.get(0));
+        }
+        if (resolvers.size() > 0) {
+            defaultServiceMap.put(KlabService.Type.RESOLVER, resolvers.get(0));
+        }
+        if (resources.size() > 0) {
+            defaultServiceMap.put(KlabService.Type.RESOURCES, resources.get(0));
+        }
+        if (runtimes.size() > 0) {
+            defaultServiceMap.put(KlabService.Type.RUNTIME, runtimes.get(0));
+        }
     }
 
     /**
@@ -117,13 +158,14 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
         this.parentScope = parent;
         this.data = parent.data;
         this.local = parent.local;
-        this.manager = parent.manager;
+        this.serviceMap.putAll(parent.serviceMap);
+        this.defaultServiceMap.putAll(parent.defaultServiceMap);
     }
 
     @Override
     public SessionScope runSession(String sessionName) {
 
-        final ServiceSessionScope ret = new ServiceSessionScope(this, true);
+        final ServiceSessionScope ret = new ServiceSessionScope(this);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateSession(ret, sessionName), Ref.class);
         if (!sessionAgent.isEmpty()) {
@@ -134,15 +176,13 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
             ret.setStatus(Status.ABORTED);
         }
 
-        this.manager.registerScope(ret);
-
         return ret;
     }
 
     @Override
     public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
 
-        final ServiceSessionScope ret = new ServiceSessionScope(this, true);
+        final ServiceSessionScope ret = new ServiceSessionScope(this);
         ret.setStatus(Status.WAITING);
         Ref sessionAgent = this.agent.ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
         if (!sessionAgent.isEmpty()) {
@@ -153,8 +193,6 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
         } else {
             ret.setStatus(Status.ABORTED);
         }
-
-        this.manager.registerScope(ret);
 
         return ret;
     }
@@ -247,8 +285,7 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
 
     @Override
     public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        // TODO if a service resolver is available, that should be used.
-        return Collections.singleton(getService(serviceClass));
+        return new Utils.Casts<KlabService, T>().cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
     }
 
     @Override
@@ -293,6 +330,11 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
     }
 
     @Override
+    public <T extends KlabService> T getService(Class<T> serviceClass) {
+        return (T) defaultServiceMap.get(KlabService.Type.classify(serviceClass));
+    }
+
+    @Override
     public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
         for (var service : getServices(serviceClass)) {
             if (serviceId.equals(service.serviceId())) {
@@ -312,7 +354,7 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
 
     @Override
     public void switchService(KlabService service) {
-        // TODO based on client request, or just avoid in this implementation.
+        // no switching at server side. TODO Consider raising an exception or when that could be appropriate.
     }
 
     public Collection<Role> getRoles() {
@@ -347,6 +389,10 @@ public abstract class ServiceUserScope extends ChannelImpl implements UserScope 
 
     public void setParentScope(ServiceUserScope parentScope) {
         this.parentScope = parentScope;
+    }
+
+    public String toString() {
+        return user.toString();
     }
 
 }

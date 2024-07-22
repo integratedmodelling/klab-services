@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 
@@ -36,7 +38,7 @@ public class RuntimeService extends BaseService
     Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
     private String hardwareSignature =
             org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
-    // TODO connect to runtime.yaml configuration
+
     private RuntimeConfiguration configuration;
 
     public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
@@ -110,6 +112,10 @@ public class RuntimeService extends BaseService
     @Override
     public Capabilities capabilities(Scope scope) {
 
+        /*
+        TODO if scope is admin, add descriptors for all the DTs and their data
+         */
+
         return new RuntimeCapabilitiesImpl() {
 
             @Override
@@ -142,24 +148,6 @@ public class RuntimeService extends BaseService
 
     public String serviceId() {
         return configuration.getServiceId();
-    }
-
-    @Override
-    public Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope) {
-        return new ObservationTask(dataflow, scope, getDigitalTwin(scope), true);
-    }
-
-    @Override
-    public Collection<Observation> children(ContextScope scope, Observation rootObservation) {
-        var digitalTwin = getDigitalTwin(scope);
-        return digitalTwin == null ? Collections.emptyList() :
-               digitalTwin.getLogicalChildren(rootObservation);
-    }
-
-    @Override
-    public Observation parent(ContextScope scope, Observation rootObservation) {
-        var digitalTwin = getDigitalTwin(scope);
-        return digitalTwin.getLogicalParent(rootObservation);
     }
 
     private DigitalTwin getDigitalTwin(ContextScope scope) {
@@ -211,21 +199,23 @@ public class RuntimeService extends BaseService
     }
 
     @Override
-    public String createSession(UserScope scope, String sessionName) {
-        var sessionScope = scope.runSession(sessionName);
-        if (sessionScope instanceof ServiceSessionScope sscope) {
-            return sscope.getId();
+    public String registerSession(SessionScope sessionScope) {
+        if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
+            serviceSessionScope.setId(Utils.Names.shortUUID());
+            getScopeManager().registerScope(serviceSessionScope);
+            return serviceSessionScope.getId();
         }
-        return null;
+        throw new KlabIllegalArgumentException("unexpected scope class");
     }
 
     @Override
-    public String createContext(SessionScope sessionScope, String contextName) {
-        var contextScope = sessionScope.createContext(contextName);
+    public String registerContext(ContextScope contextScope) {
         if (contextScope instanceof ServiceContextScope serviceContextScope) {
+            serviceContextScope.setId(serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
+            getScopeManager().registerScope(serviceContextScope);
             return serviceContextScope.getId();
         }
-        return null;
+        throw new KlabIllegalArgumentException("unexpected scope class");
     }
 
 }

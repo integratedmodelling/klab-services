@@ -176,12 +176,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          */
 
         if (currentSession == null) {
-            currentSession = currentUser().runSession("Default session");
+            currentSession = createSession("Default session");
         }
 
         if (currentContext == null && currentSession != null) {
 
-            currentContext = currentSession.createContext("Default context");
+            currentContext = createContext(currentSession, "Default context");
 
             /*
             TODO make observer and set it into the context
@@ -213,8 +213,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     private SessionScope createSession(String sessionName) {
         var runtime = engine().serviceScope().getService(RuntimeService.class);
-        var sessionId = runtime.createSession(currentUser(), sessionName);
-        return null;
+        return currentUser().runSession(sessionName);
+    }
+
+    private ContextScope createContext(SessionScope sessionScope, String contextName) {
+        var runtime = engine().serviceScope().getService(RuntimeService.class);
+        return sessionScope.createContext(contextName);
     }
 
     @Override

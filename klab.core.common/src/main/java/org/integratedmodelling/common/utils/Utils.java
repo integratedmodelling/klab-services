@@ -12,6 +12,7 @@ import com.google.common.net.MediaType;
 import com.jcraft.jsch.JSch;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -113,9 +114,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 var ret = new Client(this);
                 ret.scope = scope;
                 if (scope instanceof ContextScope contextScope) {
-                    headers.put(ServicesAPI.SCOPE_HEADER, ContextScope.getScopeId(contextScope));
-                } else if (scope instanceof SessionScope) {
-                    headers.put(ServicesAPI.SCOPE_HEADER, scope.getIdentity().getId());
+                    ret.headers.put(ServicesAPI.SCOPE_HEADER, ContextScope.getScopeId(contextScope));
+                } else if (scope instanceof ClientSessionScope clientSessionScope) {
+                    ret.headers.put(ServicesAPI.SCOPE_HEADER, clientSessionScope.getId());
                 }
                 return ret;
             }

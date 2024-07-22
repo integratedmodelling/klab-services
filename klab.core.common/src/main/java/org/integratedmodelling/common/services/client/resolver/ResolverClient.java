@@ -45,6 +45,10 @@ public class ResolverClient extends ServiceClient implements Resolver {
         super(Type.RESOLVER, identity, services);
     }
 
+    public ResolverClient(URL url, Identity identity) {
+        super(Type.RESOLVER, url, identity, List.of());
+    }
+
     public ResolverClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel, Message>... listeners) {
         super(Type.RESOLVER, url, identity, services, listeners);
     }

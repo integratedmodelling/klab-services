@@ -44,8 +44,8 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
         super(Type.RESOURCES);
     }
 
-    public ResourcesClient(Identity identity, List<ServiceReference> services) {
-        super(Type.RESOURCES, identity, services);
+    public ResourcesClient(URL url, Identity identity) {
+        super(Type.RESOURCES, identity, List.of());
     }
 
     public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,

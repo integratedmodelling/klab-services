@@ -39,14 +39,14 @@ public class ContextAgent extends KAgent {
 
     protected void getChildren(ReActorContext rctx, GetChildren message) {
         var runtime = scope.getService(RuntimeService.class);
-        scope.send(message.response(Status.FINISHED, runtime.children((ContextScope) scope,
-                message.getRootObservation())));
+//        scope.send(message.response(Status.FINISHED, runtime.children((ContextScope) scope,
+//                message.getRootObservation())));
     }
 
     protected void getParent(ReActorContext rctx, GetParent message) {
         var runtime = scope.getService(RuntimeService.class);
-        scope.send(message.response(Status.FINISHED, runtime.parent((ContextScope) scope,
-                message.getRootObservation())));
+//        scope.send(message.response(Status.FINISHED, scope.parent((ContextScope) scope,
+//                message.getRootObservation())));
     }
 
     protected void observe(ReActorContext rctx, Observe message) {
@@ -87,14 +87,14 @@ public class ContextAgent extends KAgent {
                 /*
                  * Run the dataflow
                  */
-                result = scope.getService(RuntimeService.class).run(dataflow, resolutionScope).get();
-
-                /*
-                 * TODO adjust overall geometry and catalog
-                 */
-                if (!result.isEmpty()) {
-                    status = Status.FINISHED;
-                }
+//                result = scope.getService(RuntimeService.class).run(dataflow, resolutionScope).get();
+//
+//                /*
+//                 * TODO adjust overall geometry and catalog
+//                 */
+//                if (!result.isEmpty()) {
+//                    status = Status.FINISHED;
+//                }
             }
 
         } catch (Throwable e) {

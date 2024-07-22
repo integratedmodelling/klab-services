@@ -7,11 +7,14 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.*;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.objects.ContextRequest;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -27,9 +30,9 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         super(Type.RUNTIME);
     }
 
-    public RuntimeClient(Identity identity, List<ServiceReference> services) {
-        super(Type.RUNTIME, identity, services);
-    }
+    //    public RuntimeClient(Identity identity, List<ServiceReference> services) {
+    //        super(Type.RUNTIME, identity, services);
+    //    }
 
     public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
             Message>... listeners) {
@@ -46,34 +49,48 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public String createSession(UserScope scope, String sessionName) {
-        return client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", sessionName);
+    public String registerSession(SessionScope scope) {
+        return client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", scope.getName());
     }
 
     @Override
-    public String createContext(SessionScope scope, String contextName) {
-        return client.withScope(scope).get(ServicesAPI.RUNTIME.CREATE_CONTEXT, String.class, "name", contextName);
+    public String registerContext(ContextScope scope) {
+
+        ContextRequest request = new ContextRequest();
+        request.setName(scope.getName());
+
+        var runtime = scope.getService(RuntimeService.class);
+
+        // The runtime needs to use our resolver(s) and resource service(s), as long as they're accessible.
+        // The reasoner can be the runtime's own unless we have locked worldview projects.
+        for (var service : scope.getServices(ResourcesService.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResourceServices().add(serviceClient.getUrl());
+                }
+            }
+        }
+        for (var service : scope.getServices(Resolver.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResolverServices().add(serviceClient.getUrl());
+                }
+            }
+        }
+
+        if (isLocal() && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
+            request.getReasonerServices().add(reasonerClient.getUrl());
+        }
+
+        return client.withScope(scope.getParentScope()).post(ServicesAPI.RUNTIME.CREATE_CONTEXT, request,
+                String.class);
     }
 
     @Override
     public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class);
-    }
-
-    @Override
-    public Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Collection<Observation> children(ContextScope scope, Observation rootObservation) {
-        return null;
-    }
-
-    @Override
-    public Observation parent(ContextScope scope, Observation rootObservation) {
-        return null;
     }
 
 }

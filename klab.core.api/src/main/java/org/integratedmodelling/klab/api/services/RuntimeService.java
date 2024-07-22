@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services;
 
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -13,10 +14,13 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 /**
- * TODO consider whether to add a <T extends Artifact> and leave the possibility
- * of implementing one that handles non-semantic artifacts. Could be a door into
- * wrapping external computational services like OpenEO that can interpret k.LAB
- * dataflows.
+ * The runtime service holds the actual digital twins referred to by context scopes. Client scopes will
+ * register themselves at creation to obtain the scope header
+ * ({@link org.integratedmodelling.klab.api.ServicesAPI#SCOPE_HEADER} that enables communication. Scopes
+ * should unregister themselves after use.
+ * <p>
+ * All other main functions of the runtime service are exposed through the GraphQL endpoint that gives access
+ * to each context.
  *
  * @author Ferd
  */
@@ -39,26 +43,22 @@ public interface RuntimeService extends KlabService {
      * correspondent behaviors, test namespaces or scenarios and initialize the session accordingly. Return
      * the unique session ID.
      *
-     * @param scope       the user who will own the session
-     * @param sessionName a name for the session. The name is not unique and a new session is always returned,
-     *                    even when passing the same name as a previous call. The name of a session can be
-     *                    changed after creation.
-     * @return the ID of the new session created
+     * @param sessionScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return the ID of the new session created at server side, or null in case of failure.
      */
-    String createSession(UserScope scope, String sessionName);
+    String registerSession(SessionScope sessionScope);
 
     /**
      * Create a context with the passed name in the passed session. Context starts empty with the default
-     * observer for the worldview.
+     * observer for the worldview, using the services available to the user and passed as parameters. The same
+     * runtime that hosts the context must become the one and only runtime accessible to the resulting scope.
      *
-     * @param scope       the session that will hold this context. The default observer will be created and
-     *                    configured based on the user of the {@link UserScope} that owns the session.
-     * @param contextName a name for the context. The name is not unique and a new context is always returned,
-     *                    even when passing the same name as a previous call. The name of a context can be
-     *                    changed after creation.
-     * @return
+     * @param contextScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return the ID of the new session created at server side, or null in case of failure.
      */
-    String createContext(SessionScope scope, String contextName);
+    String registerContext(ContextScope contextScope);
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available
@@ -87,32 +87,6 @@ public interface RuntimeService extends KlabService {
      */
     Capabilities capabilities(Scope scope);
 
-    /**
-     * Run the passed dataflow in the passed scope. The two must be valid for each other.
-     *
-     * @param dataflow
-     * @param scope
-     * @return
-     */
-    Future<Observation> run(Dataflow<Observation> dataflow, ContextScope scope);
-
-    /**
-     * Get the first-level children of the passed observation in the scope.
-     *
-     * @param scope
-     * @param rootObservation
-     * @return
-     */
-    Collection<Observation> children(ContextScope scope, Observation rootObservation);
-
-    /**
-     * Get the parent observation of the passed observation in the scope.
-     *
-     * @param scope
-     * @param rootObservation
-     * @return
-     */
-    Observation parent(ContextScope scope, Observation rootObservation);
 
     interface Admin {
 

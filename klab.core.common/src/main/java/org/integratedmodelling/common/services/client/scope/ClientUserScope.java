@@ -40,13 +40,8 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     protected Parameters<String> data;
     private Identity user;
     private Ref agent;
-
     protected Scope parentScope;
     private Status status = Status.STARTED;
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     private String id;
 
@@ -86,6 +81,14 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
             }
         }
         throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
 
@@ -155,34 +158,36 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
             throw new KlabResourceAccessException("Runtime service is not accessible: cannot create session");
         }
 
-        var sessionId = runtime.createSession(this, sessionName);
+        /**
+         * Registration with the runtime succeeded. Return a peer scope locked to the
+         * runtime service that hosts it.
+         */
+        var ret = new ClientSessionScope(this, sessionName, runtime) {
+
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+                if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+                    return (T)runtime;
+                }
+                return ClientUserScope.this.getService(serviceClass);
+            }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                if (serviceClass.isAssignableFrom(RuntimeService.class)) {
+                    return List.of((T)runtime);
+                }
+                return ClientUserScope.this.getServices(serviceClass);
+            }
+        };
+
+        var sessionId = runtime.registerSession(ret);
 
         if (sessionId != null) {
-
-            /**
-             * Registration with the runtime succeeded. Return a peer scope locked to the
-             * runtime service that hosts it.
-             */
-            return new ClientSessionScope(this, sessionId, runtime) {
-
-                @Override
-                public <T extends KlabService> T getService(Class<T> serviceClass) {
-                    if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-                        return (T)runtime;
-                    }
-                    return ClientUserScope.this.getService(serviceClass);
-                }
-
-                @Override
-                public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                    if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-                        return List.of((T)runtime);
-                    }
-                    return ClientUserScope.this.getServices(serviceClass);
-                }
-            };
-
+            ret.setId(sessionId);
+            return ret;
         }
+
         return null;
     }
 

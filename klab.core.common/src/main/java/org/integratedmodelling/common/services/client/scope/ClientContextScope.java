@@ -27,8 +27,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     private String[] scenarios;
     private String resolutionNamespace;
 
-    public ClientContextScope(ClientUserScope parent, String contextId, RuntimeService runtimeService) {
-        super(parent, contextId, runtimeService);
+    public ClientContextScope(ClientUserScope parent, String contextName, RuntimeService runtimeService) {
+        super(parent, contextName, runtimeService);
     }
 
     @Override
@@ -164,6 +164,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     @Override
     public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String, String> localNames) {
         return null;
+    }
+
+    @Override
+    public Map<Concept, Concept> getContextualizedPredicates() {
+        return Map.of();
     }
 
     @Override

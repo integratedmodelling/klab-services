@@ -191,13 +191,13 @@ public class Resolver {
 //                ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
 
                 var runtime = ctx.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
-                var result = runtime.run(this.dataflow, ctx);
-                out.println("Dataflow submitted to the runtime for execution");
-                try {
-                    dumpObservationStructure(result.get(), ctx, runtime, out, 0);
-                } catch (Exception e) {
-                    throw new KlabIOException(e);
-                }
+//                var result = runtime.run(this.dataflow, ctx);
+//                out.println("Dataflow submitted to the runtime for execution");
+//                try {
+//                    dumpObservationStructure(result.get(), ctx, runtime, out, 0);
+//                } catch (Exception e) {
+//                    throw new KlabIOException(e);
+//                }
 
             } else {
                 err.println("Dataflow is empty: not submitted to runtime");
@@ -209,9 +209,9 @@ public class Resolver {
             var spacer = Utils.Strings.spaces(level);
             out.println(Ansi.AUTO.string("@|green " + spacer + (observation instanceof DirectObservation dobs ?
                     (dobs.getName() + " ") : "") + observation.getObservable() + "|@"));
-            for (var child : service.children(scope, observation)) {
-                dumpObservationStructure(child, scope, service, out, level + 3);
-            }
+//            for (var child : service.children(scope, observation)) {
+//                dumpObservationStructure(child, scope, service, out, level + 3);
+//            }
         }
     }
 }

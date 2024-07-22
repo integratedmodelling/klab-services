@@ -47,20 +47,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     protected ServiceContextScope parent;
     private Dataflow<Observation> dataflow = Dataflow.empty(Observation.class);
 
-    ServiceContextScope(ServiceSessionScope parent) {
-        super(parent, true);
-        this.observer = null; // NAAH parent.getUser();
-        this.data = Parameters.create();
-        this.data.putAll(parent.data);
-        this.catalog = new HashMap<>();
-        /*
-         * TODO choose the services if this context or user requires specific ones
-         */
-    }
-
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private ServiceContextScope(ServiceContextScope parent) {
-        super(parent, false);
+        super(parent);
         this.parent = parent;
         this.observer = parent.observer;
         this.contextObservation = parent.contextObservation;
@@ -70,6 +59,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.resolutionScenarios.addAll(parent.resolutionScenarios);
         this.resolutionNamespace = parent.resolutionNamespace;
     }
+
+    ServiceContextScope(ServiceSessionScope parent) {
+        super(parent);
+        this.observer = null; // NAAH parent.getUser();
+        this.data = Parameters.create();
+        this.data.putAll(parent.data);
+        this.catalog = new HashMap<>();
+        /*
+         * TODO choose the services if this context or user requires specific ones
+         */
+    }
+
 
     @Override
     public Subject getObserver() {

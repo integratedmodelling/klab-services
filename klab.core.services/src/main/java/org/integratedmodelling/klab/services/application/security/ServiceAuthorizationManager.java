@@ -301,7 +301,7 @@ public class ServiceAuthorizationManager {
             // ...then contextualized as needed
             var scopeData = ContextScope.parseScopeId(scopeHeader);
             scope = klabService.get().getScopeManager().getScope(ret, scopeData.type().classify(), scopeData.scopeId());
-            if (scope != null) {
+            if (scope instanceof ServiceContextScope) {
                 scope = klabService.get().getScopeManager().contextualizeScope((ServiceContextScope) scope, scopeData);
             }
         }
@@ -334,34 +334,6 @@ public class ServiceAuthorizationManager {
         return ret;
     }
 
-//    /**
-//     * Resolve or create the scope correspondent to the passed principal. A scopeHeader (from the header
-//     * {@link ServicesAPI#SCOPE_HEADER}) may be passed to create or retrieve a scope below the user level,
-//     * which will only be relevant in runtime and resolver services.
-//     *
-//     * @param principal
-//     * @param scopeClass
-//     * @param scopeHeader if not null, use to establish a scope below
-//     *                    {@link org.integratedmodelling.klab.api.scope.UserScope}, possibly with a given
-//     *                    observer and other parameters.
-//     * @param <T>
-//     * @return
-//     */
-//    public <T extends Scope> T resolveScope(Principal principal, Class<T> scopeClass, String scopeHeader) {
-//
-//        T ret = null;
-//        if (principal instanceof EngineAuthorization authorization) {
-//            if (authorization.getScopeId() != null) {
-//                ret = (T) klabService.get().getScopeManager().getScope(authorization, scopeClass, scopeHeader);
-//            } else if (klabService.get() != null && scopeClass.isAssignableFrom(klabService.get().serviceScope().getClass())) {
-//                ret = (T) klabService.get().serviceScope();
-//            }
-//            if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
-//                return (T) ret;
-//            }
-//        }
-//        return ret;
-//    }
 
     private Set<Group> filterGroups(List<String> groupStrings) {
         Set<Group> ret = new HashSet<>();
@@ -379,35 +351,5 @@ public class ServiceAuthorizationManager {
 
         return ret;
     }
-
-//    /**
-//     * Based on the scope type and permissions, either add listeners to the service scope or build a
-//     * lower-level scope for future reference.
-//     * <p>
-//     * TODO
-//     *
-//     * @param scopeType
-//     * @param scopeId
-//     * @param engineAuthorization
-//     * @return
-//     */
-//    public boolean registerScope(Scope.Type scopeType, String scopeId,
-//                                 EngineAuthorization engineAuthorization) {
-//        // TODO must work with the service scope channel etc.
-//        return true;
-//    }
-//
-//    /**
-//     * Unregister a previously registered scope.
-//     *
-//     * @param scopeId
-//     * @param engineAuthorization
-//     * @return
-//     */
-//    public boolean unregisterScope(String scopeId, EngineAuthorization engineAuthorization) {
-//        // TODO uninstall any listeners and monitors if service; remove child scopes
-//        return true;
-//    }
-
 
 }

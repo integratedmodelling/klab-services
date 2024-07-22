@@ -335,6 +335,9 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     public static String getScopeId(ContextScope scope) {
 
         StringBuffer ret = new StringBuffer(512);
+
+        ret.append(scope.getId());
+
         if (scope.getContextObservation() != null) {
 
             var cobs = new ArrayList<Observation>();

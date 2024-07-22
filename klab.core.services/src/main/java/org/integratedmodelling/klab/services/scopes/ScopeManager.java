@@ -83,29 +83,14 @@ public class ScopeManager {
         ServiceUserScope ret = scopes.get(user.getUsername());
         if (ret == null) {
 
-            ret = new ServiceUserScope(user, this) {
-
-                @Override
-                public void switchService(KlabService service) {
-                    // don't
-                }
-
-                @Override
-                public <T extends KlabService> T getService(Class<T> serviceClass) {
-                    return service.serviceScope().getService(serviceClass);
-                }
-
-                public String toString() {
-                    return user.toString();
-                }
-
-            };
+            ret = new ServiceUserScope(user);
 
             String agentName = user.getUsername();
             // TODO move to lazy logics
             KActorsBehavior.Ref agent = KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName,
                     ret)).get());
             ret.setAgent(agent);
+            ret.setId(user.getUsername());
 
             scopes.put(user.getUsername(), ret);
 
