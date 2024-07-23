@@ -187,7 +187,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
             for (Concept trigger : triggerObservables) {
                 Set<Observation> ret = new HashSet<>();
-                checkScope(trigger, scope.getCatalog(), relationship, ret);
+                checkScope(trigger, scope.getObservations(), relationship, ret);
                 if (!ret.isEmpty()) {
                     return ret;
                 }

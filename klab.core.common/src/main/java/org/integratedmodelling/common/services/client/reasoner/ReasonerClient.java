@@ -47,9 +47,9 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         super(Type.REASONER, url, identity, List.of());
     }
 
-    public ReasonerClient(Identity identity, List<ServiceReference> services) {
-        super(Type.REASONER, identity, services);
-    }
+//    public ReasonerClient(Identity identity, List<ServiceReference> services) {
+//        super(Type.REASONER, identity, services);
+//    }
 
     public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
             Message>... listeners) {

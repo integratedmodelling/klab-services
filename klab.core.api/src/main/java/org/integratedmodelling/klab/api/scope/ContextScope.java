@@ -3,8 +3,10 @@ package org.integratedmodelling.klab.api.scope;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.*;
+import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -14,12 +16,23 @@ import java.util.*;
 import java.util.concurrent.Future;
 
 /**
- * The scope for a context and any observations made within it. The context scope is the door to the "digital
- * twin" of the observations made in it. The scope always has an observer that can be switched to another. A
- * scope is also passed around during resolution and carries scope information (namespace, project, scenarios)
- * that is relevant to the resolver. Scopes can be specialized to customize resolution before
- * {@link #observe(Object...)} is called, and their status is passed across network boundaries, encoded in the
- * scope header added to requests that trigger resolution.
+ * The scope for a context and any observations made within it. The context scope is the handle to the
+ * "digital twin" of the observations made in it and contains all the methods that give access to the
+ * observation, dataflow and provenance graphs. These are available from the GraphQL API served by the
+ * {@link org.integratedmodelling.klab.api.services.RuntimeService}.
+ * <p>
+ * The context scope always has an observer that can be switched to another when making observations. The
+ * observer is an observation of an agent (a {@link Subject} in the API, with agent semantics). The calling
+ * client should explicitly provide an observer; if not, the digital twin should provide one by default, using
+ * information from the parent scopes (session user identity, including any roles specified in the user groups
+ * subscribed to). Observations of the same observable with different observers are different observations.
+ * <p>
+ * A context scope is used to create observations, which will trigger resolution, through
+ * {@link #observe(Object...)} and carries information (namespace, project, scenarios) that is relevant to the
+ * resolver. Scopes can be specialized to customize resolution before {@link #observe(Object...)} is called,
+ * and their status is passed across network boundaries, encoded in the scope header added to requests that
+ * trigger resolution. If resolution in the runtime fails, the resulting observation will be in an unresolved
+ * state, unusable to make any further resolution, and the context is to be considered inconsistent.
  * <p>
  * The context scope carries the URL of the digital twin (a GraphQL endpoint) and can be connected to another
  * to form larger, multi-observer, distributed scopes.
@@ -44,12 +57,61 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     URL getUrl();
 
     /**
-     * Return the observer for this context. This will never be null. The scale of the observer implies the
-     * default context of observation.
+     * Return the observer for this context. This should never be null even if the context is not focused on
+     * an observation, and the system should provide a default observer built from session data if
+     * observations were made without an explicit observer. The scale of the observer implies the default
+     * context of observation.
      *
      * @return
      */
-    Subject getObserver();
+    Observer getObserver();
+
+    /**
+     * A context scope is inconsistent if resolution has failed for one or more <em>dependent</em>
+     * observations, such as qualities and processes. These can be retrieved through
+     * {@link #getInconsistencies(boolean)} passing true as parameter.
+     *
+     * @return
+     */
+    boolean isConsistent();
+
+    /**
+     * Return all observations in this scope for which resolution has failed. Optionally only return dependent
+     * observations, whose presence makes the context and the associated digital twin inconsistent.
+     *
+     * @param dependentOnly if true, only dependent observations are returned
+     * @return the requested inconsistent observations in this scope
+     */
+    Collection<Observation> getInconsistencies(boolean dependentOnly);
+
+    /**
+     * Return all the known observation perspectives for the passed observable. These are the different
+     * observations of the same observable made by different observers. The observer in the scope and in the
+     * passed observable will be ignored when matching.
+     *
+     * @param observable
+     * @param <T>
+     * @return zero or more observations of the same observable. If > 1, the resulting observations are
+     * guaranteed to have different observers.
+     */
+    <T extends Observation> Collection<T> getPerspectives(Observable observable);
+
+    /**
+     * Return the observer that has made the observation passed. It should never be null. This is done by
+     * inspecting the observation graph.
+     *
+     * @param observation
+     * @return
+     */
+    Observer getObserverOf(Observation observation);
+
+    /**
+     * Return the observations made in this context using {@link #observe(Object...)}. The resulting
+     * collection must iterate in order of observation, established by provenance.
+     *
+     * @return
+     */
+    Collection<Observation> getRootObservations();
 
     /**
      * If this scope is focused on a specific subject, return it.
@@ -64,7 +126,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observer
      * @return
      */
-    ContextScope withObserver(Subject observer);
+    ContextScope withObserver(Observer observer);
 
     /**
      * Return a new observation scope that sets the passed scenarios for any future observation.
@@ -76,7 +138,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
 
     /**
      * Return a new context scope with the passed namespace of resolution. Used by the resolver or to
-     * fine-tune resolution.
+     * fine-tune resolution, prioritizing models in the passed namespace and the enclosing project.
      *
      * @param namespace
      * @return
@@ -121,14 +183,24 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     /**
      * Make an observation. Must be called on a context scope, possibly focused on a given root observation
      * using {@link #within(DirectObservation)}}. If no root observation is present in the scope, the
-     * arguments must fully specify a subject, either through a direct definition from a passed object or a
-     * URN specifying a definition or a subject observation. If the observer is focused on a scale,  the
-     * context can decide to use it as a scale for the root observation.
+     * arguments must fully specify a <em>substantial</em>, either through a direct definition from a passed
+     * object or a URN specifying a definition or a subject observation. If the observer is focused on a
+     * scale, the context can decide to use it as a scale for the root observation. The worldview may have
+     * defaults that enable construction of default substantials when a dependent is the first observation
+     * query, like in k.Explorer.
+     * <p>
+     * After this is called, the observation will be created and resolution started in the runtime service
+     * chosen at context creation. The ID in the returned {@link ObservationTask} is the ID of the
+     * observation. If resolution fails, the observation will exist in an unresolved state; if any of these
+     * observations are of dependents, the context will be inconsistent.
      * <p>
      * Observables will be routinely specified through URNs, which will be validated as any observable object
      * - concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a
      * context/observation in an externally hosted runtime to link to the current context. Passing descriptors
      * for concepts, observables, acknowledgements or models should not cause errors.
+     * <p>
+     * If the parameters contain two scales and the semantics is an agent, the runtime should build an
+     * observer, and set it as the observer for the scope if there isn't one already.
      * <p>
      * In case the observable specifies a relationship, k.LAB will attempt to instantiate it, observing its
      * source/target endpoints as well, unless two subject observations are passed, in which case a specified
@@ -140,9 +212,10 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * overall geometry of the context will be automatically adjusted.
      *
      * @param observables URN(s) specifying resolvables, or direct objects that can be resolved and observed.
-     * @return a future for the observation being contextualized.
+     * @return a future for the observation being contextualized. The associated ID can be used for inquiries
+     * beyond the future's own API, such as retrieval of notifications.
      */
-    Future<Observation> observe(Object... observables);
+    ObservationTask observe(Object... observables);
 
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or
@@ -163,37 +236,54 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     Collection<Observation> affected(Observation observation);
 
     /**
-     * Start the scheduling if the context occurs; do nothing if not. This can be called again at each
-     * observation, with intelligent "replay" of any transitions that need to be seen again.
+     * Start the scheduling if the context occurs; do nothing if not, or if there are no new transitions to
+     * calculate. This can be called multiple times, normally after each observation, with intelligent
+     * "replay" of any transitions that need to be seen again.
      */
     void runTransitions();
 
     /**
-     * The provenance graph. Empty in an empty context, never null. Provenance will be relative to the context
-     * observation this scope focuses on.
+     * Return the portion of the provenance graph that pertains to this scope. This may be empty in an empty
+     * context, never null. Provenance will be relative to the context observation this scope focuses on. The
+     * full provenance graph will be returned by calling this method on the result of
+     * {@link #getRootContextScope()}.
      *
      * @return the provenance graph for this scope
      */
     Provenance getProvenance();
 
     /**
-     * There is one report per root context. Actuators will add sections to it as models are computed, based
-     * on the documentation templates associated with models and their parts. The report can be compiled and
-     * rendered at any time. Each observation in the same context will report the same report.
+     * Return the report that pertains to this scope. The result may be a subgraph of the root report
+     * available from the root context scope. There is one report per root context. Actuators will add
+     * sections to it as models are computed, based on the documentation templates associated with models and
+     * their parts. The report can be compiled and rendered at any time. Each observation in the same context
+     * will report the same report.
      *
      * @return
      */
     Report getReport();
 
     /**
-     * There is one dataflow per context, and it's never null. It starts empty and incorporates all the
-     * dataflows created by the resolver when new observations are made. Each dataflow is inserted in the main
-     * one at the appropriate position, so that running the dataflow again will recreate the exact same
-     * context.
+     * Return the dataflow that pertains to this scope. The result may be a subgraph of the root context
+     * scope's dataflow. There is one dataflow per context, and it's never null. It starts empty and
+     * incorporates all the dataflows created by the resolver when new observations are made. Each dataflow is
+     * inserted in the main one at the appropriate position, so that running the dataflow again will recreate
+     * the exact same context. The dataflow returned pertains to the observation that the scope is focused
+     * on.
+     * <p>
+     * Note that the dataflow will not recompute observations, so the partial dataflow may not be a complete
+     * strategy for the observation as it may reuse information already available in upstream scopes.
      *
      * @return
      */
     Dataflow<Observation> getDataflow();
+
+    /**
+     * Return the root context scope with the overall observer and the full observation graph.
+     *
+     * @return
+     */
+    ContextScope getRootContextScope();
 
     /**
      * Return the parent observation of the passed observation. The runtime context maintains the logical
@@ -241,14 +331,14 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     Collection<Relationship> getIncomingRelationships(DirectObservation observation);
 
     /**
-     * Return the currently known observations as a map indexed by observable.
+     * Return the observations in this scope as a map indexed by observable.
      *
      * @return
      */
-    Map<Observable, Observation> getCatalog();
+    Map<Observable, Observation> getObservations();
 
     /**
-     * Retrieve the observation recognized in this context with the passed name.
+     * Retrieve the observation that is recognized with the passed name in this context.
      *
      * @param <T>
      * @param localName

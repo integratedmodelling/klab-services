@@ -10,12 +10,14 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
 import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
@@ -33,7 +35,7 @@ import java.util.concurrent.Future;
  */
 public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
 
-    private Subject observer;
+    private Observer observer;
     private DirectObservation contextObservation;
     private Set<String> resolutionScenarios = new LinkedHashSet<>();
     private Scale geometry = Scale.empty();
@@ -73,11 +75,36 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
 
     @Override
-    public Subject getObserver() {
+    public Observer getObserver() {
         return this.observer;
     }
 
-//    @Override
+    @Override
+    public boolean isConsistent() {
+        return false;
+    }
+
+    @Override
+    public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+        return List.of();
+    }
+
+    @Override
+    public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
+        return List.of();
+    }
+
+    @Override
+    public Observer getObserverOf(Observation observation) {
+        return null;
+    }
+
+    @Override
+    public Collection<Observation> getRootObservations() {
+        return List.of();
+    }
+
+    //    @Override
 //    public Scale getScale() {
 //        return geometry;
 //    }
@@ -96,7 +123,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ServiceContextScope withObserver(Subject observer) {
+    public ServiceContextScope withObserver(Observer observer) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.observer = observer;
         ret.catalog = new HashMap<>(this.catalog);
@@ -104,7 +131,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public Future<Observation> observe(Object... observables) {
+    public ObservationTask observe(Object... observables) {
 
         /**
          * The Observe message ID is the task ID
@@ -165,6 +192,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
+    public ContextScope getRootContextScope() {
+        return null;
+    }
+
+    @Override
     public DirectObservation getParentOf(Observation observation) {
         return null;
     }
@@ -193,7 +225,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public Map<Observable, Observation> getCatalog() {
+    public Map<Observable, Observation> getObservations() {
         return catalog;
     }
 

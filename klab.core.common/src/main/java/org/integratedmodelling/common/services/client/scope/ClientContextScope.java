@@ -3,14 +3,12 @@ package org.integratedmodelling.common.services.client.scope;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
-import org.integratedmodelling.klab.api.knowledge.observation.Subject;
+import org.integratedmodelling.klab.api.knowledge.observation.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
@@ -22,7 +20,7 @@ import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
-    private Subject observer;
+    private Observer observer;
     private DirectObservation contextObservation;
     private String[] scenarios;
     private String resolutionNamespace;
@@ -37,7 +35,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Subject getObserver() {
+    public Observer getObserver() {
         return this.observer;
     }
 
@@ -47,7 +45,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public ContextScope withObserver(Subject observer) {
+    public ContextScope withObserver(Observer observer) {
         return this;
     }
 
@@ -77,7 +75,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Future<Observation> observe(Object... observables) {
+    public ObservationTask observe(Object... observables) {
         return null;
     }
 
@@ -132,7 +130,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Map<Observable, Observation> getCatalog() {
+    public Map<Observable, Observation> getObservations() {
         return Map.of();
     }
 
@@ -174,5 +172,35 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     @Override
     public void close() throws Exception {
 
+    }
+
+    @Override
+    public boolean isConsistent() {
+        return false;
+    }
+
+    @Override
+    public Collection<Observation> getInconsistencies(boolean dependentOnly) {
+        return List.of();
+    }
+
+    @Override
+    public <T extends Observation> Collection<T> getPerspectives(Observable observable) {
+        return List.of();
+    }
+
+    @Override
+    public Observer getObserverOf(Observation observation) {
+        return null;
+    }
+
+    @Override
+    public Collection<Observation> getRootObservations() {
+        return List.of();
+    }
+
+    @Override
+    public ContextScope getRootContextScope() {
+        return null;
     }
 }

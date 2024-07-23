@@ -12,7 +12,6 @@ import java.util.Set;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
@@ -109,9 +108,9 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         super(ResolutionImpl.ResolutionEdge.class);
         this.resolvable = root;
         // pre-resolved observations. Can't use better idioms for apparent bug in Java type system.
-        for (Observable o : scope.getCatalog().keySet()) {
+        for (Observable o : scope.getObservations().keySet()) {
             Set<Resolvable> set = new HashSet<>();
-            set.add(scope.getCatalog().get(o));
+            set.add(scope.getObservations().get(o));
             resolved.put(o, set);
         }
     }

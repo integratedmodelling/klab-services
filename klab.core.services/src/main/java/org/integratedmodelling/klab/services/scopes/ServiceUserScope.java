@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
@@ -136,20 +137,21 @@ public class ServiceUserScope extends ChannelImpl implements UserScope {
      * @param resultClass
      * @return
      */
-    protected <T> Future<T> responseFuture(AgentMessage message, Class<T> resultClass) {
-        Future<T> ret = new FutureTask<T>(new Callable<T>() {
-
-            @Override
-            public T call() throws Exception {
-                // TODO Auto-generated method stub
-                return null;
-            }
-
-        });
+    protected <T> ObservationTask responseFuture(AgentMessage message, Class<T> resultClass) {
+//        var ret = new ObservationTask(new Callable<T>() {
+//
+//            @Override
+//            public T call() throws Exception {
+//                // TODO Auto-generated method stub
+//                return null;
+//            }
+//
+//        }) {
+//        };
 
         // TODO enqueue
 
-        return ret;
+        return null; // ret;
     }
 
     protected ServiceUserScope(ServiceUserScope parent) {
