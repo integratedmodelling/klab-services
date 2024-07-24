@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.services.scopes;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -12,12 +11,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
-import org.integratedmodelling.klab.api.knowledge.observation.Subject;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
@@ -25,7 +23,6 @@ import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 import java.io.Closeable;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.Future;
 
 /**
  * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service through the
@@ -131,7 +128,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ObservationTask observe(Object... observables) {
+    public ResolutionTask observe(Object... observables) {
 
         /**
          * The Observe message ID is the task ID

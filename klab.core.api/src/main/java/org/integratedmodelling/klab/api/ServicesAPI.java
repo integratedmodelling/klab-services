@@ -295,6 +295,11 @@ public interface ServicesAPI {
          */
         String CREATE_CONTEXT = "/createContext";
 
+        /**
+         * The GraphQL endpoint for digital twin access.
+         */
+        String DIGITAL_TWIN_GRAPH = "/dt";
+
     }
 
     public interface RESOURCES {

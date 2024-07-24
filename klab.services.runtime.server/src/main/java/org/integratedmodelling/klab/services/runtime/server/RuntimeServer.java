@@ -27,9 +27,10 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
          * This runtime gets resolvers and resource services from the observation requests, so does not need
          * its own services besides reasoning.
          *
-         * TODO the context request should contain the service URLs actually.
+         * TODO the context request contains the service URLs actually. So all these should be optional only
+         *  for the runtime to work standalone (but there are issues if these aren't there).
          */
-        return List.of(KlabService.Type.REASONER);
+        return List.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER, KlabService.Type.RESOLVER);
     }
 
 

@@ -6,14 +6,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.Future;
 
 /**
  * The scope for a context and any observations made within it. The context scope is the handle to the
@@ -190,7 +189,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * query, like in k.Explorer.
      * <p>
      * After this is called, the observation will be created and resolution started in the runtime service
-     * chosen at context creation. The ID in the returned {@link ObservationTask} is the ID of the
+     * chosen at context creation. The ID in the returned {@link ResolutionTask} is the ID of the
      * observation. If resolution fails, the observation will exist in an unresolved state; if any of these
      * observations are of dependents, the context will be inconsistent.
      * <p>
@@ -200,7 +199,8 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * for concepts, observables, acknowledgements or models should not cause errors.
      * <p>
      * If the parameters contain two scales and the semantics is an agent, the runtime should build an
-     * observer, and set it as the observer for the scope if there isn't one already.
+     * observer, and set it as the observer for the scope if there isn't one already. The second scale will be
+     * set as the observation scale.
      * <p>
      * In case the observable specifies a relationship, k.LAB will attempt to instantiate it, observing its
      * source/target endpoints as well, unless two subject observations are passed, in which case a specified
@@ -215,7 +215,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @return a future for the observation being contextualized. The associated ID can be used for inquiries
      * beyond the future's own API, such as retrieval of notifications.
      */
-    ObservationTask observe(Object... observables);
+    ResolutionTask observe(Object... observables);
 
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or

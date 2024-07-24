@@ -26,6 +26,8 @@ import java.util.function.BiConsumer;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
+    private GraphQLClient graphClient;
+
     public RuntimeClient() {
         super(Type.RUNTIME);
     }
@@ -46,6 +48,12 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     @Override
     public boolean releaseScope(Scope scope) {
         return false;
+    }
+
+    @Override
+    protected void establishConnection() {
+        super.establishConnection();
+        this.graphClient = new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH);
     }
 
     @Override

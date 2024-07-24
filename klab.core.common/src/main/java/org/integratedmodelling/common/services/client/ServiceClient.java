@@ -211,7 +211,7 @@ public abstract class ServiceClient implements KlabService {
      * ensure the connection remains alive. Build the service scope and if we're on the LAN or LOCALHOST
      * locality, establish the Websocket link between the client and the server so we can listen to events.
      */
-    private void establishConnection() {
+    protected void establishConnection() {
 
         this.token = this.authentication.getFirst().getId();
         this.client = Utils.Http.getServiceClient(token, this);

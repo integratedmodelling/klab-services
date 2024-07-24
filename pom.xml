@@ -117,7 +117,7 @@
             2.0.0 -->
         <spring-boot.version>3.3.1</spring-boot.version>
         <spring.version>6.1.10</spring.version>
-        <spring-security.version>6.3.12</spring-security.version>
+        <spring-security.version>6.3.1</spring-security.version>
         <junit-version>5.6.3</junit-version>
         <jackson-version>2.17.1</jackson-version>
         <!-- <jsonld-java-version>0.13.4</jsonld-java-version> -->
@@ -310,6 +310,11 @@
                 <scope>compile</scope>
             </dependency>
             <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-oauth2-client</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-websocket</artifactId>
                 <version>${spring-boot.version}</version>
@@ -322,6 +327,16 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-webflux</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-security</artifactId>
                 <version>${spring-boot.version}</version>
             </dependency>
         </dependencies>

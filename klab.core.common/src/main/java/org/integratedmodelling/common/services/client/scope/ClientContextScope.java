@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.services.client.scope;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.*;
@@ -8,7 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
@@ -16,7 +15,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
@@ -75,7 +73,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public ObservationTask observe(Object... observables) {
+    public ResolutionTask observe(Object... observables) {
         return null;
     }
 

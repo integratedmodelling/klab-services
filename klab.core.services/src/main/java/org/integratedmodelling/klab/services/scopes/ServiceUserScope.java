@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.services.scopes;
 import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -14,7 +13,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resolver.ObservationTask;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
@@ -137,7 +136,7 @@ public class ServiceUserScope extends ChannelImpl implements UserScope {
      * @param resultClass
      * @return
      */
-    protected <T> ObservationTask responseFuture(AgentMessage message, Class<T> resultClass) {
+    protected <T> ResolutionTask responseFuture(AgentMessage message, Class<T> resultClass) {
 //        var ret = new ObservationTask(new Callable<T>() {
 //
 //            @Override

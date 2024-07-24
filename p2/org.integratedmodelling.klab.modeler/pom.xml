@@ -56,7 +56,7 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>
+                                            <id>org.jgrapht:jgrapht-core:jar:1.5.2</id>
                                             <override>true</override>
                                             <source>true</source>
                                             <instructions>
@@ -64,547 +64,633 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.github.mwiede:jsch:0.2.17</id>
+                                            <id>org.jheaps:jheaps:jar:0.14</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.google.inject:guice:jar:7.0.0</id>
+                                            <id>org.apfloat:apfloat:jar:1.10.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apfloat:apfloat:1.10.1</id>
+                                            <id>com.github.mwiede:jsch:jar:0.2.17</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
-                                        <!--                                <artifact>
-                                                                            <id>rg.apiguardian:apiguardian-api:1.1.2</id>
-                                                                            <override>true</override>
-                                                                            <instructions>
-                                                                                <_noee>true</_noee>
-                                                                            </instructions>
-                                                                        </artifact>-->
                                         <artifact>
-                                            <id>org.checkerframework:checker-qual:3.41.0</id>
+                                            <id>com.rabbitmq:amqp-client:jar:5.21.0</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>io.github.classgraph:classgraph:4.8.162</id>
+                                            <id>tech.units:indriya:jar:2.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>commons-codec:commons-codec:1.11</id>
+                                            <id>javax.measure:unit-api:jar:2.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.glassfish.tyrus.bundles:tyrus-standalone-client:2.1.5</id>
+                                            <id>tech.uom.lib:uom-lib-common:jar:2.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>commons-collections:commons-collections:3.2.2</id>
+                                            <id>jakarta.inject:jakarta.inject-api:jar:2.0.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.commons:commons-exec:1.3</id>
+                                            <id>org.apiguardian:apiguardian-api:jar:1.1.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>commons-io:commons-io:2.11.0</id>
+                                            <id>org.javassist:javassist:jar:3.29.2-GA</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.commons:commons-lang3:3.12.0</id>
+                                            <id>io.github.classgraph:classgraph:jar:4.8.162</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>commons-logging:commons-logging:1.2</id>
+                                            <id>org.apache.commons:commons-lang3:jar:3.12.0</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.google.errorprone:error_prone_annotations:2.23.0</id>
+                                            <id>com.fasterxml.jackson.core:jackson-core:jar:2.17.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>dev.failsafe:failsafe:3.3.2</id>
+                                            <id>com.fasterxml.jackson.core:jackson-databind:jar:2.17.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.google.guava:failureaccess:1.0.2</id>
+                                            <id>com.fasterxml.jackson.core:jackson-annotations:jar:2.17.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.httpcomponents:fluent-hc:4.5.13</id>
+                                            <id>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.17.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.google.guava:guava:33.0.0-jre</id>
+                                            <id>org.yaml:snakeyaml:jar:2.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.httpcomponents:httpclient-cache:4.5.13</id>
+                                            <id>commons-io:commons-io:jar:2.11.0</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.httpcomponents:httpclient-osgi:4.5.13</id>
+                                            <id>org.slf4j:slf4j-api:jar:2.0.11</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.httpcomponents:httpclient:4.5.13</id>
+                                            <id>com.fasterxml.jackson.module:jackson-module-parameter-names:jar:2.17.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.httpcomponents:httpcore:4.4.13</id>
+                                            <id>org.reflections:reflections:jar:0.10.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.httpcomponents:httpmime:4.5.13</id>
+                                            <id>com.google.code.findbugs:jsr305:jar:3.0.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>tech.units:indriya:2.2</id>
+                                            <id>commons-collections:commons-collections:jar:3.2.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.google.j2objc:j2objc-annotations:2.8</id>
+                                            <id>com.google.guava:guava:jar:33.0.0-jre</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.core:jackson-annotations:2.15.4</id>
+                                            <id>com.google.guava:failureaccess:jar:1.0.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.core:jackson-core:2.15.4</id>
+                                            <id>com.google.guava:listenablefuture:jar:9999.0-empty-to-avoid-conflict-with-guava</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.core:jackson-databind:2.15.4</id>
+                                            <id>org.checkerframework:checker-qual:jar:3.41.0</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.4</id>
+                                            <id>com.google.errorprone:error_prone_annotations:jar:2.23.0</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.15.4</id>
+                                            <id>com.google.j2objc:j2objc-annotations:jar:2.8</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.4</id>
+                                            <id>org.glassfish.tyrus.bundles:tyrus-standalone-client:jar:2.1.5</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.fasterxml.jackson.module:jackson-module-parameter-names:2.15.4</id>
+                                            <id>org.springframework:spring-messaging:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>jakarta.annotation:jakarta.annotation-api:2.1.1</id>
+                                            <id>org.springframework:spring-beans:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>jakarta.inject:jakarta.inject-api:2.0.1</id>
+                                            <id>org.springframework:spring-core:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.javassist:javassist:3.29.2-GA</id>
+                                            <id>org.springframework:spring-jcl:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.jgrapht:jgrapht-core:1.5.2</id>
+                                            <id>org.springframework.boot:spring-boot-starter-websocket:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.jheaps:jheaps:0.14</id>
+                                            <id>org.springframework.boot:spring-boot-starter-web:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.google.code.findbugs:jsr305:3.0.2</id>
+                                            <id>org.springframework.boot:spring-boot-starter-tomcat:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.slf4j:jul-to-slf4j:2.0.12</id>
+                                            <id>org.apache.tomcat.embed:tomcat-embed-core:jar:10.1.25</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>
-                                                com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
-                                            </id>
+                                            <id>org.apache.tomcat.embed:tomcat-embed-el:jar:10.1.25</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.logging.log4j:log4j-api:2.21.1</id>
+                                            <id>org.apache.tomcat.embed:tomcat-embed-websocket:jar:10.1.25</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.logging.log4j:log4j-to-slf4j:2.21.1</id>
+                                            <id>org.springframework:spring-web:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>ch.qos.logback:logback-classic:1.4.14</id>
+                                            <id>io.micrometer:micrometer-observation:jar:1.12.7</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>ch.qos.logback:logback-core:1.4.14</id>
+                                            <id>io.micrometer:micrometer-commons:jar:1.12.7</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>io.micrometer:micrometer-commons:1.12.3</id>
+                                            <id>org.springframework:spring-webmvc:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>io.micrometer:micrometer-observation:1.12.3</id>
+                                            <id>org.springframework:spring-aop:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.opentest4j:opentest4j:1.3.0</id>
+                                            <id>org.springframework:spring-expression:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.reflections:reflections:0.10.2</id>
+                                            <id>org.springframework:spring-websocket:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.slf4j:slf4j-api:2.0.11</id>
+                                            <id>org.springframework:spring-context:jar:6.1.10</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.yaml:snakeyaml:2.1</id>
+                                            <id>org.springframework.boot:spring-boot-starter-graphql:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-aop:6.1.4</id>
+                                            <id>org.springframework.boot:spring-boot-starter:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-beans:6.1.4</id>
+                                            <id>org.springframework.boot:spring-boot:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot-autoconfigure:3.2.3</id>
+                                            <id>org.springframework.boot:spring-boot-autoconfigure:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot-starter-json:3.2.3</id>
+                                            <id>org.springframework.boot:spring-boot-starter-logging:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot-starter-logging:3.2.3</id>
+                                            <id>ch.qos.logback:logback-classic:jar:1.5.6</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot-starter-tomcat:3.2.3</id>
+                                            <id>ch.qos.logback:logback-core:jar:1.5.6</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot-starter-web:3.2.3</id>
+                                            <id>org.apache.logging.log4j:log4j-to-slf4j:jar:2.23.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot-starter-websocket:3.2.3</id>
+                                            <id>org.apache.logging.log4j:log4j-api:jar:2.23.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot-starter:3.2.3</id>
+                                            <id>org.slf4j:jul-to-slf4j:jar:2.0.13</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>com.rabbitmq:amqp-client:5.21.0</id>
+                                            <id>jakarta.annotation:jakarta.annotation-api:jar:2.1.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework.boot:spring-boot:3.2.3</id>
+                                            <id>org.springframework.boot:spring-boot-starter-json:jar:3.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-context:6.1.4</id>
+                                            <id>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.17.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-core:6.1.4</id>
+                                            <id>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.17.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-expression:6.1.4</id>
+                                            <id>org.springframework.graphql:spring-graphql:jar:1.3.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>javax.websocket:javax.websocket-api:1.1</id>
+                                            <id>com.graphql-java:graphql-java:jar:22.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-jcl:6.1.4</id>
+                                            <id>com.graphql-java:java-dataloader:jar:3.3.0</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-messaging:6.1.4</id>
+                                            <id>org.reactivestreams:reactive-streams:jar:1.0.3</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-web:6.1.4</id>
+                                            <id>io.projectreactor:reactor-core:jar:3.6.7</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-webmvc:6.1.4</id>
+                                            <id>io.micrometer:context-propagation:jar:1.1.1</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.springframework:spring-websocket:6.1.4</id>
+                                            <id>dev.failsafe:failsafe:jar:3.3.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.tomcat.embed:tomcat-embed-core:10.1.19</id>
+                                            <id>org.apache.httpcomponents:httpclient-osgi:jar:4.5.13</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.tomcat.embed:tomcat-embed-el:10.1.19</id>
+                                            <id>org.apache.httpcomponents:httpclient:jar:4.5.13</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>org.apache.tomcat.embed:tomcat-embed-websocket:10.1.19</id>
+                                            <id>org.apache.httpcomponents:httpcore:jar:4.4.13</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>javax.measure:unit-api:2.2</id>
+                                            <id>commons-logging:commons-logging:jar:1.2</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>tech.uom.lib:uom-lib-common:2.2</id>
+                                            <id>commons-codec:commons-codec:jar:1.11</id>
                                             <override>true</override>
+                                            <source>true</source>
                                             <instructions>
                                                 <_noee>true</_noee>
                                             </instructions>
                                         </artifact>
-                                        <!-- specify your dependencies here
-                                         groupId:artifactId:version
                                         <artifact>
-                                            <id>com.google.guava:guava:jar:23.0</id>  Artifact with existing OSGi-Manifest
-                                             <transitive>false</transitive>
-                                             <source>true</source>
+                                            <id>org.apache.httpcomponents:httpmime:jar:4.5.13</id>
+                                            <override>true</override>
+                                            <source>true</source>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
+                                        <artifact>
+                                            <id>org.apache.httpcomponents:httpclient-cache:jar:4.5.13</id>
+                                            <override>true</override>
+                                            <source>true</source>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
                                         </artifact>
                                         <artifact>
-                                            <id>commons-io:commons-io:1.3</id>  Artifact without existing OSGi-Manifest
-                                        </artifact> -->
+                                            <id>org.apache.httpcomponents:fluent-hc:jar:4.5.13</id>
+                                            <override>true</override>
+                                            <source>true</source>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
+                                        <artifact>
+                                            <id>org.apache.commons:commons-exec:jar:1.4.0</id>
+                                            <override>true</override>
+                                            <source>true</source>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
                                     </artifacts>
-
                                 </feature>
-
                             </featureDefinitions>
+                            <skipInvalidArtifacts>true</skipInvalidArtifacts>
                         </configuration>
                     </execution>
                 </executions>
