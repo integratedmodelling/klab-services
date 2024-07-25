@@ -1,5 +1,7 @@
 package org.integratedmodelling.common.graph;
 
+import java.util.List;
+
 /**
  * Holds the record types corresponding to the GraphQL schema in resources.
  */
@@ -16,13 +18,13 @@ public class Graph {
 
     enum ObservationType {SUBJECT, STATE, PROCESS, OBSERVER, EVENT, RELATIONSHIP}
 
-    public record Link() {
+    public record Link(String sourceId, String targetId, LinkType type) {
     }
 
     public record Notification(Level level, String message, String mclass) {
     }
 
-    public record ResolutionTask() {
+    public record ResolutionTask(String id, Double start, Double end, Status status, List<Notification> notifications) {
     }
 
     public record Grid(int xCells, int yCells, double x1, double x2, double y1, double y2) {
@@ -42,15 +44,15 @@ public class Graph {
                               Observable semantics, Status resolution, Geometry observerGeometry) {
     }
 
-    public record ObservationInput() {
+    public record ObservationInput(String name, String observable, String geometry, String defaultValue, String observerGeometry) {
     }
 
-    public record Dataflow() {
+    public record Dataflow(String id, List<Actuator> actuators) {
     }
 
-    public record Actuator() {
+    public record Actuator(String id, Observable observable, List<Actuator> children) {
     }
 
-    public record ProvenanceNode() {
+    public record ProvenanceNode(String id) {
     }
 }

@@ -33,7 +33,6 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
         return List.of(KlabService.Type.RESOURCES, KlabService.Type.REASONER, KlabService.Type.RESOLVER);
     }
 
-
     @Override
     protected RuntimeService createPrimaryService(ServiceScope serviceScope,
                                                   ServiceStartupOptions options) {
