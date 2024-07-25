@@ -152,20 +152,6 @@
             <version>3.2.2</version>
         </dependency>
 
-
-        <!-- Unirest, while redundant with Spring templates, removes a lot of pain
-            when doing quick REST interactions. DEPRECATED - use Java HttpClient instead -->
-        <!--        <dependency>
-                    <groupId>com.konghq</groupId>
-                    <artifactId>unirest-java</artifactId>
-                    <version>3.13.6</version>
-                </dependency>
-                <dependency>
-                    <groupId>com.konghq</groupId>
-                    <artifactId>unirest-objectmapper-jackson</artifactId>
-                    <version>4.2.1</version>
-                </dependency>-->
-
         <!-- MapDB for various persistent caches. Simple, used it a lot, never
             a problem. -->
         <dependency>
@@ -297,23 +283,6 @@
             -->
             <version>${spring-boot.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-            <!--
-                        <exclusions>
-                            <exclusion>
-                                <groupId>org.springframework.boot</groupId>
-                                <artifactId>spring-boot-starter-tomcat</artifactId>
-                            </exclusion>
-                            <exclusion>
-                                <groupId>org.springframework.boot</groupId>
-                                <artifactId>spring-boot-starter-logging</artifactId>
-                            </exclusion>
-                        </exclusions>
-            -->
-            <version>${spring-boot.version}</version>
-        </dependency>
         <!-- GEOTOOLS mess starts -->
         <!-- <dependency> <groupId>org.geotools</groupId> <artifactId>gt-metadata</artifactId>
             <version>${geotools.version}</version> </dependency> -->
@@ -413,12 +382,6 @@
         <dependency>
             <groupId>org.integratedmodelling</groupId>
             <artifactId>klab.core.api</artifactId>
-            <version>${klab.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.core.common</artifactId>
             <version>${klab.version}</version>
             <scope>compile</scope>
         </dependency>

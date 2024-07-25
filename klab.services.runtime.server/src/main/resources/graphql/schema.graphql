@@ -1,0 +1,121 @@
+# Main query types
+
+type Query {
+    # all root observations in scope (including the observer)
+    observations: [Observation]!
+#    tasks: [ResolutionTask]!
+#    notifications(after: Int): [Notification]!
+}
+
+#type Mutation {
+#    # submit the data for an observation and obtain the observation ID, also the task ID of its resolution
+#    observe(observation: ObservationInput): String
+#}
+
+# ---- COMMON types
+
+enum Status { WAITING, STARTED, FINISHED, ABORTED }
+enum Level { DEBUG, INFO, WARNING, ERROR }
+enum SemanticType {QUALITY, AGENT, SUBJECT, FUNCTIONAL_RELATIONSHIP, STRUCTURAL_RELATIONSHIP, BOND, EVENT, PROCESS, CONFIGURATION}
+enum LinkType {CHILD, PARENT, OBSERVER}
+
+#type Link {
+#
+#    sourceId: String!
+#    targetID: String!
+#    type: LinkType!
+#}
+
+type Notification {
+    level: Level
+    message: String
+    mclass: String
+}
+
+# ----- OBSERVATION schema ------
+
+type Observation {
+    id: String!
+    name: String!
+    type: ObservationType!
+    geometry: Geometry!
+    semantics: Observable!
+    resolution: Status!
+    # if this is not null, the observation is an observer
+    observerGeometry: Geometry
+}
+
+#type ResolutionTask {
+#    # same as the ID of the observation being resolved
+#    id: String
+#    start: Float!
+#    end: Float
+#    status: Status!
+#    notifications: [Notification]!
+#}
+
+type Observable {
+    semantics: String!
+    collective: Boolean!
+    referenceName: String!
+    baseType: SemanticType!
+}
+
+type Geometry {
+    multiplicity: Int!
+    # mandatorily a WKB string
+    shape: String
+    grid: Grid
+    projection: String
+    time: Time
+}
+
+type Grid {
+    xCells: Int
+    yCells: Int
+    x1: Float
+    x2: Float
+    y1: Float
+    y2: Float
+}
+
+type Time {
+    # seconds from epoch (should be converted to long)
+    start: Float
+    # seconds from epoch (should be converted to long)
+    end: Float
+}
+
+enum ObservationType {SUBJECT, STATE, PROCESS, OBSERVER, EVENT, RELATIONSHIP}
+
+## ==== Input schema to create observations ====
+
+#input ObservationInput {
+#    name: String
+#    observable: String!
+#    geometry: String!
+#    # default value, optional, only for states, parsed from string according to semantics
+#    defaultValue: String
+#    observerGeometry: String
+#}
+
+# ----- DATAFLOW schema
+#
+#
+#type Dataflow {
+#    id: String!
+#}
+#
+#type Actuator {
+#    id: String!
+#    observable: Observable!
+#    children: [Actuator]!
+#}
+#
+## ------ PROVENANCE schema
+#
+#type ProvenanceNode {
+#    id: String!
+#}
+#
+#

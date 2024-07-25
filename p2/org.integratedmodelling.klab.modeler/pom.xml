@@ -56,6 +56,14 @@
                                             </instructions>
                                         </artifact>
                                         <artifact>
+                                            <id>org.integratedmodelling:klab.modeler:jar:0.11.0-SNAPSHOT</id>
+                                            <override>true</override>
+                                            <source>true</source>
+                                            <instructions>
+                                                <_noee>true</_noee>
+                                            </instructions>
+                                        </artifact>
+                                        <artifact>
                                             <id>org.jgrapht:jgrapht-core:jar:1.5.2</id>
                                             <override>true</override>
                                             <source>true</source>

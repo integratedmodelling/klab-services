@@ -2,12 +2,11 @@ package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import com.google.common.net.HttpHeaders;
 import jakarta.servlet.http.HttpServletRequest;
+import org.integratedmodelling.common.graph.Graph;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
-import org.integratedmodelling.klab.services.runtime.server.objects.Context;
-import org.integratedmodelling.klab.services.runtime.server.objects.ObservationInput;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -31,17 +30,6 @@ public class RuntimeServerContextController {
     @Autowired
     private HttpServletRequest request;
 
-    private List<Context> demoContexts = new ArrayList<>();
-
-    public RuntimeServerContextController() {
-        demoContexts.add(new Context("dio1", "dio uno", null, null));
-        demoContexts.add(new Context("dio2", "dio due", null, null));
-        demoContexts.add(new Context("dio3", "dio tre", null, null));
-        demoContexts.add(new Context("dio4", "dio quattro", null, null));
-        demoContexts.add(new Context("dio5", "dio cinque", null, null));
-        demoContexts.add(new Context("dio6", "dio sei", null, null));
-    }
-
     /**
      * Return the authorization including the scope referenced in the request
      *
@@ -54,18 +42,23 @@ public class RuntimeServerContextController {
         return authorizationManager.validateToken(authHeader, serverKey, observerToken);
     }
 
-    @QueryMapping("contexts")
-    public List<Context> contexts() {
-        return demoContexts;
+    @QueryMapping
+    public List<Graph.Observation> observations() {
+        return List.of();
     }
 
-    @QueryMapping("context")
-    public Context context() {
-        return demoContexts.get(2);
+    @QueryMapping
+    public Graph.ResolutionTask tasks() {
+        return null;
+    }
+
+    @QueryMapping
+    public List<Graph.Notification> notifications(@Argument int after) {
+        return List.of();
     }
 
     @MutationMapping
-    public String observe(@Argument(name = "observation") ObservationInput observation) {
+    public String observe(@Argument(name = "observation") Graph.ObservationInput observation) {
         return null;
     }
 

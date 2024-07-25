@@ -1,27 +1,22 @@
 package org.integratedmodelling.common.services.client.runtime;
 
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
+import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextRequest;
-import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
