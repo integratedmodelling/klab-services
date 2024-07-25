@@ -1,10 +1,14 @@
 # Main query types
 
 type Query {
-    # all root observations in scope (including the observer)
+    # all root observations in scope (including the observer) if at root level; children if in observation scope
     observations: [Observation]!
+    # The parent observation (null if not in observation scope)
+    parent: Observation
+    # All tasks in scope
     tasks: [ResolutionTask]!
-    notifications(after: Int): [Notification]!
+    # all notifications from tasks in this scope (and children) that happened after passed Epoch (a long in the API)
+    notifications(after: Float = 0): [Notification]!
 }
 
 type Mutation {
@@ -20,7 +24,6 @@ enum SemanticType {QUALITY, AGENT, SUBJECT, FUNCTIONAL_RELATIONSHIP, STRUCTURAL_
 enum LinkType {CHILD, PARENT, OBSERVER}
 
 type Link {
-
     sourceId: String!
     targetID: String!
     type: LinkType!
@@ -29,7 +32,8 @@ type Link {
 type Notification {
     level: Level
     message: String
-    mclass: String
+    mClass: String
+    taskId: String
 }
 
 # ----- OBSERVATION schema ------
@@ -43,6 +47,7 @@ type Observation {
     resolution: Status!
     # if this is not null, the observation is an observer
     observerGeometry: Geometry
+    nChildren: Int
 }
 
 type ResolutionTask {
@@ -52,6 +57,7 @@ type ResolutionTask {
     end: Float
     status: Status!
     notifications: [Notification]!
+    children: [ResolutionTask]!
 }
 
 type Observable {

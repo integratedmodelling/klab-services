@@ -29,6 +29,8 @@ import org.integratedmodelling.klab.api.knowledge.DataArtifact;
  * an abstract predicate. In that case, the state carries pure semantics and there is no storage of values; the
  * observable will be the logical OR of all the concrete concepts contextualized from the predicate.
  *
+ * TODO/FIXME we should just have getStorage() and move all the access methods there; storage == artifact
+ *
  * @author ferdinando.villa
  * @version $Id: $Id
  */

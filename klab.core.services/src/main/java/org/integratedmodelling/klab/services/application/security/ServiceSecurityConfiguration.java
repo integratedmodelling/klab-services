@@ -31,7 +31,7 @@ public class ServiceSecurityConfiguration {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**", "/graphql", "/graphiql", "/actuator/**",
+                        .requestMatchers("/public/**", "/dt", "/graphiql", "/actuator/**",
                                 "/swagger-ui/**", "/v3/api" +
                                         "-docs/**", "/v3/api-docs.yaml", "/api.html").permitAll()
                         .anyRequest().authenticated())

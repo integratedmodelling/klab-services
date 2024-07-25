@@ -189,9 +189,9 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * query, like in k.Explorer.
      * <p>
      * After this is called, the observation will be created and resolution started in the runtime service
-     * chosen at context creation. The ID in the returned {@link ResolutionTask} is the ID of the
-     * observation. If resolution fails, the observation will exist in an unresolved state; if any of these
-     * observations are of dependents, the context will be inconsistent.
+     * chosen at context creation. The ID in the returned {@link ResolutionTask} is the ID of the observation.
+     * If resolution fails, the observation will exist in an unresolved state; if any of these observations
+     * are of dependents, the context will be inconsistent.
      * <p>
      * Observables will be routinely specified through URNs, which will be validated as any observable object
      * - concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a
@@ -211,7 +211,11 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * If the observation is at root level, or connecting two root-level subject through a relationship, the
      * overall geometry of the context will be automatically adjusted.
      *
-     * @param observables URN(s) specifying resolvables, or direct objects that can be resolved and observed.
+     * @param observables URN(s) specifying resolvables, or direct objects that can be resolved and observed,
+     *                    such as observables, resources, geometries and resolvable k.IM syntactic objects.
+     *                    Nulls should be admitted and ignored. Two geometries will specify an observer (own
+     *                    and observed geometry, in the passed order) and the scope shouldn't have an observer
+     *                    set.
      * @return a future for the observation being contextualized. The associated ID can be used for inquiries
      * beyond the future's own API, such as retrieval of notifications.
      */

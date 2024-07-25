@@ -42,18 +42,11 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     private Ref agent;
     protected Scope parentScope;
     private Status status = Status.STARTED;
-
     private String id;
-
     private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
-
     private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
             Collections
                     .synchronizedMap(new HashMap<>());
-
-    //	private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
-    //	Collections
-    //			.synchronizedMap(new HashMap<>());
 
     public BiConsumer<Scope, Message>[] getListeners() {
         return listeners.toArray(new BiConsumer[]{});

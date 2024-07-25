@@ -33,10 +33,11 @@ public class ObservationImpl implements Observation {
     private static final long serialVersionUID = 8993700853991252827L;
 
     private Observable observable;
-    private Scale scale;
+    private Scale geometry;
     private Metadata metadata = Metadata.create();
     private String id;
     private String urn;
+    private boolean resolved;
 
     public ObservationImpl() {
     }
@@ -49,7 +50,7 @@ public class ObservationImpl implements Observation {
 
     @Override
     public Scale getGeometry() {
-        return this.scale;
+        return this.geometry;
     }
 
     @Override
@@ -180,21 +181,38 @@ public class ObservationImpl implements Observation {
     }
 
     @Override
-    public Space getSpace() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-//
-//    @Override
-//    public Version getVersion() {
-//        // TODO Auto-generated method stub
-//        return null;
-//    }
-
-    @Override
     public List<Annotation> getAnnotations() {
         // TODO Auto-generated method stub
         return null;
     }
 
+    public void setObservable(Observable observable) {
+        this.observable = observable;
+    }
+
+
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setUrn(String urn) {
+        this.urn = urn;
+    }
+
+    @Override
+    public boolean isResolved() {
+        return resolved;
+    }
+
+    public void setResolved(boolean resolved) {
+        this.resolved = resolved;
+    }
+
+    public void setGeometry(Scale geometry) {
+        this.geometry = geometry;
+    }
 }

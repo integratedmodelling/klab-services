@@ -7,6 +7,15 @@ import java.util.List;
  */
 public class Graph {
 
+    public interface Queries {
+        public static final String OBSERVE = """
+                mutation Observe {
+                    observe(observation: $observation)
+                }
+                """;
+    }
+
+
     enum Status {WAITING, STARTED, FINISHED, ABORTED}
 
     enum Level {DEBUG, INFO, WARNING, ERROR}
@@ -21,10 +30,10 @@ public class Graph {
     public record Link(String sourceId, String targetId, LinkType type) {
     }
 
-    public record Notification(Level level, String message, String mclass) {
+    public record Notification(Level level, String message, String mClass, String taskId) {
     }
 
-    public record ResolutionTask(String id, Double start, Double end, Status status, List<Notification> notifications) {
+    public record ResolutionTask(String id, Double start, Double end, Status status, List<Notification> notifications, List<ResolutionTask> children) {
     }
 
     public record Grid(int xCells, int yCells, double x1, double x2, double y1, double y2) {
@@ -41,7 +50,7 @@ public class Graph {
     }
 
     public record Observation(String id, String name, ObservationType type, Geometry geometry,
-                              Observable semantics, Status resolution, Geometry observerGeometry) {
+                              Observable semantics, Status resolution, Geometry observerGeometry, int nChildren) {
     }
 
     public record ObservationInput(String name, String observable, String geometry, String defaultValue, String observerGeometry) {

@@ -23,15 +23,18 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 
 /**
- * The interface Observation, which is the semantic equivalent of an Artifact and once created in a k.LAB session, can
- * be made reactive by supplementing it with a behavior. Models may bind instantiated observations to actor files that
- * will provide behaviors for their instances (or a subset thereof). Once made reactive, they can interact with each
- * other and the system.
+ * The interface Observation, which is the semantic equivalent of an Artifact and once created in a k.LAB
+ * session, can be made reactive by supplementing it with a behavior. Models may bind instantiated
+ * observations to actor files that will provide behaviors for their instances (or a subset thereof). Once
+ * made reactive, they can interact with each other and the system.
  * <p>
  * FIXME the API needs to lose a lot of weight
+ * <p>
+ * TODO we could just use Observation (abstract) + DirectObservation (rename to Substantial) and State, then
+ *  everything else is taken care of by the semantics (folder == getObservable().isCollective()), the DT
+ *  and its graph.
  *
  * @author ferdinando.villa
  * @version $Id: $Id
@@ -46,16 +49,16 @@ public interface Observation extends Knowledge, Artifact, Resolvable {
     Observable getObservable();
 
     /**
-     * The observer that/who made the observation. May be a simple identity (like the user in the main scope) or a
-     * DirectObservation from (this or another) scope, which also implements Identity. Never null.
+     * The observer that/who made the observation. May be a simple identity (like the user in the main scope)
+     * or a DirectObservation from (this or another) scope, which also implements Identity. Never null.
      *
      * @return
      */
     Identity getObserver();
 
     /**
-     * Return the scale where this is contextualized. It may differ from the scale of the context although the latter
-     * should always contain the scale of all observations and observers in it.
+     * Return the scale where this is contextualized. It may differ from the scale of the context although the
+     * latter should always contain the scale of all observations and observers in it.
      *
      * @return the observation's scale
      */
@@ -63,10 +66,19 @@ public interface Observation extends Knowledge, Artifact, Resolvable {
     Scale getGeometry();
 
     /**
-     * Return a view of this observation restricted to the passed locator, which is applied to the scale to obtain a new
-     * scale, used as a filter to obtain the view. The result should be able to handle both conformant scaling (e.g. fix
-     * one dimension) and non-conformant (i.e. one state maps to multiple ones with irregular extent coverage) in both
-     * reading and writing.
+     * True if the observation has been resolved. This will be false until the resolution task with the same
+     * ID has finished. Dependent observation that are unresolved make the context inconsistent. Substantials
+     * remain usable in an unresolved state.
+     *
+     * @return
+     */
+    boolean isResolved();
+
+    /**
+     * Return a view of this observation restricted to the passed locator, which is applied to the scale to
+     * obtain a new scale, used as a filter to obtain the view. The result should be able to handle both
+     * conformant scaling (e.g. fix one dimension) and non-conformant (i.e. one state maps to multiple ones
+     * with irregular extent coverage) in both reading and writing.
      *
      * @param locator
      * @return a rescaled view of this observation
@@ -74,76 +86,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable {
      */
     Observation at(Locator locator);
 
-//	/**
-//	 * Observation may have been made in the context of another direct observation.
-//	 * This will always return non-null in indirect observations, and may return
-//	 * null in direct ones when they represent the "root" context.
-//	 *
-//	 * @return the context for the observation, if any.
-//	 */
-//	DirectObservation getContext();
-
-//	/**
-//	 * True if our scale has an observation of space with more than one state value.
-//	 *
-//	 * @return true if distributed in space
-//	 */
-//	boolean isSpatiallyDistributed();
-//
-//	/**
-//	 * True if our scale has an observation of time with more than one state value.
-//	 *
-//	 * @return true if distributed in time.
-//	 */
-//	boolean isTemporallyDistributed();
-//
-//	/**
-//	 * True if our scale has any implementation of time.
-//	 *
-//	 * @return if time is known
-//	 */
-//	boolean isTemporal();
-//
-//	/**
-//	 * True if our scale has any implementation of space.
-//	 *
-//	 * @return if space is known
-//	 */
-//	boolean isSpatial();
-
-    /**
-     * Return the spatial extent, or null.
-     *
-     * @return the observation of space
-     */
-    Space getSpace();
-
-//	/**
-//	 * Return true if this observation has changes that happened after
-//	 * initialization. Note that it is not guaranteed that a dynamic observation
-//	 * knows it's dynamic before changes are reported, so observations may start
-//	 * static and become dynamic later.
-//	 *
-//	 * @return
-//	 */
-//	boolean isDynamic();
-
-//	/**
-//	 * Time of creation according to context time, not to be confused with the
-//	 * system creation time returned by {@link #getTimestamp()}.
-//	 *
-//	 * @return the time of creation
-//	 */
-//	long getCreationTime();
-
-//	/**
-//	 * Time of "exit", i.e. end of life of the observation according to context
-//	 * time. If the context has no time or the object is current, this is -1L.
-//	 *
-//	 * @return the time of exit
-//	 */
-//
-//	long getExitTime();
 
     static Observation EMPTY_OBSERVATION = new ObservationImpl() {
 

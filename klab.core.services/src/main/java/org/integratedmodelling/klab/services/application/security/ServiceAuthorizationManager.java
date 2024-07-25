@@ -280,6 +280,7 @@ public class ServiceAuthorizationManager {
             anonymous user case also intercepts JWT token failure
              */
             ret = new EngineAuthorization("nohub", "anonymous", List.of(), null);
+            ret.setTokenString(ServicesAPI.ANONYMOUS_TOKEN);
         }
 
         if (privilegedLocalService) {

@@ -6,10 +6,11 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import java.util.concurrent.Future;
 
 /**
- * The observation future that tracks resolution in the runtime.
+ * The observation future that tracks resolution in the runtime and the return value of
+ * {@link org.integratedmodelling.klab.api.scope.ContextScope#observe(Object...)}.
  * <p>
- * TODO add methods to subscribe to task-related notifications at client side. These could use messaging or
- *  polling.
+ * Resolution tasks may have children, which are accounted for in the resolution graph in the digital twin so
+ * there is no getChildren() method. A task isn't complete until all of its children are.
  */
 public interface ResolutionTask extends Future<Observation> {
 

@@ -4,6 +4,11 @@ import com.google.common.net.HttpHeaders;
 import jakarta.servlet.http.HttpServletRequest;
 import org.integratedmodelling.common.graph.Graph;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
 import org.integratedmodelling.klab.services.runtime.server.RuntimeServer;
@@ -42,7 +47,7 @@ public class RuntimeServerContextController {
         return authorizationManager.validateToken(authHeader, serverKey, observerToken);
     }
 
-    @QueryMapping
+    @QueryMapping("observations")
     public List<Graph.Observation> observations() {
         return List.of();
     }
@@ -53,13 +58,21 @@ public class RuntimeServerContextController {
     }
 
     @QueryMapping
-    public List<Graph.Notification> notifications(@Argument(name="after") int after) {
+    public List<Graph.Notification> notifications(@Argument(name="after") float after) {
         return List.of();
     }
 
     @MutationMapping
     public String observe(@Argument(name = "observation") Graph.ObservationInput observation) {
-        return null;
+        var authorization = getAuthorization();
+        var scope = authorization.getScope(ContextScope.class);
+        var observable = scope.getService(Reasoner.class).resolveObservable(observation.observable());
+        var geometry = Geometry.create(observation.geometry());
+        var pod = observation.defaultValue() == null ? null : Utils.Data.asPOD(observation.defaultValue());
+        var observerGeometry = observation.observerGeometry() == null ? null : Geometry.create(observation.observerGeometry());
+        var task = authorization.getScope(ContextScope.class).observe(observation.name(), geometry,
+                observable, pod, observerGeometry);
+        return task.getId();
     }
 
 }

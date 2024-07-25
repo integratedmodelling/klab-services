@@ -1,9 +1,13 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -74,6 +78,11 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public ResolutionTask observe(Object... observables) {
+
+        var runtime = getService(RuntimeService.class);
+
+        var taskId = runtime.observe(this, observables);
+
         return null;
     }
 

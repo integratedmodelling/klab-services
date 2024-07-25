@@ -218,4 +218,10 @@ public class RuntimeService extends BaseService
         throw new KlabIllegalArgumentException("unexpected scope class");
     }
 
+    @Override
+    public String observe(ContextScope scope, Object... resolvables) {
+        // TODO this is the actual shit. Talk to the actor in the scope.
+        return "";
+    }
+
 }

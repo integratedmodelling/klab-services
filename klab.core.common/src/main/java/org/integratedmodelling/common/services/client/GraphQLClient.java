@@ -4,7 +4,9 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.springframework.graphql.client.GraphQlClient;
 import org.springframework.graphql.client.HttpSyncGraphQlClient;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -24,6 +26,23 @@ public class GraphQLClient {
                                                   .build();
     }
 
+    private GraphQlClient.RequestSpec request(String query, Scope scope, Object... arguments) {
+        var scopeToken = scope instanceof SessionScope sessionScope ? sessionScope.getId() : null;
+        var authToken = scope.getIdentity().getId();
+        var client = this.graphQlClient;
+        if (scopeToken != null) {
+            client = client.mutate().header(ServicesAPI.SCOPE_HEADER,  scopeToken).build();
+        }
+        if (authToken != null) {
+            client = client.mutate().header(HttpHeaders.AUTHORIZATION,  authToken).build();
+        }
+        var request = client.document(query);
+        if (arguments != null && arguments.length > 0) {
+            request = request.variables(Utils.Maps.makeKeyMap(arguments));
+        }
+        return request;
+    }
+
     /**
      *
      * @param query
@@ -34,23 +53,15 @@ public class GraphQLClient {
      * @param <T>
      */
     public <T> T query(String query, String target, Class<T> resultClass, Scope scope, Object... arguments) {
-        var scopeToken = scope instanceof SessionScope sessionScope ? sessionScope.getId() : null;
-        var client = this.graphQlClient;
-        if (scopeToken != null) {
-            client = client.mutate().header(ServicesAPI.SCOPE_HEADER,  scopeToken).build();
-        }
-        var request = client.document(query);
-        if (arguments != null && arguments.length > 0) {
-            request = request.variables(Utils.Maps.makeKeyMap(arguments));
-        }
-        return request.retrieveSync(target).toEntity(resultClass);
+        return request(query, scope, arguments).retrieveSync(target).toEntity(resultClass);
     }
 
-    public <T> List<T> queryList(String query, Class<T> resultClass, Scope scope, Object... arguments) {
-        return null;
+    public <T> List<T> queryList(String query, String target, Class<T> resultClass, Scope scope, Object... arguments) {
+        return request(query, scope, arguments).retrieveSync(target).toEntityList(resultClass);
     }
 
     /**
+     * Single response, no target argument
      *
      * @param query
      * @param resultClass
@@ -59,12 +70,9 @@ public class GraphQLClient {
      * @return
      * @param <T>
      */
-    public <T> T mutate(String query, Class<T> resultClass, Scope scope, Object... arguments) {
-        return null;
+    public <T> T query(String query, Class<T> resultClass, Scope scope, Object... arguments) {
+        return request(query, scope, arguments).executeSync().toEntity(resultClass);
     }
 
-    public <T> List<T> mutateList(String query, Class<T> resultClass, Scope scope, Object... arguments) {
-        return null;
-    }
 
 }
