@@ -12,11 +12,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.*;
+import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.collections.Literal;
-import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.collections.*;
 import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
@@ -36,6 +34,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -63,29 +62,40 @@ public class JacksonConfiguration {
             ret.setValueType(p.getCodec().treeToValue(node.get("valueType"), ValueType.class));
             switch (ret.getValueType()) {
                 case ANNOTATION:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case ANYTHING:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case ANYTRUE:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case ANYVALUE:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case BOOLEAN:
                     ret.setValue(node.get("value").asBoolean());
                     break;
                 case CALLCHAIN:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case COMPONENT:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case DATE:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case EMPTY:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case ERROR:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case EXPRESSION:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case LIST:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case CONSTANT:
                 case STRING:
@@ -101,30 +111,40 @@ public class JacksonConfiguration {
                     ret.setValue(Utils.Json.asMap(node.get("value")));
                     break;
                 case NODATA:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case NUMBER, DOUBLE:
                     ret.setValue(node.get("value").asDouble());
                     break;
                 case OBJECT:
+                    System.out.println("BINGO BONGO " + ret.getValueType() + node.get("value").toPrettyString());
                     break;
                 case OBSERVABLE:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case OBSERVATION:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case QUANTITY:
+                    ret.setValue(p.getCodec().treeToValue(node.get("value"), QuantityImpl.class));
                     break;
                 case RANGE:
                     ret.setValue(p.getCodec().treeToValue(node.get("value"), NumericRangeImpl.class));
                     break;
                 case SET:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case TABLE:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case TREE:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case TYPE:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case CONCEPT:
+                    System.out.println("BINGO BONGO " + ret.getValueType());
                     break;
                 case INTEGER:
                     ret.setValue(node.get("value").asInt());
@@ -330,14 +350,14 @@ public class JacksonConfiguration {
         mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
         SimpleModule module = new SimpleModule();
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
-                                      Repository.class, Project.Manifest.class,
+                                      Repository.class, Project.Manifest.class, Identifier.class,
                                       Triple.class, Unit.class, Project.class, KlabAsset.class,
                                       Currency.class, Message.class, Worldview.class, Workspace.class,
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,
                                       KimNamespace.class, KimObservationStrategyDocument.class,
                                       KdlDataflow.class, KActorsBehavior.class, KimModel.class,
                                       KimSymbolDefinition.class, Contextualizable.class,
-                                      KimConcept.class, KimObservable.class, /*KimInstance.class,*/
+                                      KimConcept.class, KimObservable.class, Quantity.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());

@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.lang.kim;
 
 import org.integratedmodelling.klab.api.collections.Literal;
+import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 
 import java.io.Serial;

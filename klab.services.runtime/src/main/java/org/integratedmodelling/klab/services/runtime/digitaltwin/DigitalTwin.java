@@ -692,9 +692,9 @@ public class DigitalTwin implements Closeable {
         logicalStructure.addEdge(childArtifact, parentArtifact);
     }
 
-    public void add(Observation v) {
+    private void add(Observation v) {
         physicalStructure.addVertex(v);
-        if (!(v instanceof ObservationGroup)) {
+        if (!(v.getObservable().isCollective())) {
             logicalStructure.addVertex(v);
         }
     }

@@ -39,10 +39,9 @@ public class ObservableBuildStrategy implements Observable.Builder {
     // all the methods codified as an enum
     public enum OperationType {
         OF, WITH,/* WITHIN, */GOAL, FROM, TO, WITH_ROLE, AS, WITH_TRAITS, WITHOUT, WITHOUT_ANY_CONCEPTS, WITHOUT_ANY_TYPES, ADJACENT,
-        COOCCURRENT,
-        WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR, LINKING, NAMED,
-        WITH_DISTRIBUTED_INHERENCY, WITHOUT_VALUE_OPERATORS, AS_OPTIONAL, WITHOUT_ROLES,
-        WITH_TEMPORAL_INHERENT, WITH_DEREIFIED_ATTRIBUTE, REFERENCE_NAMED, WITH_INLINE_VALUE,
+        COOCCURRENT, COLLECTIVE,
+        WITH_UNIT, WITH_CURRENCY, WITH_RANGE, WITH_VALUE_OPERATOR, LINKING, NAMED, WITHOUT_VALUE_OPERATORS, AS_OPTIONAL, WITHOUT_ROLES,
+        WITH_TEMPORAL_INHERENT, REFERENCE_NAMED, WITH_INLINE_VALUE,
         WITH_DEFAULT_VALUE, WITH_RESOLUTION_EXCEPTION, AS_GENERIC, WITH_ANNOTATION, AS_DESCRIPTION_TYPE
     }
 
@@ -434,12 +433,12 @@ public class ObservableBuildStrategy implements Observable.Builder {
         this.operations.add(new Operation(OperationType.NAMED, name));
         return this;
     }
-
-    @Override
-    public Builder withDistributedInherency(boolean ofEach) {
-        this.operations.add(new Operation(OperationType.WITH_DISTRIBUTED_INHERENCY, ofEach));
-        return this;
-    }
+//
+//    @Override
+//    public Builder withDistributedInherency(boolean ofEach) {
+//        this.operations.add(new Operation(OperationType.WITH_DISTRIBUTED_INHERENCY, ofEach));
+//        return this;
+//    }
 
     @Override
     public Builder withoutValueOperators() {
@@ -471,11 +470,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Builder withDereifiedAttribute(String dereifiedAttribute) {
-        this.operations.add(new Operation(OperationType.WITH_DEREIFIED_ATTRIBUTE, dereifiedAttribute));
-        return this;
-    }
+//    @Override
+//    public Builder withDereifiedAttribute(String dereifiedAttribute) {
+//        this.operations.add(new Operation(OperationType.WITH_DEREIFIED_ATTRIBUTE, dereifiedAttribute));
+//        return this;
+//    }
 
     @Override
     public Builder named(String name, String referenceName) {
@@ -523,6 +522,12 @@ public class ObservableBuildStrategy implements Observable.Builder {
     @Override
     public Builder generic(boolean generic) {
         this.operations.add(new Operation(OperationType.AS_GENERIC, generic));
+        return this;
+    }
+
+    @Override
+    public Builder collective(boolean collective) {
+        this.operations.add(new Operation(OperationType.COLLECTIVE, collective));
         return this;
     }
 

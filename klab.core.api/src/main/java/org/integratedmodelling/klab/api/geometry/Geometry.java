@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.geometry;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.ExtentDimension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -382,4 +383,8 @@ public interface Geometry extends Serializable, Locator {
      */
     boolean infiniteTime();
 
-}
+
+    static GeometryBuilder builder() {
+        return new GeometryBuilder();
+    }
+ }

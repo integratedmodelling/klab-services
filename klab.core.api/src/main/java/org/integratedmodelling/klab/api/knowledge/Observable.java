@@ -274,13 +274,13 @@ public interface Observable extends Semantics, Resolvable {
          */
         Builder named(String name);
 
-        /**
-         * Set the flag that signifies distributed inherency (of each).
-         *
-         * @param ofEach
-         * @return
-         */
-        Builder withDistributedInherency(boolean ofEach);
+//        /**
+//         * Set the flag that signifies distributed inherency (of each).
+//         *
+//         * @param ofEach
+//         * @return
+//         */
+//        Builder withDistributedInherency(boolean ofEach);
 
         /**
          * Remove any value operators
@@ -326,14 +326,7 @@ public interface Observable extends Semantics, Resolvable {
          */
         Builder withTemporalInherent(Concept concept);
 
-        /**
-         * Add the dereified attribute to the observable. Will only affect the computations built from it
-         * after it's resolved.
-         *
-         * @param dereifiedAttribute
-         * @return
-         */
-        Builder withDereifiedAttribute(String dereifiedAttribute);
+
 
         /**
          * Set both the name and the reference name, to preserve a previous setting
@@ -396,6 +389,14 @@ public interface Observable extends Semantics, Resolvable {
          * @return
          */
         Builder generic(boolean generic);
+
+        /**
+         * Make this observable collective. Must be a substantial.
+         *
+         * @param collective
+         * @return
+         */
+        Builder collective(boolean collective);
 
         /**
          * Add an annotation to the result observable.
@@ -560,14 +561,23 @@ public interface Observable extends Semantics, Resolvable {
     Collection<Pair<Concept, Concept>> getSpecializedComponents();
 
     /**
+     * Collective observables have <code>each</code> in front of their declaration and specify the
+     * instantiation of substantials. The same observable without <code>each</code> specifies its
+     * resolution.
+     *
      * @return
      */
-    String getDereifiedAttribute();
+    boolean isCollective();
 
-    /**
-     * @return
-     */
-    boolean isDistributedInherency();
+//    /**
+//     * @return
+//     */
+//    String getDereifiedAttribute();
+
+//    /**
+//     * @return
+//     */
+//    boolean isDistributedInherency();
 
 
     public static Observable promote(Concept concept) {

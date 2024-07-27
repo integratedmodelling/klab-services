@@ -53,7 +53,7 @@ public abstract class H2Kbox {
 		try {
 			database = H2Database.create(name);
 		} catch (Throwable t) {
-			System.out.println("DIO MAIALE");
+			System.out.println("DIO MAIALE " + t.getMessage()) ;
 		}
 	}
 

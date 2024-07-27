@@ -6,7 +6,6 @@ public interface KimLiteral extends KimAsset {
 
     ValueType getValueType();
 
-    <T> T get(Class<? extends T> valueClass);
-
+    <T> T getUnparsedValue(Class<? extends T> valueClass);
 
 }

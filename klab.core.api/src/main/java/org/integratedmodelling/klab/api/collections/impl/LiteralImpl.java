@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
@@ -53,8 +54,14 @@ public class LiteralImpl implements Literal {
             return ValueType.LIST;
         } else if (o instanceof Observation) {
             return ValueType.OBSERVATION;
+        } else if (o instanceof Quantity) {
+            return ValueType.QUANTITY;
         }
         // TODO continue
+
+        System.out.println("PORCO FUNGO NON SO CHE CAZZO È: " + (o == null ? null :
+                                                                 o.getClass().getCanonicalName()));
+
         return o == null ? ValueType.NODATA : ValueType.OBJECT;
     }
 

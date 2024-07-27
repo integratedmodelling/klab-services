@@ -1074,9 +1074,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
 
             if (operator.getSecond().getValueType() == ValueType.CONCEPT) {
-                ret.append(conceptDisplayName(operator.getSecond().get(Concept.class)));
+                var concept = operator.getSecond().get(KimConcept.class);
+                ret.append(conceptDisplayName(declareConcept(concept)));
             } else if (operator.getSecond().getValueType() == ValueType.OBSERVABLE) {
-                ret.append(observableDisplayName(operator.getSecond().get(Observable.class)));
+                var observable = operator.getSecond().get(KimObservable.class);
+                ret.append(observableDisplayName(declareObservable(observable)));
             } else {
                 ret.append("_").append(operator.getSecond().get(Object.class).toString().replace(' ', '_'));
             }
@@ -2095,9 +2097,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                                                       new Concept[]{other});
         }
 
-        if (concept.getDistributedInherent() != null) {
-            builder.withDistributedInherency(true);
-        }
+//        if (concept.getDistributedInherent() != null) {
+//            builder.withDistributedInherency(true);
+//        }
 
         /*
          * transformations first
@@ -2140,11 +2142,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         if (concept.getGoal() != null) {
             Concept c = declareInternal(concept.getGoal(), ontology, monitor);
             if (c != null) {
-                if (SemanticRole.GOAL.equals(concept.getDistributedInherent())) {
-                    builder.of(c);
-                } else {
+//                if (SemanticRole.GOAL.equals(concept.getDistributedInherent())) {
+//                    builder.of(c);
+//                } else {
                     builder.withGoal(c);
-                }
+//                }
             }
         }
         if (concept.getCooccurrent() != null) {
@@ -2455,10 +2457,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return observationReasoner.inferStrategies(observable, scope);
     }
 
-    @Override
-    public boolean hasDistributedInherency(Concept c) {
-        return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
-    }
+//    @Override
+//    public boolean hasDistributedInherency(Concept c) {
+//        return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
+//    }
 
     @Override
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
@@ -2591,9 +2593,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 case NAMED -> {
                     ret = ret.named(op.getPod().get(String.class));
                 }
-                case WITH_DISTRIBUTED_INHERENCY -> {
-                    ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
-                }
+//                case WITH_DISTRIBUTED_INHERENCY -> {
+//                    ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
+//                }
                 case WITHOUT_VALUE_OPERATORS -> {
                     ret = ret.withoutValueOperators();
                 }
@@ -2606,14 +2608,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 case WITH_TEMPORAL_INHERENT -> {
                     ret = ret.withTemporalInherent(op.getConcepts().get(0));
                 }
-                case WITH_DEREIFIED_ATTRIBUTE -> {
-                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
-                }
+//                case WITH_DEREIFIED_ATTRIBUTE -> {
+//                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
+//                }
                 case REFERENCE_NAMED -> {
                     ret = ret.withReferenceName(op.getPod().get(String.class));
                 }
                 case WITH_INLINE_VALUE -> {
                     ret = ret.withInlineValue(op.getPod().get(Object.class));
+                }
+                case COLLECTIVE -> {
+                    ret = ret.collective(op.getPod().get(Boolean.class));
                 }
                 case WITH_DEFAULT_VALUE -> {
                     ret = ret.withDefaultValue(op.getPod().get(Object.class));

@@ -361,11 +361,11 @@ public abstract class ObservableKbox extends H2Kbox {
                     Concept candidate = conceptHash.get(def);
                     boolean ok = true;
 
-                    if (candidate.is(SemanticType.PREDICATE)) {
-                        // inherency must align with the resolution mode
-                        boolean hasDistributedInherency = scope.getService(Reasoner.class).hasDistributedInherency(candidate);
-                        ok = (hasDistributedInherency && instantiation) || (!hasDistributedInherency && !instantiation);
-                    }
+//                    if (candidate.is(SemanticType.PREDICATE)) {
+//                        // inherency must align with the resolution mode
+//                        boolean hasDistributedInherency = scope.getService(Reasoner.class).hasDistributedInherency(candidate);
+//                        ok = (hasDistributedInherency && instantiation) || (!hasDistributedInherency && !instantiation);
+//                    }
                     if (ok) {
                         ret.add(candidate);
                     }

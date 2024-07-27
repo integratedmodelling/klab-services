@@ -47,7 +47,7 @@ public class RuntimeServerContextController {
         return authorizationManager.validateToken(authHeader, serverKey, observerToken);
     }
 
-    @QueryMapping("observations")
+    @QueryMapping
     public List<Graph.Observation> observations() {
         return List.of();
     }

@@ -539,11 +539,11 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         return null;
     }
 
-    @Override
-    public boolean hasDistributedInherency(Concept c) {
-        // TODO Auto-generated method stub
-        return false;
-    }
+//    @Override
+//    public boolean hasDistributedInherency(Concept c) {
+//        // TODO Auto-generated method stub
+//        return false;
+//    }
 
     @Override
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> type) {

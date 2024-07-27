@@ -15,6 +15,8 @@ import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.springframework.util.StringUtils;
@@ -39,6 +41,7 @@ public class ObservableImpl implements Observable {
 //    private Resolution resolution;
     private boolean optional;
     private boolean generic;
+    private boolean collective;
     private Collection<ResolutionException> resolutionExceptions = EnumSet.noneOf(ResolutionException.class);
     private Literal defaultValue;
     private Literal value;
@@ -48,8 +51,8 @@ public class ObservableImpl implements Observable {
     private String referenceName;
     private String name;
     private String namespace;
-    private boolean distributedInherency;
-    private String dereifiedAttribute;
+//    private boolean distributedInherency;
+//    private String dereifiedAttribute;
     private Metadata metadata = Metadata.create();
 
     transient Knowledge resolving;
@@ -105,8 +108,8 @@ public class ObservableImpl implements Observable {
         this.referenceName = other.referenceName;
         this.name = other.name;
         this.namespace = other.namespace;
-        this.distributedInherency = other.distributedInherency;
-        this.dereifiedAttribute = other.dereifiedAttribute;
+//        this.distributedInherency = other.distributedInherency;
+//        this.dereifiedAttribute = other.dereifiedAttribute;
         this.metadata.putAll(other.metadata);
     }
 
@@ -316,21 +319,23 @@ public class ObservableImpl implements Observable {
     @Override
     public String displayName() {
 
-        String ret = getSemantics().displayName();
+        StringBuilder ret = new StringBuilder(getSemantics().displayName());
 
         for (Pair<ValueOperator, Literal> operator : getValueOperators()) {
 
-            ret += StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_'));
+            ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
 
             if (operator.getSecond().getValueType() == ValueType.CONCEPT) {
-                ret += operator.getSecond().get(Concept.class).displayName();
+                // FIXME use displayName for the associated concept! needs the service
+                ret.append(operator.getSecond().get(KimConcept.class).getName());
             } else if (operator.getSecond().getValueType() == ValueType.OBSERVABLE) {
-                ret += operator.getSecond().get(Observable.class).displayName();
+                // FIXME use displayName for the associated observable! needs the service
+                ret.append(operator.getSecond().get(KimObservable.class).getCodeName());
             } else {
-                ret += "_" + operator.getSecond().get(Object.class).toString().replace(' ', '_');
+                ret.append("_").append(operator.getSecond().get(Object.class).toString().replace(' ', '_'));
             }
         }
-        return ret;
+        return ret.toString();
     }
 
     @Override
@@ -395,24 +400,24 @@ public class ObservableImpl implements Observable {
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-
-    @Override
-    public boolean isDistributedInherency() {
-        return distributedInherency;
-    }
-
-    public void setDistributedInherency(boolean distributedInherency) {
-        this.distributedInherency = distributedInherency;
-    }
-
-    @Override
-    public String getDereifiedAttribute() {
-        return dereifiedAttribute;
-    }
-
-    public void setDereifiedAttribute(String dereifiedAttribute) {
-        this.dereifiedAttribute = dereifiedAttribute;
-    }
+//
+//    @Override
+//    public boolean isDistributedInherency() {
+//        return distributedInherency;
+//    }
+//
+//    public void setDistributedInherency(boolean distributedInherency) {
+//        this.distributedInherency = distributedInherency;
+//    }
+//
+//    @Override
+//    public String getDereifiedAttribute() {
+//        return dereifiedAttribute;
+//    }
+//
+//    public void setDereifiedAttribute(String dereifiedAttribute) {
+//        this.dereifiedAttribute = dereifiedAttribute;
+//    }
 
     public void setSemantics(Concept semantics) {
         this.semantics = semantics;
@@ -458,14 +463,14 @@ public class ObservableImpl implements Observable {
         this.metadata = metadata;
     }
 
-    // @Override
-    // public String getModelReference() {
-    // return modelReference;
-    // }
-    //
-    // public void setModelReference(String modelReference) {
-    // this.modelReference = modelReference;
-    // }
+    @Override
+    public boolean isCollective() {
+        return collective;
+    }
+
+    public void setCollective(boolean collective) {
+        this.collective = collective;
+    }
 
     @Override
     public int hashCode() {

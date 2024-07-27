@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @author ferdinando.villa
  *
  */
-public interface Quantity extends Literal {
+public interface Quantity  {
 	
 	/**
 	 * May be an integer or a double.

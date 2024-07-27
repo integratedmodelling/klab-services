@@ -67,9 +67,9 @@ public class ObservableBuilder implements Observable.Builder {
     private Unit unit;
     private Currency currency;
     private List<Annotation> annotations = new ArrayList<>();
-    private String dereifiedAttribute;
+//    private String dereifiedAttribute;
     private boolean isTrivial = true;
-    private boolean distributedInherency = false;
+//    private boolean distributedInherency = false;
     private KimConcept declaration;
     private boolean axiomsAdded = false;
     private String referenceName = null;
@@ -78,6 +78,7 @@ public class ObservableBuilder implements Observable.Builder {
     Object inlineValue;
     NumericRange range;
     boolean generic;
+    private boolean collective;
 
     private Literal defaultValue = null;
     private Set<Observable.ResolutionException> resolutionExceptions = EnumSet
@@ -892,6 +893,11 @@ public class ObservableBuilder implements Observable.Builder {
          */
         String rId = "";
 
+        if (collective) {
+            cId = cDs = "Each";
+            rId = "each_";
+        }
+
         if (traits != null && traits.size() > 0) {
 
             for (Concept t : traits) {
@@ -973,9 +979,9 @@ public class ObservableBuilder implements Observable.Builder {
                 var removeme = reasoner.compatible(inherent, other);
             }
             cleanId = getCleanId(inherent);
-            cId += (distributedInherency ? "OfEach" : "Of") + cleanId;
-            cDs += (distributedInherency ? "OfEach" : "Of") + cleanId;
-            rId += (distributedInherency ? "_of_each_" : "_of_") + inherent.getReferenceName();
+            cId += "Of" + cleanId;
+            cDs += "Of" + cleanId;
+            rId += "_of_" + inherent.getReferenceName();
         }
 
 //        if (context != null) {
@@ -1165,9 +1171,9 @@ public class ObservableBuilder implements Observable.Builder {
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY, cDs));
         axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cId));
         axioms.add(Axiom.SubClass(main.getNamespace() + ":" + main.getName(), conceptId));
-        if (distributedInherency) {
-            axioms.add(Axiom.AnnotationAssertion(conceptId, NS.INHERENCY_IS_DISTRIBUTED, "true"));
-        }
+//        if (distributedInherency) {
+//            axioms.add(Axiom.AnnotationAssertion(conceptId, NS.INHERENCY_IS_DISTRIBUTED, "true"));
+//        }
 
         /*
          * add the core observable concept ID using NS.CORE_OBSERVABLE_PROPERTY
@@ -1407,9 +1413,9 @@ public class ObservableBuilder implements Observable.Builder {
         ret.setOptional(this.optional);
         // ret.setMustContextualizeAtResolution(mustContextualize);
         ret.getAnnotations().addAll(annotations);
-        ret.setDistributedInherency(distributedInherency);
+//        ret.setDistributedInherency(distributedInherency);
         // ret.setTemporalInherent(temporalInherent);
-        ret.setDereifiedAttribute(this.dereifiedAttribute);
+//        ret.setDereifiedAttribute(this.dereifiedAttribute);
         // ret.setDereified(this.dereified);
         ret.setGeneric(this.generic);
         // ret.setGlobal(this.global);
@@ -1493,11 +1499,11 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-    @Override
-    public Observable.Builder withDistributedInherency(boolean b) {
-        this.distributedInherency = b;
-        return this;
-    }
+//    @Override
+//    public Observable.Builder withDistributedInherency(boolean b) {
+//        this.distributedInherency = b;
+//        return this;
+//    }
 
     @Override
     public Observable.Builder withValueOperator(ValueOperator operator, Object operand) {
@@ -1517,11 +1523,11 @@ public class ObservableBuilder implements Observable.Builder {
 //        return this;
 //    }
 
-    @Override
-    public Observable.Builder withDereifiedAttribute(String dereifiedAttribute) {
-        this.dereifiedAttribute = dereifiedAttribute;
-        return this;
-    }
+//    @Override
+//    public Observable.Builder withDereifiedAttribute(String dereifiedAttribute) {
+//        this.dereifiedAttribute = dereifiedAttribute;
+//        return this;
+//    }
 
     public boolean axiomsAdded() {
         return this.axiomsAdded;
@@ -1566,6 +1572,12 @@ public class ObservableBuilder implements Observable.Builder {
     @Override
     public Observable.Builder generic(boolean generic) {
         this.generic = generic;
+        return this;
+    }
+
+    @Override
+    public Observable.Builder collective(boolean collective) {
+        this.collective = collective;
         return this;
     }
 

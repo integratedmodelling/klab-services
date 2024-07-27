@@ -15,13 +15,12 @@ public class KimLiteralImpl extends KimAssetImpl implements KimLiteral {
      * @param o
      * @return
      */
-//    public static KimLiteralImpl of(Object o) {
-//        KimLiteralImpl ret = new KimLiteralImpl();
-//        ret.value = o;
-//        ret.valueType = classifyLiteral(o);
-//        return ret;
-//    }
-
+    //    public static KimLiteralImpl of(Object o) {
+    //        KimLiteralImpl ret = new KimLiteralImpl();
+    //        ret.value = o;
+    //        ret.valueType = classifyLiteral(o);
+    //        return ret;
+    //    }
     public static ValueType classifyLiteral(Object o) {
         return LiteralImpl.classifyLiteral(o);
     }
@@ -33,7 +32,7 @@ public class KimLiteralImpl extends KimAssetImpl implements KimLiteral {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T get(Class<? extends T> valueClass) {
+    public <T> T getUnparsedValue(Class<? extends T> valueClass) {
         return (T) value;
     }
 
@@ -50,7 +49,8 @@ public class KimLiteralImpl extends KimAssetImpl implements KimLiteral {
     }
 
     /**
-     * Classifies and returns a literal for the passed object.
+     * Classifies and returns an "unparsed" version of the literal for the passed object. The return value
+     * must unparse recursively in case of a collection or map.
      *
      * @param o
      * @return

@@ -12,6 +12,10 @@ import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -30,6 +34,7 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
+import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
 import org.integratedmodelling.klab.modeler.model.NavigableProject;
 import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
@@ -37,6 +42,7 @@ import org.integratedmodelling.klab.modeler.views.controllers.*;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +63,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     File workbenchDefinition;
     private Map<String, URL> serviceUrls = new HashMap<>();
     private Geometry focalGeometry = Geometry.EMPTY;
-    
+
     public ModelerImpl() {
         super();
         // read the workbench config
@@ -183,31 +189,35 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
             currentContext = createContext(currentSession, "Default context");
 
-            /*
-            TODO make observer and set it into the context
-             */
-
         }
 
-        ResolutionRequest request = null;
+        /* TODO handle observer, if not there make it and set it into the context. The logic should be
+        *   configurable and specific of the modeler, no defaults should be used in the runtime. */
 
+
+        List<Object> resolvables = new ArrayList<>();
+
+        /**
+         * Assets are observed by URN unless they're models or observation definitions
+         */
         if (asset instanceof NavigableAsset navigableAsset) {
-            var workspace = navigableAsset.parent(NavigableWorkspace.class);
-            if (workspace != null) {
-                var serviceUrl = workspace.getMetadata().get(Metadata.KLAB_SERVICE_URL);
-                if (serviceUrl != null) {
 
+            if (navigableAsset instanceof NavigableKlabStatement statement) {
+                var delegate = statement.getDelegate();
+                if (delegate instanceof KimModel || (delegate instanceof KimSymbolDefinition definition &&
+                        "observation".equals(definition.getDefineClass()))) {
+                    resolvables.add(delegate);
+                } else if (delegate instanceof KimConceptStatement conceptStatement) {
+                    resolvables.add(conceptStatement.getNamespace() + ":" + conceptStatement.getUrn());
+                } else if (delegate instanceof KimObservable conceptStatement) {
+                    resolvables.add(conceptStatement.getUrn());
                 }
             }
         } else if (asset instanceof String || asset instanceof Urn) {
-            String urn = asset.toString();
+            resolvables.add(asset.toString());
         }
 
-        if (request != null) {
-            /*
-                send the request with the context, get a dataflow
-             */
-        }
+        currentContext.observe(resolvables.toArray());
 
     }
 
@@ -244,8 +254,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public void deleteProject(String projectUrl) {
 
         if (getUI() != null) {
-            if (!getUI().confirm(Notification.create("Confirm unrecoverable deletion of project " + projectUrl +
-                    "?"))) {
+            if (!getUI().confirm(Notification.create("Confirm unrecoverable deletion of project " + projectUrl + "?"))) {
                 return;
             }
         }
@@ -266,8 +275,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public void deleteAsset(NavigableAsset asset) {
 
         if (getUI() != null) {
-            if (!getUI().confirm(Notification.create("Confirm unrecoverable deletion of " + asset.getUrn() +
-                    "?"))) {
+            if (!getUI().confirm(Notification.create("Confirm unrecoverable deletion of " + asset.getUrn() + "?"))) {
                 return;
             }
         }
@@ -276,8 +284,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
                 var project = asset.parent(NavigableProject.class);
-                var ret = admin.deleteDocument(project.getUrn(), asset.getUrn(),
-                        scope());
+                var ret = admin.deleteDocument(project.getUrn(), asset.getUrn(), scope());
                 handleResultSets(ret);
             });
         } else if (getUI() != null) {
@@ -329,8 +336,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
             Thread.ofVirtual().start(() -> {
-                var changes = admin.createDocument(projectName, newDocumentUrn, documentType,
-                        scope());
+                var changes = admin.createDocument(projectName, newDocumentUrn, documentType, scope());
                 if (changes != null) {
                     for (var change : changes) {
                         dispatch(this, UIEvent.WorkspaceModified, change);
@@ -354,9 +360,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             engine.setDefaultService(service);
         } else {
             engine().serviceScope().warn("Modeler: request to set default service wasn't honored " +
-                    "because " +
-                    "the engine " +
-                    "implementation is overridden");
+                    "because " + "the engine " + "implementation is overridden");
         }
     }
 

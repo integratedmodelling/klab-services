@@ -57,6 +57,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.While;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
@@ -994,7 +995,7 @@ public class KActorsVM implements VM {
                 ret = arg.getStatedValue().get(Quantity.class);
                 break;
             case OBSERVABLE:
-                ret = arg.getStatedValue().get(Observable.class);
+                ret = arg.getStatedValue().get(KimObservable.class);
                 break;
             case ERROR:
                 throw arg.getStatedValue() instanceof Throwable

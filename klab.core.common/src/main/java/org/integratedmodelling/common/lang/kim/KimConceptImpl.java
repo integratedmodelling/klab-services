@@ -43,18 +43,18 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private KimConcept adjacent;
     private String codeName;
     private KimConcept temporalInherent;
-    private SemanticRole distributedInherent;
+//    private SemanticRole distributedInherent;
 //    private Version version;
     private boolean collective;
 
-    @Override
-    public SemanticRole getDistributedInherent() {
-        return distributedInherent;
-    }
+//    @Override
+//    public SemanticRole getDistributedInherent() {
+//        return distributedInherent;
+//    }
 
-    public void setDistributedInherent(SemanticRole distributedInherent) {
-        this.distributedInherent = distributedInherent;
-    }
+//    public void setDistributedInherent(SemanticRole distributedInherent) {
+//        this.distributedInherent = distributedInherent;
+//    }
 
     public Set<SemanticType> getArgumentType() {
         return argumentType;
@@ -100,7 +100,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.adjacent = other.adjacent;
         this.codeName = other.codeName;
         this.temporalInherent = other.temporalInherent;
-        this.distributedInherent = other.distributedInherent;
+//        this.distributedInherent = other.distributedInherent;
         this.argumentType = EnumSet.copyOf(other.argumentType);
     }
 
@@ -563,7 +563,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
 //		}
 
         if (inherent != null) {
-            ret += " of " + (distributedInherent == null ? "" : "each ") + ((KimConceptImpl) inherent).computeUrn();
+            ret += " of " + ((KimConceptImpl) inherent).computeUrn();
             complex = true;
         }
 

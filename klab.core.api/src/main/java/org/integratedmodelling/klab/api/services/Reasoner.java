@@ -465,13 +465,13 @@ public interface Reasoner extends KlabService {
      */
     boolean hasParentRole(Semantics o1, Concept t);
 
-    /**
-     * True if the concept was declared with distributed inherency (<code>of each</code>)
-     *
-     * @param c
-     * @return
-     */
-    boolean hasDistributedInherency(Concept c);
+//    /**
+//     * True if the concept was declared with distributed inherency (<code>of each</code>)
+//     *
+//     * @param c
+//     * @return
+//     */
+//    boolean hasDistributedInherency(Concept c);
 
     /**
      * Like {@link #traits(Semantics)} but only returns the traits directly attributed to this concept.

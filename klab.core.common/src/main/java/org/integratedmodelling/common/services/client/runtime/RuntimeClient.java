@@ -7,6 +7,7 @@ import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.geometry.impl.GeometryBuilder;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
@@ -138,20 +139,51 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 //                            step: 1.day
 //                        }
                         var definition = symbol.getValue().get(Map.class);
+                        name = symbol.getName();
                         if (definition.containsKey("semantics")) {
-
+                            observable = scope.getService(Reasoner.class).resolveObservable(definition.get("semantics").toString());
+                        }
+                        if (definition.containsKey("space") || definition.containsKey("time")) {
+                            var geometryBuilder = Geometry.builder();
+                            if (definition.containsKey("space")) {
+                                var spaceBuilder = geometryBuilder.space();
+                                if (definition.get("space") instanceof Map<?,?> spaceDefinition) {
+                                    if (spaceDefinition.containsKey("shape")) {
+                                        spaceBuilder.shape(spaceDefinition.get("shape").toString());
+                                    }
+                                    if (spaceDefinition.containsKey("grid")) {
+                                        spaceBuilder.resolution(spaceDefinition.get("grid").toString());
+                                    }
+                                    // TODO add bounding box etc
+                                }
+                                geometryBuilder = spaceBuilder.build();
+                            }
+                            if (definition.containsKey("time")) {
+                                var timeBuilder = geometryBuilder.time();
+                                if (definition.get("time") instanceof Map<?,?> timeDefinition) {
+                                    if (timeDefinition.containsKey("year")) {
+                                        // TODO everything
+                                    }
+                                }
+                                geometryBuilder = timeBuilder.build();
+                            }
+                            geometry = geometryBuilder.build();
                         }
 
                     }
                 } else if (o instanceof KimModel model) {
                     // send the model URN and extract the observable
+                    observable =  scope.getService(Reasoner.class).declareObservable(model.getObservables().get(0));
+                    modelUrn = model.getUrn();
                 }
             }
         }
 
-        // if we have no geometry and it's a dependent, use the observer's scale if any, otherwise empty is OK
+        // TODO ensure we have all info to proceed
 
-        // if we have no name, use the observable
+        // TODO if we have no geometry and it's a dependent, use the observer's scale if any, otherwise empty is OK
+
+        // TODO if we have no name, use the observable
 
         /*
         build a mutation query and send to the digital twin endpoint of the runtime

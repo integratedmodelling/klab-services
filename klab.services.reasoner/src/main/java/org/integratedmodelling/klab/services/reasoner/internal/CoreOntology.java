@@ -162,8 +162,8 @@ public class CoreOntology {
         public static final String IS_TYPE_DELEGATE = "odo:isTypeDelegate";
         public static final String IS_NEGATION_OF = "odo:isNegationOf";
 
-        @Deprecated
-        public static final String INHERENCY_IS_DISTRIBUTED = "odo:inherencyIsDistributed";
+//        @Deprecated
+//        public static final String INHERENCY_IS_DISTRIBUTED = "odo:inherencyIsDistributed";
 //        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
 //        public static final String IS_CORE_KIM_TYPE = "observation:isCoreKimType";
 

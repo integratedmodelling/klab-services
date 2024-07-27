@@ -3,10 +3,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 import org.integratedmodelling.klab.api.collections.Literal;
 
 /**
- * The syntactic peer of a k.IM 'define' statement. These are only inserted in the statement list to navigate
- * the statements; the actual objects used, potentially translated to instance implementations according to
- * their class, are stored in the namespace after parsing, accessible through
- * {@link KimNamespace#getDefines()}.
+ * The syntactic peer of a k.IM 'define' statement.
  *
  * @author ferdinando.villa
  */
@@ -36,8 +33,10 @@ public interface KimSymbolDefinition extends KlabStatement {
     /**
      * Can currently be the content of a  ParsedObject of various types. Converting to the object specified by
      * {@link #getDefineClass()}, if any, if done at the point of use.
+     * <p>
+     * Use {@link KimLiteral#getUnparsedValue(Class)} to "unparse" recursively to a POD object,
      *
-     * @return the value defined in the code
+     * @return the value defined in the code as a parsed KimLiteral
      */
     Literal getValue();
 

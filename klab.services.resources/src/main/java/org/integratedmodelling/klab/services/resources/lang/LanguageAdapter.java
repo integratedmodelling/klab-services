@@ -1,18 +1,20 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
+import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.kim.*;
+import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.languages.api.*;
+
 
 import java.util.*;
 
@@ -25,31 +27,6 @@ public enum LanguageAdapter {
 
     Map<String, Instance> instanceAnnotations = new HashMap<>();
     Map<String, Class<?>> instanceImplementations = new HashMap<>();
-
-    /**
-     * Generic adapter for values, normally literals but possibly other objects. Only handles specific cases
-     * and throws feces if abused.
-     *
-     * @param value
-     * @return
-     */
-    private Object unparse(ParsedObject value) {
-
-        var ret = switch (value) {
-            case ParsedLiteral literal -> adaptLiteral(literal);
-            case ObservableSyntax observable -> adaptObservable(observable);
-            case SemanticSyntax semanticSyntax -> adaptSemantics(semanticSyntax);
-            case null -> null;
-            default ->
-                    throw new KlabIllegalArgumentException("Unexpected argument to LanguageAdapter:adapt: " + value.getClass().getCanonicalName());
-        };
-
-        if (ret instanceof KimLiteral literal) {
-            ret = literal.get(Object.class);
-        }
-
-        return ret;
-    }
 
     public boolean registerInstanceClass(Instance annotation, Class<?> annotated) {
 
@@ -112,12 +89,13 @@ public enum LanguageAdapter {
 
         for (var restriction : semantics.getRestrictions()) {
             switch (restriction.getFirst()) {
-                case OF, OF_EACH -> {
+                case OF -> {
                     // TODO
                     ret.setInherent(adaptSemantics(restriction.getSecond().get(0)));
-                    if (restriction.getFirst() == SemanticSyntax.BinaryOperator.OF_EACH) {
-                        ret.setDistributedInherent(SemanticRole.INHERENT);
-                    }
+                    //                    if (restriction.getFirst() == SemanticSyntax.BinaryOperator
+                    //                    .OF_EACH) {
+                    //                        ret.setDistributedInherent(SemanticRole.INHERENT);
+                    //                    }
                 }
                 case FOR -> {
                     ret.setGoal(adaptSemantics(restriction.getSecond().get(0)));
@@ -190,7 +168,6 @@ public enum LanguageAdapter {
     }
 
     private KlabStatement adaptDefine(DefineSyntax define, KimNamespace namespace) {
-
         KimSymbolDefinitionImpl ret = new KimSymbolDefinitionImpl();
         ret.setDeprecated(define.getDeprecation() != null);
         ret.setDefineClass(define.getInstanceClass());
@@ -199,33 +176,67 @@ public enum LanguageAdapter {
         ret.setName(define.getName());
         ret.setLength(define.getCodeLength());
         ret.setNamespace(namespace.getUrn());
-
-        var value = unparse(define.getValue());
-        if (value != null) {
-            // FIXME this should be done at the point of use
-//            if (define.getInstanceClass() != null) {
-//                var implementationClass = instanceImplementations.get(define.getInstanceClass());
-//                if (implementationClass == null) {
-//                    namespace.getNotifications().add(Notification.create("", Notification.Level.Error,
-//                            asLexicalContext(define)));
-//                } else {
-//                    // pass the object through the constructor
-//                    var constructor = ConstructorUtils.getMatchingAccessibleConstructor(implementationClass,
-//                            value.getClass());
-//                    if (constructor != null) {
-//                        try {
-//                            value = constructor.newInstance(value);
-//                        } catch (Throwable e) {
-//                            throw new RuntimeException(e);
-//                        }
-//                    }
-//                }
-//            }
-            ret.setValue(Literal.of(value));
-        }
-
+        ret.setValue(Literal.of(adaptValue(define.getValue())));
         return ret;
     }
+
+    /**
+     * Adapt any value that can be part of a literal, recursively unparsing its contents. We only keep the
+     * syntactic info for the top-level object.
+     *
+     * @param value
+     * @return
+     */
+    private Object adaptValue(Object value) {
+
+        if (value == null) {
+            return null;
+        }
+
+        Object object = value;
+        if (object instanceof ParsedLiteral parsedLiteral) {
+            if (parsedLiteral.isIdentifier()) {
+                return Identifier.create(parsedLiteral.getPod().toString());
+            }
+            if (parsedLiteral.getCurrency() != null || parsedLiteral.getUnit() != null) {
+                QuantityImpl ret = new QuantityImpl();
+                ret.setCurrency(parsedLiteral.getCurrency());
+                ret.setUnit(parsedLiteral.getUnit());
+                ret.setValue(parsedLiteral.getPod() instanceof Number number ? number : 0);
+                return ret;
+            }
+            object = adaptValue(parsedLiteral.getPod());
+            if (object == null) {
+                return null;
+            }
+        } else if (object instanceof Literal literal) {
+            object = literal.get(Object.class);
+        }
+
+        return switch (object) {
+            case Map<?, ?> map -> {
+                var ret = new LinkedHashMap<Object, Object>();
+                for (Object key : map.keySet()) {
+                    ret.put(key, adaptValue(map.get(key)));
+                }
+                yield ret;
+            }
+            case Collection<?> collection -> {
+                var ret = new ArrayList<>();
+                for (Object item : collection) {
+                    ret.add(adaptValue(item));
+                }
+                yield ret;
+            }
+            case ObservableSyntax observableSyntax -> {
+                yield adaptObservable(observableSyntax);
+            }
+            default -> {
+                yield object;
+            }
+        };
+    }
+
 
     private Notification.LexicalContext asLexicalContext(ParsedObject object) {
         // TODO
@@ -481,12 +492,45 @@ public enum LanguageAdapter {
         }
         return ret;
     }
+//
+//    private Object adaptLiteral(Literal literal) {
+//        if (literal.getBoolean() != null) {
+//            return literal.getBoolean();
+//        } else if (literal.getId() != null) {
+//            return Identifier.create(literal.getId());
+//        } else if (literal.getList() != null) {
+//            List<Object> ret = new ArrayList<>();
+//            for (var o : literal.getList().getContents()) {
+//                ret.add(adaptLiteral(o));
+//            }
+//        } else if (literal.getMap() != null) {
+//
+//            for (var entry : literal.getMap().getEntries()) {
+//            }
+//
+//        } else if (literal.getNumber() != null) {
+//
+//        } else if (literal.getObservable() != null) {
+//
+//        } else if (literal.getQuantity() != null) {
+//
+//        } else if (literal.getRangeMax() != null) {
+//
+//        } else if (literal.getString() != null) {
+//
+//        }
+//        return null;
+//    }
 
     private KimLiteral adaptLiteral(ParsedLiteral let) {
         if (let.getCurrency() != null) {
             // TODO return a KimQuantity
         } else if (let.getUnit() != null) {
             // TODO return a KimQuantity
+        } else if (let.getPod() instanceof Map<?, ?> map) {
+
+        } else if (let.getPod() instanceof Collection<?> collection) {
+
         }
         return KimLiteralImpl.of(let.getPod());
     }

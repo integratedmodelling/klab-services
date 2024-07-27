@@ -169,15 +169,15 @@ public interface KimConcept extends KlabStatement {
      */
     KimConcept getTemporalInherent();
 
-    /**
-     * Distributed inherency is when either the inherent or the context are specified as distributed with an
-     * <code>each</code> keyword. This matters for attribute observations as it discriminates between
-     * resolvers and classifiers. The role returned should be either null, CONTEXT or INHERENT; when not null,
-     * the corresponding concepts must be directly specified..
-     *
-     * @return
-     */
-    SemanticRole getDistributedInherent();
+//    /**
+//     * Distributed inherency is when either the inherent or the context are specified as distributed with an
+//     * <code>each</code> keyword. This matters for attribute observations as it discriminates between
+//     * resolvers and classifiers. The role returned should be either null, CONTEXT or INHERENT; when not null,
+//     * the corresponding concepts must be directly specified..
+//     *
+//     * @return
+//     */
+//    SemanticRole getDistributedInherent();
 
 
 }
