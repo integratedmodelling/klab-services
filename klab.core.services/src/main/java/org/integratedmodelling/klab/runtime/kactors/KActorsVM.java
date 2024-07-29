@@ -992,10 +992,10 @@ public class KActorsVM implements VM {
                 ret = arg.getConstructor();
                 break;
             case QUANTITY:
-                ret = arg.getStatedValue().get(Quantity.class);
+                ret = arg.getStatedValue();
                 break;
             case OBSERVABLE:
-                ret = arg.getStatedValue().get(KimObservable.class);
+                ret = arg.getStatedValue();
                 break;
             case ERROR:
                 throw arg.getStatedValue() instanceof Throwable
@@ -1056,7 +1056,7 @@ public class KActorsVM implements VM {
                 break;
             case LIST:
                 ret = new ArrayList<Object>();
-                for (Object o : arg.getStatedValue().get(Collection.class)) {
+                for (Object o : ((Collection<?>)arg.getStatedValue())) {
                     ((List<Object>) ret).add(o instanceof KActorsValue ? evaluateInScope((KActorsValue) o,
                             scope) : o);
                 }
@@ -1071,7 +1071,7 @@ public class KActorsVM implements VM {
                 // TODO eval all args
                 break;
             case URN:
-                ret = new Urn(arg.getStatedValue().get(String.class));
+                ret = new Urn(arg.getStatedValue().toString());
                 break;
             case CALLCHAIN:
                 ret = executeFunctionChain(arg.getCallChain(), scope.getBehavior(), scope);
@@ -1079,17 +1079,17 @@ public class KActorsVM implements VM {
             case LOCALIZED_KEY:
 
                 if (scope.getLocalizedSymbols() != null) {
-                    ret = scope.getLocalizedSymbols().get(arg.getStatedValue().get(String.class));
+                    ret = scope.getLocalizedSymbols().get(arg.getStatedValue().toString());
                 }
                 if (ret == null) {
                     // ensure invariance in copies of the behavior
-                    ret = "#" + arg.getStatedValue().get(Object.class);
+                    ret = "#" + arg.getStatedValue();
                     // .capitalize(arg.getStatedValue().toString().toLowerCase().replace("__",
                     // ":").replace("_", " "));
                 }
                 break;
             default:
-                ret = arg.getStatedValue().get(Object.class);
+                ret = arg.getStatedValue();
         }
 
         if (arg.getExpressionType() == ExpressionType.TERNARY_OPERATOR) {
@@ -1777,7 +1777,7 @@ public class KActorsVM implements VM {
 
             case ANNOTATION:
                 for (Annotation annotation : Utils.Annotations.collectAnnotations(value)) {
-                    if (annotation.getName().equals(kvalue.getStatedValue().get(String.class))) {
+                    if (annotation.getName().equals(kvalue.getStatedValue().toString())) {
                         scope.getSymbolTable().put(annotation.getName(), annotation);
                         return true;
                     }
@@ -1810,8 +1810,8 @@ public class KActorsVM implements VM {
                 System.out.println("ACH AN EXPRESSION");
                 break;
             case IDENTIFIER:
-                if (scope.getSymbolTable().containsKey(kvalue.getStatedValue().get(String.class))) {
-                    return kvalue.getStatedValue().get(String.class).equals(scope.getSymbolTable().get(value));
+                if (scope.getSymbolTable().containsKey(kvalue.getStatedValue().toString())) {
+                    return kvalue.getStatedValue().toString().equals(scope.getSymbolTable().get(value));
                 }
                 if (!notMatch(value)) {
                     // NO - if defined in scope, match to its value, else just return true.
@@ -1830,7 +1830,7 @@ public class KActorsVM implements VM {
             case NODATA:
                 return value == null || value instanceof Number && Double.isNaN(((Number) value).doubleValue());
             case NUMBER:
-                return value instanceof Number && value.equals(kvalue.getStatedValue().get(Number.class));
+                return value instanceof Number num && num.equals(kvalue.getStatedValue());
             case NUMBERED_PATTERN:
                 break;
             case OBSERVABLE:
@@ -1851,12 +1851,12 @@ public class KActorsVM implements VM {
             case REGEXP:
                 break;
             case STRING:
-                return value instanceof String && value.equals(kvalue.getStatedValue().get(String.class));
+                return value instanceof String && value.equals(kvalue.getStatedValue().toString());
             case TABLE:
                 break;
             case TYPE:
-                return value != null && (kvalue.getStatedValue().get(String.class).equals(value.getClass().getCanonicalName())
-                        || kvalue.getStatedValue().get(String.class)
+                return value != null && (kvalue.getStatedValue().toString().equals(value.getClass().getCanonicalName())
+                        || kvalue.getStatedValue().toString()
                                  .equals(Utils.Paths.getLast(value.getClass().getCanonicalName(), '.')));
             case URN:
                 break;
@@ -1870,8 +1870,8 @@ public class KActorsVM implements VM {
                 break;
             case CONSTANT:
                 return (value instanceof Enum
-                        && ((Enum<?>) value).name().toUpperCase().equals(kvalue.getStatedValue().get(String.class)))
-                        || (value instanceof String && value.equals(kvalue.getStatedValue().get(String.class)));
+                        && ((Enum<?>) value).name().toUpperCase().equals(kvalue.getStatedValue().toString()))
+                        || (value instanceof String && value.equals(kvalue.getStatedValue().toString()));
             case EMPTY:
                 return value == null || (value instanceof Collection && ((Collection<?>) value).isEmpty())
                         || (value instanceof String && ((String) value).isEmpty())

@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Literal;
+//import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
@@ -446,7 +446,7 @@ public interface Observable extends Semantics, Resolvable {
     /**
      * @return
      */
-    List<Pair<ValueOperator, Literal>> getValueOperators();
+    List<Pair<ValueOperator, Object>> getValueOperators();
 
     /**
      * Each observable must be able to quickly assess the type of the description (observation activity) that
@@ -495,7 +495,7 @@ public interface Observable extends Semantics, Resolvable {
      *
      * @return
      */
-    Literal getValue();
+    Object getValue();
 
     /**
      * If a default value was defined for a quality observable, it is returned here. It will be applied
@@ -503,7 +503,7 @@ public interface Observable extends Semantics, Resolvable {
      *
      * @return
      */
-    Literal getDefaultValue();
+    Object getDefaultValue();
 
     /**
      * Resolution exceptions linked to the use of a stated default value.

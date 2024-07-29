@@ -1,35 +1,27 @@
 package org.integratedmodelling.common.data.jackson;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
-import org.integratedmodelling.common.lang.QuantityImpl;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.collections.*;
-import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
+import org.integratedmodelling.klab.api.collections.Identifier;
+import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
-import org.integratedmodelling.klab.api.data.ValueType;
-import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
-import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Group;
-import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -40,121 +32,124 @@ import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
-import org.integratedmodelling.common.logging.Logging;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.net.URI;
+import java.net.URL;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class JacksonConfiguration {
 
     public static final String CLASS_FIELD = "@CLASS";
 
-    static class LiteralDeserializer extends JsonDeserializer<Literal> {
-
-        @Override
-        public Literal deserialize(JsonParser p, DeserializationContext ctxt) throws IOException,
-                JsonProcessingException {
-            LiteralImpl ret = new LiteralImpl();
-            JsonNode node = p.getCodec().readTree(p);
-            ret.setValueType(p.getCodec().treeToValue(node.get("valueType"), ValueType.class));
-            switch (ret.getValueType()) {
-                case ANNOTATION:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case ANYTHING:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case ANYTRUE:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case ANYVALUE:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case BOOLEAN:
-                    ret.setValue(node.get("value").asBoolean());
-                    break;
-                case CALLCHAIN:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case COMPONENT:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case DATE:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case EMPTY:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case ERROR:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case EXPRESSION:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case LIST:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case CONSTANT:
-                case STRING:
-                case CLASS:
-                case IDENTIFIER:
-                case LOCALIZED_KEY:
-                case REGEXP:
-                case NUMBERED_PATTERN:
-                case URN:
-                    ret.setValue(node.get("value").asText());
-                    break;
-                case MAP:
-                    ret.setValue(Utils.Json.asMap(node.get("value")));
-                    break;
-                case NODATA:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case NUMBER, DOUBLE:
-                    ret.setValue(node.get("value").asDouble());
-                    break;
-                case OBJECT:
-                    System.out.println("BINGO BONGO " + ret.getValueType() + node.get("value").toPrettyString());
-                    break;
-                case OBSERVABLE:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case OBSERVATION:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case QUANTITY:
-                    ret.setValue(p.getCodec().treeToValue(node.get("value"), QuantityImpl.class));
-                    break;
-                case RANGE:
-                    ret.setValue(p.getCodec().treeToValue(node.get("value"), NumericRangeImpl.class));
-                    break;
-                case SET:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case TABLE:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case TREE:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case TYPE:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case CONCEPT:
-                    System.out.println("BINGO BONGO " + ret.getValueType());
-                    break;
-                case INTEGER:
-                    ret.setValue(node.get("value").asInt());
-                    break;
-                default:
-                    break;
-            }
-            return ret;
-        }
-    }
+    //    static class LiteralDeserializer extends JsonDeserializer<Literal> {
+    //
+    //        @Override
+    //        public Literal deserialize(JsonParser p, DeserializationContext ctxt) throws IOException,
+    //                JsonProcessingException {
+    //            LiteralImpl ret = new LiteralImpl();
+    //            JsonNode node = p.getCodec().readTree(p);
+    //            ret.setValueType(p.getCodec().treeToValue(node.get("valueType"), ValueType.class));
+    //            switch (ret.getValueType()) {
+    //                case ANNOTATION:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case ANYTHING:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case ANYTRUE:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case ANYVALUE:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case BOOLEAN:
+    //                    ret.setValue(node.get("value").asBoolean());
+    //                    break;
+    //                case CALLCHAIN:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case COMPONENT:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case DATE:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case EMPTY:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case ERROR:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case EXPRESSION:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case LIST:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case CONSTANT:
+    //                case STRING:
+    //                case CLASS:
+    //                case IDENTIFIER:
+    //                case LOCALIZED_KEY:
+    //                case REGEXP:
+    //                case NUMBERED_PATTERN:
+    //                case URN:
+    //                    ret.setValue(node.get("value").asText());
+    //                    break;
+    //                case MAP:
+    //                    ret.setValue(Utils.Json.asMap(node.get("value")));
+    //                    break;
+    //                case NODATA:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case NUMBER, DOUBLE:
+    //                    ret.setValue(node.get("value").asDouble());
+    //                    break;
+    //                case OBJECT:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType() + node.get("value")
+    //                    .toPrettyString());
+    //                    break;
+    //                case OBSERVABLE:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case OBSERVATION:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case QUANTITY:
+    //                    ret.setValue(p.getCodec().treeToValue(node.get("value"), QuantityImpl.class));
+    //                    break;
+    //                case RANGE:
+    //                    ret.setValue(p.getCodec().treeToValue(node.get("value"), NumericRangeImpl.class));
+    //                    break;
+    //                case SET:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case TABLE:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case TREE:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case TYPE:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case CONCEPT:
+    //                    System.out.println("BINGO BONGO " + ret.getValueType());
+    //                    break;
+    //                case INTEGER:
+    //                    ret.setValue(node.get("value").asInt());
+    //                    break;
+    //                default:
+    //                    break;
+    //            }
+    //            return ret;
+    //        }
+    //    }
 
     @SuppressWarnings("rawtypes")
     static class PolymorphicSerializer<T> extends JsonSerializer<T> {
@@ -206,7 +201,7 @@ public class JacksonConfiguration {
         public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode node = p.getCodec().readTree(p);
             try {
-                return (T) deserialize(node, p, (Field)null);
+                return (T) deserialize(node, p, (Field) null);
             } catch (Exception e) {
                 e.printStackTrace();
                 throw new KlabIOException(e);
@@ -311,7 +306,9 @@ public class JacksonConfiguration {
 
         private Object checkField(Class<?> type, Object val) {
 
-            if (type.isEnum() && val instanceof String) {
+            if (type.equals(Object.class)) {
+                return val;
+            } else if (type.isEnum() && val instanceof String) {
                 val = Enum.valueOf((Class<? extends Enum>) type, (String) val);
             } else if ((type == Long.class || type == long.class) && val instanceof Integer integer) {
                 val = integer.longValue();
@@ -356,14 +353,15 @@ public class JacksonConfiguration {
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,
                                       KimNamespace.class, KimObservationStrategyDocument.class,
                                       KdlDataflow.class, KActorsBehavior.class, KimModel.class,
-                                      KimSymbolDefinition.class, Contextualizable.class,
+                                      KimSymbolDefinition.class, Contextualizable.class, Identifier.class,
                                       KimConcept.class, KimObservable.class, Quantity.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
             module.addDeserializer(cls, new PolymorphicDeserializer<>());
         }
-        module.addDeserializer(Literal.class, new LiteralDeserializer());
+        //        module.addSerializer(Literal.class, new PolymorphicSerializer<>());
+        //        module.addDeserializer(Literal.class, new LiteralDeserializer());
 
         mapper.registerModule(module);
         mapper.registerModule(new ParameterNamesModule());

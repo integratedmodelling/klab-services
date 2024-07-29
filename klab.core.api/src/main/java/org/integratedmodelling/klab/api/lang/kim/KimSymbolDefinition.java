@@ -1,7 +1,5 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.Literal;
-
 /**
  * The syntactic peer of a k.IM 'define' statement.
  *
@@ -38,6 +36,6 @@ public interface KimSymbolDefinition extends KlabStatement {
      *
      * @return the value defined in the code as a parsed KimLiteral
      */
-    Literal getValue();
+    Object getValue();
 
 }

@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api;
 
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
@@ -137,7 +136,7 @@ public enum Klab {
 
         Model.Builder getModelBuilder(Resource resource);
 
-        Model.Builder getModelBuilder(Literal value);
+        Model.Builder getModelBuilder(Object value);
 
         Model.Builder getModelLearner(String outputResourceUrn);
 

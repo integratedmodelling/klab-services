@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -181,7 +180,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         private boolean negated;
         private KimObservable match;
         private ServiceCall function;
-        private Literal literal;
+        private Object literal;
 
         @Override
         public boolean isNegated() {
@@ -199,7 +198,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         }
 
         @Override
-        public Literal getLiteral() {
+        public Object getLiteral() {
             return this.literal;
         }
 
@@ -215,7 +214,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
             this.function = function;
         }
 
-        public void setLiteral(Literal literal) {
+        public void setLiteral(Object literal) {
             this.literal = literal;
         }
     }

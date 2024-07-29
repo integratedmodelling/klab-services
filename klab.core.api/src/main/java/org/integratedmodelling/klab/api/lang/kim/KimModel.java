@@ -1,6 +1,5 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;

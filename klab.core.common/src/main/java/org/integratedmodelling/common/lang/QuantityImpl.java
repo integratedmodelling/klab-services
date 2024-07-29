@@ -1,18 +1,18 @@
 package org.integratedmodelling.common.lang;
 
-import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.lang.Quantity;
 
-public class QuantityImpl extends LiteralImpl implements Quantity {
+public class QuantityImpl implements Quantity {
 
     private static final long serialVersionUID = -4049367875348743501L;
 
     private String unit;
     private String currency;
+    private Number value;
 
     @Override
     public Number getValue() {
-        return (Number)super.getValue();
+        return value;
     }
 
     @Override
@@ -26,7 +26,7 @@ public class QuantityImpl extends LiteralImpl implements Quantity {
     }
 
     public void setValue(Number value) {
-        super.setValue(value);
+        this.value = value;
     }
 
     public void setUnit(String unit) {

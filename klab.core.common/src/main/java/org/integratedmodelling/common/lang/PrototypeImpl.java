@@ -1,17 +1,5 @@
 package org.integratedmodelling.common.lang;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.documentation.Documentation;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -23,6 +11,10 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabAnnotation;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
 import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.logging.Level;
 
 public class PrototypeImpl implements Prototype {
 
@@ -41,7 +33,7 @@ public class PrototypeImpl implements Prototype {
         private boolean artifact;
         private boolean expression;
         private boolean parameter;
-        private Literal defaultValue = null;
+        private Object defaultValue = null;
         private Set<String> enumValues = new HashSet<>();
         private String label = null;
         private String unit = null;
@@ -89,7 +81,7 @@ public class PrototypeImpl implements Prototype {
         }
 
         @Override
-        public Literal getDefaultValue() {
+        public Object getDefaultValue() {
             return defaultValue;
         }
 
@@ -130,7 +122,7 @@ public class PrototypeImpl implements Prototype {
             this.type = type;
         }
 
-        public void setDefaultValue(Literal defaultValue) {
+        public void setDefaultValue(Object defaultValue) {
             this.defaultValue = defaultValue;
         }
 

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.impl.PairImpl;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -100,7 +99,7 @@ public interface Prototype extends Serializable {
          * 
          * @return default value (POD, list, {@link NumericRangeImpl}) or null.
          */
-        public Literal getDefaultValue();
+        public Object getDefaultValue();
 
         /**
          * 

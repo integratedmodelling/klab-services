@@ -17,8 +17,11 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import javassist.Modifier;
+import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
+import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.common.lang.PrototypeImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -35,7 +38,6 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projec
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
-import org.integratedmodelling.common.lang.PrototypeImpl;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.*;
@@ -51,9 +53,6 @@ import org.integratedmodelling.klab.api.utils.Utils.OS;
 import org.integratedmodelling.klab.components.LocalComponentRepository;
 import org.integratedmodelling.klab.data.mediation.CurrencyServiceImpl;
 import org.integratedmodelling.klab.data.mediation.UnitServiceImpl;
-import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
-import org.integratedmodelling.common.knowledge.ObservableImpl;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.runtime.language.LanguageService;
 import org.integratedmodelling.klab.runtime.scale.CoverageImpl;
 import org.integratedmodelling.klab.runtime.scale.ScaleImpl;
@@ -183,7 +182,7 @@ public enum ServiceConfiguration {
             }
 
             @Override
-            public Model.Builder getModelBuilder(Literal value) {
+            public Model.Builder getModelBuilder(Object value) {
                 return new ModelBuilderImpl(value);
             }
 

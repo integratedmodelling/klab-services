@@ -3,11 +3,16 @@ package org.integratedmodelling.klab.services.reasoner;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
+import org.integratedmodelling.common.knowledge.ConceptImpl;
+import org.integratedmodelling.common.knowledge.IntelligentMap;
+import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.common.lang.AnnotationImpl;
+import org.integratedmodelling.common.lang.kim.KimConceptImpl;
+import org.integratedmodelling.common.lang.kim.KimObservableImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -18,9 +23,6 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.common.lang.AnnotationImpl;
-import org.integratedmodelling.common.lang.kim.KimConceptImpl;
-import org.integratedmodelling.common.lang.kim.KimObservableImpl;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -37,11 +39,6 @@ import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
 import org.integratedmodelling.klab.indexing.SemanticExpression;
-import org.integratedmodelling.common.knowledge.ConceptImpl;
-import org.integratedmodelling.common.knowledge.IntelligentMap;
-import org.integratedmodelling.common.knowledge.ObservableImpl;
-import org.integratedmodelling.common.logging.Logging;
-//import org.integratedmodelling.klab.services.authentication.impl.LocalServiceScope;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConfiguration;
@@ -1069,18 +1066,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         StringBuilder ret = new StringBuilder(conceptDisplayName(o.asConcept()));
 
-        for (Pair<ValueOperator, Literal> operator : o.getValueOperators()) {
+        for (Pair<ValueOperator, Object> operator : o.getValueOperators()) {
 
             ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
 
-            if (operator.getSecond().getValueType() == ValueType.CONCEPT) {
-                var concept = operator.getSecond().get(KimConcept.class);
+            if (operator.getSecond() instanceof KimConcept concept) {
                 ret.append(conceptDisplayName(declareConcept(concept)));
-            } else if (operator.getSecond().getValueType() == ValueType.OBSERVABLE) {
-                var observable = operator.getSecond().get(KimObservable.class);
+            } else if (operator.getSecond() instanceof KimObservable observable) {
                 ret.append(observableDisplayName(declareObservable(observable)));
             } else {
-                ret.append("_").append(operator.getSecond().get(Object.class).toString().replace(' ', '_'));
+                ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
             }
         }
         return ret.toString();
@@ -2097,9 +2092,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                                                       new Concept[]{other});
         }
 
-//        if (concept.getDistributedInherent() != null) {
-//            builder.withDistributedInherency(true);
-//        }
+        //        if (concept.getDistributedInherent() != null) {
+        //            builder.withDistributedInherency(true);
+        //        }
 
         /*
          * transformations first
@@ -2142,11 +2137,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         if (concept.getGoal() != null) {
             Concept c = declareInternal(concept.getGoal(), ontology, monitor);
             if (c != null) {
-//                if (SemanticRole.GOAL.equals(concept.getDistributedInherent())) {
-//                    builder.of(c);
-//                } else {
-                    builder.withGoal(c);
-//                }
+                //                if (SemanticRole.GOAL.equals(concept.getDistributedInherent())) {
+                //                    builder.of(c);
+                //                } else {
+                builder.withGoal(c);
+                //                }
             }
         }
         if (concept.getCooccurrent() != null) {
@@ -2457,10 +2452,10 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return observationReasoner.inferStrategies(observable, scope);
     }
 
-//    @Override
-//    public boolean hasDistributedInherency(Concept c) {
-//        return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
-//    }
+    //    @Override
+    //    public boolean hasDistributedInherency(Concept c) {
+    //        return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
+    //    }
 
     @Override
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {
@@ -2585,22 +2580,22 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 }
                 case WITH_VALUE_OPERATOR -> {
                     ret = ret.withValueOperator(op.getValueOperation().getFirst(),
-                            op.getValueOperation().getSecond().get(Object.class));
+                            op.getValueOperation().getSecond());
                 }
                 case LINKING -> {
                     ret = ret.linking(op.getConcepts().get(0), op.getConcepts().get(1));
                 }
                 case NAMED -> {
-                    ret = ret.named(op.getPod().get(String.class));
+                    ret = ret.named((String) op.getPod());
                 }
-//                case WITH_DISTRIBUTED_INHERENCY -> {
-//                    ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
-//                }
+                //                case WITH_DISTRIBUTED_INHERENCY -> {
+                //                    ret = ret.withDistributedInherency(op.getPod().get(Boolean.class));
+                //                }
                 case WITHOUT_VALUE_OPERATORS -> {
                     ret = ret.withoutValueOperators();
                 }
                 case AS_OPTIONAL -> {
-                    ret = ret.optional(op.getPod().get(Boolean.class));
+                    ret = ret.optional((Boolean) op.getPod());
                 }
                 case WITHOUT_ROLES -> {
                     ret = ret.without(op.getRoles().toArray(new SemanticRole[0]));
@@ -2608,26 +2603,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 case WITH_TEMPORAL_INHERENT -> {
                     ret = ret.withTemporalInherent(op.getConcepts().get(0));
                 }
-//                case WITH_DEREIFIED_ATTRIBUTE -> {
-//                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
-//                }
+                //                case WITH_DEREIFIED_ATTRIBUTE -> {
+                //                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
+                //                }
                 case REFERENCE_NAMED -> {
-                    ret = ret.withReferenceName(op.getPod().get(String.class));
+                    ret = ret.withReferenceName((String)op.getPod());
                 }
                 case WITH_INLINE_VALUE -> {
-                    ret = ret.withInlineValue(op.getPod().get(Object.class));
+                    ret = ret.withInlineValue(op.getPod());
                 }
                 case COLLECTIVE -> {
-                    ret = ret.collective(op.getPod().get(Boolean.class));
+                    ret = ret.collective((Boolean) op.getPod());
                 }
                 case WITH_DEFAULT_VALUE -> {
-                    ret = ret.withDefaultValue(op.getPod().get(Object.class));
+                    ret = ret.withDefaultValue(op.getPod());
                 }
                 case WITH_RESOLUTION_EXCEPTION -> {
                     ret = ret.withResolutionException(op.getResolutionException());
                 }
                 case AS_GENERIC -> {
-                    ret = ret.generic(op.getPod().get(Boolean.class));
+                    ret = ret.generic((Boolean)op.getPod());
                 }
                 case WITH_ANNOTATION -> {
                     for (Annotation annotation : op.getAnnotations()) {

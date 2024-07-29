@@ -1,13 +1,11 @@
 package org.integratedmodelling.klab.services.reasoner;
 
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -141,7 +139,7 @@ public class ObservationReasoner {
     }
 
     private List<ObservationStrategyObsolete> addValueOperatorStrategies(List<ObservationStrategyObsolete> ret,
-                                                                         List<Pair<ValueOperator, Literal>> observable, int rank) {
+                                                                         List<Pair<ValueOperator, Object>> observable, int rank) {
         // TODO add new strategies to the previous one; increment their rank by 1
         return ret;
     }

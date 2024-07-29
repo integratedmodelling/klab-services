@@ -1,9 +1,5 @@
 package org.integratedmodelling.klab.api.lang;
 
-import org.integratedmodelling.klab.api.collections.Literal;
-
-import java.io.Serializable;
-
 /**
  * Just a number with units.
  * 

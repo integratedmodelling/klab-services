@@ -1,10 +1,5 @@
 package org.integratedmodelling.klab.api.lang;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
@@ -14,6 +9,10 @@ import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 /**
  * FIXME all this is obsolete. Should be a light wrapper without all those methods.
@@ -287,7 +286,7 @@ public interface Contextualizable extends KlabStatement {
      *
      * @return any literal
      */
-    Literal getLiteral();
+    Object getLiteral();
 
     /**
      * A literal constant produced in lieu of this computation Only one among getLiteral(), getServiceCall(),

@@ -1,7 +1,6 @@
 package org.integratedmodelling.common.lang;
 
 import org.integratedmodelling.common.lang.kim.KimStatementImpl;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
@@ -26,7 +25,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private KimObservable target;
     private String mediationTargetId;
     private String language;
-    private Literal literal;
+    private Object literal;
     private ServiceCall serviceCall;
     private ExpressionCode expression;
     private KimClassification classification;
@@ -70,7 +69,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     }
 
     @Override
-    public Literal getLiteral() {
+    public Object getLiteral() {
         return this.literal;
     }
 
@@ -174,7 +173,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
         this.language = language;
     }
 
-    public void setLiteral(Literal literal) {
+    public void setLiteral(Object literal) {
         this.literal = literal;
     }
 

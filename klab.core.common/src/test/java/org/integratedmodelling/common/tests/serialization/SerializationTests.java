@@ -1,18 +1,16 @@
 package org.integratedmodelling.common.tests.serialization;
 
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import org.integratedmodelling.common.lang.AnnotationImpl;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SerializationTests {
 
@@ -88,17 +86,17 @@ class SerializationTests {
         assertEquals(before, after);
     }
 
-    private Object serializeAndDeserializeLiteral(Object o) {
-        LiteralImpl literal = LiteralImpl.of(o);
-        String serialized = Utils.Json.asString(literal);
-        System.out.println(serialized);
-        return Utils.Json.parseObject(serialized, Literal.class).get(Object.class);
-    }
+//    private Object serializeAndDeserializeLiteral(Object o) {
+//        LiteralImpl literal = LiteralImpl.of(o);
+//        String serialized = Utils.Json.asString(literal);
+//        System.out.println(serialized);
+//        return Utils.Json.parseObject(serialized, Literal.class).get(Object.class);
+//    }
 
-    @Test
-    void literals() {
-        // TODO use the above with all kinds of things
-        assert (serializeAndDeserializeLiteral(10) instanceof Integer);
-        assert (serializeAndDeserializeLiteral("Zorba") instanceof String);
-    }
+//    @Test
+//    void literals() {
+//        // TODO use the above with all kinds of things
+//        assert (serializeAndDeserializeLiteral(10) instanceof Integer);
+//        assert (serializeAndDeserializeLiteral("Zorba") instanceof String);
+//    }
 }

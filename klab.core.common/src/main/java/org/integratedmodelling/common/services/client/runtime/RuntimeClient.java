@@ -127,7 +127,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                     resourceUrn = urn.getUrn();
                 } else if (o instanceof KimSymbolDefinition symbol) {
                     // must be an "observation" class
-                    if ("observation".equals(symbol.getDefineClass()) && symbol.getValue().getValueType() == ValueType.MAP) {
+                    if ("observation".equals(symbol.getDefineClass()) && symbol.getValue() instanceof Map<?,?> definition) {
 //                        semantics: earth:Region
 //                        space: {
 //                            shape: "EPSG:4326 POLYGON((33.796 -7.086, 35.946 -7.086, 35.946 -9.41, 33.796 -9.41, 33.796 -7.086))"
@@ -138,7 +138,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 //                            year: 2010
 //                            step: 1.day
 //                        }
-                        var definition = symbol.getValue().get(Map.class);
                         name = symbol.getName();
                         if (definition.containsKey("semantics")) {
                             observable = scope.getService(Reasoner.class).resolveObservable(definition.get("semantics").toString());

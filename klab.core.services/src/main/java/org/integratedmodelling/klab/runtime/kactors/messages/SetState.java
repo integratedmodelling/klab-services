@@ -1,9 +1,8 @@
 package org.integratedmodelling.klab.runtime.kactors.messages;
 
-import java.io.Serializable;
-
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
+
+import java.io.Serializable;
 
 /**
  * Set an agent's state
@@ -16,13 +15,13 @@ public class SetState implements Serializable, VM.AgentMessage {
 	private static final long serialVersionUID = -4670805652995373573L;
 
 	private String key;
-	private Literal value;
+	private Object value;
 
 	public SetState() {}
 	
 	public SetState(String key, Object value) {
 		this.key = key;
-		this.value = Literal.of(value);
+		this.value = value;
 	}
 
 	public String getKey() {
@@ -33,11 +32,11 @@ public class SetState implements Serializable, VM.AgentMessage {
 		this.key = key;
 	}
 
-	public Literal getValue() {
+	public Object getValue() {
 		return value;
 	}
 
-	public void setValue(Literal value) {
+	public void setValue(Object value) {
 		this.value = value;
 	}
 

@@ -1,13 +1,12 @@
 package org.integratedmodelling.common.lang.kactors;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Arguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class KActorsValueImpl /*extends KActorsCodeStatementImpl*/ implements KActorsValue {
 
@@ -62,7 +61,7 @@ public class KActorsValueImpl /*extends KActorsCodeStatementImpl*/ implements KA
 
 	private ValueType type;
 	private ExpressionType expressionType;
-	private Literal statedValue;
+	private Object statedValue;
 	private boolean exclusive;
 	private KActorsValue trueCase;
 	private KActorsValue falseCase;
@@ -82,7 +81,7 @@ public class KActorsValueImpl /*extends KActorsCodeStatementImpl*/ implements KA
 	}
 
 	@Override
-	public Literal getStatedValue() {
+	public Object getStatedValue() {
 		return this.statedValue;
 	}
 
@@ -130,7 +129,7 @@ public class KActorsValueImpl /*extends KActorsCodeStatementImpl*/ implements KA
 		this.expressionType = expressionType;
 	}
 
-	public void setStatedValue(Literal statedValue) {
+	public void setStatedValue(Object statedValue) {
 		this.statedValue = statedValue;
 	}
 

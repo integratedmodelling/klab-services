@@ -1,12 +1,5 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
@@ -20,6 +13,12 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A builder that just registers actions called on it and gets sent to a reasoner to replicate them in the
@@ -57,19 +56,19 @@ public class ObservableBuildStrategy implements Observable.Builder {
         private Currency currency;
         private NumericRange range;
         private OperationType type;
-        private Literal pod;
+        private Object pod;
         private List<Concept> concepts = new ArrayList<>();
         private List<SemanticType> types = new ArrayList<>();
         private List<SemanticRole> roles = new ArrayList<>();
 
-        private Pair<ValueOperator, Literal> valueOperation;
+        private Pair<ValueOperator, Object> valueOperation;
         private UnarySemanticOperator operator;
 
         public Operation() {
 
         }
 
-        public Operation(OperationType type, Literal value) {
+        public Operation(OperationType type, Object value) {
             this.type = type;
             this.pod = value;
         }
@@ -118,7 +117,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
             this.range = unit;
         }
 
-        public Operation(OperationType operationType, Pair<ValueOperator, Literal> unit) {
+        public Operation(OperationType operationType, Pair<ValueOperator, Object> unit) {
             this.type = type;
             this.valueOperation = unit;
         }
@@ -130,7 +129,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
         public Operation(OperationType operationType, boolean generic) {
             this.type = operationType;
-            this.pod = Literal.of(generic);
+            this.pod = generic;
         }
 
         public Operation(OperationType operationType) {
@@ -139,7 +138,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
         public Operation(OperationType operationType, String name) {
             this.type = operationType;
-            this.pod = Literal.of(name);
+            this.pod = name;
         }
 
         public Operation(OperationType operationType, ResolutionException resolutionException) {
@@ -168,11 +167,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
             this.type = type;
         }
 
-        public Literal getPod() {
+        public Object getPod() {
             return pod;
         }
 
-        public void setPod(Literal pod) {
+        public void setPod(Object pod) {
             this.pod = pod;
         }
 
@@ -232,11 +231,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
             this.range = range;
         }
 
-        public Pair<ValueOperator, Literal> getValueOperation() {
+        public Pair<ValueOperator, Object> getValueOperation() {
             return valueOperation;
         }
 
-        public void setValueOperation(Pair<ValueOperator, Literal> valueOperation) {
+        public void setValueOperation(Pair<ValueOperator, Object> valueOperation) {
             this.valueOperation = valueOperation;
         }
 
@@ -261,7 +260,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
     private Observable baseObservable;
     private Concept baseConcept;
     private List<Operation> operations = new ArrayList<>();
-    private Literal defaultValue;
+    private Object defaultValue;
     private List<Notification> notifications = new ArrayList<>();
 
     public ObservableBuildStrategy(Observable observable, Scope scope) {
@@ -412,7 +411,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
     @Override
     public Builder withValueOperator(ValueOperator operator, Object valueOperand) {
         this.operations.add(new Operation(OperationType.WITH_VALUE_OPERATOR, Pair.of(operator,
-                Literal.of(valueOperand))));
+                valueOperand)));
         return this;
     }
 
@@ -497,13 +496,13 @@ public class ObservableBuildStrategy implements Observable.Builder {
 
     @Override
     public Builder withInlineValue(Object value) {
-        this.operations.add(new Operation(OperationType.WITH_INLINE_VALUE, Literal.of(value)));
+        this.operations.add(new Operation(OperationType.WITH_INLINE_VALUE, value));
         return this;
     }
 
     @Override
     public Builder withDefaultValue(Object defaultValue) {
-        this.operations.add(new Operation(OperationType.WITH_DEFAULT_VALUE, Literal.of(defaultValue)));
+        this.operations.add(new Operation(OperationType.WITH_DEFAULT_VALUE, defaultValue));
         return this;
     }
 
@@ -567,11 +566,11 @@ public class ObservableBuildStrategy implements Observable.Builder {
         this.baseObservable = baseObservable;
     }
 
-    public Literal getDefaultValue() {
+    public Object getDefaultValue() {
         return defaultValue;
     }
 
-    public void setDefaultValue(Literal defaultValue) {
+    public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 

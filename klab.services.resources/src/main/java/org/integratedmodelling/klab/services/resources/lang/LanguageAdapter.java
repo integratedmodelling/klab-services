@@ -3,9 +3,7 @@ package org.integratedmodelling.klab.services.resources.lang;
 import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.lang.kim.*;
 import org.integratedmodelling.klab.api.collections.Identifier;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.LiteralImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
@@ -14,7 +12,6 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
 import org.integratedmodelling.languages.api.*;
-
 
 import java.util.*;
 
@@ -60,6 +57,10 @@ public enum LanguageAdapter {
     public KimConcept adaptSemantics(SemanticSyntax semantics) {
 
         KimConceptImpl ret = new KimConceptImpl();
+
+        if (semantics.getType() == null) {
+            System.out.println("dio porco should never happen");
+        }
 
         ret.setType(adaptSemanticType(semantics.getType()));
         ret.setNegated(semantics.isNegated());
@@ -176,7 +177,7 @@ public enum LanguageAdapter {
         ret.setName(define.getName());
         ret.setLength(define.getCodeLength());
         ret.setNamespace(namespace.getUrn());
-        ret.setValue(Literal.of(adaptValue(define.getValue())));
+        ret.setValue(adaptValue(define.getValue()));
         return ret;
     }
 
@@ -209,8 +210,12 @@ public enum LanguageAdapter {
             if (object == null) {
                 return null;
             }
-        } else if (object instanceof Literal literal) {
+        } /*else if (object instanceof Literal literal) {
             object = literal.get(Object.class);
+        } */else if (object instanceof ObservableSyntax observableSyntax) {
+            object = adaptObservable(observableSyntax);
+        } else if (object instanceof SemanticSyntax semanticSyntax) {
+            object = adaptSemantics(semanticSyntax);
         }
 
         return switch (object) {
@@ -488,7 +493,7 @@ public enum LanguageAdapter {
         for (var let : strategy.getMacroVariables().keySet()) {
             var f = new KimObservationStrategyImpl.FilterImpl();
             // TODO
-            ret.getMacroVariables().put(adaptLiteral(let), f);
+//            ret.getMacroVariables().put(adaptLiteral(let), f);
         }
         return ret;
     }
@@ -522,18 +527,18 @@ public enum LanguageAdapter {
 //        return null;
 //    }
 
-    private KimLiteral adaptLiteral(ParsedLiteral let) {
-        if (let.getCurrency() != null) {
-            // TODO return a KimQuantity
-        } else if (let.getUnit() != null) {
-            // TODO return a KimQuantity
-        } else if (let.getPod() instanceof Map<?, ?> map) {
-
-        } else if (let.getPod() instanceof Collection<?> collection) {
-
-        }
-        return KimLiteralImpl.of(let.getPod());
-    }
+//    private KimLiteral adaptLiteral(ParsedLiteral let) {
+//        if (let.getCurrency() != null) {
+//            // TODO return a KimQuantity
+//        } else if (let.getUnit() != null) {
+//            // TODO return a KimQuantity
+//        } else if (let.getPod() instanceof Map<?, ?> map) {
+//
+//        } else if (let.getPod() instanceof Collection<?> collection) {
+//
+//        }
+//        return let.getPod();
+//    }
 
     public KimOntology adaptOntology(OntologySyntax ontology, String projectName,
                                      Collection<Notification> notifications) {

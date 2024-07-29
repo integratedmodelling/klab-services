@@ -1,10 +1,8 @@
 package org.integratedmodelling.common.knowledge;
 
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.ValueType;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
@@ -12,7 +10,6 @@ import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
@@ -43,11 +40,11 @@ public class ObservableImpl implements Observable {
     private boolean generic;
     private boolean collective;
     private Collection<ResolutionException> resolutionExceptions = EnumSet.noneOf(ResolutionException.class);
-    private Literal defaultValue;
-    private Literal value;
+    private Object defaultValue;
+    private Object value;
     private String statedName;
     private List<Annotation> annotations = new ArrayList<>();
-    private List<Pair<ValueOperator, Literal>> valueOperators = new ArrayList<>();
+    private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
     private String referenceName;
     private String name;
     private String namespace;
@@ -180,7 +177,7 @@ public class ObservableImpl implements Observable {
     }
 
     @Override
-    public List<Pair<ValueOperator, Literal>> getValueOperators() {
+    public List<Pair<ValueOperator, Object>> getValueOperators() {
         return valueOperators;
     }
 
@@ -229,7 +226,7 @@ public class ObservableImpl implements Observable {
     }
 
     @Override
-    public Literal getValue() {
+    public Object getValue() {
         return value;
     }
 
@@ -252,7 +249,7 @@ public class ObservableImpl implements Observable {
     // }
 
     @Override
-    public Literal getDefaultValue() {
+    public Object getDefaultValue() {
         return defaultValue;
     }
 
@@ -321,18 +318,18 @@ public class ObservableImpl implements Observable {
 
         StringBuilder ret = new StringBuilder(getSemantics().displayName());
 
-        for (Pair<ValueOperator, Literal> operator : getValueOperators()) {
+        for (Pair<ValueOperator, Object> operator : getValueOperators()) {
 
             ret.append(StringUtils.capitalize(operator.getFirst().declaration.replace(' ', '_')));
 
-            if (operator.getSecond().getValueType() == ValueType.CONCEPT) {
+            if (operator.getSecond() instanceof KimConcept kimConcept) {
                 // FIXME use displayName for the associated concept! needs the service
-                ret.append(operator.getSecond().get(KimConcept.class).getName());
-            } else if (operator.getSecond().getValueType() == ValueType.OBSERVABLE) {
+                ret.append(kimConcept.getName());
+            } else if (operator.getSecond() instanceof KimObservable kimObservable) {
                 // FIXME use displayName for the associated observable! needs the service
-                ret.append(operator.getSecond().get(KimObservable.class).getCodeName());
+                ret.append(kimObservable.getCodeName());
             } else {
-                ret.append("_").append(operator.getSecond().get(Object.class).toString().replace(' ', '_'));
+                ret.append("_").append(operator.getSecond().toString().replace(' ', '_'));
             }
         }
         return ret.toString();
@@ -369,11 +366,11 @@ public class ObservableImpl implements Observable {
         this.resolutionExceptions = resolutionExceptions;
     }
 
-    public void setDefaultValue(Literal defaultValue) {
+    public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
     }
 
-    public void setValue(Literal value) {
+    public void setValue(Object value) {
         this.value = value;
     }
 
@@ -385,7 +382,7 @@ public class ObservableImpl implements Observable {
         this.annotations = annotations;
     }
 
-    public void setValueOperators(List<Pair<ValueOperator, Literal>> valueOperators) {
+    public void setValueOperators(List<Pair<ValueOperator, Object>> valueOperators) {
         this.valueOperators = valueOperators;
     }
 

@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.knowledge;
 
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
 import org.integratedmodelling.klab.api.knowledge.Model;
@@ -22,7 +21,7 @@ public class ModelBuilderImpl implements Model.Builder {
     public ModelBuilderImpl(Artifact.Type type) {
 
     }
-    public ModelBuilderImpl(Literal value) {
+    public ModelBuilderImpl(Object value) {
 
     }
     public ModelBuilderImpl(Observable observable) {

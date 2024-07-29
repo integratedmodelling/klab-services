@@ -1,6 +1,5 @@
 package org.integratedmodelling.common.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.impl.NumericRangeImpl;
@@ -24,10 +23,10 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	private String unit;
 	private String currency;
 	private String formalName;
-	private Literal value;
-	private Literal defaultValue;
+	private Object value;
+	private Object defaultValue;
 	private List<Observable.ResolutionException> resolutionExceptions = new ArrayList<>();
-	private List<Pair<ValueOperator, Literal>> valueOperators = new ArrayList<>();
+	private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
 	private String attributeIdentifier;
 	private boolean optional;
 	private String modelReference;
@@ -66,12 +65,12 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	}
 
 	@Override
-	public Literal getValue() {
+	public Object getValue() {
 		return this.value;
 	}
 
 	@Override
-	public Literal getDefaultValue() {
+	public Object getDefaultValue() {
 		return this.defaultValue;
 	}
 
@@ -81,7 +80,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 	}
 
 	@Override
-	public List<Pair<ValueOperator, Literal>> getValueOperators() {
+	public List<Pair<ValueOperator, Object>> getValueOperators() {
 		return this.valueOperators;
 	}
 
@@ -151,11 +150,11 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 		this.formalName = formalName;
 	}
 
-	public void setValue(Literal value) {
+	public void setValue(Object value) {
 		this.value = value;
 	}
 
-	public void setDefaultValue(Literal defaultValue) {
+	public void setDefaultValue(Object defaultValue) {
 		this.defaultValue = defaultValue;
 	}
 
@@ -163,7 +162,7 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
 		this.resolutionExceptions = resolutionExceptions;
 	}
 
-	public void setValueOperators(List<Pair<ValueOperator, Literal>> valueOperators) {
+	public void setValueOperators(List<Pair<ValueOperator, Object>> valueOperators) {
 		this.valueOperators = valueOperators;
 	}
 

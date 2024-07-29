@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.Literal;
+//import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -46,14 +46,14 @@ public interface KimObservable extends KlabStatement, Resolvable {
     /**
      * @return the literal value
      */
-    Literal getValue();
+    Object getValue();
 
     /**
      * The default value if one is given. The optional state and resolution triggers are affected.
      *
      * @return
      */
-    Literal getDefaultValue();
+    Object getDefaultValue();
 
     /**
      * Resolution exceptions linked to the use of a stated default value.
@@ -67,7 +67,7 @@ public interface KimObservable extends KlabStatement, Resolvable {
      *
      * @return
      */
-    List<Pair<ValueOperator, Literal>> getValueOperators();
+    List<Pair<ValueOperator, Object>> getValueOperators();
 
     /**
      * If the observable specification had an identifier (rather than a literal value) before an 'as' clause

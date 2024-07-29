@@ -1,7 +1,8 @@
 package org.integratedmodelling.klab.services.reasoner.internal;
 
+import org.integratedmodelling.common.knowledge.ObservableImpl;
+import org.integratedmodelling.common.lang.kim.KimConceptImpl;
 import org.integratedmodelling.common.utils.Utils;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
@@ -15,14 +16,12 @@ import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
-import org.integratedmodelling.common.lang.kim.KimConceptImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
-import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.klab.services.reasoner.ReasonerService;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
@@ -62,7 +61,7 @@ public class ObservableBuilder implements Observable.Builder {
     private List<Concept> traits = new ArrayList<>();
     private List<Concept> roles = new ArrayList<>();
     private List<Concept> removed = new ArrayList<>();
-    private List<Pair<ValueOperator, Literal>> valueOperators = new ArrayList<>();
+    private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
     private List<Notification> notifications = new ArrayList<>();
     private Unit unit;
     private Currency currency;
@@ -80,7 +79,7 @@ public class ObservableBuilder implements Observable.Builder {
     boolean generic;
     private boolean collective;
 
-    private Literal defaultValue = null;
+    private Object defaultValue = null;
     private Set<Observable.ResolutionException> resolutionExceptions = EnumSet
             .noneOf(Observable.ResolutionException.class);
     private ReasonerService reasoner;
@@ -1337,18 +1336,18 @@ public class ObservableBuilder implements Observable.Builder {
             ret.setUrn(ret.getUrn() + " in " + ret.getUnit());
         }
 
-        String opId = "";
-        String cdId = "";
+        StringBuilder opId = new StringBuilder();
+        StringBuilder cdId = new StringBuilder();
 
-        for (Pair<ValueOperator, Literal> op : valueOperators) {
+        for (Pair<ValueOperator, Object> op : valueOperators) {
 
             ValueOperator valueOperator = op.getFirst();
-            Object valueOperand = op.getSecond().get(Object.class);
+            Object valueOperand = op.getSecond();
 
             ret.setUrn(ret.getUrn() + " " + valueOperator.declaration);
 
-            opId += (opId.isEmpty() ? "" : "_") + valueOperator.textForm;
-            cdId += (cdId.isEmpty() ? "" : "_") + valueOperator.textForm;
+            opId.append((opId.length() == 0) ? "" : "_").append(valueOperator.textForm);
+            cdId.append((cdId.length() == 0) ? "" : "_").append(valueOperator.textForm);
 
             /*
              * turn these into their parsed form so we have their properly computed
@@ -1364,9 +1363,8 @@ public class ObservableBuilder implements Observable.Builder {
 
                 ret.setUrn(ret.getUrn() + " " + ((Concept) valueOperand).getUrn());
 
-                opId += (opId.isEmpty() ? "" : "_") + ((Concept) valueOperand).getReferenceName();
-                cdId += (cdId.isEmpty() ? "" : "_")
-                        + ((Concept) valueOperand).displayName().replaceAll("\\-", "_").replaceAll(" ", "_");
+                opId.append((opId.length() == 0) ? "" : "_").append(((Concept) valueOperand).getReferenceName());
+                cdId.append((cdId.length() == 0) ? "" : "_").append(((Concept) valueOperand).displayName().replaceAll("\\-", "_").replaceAll(" ", "_"));
 
                 if (name == null) {
                     ret.setName(ret.getName() + "_"
@@ -1377,8 +1375,8 @@ public class ObservableBuilder implements Observable.Builder {
             } else if (valueOperand instanceof Observable) {
 
                 ret.setUrn(ret.getUrn() + " (" + ((Observable) valueOperand).getUrn() + ")");
-                opId += (opId.isEmpty() ? "" : "_") + ((Observable) valueOperand).getReferenceName();
-                cdId += (cdId.isEmpty() ? "" : "_") + ((Observable) valueOperand).displayName();
+                opId.append((opId.length() == 0) ? "" : "_").append(((Observable) valueOperand).getReferenceName());
+                cdId.append((cdId.length() == 0) ? "" : "_").append(((Observable) valueOperand).displayName());
 
             } else {
 
@@ -1386,20 +1384,20 @@ public class ObservableBuilder implements Observable.Builder {
 
                     ret.setUrn(ret.getUrn() + " " + valueOperand);
 
-                    opId += (opId.isEmpty() ? "" : "_") + getCodeForm(valueOperand, true);
-                    cdId += (cdId.isEmpty() ? "" : "_") + getCodeForm(valueOperand, false);
+                    opId.append((opId.length() == 0) ? "" : "_").append(getCodeForm(valueOperand, true));
+                    cdId.append((cdId.length() == 0) ? "" : "_").append(getCodeForm(valueOperand, false));
                 }
             }
 
-            ret.getValueOperators().add(Pair.of(valueOperator, Literal.of(valueOperand)));
+            ret.getValueOperators().add(Pair.of(valueOperator, valueOperand));
 
         }
 
-        if (!opId.isEmpty()) {
+        if (opId.length() > 0) {
             ret.setReferenceName(ret.getReferenceName() + "_" + opId);
         }
 
-        if (!cdId.isEmpty()) {
+        if (cdId.length() > 0) {
             ret.setName(ret.getName() + "_" + cdId);
         }
 
@@ -1442,7 +1440,7 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (this.inlineValue != null) {
-            ret.setValue(Literal.of(this.inlineValue));
+            ret.setValue(this.inlineValue);
         }
 
         if (this.range != null) {
@@ -1507,7 +1505,7 @@ public class ObservableBuilder implements Observable.Builder {
 
     @Override
     public Observable.Builder withValueOperator(ValueOperator operator, Object operand) {
-        this.valueOperators.add(Pair.of(operator, Literal.of(operand)));
+        this.valueOperators.add(Pair.of(operator, operand));
         return this;
     }
 
@@ -1595,7 +1593,7 @@ public class ObservableBuilder implements Observable.Builder {
 
     @Override
     public Observable.Builder withDefaultValue(Object defaultValue) {
-        this.defaultValue = Literal.of(defaultValue);
+        this.defaultValue = defaultValue;
         return this;
     }
 

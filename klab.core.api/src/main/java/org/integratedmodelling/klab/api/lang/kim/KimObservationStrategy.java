@@ -1,6 +1,6 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
-import org.integratedmodelling.klab.api.collections.Literal;
+//import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
 import java.io.Serializable;
@@ -29,7 +29,7 @@ public interface KimObservationStrategy extends KlabStatement {
 
         ServiceCall getFunction();
 
-        Literal getLiteral();
+        Object getLiteral();
     }
 
     /**

@@ -1,15 +1,14 @@
 package org.integratedmodelling.klab.api.knowledge;
 
-import java.util.List;
-
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+
+import java.util.List;
 
 public interface Model extends Knowledge, Resolvable {
 
@@ -178,7 +177,7 @@ public interface Model extends Knowledge, Resolvable {
      * @param value
      * @return
      */
-    static Builder builder(Literal value) {
+    static Builder builder(Object value) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();
         if (configuration == null) {
             throw new KlabIllegalStateException("k.LAB environment not configured to promote a concept to " +
