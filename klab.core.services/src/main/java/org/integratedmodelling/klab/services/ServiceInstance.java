@@ -77,6 +77,10 @@ public abstract class ServiceInstance<T extends BaseService> {
      */
     protected abstract List<KlabService.Type> getEssentialServices();
 
+    public Identity getServiceOwner() {
+        return identity == null ? null : identity.getFirst();
+    }
+
     /**
      * This method must create the primary service, using the passed ServiceScope.
      *

@@ -436,12 +436,14 @@ public class ObservableImpl implements Observable {
         }
         ret.artifactType = Artifact.Type.forSemantics(concept.getType());
 
-        var reasoner = scope.getService(Reasoner.class);
-        boolean distributedDescription = concept.is(SemanticType.TRAIT)
-                                         ? reasoner.inherent(concept) != null
-                                         : concept.is(SemanticType.COUNTABLE);
+//        var reasoner = scope.getService(Reasoner.class);
+        // FIXME unsure of all this
+//        boolean distributedDescription = concept.is(SemanticType.TRAIT)
+//                                         ? reasoner.inherent(concept) != null
+//                                         : concept.isCollective();
 
-        ret.descriptionType = DescriptionType.forSemantics(concept.getType(), distributedDescription);
+        ret.collective = concept.isCollective();
+        ret.descriptionType = DescriptionType.forSemantics(concept.getType(), concept.isCollective());
 
         return ret;
     }

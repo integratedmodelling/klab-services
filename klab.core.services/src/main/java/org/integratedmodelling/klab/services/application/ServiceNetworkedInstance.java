@@ -123,7 +123,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        authorizationManager.setKlabService(() -> klabService());
+        authorizationManager.setKlabService(() -> this);
         super.start(environment.getRequiredProperty("klab.service.options", ServiceStartupOptions.class));
     }
 

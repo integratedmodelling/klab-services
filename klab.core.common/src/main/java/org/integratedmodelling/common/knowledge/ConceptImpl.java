@@ -26,6 +26,7 @@ public class ConceptImpl implements Concept {
     private String name;
     private String referenceName;
     private boolean isAbstract;
+    private boolean collective;
     private List<Annotation> annotations = new ArrayList<>();
     private LogicalConnector qualifier;
 
@@ -187,6 +188,12 @@ public class ConceptImpl implements Concept {
 		this.annotations = annotations;
 	}
 
-    
-    
+    @Override
+    public boolean isCollective() {
+        return collective;
+    }
+
+    public void setCollective(boolean collective) {
+        this.collective = collective;
+    }
 }

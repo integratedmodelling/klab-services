@@ -210,16 +210,21 @@ public abstract class ServiceClient implements KlabService {
      * stored and if needed, authenticate further using the token. Start polling at regular intervals to
      * ensure the connection remains alive. Build the service scope and if we're on the LAN or LOCALHOST
      * locality, establish the Websocket link between the client and the server so we can listen to events.
+     *
+     * @return null if server is remote (the auth key is the ID of the identity) or non-null if using a local
+     * server; in that case, the return value is the value for {@link ServicesAPI#SERVER_KEY_HEADER}.
      */
-    protected void establishConnection() {
+    protected String establishConnection() {
 
         this.token = this.authentication.getFirst().getId();
+        String ret = null;
         this.client = Utils.Http.getServiceClient(token, this);
         var secret = Configuration.INSTANCE.getServiceSecret(serviceType);
         if (secret != null) {
             local = Utils.URLs.isLocalHost(getUrl());
             if (local) {
                 client.setHeader(ServicesAPI.SERVER_KEY_HEADER, secret);
+                ret = secret;
             }
         }
 
@@ -255,6 +260,8 @@ public abstract class ServiceClient implements KlabService {
         }
 
         scheduler.scheduleAtFixedRate(this::timedTasks, 2, pollCycleSeconds, TimeUnit.SECONDS);
+
+        return ret;
     }
 
     private void timedTasks() {

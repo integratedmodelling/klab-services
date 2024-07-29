@@ -58,8 +58,8 @@ public class ServiceUserScope extends ChannelImpl implements UserScope {
             Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    private Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
-    private Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
+    protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
+    protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
 
     public ServiceUserScope(UserIdentity user) {
         super(user);

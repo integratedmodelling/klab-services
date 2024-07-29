@@ -3,39 +3,34 @@ package org.integratedmodelling.klab.services.runtime;
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.scope.*;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
-import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.services.runtime.tasks.ObservationTask;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.*;
-import java.util.concurrent.Future;
 
 public class RuntimeService extends BaseService
         implements
         org.integratedmodelling.klab.api.services.RuntimeService,
         org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
-    /**
-     * The runtime maintains a "digital twin" per each context ID in its purvey. The contexts must release
-     * resources in the runtime when they go out of scope.
-     */
-    Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
+//    /**
+//     * The runtime maintains a "digital twin" per each context ID in its purvey. The contexts must release
+//     * resources in the runtime when they go out of scope.
+//     */
+//    Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
     private String hardwareSignature =
             org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
@@ -149,15 +144,15 @@ public class RuntimeService extends BaseService
     public String serviceId() {
         return configuration.getServiceId();
     }
-
-    private DigitalTwin getDigitalTwin(ContextScope scope) {
-        DigitalTwin ret = digitalTwins.get(scope.getIdentity().getId());
-        if (ret == null) {
-            ret = new DigitalTwin(scope);
-            digitalTwins.put(scope.getIdentity().getId(), ret);
-        }
-        return ret;
-    }
+//
+//    private DigitalTwin getDigitalTwin(ContextScope scope) {
+//        DigitalTwin ret = digitalTwins.get(scope.getIdentity().getId());
+//        if (ret == null) {
+//            ret = new DigitalTwin(scope);
+//            digitalTwins.put(scope.getIdentity().getId(), ret);
+//        }
+//        return ret;
+//    }
 
     @Override
     public Map<String, String> getExceptionTestcases(Scope scope, boolean deleteExisting) {
@@ -183,19 +178,20 @@ public class RuntimeService extends BaseService
 
     @Override
     public boolean releaseScope(Scope scope) {
-
-        /**
-         * TODO fix based on the type of scope. Each should release every resource held below the scope.
-         */
-        var dt = this.digitalTwins.remove(scope.getIdentity().getId());
-        if (dt != null) {
-            try {
-                dt.close();
-            } catch (IOException e) {
-                throw new KlabInternalErrorException(e);
-            }
-        }
-        return dt != null;
+//
+//        /**
+//         * TODO fix based on the type of scope. Each should release every resource held below the scope.
+//         */
+//        var dt = this.digitalTwins.remove(scope.getIdentity().getId());
+//        if (dt != null) {
+//            try {
+//                dt.close();
+//            } catch (IOException e) {
+//                throw new KlabInternalErrorException(e);
+//            }
+//        }
+//        return dt != null;
+        return true;
     }
 
     @Override

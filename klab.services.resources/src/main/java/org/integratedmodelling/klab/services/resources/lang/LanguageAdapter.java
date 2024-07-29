@@ -64,7 +64,7 @@ public enum LanguageAdapter {
 
         ret.setType(adaptSemanticType(semantics.getType()));
         ret.setNegated(semantics.isNegated());
-        ret.setCollective(semantics.isDistributed());
+        ret.setCollective(semantics.isCollective());
         ret.setCodeName(semantics.codeName());
         ret.setDeprecation(semantics.getDeprecation());
         ret.setDeprecated(semantics.getDeprecation() != null);

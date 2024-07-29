@@ -4,7 +4,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
-import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.runtime.digitaltwin.DigitalTwin;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;

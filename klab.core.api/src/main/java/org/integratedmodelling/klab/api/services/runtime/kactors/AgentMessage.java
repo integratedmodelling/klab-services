@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime.kactors;
 
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 
 import java.io.Serializable;

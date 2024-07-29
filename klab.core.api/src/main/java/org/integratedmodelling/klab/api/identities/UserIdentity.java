@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.identities;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 
@@ -40,7 +41,7 @@ public interface UserIdentity extends Identity {
 	 *
 	 * @return a set of group names
 	 */
-	Set<Group> getGroups();
+	Collection<Group> getGroups();
 
 	/**
 	 * Anonymous users cannot access the network and get a default worldview.

@@ -9,9 +9,11 @@ import org.integratedmodelling.klab.api.engine.StartupOptions;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.rest.ServiceReference;
+import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -23,6 +25,7 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.jwt.consumer.JwtContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyFactory;
@@ -60,9 +63,9 @@ public class ServiceAuthorizationManager {
      * This is set explicitly after the scope is created. Without the root scope, no authentication is
      * possible
      */
-    private Supplier<BaseService> klabService;
+    private Supplier<ServiceInstance<?>> klabService;
 
-    public void setKlabService(Supplier<BaseService> klabService) {
+    public void setKlabService(Supplier<ServiceInstance<?>> klabService) {
         this.klabService = klabService;
     }
 
@@ -190,7 +193,7 @@ public class ServiceAuthorizationManager {
         EngineAuthorization ret = null;
 
         var privilegedLocalService =
-                serverKey != null && serverKey.equals(klabService.get().getServiceSecret());
+                serverKey != null && serverKey.equals(klabService.get().klabService().getServiceSecret());
 
         /*
         we move on to JWT parsing only if the service is authenticated with the hub and the user is not
@@ -225,7 +228,7 @@ public class ServiceAuthorizationManager {
                     ret = new EngineAuthorization(hubId, username, groupStrings,
                             Collections.unmodifiableList(filterRoles(roleStrings)));
 
-                    if (klabService.get().getServiceSecret().equals(token)) {
+                    if (klabService.get().klabService().getServiceSecret().equals(token)) {
                         ret.setTokenString(token);
                     }
 
@@ -284,31 +287,40 @@ public class ServiceAuthorizationManager {
         }
 
         if (privilegedLocalService) {
-            // any user with local authority (including anonymous) gets all privileges
+            // any user with local authority (including anonymous) gets all privileges and the user data
+            // from the authenticating user
             ret.setLocal(true);
             ret.setRoles(EnumSet.of(Role.ROLE_ENGINE, Role.ROLE_ADMINISTRATOR, Role.ROLE_USER,
                     Role.ROLE_DATA_MANAGER));
             ret.setAuthenticated(true);
             ret.setTokenString(serverKey);
-        }
 
+            var owner = klabService.get().getServiceOwner();
+            if (owner instanceof UserIdentity user && "anonymous".equals(ret.getUsername())) {
+                ret.setUsername(user.getUsername());
+                ret.setGroups(user.getGroups());
+                ret.setEmailAddress(user.getEmailAddress());
+            }
+        }
 
         /**
          * User scope is created anyway.
          */
-        Scope scope = klabService.get().getScopeManager().getOrCreateUserScope(ret);
+        Scope scope = klabService.get().klabService().getScopeManager().getOrCreateUserScope(ret);
         ((ServiceUserScope) scope).setLocal(ret.isLocal());
         if (scopeHeader != null) {
             // ...then contextualized as needed
             var scopeData = ContextScope.parseScopeId(scopeHeader);
-            scope = klabService.get().getScopeManager().getScope(ret, scopeData.type().classify(), scopeData.scopeId());
+            scope = klabService.get().klabService().getScopeManager().getScope(ret,
+                    scopeData.type().classify(), scopeData.scopeId());
             if (scope instanceof ServiceContextScope) {
-                scope = klabService.get().getScopeManager().contextualizeScope((ServiceContextScope) scope, scopeData);
+                scope = klabService.get().klabService().getScopeManager().contextualizeScope((ServiceContextScope) scope, scopeData);
             }
         }
 
         if (scope == null) {
-            Logging.INSTANCE.error("Internal error: user " + ret.getUsername() + " was authorized with null scope");
+            Logging.INSTANCE.error("Internal error: user " + ret.getUsername() + " was authorized with null" +
+                    " scope");
         }
 
         ret.setScope(scope);

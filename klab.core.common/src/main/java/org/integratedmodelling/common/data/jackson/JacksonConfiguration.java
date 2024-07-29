@@ -46,111 +46,6 @@ public class JacksonConfiguration {
 
     public static final String CLASS_FIELD = "@CLASS";
 
-    //    static class LiteralDeserializer extends JsonDeserializer<Literal> {
-    //
-    //        @Override
-    //        public Literal deserialize(JsonParser p, DeserializationContext ctxt) throws IOException,
-    //                JsonProcessingException {
-    //            LiteralImpl ret = new LiteralImpl();
-    //            JsonNode node = p.getCodec().readTree(p);
-    //            ret.setValueType(p.getCodec().treeToValue(node.get("valueType"), ValueType.class));
-    //            switch (ret.getValueType()) {
-    //                case ANNOTATION:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case ANYTHING:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case ANYTRUE:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case ANYVALUE:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case BOOLEAN:
-    //                    ret.setValue(node.get("value").asBoolean());
-    //                    break;
-    //                case CALLCHAIN:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case COMPONENT:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case DATE:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case EMPTY:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case ERROR:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case EXPRESSION:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case LIST:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case CONSTANT:
-    //                case STRING:
-    //                case CLASS:
-    //                case IDENTIFIER:
-    //                case LOCALIZED_KEY:
-    //                case REGEXP:
-    //                case NUMBERED_PATTERN:
-    //                case URN:
-    //                    ret.setValue(node.get("value").asText());
-    //                    break;
-    //                case MAP:
-    //                    ret.setValue(Utils.Json.asMap(node.get("value")));
-    //                    break;
-    //                case NODATA:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case NUMBER, DOUBLE:
-    //                    ret.setValue(node.get("value").asDouble());
-    //                    break;
-    //                case OBJECT:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType() + node.get("value")
-    //                    .toPrettyString());
-    //                    break;
-    //                case OBSERVABLE:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case OBSERVATION:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case QUANTITY:
-    //                    ret.setValue(p.getCodec().treeToValue(node.get("value"), QuantityImpl.class));
-    //                    break;
-    //                case RANGE:
-    //                    ret.setValue(p.getCodec().treeToValue(node.get("value"), NumericRangeImpl.class));
-    //                    break;
-    //                case SET:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case TABLE:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case TREE:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case TYPE:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case CONCEPT:
-    //                    System.out.println("BINGO BONGO " + ret.getValueType());
-    //                    break;
-    //                case INTEGER:
-    //                    ret.setValue(node.get("value").asInt());
-    //                    break;
-    //                default:
-    //                    break;
-    //            }
-    //            return ret;
-    //        }
-    //    }
-
     @SuppressWarnings("rawtypes")
     static class PolymorphicSerializer<T> extends JsonSerializer<T> {
 
@@ -360,8 +255,6 @@ public class JacksonConfiguration {
             module.addSerializer(cls, new PolymorphicSerializer<>());
             module.addDeserializer(cls, new PolymorphicDeserializer<>());
         }
-        //        module.addSerializer(Literal.class, new PolymorphicSerializer<>());
-        //        module.addDeserializer(Literal.class, new LiteralDeserializer());
 
         mapper.registerModule(module);
         mapper.registerModule(new ParameterNamesModule());

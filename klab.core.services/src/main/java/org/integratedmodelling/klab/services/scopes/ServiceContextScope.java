@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.scopes;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -59,6 +61,29 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.resolutionNamespace = parent.resolutionNamespace;
     }
 
+    // next 3 are overridden with the same code as the parent because they need to use the local maps, not the
+    // parent's
+
+    @Override
+    public <T extends KlabService> T getService(Class<T> serviceClass) {
+        return (T) defaultServiceMap.get(KlabService.Type.classify(serviceClass));
+    }
+
+    @Override
+    public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+        for (var service : getServices(serviceClass)) {
+            if (serviceId.equals(service.serviceId())) {
+                return service;
+            }
+        }
+        throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
+    }
+
+    @Override
+    public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+        return new org.integratedmodelling.klab.api.utils.Utils.Casts<KlabService, T>().cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
+    }
+
     ServiceContextScope(ServiceSessionScope parent) {
         super(parent);
         this.observer = null; // NAAH parent.getUser();
@@ -102,9 +127,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     //    @Override
-//    public Scale getScale() {
-//        return geometry;
-//    }
+    //    public Scale getScale() {
+    //        return geometry;
+    //    }
 
     @Override
     public ServiceContextScope withScenarios(String... scenarios) {
@@ -154,16 +179,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         });
 
         for (Object o : observables) {
-            if (o instanceof String || o instanceof Urn || o instanceof URL) {
-                message.setUrn(o.toString());
-            } else if (o instanceof Knowledge) {
-                message.setUrn(((Knowledge) o).getUrn());
-            } else if (o instanceof Geometry) {
-                message.setGeometry((Geometry) o);
-            }
+//            if (o instanceof String || o instanceof Urn || o instanceof URL) {
+//                message.setUrn(o.toString());
+//            } else if (o instanceof Knowledge) {
+//                message.setUrn(((Knowledge) o).getUrn());
+//            } else if (o instanceof Geometry) {
+//                message.setGeometry((Geometry) o);
+//            }
         }
 
-        message.setScope(this);
+//        message.setScope(this);
 
         this.getAgent().tell(message);
 

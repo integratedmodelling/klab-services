@@ -57,7 +57,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
     /**
      * The groups associated with the token. These come from the authenticating hub.
      */
-    private List<Group> groups = new ArrayList<>();
+    private Collection<Group> groups = new ArrayList<>();
 
     /**
      * The ID of the Integrated Modelling partner which owns the directory containing the user being
@@ -66,6 +66,8 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      * Spring equivalent: [none] JWT equivalent: issuer ("iss" claim)
      */
     private final Credentials partnerId;
+
+    private String emailAddress;
 
     /**
      * A collection of partner-specific permissions being granted with this Authentication. For example, a
@@ -84,8 +86,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
      * be duplicates between partners, so usernames should always be identified with respect to the directory
      * in which they are stored.
      */
-    private final Credentials username;
-
+    private Credentials username;
 
     private boolean local;
 
@@ -236,7 +237,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         return null;
     }
 
-    public List<Group> getGroups() {
+    public Collection<Group> getGroups() {
         return groups;
     }
 
@@ -250,7 +251,7 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         return tokenString.value;
     }
 
-    public void setGroups(List<Group> groups) {
+    public void setGroups(Collection<Group> groups) {
         this.groups = groups;
     }
 
@@ -282,8 +283,25 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         return null;
     }
 
+    /**
+     * May be null
+     *
+     * @return
+     */
+    public String getEmailAddress() {
+        return emailAddress;
+    }
+
+    public void setEmailAddress(String emailAddress) {
+        this.emailAddress = emailAddress;
+    }
+
     public void setScope(Scope scope) {
         this.scope = scope;
+    }
+
+    public void setUsername(String username) {
+        this.username = new Credentials(username);
     }
 
     public class Credentials implements CredentialsContainer {

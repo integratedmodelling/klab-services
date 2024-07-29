@@ -13,17 +13,15 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
+import org.integratedmodelling.klab.runtime.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.GetChildren;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.GetParent;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 
 public class ContextAgent extends KAgent {
 
-    /**
-     * The geometry of focus when the context was created.
-     */
-//    private final Geometry focalGeometry;
-//    private Geometry currentGeometry;
+
+    private DigitalTwin digitalTwin;
 
     public ContextAgent(String name, ContextScope scope) {
         super(name, scope);
@@ -65,12 +63,12 @@ public class ContextAgent extends KAgent {
 
             resolvable = null; // resolver.resolveKnowledge(message.getUrn(), Resolvable.class, scope);
             if (resolvable == null) {
-                scope.send(message.response(Status.ABORTED, AgentResponse.ERROR,
-                        "Cannot resolve URN " + message.getUrn()));
+//                scope.send(message.response(Status.ABORTED, AgentResponse.ERROR,
+//                        "Cannot resolve URN " + message.getUrn()));
                 return;
             }
 
-            ContextScope resolutionScope = message.getScope();
+//            ContextScope resolutionScope = message.getScope();
             if (resolvable instanceof Observation instance) {
 //                resolutionScope = resolutionScope.withGeometry(instance.getGeometry());
             }
@@ -78,25 +76,25 @@ public class ContextAgent extends KAgent {
             /*
              * Build the dataflow in the scope
              */
-            var resolution = resolver.resolve(resolvableUrn, resolutionScope);
+//            var resolution = resolver.resolve(resolvableUrn, resolutionScope);
 
-            if (resolution.getCoverage().isRelevant()) {
-
-                Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, resolutionScope);
-
-                /*
-                 * Run the dataflow
-                 */
-//                result = scope.getService(RuntimeService.class).run(dataflow, resolutionScope).get();
+//            if (resolution.getCoverage().isRelevant()) {
+//
+//                Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, resolutionScope);
 //
 //                /*
-//                 * TODO adjust overall geometry and catalog
+//                 * Run the dataflow
 //                 */
-//                if (!result.isEmpty()) {
-//                    status = Status.FINISHED;
-//                }
-            }
-
+////                result = scope.getService(RuntimeService.class).run(dataflow, resolutionScope).get();
+////
+////                /*
+////                 * TODO adjust overall geometry and catalog
+////                 */
+////                if (!result.isEmpty()) {
+////                    status = Status.FINISHED;
+////                }
+//            }
+//
         } catch (Throwable e) {
             scope.error(e);
             status = Status.ABORTED;

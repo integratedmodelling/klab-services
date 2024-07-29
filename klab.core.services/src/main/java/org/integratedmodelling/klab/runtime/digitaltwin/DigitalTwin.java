@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.runtime.digitaltwin;
+package org.integratedmodelling.klab.runtime.digitaltwin;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Histogram;
@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
+import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
@@ -781,6 +782,10 @@ public class DigitalTwin implements Closeable {
     public Observation getObservation(String id) {
         ObservationData data = observationData.get(id);
         return data == null ? Observation.empty() : data.observation;
+    }
+
+    public Observation createObservation(Observe definition) {
+        return null;
     }
 
     @Override

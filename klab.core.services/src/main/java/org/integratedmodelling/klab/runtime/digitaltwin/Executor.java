@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.services.runtime.digitaltwin;
+package org.integratedmodelling.klab.runtime.digitaltwin;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
