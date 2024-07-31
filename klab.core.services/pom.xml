@@ -163,6 +163,18 @@
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.collections</groupId>
+                    <artifactId>eclipse-collections</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.collections</groupId>
+                    <artifactId>eclipse-collections-forkjoin</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.collections</groupId>
+                    <artifactId>eclipse-collections-api</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -336,6 +348,12 @@
             <groupId>org.geotools</groupId>
             <artifactId>gt-process-raster</artifactId>
             <version>${geotools.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-runtime</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
@@ -391,30 +409,36 @@
             <version>10.1.25</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.services.reasoner.client</artifactId>
-            <version>0.11.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.services.resources.client</artifactId>
-            <version>0.11.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.services.resolver.client</artifactId>
-            <version>0.11.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.integratedmodelling</groupId>
-            <artifactId>klab.services.runtime.client</artifactId>
-            <version>0.11.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
-    </dependencies>
+        <!--        <dependency>
+                    <groupId>org.integratedmodelling</groupId>
+                    <artifactId>klab.services.reasoner.client</artifactId>
+                    <version>0.11.0-SNAPSHOT</version>
+                    <scope>compile</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.integratedmodelling</groupId>
+                    <artifactId>klab.services.resources.client</artifactId>
+                    <version>0.11.0-SNAPSHOT</version>
+                    <scope>compile</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.integratedmodelling</groupId>
+                    <artifactId>klab.services.resolver.client</artifactId>
+                    <version>0.11.0-SNAPSHOT</version>
+                    <scope>compile</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.integratedmodelling</groupId>
+                    <artifactId>klab.services.runtime.client</artifactId>
+                    <version>0.11.0-SNAPSHOT</version>
+                    <scope>compile</scope>
+                </dependency>-->
 
+        <dependency>
+            <groupId>org.eclipse.collections</groupId>
+            <artifactId>eclipse-collections</artifactId>
+            <version>11.1.0</version>
+        </dependency>
+
+    </dependencies>
 </project>

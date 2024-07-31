@@ -1,75 +1,116 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.integratedmodelling</groupId>
-		<artifactId>klab-services</artifactId>
-		<version>0.11.0-SNAPSHOT</version>
-	</parent>
-	<artifactId>klab.services.runtime</artifactId>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.integratedmodelling</groupId>
+        <artifactId>klab-services</artifactId>
+        <version>0.11.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>klab.services.runtime</artifactId>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>21</source>
-					<target>21</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<annotationProcessorPaths>
-						<path>
-							<groupId>com.github.therapi</groupId>
-							<artifactId>therapi-runtime-javadoc-scribe</artifactId>
-							<version>0.15.0</version>
-						</path>
-					</annotationProcessorPaths>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.github.therapi</groupId>
+                            <artifactId>therapi-runtime-javadoc-scribe</artifactId>
+                            <version>0.15.0</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.integratedmodelling</groupId>
-			<artifactId>klab.core.services</artifactId>
-			<version>${klab.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.integratedmodelling</groupId>
-			<artifactId>klab.core.api</artifactId>
-			<version>${klab.version}</version>
-		</dependency>
+    <dependencies>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.core.services</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.integratedmodelling</groupId>
+            <artifactId>klab.core.api</artifactId>
+            <version>${klab.version}</version>
+        </dependency>
 
-		<!-- Embedded QPid to enable simple/local DT messaging when requested and there is no broker configured.
-		     Note that the below is qpid-broker-core and *not* qpid-broker. -->
-		<dependency>
-			<groupId>org.apache.qpid</groupId>
-			<artifactId>qpid-broker-core</artifactId>
-			<version>9.2.0</version>
-		</dependency>
-		<!-- AMQP protocol support is modular. Here we show support for 0-8/0-9 and 1.0. Support for 0-10 is excluded. -->
-		<dependency>
-			<groupId>org.apache.qpid</groupId>
-			<artifactId>qpid-broker-plugins-amqp-0-8-protocol</artifactId>
-			<version>9.2.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.qpid</groupId>
-			<artifactId>qpid-broker-plugins-amqp-1-0-protocol</artifactId>
-			<version>9.2.0</version>
-		</dependency>
-		<!-- If a different store type is required it needs to be included here -->
-		<dependency>
-			<groupId>org.apache.qpid</groupId>
-			<artifactId>qpid-broker-plugins-memory-store</artifactId>
-			<version>9.2.0</version>
-		</dependency>
+        <!-- Embedded QPid to enable simple/local DT messaging when requested and there is no broker configured.
+             Note that the below is qpid-broker-core and *not* qpid-broker. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-core</artifactId>
+            <version>9.2.0</version>
+        </dependency>
+        <!-- AMQP protocol support is modular. Here we show support for 0-8/0-9 and 1.0. Support for 0-10 is excluded. -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-amqp-0-8-protocol</artifactId>
+            <version>9.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-amqp-1-0-protocol</artifactId>
+            <version>9.2.0</version>
+        </dependency>
+        <!-- If a different store type is required it needs to be included here -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-memory-store</artifactId>
+            <version>9.2.0</version>
+        </dependency>
 
-	</dependencies>
+        <!-- neo4j provides the default persistence model for the digital twin and the social graph. Would be so much better if
+ they didn't want their f'ing money to make it distributed and production-level. Consider moving to
+ dgraph or memgraph for production.
+  -->
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j</artifactId>
+            <version>5.22.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-spatial-index</artifactId>
+            <version>5.22.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-bolt</artifactId>
+            <version>5.22.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>5.22.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-ogm-core</artifactId>
+            <version>4.0.10</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-ogm-bolt-driver</artifactId>
+            <version>4.0.10</version>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.13.1</version>
+        </dependency>
 
-</project>
+    </dependencies>
+
+        </project>

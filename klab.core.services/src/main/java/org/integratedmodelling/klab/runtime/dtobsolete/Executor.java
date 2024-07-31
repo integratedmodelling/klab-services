@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.digitaltwin;
+package org.integratedmodelling.klab.runtime.dtobsolete;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.State;

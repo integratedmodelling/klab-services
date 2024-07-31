@@ -2,12 +2,11 @@ package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import com.google.common.net.HttpHeaders;
 import jakarta.servlet.http.HttpServletRequest;
-import org.integratedmodelling.common.graph.Graph;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
@@ -18,7 +17,6 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,30 +46,30 @@ public class RuntimeServerContextController {
     }
 
     @QueryMapping
-    public List<Graph.Observation> observations() {
+    public List<GraphModel.Observation> observations() {
         return List.of();
     }
 
     @QueryMapping
-    public List<Graph.ResolutionTask> tasks() {
+    public List<GraphModel.ResolutionTask> tasks() {
         return List.of();
     }
 
     @QueryMapping
-    public List<Graph.Notification> notifications(@Argument(name="after") float after) {
+    public List<GraphModel.Notification> notifications(@Argument(name="after") float after) {
         return List.of();
     }
 
     @MutationMapping
-    public String observe(@Argument(name = "observation") Graph.ObservationInput observation) {
+    public String observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
         var authorization = getAuthorization();
         var scope = authorization.getScope(ContextScope.class);
         var observable = scope.getService(Reasoner.class).resolveObservable(observation.observable());
         var geometry = Geometry.create(observation.geometry());
         var pod = observation.defaultValue() == null ? null : Utils.Data.asPOD(observation.defaultValue());
         var observerGeometry = observation.observerGeometry() == null ? null : Geometry.create(observation.observerGeometry());
-        var task = authorization.getScope(ContextScope.class).observe(observation.name(), geometry,
-                observable, pod, observerGeometry);
+        var task = authorization.getScope(ContextScope.class)
+                                .observe(observation.name(), geometry, observable, pod, observerGeometry);
         return task.getId();
     }
 

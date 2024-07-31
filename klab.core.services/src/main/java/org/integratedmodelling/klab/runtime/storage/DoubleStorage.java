@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
+import org.integratedmodelling.klab.runtime.dtobsolete.StorageScope;
 import org.ojalgo.array.BufferArray;
 
 import java.util.NavigableMap;

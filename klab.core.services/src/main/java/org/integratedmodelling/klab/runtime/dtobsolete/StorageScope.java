@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.storage;
+package org.integratedmodelling.klab.runtime.dtobsolete;
 
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -49,8 +49,8 @@ public class StorageScope {
 
     static public void main(String[] args) throws InterruptedException {
 
-        for (int n = 1; n < 10; n++) {
-
+//        for (int n = 1; n < 10; n++) {
+//
 //            var made = getFloatFactory().make(1000 * 1000);
 //            AtomicInteger fatto = new AtomicInteger(0);
 //            long start = System.currentTimeMillis();
@@ -78,7 +78,7 @@ public class StorageScope {
 //                made.set(i, i);
 //            }
 //            System.out.println("Invece di " + (System.currentTimeMillis() - start));
-        }
+//        }
     }
 
     private BufferArray.MappedFileFactory getFloatFactory() {

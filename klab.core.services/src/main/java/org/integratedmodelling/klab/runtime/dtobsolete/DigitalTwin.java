@@ -1,4 +1,4 @@
-package org.integratedmodelling.klab.runtime.digitaltwin;
+package org.integratedmodelling.klab.runtime.dtobsolete;
 
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Histogram;
@@ -8,10 +8,8 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
-import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.knowledge.observation.Observer;
+import org.integratedmodelling.klab.api.knowledge.observation.*;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.*;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
@@ -28,7 +26,6 @@ import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
-import org.integratedmodelling.klab.runtime.storage.StorageScope;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -38,6 +35,7 @@ import org.ojalgo.concurrent.Parallelism;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serial;
+import java.lang.Process;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -67,8 +65,10 @@ import java.util.stream.Collectors;
  * <p>Ideas for the DT API and interface:</p>
  * <ul>
  *     <li>Use GraphQL on the main DT GET endpoint for inquiries along the observation structure and
- *     possibly the dataflow. That could be just the URL of the runtime + /{observation|dataflow}/+ the ID of the
- *     DT/context, possibly starting at a non-root observation or actuator (their IDs are the same). This can be the
+ *     possibly the dataflow. That could be just the URL of the runtime + /{observation|dataflow}/+ the ID
+ *     of the
+ *     DT/context, possibly starting at a non-root observation or actuator (their IDs are the same). This
+ *     can be the
  *     basis for the remote digital twin API.</li>
  * </ul>
  *
@@ -79,11 +79,29 @@ public class DigitalTwin implements Closeable {
     private final ContextScope scope;
     private long MAXIMUM_TASK_TIMEOUT_HOURS = 48l;
     private StorageScope storageScope;
-    private final Graph<Observation, DefaultEdge> logicalStructure = new DefaultDirectedGraph<Observation,
-            DefaultEdge>(DefaultEdge.class);
-    private final Graph<Observation, DefaultEdge> physicalStructure = new DefaultDirectedGraph<Observation,
-            DefaultEdge>(DefaultEdge.class);
+    private final Graph<Observation, StructureEdge> logicalStructure =
+            new DefaultDirectedGraph<>(StructureEdge.class);
+    private final Graph<Observation, StructureEdge> physicalStructure =
+            new DefaultDirectedGraph<>(StructureEdge.class);
     private final Map<String, Process> derivedOccurrents = new HashMap<>();
+
+    public static class StructureEdge extends DefaultEdge {
+
+        public enum Type {
+            Parent,
+            Observer
+        }
+
+        public Type type = Type.Parent;
+
+        StructureEdge() {
+
+        }
+
+        StructureEdge(Type type) {
+            this.type = type;
+        }
+    }
 
     public boolean validate(ContextScope scope) {
         // check out all calls etc.
@@ -141,9 +159,8 @@ public class DigitalTwin implements Closeable {
         var parallelism = getParallelism(scope);
 
         return switch (functor) {
-            case null ->
-                    throw new KlabInternalErrorException("function call " + computation.getUrn() + " " +
-                            "produced a null" + " result");
+            case null -> throw new KlabInternalErrorException("function call " + computation.getUrn() + " " +
+                    "produced a null" + " result");
             case Instantiator instantiator ->
                     new Executor(Executor.Type.OBSERVATION_INSTANTIATOR, parallelism) {
                         @Override
@@ -347,7 +364,8 @@ public class DigitalTwin implements Closeable {
         var groups = executionOrder.stream().collect(Collectors.groupingBy(s -> s.getSecond()));
         var lastOrder = executionOrder.getLast().getSecond();
         var parallelism = getParallelism(scope);
-        var initializationScope = scope; // FIXME CHECK .withGeometry(scope.getContextObservation().getGeometry().initialization());
+        var initializationScope = scope; // FIXME CHECK .withGeometry(scope.getContextObservation()
+        // .getGeometry().initialization());
 
         for (var i = 0; i <= lastOrder; i++) {
             var actuatorGroup = groups.get(i);
@@ -423,9 +441,12 @@ public class DigitalTwin implements Closeable {
     private Storage createStorage(Observable observable, ContextScope scope) {
         // TODO use options from the scope for parallelization and choice float/double
         var storage = switch (observable.getDescriptionType()) {
-            case QUANTIFICATION -> new DoubleStorage(scope.getContextObservation().getGeometry(), storageScope);
-            case CATEGORIZATION -> new KeyedStorage(scope.getContextObservation().getGeometry(), storageScope);
-            case VERIFICATION -> new BooleanStorage(scope.getContextObservation().getGeometry(), storageScope);
+            case QUANTIFICATION ->
+                    new DoubleStorage(scope.getContextObservation().getGeometry(), storageScope);
+            case CATEGORIZATION ->
+                    new KeyedStorage(scope.getContextObservation().getGeometry(), storageScope);
+            case VERIFICATION ->
+                    new BooleanStorage(scope.getContextObservation().getGeometry(), storageScope);
             default ->
                     throw new KlabIllegalStateException("Unexpected value: " + observable.getDescriptionType());
         };
@@ -605,7 +626,7 @@ public class DigitalTwin implements Closeable {
 
     public Collection<Observation> getLogicalChildren(Observation parent) {
         List<Observation> ret = new ArrayList<>();
-        for (DefaultEdge edge : logicalStructure.incomingEdgesOf(parent)) {
+        for (StructureEdge edge : logicalStructure.incomingEdgesOf(parent)) {
             ret.add(logicalStructure.getEdgeSource(edge));
         }
         return ret;
@@ -613,7 +634,7 @@ public class DigitalTwin implements Closeable {
 
     public Collection<Observation> getPhysicalChildren(Observation parent) {
         List<Observation> ret = new ArrayList<>();
-        for (DefaultEdge edge : physicalStructure.incomingEdgesOf(parent)) {
+        for (StructureEdge edge : physicalStructure.incomingEdgesOf(parent)) {
             ret.add(physicalStructure.getEdgeSource(edge));
         }
         return ret;
@@ -623,7 +644,7 @@ public class DigitalTwin implements Closeable {
         if (child instanceof ObservationGroup) {
             return getPhysicalParent(child);
         }
-        for (DefaultEdge edge : logicalStructure.outgoingEdgesOf(child)) {
+        for (StructureEdge edge : logicalStructure.outgoingEdgesOf(child)) {
             return logicalStructure.getEdgeTarget(edge);
         }
         return null;
@@ -633,8 +654,20 @@ public class DigitalTwin implements Closeable {
         if (!physicalStructure.vertexSet().contains(child)) {
             return null;
         }
-        for (DefaultEdge edge : physicalStructure.outgoingEdgesOf(child)) {
+        for (StructureEdge edge : physicalStructure.outgoingEdgesOf(child)) {
             return physicalStructure.getEdgeTarget(edge);
+        }
+        return null;
+    }
+
+    public Observer getObserverOf(Observation observation) {
+        if (!physicalStructure.vertexSet().contains(observation)) {
+            return null;
+        }
+        for (StructureEdge edge : physicalStructure.incomingEdgesOf(observation)) {
+            if (edge.type == StructureEdge.Type.Observer) {
+                return (Observer)physicalStructure.getEdgeSource(edge);
+            }
         }
         return null;
     }
@@ -707,10 +740,10 @@ public class DigitalTwin implements Closeable {
         Set<Observation> outgoing = new HashSet<>();
         Set<Observation> incoming = new HashSet<>();
         if (logicalStructure.containsVertex(original)) {
-            for (DefaultEdge edge : logicalStructure.outgoingEdgesOf(original)) {
+            for (StructureEdge edge : logicalStructure.outgoingEdgesOf(original)) {
                 outgoing.add(logicalStructure.getEdgeTarget(edge));
             }
-            for (DefaultEdge edge : logicalStructure.incomingEdgesOf(original)) {
+            for (StructureEdge edge : logicalStructure.incomingEdgesOf(original)) {
                 incoming.add(logicalStructure.getEdgeSource(edge));
             }
             logicalStructure.removeVertex(original);
@@ -740,10 +773,10 @@ public class DigitalTwin implements Closeable {
         if (logicalStructure.containsVertex(original)) {
             List<Observation> sources = new ArrayList<>();
             List<Observation> targets = new ArrayList<>();
-            for (DefaultEdge edge : logicalStructure.incomingEdgesOf(original)) {
+            for (StructureEdge edge : logicalStructure.incomingEdgesOf(original)) {
                 sources.add(logicalStructure.getEdgeSource(edge));
             }
-            for (DefaultEdge edge : logicalStructure.outgoingEdgesOf(original)) {
+            for (StructureEdge edge : logicalStructure.outgoingEdgesOf(original)) {
                 targets.add(logicalStructure.getEdgeTarget(edge));
             }
             logicalStructure.removeVertex(original);
@@ -758,10 +791,10 @@ public class DigitalTwin implements Closeable {
         if (physicalStructure.containsVertex(original)) {
             List<Observation> sources = new ArrayList<>();
             List<Observation> targets = new ArrayList<>();
-            for (DefaultEdge edge : physicalStructure.incomingEdgesOf(original)) {
+            for (StructureEdge edge : physicalStructure.incomingEdgesOf(original)) {
                 sources.add(physicalStructure.getEdgeSource(edge));
             }
-            for (DefaultEdge edge : physicalStructure.outgoingEdgesOf(original)) {
+            for (StructureEdge edge : physicalStructure.outgoingEdgesOf(original)) {
                 targets.add(physicalStructure.getEdgeTarget(edge));
             }
             physicalStructure.removeVertex(original);

@@ -1,10 +1,10 @@
 package org.integratedmodelling.common.services.client.runtime;
 
-import org.integratedmodelling.common.graph.Graph;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -128,26 +128,29 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                     resourceUrn = urn.getUrn();
                 } else if (o instanceof KimSymbolDefinition symbol) {
                     // must be an "observation" class
-                    if ("observation".equals(symbol.getDefineClass()) && symbol.getValue() instanceof Map<?,?> definition) {
-//                        semantics: earth:Region
-//                        space: {
-//                            shape: "EPSG:4326 POLYGON((33.796 -7.086, 35.946 -7.086, 35.946 -9.41, 33.796 -9.41, 33.796 -7.086))"
-//                            grid: 1.km
-//                        }
-//                        //	year: 2010 ...or...
-//                        time: {
-//                            year: 2010
-//                            step: 1.day
-//                        }
+                    if ("observation".equals(symbol.getDefineClass()) && symbol.getValue() instanceof Map<?
+                            , ?> definition) {
+                        //                        semantics: earth:Region
+                        //                        space: {
+                        //                            shape: "EPSG:4326 POLYGON((33.796 -7.086, 35.946 -7
+                        //                            .086, 35.946 -9.41, 33.796 -9.41, 33.796 -7.086))"
+                        //                            grid: 1.km
+                        //                        }
+                        //                        //	year: 2010 ...or...
+                        //                        time: {
+                        //                            year: 2010
+                        //                            step: 1.day
+                        //                        }
                         name = symbol.getName();
                         if (definition.containsKey("semantics")) {
-                            observable = scope.getService(Reasoner.class).resolveObservable(definition.get("semantics").toString());
+                            observable = scope.getService(Reasoner.class).resolveObservable(definition.get(
+                                    "semantics").toString());
                         }
                         if (definition.containsKey("space") || definition.containsKey("time")) {
                             var geometryBuilder = Geometry.builder();
                             if (definition.containsKey("space")) {
                                 var spaceBuilder = geometryBuilder.space();
-                                if (definition.get("space") instanceof Map<?,?> spaceDefinition) {
+                                if (definition.get("space") instanceof Map<?, ?> spaceDefinition) {
                                     if (spaceDefinition.containsKey("shape")) {
                                         spaceBuilder.shape(spaceDefinition.get("shape").toString());
                                     }
@@ -160,7 +163,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                             }
                             if (definition.containsKey("time")) {
                                 var timeBuilder = geometryBuilder.time();
-                                if (definition.get("time") instanceof Map<?,?> timeDefinition) {
+                                if (definition.get("time") instanceof Map<?, ?> timeDefinition) {
                                     if (timeDefinition.containsKey("year")) {
                                         // TODO everything
                                     }
@@ -173,7 +176,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
                     }
                 } else if (o instanceof KimModel model) {
                     // send the model URN and extract the observable
-                    observable =  scope.getService(Reasoner.class).declareObservable(model.getObservables().get(0));
+                    observable =
+                            scope.getService(Reasoner.class).declareObservable(model.getObservables().get(0));
                     modelUrn = model.getUrn();
                 }
             }
@@ -181,7 +185,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
         // TODO ensure we have all info to proceed
 
-        // TODO if we have no geometry and it's a dependent, use the observer's scale if any, otherwise empty is OK
+        // TODO if we have no geometry and it's a dependent, use the observer's scale if any, otherwise
+        //  empty is OK
 
         // TODO if we have no name, use the observable
 
@@ -190,10 +195,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         ObservationInput(String name, String observable, String geometry, String defaultValue, String
         observerGeometry) {
          */
-        Graph.ObservationInput request = new Graph.ObservationInput(name, observable.getUrn(),
+        GraphModel.ObservationInput request = new GraphModel.ObservationInput(name, observable.getUrn(),
                 geometry.encode(), defaultValue, observerGeometry == null ? null : observerGeometry.encode());
 
-        return graphClient.query(Graph.Queries.OBSERVE, String.class, scope, "observation", request);
+        return graphClient.query(GraphModel.Queries.GraphQL.OBSERVE, String.class, scope, "observation",
+                request);
     }
 
     @Override

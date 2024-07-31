@@ -66,6 +66,7 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+
         <!-- needs to be forced for some reason, or GraphQL won't initialize -->
         <dependency>
             <groupId>io.micrometer</groupId>
