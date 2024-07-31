@@ -76,7 +76,7 @@ public class DataflowImpl implements Dataflow<Observation> {
 
     }
 
-    private Actuator findActuator(String id) {
+    private Actuator findActuator(long id) {
         for (Actuator actuator : getComputation()) {
             Actuator found = findActuator(actuator, id);
             if (found != null) {
@@ -86,8 +86,8 @@ public class DataflowImpl implements Dataflow<Observation> {
         return null;
     }
 
-    private Actuator findActuator(Actuator actuator, String id) {
-        if (id.equals(actuator.getId())) {
+    private Actuator findActuator(Actuator actuator, long id) {
+        if (id == actuator.getId()) {
             return actuator;
         }
         for (Actuator child : actuator.getChildren()) {

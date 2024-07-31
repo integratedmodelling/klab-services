@@ -22,12 +22,12 @@ import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationIm
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 
 /**
- * The interface Observation, which is the semantic equivalent of an Artifact and once created in a k.LAB
- * session, can be made reactive by supplementing it with a behavior. Models may bind instantiated
- * observations to actor files that will provide behaviors for their instances (or a subset thereof). Once
- * made reactive, they can interact with each other and the system.
- * <p>
- * FIXME the API needs to lose a lot of weight
+ * The interface Observation, which is the semantic equivalent of an Artifact and represents an observable in
+ * the observation graph of a k.LAB context. Once created in a k.LAB session, it can be made reactive by
+ * supplementing it with a behavior, which will create an agent accessible through the context scope focused
+ * on the observation. Models may bind instantiated observations to actor files that will provide behaviors
+ * for their instances (or a subset thereof). Once made reactive, they can interact with each other and the
+ * system.
  * <p>
  * TODO we could just use Observation (abstract) + DirectObservation (rename to Substantial) and State, then
  *  everything else is taken care of by the semantics (folder == getObservable().isCollective()), the DT
@@ -37,6 +37,17 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
  * @version $Id: $Id
  */
 public interface Observation extends Knowledge, Artifact, Resolvable {
+
+    static final long UNASSIGNED_ID = -1;
+
+    /**
+     * The ID of an observation is a positive long for efficiency. Paths such as 3.44.234 identify observation
+     * hierarchies to reconstruct scopes. An ID of -1L means that the observation is unassigned to the
+     * observation graph.
+     *
+     * @return
+     */
+    long getId();
 
     /**
      * Return the observable.
@@ -82,7 +93,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable {
      * @throws IllegalArgumentException if the locator is unsuitable for the observation
      */
     Observation at(Locator locator);
-
 
     static Observation EMPTY_OBSERVATION = new ObservationImpl() {
 

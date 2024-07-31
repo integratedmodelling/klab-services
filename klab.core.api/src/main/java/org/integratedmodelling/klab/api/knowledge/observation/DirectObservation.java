@@ -26,7 +26,7 @@ import org.integratedmodelling.klab.api.knowledge.ObjectArtifact;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public abstract interface DirectObservation extends Observation, Identity, ObjectArtifact {
+public abstract interface DirectObservation extends Observation, ObjectArtifact {
 
 	/**
 	 * <p>

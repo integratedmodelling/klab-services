@@ -8,7 +8,6 @@ import org.integratedmodelling.klab.api.geometry.Offset;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.data.histogram.SPDTHistogram;
-import org.integratedmodelling.klab.runtime.dtobsolete.StorageScope;
 import org.ojalgo.array.BufferArray;
 
 import java.util.NavigableMap;
@@ -30,9 +29,9 @@ public class DoubleStorage implements Storage {
     private final Scale scale;
     long sliceSize;
     private NavigableMap<Long, DirectSliceBuffer> buffers = new TreeMap<>();
-    private StorageScope scope;
+    private StateStorageImpl scope;
 
-    public DoubleStorage(Scale scale, StorageScope scope) {
+    public DoubleStorage(Scale scale, StateStorageImpl scope) {
         this.scope = scope;
         this.scale = scale;
         this.sliceSize = scale.without(Geometry.Dimension.Type.TIME).size();

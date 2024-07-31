@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 public class ActuatorImpl implements Actuator {
 
     private static final long serialVersionUID = 2500101522003062757L;
-    private String id;
+    private long id;
     private long timestamp;
     private boolean empty;
     private String name;
@@ -35,7 +35,7 @@ public class ActuatorImpl implements Actuator {
     private Queue<ObservationStrategyObsolete> deferrals = new ConcurrentLinkedQueue<>();
 
     @Override
-    public String getId() {
+    public long getId() {
         return this.id;
     }
 
@@ -104,7 +104,7 @@ public class ActuatorImpl implements Actuator {
         return this.data;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

@@ -127,12 +127,12 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Collection<Relationship> getOutgoingRelationships(DirectObservation observation) {
+    public Collection<Observation> getOutgoingRelationships(DirectObservation observation) {
         return List.of();
     }
 
     @Override
-    public Collection<Relationship> getIncomingRelationships(DirectObservation observation) {
+    public Collection<Observation> getIncomingRelationships(DirectObservation observation) {
         return List.of();
     }
 

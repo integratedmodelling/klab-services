@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.runtime.dtobsolete;
 
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.data.Histogram;
 import org.integratedmodelling.klab.api.data.RuntimeAsset;
 import org.integratedmodelling.klab.api.data.Storage;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -10,8 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.*;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.*;
+//import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -26,6 +24,7 @@ import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
+import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -78,7 +77,7 @@ public class DigitalTwin implements Closeable {
 
     private final ContextScope scope;
     private long MAXIMUM_TASK_TIMEOUT_HOURS = 48l;
-    private StorageScope storageScope;
+    private StateStorageImpl storageScope;
     private final Graph<Observation, StructureEdge> logicalStructure =
             new DefaultDirectedGraph<>(StructureEdge.class);
     private final Graph<Observation, StructureEdge> physicalStructure =
@@ -240,7 +239,7 @@ public class DigitalTwin implements Closeable {
         if (data == null && /* shouldn't happen */ !actuator.isReference()) {
             data = new ObservationData();
             data.actuator = actuator;
-            data.observation = createObservation(actuator, contextObservation, scope);
+//            data.observation = createObservation(actuator, contextObservation, scope);
             data.scale = scope.getContextObservation().getGeometry();
             data.contextObservation = contextObservation;
 
@@ -334,7 +333,7 @@ public class DigitalTwin implements Closeable {
     /**
      * TODO if Javolution or something else eventually provides a fast map, use that here.
      */
-    Map<String, ObservationData> observationData = new HashMap<>();
+    Map<Long, ObservationData> observationData = new HashMap<>();
 
     /*
      * TODO a separate Inspector for debugging and testing (ideally, use a different top
@@ -344,7 +343,7 @@ public class DigitalTwin implements Closeable {
 
     public DigitalTwin(ContextScope scope) {
         this.scope = scope;
-        this.storageScope = new StorageScope(scope);
+        this.storageScope = new StateStorageImpl(scope);
     }
 
     /**
@@ -454,43 +453,43 @@ public class DigitalTwin implements Closeable {
         return storage;
     }
 
-    private ObservationImpl createObservation(Actuator actuator, DirectObservation parent,
-                                              ContextScope scope) {
-
-        var ret = switch (actuator.getObservable().getDescriptionType()) {
-            case ACKNOWLEDGEMENT ->
-                    new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
-            case INSTANTIATION, CONNECTION ->
-                    new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
-            case CATEGORIZATION, VERIFICATION, QUANTIFICATION ->
-                    new StateImpl(actuator.getObservable(), actuator.getId(), scope) {
-
-                        private Storage storage = createStorage(actuator.getObservable(), scope);
-
-                        @Override
-                        public Histogram getHistogram() {
-                            return storage.getHistogram();
-                        }
-
-                        @Override
-                        public <T extends Storage> T storage(Class<T> storageClass) {
-                            // Just let this throw a cast exception instead of adding painful checks
-                            return (T) storage;
-                        }
-                    };
-            case SIMULATION -> new ProcessImpl(actuator.getObservable(), actuator.getId(), scope);
-            case CHARACTERIZATION, CLASSIFICATION -> null; // TODO
-            case DETECTION -> new ConfigurationImpl(actuator.getObservable(), actuator.getId(), scope);
-            default -> null;
-        };
-
-        add(ret);
-        if (parent != null) {
-            link(ret, parent);
-        }
-
-        return ret;
-    }
+//    private ObservationImpl createObservation(Actuator actuator, DirectObservation parent,
+//                                              ContextScope scope) {
+//
+//        var ret = switch (actuator.getObservable().getDescriptionType()) {
+//            case ACKNOWLEDGEMENT ->
+//                    new DirectObservationImpl(actuator.getObservable(), actuator.getId(), scope);
+//            case INSTANTIATION, CONNECTION ->
+//                    new ObservationGroupImpl(actuator.getObservable(), actuator.getId(), scope);
+//            case CATEGORIZATION, VERIFICATION, QUANTIFICATION ->
+//                    new StateImpl(actuator.getObservable(), scope) {
+//
+//                        private Storage storage = createStorage(actuator.getObservable(), scope);
+//
+//                        @Override
+//                        public Histogram getHistogram() {
+//                            return storage.getHistogram();
+//                        }
+//
+//                        @Override
+//                        public <T extends Storage> T storage(Class<T> storageClass) {
+//                            // Just let this throw a cast exception instead of adding painful checks
+//                            return (T) storage;
+//                        }
+//                    };
+//            case SIMULATION -> new ProcessImpl(actuator.getObservable(), actuator.getId(), scope);
+//            case CHARACTERIZATION, CLASSIFICATION -> null; // TODO
+//            case DETECTION -> new ConfigurationImpl(actuator.getObservable(), actuator.getId(), scope);
+//            default -> null;
+//        };
+//
+//        add(ret);
+//        if (parent != null) {
+//            link(ret, parent);
+//        }
+//
+//        return ret;
+//    }
 
 
     /**
@@ -579,7 +578,7 @@ public class DigitalTwin implements Closeable {
                     var odata = this.observationData.get(actuator.getId());
                     context = (DirectObservation) odata.observation;
                 }
-                ret.put(actuator.getId(), actuator);
+//                ret.put(actuator.getId(), actuator);
             }
             collectActuators(actuator.getChildren(), dataflow, scope, context, ret);
         }
@@ -641,9 +640,9 @@ public class DigitalTwin implements Closeable {
     }
 
     public Observation getLogicalParent(Observation child) {
-        if (child instanceof ObservationGroup) {
-            return getPhysicalParent(child);
-        }
+//        if (child instanceof ObservationGroup) {
+//            return getPhysicalParent(child);
+//        }
         for (StructureEdge edge : logicalStructure.outgoingEdgesOf(child)) {
             return logicalStructure.getEdgeTarget(edge);
         }
@@ -698,7 +697,7 @@ public class DigitalTwin implements Closeable {
              * we keep the information about the artifact being owned by a process, so that we can
              * tell the occurrence when it's relevant.
              */
-            this.derivedOccurrents.put(childArtifact.getId(), (Process) parentArtifact);
+//            this.derivedOccurrents.put(childArtifact.getId(), (Process) parentArtifact);
 
             parentArtifact = getPhysicalParent(parentArtifact);
         }
@@ -711,14 +710,14 @@ public class DigitalTwin implements Closeable {
         physicalStructure.addEdge(childArtifact, parentArtifact);
 
         // if we're linking a folder to something, all done
-        if (childArtifact instanceof ObservationGroup) {
-            return;
-        }
-
-        // otherwise link, possibly skipping the non-logical level
-        if (parentArtifact instanceof ObservationGroup) {
-            parentArtifact = getPhysicalParent(parentArtifact);
-        }
+//        if (childArtifact instanceof ObservationGroup) {
+//            return;
+//        }
+//
+//        // otherwise link, possibly skipping the non-logical level
+//        if (parentArtifact instanceof ObservationGroup) {
+//            parentArtifact = getPhysicalParent(parentArtifact);
+//        }
 
         // add process children but not folders
         logicalStructure.addVertex(childArtifact);
@@ -812,7 +811,7 @@ public class DigitalTwin implements Closeable {
         return derivedOccurrents.get(artifact.getId());
     }
 
-    public Observation getObservation(String id) {
+    public Observation getObservation(long id) {
         ObservationData data = observationData.get(id);
         return data == null ? Observation.empty() : data.observation;
     }

@@ -20,40 +20,40 @@ public class DirectObservationImpl extends ObservationImpl implements DirectObse
 	public DirectObservationImpl() {
 	}
 
-	public DirectObservationImpl(Observable observable, String id, ContextScope scope) {
-		super(observable, id, scope);
+	public DirectObservationImpl(Observable observable) {
+		super(observable);
 		this.name = observable.getName();
 	}
-
-	@Override
-	public org.integratedmodelling.klab.api.identities.Identity.Type getIdentityType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Identity getParentIdentity() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean is(org.integratedmodelling.klab.api.identities.Identity.Type type) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public Parameters<String> getData() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public <T extends Identity> T getParentIdentity(Class<T> type) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+//
+//	@Override
+//	public org.integratedmodelling.klab.api.identities.Identity.Type getIdentityType() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//
+//	@Override
+//	public Identity getParentIdentity() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//
+//	@Override
+//	public boolean is(org.integratedmodelling.klab.api.identities.Identity.Type type) {
+//		// TODO Auto-generated method stub
+//		return false;
+//	}
+//
+//	@Override
+//	public Parameters<String> getData() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//
+//	@Override
+//	public <T extends Identity> T getParentIdentity(Class<T> type) {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
 
 	@Override
 	public <T extends Artifact> Collection<T> getChildren(Class<T> cls) {

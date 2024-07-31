@@ -1,5 +1,6 @@
-package org.integratedmodelling.klab.runtime.dtobsolete;
+package org.integratedmodelling.klab.runtime.storage;
 
+import org.integratedmodelling.klab.api.digitaltwin.StateStorage;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
@@ -14,7 +15,7 @@ import java.io.File;
  * the context data at the runtime side. The StorageScope is managed by the StorageManager, which is a singleton used by
  * the DigitalTwin.
  */
-public class StorageScope {
+public class StateStorageImpl implements StateStorage {
 
     private File workspace;
     private File floatBackupFile;
@@ -31,7 +32,7 @@ public class StorageScope {
 
     private Parallelism parallelism = Parallelism.ONE;
 
-    public StorageScope(ContextScope scope) {
+    public StateStorageImpl(ContextScope scope) {
         // choose the mm files, parallelism level and the floating point representation
         this.workspace = ServiceConfiguration.INSTANCE.getScratchDataDirectory("ktmp");
         this.floatBackupFile = new File(this.workspace + File.separator + "fstorage.bin");

@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
+import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.services.runtime.neo4j.GraphDatabaseNeo4jEmbedded;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -26,15 +28,17 @@ public class RuntimeService extends BaseService
         org.integratedmodelling.klab.api.services.RuntimeService,
         org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
-//    /**
-//     * The runtime maintains a "digital twin" per each context ID in its purvey. The contexts must release
-//     * resources in the runtime when they go out of scope.
-//     */
-//    Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
+    //    /**
+    //     * The runtime maintains a "digital twin" per each context ID in its purvey. The contexts must
+    //     release
+    //     * resources in the runtime when they go out of scope.
+    //     */
+    //    Map<String, DigitalTwin> digitalTwins = Collections.synchronizedMap(new HashMap<>());
     private String hardwareSignature =
             org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
 
     private RuntimeConfiguration configuration;
+    private GraphDatabase graphDatabase;
 
     public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
         super(scope, Type.RUNTIME, options);
@@ -51,6 +55,18 @@ public class RuntimeService extends BaseService
             this.configuration.setServiceId(UUID.randomUUID().toString());
             saveConfiguration();
         }
+    }
+
+    private boolean createGraphDatabase() {
+        // TODO choose the DB from configuration
+        this.graphDatabase =
+                new GraphDatabaseNeo4jEmbedded(BaseService.getConfigurationSubdirectory(startupOptions, "dt"
+                ).toPath());
+        return this.graphDatabase.isOnline();
+    }
+
+    public GraphDatabase getGraphDatabase() {
+        return this.graphDatabase;
     }
 
     private void saveConfiguration() {
@@ -71,26 +87,32 @@ public class RuntimeService extends BaseService
         extensionPackages.add("org.integratedmodelling.klab.runtime");
         extensionPackages.add("org.integratedmodelling.klab.runtime.temporary");
 
+        if (createGraphDatabase()) {
 
+            /*
+             * Check for updates, load and scan all new plug-ins, returning the main packages to scan
+             * FIXME update, put in BaseService
+             */
+            //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
 
-        /*
-         * Check for updates, load and scan all new plug-ins, returning the main packages to scan
-         * FIXME update, put in BaseService
-         */
-        //        extensionPackages.addAll(Configuration.INSTANCE.updateAndLoadComponents("resolver"));
+            /*
+             * Scan all packages registered under the parent package of all k.LAB services. TODO all
+             * assets from there should be given default permissions (or those encoded with their
+             * annotations) that are exposed to the admin API.
+             */
+            for (String pack : extensionPackages) {
+                ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+                        ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
+            }
 
-        /*
-         * Scan all packages registered under the parent package of all k.LAB services. TODO all
-         * assets from there should be given default permissions (or those encoded with their
-         * annotations) that are exposed to the admin API.
-         */
-        for (String pack : extensionPackages) {
-            ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
-                    ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
+            serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                    capabilities(serviceScope()));
+        } else {
+
+            serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
+                    capabilities(serviceScope()));
+
         }
-
-        serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                capabilities(serviceScope()));
 
     }
 
@@ -144,15 +166,15 @@ public class RuntimeService extends BaseService
     public String serviceId() {
         return configuration.getServiceId();
     }
-//
-//    private DigitalTwin getDigitalTwin(ContextScope scope) {
-//        DigitalTwin ret = digitalTwins.get(scope.getIdentity().getId());
-//        if (ret == null) {
-//            ret = new DigitalTwin(scope);
-//            digitalTwins.put(scope.getIdentity().getId(), ret);
-//        }
-//        return ret;
-//    }
+    //
+    //    private DigitalTwin getDigitalTwin(ContextScope scope) {
+    //        DigitalTwin ret = digitalTwins.get(scope.getIdentity().getId());
+    //        if (ret == null) {
+    //            ret = new DigitalTwin(scope);
+    //            digitalTwins.put(scope.getIdentity().getId(), ret);
+    //        }
+    //        return ret;
+    //    }
 
     @Override
     public Map<String, String> getExceptionTestcases(Scope scope, boolean deleteExisting) {
@@ -178,19 +200,20 @@ public class RuntimeService extends BaseService
 
     @Override
     public boolean releaseScope(Scope scope) {
-//
-//        /**
-//         * TODO fix based on the type of scope. Each should release every resource held below the scope.
-//         */
-//        var dt = this.digitalTwins.remove(scope.getIdentity().getId());
-//        if (dt != null) {
-//            try {
-//                dt.close();
-//            } catch (IOException e) {
-//                throw new KlabInternalErrorException(e);
-//            }
-//        }
-//        return dt != null;
+        //
+        //        /**
+        //         * TODO fix based on the type of scope. Each should release every resource held below the
+        //          scope.
+        //         */
+        //        var dt = this.digitalTwins.remove(scope.getIdentity().getId());
+        //        if (dt != null) {
+        //            try {
+        //                dt.close();
+        //            } catch (IOException e) {
+        //                throw new KlabInternalErrorException(e);
+        //            }
+        //        }
+        //        return dt != null;
         return true;
     }
 

@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.api.digitaltwin;
 
 public interface DigitalTwin {
 
-    GraphStorage graphStorage();
 
     StateStorage stateStorage();
 

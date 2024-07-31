@@ -69,6 +69,13 @@ public interface Actuator extends Plan, Serializable {
     static final String DEFERRED_STRATEGY_CALL = "klab.internal.deferred";
 
     /**
+     * The ID of the actuator must be the same as that of the observation it handles.
+     *
+     * @return the observation's ID.
+     */
+    long getId();
+
+    /**
      * All actuators have a name that corresponds 1-to-1 to the semantics it was created to resolve
      * (observable reference name). The only case for duplication of the same name is when a direct
      * observation is made as instantiation (with type
@@ -135,10 +142,10 @@ public interface Actuator extends Plan, Serializable {
      * the list should be empty: any mediations are part of the referencing actuator's computations.
      * <p>
      * An internal service call named {@link #DEFERRED_STRATEGY_CALL} should be used to specify deferred
-     * observation strategies, with the {@link ObservationStrategyObsolete} communicated by the resolver as default
-     * {@link ServiceCall#DEFAULT_PARAMETER_NAME} parameter. The runtime will resolve the strategy once the
-     * context observation has been made and insert the resulting dataflow's actuators as children of the
-     * current one.
+     * observation strategies, with the {@link ObservationStrategyObsolete} communicated by the resolver as
+     * default {@link ServiceCall#DEFAULT_PARAMETER_NAME} parameter. The runtime will resolve the strategy
+     * once the context observation has been made and insert the resulting dataflow's actuators as children of
+     * the current one.
      *
      * @return all computations. Never null, possibly empty.
      */

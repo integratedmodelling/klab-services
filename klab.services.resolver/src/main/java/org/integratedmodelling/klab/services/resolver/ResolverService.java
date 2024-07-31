@@ -420,7 +420,8 @@ public class ResolverService extends BaseService implements Resolver {
                 ret.getComputation().add(getServiceCall(computation));
             }
 
-            ret.setId(id);
+            // GAAAH
+//            ret.setId(id);
             ret.setName(observable.getName());
             ret.setAlias(observable.getStatedName());
 

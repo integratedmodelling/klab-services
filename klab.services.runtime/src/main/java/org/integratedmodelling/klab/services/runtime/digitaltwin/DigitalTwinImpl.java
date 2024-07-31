@@ -3,37 +3,41 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.digitaltwin.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 
 public class DigitalTwinImpl implements DigitalTwin {
 
     GraphDatabase graphDatabase;
+    StateStorage stateStorage;
+    ObservationGraph observationGraph;
+    DataflowGraph dataflowGraph;
+    ProvenanceGraph provenanceGraph;
 
     public DigitalTwinImpl(ContextScope scope, GraphDatabase database) {
         this.graphDatabase = database;
-    }
-
-    @Override
-    public GraphStorage graphStorage() {
-        return null;
+        this.observationGraph = new ObservationGraphImpl(database, scope);
+        this.dataflowGraph = new DataflowGraphImpl(database, scope);
+        this.provenanceGraph = new ProvenanceGraphImpl(database, scope);
+        this.stateStorage = new StateStorageImpl(scope);
     }
 
     @Override
     public StateStorage stateStorage() {
-        return null;
+        return this.stateStorage;
     }
 
     @Override
     public ObservationGraph observationGraph() {
-        return null;
+        return this.observationGraph;
     }
 
     @Override
     public DataflowGraph dataflowGraph() {
-        return null;
+        return this.dataflowGraph;
     }
 
     @Override
     public ProvenanceGraph provenanceGraph() {
-        return null;
+        return this.provenanceGraph;
     }
 }

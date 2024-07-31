@@ -323,7 +323,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observation a {@link DirectObservation} object.
      * @return a {@link java.util.Collection} object.
      */
-    Collection<Relationship> getOutgoingRelationships(DirectObservation observation);
+    Collection<Observation> getOutgoingRelationships(DirectObservation observation);
 
     /**
      * Inspect the network graph of the current context, returning all relationships that have the passed
@@ -332,7 +332,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observation a {@link DirectObservation} object.
      * @return a {@link java.util.Collection} object.
      */
-    Collection<Relationship> getIncomingRelationships(DirectObservation observation);
+    Collection<Observation> getIncomingRelationships(DirectObservation observation);
 
     /**
      * Return the observations in this scope as a map indexed by observable.

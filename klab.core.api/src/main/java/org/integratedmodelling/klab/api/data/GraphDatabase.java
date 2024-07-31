@@ -1,5 +1,10 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
+
 import java.net.URL;
 
 /**
@@ -8,6 +13,20 @@ import java.net.URL;
  * persistent or non-persistent, distributed or local digital twin operation according to configuration.
  */
 public interface GraphDatabase {
+
+    /**
+     * The database should only be used in a contextualized form, which will establish any possible long-lived
+     * connection so that performance is optimal. Implementations should throw an exception when
+     * contextualization has not happened.
+     * <p>
+     * If the database serves multiple contexts, the contextualization operation should also build or load a
+     * main context node, to which all root observations will be linked, and the context-specific dataflow and
+     * provenance roots..
+     *
+     * @param scope
+     * @return
+     */
+    GraphDatabase contextualize(ContextScope scope);
 
     /**
      * If true, the database can create a new database by merging with the URL of another digital twin,
@@ -21,9 +40,20 @@ public interface GraphDatabase {
      * Build a federated graph resulting from merging with the URL pointing to a remote digital twin.
      *
      * @param remoteDigitalTwinURL
-
      * @return the federated database
      */
     GraphDatabase merge(URL remoteDigitalTwinURL);
 
+    /**
+     * Checked after initialization.
+     *
+     * @return true if DB can be used.
+     */
+    boolean isOnline();
+
+    long add(Observation observation, Observation parent);
+
+    long add(Actuator actuator, Actuator parent);
+
+    long add(Provenance.Node node, Provenance.Node parent);
 }

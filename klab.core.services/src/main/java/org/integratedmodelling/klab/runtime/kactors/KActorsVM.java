@@ -30,11 +30,9 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.ObservationGroup;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
-import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsArguments;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -57,7 +55,6 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.While;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
-import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
@@ -1650,7 +1647,7 @@ public class KActorsVM implements VM {
 
         // TODO Auto-generated method stub
         ExpressionCode selector = null;
-        ObservationGroup distribute = null;
+        Observation distribute = null;
         boolean ok = false;
 
         if (arguments.containsKey("select")) {
@@ -1877,7 +1874,7 @@ public class KActorsVM implements VM {
                         || (value instanceof String && ((String) value).isEmpty())
                         || (value instanceof Concept && ((Concept) value).is(SemanticType.NOTHING))
                         || (value instanceof Observable && ((Observable) value).is(SemanticType.NOTHING))
-                        || (value instanceof Artifact && !(value instanceof ObservationGroup) && ((Artifact) value).isEmpty())
+//                        || (value instanceof Artifact && !(value instanceof ObservationGroup) && ((Artifact) value).isEmpty())
                         || (value instanceof Observation && ((Observation) value).getObservable().is(SemanticType.NOTHING));
             case OBJECT:
                 break;

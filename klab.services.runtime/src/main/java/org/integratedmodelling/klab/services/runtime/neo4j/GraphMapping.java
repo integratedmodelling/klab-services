@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.neo4j.ogm.annotation.GeneratedValue;
+import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 import java.util.List;
@@ -16,7 +18,7 @@ public class GraphMapping {
      */
     @NodeEntity
     public static class Observable {
-        Long id;
+        @Id
         String referenceName;
         String urn;
         Set<SemanticType> types;
@@ -24,7 +26,7 @@ public class GraphMapping {
 
     @NodeEntity
     public static class ContextMapping {
-        Long id;
+        @Id
         String contextId;
         List<ObservationMapping> rootObservationsMappings;
         DataflowMapping dataflowMapping;
@@ -33,31 +35,38 @@ public class GraphMapping {
 
     @NodeEntity
     public static class ObservationMapping {
+        @Id @GeneratedValue
         Long id;
 
     }
 
     @NodeEntity
     public static class DataflowMapping {
+        @Id @GeneratedValue
         Long id;
         List<ActuatorMapping> rootActuators;
     }
 
     @NodeEntity
     public static class ProvenanceMapping {
+        @Id @GeneratedValue
         Long id;
         List<ProvenanceNodeMapping> rootProvenanceNodes;
     }
 
     @NodeEntity
     public static class ActuatorMapping {
+        @Id @GeneratedValue
         Long id;
+        Long observationId;
         String name;
         String semantics;
     }
 
     @NodeEntity
     public static class ProvenanceNodeMapping {
+        @Id @GeneratedValue
         Long id;
+        Long observationId;
     }
 }

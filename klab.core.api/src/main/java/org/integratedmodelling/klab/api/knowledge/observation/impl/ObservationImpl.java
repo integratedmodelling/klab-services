@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge.observation.impl;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -30,22 +31,21 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
  */
 public class ObservationImpl implements Observation {
 
+    @Serial
     private static final long serialVersionUID = 8993700853991252827L;
 
     private Observable observable;
     private Scale geometry;
     private Metadata metadata = Metadata.create();
-    private String id;
+    private long id = UNASSIGNED_ID;
     private String urn;
     private boolean resolved;
 
     public ObservationImpl() {
     }
 
-    protected ObservationImpl(Observable observable, String id, ContextScope scope) {
+    protected ObservationImpl(Observable observable) {
         this.observable = observable;
-        this.id = id;
-//        this.scale = scope.getScale();
     }
 
     @Override
@@ -141,9 +141,8 @@ public class ObservationImpl implements Observation {
     }
 
     @Override
-    public String getId() {
-        // TODO Auto-generated method stub
-        return null;
+    public long getId() {
+        return this.id;
     }
 
     @Override
@@ -195,7 +194,7 @@ public class ObservationImpl implements Observation {
         this.metadata = metadata;
     }
 
-    public void setId(String id) {
+    public void setId(long id) {
         this.id = id;
     }
 

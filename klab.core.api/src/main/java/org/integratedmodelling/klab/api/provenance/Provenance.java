@@ -94,13 +94,6 @@ public interface Provenance {
 	abstract interface Node {
 
 		/**
-		 * A unique string ID.
-		 * 
-		 * @return
-		 */
-		String getId();
-
-		/**
 		 * Timestamp of creation or execution.
 		 * 
 		 * @return

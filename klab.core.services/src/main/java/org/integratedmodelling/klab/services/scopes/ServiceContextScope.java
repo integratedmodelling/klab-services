@@ -3,15 +3,11 @@ package org.integratedmodelling.klab.services.scopes;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
-import org.integratedmodelling.klab.api.knowledge.observation.Relationship;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -235,13 +231,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public Collection<Relationship> getOutgoingRelationships(DirectObservation observation) {
+    public Collection<Observation> getOutgoingRelationships(DirectObservation observation) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<Relationship> getIncomingRelationships(DirectObservation observation) {
+    public Collection<Observation> getIncomingRelationships(DirectObservation observation) {
         // TODO Auto-generated method stub
         return null;
     }

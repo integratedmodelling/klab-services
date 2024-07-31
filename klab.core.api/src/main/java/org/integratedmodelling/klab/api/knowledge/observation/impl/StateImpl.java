@@ -11,8 +11,8 @@ public abstract class StateImpl extends ObservationImpl implements State {
 
 	public StateImpl() {}
 
-	public StateImpl(Observable observable, String id, ContextScope scope) {
-		super(observable, id, scope);
+	public StateImpl(Observable observable) {
+		super(observable);
 	}
 
 	@Override
