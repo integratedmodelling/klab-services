@@ -79,6 +79,12 @@
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j</artifactId>
             <version>5.22.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
@@ -113,4 +119,4 @@
 
     </dependencies>
 
-        </project>
+</project>
