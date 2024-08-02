@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -136,7 +137,7 @@ public class ServiceUserScope extends ChannelImpl implements UserScope {
      * @param resultClass
      * @return
      */
-    protected <T> ResolutionTask responseFuture(AgentMessage message, Class<T> resultClass) {
+    protected <T> ResolutionTask responseFuture(AgentMessage message, Observation observation, Class<T> resultClass) {
 //        var ret = new ObservationTask(new Callable<T>() {
 //
 //            @Override
@@ -148,7 +149,7 @@ public class ServiceUserScope extends ChannelImpl implements UserScope {
 //        }) {
 //        };
 
-        // TODO enqueue
+        // TODO enqueue, listen or poll based on messaging protocol configured
 
         return null; // ret;
     }

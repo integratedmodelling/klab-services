@@ -1,17 +1,12 @@
 package org.integratedmodelling.klab.api.services;
 
+import java.net.URI;
 import java.net.URL;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes will
@@ -69,7 +64,7 @@ public interface RuntimeService extends KlabService {
      * @param resolvables
      * @return
      */
-    String observe(ContextScope scope, Object... resolvables);
+    long observe(ContextScope scope, Object... resolvables);
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available
@@ -87,7 +82,7 @@ public interface RuntimeService extends KlabService {
          *
          * @return the broker URL or null
          */
-        URL getBrokerURL();
+        URI getBrokerURI();
     }
 
     /**

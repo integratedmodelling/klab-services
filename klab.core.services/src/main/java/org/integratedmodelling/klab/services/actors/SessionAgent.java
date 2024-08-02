@@ -6,6 +6,7 @@ import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactorsystem.ReActorContext;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
+import org.integratedmodelling.klab.runtime.kactors.messages.InstrumentSessionScope;
 
 public class SessionAgent extends KAgent {
 
@@ -14,9 +15,17 @@ public class SessionAgent extends KAgent {
     }
 
     protected ReActions.Builder setBehavior() {
-        return super.setBehavior().reAct(CreateContext.class, this::createContext);
+        return super.setBehavior()
+                    .reAct(InstrumentSessionScope.class, this::instrumentSession)
+                    .reAct(CreateContext.class, this::createContext);
     }
-    
+
+    private void instrumentSession(ReActorContext reActorContext,
+                                   InstrumentSessionScope instrumentSessionScope) {
+        // TODO create queue and set up scope to use it
+        System.out.println("INSTRUMENTING THE SESSION WITH BROKER " + instrumentSessionScope.getBrokerUrl());
+    }
+
     @Override
     protected void initialize(ReActorContext rctx, ReActorInit message) {
         super.initialize(rctx, message);
@@ -29,14 +38,14 @@ public class SessionAgent extends KAgent {
     }
 
     private void createContext(ReActorContext rctx, CreateContext message) {
-//        KActorsBehavior behavior = message.getScope().getService(ResourceProvider.class)
-//                .resolveBehavior(message.getApplicationId(), message.getScope());
-//        if (behavior == null) {
-//            message.getScope().error("cannot find behavior " + message.getApplicationId());
-//            rctx.reply(ReActorRef.NO_REACTOR_REF);
-//        } else {
-//
-            rctx.spawnChild(new ContextAgent(message.getContextId(), message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
-//        }
+        //        KActorsBehavior behavior = message.getScope().getService(ResourceProvider.class)
+        //                .resolveBehavior(message.getApplicationId(), message.getScope());
+        //        if (behavior == null) {
+        //            message.getScope().error("cannot find behavior " + message.getApplicationId());
+        //            rctx.reply(ReActorRef.NO_REACTOR_REF);
+        //        } else {
+        //
+        rctx.spawnChild(new ContextAgent(message.getContextId(), message.getScope())).ifSuccess((ref) -> rctx.reply(ref));
+        //        }
     }
 }

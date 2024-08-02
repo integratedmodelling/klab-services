@@ -27,6 +27,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     private String[] scenarios;
     private String resolutionNamespace;
 
+
     public ClientContextScope(ClientUserScope parent, String contextName, RuntimeService runtimeService) {
         super(parent, contextName, runtimeService);
     }
@@ -80,10 +81,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public ResolutionTask observe(Object... observables) {
 
         var runtime = getService(RuntimeService.class);
-
         var taskId = runtime.observe(this, observables);
 
-        return null;
+        return null; // new ClientResolutionTask(this);
     }
 
     @Override
@@ -177,7 +177,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
 
     }
 

@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.runtime.kactors.messages;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 
+/**
+ * Sent to the session agent to create and return the handle to a new context agent.
+ */
 public class CreateContext extends AgentMessage {
 
     private static final long serialVersionUID = -4721979530562111456L;

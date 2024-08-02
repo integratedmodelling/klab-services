@@ -18,35 +18,35 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 
 /**
  * ACHTUNG obsolete description
- *
- * {@code Identity} represents all identities known to the IM semantic web. Since 0.10.0 identities are arranged in a
- * parent/child hierarchy through exposing their parent identity, which is only null in top-level identities, i.e.
- * {@link IPartnerIdentity}. The current identity is carried in the {@link IMonitor} available during all computations.
- * From the current identity, those upstream can be retrieved using the {@code IIdentity} API. Identity objects are
- * passed to the API in lieu of raw authorization tokens, to give uniform access to the privileges, metadata and lineage
- * connected to it.
  * <p>
- * * A certificate defines a 'root' identity: a {@link IPartnerIdentity}, {@link INodeIdentity} or {@link UserIdentity}.
- * Nodes and engines start by reading a certificate, which establishes the [partner, [node and [user]]] identities
- * according to context. Engines create a {@link INetworkSessionIdentity} upon successful connection to the IM web, and
- * append themselves as a {@link Engine}, then duplicate the {@link UserIdentity} as the default
- * {@link IEngineUserIdentity}, to which they can add others if local authentication is enabled.
- * {@link ISession Sessions} are appended to each IEngineUser, {@link Observation observations} to sessions and tasks to
- * observations.
+ * {@code Identity} represents all identities known to the IM semantic web. Since 0.10.0 identities are
+ * arranged in a parent/child hierarchy through exposing their parent identity, which is only null in
+ * top-level identities, i.e. {@link IPartnerIdentity}. The current identity is carried in the
+ * {@link IMonitor} available during all computations. From the current identity, those upstream can be
+ * retrieved using the {@code IIdentity} API. Identity objects are passed to the API in lieu of raw
+ * authorization tokens, to give uniform access to the privileges, metadata and lineage connected to it.
  * <p>
- * Identities at certain levels (currently node, user, network session, engine, engine user and session) implement the
- * security principals for the REST API.
+ * * A certificate defines a 'root' identity: a {@link IPartnerIdentity}, {@link INodeIdentity} or
+ * {@link UserIdentity}. Nodes and engines start by reading a certificate, which establishes the [partner,
+ * [node and [user]]] identities according to context. Engines create a {@link INetworkSessionIdentity} upon
+ * successful connection to the IM web, and append themselves as a {@link Engine}, then duplicate the
+ * {@link UserIdentity} as the default {@link IEngineUserIdentity}, to which they can add others if local
+ * authentication is enabled. {@link ISession Sessions} are appended to each IEngineUser,
+ * {@link Observation observations} to sessions and tasks to observations.
  * <p>
- * Identities are arranged as follows. The chain of inheritance will depend on authentication: anonymous IKlabUser users
- * won't have a partner or node, offline users will have a partner but not a node, engines that did not authenticate to
- * the network won't have a network session, etc. All these conditions can be checked by calling
- * {@link #getParentIdentity(Class)} for the desired interface on the current identity and checking the result for
- * null.
+ * Identities at certain levels (currently node, user, network session, engine, engine user and session)
+ * implement the security principals for the REST API.
  * <p>
- * Starting in k.LAB 0.11, an identity can receive a behavior and become a reactive actor. The actor's capabilities
- * depend both on the nature of the identity and the behavior it receives. Identities that are created from within k.IM
- * can be bound a behavior from source code; the user-definable part of behavior is specified in k.Actor, the k.LAB
- * actor language.
+ * Identities are arranged as follows. The chain of inheritance will depend on authentication: anonymous
+ * IKlabUser users won't have a partner or node, offline users will have a partner but not a node, engines
+ * that did not authenticate to the network won't have a network session, etc. All these conditions can be
+ * checked by calling {@link #getParentIdentity(Class)} for the desired interface on the current identity and
+ * checking the result for null.
+ * <p>
+ * Starting in k.LAB 0.11, an identity can receive a behavior and become a reactive actor. The actor's
+ * capabilities depend both on the nature of the identity and the behavior it receives. Identities that are
+ * created from within k.IM can be bound a behavior from source code; the user-definable part of behavior is
+ * specified in k.Actor, the k.LAB actor language.
  * <p>
  *
  * <pre>
@@ -105,8 +105,8 @@ public abstract interface Identity {
         ENGINE,
 
         /**
-         * Identified by an engine user token released by an engine after authentication. Default engine user is the
-         * server user who owns the engine.
+         * Identified by an engine user token released by an engine after authentication. Default engine user
+         * is the server user who owns the engine.
          */
         ENGINE_USER,
 
@@ -126,8 +126,8 @@ public abstract interface Identity {
         TASK,
 
         /**
-         * A script identity identifies a script (namespace with run/test/observe annotations or imperative code)
-         * running as a task within a session.
+         * A script identity identifies a script (namespace with run/test/observe annotations or imperative
+         * code) running as a task within a session.
          */
         SCRIPT,
 
@@ -145,8 +145,9 @@ public abstract interface Identity {
     Type getIdentityType();
 
     /**
-     * Unique ID. When appropriate it corresponds to the authorization token retrieved upon authentication. Assumed to
-     * expire at some sensible point in time, if stored it should be validated before use and refreshed if necessary.
+     * Unique ID. When appropriate it corresponds to the authorization token retrieved upon authentication.
+     * Assumed to expire at some sensible point in time, if stored it should be validated before use and
+     * refreshed if necessary.
      *
      * @return a token to use as authentication when dealing with the engine.
      */
@@ -162,11 +163,21 @@ public abstract interface Identity {
     /**
      * True if the identity is of the passed type.
      *
-     * @param type a {@link org.integratedmodelling.klab.api.services.resources.adapters.ResolutionType.IIdentity.Type}
+     * @param type a
+     *             {@link
+     *             org.integratedmodelling.klab.api.services.resources.adapters.ResolutionType.IIdentity.Type}
      *             object.
      * @return a boolean.
      */
     boolean is(Type type);
+
+    /**
+     * False for anonymous user identities or their children. Changes some of the results in capabilities and
+     * other responses.
+     *
+     * @return
+     */
+    boolean isAuthenticated();
 
     /**
      * All identities can have arbitrary data associated.
@@ -202,6 +213,7 @@ public abstract interface Identity {
     @SuppressWarnings("unchecked")
     static <T extends Identity> T findParent(Identity child, Class<T> type) {
         return child == null ? null
-                : (type.isAssignableFrom(child.getClass()) ? (T) child : findParent(child.getParentIdentity(), type));
+                             : (type.isAssignableFrom(child.getClass()) ? (T) child :
+                                findParent(child.getParentIdentity(), type));
     }
 }

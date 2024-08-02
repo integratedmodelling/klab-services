@@ -114,7 +114,7 @@ public class ChannelImpl implements Channel {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close()  {
         // TODO
     }
 }

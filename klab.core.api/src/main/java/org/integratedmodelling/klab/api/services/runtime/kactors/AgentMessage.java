@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services.runtime.kactors;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.Scope.Status;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public abstract class AgentMessage implements Serializable, VM.AgentMessage {
 
+    @Serial
     private static final long serialVersionUID = 721530303478254820L;
     private static AtomicLong nextId = new AtomicLong(0L);
 

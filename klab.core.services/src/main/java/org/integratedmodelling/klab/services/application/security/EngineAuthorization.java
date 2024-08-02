@@ -101,6 +101,10 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
         this.username = new Credentials(username);
         expiration = Instant.now().plusSeconds(TOKEN_TTL_SECONDS);
 
+        /*
+        TODO set the identity! This will generate an NPE
+         */
+
         // convenience code: mimic what the parent constructor did, but with the <Role>
         // generic type.
         if (roles == null) {

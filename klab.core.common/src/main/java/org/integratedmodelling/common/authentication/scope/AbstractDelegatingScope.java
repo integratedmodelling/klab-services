@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -137,9 +138,15 @@ public abstract class AbstractDelegatingScope implements Scope {
         this.parentScope = parentScope;
     }
 
+//    @Override
+//    public void close() {
+//        delegateChannel.close();
+//    }
+
+
     @Override
-    public void close() throws Exception {
-        delegateChannel.close();
+    public void close() throws IOException {
+
     }
 
     public void addListener(BiConsumer<Channel, Message> listener) {

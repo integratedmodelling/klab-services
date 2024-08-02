@@ -13,6 +13,7 @@
  */
 package org.integratedmodelling.klab.api.services.runtime;
 
+import java.io.Closeable;
 import java.util.function.Consumer;
 
 import javax.sound.midi.Receiver;
@@ -38,7 +39,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Channel extends AutoCloseable {
+public interface Channel extends Closeable {
 
     /**
      * All channels (and their children, the {@link org.integratedmodelling.klab.api.scope.Scope}s) are owned

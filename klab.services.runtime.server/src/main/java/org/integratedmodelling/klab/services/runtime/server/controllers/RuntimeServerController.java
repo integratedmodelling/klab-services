@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
@@ -37,12 +38,16 @@ public class RuntimeServerController {
     private RuntimeServer runtimeService;
 
     @GetMapping(ServicesAPI.RUNTIME.CREATE_SESSION)
-    public String createSession(@PathVariable(name = "name") String name, Principal principal) {
+    public String createSession(@PathVariable(name = "name") String name, Principal principal, HttpServletResponse response) {
         if (principal instanceof EngineAuthorization authorization) {
 
             var userScope = authorization.getScope(UserScope.class);
             if (userScope != null) {
                 var ret = userScope.runSession(name);
+                var brokerUrl = runtimeService.klabService().capabilities(userScope).getBrokerURI();
+                if (brokerUrl != null) {
+                    response.setHeader(ServicesAPI.MESSAGING_URN_HEADER, brokerUrl.toString());
+                }
                 return runtimeService.klabService().registerSession(ret);
             }
         }

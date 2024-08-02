@@ -8,6 +8,7 @@ public class IdentityImpl implements Identity {
     private Type identityType;
     private String id;
     private Identity parentIdentity;
+    private boolean authenticated;
 
     @Override
     public Type getIdentityType() {
@@ -53,5 +54,14 @@ public class IdentityImpl implements Identity {
 
     public void setParentIdentity(Identity parentIdentity) {
         this.parentIdentity = parentIdentity;
+    }
+
+    @Override
+    public boolean isAuthenticated() {
+        return authenticated;
+    }
+
+    public void setAuthenticated(boolean authenticated) {
+        this.authenticated = authenticated;
     }
 }

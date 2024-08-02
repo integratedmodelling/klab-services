@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.impl.AbstractServiceCapabilities;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -15,7 +16,7 @@ import java.util.Set;
 public class RuntimeCapabilitiesImpl extends AbstractServiceCapabilities implements RuntimeService.Capabilities {
 
     private KlabService.Type type;
-    private URL brokerURL;
+    private URI brokerURI;
 
     @Override
     public KlabService.Type getType() {
@@ -27,11 +28,11 @@ public class RuntimeCapabilitiesImpl extends AbstractServiceCapabilities impleme
     }
 
     @Override
-    public URL getBrokerURL() {
-        return brokerURL;
+    public URI getBrokerURI() {
+        return brokerURI;
     }
 
-    public void setBrokerURL(URL brokerURL) {
-        this.brokerURL = brokerURL;
+    public void setBrokerURL(URI brokerURI) {
+        this.brokerURI = brokerURI;
     }
 }

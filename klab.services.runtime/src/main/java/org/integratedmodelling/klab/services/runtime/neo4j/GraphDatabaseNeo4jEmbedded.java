@@ -20,6 +20,7 @@ import org.neo4j.ogm.session.SessionFactory;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 
 /**
  * A local, embedded, persistent k.LAB-instrumented, configurable Neo4j database. To work with the f'ing
@@ -32,15 +33,18 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
     private GraphDatabaseService graphDb;
     private SessionFactory sessionFactory;
     private boolean online = true;
-    // we use a session per context in normal usage, established through contextualize()
+    // we use a session per context in normal usage, established through contextualize() which also sets up
+    // the root nodes for the context
     private Session contextSession_ = null;
+    private ContextScope scope_ = null;
 
-    private GraphDatabaseNeo4jEmbedded(GraphDatabaseNeo4jEmbedded parent) {
+    private GraphDatabaseNeo4jEmbedded(GraphDatabaseNeo4jEmbedded parent, ContextScope scope) {
         this.managementService = parent.managementService;
         this.graphDb = parent.graphDb;
         this.sessionFactory = parent.sessionFactory;
         if (this.online = parent.online) {
             this.contextSession_ = sessionFactory.openSession();
+            this.scope_ = scope;
         }
     }
 
@@ -80,9 +84,27 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
     @Override
     public GraphDatabase contextualize(ContextScope scope) {
-        var ret = new GraphDatabaseNeo4jEmbedded(this);
-        // TODO produce and store the context root with the provenance and dataflow.
-        return ret;
+
+        if (this.scope_ != null) {
+            throw new KlabIllegalStateException("cannot recontextualize a previously contextualized graph database");
+        }
+
+        var node = session().load(GraphMapping.ContextMapping.class, scope.getId());
+        if (node == null) {
+            // produce and store the context root with the provenance and dataflow.
+            node = new GraphMapping.ContextMapping();
+            node.contextId = scope.getId();
+            node.dataflowMapping = new GraphMapping.DataflowMapping();
+            node.provenanceMapping = new GraphMapping.ProvenanceMapping();
+            node.rootObservationsMappings = new ArrayList<>();
+            try (var transaction = session().beginTransaction()) {
+                session().save(node);
+                transaction.commit();
+            } catch (Throwable t) {
+                return this;
+            }
+        }
+        return new GraphDatabaseNeo4jEmbedded(this, scope);
     }
 
     @Override
@@ -103,7 +125,8 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
     private Session session() {
         if (contextSession_ == null) {
-            throw new KlabIllegalStateException("GraphDatabaseNeo4jEmbedded used without previous contextualization");
+            throw new KlabIllegalStateException("GraphDatabaseNeo4jEmbedded used without previous " +
+                    "contextualization");
         }
         return contextSession_;
     }
@@ -115,6 +138,11 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
      */
     @Override
     public long add(Observation observation, Observation parent) {
+
+        if (this.scope_ == null) {
+            throw new KlabIllegalStateException("cannot use a graph database in its non-contextualized state");
+        }
+
         return Observation.UNASSIGNED_ID;
     }
 

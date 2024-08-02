@@ -24,6 +24,8 @@ import org.jgrapht.graph.DefaultEdge;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -71,7 +73,7 @@ public class ScopeManager {
         // send each scope closing to a virtual thread after removing from the scope map
     }
 
-    public void registerScope(ServiceUserScope serviceScope) {
+    public void registerScope(ServiceUserScope serviceScope, URI brokerUri) {
         scopes.put(serviceScope.getId(), serviceScope);
     }
 
@@ -159,6 +161,7 @@ public class ScopeManager {
         UserIdentityImpl ret = new UserIdentityImpl();
         ret.setUsername(engineAuthorization.getUsername());
         ret.setId(engineAuthorization.getToken());
+        ret.setAuthenticated(engineAuthorization.isAuthenticated());
         // TODO continue
         return ret;
     }

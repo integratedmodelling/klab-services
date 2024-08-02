@@ -70,6 +70,11 @@
             <artifactId>qpid-broker-plugins-memory-store</artifactId>
             <version>9.2.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-broker-plugins-management-http</artifactId>
+            <version>9.2.0</version>
+        </dependency>
 
         <!-- neo4j provides the default persistence model for the digital twin and the social graph. Would be so much better if
  they didn't want their f'ing money to make it distributed and production-level. Consider moving to

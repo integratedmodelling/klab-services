@@ -34,6 +34,11 @@ public class AnonymousUser implements UserIdentity {
     }
 
     @Override
+    public boolean isAuthenticated() {
+        return false;
+    }
+
+    @Override
     public <T extends Identity> T getParentIdentity(Class<T> type) {
         return null;
     }

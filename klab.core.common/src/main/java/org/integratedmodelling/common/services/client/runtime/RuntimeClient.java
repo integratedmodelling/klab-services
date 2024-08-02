@@ -93,12 +93,17 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
             request.getReasonerServices().add(reasonerClient.getUrl());
         }
 
+        /*
+        TODO according to remote capabilities, set up the messaging queue in the scope for communication of
+          digital twin events. Modifications and inquiries are all sent through the GraphQL API.
+         */
+
         return client.withScope(scope.getParentScope()).post(ServicesAPI.RUNTIME.CREATE_CONTEXT, request,
                 String.class);
     }
 
     @Override
-    public String observe(ContextScope scope, Object... resolvables) {
+    public long observe(ContextScope scope, Object... resolvables) {
 
         String name = null;
         Geometry geometry = Geometry.EMPTY;
@@ -198,7 +203,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         GraphModel.ObservationInput request = new GraphModel.ObservationInput(name, observable.getUrn(),
                 geometry.encode(), defaultValue, observerGeometry == null ? null : observerGeometry.encode());
 
-        return graphClient.query(GraphModel.Queries.GraphQL.OBSERVE, String.class, scope, "observation",
+        return graphClient.query(GraphModel.Queries.GraphQL.OBSERVE, Long.class, scope, "observation",
                 request);
     }
 

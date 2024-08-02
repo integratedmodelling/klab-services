@@ -20,6 +20,12 @@ public interface ServicesAPI {
      * Server secret key to match with the service secret to validate local or privileged connections.
      */
     String SERVER_KEY_HEADER = "Server-Key";
+
+    /**
+     * Response header for the URN of a AMQP messaging service, returned along with the
+     * {@link RUNTIME#CREATE_SESSION} response when messaging is available.
+     */
+    String MESSAGING_URN_HEADER = "Messaging-Urn";
     /**
      * this is used across the stack as a token for anonymous usage of the services. It enables access to all
      * services with non-privileged read-only access,
@@ -283,12 +289,20 @@ public interface ServicesAPI {
         }
 
         /**
-         * The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a specified
-         * behavior. The POST endpoint can be fed k.Actors behavior code to run.
+         * Create a session in the runtime, return the scope ID.
+         * <p>
+         * TODO The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a specified
+         *  behavior. The POST endpoint can be fed k.Actors behavior code to run.
+         * <p>
+         * If the runtime provides AMQP messaging, the MESSAGING_URN_HEADER header in the response will be
+         * set to the full URN of the service. Each session ID and context ID will correspond to a queue
+         * that clients can subscribe to.
          */
         String CREATE_SESSION = "/createSession/{name}";
 
         /**
+         * Create an observation scope in a session in the runtime, return the scope ID.
+         *
          * The createContext is a POST endpoint must have the OBSERVER_HEADER set to the ID of a valid session
          * returned by CREATE_SESSION. The context is created empty and without observer, unless the POST data
          * contain the definition of one.

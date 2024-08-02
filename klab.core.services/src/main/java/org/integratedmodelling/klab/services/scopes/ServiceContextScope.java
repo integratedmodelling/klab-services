@@ -3,15 +3,20 @@ package org.integratedmodelling.klab.services.scopes;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -19,6 +24,7 @@ import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
@@ -149,12 +155,9 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ResolutionTask observe(Object... observables) {
+    public ResolutionTask observe(Object... resolvables) {
 
-        /**
-         * The Observe message ID is the task ID
-         */
-        Observe message = registerMessage(Observe.class, (m, r) -> {
+        var message = registerMessage(Observe.class, (m, r) -> {
 
             System.out.println("DIOCÁ REGISTER THIS MESSAGE: task " + m.getId() + " has status " + r.getStatus());
 
@@ -174,22 +177,34 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
         });
 
-        for (Object o : observables) {
-//            if (o instanceof String || o instanceof Urn || o instanceof URL) {
-//                message.setUrn(o.toString());
-//            } else if (o instanceof Knowledge) {
-//                message.setUrn(((Knowledge) o).getUrn());
-//            } else if (o instanceof Geometry) {
-//                message.setGeometry((Geometry) o);
-//            }
+        if (resolvables != null) {
+            for (Object o : resolvables) {
+                if (o instanceof Observable obs) {
+                    message.setObservable(obs);
+                } else if (o instanceof Geometry geom) {
+                    if (message.getGeometry() == null) {
+                        message.setGeometry(geom);
+                    } else {
+                        message.setObserverGeometry(geom);
+                    }
+                } else if (o instanceof String string) {
+                    if (message.getName() == null) {
+                        message.setName(string);
+                    } else {
+                        message.setDefaultValue(Utils.Data.asPOD(string));
+                    }
+                } else if (o instanceof Urn urn) {
+                    message.setResourceUrn(urn);
+                } else if (o instanceof KimModel model) {
+                    message.setModelUrn(model.getUrn());
+                }
+            }
         }
 
-//        message.setScope(this);
-
-        this.getAgent().tell(message);
+        var observation = this.getAgent().ask(message, Observation.class);
 
         // TODO return a completable future that watches the response
-        return responseFuture(message, Observation.class);
+        return responseFuture(message, observation, Observation.class);
     }
 
     @Override
@@ -351,17 +366,19 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public void close() throws Exception {
+    public void close()  {
 
         getService(RuntimeService.class).releaseScope(this);
 
         // Call close() on all closeables in our dataset, including AutoCloseable if any.
         for (String key : getData().keySet()) {
             Object object = getData().get(key);
-            if (object instanceof AutoCloseable autoCloseable) {
-                autoCloseable.close();
-            } else if (object instanceof Closeable closeable) {
-                closeable.close();
+            if (object instanceof Closeable closeable) {
+                try {
+                    closeable.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }

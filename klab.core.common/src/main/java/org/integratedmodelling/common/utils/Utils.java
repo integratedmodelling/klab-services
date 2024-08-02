@@ -72,6 +72,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
     public static class Http {
 
+        /**
+         * HTTP client instrumented for k.LAB. Thread safe <em>except</em> when the response headers are
+         * accessed (they are filled in after each call and reset before the next).
+         */
         public static class Client implements AutoCloseable {
 
             private HttpClient client;
@@ -79,6 +83,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private String authorization;
             private Scope scope; // may be null
             private Map<String, String> headers = new HashMap<>();
+            private Map<String, List<String>> responseHeaders = new HashMap<>();
 
             public void setAuthorization(String token) {
                 this.authorization = token;
@@ -93,7 +98,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 // TODO
             }
 
-            private Client() {}
+            private Client() {
+            }
 
             private Client(Client other) {
                 this.client = other.client;
@@ -104,8 +110,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
-             * Localize the scope to another. Headers passed with the request will reflect the
-             * scope nesting.
+             * Localize the scope to another. Headers passed with the request will reflect the scope nesting.
              *
              * @param scope
              * @return
@@ -122,6 +127,33 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
+             * Return the first (assumed only) header from the response to the previous call, or null
+             *
+             * @param header
+             * @return
+             */
+            public String getResponseHeader(String header) {
+                var list = responseHeaders.get(header);
+                if (list != null && list.size() > 0) {
+                    return list.get(0);
+                }
+                return null;
+            }
+
+            /**
+             * Return all values for the passed response header, or the empty list.
+             * @param header
+             * @return
+             */
+            public List<String> getResponseHeaders(String header) {
+                var list = responseHeaders.get(header);
+                if (list != null) {
+                    return list;
+                }
+                return List.of();
+            }
+
+            /**
              * GET helper that sets all headers and automatically handles JSON marshalling.
              *
              * @param apiRequest
@@ -134,6 +166,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
+
+                responseHeaders.clear();
 
                 try {
                     var payloadText = payload instanceof String
@@ -163,6 +197,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             client.send(request, HttpResponse.BodyHandlers.ofString());
 
                     if (response.statusCode() == 200) {
+                        parseHeaders(response);
                         return parseResponse(response.body(), resultClass);
                     }
 
@@ -183,6 +218,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
+                responseHeaders.clear();
 
                 try {
                     var payloadText = payload instanceof String
@@ -212,6 +248,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             client.send(request, HttpResponse.BodyHandlers.ofString());
 
                     if (response.statusCode() == 200) {
+                        parseHeaders(response);
                         return parseResponseList(response.body(), resultClass);
                     }
 
@@ -309,6 +346,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
+                responseHeaders.clear();
 
                 try {
                     var requestBuilder = HttpRequest.newBuilder().GET();
@@ -324,6 +362,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                                 client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.ofString());
 
                         if (response != null && response.statusCode() == 200) {
+                            parseHeaders(response);
                             return parseResponse(response.body(), resultClass);
                         }
                     } else {
@@ -347,6 +386,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
+                responseHeaders.clear();
 
                 try {
                     var requestBuilder = HttpRequest.newBuilder().GET();
@@ -361,6 +401,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.ofString());
 
                     if (response != null && response.statusCode() == 200) {
+                        parseHeaders(response);
                         return parseResponseList(response.body(), resultClass);
                     }
 
@@ -390,6 +431,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 var options = new Options();
                 var params = makeKeyMap(options, parameters);
                 var apiCall = substituteTemplateParameters(apiRequest, params);
+                responseHeaders.clear();
 
                 try {
                     var requestBuilder = HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.noBody());
@@ -404,6 +446,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                             client.send(requestBuilder.uri(URI.create(uri + apiCall + encodeParameters(params))).build(), HttpResponse.BodyHandlers.discarding());
 
                     if (response != null && response.statusCode() == 200) {
+                        parseHeaders(response);
                         return true;
                     }
 
@@ -417,6 +460,10 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 }
 
                 return false;
+            }
+
+            public void parseHeaders(HttpResponse<?> response) {
+                responseHeaders.putAll(response.headers().map());
             }
 
             private <T> List<T> parseResponseList(String body, Class<T> resultClass) {
