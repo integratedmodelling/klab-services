@@ -1,264 +1,134 @@
 package org.integratedmodelling.common.authentication.scope;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
+import java.net.URI;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
 /**
- * Replicates the functionality of the parent
- * {@link org.integratedmodelling.klab.api.services.runtime.Channel} but implements the connection to remote
- * services. If {@link #connect(KlabService)} is called with an actual embedded service as parameter, any
- * listeners will be shared with the service scope; otherwise, the REST API will be used to establish a
- * Websockets connection as long as the service allows it.
+ * Hosts the AMQP connections and channels for all the subscribed queues. In service use, creates the queues
+ * and advertises them. In client configurations, consumes the queues and dispatches the messages to their
+ * respective handlers. Calling {@link #post(Consumer, Object...)} will react appropriately when the message
+ * receive a response,
  */
-public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel  {
+public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
     public MessagingChannelImpl(Identity identity) {
         super(identity);
+        // TODO ensure we have a channel and a connection (depending on what we are it could be in our
+        //  parent channel, which we only access if we are a scope)
+        // TODO install the consumer that will call send() for each incoming message
+        // TODO declare all queues we subscribe to; set their IDs in a map indexed by queue type
+    }
+
+    ConnectionFactory connectionFactory = null;
+    Connection connection = null;
+    Map<Message.Queue, String> queueNames = new HashMap<>();
+
+    @Override
+    public Message send(Object... args) {
+        var message = Message.create(this, args);
+        // dispatch to queue if the queue is there
+        if (subscriptions.contains(message.getQueue())) {
+            var channel = getChannel(message.getQueue());
+            if (channel != null) {
+                switch (message.getQueue()) {
+                    case Events -> {
+                    }
+                    case Errors -> {
+                    }
+                    case Warnings -> {
+                    }
+                    case Info -> {
+                    }
+                    case Debug -> {
+                    }
+                    case Clock -> {
+                    }
+                    case Status -> {
+                    }
+                    case UI -> {
+                    }
+                    case None -> {
+                    }
+                }
+            }
+        }
+        // this will dispatch to the local handlers
+        return super.send(args);
+    }
+
+    private Channel getChannel(Message.Queue queue) {
+
+
+
+        return null;
+    }
+
+    /*
+     * Channels are not hierarchically organized but most of their derivatives are. If this is a scope,
+     * this methods finds the first parent that meets the passed condition.
+     *
+     * @param filter
+     * @return
+     */
+    private MessagingChannelImpl findParent(Predicate<MessagingChannelImpl> filter) {
+
+        if (filter.test(this)) {
+            return this;
+        }
+
+        if (this instanceof Scope scope && scope.getParentScope() instanceof MessagingChannelImpl parent) {
+            return parent.findParent(filter);
+        }
+
+        return null;
+    }
+
+    public static void main(String[] strings) throws Exception {
+        // just test the messaging
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setUri("amqp://localhost:20937");
+        //        factory.useSslProtocol();
+
+        var connection = factory.newConnection();
+        //get a channel for sending the "kickoff" message
+        var channel = connection.createChannel();
+    }
+
+    /**
+     * Called on the intended target, should use the local connection fields.
+     *
+     * @param brokerUrl
+     * @param queuesHeader
+     * @return
+     */
+    public Collection<Message.Queue> setupMessaging(String brokerUrl, Collection<Message.Queue> queuesHeader) {
+        return EnumSet.noneOf(Message.Queue.class);
+    }
+
+    /**
+     * Called on anything that has a broker connection either locally or in one of the parents.
+     * @param queuesHeader
+     * @return
+     */
+    public Collection<Message.Queue> setupMessagingQueues(Collection<Message.Queue> queuesHeader) {
+        return EnumSet.noneOf(Message.Queue.class);
     }
 
     @Override
-    public Message send(Object... message) {
-        // TODO dispatch to queues
-        return super.send(message);
+    public boolean hasMessaging() {
+        return connection != null && connection.isOpen();
     }
-
-    //    //    MessageBus messageBus;
-//    private WebSocketStompClient stompClient;
-//    private StompSession session;
-//    private AtomicBoolean paired = new AtomicBoolean(false);
-//    private Utils.Http.Client client;
-//    private String channel;
-//    // This becomes the ID for the paired scopes in the service
-//    private String scopeId;
-//    private Scope.Type scopeType;
-//
-//    // default provenance for notifications: set to Forwarded so that client messages are not sent to server
-//    private Message.ForwardingPolicy notificationProvenance = Message.ForwardingPolicy.DoNotForward;
-//
-//    public MessagingChannelImpl(Identity identity, Utils.Http.Client client, Scope.Type scopeType) {
-//        super(identity);
-//        this.client = client;
-//        this.scopeType = scopeType;
-//    }
-//
-//
-//    @Override
-//    public void info(Object... info) {
-//        if (!listeners.isEmpty() || isPaired()) {
-//            var notification = Notification.create(info);
-//            send(Message.MessageClass.Notification, Message.MessageType.Info, notificationProvenance,
-//                    notification);
-//        } else {
-//            Logging.INSTANCE.info(info);
-//        }
-//    }
-//
-//    @Override
-//    public void warn(Object... o) {
-//        if (!listeners.isEmpty() || isPaired()) {
-//            var notification = Notification.create(o);
-//            send(Message.MessageClass.Notification, Message.MessageType.Warning, notificationProvenance,
-//                    notification);
-//        } else {
-//            Logging.INSTANCE.warn(o);
-//        }
-//    }
-//
-//    @Override
-//    public void error(Object... o) {
-//        errors.set(true);
-//        if (!listeners.isEmpty() || isPaired()) {
-//            var notification = Notification.create(o);
-//            send(Message.MessageClass.Notification, Message.MessageType.Error, notificationProvenance,
-//                    notification);
-//        } else {
-//            Logging.INSTANCE.error(o);
-//        }
-//    }
-//
-//    @Override
-//    public void debug(Object... o) {
-//        if (!listeners.isEmpty() || isPaired()) {
-//            var notification = Notification.create(o);
-//            send(Message.MessageClass.Notification, Message.MessageType.Debug, notificationProvenance,
-//                    notification);
-//        } else {
-//            Logging.INSTANCE.debug(o);
-//        }
-//    }
-//
-//
-//    public boolean isPaired() {
-//        return paired.get();
-//    }
-//
-//    // if we got an error during pairing attempts, this is saved for reference
-//    private Throwable pairingError = null;
-//
-//    @Override
-//    public boolean connect(KlabService service) {
-//
-//        // TODO if service is embedded implementation, just install same listeners in service scope
-//
-//        if (client == null) {
-//            return false;
-//        }
-//
-//        this.scopeId = Utils.Names.shortUUID();
-//
-////        String response = client.get(ServicesAPI.SCOPE.REGISTER, String.class, "scopeType", scopeType,
-////                "scopeId", scopeId);
-////
-////        if (response != null) {
-////            String[] split = response.split(",");
-////            if (this.stompClient == null) {
-////                this.stompClient = getStompClient(split[0], split[1]);
-////            }
-////
-////            if (this.stompClient != null) {
-////                info("Client paired to remote " + service.status().getServiceType() + " service " + service.getServiceName());
-////                return true;
-////            }
-////        }
-//
-//        return false;
-//    }
-//
-//    @Override
-//    public boolean disconnect(KlabService service) {
-//        if (isPaired() && session.isConnected()) {
-//            paired.set(false);
-////            var ret = client.get(ServicesAPI.SCOPE.DISPOSE, Boolean.class, "scopeId", scopeId);
-////            session.disconnect();
-////            return ret != null && ret;
-//        }
-//        return false;
-//    }
-//
-//    @Override
-//    public Message send(Object... message) {
-//        var ret = super.send(message);
-//        if (session != null && ret.getForwardingPolicy() == Message.ForwardingPolicy.Forward) {
-//            session.send(channel, ret);
-//        }
-//        return ret;
-//    }
-//
-//    @Override
-//    public Message post(Consumer<Message> handler, Object... message) {
-//        var ret = super.post(handler, message);
-//        if (session != null && ret.getForwardingPolicy() == Message.ForwardingPolicy.Forward) {
-//            session.send(channel, ret);
-//        }
-//        return ret;
-//    }
-//
-//    private WebSocketStompClient getStompClient(String url, String channel) {
-//
-//        this.channel = channel;
-//
-//        StompSessionHandler sessionHandler = new StompSessionHandlerAdapter() {
-//
-//            @Override
-//            public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-//                MessagingChannelImpl.super.info("New session established : " + session.getSessionId());
-//                session.subscribe(channel, this);
-//                MessagingChannelImpl.super.info("Subscribed to " + channel);
-//                session.send(channel, getHandshakingMessage());
-//                MessagingChannelImpl.super.info("Message sent to websocket server");
-//            }
-//
-//            @Override
-//            public void handleException(StompSession session, StompCommand command, StompHeaders headers,
-//                                        byte[] payload, Throwable exception) {
-//                MessagingChannelImpl.super.error("Websockets transfer exception", exception);
-//            }
-//
-//            @Override
-//            public java.lang.reflect.Type getPayloadType(StompHeaders headers) {
-//                return Map.class;
-//            }
-//
-//            @Override
-//            public void handleFrame(StompHeaders headers, Object payload) {
-//
-//                // NAH this will be a Map diocane, must convert and add the forwarding nature
-//                Message message = (Message) payload;
-//                if (payload == null) {
-//                    debug("Received null payload");
-//                    return;
-//                }
-//                info("Received : " + message + " from : " + message.getIdentity());
-//                if (message.is(Message.MessageClass.ServiceLifecycle, Message.MessageType.ConnectScope)) {
-//                    // TODO handshaking message must be received once, after which we're connected
-//                    System.out.println("WE'RE CONNECTED");
-//                } else {
-//                    // send through listeners, don't bounce back
-//                    MessagingChannelImpl.super.send(message);
-//                }
-//            }
-//        };
-//
-//        /*
-//        TODO revise - currently this doesn't work very well, particularly 1) under classloading constraints
-//         there are runtime load exceptions, and 2) the server messages don't get here for some reason
-//         */
-//
-//        List<Transport> transports = new ArrayList<>();
-//        transports.add(new WebSocketTransport(new StandardWebSocketClient()));
-//        transports.add(new RestTemplateXhrTransport());
-//        var transport = new SockJsClient(transports);
-//
-////        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-////        container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024);
-////        container.setDefaultMaxTextMessageBufferSize(1024 * 1024);
-////        List<Transport> transports = new ArrayList<>(1);
-////        transports.add(new WebSocketTransport(new StandardWebSocketClient(container)));
-////        SockJsClient transport = new SockJsClient(transports);
-//
-//        /*
-//         * and three more for the next one
-//         */
-//        transport.setMessageCodec(new Jackson2SockJsMessageCodec(Utils.Json.newObjectMapper()));
-//        stompClient = new WebSocketStompClient(transport);
-//        stompClient.setInboundMessageSizeLimit(1024 * 1024);
-//        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
-//        try {
-//            stompClient.connectAsync(url, sessionHandler).whenComplete((session, exception) -> {
-//                if (session != null) {
-//                    MessagingChannelImpl.this.session = session;
-//                    paired.set(true);
-//                }
-//                if (exception != null) {
-//                    super.error(exception);
-//                    pairingError = exception;
-//                    paired.set(false);
-//                }
-//            });
-//        } catch (Throwable e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//
-//        return stompClient;
-//
-//    }
-//
-//    private Message getHandshakingMessage() {
-//        ScopeOptions scopeData = new ScopeOptions();
-//
-//        return Message.create(scopeId, Message.MessageClass.ServiceLifecycle, Message.MessageType.ConnectScope
-//                , scopeData);
-//    }
-//
-//    public Message.ForwardingPolicy getNotificationProvenance() {
-//        return notificationProvenance;
-//    }
-//
-//    public void setNotificationProvenance(Message.ForwardingPolicy notificationProvenance) {
-//        this.notificationProvenance = notificationProvenance;
-//    }
-
 }

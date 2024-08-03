@@ -308,11 +308,11 @@ public abstract class ServiceClient implements KlabService {
                             }
                         }
 
-                        if (Configuration.INSTANCE.pairServiceScopes() && local) {
-                            // establish whatever scope "entanglement" is allowed by the service. For now
-                            // disable, we try to do everything through REST and see if it's practical.
-                            scope.connect(this);
-                        }
+//                        if (Configuration.INSTANCE.pairServiceScopes() && local) {
+//                            // establish whatever scope "entanglement" is allowed by the service. For now
+//                            // disable, we try to do everything through REST and see if it's practical.
+//                            scope.connect(this);
+//                        }
 
                     }
 
@@ -355,7 +355,7 @@ public abstract class ServiceClient implements KlabService {
 
     @Override
     public final boolean shutdown() {
-        scope.disconnect(this);
+//        scope.disconnect(this);
         this.scheduler.shutdown();
         if (local) {
             return client.put(ServicesAPI.ADMIN.SHUTDOWN);

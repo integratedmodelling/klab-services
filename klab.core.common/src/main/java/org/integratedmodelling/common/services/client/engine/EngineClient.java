@@ -281,7 +281,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
-        var ret = new ClientUserScope(authData.getFirst(), Scope.Type.SERVICE,
+        var ret = new ClientUserScope(authData.getFirst(),
                 (serviceScope() instanceof ChannelImpl channel) ?
                 channel.listeners().toArray(new BiConsumer[]{}) : new BiConsumer[]{}) {
             @Override

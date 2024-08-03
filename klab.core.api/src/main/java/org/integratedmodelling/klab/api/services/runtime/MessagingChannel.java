@@ -13,4 +13,10 @@ public interface MessagingChannel extends Channel {
         return EnumSet.of(Message.Queue.Errors, Message.Queue.Events, Message.Queue.Status);
     }
 
+    /**
+     * True if messaging is available and connected.
+     *
+     * @return
+     */
+    boolean hasMessaging();
 }

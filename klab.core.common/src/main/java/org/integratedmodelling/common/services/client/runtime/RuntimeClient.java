@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.runtime;
 
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
@@ -20,6 +21,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
@@ -61,11 +63,9 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     public String registerSession(SessionScope scope) {
         var ret = client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", scope.getName());
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
-        if (brokerURI != null) {
-            // TODO setup messaging for this and child scopes: there will be a queue with the session ID
-            //  and one per
-            //  each new context.
-            System.out.println("ZOPPALÁ BROKER AVAILABLE ON " + brokerURI);
+        if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+            // TODO negotiate queues
+            messagingChannel.setupMessaging(brokerURI, scope.defaultQueues());
         }
         return ret;
     }
@@ -77,6 +77,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         request.setName(scope.getName());
 
         var runtime = scope.getService(RuntimeService.class);
+        var hasMessaging =
+                scope.getParentScope() instanceof MessagingChannel messagingChannel && messagingChannel.hasMessaging();
 
         // The runtime needs to use our resolver(s) and resource service(s), as long as they're accessible.
         // The reasoner can be the runtime's own unless we have locked worldview projects.
@@ -101,14 +103,23 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
             request.getReasonerServices().add(reasonerClient.getUrl());
         }
 
+        if (hasMessaging) {
+            // TODO setup queue request
+        }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.RUNTIME.CREATE_CONTEXT, request,
                 String.class);
+
+        if (hasMessaging) {
+
+            // TODO negotiate queues from response header
 
         /*
         TODO if the session scope has messaging, set up the messaging queues for
           digital twin events. Inquiries and modiare all sent through the GraphQL API.
          */
+
+        }
 
         return ret;
     }

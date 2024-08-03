@@ -107,15 +107,15 @@ public class ServiceChannelImpl extends ChannelImpl {
         return websocketSupplier != null && websocketSupplier.get() != null;
     }
 
-    @Override
-    public boolean connect(KlabService service) {
-        return true;
-    }
-
-    @Override
-    public boolean disconnect(KlabService service) {
-        return true;
-    }
+//    @Override
+//    public boolean connect(KlabService service) {
+//        return true;
+//    }
+//
+//    @Override
+//    public boolean disconnect(KlabService service) {
+//        return true;
+//    }
 
     @Override
     public Message send(Object... message) {

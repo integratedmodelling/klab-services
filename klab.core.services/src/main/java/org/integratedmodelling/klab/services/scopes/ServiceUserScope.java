@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -44,7 +45,7 @@ import java.util.function.Consumer;
  *
  * @author Ferd
  */
-public class ServiceUserScope extends ChannelImpl implements UserScope {
+public class ServiceUserScope extends MessagingChannelImpl implements UserScope {
 
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
@@ -217,93 +218,59 @@ public class ServiceUserScope extends ChannelImpl implements UserScope {
     public void setAgent(Ref agent) {
         this.agent = agent;
     }
-
-    @Override
-    public void info(Object... info) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.info(info);
-    }
-
-    @Override
-    public void warn(Object... o) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.warn(o);
-    }
-
-    @Override
-    public void error(Object... o) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.error(o);
-    }
-
-    @Override
-    public void debug(Object... o) {
-        // TODO Auto-generated method stub
-        Logging.INSTANCE.debug(o);
-    }
-
-    @Override
-    public Message post(Consumer<Message> responseHandler, Object... message) {
-
-        /*
-         * Agent scopes will intercept the response from an agent and pair it with the
-         * response handler. All response handlers are scheduled and executed in
-         * sequence.
-         */
-        if (message != null && message.length == 1 && message[0] instanceof AgentResponse) {
-            Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>> handler = responseHandlers
-                    .get(((AgentResponse) message[0]).getId());
-            if (handler != null) {
-                executor.execute(() -> {
-                    handler.getSecond().accept(handler.getFirst(), (AgentResponse) message[0]);
-                    if (((AgentResponse) message[0]).isRemoveHandler()) {
-                        responseHandlers.remove(((AgentResponse) message[0]).getId());
-                    }
-                });
-            }
-            return null;
-        } else if (message != null && message.length == 1 && message[0] instanceof VM.AgentMessage) {
-            /*
-             * dispatch to the agent. If there's a handler, make a responseHandler and
-             * ensure that it gets a message
-             */
-            if (responseHandler != null) {
-                // TODO needs an asynchronous ask()
-                // Message m = Message.create(getIdentity().getId(),
-                // Message.MessageClass.ActorCommunication, Message.Type.AgentResponse,
-                // message[0]);
-                // this.getAgent().ask(m, (VM.AgentMessage)message[0]);
-            } else {
-                this.getAgent().tell((VM.AgentMessage) message[0]);
-            }
-
-        } else {
-            return super.post(responseHandler, message);
-        }
-
-        return null;
-
-    }
+//
+//    @Override
+//    public Message post(Consumer<Message> responseHandler, Object... message) {
+//
+//        /*
+//         * Agent scopes will intercept the response from an agent and pair it with the
+//         * response handler. All response handlers are scheduled and executed in
+//         * sequence.
+//         */
+//        if (message != null && message.length == 1 && message[0] instanceof AgentResponse) {
+//            Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>> handler = responseHandlers
+//                    .get(((AgentResponse) message[0]).getId());
+//            if (handler != null) {
+//                executor.execute(() -> {
+//                    handler.getSecond().accept(handler.getFirst(), (AgentResponse) message[0]);
+//                    if (((AgentResponse) message[0]).isRemoveHandler()) {
+//                        responseHandlers.remove(((AgentResponse) message[0]).getId());
+//                    }
+//                });
+//            }
+//            return null;
+//        } else if (message != null && message.length == 1 && message[0] instanceof VM.AgentMessage) {
+//            /*
+//             * dispatch to the agent. If there's a handler, make a responseHandler and
+//             * ensure that it gets a message
+//             */
+//            if (responseHandler != null) {
+//                // TODO needs an asynchronous ask()
+//                // Message m = Message.create(getIdentity().getId(),
+//                // Message.MessageClass.ActorCommunication, Message.Type.AgentResponse,
+//                // message[0]);
+//                // this.getAgent().ask(m, (VM.AgentMessage)message[0]);
+//            } else {
+//                this.getAgent().tell((VM.AgentMessage) message[0]);
+//            }
+//
+//        } else {
+//            return super.post(responseHandler, message);
+//        }
+//
+//        return null;
+//
+//    }
 
     @Override
     public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
         return new Utils.Casts<KlabService, T>().cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
     }
 
-    @Override
-    public Message send(Object... message) {
-        return post(null, message);
-    }
-
-    @Override
-    public boolean isInterrupted() {
-        return status == Status.INTERRUPTED;
-    }
-
-    @Override
-    public void interrupt() {
-        this.status = Status.INTERRUPTED;
-    }
+//    @Override
+//    public Message send(Object... message) {
+//        return post(null, message);
+//    }
 
     @Override
     public boolean hasErrors() {

@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,9 +15,14 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
- * Basic listenable, logging channel. Does not attempt to pair scopes when {@link #connect(KlabService)} is
- * called.  Calls to {@link #post(Consumer, Object...)} and {@link #send(Object...)} have no effect besides
- * invoking listeners and functors.
+ * Basic listenable, logging channel not instrumented for messaging. Meant to be use as an on-off scope when
+ * one is required or as a parent for {@link org.integratedmodelling.klab.api.scope.ServiceScope}. Calls to
+ * {@link #post(Consumer, Object...)} and {@link #send(Object...)} have no effect besides invoking the scope's
+ * own handlers and listeners. Because messaging is not enabled, calling {@link #post(Consumer, Object...)}
+ * will not produce a response.
+ * <p>
+ * Listeners can be added at any time and only get invoked by send() and post(), never by the handlers when
+ * directly called.
  */
 public class ChannelImpl implements Channel {
 
@@ -40,10 +46,6 @@ public class ChannelImpl implements Channel {
     @Override
     public void info(Object... info) {
         Logging.INSTANCE.info(info);
-        if (!listeners.isEmpty()) {
-            // TODO should have level to select what gets sent
-            // TODO turn arguments into Notification and Message and pass through send()
-        }
     }
 
     @Override
@@ -88,14 +90,40 @@ public class ChannelImpl implements Channel {
     }
 
 
-
     @Override
-    public Message send(Object... message) {
-        var me = Message.create(this, message);
-        for (var listener : listeners) {
-            listener.accept(this, me);
+    public Message send(Object... args) {
+
+        var message = Message.create(this, args);
+        switch (message.getQueue()) {
+            case Events -> {
+                this.event(message);
+            }
+            case Errors -> {
+                error(message.getPayload(Notification.class));
+            }
+            case Warnings -> {
+                warn(message.getPayload(Notification.class));
+            }
+            case Info -> {
+                info(message.getPayload(Notification.class));
+            }
+            case Debug -> {
+                debug(message.getPayload(Notification.class));
+            }
+            case Clock -> {
+            }
+            case Status -> {
+            }
+            case UI -> {
+                this.ui(message);
+            }
+            case None -> {
+            }
         }
-        return me;
+        for (var listener : listeners) {
+            listener.accept(this, message);
+        }
+        return message;
     }
 
     @Override
@@ -131,17 +159,7 @@ public class ChannelImpl implements Channel {
     }
 
     @Override
-    public boolean connect(KlabService service) {
-        return false;
-    }
-
-    @Override
-    public boolean disconnect(KlabService service) {
-        return false;
-    }
-
-    @Override
-    public void close()  {
+    public void close() {
         // TODO
     }
 }

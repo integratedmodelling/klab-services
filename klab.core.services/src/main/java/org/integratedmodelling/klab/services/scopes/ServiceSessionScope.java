@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.services.scopes;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -10,6 +12,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
 
@@ -44,7 +47,6 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         if (!contextAgent.isEmpty()) {
             ret.setStatus(Status.STARTED);
             ret.setAgent(contextAgent);
-//            contexts.put(contextId, ret);
         } else {
             ret.setStatus(Status.ABORTED);
         }
@@ -68,5 +70,4 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     public void logout() {
         // TODO
     }
-
 }

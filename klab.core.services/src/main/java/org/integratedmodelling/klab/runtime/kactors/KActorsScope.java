@@ -598,15 +598,15 @@ public class KActorsScope implements VM.BehaviorScope {
 		return mainScope.hasErrors();
 	}
 
-	@Override
-	public boolean connect(KlabService service) {
-		return false;
-	}
-
-	@Override
-	public boolean disconnect(KlabService service) {
-		return false;
-	}
+//	@Override
+//	public boolean connect(KlabService service) {
+//		return false;
+//	}
+//
+//	@Override
+//	public boolean disconnect(KlabService service) {
+//		return false;
+//	}
 
 	@Override
 	public void close()  {

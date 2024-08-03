@@ -44,6 +44,7 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     protected Scope parentScope;
     private Status status = Status.STARTED;
     private String id;
+    protected Type type;
     private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
     private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
             Collections
@@ -55,7 +56,7 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ClientUserScope(Identity user, Scope.Type scopeType, BiConsumer<Scope, Message>... listeners) {
+    public ClientUserScope(Identity user, BiConsumer<Scope, Message>... listeners) {
         super(user/*, null, scopeType*/);
         this.user = user;
         this.data = Parameters.create();
@@ -85,56 +86,6 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
         this.id = id;
     }
 
-
-    //	/**
-    //	 * Obtain a message to an agent that is set up to intercept a response sent to
-    //	 * this channel using send()
-    //	 *
-    //	 * @param <T>
-    //	 * @param messageClass
-    //	 * @param handler
-    //	 * @return
-    //	 */
-    //	@SuppressWarnings("unchecked")
-    //	protected <T extends AgentMessage> T registerMessage(Class<T> messageClass, BiConsumer<T,
-    //	AgentResponse> handler) {
-    //
-    //		T ret = null;
-    //		try {
-    //			ret = (T) messageClass.getDeclaredConstructor().newInstance();
-    //			this.responseHandlers.put(ret.getId(),
-    //					Pair.of((AgentMessage) ret, (BiConsumer<AgentMessage, AgentResponse>) handler));
-    //		} catch (Throwable e) {
-    //			error(e);
-    //		}
-    //
-    //		return ret;
-    //	}
-
-    //	/**
-    //	 * Return a future for the result of an agent message which encodes the
-    //	 * request/response using AgentMessage/AgentResponse
-    //	 *
-    //	 * @param <T>
-    //	 * @param message
-    //	 * @param resultClass
-    //	 * @return
-    //	 */
-    //	protected <T> Future<T> responseFuture(AgentMessage message, Class<T> resultClass) {
-    //		Future<T> ret = new FutureTask<T>(new Callable<T>() {
-    //
-    //			@Override
-    //			public T call() throws Exception {
-    //				// TODO Auto-generated method stub
-    //				return null;
-    //			}
-    //
-    //		});
-    //
-    //		// TODO enqueue
-    //
-    //		return ret;
-    //	}
 
     @Override
     public SessionScope runSession(String sessionName) {
