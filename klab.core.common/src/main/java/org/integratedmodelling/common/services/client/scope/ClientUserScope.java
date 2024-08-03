@@ -18,7 +18,8 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
 
 /**
@@ -29,8 +30,8 @@ import java.util.function.BiConsumer;
  * Each scope contains a hash of generic data. Creating "child" scopes will only build a new hash when the
  * scope is of a different class, otherwise the same data is passed to all children.
  * <p>
- * The scope classes inherit from each other, so use {@link #scopeType} instead of <code>instanceof</code> to
- * discriminate if needed.
+ * The scope classes inherit from each other, so care is needed if using <code>instanceof</code> to
+ * discriminate.
  *
  * @author Ferd
  */
@@ -55,7 +56,7 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     public ClientUserScope(Identity user, Scope.Type scopeType, BiConsumer<Scope, Message>... listeners) {
-        super(user, null, scopeType);
+        super(user/*, null, scopeType*/);
         this.user = user;
         this.data = Parameters.create();
         this.id = user.getId();
@@ -160,7 +161,7 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
                 if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-                    return (T)runtime;
+                    return (T) runtime;
                 }
                 return ClientUserScope.this.getService(serviceClass);
             }
@@ -168,7 +169,7 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
             @Override
             public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
                 if (serviceClass.isAssignableFrom(RuntimeService.class)) {
-                    return List.of((T)runtime);
+                    return List.of((T) runtime);
                 }
                 return ClientUserScope.this.getServices(serviceClass);
             }

@@ -421,7 +421,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         // try {
         // projectLoader.awaitTermination(secondsToWait, TimeUnit.SECONDS);
-        return true;
+        return super.shutdown();
         // } catch (InterruptedException e) {
         // Logging.INSTANCE.error("Error during thread termination", e);
         // }

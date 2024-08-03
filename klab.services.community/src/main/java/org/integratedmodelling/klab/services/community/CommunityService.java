@@ -47,7 +47,7 @@ public class CommunityService extends BaseService implements Community {
     @Override
     public boolean shutdown() {
         // TODO Auto-generated method stub
-        return false;
+        return super.shutdown();
     }
 
 

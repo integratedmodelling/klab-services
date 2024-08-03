@@ -11,24 +11,32 @@ public interface ServicesAPI {
     String API_BASE = "/api/v2";
 
     /**
-     * Request header to communicate the "observer"
-     * <code>sessionId(.contextId)*('#' observerId)?</code>
-     * in digital twin API communication
+     * Request header to communicate and reconstruct the calling scope at server side when requests need a
+     * session or context scope. The value is formatted according to the syntax parsed by the
+     * {@link org.integratedmodelling.klab.api.scope.ContextScope.ScopeData} class.
      */
-    String SCOPE_HEADER = "Klab-Scope";
+    String SCOPE_HEADER = "klab-scope";
     /**
-     * Server secret key to match with the service secret to validate local or privileged connections.
+     * Server secret key to match with the service secret to validate local or privileged connections
+     * independent of authentication.
      */
-    String SERVER_KEY_HEADER = "Server-Key";
-
+    String SERVER_KEY_HEADER = "server-key";
     /**
      * Response header for the URN of a AMQP messaging service, returned along with the
      * {@link RUNTIME#CREATE_SESSION} response when messaging is available.
      */
-    String MESSAGING_URN_HEADER = "Messaging-Urn";
+    String MESSAGING_URN_HEADER = "messaging-urn";
+
+    /**
+     * Header used to both request and confirm the set of messaging queues wanted or offered for communication
+     * with the digital twin. The value list must conform to the names of the
+     * {@link org.integratedmodelling.klab.api.services.runtime.Message.Queue} enum.
+     */
+    String MESSAGING_QUEUES_HEADER = "messaging-queues";
+
     /**
      * this is used across the stack as a token for anonymous usage of the services. It enables access to all
-     * services with non-privileged read-only access,
+     * services with non-privileged, read-only access to knowledge declared public.
      */
     String ANONYMOUS_TOKEN = "018fc355-c123-7608-be4a-89ea1059c33e";
 
@@ -302,7 +310,7 @@ public interface ServicesAPI {
 
         /**
          * Create an observation scope in a session in the runtime, return the scope ID.
-         *
+         * <p>
          * The createContext is a POST endpoint must have the OBSERVER_HEADER set to the ID of a valid session
          * returned by CREATE_SESSION. The context is created empty and without observer, unless the POST data
          * contain the definition of one.

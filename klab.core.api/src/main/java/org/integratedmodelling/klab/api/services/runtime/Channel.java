@@ -14,22 +14,35 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import java.io.Closeable;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.sound.midi.Receiver;
 
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message.MessageClass;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 
 /**
- * A channel represents the context of computation and is used to establish the current identity as well as to
- * send messages to any subscribers. Channels may be root-level, engine-level, session-level, context-level or
- * observation-level.
+ * A channel represents the current identity and is used to report status and send messages to any subscribing
+ * identity. Channels are the base class for  {@link org.integratedmodelling.klab.api.scope.Scope} and their
+ * behavior depends on the kind of scope they implement.
  * <p>
- * The API meant to operate within tasks normally gets a monitor as a parameter in each call, normally in the
- * form of a {@link org.integratedmodelling.klab.api.scope.Scope}.
+ * The {@link #error(Object...)}, {@link #warn(Object...)}, {@link #info(Object...)}, {@link #ui(Message)},
+ * {@link #debug(Object...)}, {@link #status(Scope.Status)} and {@link #event(Message)} methods are the point
+ * of entry into the channel. Each corresponds to the handler for one of the messaging queues classified by
+ * {@link org.integratedmodelling.klab.api.services.runtime.Message.Queue}. They can be called explicitly from
+ * the API or be called in response to a message sent through {@link #send(Object...)}, either on the channel
+ * itself or on a channel that is paired to this through the messaging system. Channels instrumented for
+ * messaging (implementing MessagingChannel) may send to one or more other channels in addition to their own
+ * handlers. The paired channels will receive the messages through their respective handlers, packed as
+ * needed, only on the queues that they have subscribed to. Others just send the messages to their own
+ * handlers according to the {@link org.integratedmodelling.klab.api.services.runtime.Message.Queue}
+ * associated with the {@link Message} sent unless the channel has unsubscribed. The default queues are
+ * specified by the interface.
  * <p>
  * An important function of the monitor is to obtain the current identity that owns the computation. This is
  * done through {@link #getIdentity()}. From that, any other identity (such as the network session, the engine
@@ -40,6 +53,10 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  * @version $Id: $Id
  */
 public interface Channel extends Closeable {
+
+    default Set<Message.Queue> defaultQueues() {
+        return EnumSet.of(Message.Queue.Info);
+    }
 
     /**
      * All channels (and their children, the {@link org.integratedmodelling.klab.api.scope.Scope}s) are owned
@@ -93,6 +110,16 @@ public interface Channel extends Closeable {
      * @param o a {@link java.lang.Object} object.
      */
     void debug(Object... o);
+
+    void status(Scope.Status status);
+
+    void event(Message message);
+
+    void ui(Message message);
+
+    void subscribe(Message.Queue... queues);
+
+    void unsubscribe(Message.Queue... queues);
 
     /**
      * This is to send out serializable objects or other messages through any messaging channel registered

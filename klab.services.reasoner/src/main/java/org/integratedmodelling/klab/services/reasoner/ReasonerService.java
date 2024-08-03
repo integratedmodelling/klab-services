@@ -2444,7 +2444,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
                 capabilities(serviceScope()));
         // TODO Auto-generated method stub
-        return false;
+        return super.shutdown();
     }
 
     @Override

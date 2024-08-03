@@ -104,7 +104,6 @@ public abstract class AbstractDelegatingScope implements Scope {
         return delegateChannel.hasErrors();
     }
 
-
     @Override
     public void setData(String key, Object value) {
         this.data.put(key, value);
@@ -121,6 +120,26 @@ public abstract class AbstractDelegatingScope implements Scope {
     }
 
     @Override
+    public void status(Status status) {
+        delegateChannel.status(status);
+    }
+
+    @Override
+    public void event(Message message) {
+        delegateChannel.event(message);
+    }
+
+    @Override
+    public void subscribe(Message.Queue... queues) {
+        delegateChannel.subscribe(queues);
+    }
+
+    @Override
+    public void unsubscribe(Message.Queue... queues) {
+        delegateChannel.unsubscribe(queues);
+    }
+
+    @Override
     public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
         for (var service : getServices(serviceClass)) {
             if (serviceId.equals(service.serviceId())) {
@@ -128,6 +147,11 @@ public abstract class AbstractDelegatingScope implements Scope {
             }
         }
         throw new KlabResourceAccessException("cannot find service with ID=" + serviceId + " in the scope");
+    }
+
+    @Override
+    public void ui(Message message) {
+        delegateChannel.ui(message);
     }
 
     public Scope getParentScope() {
@@ -142,7 +166,6 @@ public abstract class AbstractDelegatingScope implements Scope {
 //    public void close() {
 //        delegateChannel.close();
 //    }
-
 
     @Override
     public void close() throws IOException {

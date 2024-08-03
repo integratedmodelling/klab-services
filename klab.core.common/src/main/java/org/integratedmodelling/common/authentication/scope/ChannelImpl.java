@@ -7,9 +7,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -27,9 +25,11 @@ public class ChannelImpl implements Channel {
     AtomicBoolean errors = new AtomicBoolean(false);
     List<BiConsumer<Channel, Message>> listeners = Collections.synchronizedList(new ArrayList<>());
     List<BiFunction<Message, Identity, Message>> functors = Collections.synchronizedList(new ArrayList<>());
+    Set<Message.Queue> subscriptions = EnumSet.noneOf(Message.Queue.class);
 
     public ChannelImpl(Identity identity) {
         this.identity = identity;
+        this.subscriptions.addAll(defaultQueues());
     }
 
     @Override
@@ -61,6 +61,33 @@ public class ChannelImpl implements Channel {
     public void debug(Object... o) {
         Logging.INSTANCE.debug(o);
     }
+
+    @Override
+    public void status(Scope.Status status) {
+
+    }
+
+    @Override
+    public void event(Message message) {
+
+    }
+
+    @Override
+    public void ui(Message message) {
+
+    }
+
+    @Override
+    public void subscribe(Message.Queue... queues) {
+
+    }
+
+    @Override
+    public void unsubscribe(Message.Queue... queues) {
+
+    }
+
+
 
     @Override
     public Message send(Object... message) {

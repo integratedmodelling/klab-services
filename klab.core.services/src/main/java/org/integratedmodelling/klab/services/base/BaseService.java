@@ -177,6 +177,12 @@ public abstract class BaseService implements KlabService {
 
     public abstract void initializeService();
 
+    @Override
+    public boolean shutdown() {
+        _scopeManager.shutdown();
+        return true;
+    }
+
     public static File getDataDir(ServiceStartupOptions startupOptions) {
         return startupOptions.getDataDir() == null ? ServiceConfiguration.INSTANCE.getDataPath() :
                startupOptions.getDataDir();

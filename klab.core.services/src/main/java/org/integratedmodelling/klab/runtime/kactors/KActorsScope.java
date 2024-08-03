@@ -549,6 +549,31 @@ public class KActorsScope implements VM.BehaviorScope {
 	}
 
 	@Override
+	public void status(Scope.Status status) {
+		mainScope.status(status);
+	}
+
+	@Override
+	public void event(Message message) {
+		mainScope.event(message);
+	}
+
+	@Override
+	public void ui(Message message) {
+		mainScope.ui(message);
+	}
+
+	@Override
+	public void subscribe(Message.Queue... queues) {
+		mainScope.subscribe(queues);
+	}
+
+	@Override
+	public void unsubscribe(Message.Queue... queues) {
+		mainScope.unsubscribe(queues);
+	}
+
+	@Override
 	public Message send(Object... message) {
 		return mainScope.send(message);
 	}

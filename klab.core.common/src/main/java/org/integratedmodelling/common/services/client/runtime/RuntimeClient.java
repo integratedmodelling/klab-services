@@ -59,7 +59,15 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public String registerSession(SessionScope scope) {
-        return client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", scope.getName());
+        var ret = client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", scope.getName());
+        var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
+        if (brokerURI != null) {
+            // TODO setup messaging for this and child scopes: there will be a queue with the session ID
+            //  and one per
+            //  each new context.
+            System.out.println("ZOPPALÁ BROKER AVAILABLE ON " + brokerURI);
+        }
+        return ret;
     }
 
     @Override
@@ -93,13 +101,16 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
             request.getReasonerServices().add(reasonerClient.getUrl());
         }
 
+
+        var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.RUNTIME.CREATE_CONTEXT, request,
+                String.class);
+
         /*
-        TODO according to remote capabilities, set up the messaging queue in the scope for communication of
-          digital twin events. Modifications and inquiries are all sent through the GraphQL API.
+        TODO if the session scope has messaging, set up the messaging queues for
+          digital twin events. Inquiries and modiare all sent through the GraphQL API.
          */
 
-        return client.withScope(scope.getParentScope()).post(ServicesAPI.RUNTIME.CREATE_CONTEXT, request,
-                String.class);
+        return ret;
     }
 
     @Override

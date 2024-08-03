@@ -245,4 +245,10 @@ public class ScopeManager {
         return null;
     }
 
+    public void shutdown() {
+        if (actorSystem != null) {
+            actorSystem.shutDown();
+        }
+    }
+
 }

@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.client.resources.CredentialsRequest;
 import org.integratedmodelling.common.utils.Utils;
@@ -228,13 +229,11 @@ public abstract class ServiceClient implements KlabService {
             }
         }
 
-        /*
-        TODO revise the websockets strategy by calling the scope controller if the conditions are there, and
-         obtaining a channel to pair the scopes.
+        /**
+         * Service scopes are non-messaging
          */
         this.scope =
-                new AbstractServiceDelegatingScope(new MessagingChannelImpl(this.authentication.getFirst(),
-                        client, Scope.Type.SERVICE)) {
+                new AbstractServiceDelegatingScope(new ChannelImpl(this.authentication.getFirst())) {
                     @Override
                     public UserScope createUser(String username, String password) {
                         return null;

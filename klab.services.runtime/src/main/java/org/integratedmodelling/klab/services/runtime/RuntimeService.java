@@ -194,7 +194,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         if (systemLauncher != null) {
             systemLauncher.shutdown();
         }
-        return true;
+        return super.shutdown();
     }
 
     @Override

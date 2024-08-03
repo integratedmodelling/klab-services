@@ -96,7 +96,7 @@ public class ResolverService extends BaseService implements Resolver {
                 capabilities(serviceScope()));
 
         // TODO Auto-generated method stub
-        return false;
+        return super.shutdown();
     }
 
     @Override

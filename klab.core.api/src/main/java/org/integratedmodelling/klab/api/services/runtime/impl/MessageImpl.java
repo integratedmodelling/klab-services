@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,9 +37,10 @@ import org.integratedmodelling.klab.api.utils.Utils;
  */
 public class MessageImpl implements Message, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 4889814573447834819L;
 
-    private static AtomicLong nextId = new AtomicLong(0L);
+    private static final AtomicLong nextId = new AtomicLong(0L);
 
     private MessageType messageType;
     private MessageClass messageClass;
@@ -50,6 +52,7 @@ public class MessageImpl implements Message, Serializable {
     private Notification.Type notificationType;
     private long timestamp = System.currentTimeMillis();
     private ForwardingPolicy forwardingPolicy = ForwardingPolicy.DoNotForward;
+    private Message.Queue queue;
 
     private static BiFunction<Map<?, ?>, Class<?>, Object> translator;
 
@@ -197,6 +200,15 @@ public class MessageImpl implements Message, Serializable {
         }
 
         return Utils.Data.asType(p, cls);
+    }
+
+    public void setQueue(Queue queue) {
+        this.queue = queue;
+    }
+
+    @Override
+    public Queue getQueue() {
+        return queue;
     }
 
     public Notification.Type getNotificationType() {
