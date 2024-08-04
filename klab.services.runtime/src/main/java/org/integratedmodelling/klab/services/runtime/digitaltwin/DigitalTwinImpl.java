@@ -14,7 +14,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     ProvenanceGraph provenanceGraph;
 
     public DigitalTwinImpl(ContextScope scope, GraphDatabase database) {
-        this.graphDatabase = database;
+        this.graphDatabase = database.contextualize(scope);
         this.observationGraph = new ObservationGraphImpl(database, scope);
         this.dataflowGraph = new DataflowGraphImpl(database, scope);
         this.provenanceGraph = new ProvenanceGraphImpl(database, scope);

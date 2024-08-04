@@ -65,4 +65,6 @@ public interface GraphDatabase {
     long add(Actuator actuator, Actuator parent);
 
     long add(Provenance.Node node, Provenance.Node parent);
+
+    void shutdown();
 }

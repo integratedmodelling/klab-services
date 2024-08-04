@@ -9,6 +9,6 @@ public class DataflowGraphImpl implements DataflowGraph {
     private final GraphDatabase database;
 
     public DataflowGraphImpl(GraphDatabase database, ContextScope contextScope) {
-        this.database = database.contextualize(contextScope);
+        this.database = database;
     }
 }

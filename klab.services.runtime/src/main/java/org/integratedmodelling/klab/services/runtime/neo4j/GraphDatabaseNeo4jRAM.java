@@ -44,4 +44,9 @@ public class GraphDatabaseNeo4jRAM implements GraphDatabase {
     public long add(Provenance.Node node, Provenance.Node parent) {
         return Observation.UNASSIGNED_ID;
     }
+
+    @Override
+    public void shutdown() {
+
+    }
 }

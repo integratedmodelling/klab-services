@@ -129,9 +129,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     private boolean createGraphDatabase() {
         // TODO choose the DB from configuration
-        this.graphDatabase =
-                new GraphDatabaseNeo4jEmbedded(BaseService.getConfigurationSubdirectory(startupOptions, "dt"
-                ).toPath());
+        var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
+        this.graphDatabase = new GraphDatabaseNeo4jEmbedded(path);
         return this.graphDatabase.isOnline();
     }
 
@@ -194,6 +193,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         if (systemLauncher != null) {
             systemLauncher.shutdown();
         }
+        if (graphDatabase != null) {
+            graphDatabase.shutdown();
+        }
         return super.shutdown();
     }
 
@@ -232,10 +234,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
             @Override
             public URI getBrokerURI() {
-                return (scope != null && scope.getIdentity().isAuthenticated())
-                       ? (configuration.getBrokerURI() != null ? configuration.getBrokerURI() :
-                          embeddedBrokerURI)
-                       : null;
+                return (scope != null && scope.getIdentity().isAuthenticated()) ?
+                       (configuration.getBrokerURI() != null ? configuration.getBrokerURI() :
+                        embeddedBrokerURI) : null;
             }
         };
     }
@@ -313,7 +314,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             /*
             TODO instrument the actor for messaging if the request declares the ability to connect
              */
-            serviceContextScope.getAgent().tell(new InstrumentContextScope(digitalTwin, capabilities(contextScope).getBrokerURI()));
+            serviceContextScope.getAgent().tell(new InstrumentContextScope(digitalTwin,
+                    capabilities(contextScope).getBrokerURI()));
 
 
             return serviceContextScope.getId();

@@ -9,6 +9,6 @@ public class ProvenanceGraphImpl implements ProvenanceGraph {
     private final GraphDatabase database;
 
     public ProvenanceGraphImpl(GraphDatabase database, ContextScope contextScope) {
-        this.database = database.contextualize(contextScope);
+        this.database = database;
     }
 }

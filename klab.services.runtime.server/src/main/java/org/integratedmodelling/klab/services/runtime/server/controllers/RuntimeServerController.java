@@ -99,9 +99,9 @@ public class RuntimeServerController {
      */
     @PostMapping(ServicesAPI.RUNTIME.CREATE_CONTEXT)
     public String createContext(@RequestBody ContextRequest request, Principal principal,
-                                HttpServletResponse response,
                                 @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required =
-                                        false) Collection<Message.Queue> queuesHeader) {
+                                        false) Collection<Message.Queue> queuesHeader,
+                                HttpServletResponse response) {
 
         if (principal instanceof EngineAuthorization authorization) {
 

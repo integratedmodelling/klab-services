@@ -44,5 +44,10 @@ public class GraphDatabaseNeo4jClient implements GraphDatabase {
         return Observation.UNASSIGNED_ID;
     }
 
+    @Override
+    public void shutdown() {
+
+    }
+
 
 }

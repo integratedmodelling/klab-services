@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
@@ -70,6 +71,8 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
             this.sessionFactory = new SessionFactory(new Configuration.Builder()
                     .uri("neo4j://localhost:7687").build(), this.getClass().getPackageName());
 
+            Logging.INSTANCE.info("Embedded Neo4J database initialized");
+
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
@@ -78,6 +81,7 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
             });
 
         } catch (Throwable t) {
+            Logging.INSTANCE.error("Error initializing Neo4J embedded database", t);
             this.online = false;
         }
     }
@@ -86,8 +90,16 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
     public GraphDatabase contextualize(ContextScope scope) {
 
         if (this.scope_ != null) {
+
+            // idempotence
+            if (this.scope_.getId().equals(scope.getId())) {
+                return this;
+            }
+
             throw new KlabIllegalStateException("cannot recontextualize a previously contextualized graph database");
         }
+
+        contextSession_ = this.sessionFactory.openSession();
 
         var node = session().load(GraphMapping.ContextMapping.class, scope.getId());
         if (node == null) {
@@ -125,7 +137,7 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
     private Session session() {
         if (contextSession_ == null) {
-            throw new KlabIllegalStateException("GraphDatabaseNeo4jEmbedded used without previous " +
+            throw new KlabIllegalStateException("DB session is null: GraphDatabaseNeo4jEmbedded used without previous " +
                     "contextualization");
         }
         return contextSession_;
@@ -154,6 +166,11 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
     @Override
     public long add(Provenance.Node node, Provenance.Node parent) {
         return Observation.UNASSIGNED_ID;
+    }
+
+    @Override
+    public void shutdown() {
+        managementService.shutdown();
     }
 
 }

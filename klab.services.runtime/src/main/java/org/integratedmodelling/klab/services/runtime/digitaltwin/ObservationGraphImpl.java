@@ -10,6 +10,6 @@ public class ObservationGraphImpl implements ObservationGraph {
     private final GraphDatabase database;
 
     public ObservationGraphImpl(GraphDatabase database, ContextScope scope) {
-        this.database = database.contextualize(scope);
+        this.database = database;
     }
 }
