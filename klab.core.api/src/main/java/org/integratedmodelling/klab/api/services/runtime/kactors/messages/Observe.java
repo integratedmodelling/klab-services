@@ -1,9 +1,8 @@
-package org.integratedmodelling.klab.runtime.kactors.messages.context;
+package org.integratedmodelling.klab.api.services.runtime.kactors.messages;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
 
 /**

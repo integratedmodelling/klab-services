@@ -2,7 +2,9 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.digitaltwin.*;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.kactors.messages.Observe;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 
 public class DigitalTwinImpl implements DigitalTwin {
@@ -44,5 +46,10 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public void dispose(boolean removePersistentData) {
         // TODO
+    }
+
+    @Override
+    public void startResolution(Observation observation) {
+
     }
 }

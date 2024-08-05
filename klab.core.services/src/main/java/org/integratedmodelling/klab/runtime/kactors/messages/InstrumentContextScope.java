@@ -14,6 +14,7 @@ public class InstrumentContextScope extends AgentMessage {
 
     private final DigitalTwin digitalTwin;
     private URI brokerUrl;
+    private boolean persistent;
 
     public InstrumentContextScope(DigitalTwin digitalTwin, URI brokerUrl) {
         super();
@@ -29,4 +30,15 @@ public class InstrumentContextScope extends AgentMessage {
         return brokerUrl;
     }
 
+    public void setBrokerUrl(URI brokerUrl) {
+        this.brokerUrl = brokerUrl;
+    }
+
+    public boolean isPersistent() {
+        return persistent;
+    }
+
+    public void setPersistent(boolean persistent) {
+        this.persistent = persistent;
+    }
 }

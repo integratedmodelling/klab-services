@@ -5,22 +5,18 @@ import io.reacted.core.messages.reactors.ReActorStop;
 import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactorsystem.ReActorContext;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
-import org.integratedmodelling.klab.api.knowledge.Resolvable;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope.Status;
-import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
 import org.integratedmodelling.klab.runtime.kactors.messages.InstrumentContextScope;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.GetChildren;
 import org.integratedmodelling.klab.runtime.kactors.messages.context.GetParent;
-import org.integratedmodelling.klab.runtime.kactors.messages.context.Observe;
+import org.integratedmodelling.klab.api.services.runtime.kactors.messages.Observe;
 
 public class ContextAgent extends KAgent {
 
 
     private DigitalTwin digitalTwin;
+    private boolean persistent;
 
     public ContextAgent(String name, ContextScope scope) {
         super(name, scope);
@@ -29,17 +25,15 @@ public class ContextAgent extends KAgent {
 
     protected ReActions.Builder setBehavior() {
         return super.setBehavior()
-                .reAct(Observe.class, this::observe)
+//                .reAct(Observe.class, this::observe)
                 .reAct(GetChildren.class, this::getChildren)
                 .reAct(InstrumentContextScope.class, this::instrumentScope)
                 .reAct(GetParent.class, this::getParent);
     }
 
     protected void instrumentScope(ReActorContext reActorContext, InstrumentContextScope instrumentContextScope) {
-
-
         this.digitalTwin = instrumentContextScope.getDigitalTwin();
-
+        this.persistent = instrumentContextScope.isPersistent();
     }
 
     protected void getChildren(ReActorContext rctx, GetChildren message) {
@@ -54,70 +48,13 @@ public class ContextAgent extends KAgent {
 //                message.getRootObservation())));
     }
 
-    protected void observe(ReActorContext rctx, Observe message) {
-
-        Status status = Status.EMPTY;
-        Resolvable resolvable = null;
-        Observation result = null;
-
-        var resolver = scope.getService(Resolver.class);
-
-        scope.send(message.statusResponse(Status.STARTED));
-
-        String resolvableUrn = null; // DIOCA' use the message
-
-        try {
-
-            resolvable = null; // resolver.resolveKnowledge(message.getUrn(), Resolvable.class, scope);
-            if (resolvable == null) {
-//                scope.send(message.response(Status.ABORTED, AgentResponse.ERROR,
-//                        "Cannot resolve URN " + message.getUrn()));
-                return;
-            }
-
-//            ContextScope resolutionScope = message.getScope();
-            if (resolvable instanceof Observation instance) {
-//                resolutionScope = resolutionScope.withGeometry(instance.getGeometry());
-            }
-
-            /*
-             * Build the dataflow in the scope
-             */
-//            var resolution = resolver.resolve(resolvableUrn, resolutionScope);
-
-//            if (resolution.getCoverage().isRelevant()) {
-//
-//                Dataflow<Observation> dataflow = resolver.compile(resolvable, resolution, resolutionScope);
-//
-//                /*
-//                 * Run the dataflow
-//                 */
-////                result = scope.getService(RuntimeService.class).run(dataflow, resolutionScope).get();
-////
-////                /*
-////                 * TODO adjust overall geometry and catalog
-////                 */
-////                if (!result.isEmpty()) {
-////                    status = Status.FINISHED;
-////                }
-//            }
-//
-        } catch (Throwable e) {
-            scope.error(e);
-            status = Status.ABORTED;
-        }
-
-        scope.send(message.response(status, AgentResponse.RESULT, result));
-
-    }
+//    protected void observe(ReActorContext rctx, Observe message) {
+//       digitalTwin.startResolution();
+//    }
 
     @Override
     protected void initialize(ReActorContext rctx, ReActorInit message) {
         super.initialize(rctx, message);
-
-        /*
-         * establish temporary storage
-         */
     }
 
     @Override
