@@ -57,7 +57,7 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     public ClientUserScope(Identity user, BiConsumer<Scope, Message>... listeners) {
-        super(user/*, null, scopeType*/);
+        super(user, false, true);
         this.user = user;
         this.data = Parameters.create();
         this.id = user.getId();

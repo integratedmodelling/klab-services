@@ -19,7 +19,7 @@ public interface ResolutionTask extends Future<Observation> {
      *
      * @return
      */
-    String getId();
+    long getId();
 
     /**
      * Typed get() for fluency.

@@ -64,7 +64,7 @@ public class ServiceUserScope extends MessagingChannelImpl implements UserScope 
     protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
 
     public ServiceUserScope(UserIdentity user) {
-        super(user);
+        super(user, true, false);
         this.user = user;
         this.data = Parameters.create();
     }
@@ -156,7 +156,7 @@ public class ServiceUserScope extends MessagingChannelImpl implements UserScope 
     }
 
     protected ServiceUserScope(ServiceUserScope parent) {
-        super(parent.user);
+        super(parent.user, parent.isSender(), parent.isReceiver());
         this.user = parent.user;
         this.parentScope = parent;
         this.data = parent.data;

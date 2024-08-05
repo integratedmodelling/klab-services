@@ -11,5 +11,10 @@ public interface DigitalTwin {
 
     ProvenanceGraph provenanceGraph();
 
-
+    /**
+     * Dispose of all storage and data, either in memory only or also on any attached storage.
+     *
+     * @param removePersistentData if true, clear all databases and storage
+     */
+    void dispose(boolean removePersistentData);
 }

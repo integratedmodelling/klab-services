@@ -72,7 +72,7 @@ public class RuntimeServerController {
                         queuesHeader = serviceSessionScope.defaultQueues();
                     }
 
-                    var implementedQueues = serviceSessionScope.setupMessaging(brokerUrl.toString(),
+                    var implementedQueues = serviceSessionScope.setupMessaging(brokerUrl.toString(), id,
                             queuesHeader);
                     response.setHeader(ServicesAPI.MESSAGING_QUEUES_HEADER,
                             Utils.Strings.join(implementedQueues, ", "));
@@ -139,7 +139,7 @@ public class RuntimeServerController {
                     var id = runtimeService.klabService().registerContext(ret);
                     serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
 
-                    var queuesAvailable = serviceContextScope.setupMessagingQueues(queuesHeader);
+                    var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);
                     response.setHeader(ServicesAPI.MESSAGING_QUEUES_HEADER,
                             Utils.Strings.join(queuesAvailable, ", "));
 

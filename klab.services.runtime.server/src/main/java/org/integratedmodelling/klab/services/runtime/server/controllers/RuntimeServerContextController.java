@@ -61,7 +61,7 @@ public class RuntimeServerContextController {
     }
 
     @MutationMapping
-    public String observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
+    public long observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
         var authorization = getAuthorization();
         var scope = authorization.getScope(ContextScope.class);
         var observable = scope.getService(Reasoner.class).resolveObservable(observation.observable());

@@ -26,8 +26,10 @@ import org.integratedmodelling.klab.api.services.runtime.objects.ContextRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
@@ -64,10 +66,22 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         var ret = client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", scope.getName());
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
         if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
-            // TODO negotiate queues
-            messagingChannel.setupMessaging(brokerURI, scope.defaultQueues());
+            var queues = getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+            messagingChannel.setupMessaging(brokerURI, ret, queues);
         }
         return ret;
+    }
+
+    private Set<Message.Queue> getQueuesFromHeader(SessionScope scope, String responseHeader) {
+        if (responseHeader != null) {
+            var ret = EnumSet.noneOf(Message.Queue.class);
+            String[] qq = responseHeader.split(", ");
+            for (var q : qq) {
+                ret.add(Message.Queue.valueOf(q));
+            }
+            return ret;
+        }
+        return scope.defaultQueues();
     }
 
     @Override
@@ -104,21 +118,17 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         }
 
         if (hasMessaging) {
-            // TODO setup queue request
+            // TODO setup desired request. This will send no header and use the defaults.
         }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.RUNTIME.CREATE_CONTEXT, request,
                 String.class);
 
         if (hasMessaging) {
-
-            // TODO negotiate queues from response header
-
-        /*
-        TODO if the session scope has messaging, set up the messaging queues for
-          digital twin events. Inquiries and modiare all sent through the GraphQL API.
-         */
-
+            var queues = getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+            if (scope instanceof MessagingChannelImpl messagingChannel) {
+                messagingChannel.setupMessagingQueues(ret, queues);
+            }
         }
 
         return ret;

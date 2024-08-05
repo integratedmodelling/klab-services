@@ -128,7 +128,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     private boolean createGraphDatabase() {
-        // TODO choose the DB from configuration
+        // TODO choose the DB from configuration - client or embedded server
         var path = BaseService.getConfigurationSubdirectory(startupOptions, "dt").toPath();
         this.graphDatabase = new GraphDatabaseNeo4jEmbedded(path);
         return this.graphDatabase.isOnline();

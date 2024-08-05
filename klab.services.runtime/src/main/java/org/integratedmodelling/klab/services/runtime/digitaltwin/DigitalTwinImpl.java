@@ -40,4 +40,9 @@ public class DigitalTwinImpl implements DigitalTwin {
     public ProvenanceGraph provenanceGraph() {
         return this.provenanceGraph;
     }
+
+    @Override
+    public void dispose(boolean removePersistentData) {
+        // TODO
+    }
 }
