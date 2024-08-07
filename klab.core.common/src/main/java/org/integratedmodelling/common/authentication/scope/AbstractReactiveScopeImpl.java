@@ -11,7 +11,7 @@ import java.io.Serializable;
 
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl implements ReactiveScope {
 
-    private KActorsBehavior.Ref agent;
+    protected KActorsBehavior.Ref agent;
 
     public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity, isSender, isReceiver);
@@ -51,6 +51,7 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
         if (message.getMessageClass() == Message.MessageClass.ActorCommunication) {
             return agent.ask(message, responseClass);
         }
+
         throw new KlabInternalErrorException("wrong message with class " + message.getMessageClass() + " sent to ReactiveScope::ask");
     }
 }

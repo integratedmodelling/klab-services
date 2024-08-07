@@ -22,6 +22,7 @@ public class UserAgent extends KAgent {
 			super.handleMessage(reActorContext, message);
 		}
 	}
+
 //
 //	private void createSession(ReActorContext rctx, CreateSession message) {
 //		rctx.spawnChild(new SessionAgent(message.getSessionId(), message.getScope()))

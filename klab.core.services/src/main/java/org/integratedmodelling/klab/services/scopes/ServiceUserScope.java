@@ -42,14 +42,13 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
     private UserIdentity user;
-    private Ref agent;
     protected ServiceUserScope parentScope;
     private Status status = Status.STARTED;
     private Collection<Role> roles;
     private String id;
     private boolean local;
-//    private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
-//            Collections.synchronizedMap(new HashMap<>());
+    //    private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
+    //            Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
@@ -96,45 +95,45 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         }
     }
 
-//    /**
-//     * Obtain a message to an agent that is set up to intercept a response sent to this channel using send()
-//     *
-//     * @param <T>
-//     * @param messageClass
-//     * @param handler
-//     * @return
-//     */
-//    @SuppressWarnings("unchecked")
-//    protected Message registerMessage(BiConsumer<Message, Message> handler) {
-//
-//        Message ret = null;
-//        try {
-//            ret = (T) messageClass.getDeclaredConstructor().newInstance();
-//            this.responseHandlers.put(ret.getId(),
-//                    Pair.of((Message) ret, (BiConsumer<Message, Message>) handler));
-//        } catch (Throwable e) {
-//            error(e);
-//        }
-//
-//        return ret;
-//    }
+    //    /**
+    //     * Obtain a message to an agent that is set up to intercept a response sent to this channel using
+    //     send()
+    //     *
+    //     * @param <T>
+    //     * @param messageClass
+    //     * @param handler
+    //     * @return
+    //     */
+    //    @SuppressWarnings("unchecked")
+    //    protected Message registerMessage(BiConsumer<Message, Message> handler) {
+    //
+    //        Message ret = null;
+    //        try {
+    //            ret = (T) messageClass.getDeclaredConstructor().newInstance();
+    //            this.responseHandlers.put(ret.getId(),
+    //                    Pair.of((Message) ret, (BiConsumer<Message, Message>) handler));
+    //        } catch (Throwable e) {
+    //            error(e);
+    //        }
+    //
+    //        return ret;
+    //    }
 
     /**
      * Return a future for the result of an agent message which encodes the request/response using
      * AgentMessage/AgentResponse
-     *
      */
     protected <T> ResolutionTask responseFuture(Observation observation) {
-//        var ret = new ObservationTask(new Callable<T>() {
-//
-//            @Override
-//            public T call() throws Exception {
-//                // TODO Auto-generated method stub
-//                return null;
-//            }
-//
-//        }) {
-//        };
+        //        var ret = new ObservationTask(new Callable<T>() {
+        //
+        //            @Override
+        //            public T call() throws Exception {
+        //                // TODO Auto-generated method stub
+        //                return null;
+        //            }
+        //
+        //        }) {
+        //        };
 
         // TODO enqueue, listen or poll based on messaging protocol configured
 
@@ -156,8 +155,9 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
 
         final ServiceSessionScope ret = new ServiceSessionScope(this);
         ret.setStatus(Status.WAITING);
-        Ref sessionAgent = ask(Ref.class, Message.MessageType.CreateSession, ret);
-        System.out.println("SON QUA E HO BECCATO UN PORCO DIO DI " + sessionAgent);
+        Ref sessionAgent = ask(Ref.class, Message.MessageClass.ActorCommunication,
+                Message.MessageType.CreateSession, ret);
+
         if (!sessionAgent.isEmpty()) {
             ret.setName(sessionName);
             ret.setStatus(Status.STARTED);
@@ -172,21 +172,22 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     @Override
     public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
 
-        // TODO set the application URN or content in the new scope so we can use the same message and automatically startup
+        // TODO set the application URN or content in the new scope so we can use the same message and
+        //  automatically startup
         return null;
-//        final ServiceSessionScope ret = new ServiceSessionScope(this);
-//        ret.setStatus(Status.WAITING);
-//        Ref sessionAgent = ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
-//        if (!sessionAgent.isEmpty()) {
-//            ret.setStatus(Status.STARTED);
-//            ret.setAgent(sessionAgent);
-//            ret.setName(behaviorName);
-//            sessionAgent.tell(new RunBehavior(behaviorName));
-//        } else {
-//            ret.setStatus(Status.ABORTED);
-//        }
-//
-//        return ret;
+        //        final ServiceSessionScope ret = new ServiceSessionScope(this);
+        //        ret.setStatus(Status.WAITING);
+        //        Ref sessionAgent = ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
+        //        if (!sessionAgent.isEmpty()) {
+        //            ret.setStatus(Status.STARTED);
+        //            ret.setAgent(sessionAgent);
+        //            ret.setName(behaviorName);
+        //            sessionAgent.tell(new RunBehavior(behaviorName));
+        //        } else {
+        //            ret.setStatus(Status.ABORTED);
+        //        }
+        //
+        //        return ret;
     }
 
     @Override
@@ -207,59 +208,59 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     public void setAgent(Ref agent) {
         this.agent = agent;
     }
-//
-//    @Override
-//    public Message post(Consumer<Message> responseHandler, Object... message) {
-//
-//        /*
-//         * Agent scopes will intercept the response from an agent and pair it with the
-//         * response handler. All response handlers are scheduled and executed in
-//         * sequence.
-//         */
-//        if (message != null && message.length == 1 && message[0] instanceof AgentResponse) {
-//            Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>> handler = responseHandlers
-//                    .get(((AgentResponse) message[0]).getId());
-//            if (handler != null) {
-//                executor.execute(() -> {
-//                    handler.getSecond().accept(handler.getFirst(), (AgentResponse) message[0]);
-//                    if (((AgentResponse) message[0]).isRemoveHandler()) {
-//                        responseHandlers.remove(((AgentResponse) message[0]).getId());
-//                    }
-//                });
-//            }
-//            return null;
-//        } else if (message != null && message.length == 1 && message[0] instanceof VM.AgentMessage) {
-//            /*
-//             * dispatch to the agent. If there's a handler, make a responseHandler and
-//             * ensure that it gets a message
-//             */
-//            if (responseHandler != null) {
-//                // TODO needs an asynchronous ask()
-//                // Message m = Message.create(getIdentity().getId(),
-//                // Message.MessageClass.ActorCommunication, Message.Type.AgentResponse,
-//                // message[0]);
-//                // this.getAgent().ask(m, (VM.AgentMessage)message[0]);
-//            } else {
-//                this.getAgent().tell((VM.AgentMessage) message[0]);
-//            }
-//
-//        } else {
-//            return super.post(responseHandler, message);
-//        }
-//
-//        return null;
-//
-//    }
+    //
+    //    @Override
+    //    public Message post(Consumer<Message> responseHandler, Object... message) {
+    //
+    //        /*
+    //         * Agent scopes will intercept the response from an agent and pair it with the
+    //         * response handler. All response handlers are scheduled and executed in
+    //         * sequence.
+    //         */
+    //        if (message != null && message.length == 1 && message[0] instanceof AgentResponse) {
+    //            Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>> handler = responseHandlers
+    //                    .get(((AgentResponse) message[0]).getId());
+    //            if (handler != null) {
+    //                executor.execute(() -> {
+    //                    handler.getSecond().accept(handler.getFirst(), (AgentResponse) message[0]);
+    //                    if (((AgentResponse) message[0]).isRemoveHandler()) {
+    //                        responseHandlers.remove(((AgentResponse) message[0]).getId());
+    //                    }
+    //                });
+    //            }
+    //            return null;
+    //        } else if (message != null && message.length == 1 && message[0] instanceof VM.AgentMessage) {
+    //            /*
+    //             * dispatch to the agent. If there's a handler, make a responseHandler and
+    //             * ensure that it gets a message
+    //             */
+    //            if (responseHandler != null) {
+    //                // TODO needs an asynchronous ask()
+    //                // Message m = Message.create(getIdentity().getId(),
+    //                // Message.MessageClass.ActorCommunication, Message.Type.AgentResponse,
+    //                // message[0]);
+    //                // this.getAgent().ask(m, (VM.AgentMessage)message[0]);
+    //            } else {
+    //                this.getAgent().tell((VM.AgentMessage) message[0]);
+    //            }
+    //
+    //        } else {
+    //            return super.post(responseHandler, message);
+    //        }
+    //
+    //        return null;
+    //
+    //    }
 
     @Override
     public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
         return new Utils.Casts<KlabService, T>().cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
     }
 
-//    @Override
-//    public Message send(Object... message) {
-//        return post(null, message);
-//    }
+    //    @Override
+    //    public Message send(Object... message) {
+    //        return post(null, message);
+    //    }
 
     @Override
     public boolean hasErrors() {

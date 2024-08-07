@@ -205,6 +205,7 @@ public abstract class KAgent implements ReActor {
      handling is to run a behavior, either as a URN or a script text.
      */
     protected void handleMessage(ReActorContext reActorContext, Message message) {
+
         if (message.getMessageType() == Message.MessageType.RunBehavior) {
             KActorsBehavior behavior = resolveBehavior(message);
             if (behavior != null) {
