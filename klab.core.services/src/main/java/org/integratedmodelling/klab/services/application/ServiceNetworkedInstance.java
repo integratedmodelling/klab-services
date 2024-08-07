@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.integratedmodelling.common.authentication.KlabCertificateImpl;
-import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.data.jackson.JacksonConfiguration;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -20,7 +20,6 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.rest.ServiceReference;
-import org.integratedmodelling.klab.services.ServiceChannelImpl;
 import org.integratedmodelling.klab.services.ServiceInstance;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.application.security.ServiceAuthorizationManager;
@@ -42,7 +41,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
 
 import javax.annotation.PreDestroy;
 import java.io.File;
@@ -110,9 +108,9 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
     @Override
     protected AbstractServiceDelegatingScope createServiceScope() {
         var ret = super.createServiceScope();
-        if (ret instanceof AbstractDelegatingScope dscope && dscope.getDelegateChannel() instanceof ServiceChannelImpl serviceChannel) {
-            serviceChannel.setWebsocketProvider(() -> webSocket);
-        }
+//        if (ret instanceof AbstractDelegatingScope dscope && dscope.getDelegateChannel() instanceof ServiceChannelImpl serviceChannel) {
+//            serviceChannel.setWebsocketProvider(() -> webSocket);
+//        }
         // TODO if we're certified, adjust the scope's locality and service discovery capabilities
         ret.setLocality(ServiceScope.Locality.LOCALHOST);
         if (ret.getIdentity() instanceof UserIdentity user && !user.isAnonymous()) {
@@ -188,7 +186,7 @@ public abstract class ServiceNetworkedInstance<T extends BaseService> extends Se
 
     protected Channel createChannel(UserIdentity identity) {
         // this channel will be fed a Websockets template supplier for pairing with remote scopes
-        return new ServiceChannelImpl(identity);
+        return new ChannelImpl(identity);
     }
 
     private void setPropertiesFromEnvironment(Environment environment) {

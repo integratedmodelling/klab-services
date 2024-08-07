@@ -138,19 +138,19 @@ public interface Channel extends Closeable {
      */
     Message send(Object... message);
 
-    /**
-     * Like {@link #send(Object...)} but takes a handler to process a response if/when it comes back.
-     * </p>
-     * FIXME we should return a CompletableFuture<Message, Message> instead of this ugly API. Maybe.
-     *
-     * @param handler the handler for the response message
-     * @param message anything that may be sent as a message: either a preconstructed {@link Message} or the
-     *                necessary info to build one, including a {@link MessageClass} and {@IMessage.Type} along
-     *                with any payload (any serializable object). Sending a {@link Notification} should
-     *                automatically promote it to a suitable logging message
-     * @return the completed message that was sent, for reference, or null if sending failed
-     */
-    Message post(Consumer<Message> handler, Object... message);
+//    /**
+//     * Like {@link #send(Object...)} but takes a handler to process a response if/when it comes back.
+//     * </p>
+//     * FIXME we should return a CompletableFuture<Message, Message> instead of this ugly API. Maybe.
+//     *
+//     * @param handler the handler for the response message
+//     * @param message anything that may be sent as a message: either a preconstructed {@link Message} or the
+//     *                necessary info to build one, including a {@link MessageClass} and {@IMessage.Type} along
+//     *                with any payload (any serializable object). Sending a {@link Notification} should
+//     *                automatically promote it to a suitable logging message
+//     * @return the completed message that was sent, for reference, or null if sending failed
+//     */
+//    Message post(Consumer<Message> handler, Object... message);
 
     void interrupt();
 

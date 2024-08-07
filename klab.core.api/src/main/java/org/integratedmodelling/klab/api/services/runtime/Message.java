@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
@@ -12,6 +13,7 @@ import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.impl.ScopeOptions;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.function.Consumer;
 
 /**
@@ -159,7 +161,17 @@ public interface Message extends Serializable {
          */
         ViewActor,
 
-        ActorCommunication
+        /**
+         * These are skipped from queues and sent directly to the scope's agent.
+         */
+        ActorCommunication;
+
+        final public MessageType[] messageTypes;
+
+        private MessageClass(MessageType... messageTypes) {
+            this.messageTypes = messageTypes == null ? new MessageType[]{} : messageTypes;
+        }
+
     }
 
     /**
@@ -211,6 +223,19 @@ public interface Message extends Serializable {
         TestCaseFinished(Queue.Events, TestStatistics.class),
         TestStarted(Queue.Events, ActionStatistics.class),
         TestFinished(Queue.Events, ActionStatistics.class),
+
+
+        /*
+         * --- actor communication messages
+         */
+        RunApplication,
+        RunBehavior,
+        CreateContext,
+        CreateSession,
+        Fire,
+        InitializeObservationContext(Queue.None, DigitalTwin.class),
+        ResolveObservation,
+
         /*
          * --- View actor messages
          */
@@ -223,11 +248,11 @@ public interface Message extends Serializable {
          */
         UsingDistribution(Queue.UI, Distribution.class);
 
-        public Class<?> payloadClass = Void.class;
-        public Queue queue = Queue.None;
+        public final Class<?> payloadClass;
+        public final Queue queue = Queue.None;
 
         private MessageType() {
-
+            this.payloadClass = Void.class;
         }
 
         private MessageType(Queue queue, Class<?> payloadClass) {

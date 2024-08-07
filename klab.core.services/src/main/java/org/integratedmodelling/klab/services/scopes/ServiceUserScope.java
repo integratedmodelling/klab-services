@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.messages.reactors.ReActorStop;
-import org.integratedmodelling.common.authentication.scope.ChannelImpl;
-import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
-import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -17,19 +15,13 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
-import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
-import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.runtime.kactors.messages.CreateApplication;
-import org.integratedmodelling.klab.runtime.kactors.messages.CreateSession;
-import org.integratedmodelling.klab.runtime.kactors.messages.RunBehavior;
 import org.integratedmodelling.klab.services.application.security.Role;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * Service-side user scope and parent class for other scopes, created and maintained on request upon
@@ -45,7 +37,7 @@ import java.util.function.Consumer;
  *
  * @author Ferd
  */
-public class ServiceUserScope extends MessagingChannelImpl implements UserScope {
+public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserScope {
 
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
@@ -56,8 +48,8 @@ public class ServiceUserScope extends MessagingChannelImpl implements UserScope 
     private Collection<Role> roles;
     private String id;
     private boolean local;
-    private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
-            Collections.synchronizedMap(new HashMap<>());
+//    private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
+//            Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
     protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
@@ -90,7 +82,6 @@ public class ServiceUserScope extends MessagingChannelImpl implements UserScope 
         serviceMap.put(KlabService.Type.RESOURCES, resources);
         serviceMap.put(KlabService.Type.RUNTIME, runtimes);
 
-
         if (reasoners.size() > 0) {
             defaultServiceMap.put(KlabService.Type.REASONER, reasoners.get(0));
         }
@@ -105,40 +96,35 @@ public class ServiceUserScope extends MessagingChannelImpl implements UserScope 
         }
     }
 
-    /**
-     * Obtain a message to an agent that is set up to intercept a response sent to this channel using send()
-     *
-     * @param <T>
-     * @param messageClass
-     * @param handler
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    protected <T extends AgentMessage> T registerMessage(Class<T> messageClass, BiConsumer<T,
-            AgentResponse> handler) {
-
-        T ret = null;
-        try {
-            ret = (T) messageClass.getDeclaredConstructor().newInstance();
-            this.responseHandlers.put(ret.getId(),
-                    Pair.of((AgentMessage) ret, (BiConsumer<AgentMessage, AgentResponse>) handler));
-        } catch (Throwable e) {
-            error(e);
-        }
-
-        return ret;
-    }
+//    /**
+//     * Obtain a message to an agent that is set up to intercept a response sent to this channel using send()
+//     *
+//     * @param <T>
+//     * @param messageClass
+//     * @param handler
+//     * @return
+//     */
+//    @SuppressWarnings("unchecked")
+//    protected Message registerMessage(BiConsumer<Message, Message> handler) {
+//
+//        Message ret = null;
+//        try {
+//            ret = (T) messageClass.getDeclaredConstructor().newInstance();
+//            this.responseHandlers.put(ret.getId(),
+//                    Pair.of((Message) ret, (BiConsumer<Message, Message>) handler));
+//        } catch (Throwable e) {
+//            error(e);
+//        }
+//
+//        return ret;
+//    }
 
     /**
      * Return a future for the result of an agent message which encodes the request/response using
      * AgentMessage/AgentResponse
      *
-     * @param <T>
-     * @param message
-     * @param resultClass
-     * @return
      */
-    protected <T> ResolutionTask responseFuture(AgentMessage message, Observation observation, Class<T> resultClass) {
+    protected <T> ResolutionTask responseFuture(Observation observation) {
 //        var ret = new ObservationTask(new Callable<T>() {
 //
 //            @Override
@@ -170,7 +156,8 @@ public class ServiceUserScope extends MessagingChannelImpl implements UserScope 
 
         final ServiceSessionScope ret = new ServiceSessionScope(this);
         ret.setStatus(Status.WAITING);
-        Ref sessionAgent = this.agent.ask(new CreateSession(ret, sessionName), Ref.class);
+        Ref sessionAgent = ask(Ref.class, Message.MessageType.CreateSession, ret);
+        System.out.println("SON QUA E HO BECCATO UN PORCO DIO DI " + sessionAgent);
         if (!sessionAgent.isEmpty()) {
             ret.setName(sessionName);
             ret.setStatus(Status.STARTED);
@@ -185,19 +172,21 @@ public class ServiceUserScope extends MessagingChannelImpl implements UserScope 
     @Override
     public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
 
-        final ServiceSessionScope ret = new ServiceSessionScope(this);
-        ret.setStatus(Status.WAITING);
-        Ref sessionAgent = this.agent.ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
-        if (!sessionAgent.isEmpty()) {
-            ret.setStatus(Status.STARTED);
-            ret.setAgent(sessionAgent);
-            ret.setName(behaviorName);
-            sessionAgent.tell(new RunBehavior(behaviorName));
-        } else {
-            ret.setStatus(Status.ABORTED);
-        }
-
-        return ret;
+        // TODO set the application URN or content in the new scope so we can use the same message and automatically startup
+        return null;
+//        final ServiceSessionScope ret = new ServiceSessionScope(this);
+//        ret.setStatus(Status.WAITING);
+//        Ref sessionAgent = ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
+//        if (!sessionAgent.isEmpty()) {
+//            ret.setStatus(Status.STARTED);
+//            ret.setAgent(sessionAgent);
+//            ret.setName(behaviorName);
+//            sessionAgent.tell(new RunBehavior(behaviorName));
+//        } else {
+//            ret.setStatus(Status.ABORTED);
+//        }
+//
+//        return ret;
     }
 
     @Override

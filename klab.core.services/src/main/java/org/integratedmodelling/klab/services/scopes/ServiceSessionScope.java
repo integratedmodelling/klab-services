@@ -6,15 +6,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.geometry.Geometry;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.klab.runtime.kactors.messages.CreateContext;
 
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope} at each new
@@ -42,8 +38,7 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
         final ServiceContextScope ret = new ServiceContextScope(this);
         ret.setName(contextName);
         ret.setStatus(Status.WAITING);
-        Ref contextAgent = this.getAgent()
-                               .ask(new CreateContext(ret, contextName), Ref.class);
+        Ref contextAgent = ask(Ref.class, Message.MessageType.CreateContext, ret);
         if (!contextAgent.isEmpty()) {
             ret.setStatus(Status.STARTED);
             ret.setAgent(contextAgent);

@@ -9,7 +9,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
  *
  * @author ferd
  */
-public interface UserScope extends Scope {
+public interface UserScope extends ReactiveScope {
 
     default Type getType() {
         return Type.USER;

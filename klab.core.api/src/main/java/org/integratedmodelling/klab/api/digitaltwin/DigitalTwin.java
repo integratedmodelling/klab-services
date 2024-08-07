@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.services.runtime.kactors.messages.Observe;
 
 public interface DigitalTwin {
 
@@ -19,7 +18,7 @@ public interface DigitalTwin {
      *
      * @param removePersistentData if true, clear all databases and storage
      */
-    void dispose(boolean removePersistentData);
+    void dispose();
 
     /**
      * Ingest and resolve an observation created externally. Ensure that the {@link Observation#getId()}

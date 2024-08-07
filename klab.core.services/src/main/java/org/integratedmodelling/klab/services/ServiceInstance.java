@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -159,7 +160,7 @@ public abstract class ServiceInstance<T extends BaseService> {
 
         this.identity = authenticateService();
 
-        return new AbstractServiceDelegatingScope(new ServiceChannelImpl(identity.getFirst())) {
+        return new AbstractServiceDelegatingScope(new ChannelImpl(identity.getFirst())) {
 
             @Override
             public UserScope createUser(String username, String password) {

@@ -5,7 +5,6 @@ import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -16,8 +15,6 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.runtime.kactors.messages.InstrumentContextScope;
-import org.integratedmodelling.klab.runtime.kactors.messages.InstrumentSessionScope;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl;
@@ -27,7 +24,6 @@ import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
@@ -77,23 +73,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         //        Channel channel = connection.createChannel();
 
         if (this.configuration.getBrokerURI() == null) {
-            // TODO review authentication: should use simple auth with random credentials published in the
-            //  context authorization response. This is anonymous, which is only OK for local runtimes.
-            //            Should be something like:
-            //            "authenticationproviders" : [ {
-            //                "id" : "88d0c7eb-4a75-4e5e-85ff-19185e0394d7",
-            //                        "name" : "plain",
-            //                        "type" : "Plain",
-            //                        "secureOnlyMechanisms": "",
-            //                        "users" : [ {
-            //                            "id" : "4ebb8d66-f8e0-4efb-9bb9-c4578292ab43",
-            //                            "name" : "guest",
-            //                            "type" : "managed",
-            //                            "password" : "guest"
-            //                } ]
-            //            } ]
-            // use a random password regenerated at each boot (or even changed periodically with a message for
-            // subscribers)
+            /*
+                Create local broker. Uses the
+                simplest possible authentication with guest/guest plain credentials, will only allow local
+                connections.
+             */
             Map<String, Object> attributes = new HashMap<>();
             URL initialConfig = this.getClass().getClassLoader().getResource(EMBEDDED_BROKER_CONFIGURATION);
             attributes.put("type", "Memory");
@@ -291,7 +275,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
             serviceSessionScope.setId(Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
-            serviceSessionScope.getAgent().tell(new InstrumentSessionScope(capabilities(sessionScope).getBrokerURI()));
             return serviceSessionScope.getId();
         }
         throw new KlabIllegalArgumentException("unexpected scope class");
@@ -310,13 +293,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             in the scope is guaranteed to exist and be this
              */
             var digitalTwin = new DigitalTwinImpl(contextScope, getGraphDatabase());
-
-            /*
-            TODO instrument the actor for messaging if the request declares the ability to connect
-             */
-            serviceContextScope.getAgent().tell(new InstrumentContextScope(digitalTwin,
-                    capabilities(contextScope).getBrokerURI()));
-
+            serviceContextScope.send(Message.MessageClass.ActorCommunication,
+                    Message.MessageType.InitializeObservationContext, digitalTwin);
 
             return serviceContextScope.getId();
 

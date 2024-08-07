@@ -7,9 +7,10 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
-import org.integratedmodelling.klab.api.knowledge.observation.*;
-//import org.integratedmodelling.klab.api.knowledge.observation.impl.ProcessImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -20,7 +21,6 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.extension.*;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.api.services.runtime.kactors.messages.Observe;
 import org.integratedmodelling.klab.runtime.storage.BooleanStorage;
 import org.integratedmodelling.klab.runtime.storage.DoubleStorage;
 import org.integratedmodelling.klab.runtime.storage.KeyedStorage;
@@ -34,7 +34,6 @@ import org.ojalgo.concurrent.Parallelism;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serial;
-import java.lang.Process;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -816,9 +815,9 @@ public class DigitalTwin implements Closeable {
         return data == null ? Observation.empty() : data.observation;
     }
 
-    public Observation createObservation(Observe definition) {
-        return null;
-    }
+//    public Observation createObservation(Observe definition) {
+//        return null;
+//    }
 
     @Override
     public void close() throws IOException {

@@ -1,5 +1,6 @@
 package org.integratedmodelling.common.services.client.scope;
 
+import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -14,8 +15,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
-import org.integratedmodelling.klab.api.services.runtime.kactors.AgentResponse;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -35,18 +34,17 @@ import java.util.function.BiConsumer;
  *
  * @author Ferd
  */
-public abstract class ClientUserScope extends MessagingChannelImpl implements UserScope {
+public abstract class ClientUserScope extends AbstractReactiveScopeImpl implements UserScope {
 
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
     private Identity user;
-    private Ref agent;
     protected Scope parentScope;
     private Status status = Status.STARTED;
     private String id;
     protected Type type;
     private List<BiConsumer<Scope, Message>> listeners = new ArrayList<>();
-    private Map<Long, Pair<AgentMessage, BiConsumer<AgentMessage, AgentResponse>>> responseHandlers =
+    private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
             Collections
                     .synchronizedMap(new HashMap<>());
 
@@ -168,15 +166,6 @@ public abstract class ClientUserScope extends MessagingChannelImpl implements Us
     @Override
     public Parameters<String> getData() {
         return this.data;
-    }
-
-    @Override
-    public Ref getAgent() {
-        return this.agent;
-    }
-
-    public void setAgent(Ref agent) {
-        this.agent = agent;
     }
 
     @Override

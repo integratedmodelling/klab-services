@@ -12,9 +12,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.klab.runtime.kactors.messages.RunBehavior;
 import org.integratedmodelling.klab.services.actors.KAgent;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -25,8 +25,9 @@ import org.jgrapht.graph.DefaultEdge;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -94,13 +95,11 @@ public class ScopeManager {
             scopes.put(user.getUsername(), ret);
 
             File userBehavior = new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator +
-                    "user" +
-                    ".kactors");
+                    "user.kactors");
             if (userBehavior.isFile() && userBehavior.canRead()) {
                 try {
-                    var message = new RunBehavior();
-                    message.setBehaviorUrl(userBehavior.toURI().toURL());
-                    agent.tell(message);
+                    ret.send(Message.MessageClass.ActorCommunication, Message.MessageType.RunBehavior,
+                            userBehavior.toURI().toURL());
                 } catch (MalformedURLException e) {
                     ret.error(e, "while reading user.kactors behavior");
                 }
@@ -188,7 +187,8 @@ public class ScopeManager {
      * @param contextualization
      * @return
      */
-    public ContextScope contextualizeScope(ServiceContextScope rootScope, ContextScope.ScopeData contextualization) {
+    public ContextScope contextualizeScope(ServiceContextScope rootScope,
+                                           ContextScope.ScopeData contextualization) {
 
         ContextScope ret = rootScope;
 

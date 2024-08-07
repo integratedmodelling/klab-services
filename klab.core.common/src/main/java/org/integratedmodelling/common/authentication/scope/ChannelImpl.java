@@ -126,14 +126,14 @@ public class ChannelImpl implements Channel {
         return message;
     }
 
-    @Override
-    public Message post(Consumer<Message> handler, Object... message) {
-        var me = Message.create(this, message);
-        for (var listener : listeners) {
-            listener.accept(this, me);
-        }
-        return me;
-    }
+//    @Override
+//    public Message post(Consumer<Message> handler, Object... message) {
+//        var me = Message.create(this, message);
+//        for (var listener : listeners) {
+//            listener.accept(this, me);
+//        }
+//        return me;
+//    }
 
     @Override
     public void interrupt() {

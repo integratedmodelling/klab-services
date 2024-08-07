@@ -1,16 +1,7 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.commons.lang3.reflect.MethodUtils;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
@@ -22,40 +13,21 @@ import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.geometry.Locator;
-import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Expression;
-import org.integratedmodelling.klab.api.knowledge.Expression.Forcing;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.Expression.Forcing;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsArguments;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.lang.kactors.*;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assert;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.*;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assert.Assertion;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Assignment;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.ConcurrentGroup;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Do;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Fail;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.FireValue;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.For;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.If;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Instantiation;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Sequence;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.TextBlock;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.While;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue.ExpressionType;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -65,14 +37,17 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.ActionExecutor;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.api.services.runtime.kactors.WidgetActionExecutor;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library;
 import org.integratedmodelling.klab.runtime.kactors.extension.Library.CallDescriptor;
-import org.integratedmodelling.klab.runtime.kactors.messages.Fire;
 import org.integratedmodelling.klab.runtime.kactors.messages.ScriptEvent;
 import org.integratedmodelling.klab.runtime.kactors.messages.SetState;
 import org.integratedmodelling.klab.runtime.kactors.messages.ViewLayout;
 import org.integratedmodelling.klab.utilities.Utils;
+
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The basic k.Actors virtual machine (VM). Each actor should own a VM but components will be routines, not
@@ -209,7 +184,7 @@ public class KActorsVM implements VM {
      * @param behavior
      */
     @Override
-    public void run(KActorsBehavior behavior, Parameters<String> arguments, Scope scope) {
+    public void run(KActorsBehavior behavior, Parameters<String> arguments, ReactiveScope scope) {
         runBehavior(behavior, arguments, new KActorsScope(scope, behavior, scope.getAgent()));
     }
 
@@ -488,7 +463,7 @@ public class KActorsVM implements VM {
             scope.onException(t, "action " + behavior + " " + action.getUrn());
 
             if (scope.getSender() != null) {
-                scope.send(new Fire(scope));
+//                scope.send(new Fire(scope));
             } /*
              * else if (parentActor != null) {
              *

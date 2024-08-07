@@ -1,12 +1,6 @@
 package org.integratedmodelling.klab.runtime.kactors;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Consumer;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsAction;
@@ -17,11 +11,15 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Concurrent
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kactors.beans.Layout;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ViewComponent;
+import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
-import org.integratedmodelling.klab.api.services.runtime.kactors.AgentMessage;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Runtime scope for all k.Actors statements. Root scopes are for each action.
@@ -34,7 +32,7 @@ public class KActorsScope implements VM.BehaviorScope {
 	private boolean synchronous = false;
 //    private KActorsScope parent = null;
 
-	private Scope mainScope;
+	private ReactiveScope mainScope;
 
 	private Long listenerId;
 	private Identity identity;
@@ -83,7 +81,7 @@ public class KActorsScope implements VM.BehaviorScope {
 	 */
 	TestScope testScope;
 
-	public KActorsScope(Scope scope, KActorsBehavior behavior, Ref sender) {
+	public KActorsScope(ReactiveScope scope, KActorsBehavior behavior, Ref sender) {
 
 		this.mainScope = scope;
 		this.identity = scope.getIdentity();
@@ -482,12 +480,12 @@ public class KActorsScope implements VM.BehaviorScope {
 	}
 
 //    @Override
-	public void tellSender(AgentMessage message) {
-		if (this.sender != null) {
-			this.sender.tell(message);
-		}
-		throw new KlabActorException("no sender for message: " + message);
-	}
+//	public void tellSender(AgentMessage message) {
+//		if (this.sender != null) {
+//			this.sender.tell(message);
+//		}
+//		throw new KlabActorException("no sender for message: " + message);
+//	}
 
 //    @Override
 	public Object getMatchValue() {
@@ -578,10 +576,10 @@ public class KActorsScope implements VM.BehaviorScope {
 		return mainScope.send(message);
 	}
 
-	@Override
-	public Message post(Consumer<Message> handler, Object... message) {
-		return mainScope.post(handler, message);
-	}
+//	@Override
+//	public Message post(Consumer<Message> handler, Object... message) {
+//		return mainScope.post(handler, message);
+//	}
 
 	@Override
 	public void interrupt() {
@@ -597,16 +595,6 @@ public class KActorsScope implements VM.BehaviorScope {
 	public boolean hasErrors() {
 		return mainScope.hasErrors();
 	}
-
-//	@Override
-//	public boolean connect(KlabService service) {
-//		return false;
-//	}
-//
-//	@Override
-//	public boolean disconnect(KlabService service) {
-//		return false;
-//	}
 
 	@Override
 	public void close()  {

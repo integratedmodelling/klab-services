@@ -39,7 +39,6 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
  */
 public abstract interface Scope extends Channel {
 
-
     enum Status {
         WAITING, STARTED, CHANGED, FINISHED, ABORTED, INTERRUPTED, EMPTY
     }
@@ -80,12 +79,7 @@ public abstract interface Scope extends Channel {
      */
     Parameters<String> getData();
 
-    /**
-     * If this scope is owned by an agent, return the agent handle for communication.
-     *
-     * @return the agent or null.
-     */
-    Ref getAgent();
+
 
     /**
      * Retrieve the service corresponding to the passed class. A {@link KlabServiceAccessException} should be

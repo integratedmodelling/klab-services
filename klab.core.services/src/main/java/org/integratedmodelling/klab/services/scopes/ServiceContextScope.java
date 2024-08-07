@@ -3,23 +3,20 @@ package org.integratedmodelling.klab.services.scopes;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
-import org.integratedmodelling.klab.api.services.runtime.kactors.messages.Observe;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -155,54 +152,38 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     @Override
     public ResolutionTask observe(Object... resolvables) {
 
-        var message = registerMessage(Observe.class, (m, r) -> {
+        Observation observation = null; // TODO have the DT create the prototype unresolved obs
 
-            System.out.println("DIOCÁ REGISTER THIS MESSAGE: task " + m.getId() + " has status " + r.getStatus());
+        //
+        //        if (resolvables != null) {
+        //            for (Object o : resolvables) {
+        //                if (o instanceof Observable obs) {
+        //                    message.setObservable(obs);
+        //                } else if (o instanceof Geometry geom) {
+        //                    if (message.getGeometry() == null) {
+        //                        message.setGeometry(geom);
+        //                    } else {
+        //                        message.setObserverGeometry(geom);
+        //                    }
+        //                } else if (o instanceof String string) {
+        //                    if (message.getName() == null) {
+        //                        message.setName(string);
+        //                    } else {
+        //                        message.setDefaultValue(Utils.Data.asPOD(string));
+        //                    }
+        //                } else if (o instanceof Urn urn) {
+        //                    message.setResourceUrn(urn);
+        //                } else if (o instanceof KimModel model) {
+        //                    message.setModelUrn(model.getUrn());
+        //                }
+        //            }
+        //        }
 
-            /**
-             * 1. If the response contains a dataflow and we don't have it, set our dataflow; else
-             * merge it with the existing based on the observation contextualized.
-             */
+        var taskId = ask(Long.class, Message.MessageType.ResolveObservation, observation);
 
-
-            /**
-             * 2. Adjust the geometry as needed
-             */
-
-            /*
-             * Notifications and bookkeeping
-             */
-
-        });
-
-        if (resolvables != null) {
-            for (Object o : resolvables) {
-                if (o instanceof Observable obs) {
-                    message.setObservable(obs);
-                } else if (o instanceof Geometry geom) {
-                    if (message.getGeometry() == null) {
-                        message.setGeometry(geom);
-                    } else {
-                        message.setObserverGeometry(geom);
-                    }
-                } else if (o instanceof String string) {
-                    if (message.getName() == null) {
-                        message.setName(string);
-                    } else {
-                        message.setDefaultValue(Utils.Data.asPOD(string));
-                    }
-                } else if (o instanceof Urn urn) {
-                    message.setResourceUrn(urn);
-                } else if (o instanceof KimModel model) {
-                    message.setModelUrn(model.getUrn());
-                }
-            }
-        }
-
-        var observation = this.getAgent().ask(message, Observation.class);
-
-        // TODO return a completable future that watches the response
-        return responseFuture(message, observation, Observation.class);
+        // TODO return a completable future that watches the response using the existing channels. Even
+        //  when the messaging is duplex, ask one first time in case the response was already sent or missed.
+        return responseFuture(observation);
     }
 
     @Override
@@ -364,7 +345,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public void close()  {
+    public void close() {
 
         getService(RuntimeService.class).releaseScope(this);
 

@@ -40,11 +40,6 @@ public abstract class AbstractDelegatingScope implements Scope {
     }
 
     @Override
-    public KActorsBehavior.Ref getAgent() {
-        return null;
-    }
-
-    @Override
     public Status getStatus() {
         return this.status;
     }
@@ -84,10 +79,10 @@ public abstract class AbstractDelegatingScope implements Scope {
         return delegateChannel.send(message);
     }
 
-    @Override
-    public Message post(Consumer<Message> handler, Object... message) {
-        return delegateChannel.post(handler, message);
-    }
+//    @Override
+//    public Message post(Consumer<Message> handler, Object... message) {
+//        return delegateChannel.post(handler, message);
+//    }
 
     @Override
     public void interrupt() {
