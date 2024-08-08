@@ -72,6 +72,7 @@ public class RuntimeServerContextController {
      */
     @MutationMapping
     public long observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
+
         var authorization = getAuthorization();
         var scope = authorization.getScope(ContextScope.class);
         var observable = scope.getService(Reasoner.class).resolveObservable(observation.observable());
@@ -84,9 +85,9 @@ public class RuntimeServerContextController {
         TODO create the observation (or observer), pass that to observe() and call it add() or something
          like it.
          */
+        // Make an observation <-> observationinput adapter in GraphModel
 
-        var task = authorization.getScope(ContextScope.class)
-                                .observe(DigitalTwin.createObservation(observation.name(), geometry, observable, pod, observerGeometry));
+        var task = authorization.getScope(ContextScope.class).observe(GraphModel.adapt(observation, scope));
         return task.getId();
     }
 

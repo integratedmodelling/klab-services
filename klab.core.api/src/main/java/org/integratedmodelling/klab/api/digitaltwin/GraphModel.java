@@ -1,5 +1,11 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.utils.Utils;
+
 import java.util.List;
 
 /**
@@ -78,5 +84,25 @@ public class GraphModel {
     }
 
     public record ProvenanceNode(String id) {
+    }
+
+    public static org.integratedmodelling.klab.api.knowledge.observation.Observation adapt(ObservationInput observationInput, Scope scope) {
+
+        var observable = scope.getService(Reasoner.class).resolveObservable(observationInput.observable());
+        var geometry = org.integratedmodelling.klab.api.geometry.Geometry.create(observationInput.geometry());
+        var pod = observationInput.defaultValue() == null ? null :
+                  Utils.Data.asPOD(observationInput.defaultValue());
+        var observerGeometry = observationInput.observerGeometry() == null ? null :
+                               org.integratedmodelling.klab.api.geometry.Geometry.create(observationInput.observerGeometry());
+
+        // TODO metadata
+
+        return DigitalTwin.createObservation(scope, observable, geometry, pod, observerGeometry);
+    }
+
+    public static ObservationInput adapt(org.integratedmodelling.klab.api.knowledge.observation.Observation observation, Scope scope) {
+
+
+        return null;
     }
 }

@@ -145,7 +145,7 @@ public class ResolverService extends BaseService implements Resolver {
     /**
      * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
      * graph which will contain any observations that were already resolved within the context observation in
-     * the scope, if any. <p>
+     * the scope, if any.
      *
      * @param knowledge
      * @param scope

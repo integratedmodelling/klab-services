@@ -55,16 +55,16 @@ public interface RuntimeService extends KlabService {
      */
     String registerContext(ContextScope contextScope);
 
-    /**
-     * Create an observation in the passed scope after collecting all the parameters into a definition and
-     * validating them, then start resolution and return the ID of both the observation and the resolution
-     * task underway. Clients can use the graph model to inquire about the observation and the digital twin
-     * status after this has returned.
-     *
-     * @param resolvables
-     * @return
-     */
-    long observe(ContextScope scope, Object... resolvables);
+//    /**
+//     * Create an observation in the passed scope after collecting all the parameters into a definition and
+//     * validating them, then start resolution and return the ID of both the observation and the resolution
+//     * task underway. Clients can use the graph model to inquire about the observation and the digital twin
+//     * status after this has returned.
+//     *
+//     * @param resolvables
+//     * @return
+//     */
+//    long observe(ContextScope scope, Object... resolvables);
 
     /**
      * All services publish capabilities and have a call to obtain them. Must list all the available

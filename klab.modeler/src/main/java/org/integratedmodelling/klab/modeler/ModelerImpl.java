@@ -5,7 +5,6 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
-import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
@@ -24,7 +23,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
@@ -37,7 +35,6 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocumen
 import org.integratedmodelling.klab.modeler.configuration.EngineConfiguration;
 import org.integratedmodelling.klab.modeler.model.NavigableKlabStatement;
 import org.integratedmodelling.klab.modeler.model.NavigableProject;
-import org.integratedmodelling.klab.modeler.model.NavigableWorkspace;
 import org.integratedmodelling.klab.modeler.panels.controllers.DocumentEditorControllerImpl;
 import org.integratedmodelling.klab.modeler.views.controllers.*;
 
@@ -187,9 +184,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         }
 
         if (currentContext == null && currentSession != null) {
-
             currentContext = createContext(currentSession, "Default context");
+        }
 
+        if (currentContext == null) {
+            currentSession.error("cannot make observation");
+            return;
         }
 
         /* TODO handle observer, if not there make it and set it into the context. The logic should be
@@ -218,7 +218,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             resolvables.add(asset.toString());
         }
 
-        currentContext.observe(DigitalTwin.createObservation(resolvables.toArray()));
+        currentContext.observe(DigitalTwin.createObservation(currentContext, resolvables.toArray()));
 
     }
 
