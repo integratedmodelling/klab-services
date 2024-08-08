@@ -2,8 +2,10 @@ package org.integratedmodelling.klab.api.scope;
 
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.observation.*;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
+import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
@@ -21,17 +23,20 @@ import java.util.*;
  * {@link org.integratedmodelling.klab.api.services.RuntimeService}.
  * <p>
  * The context scope always has an observer that can be switched to another when making observations. The
- * observer is an observation of an agent (a {@link Subject} in the API, with agent semantics). The calling
+ * observer is an observation of an agent (a {@link Observer} in the API, with agent semantics). The calling
  * client should explicitly provide an observer; if not, the digital twin should provide one by default, using
  * information from the parent scopes (session user identity, including any roles specified in the user groups
  * subscribed to). Observations of the same observable with different observers are different observations.
  * <p>
- * A context scope is used to create observations, which will trigger resolution, through
- * {@link #observe(Object...)} and carries information (namespace, project, scenarios) that is relevant to the
- * resolver. Scopes can be specialized to customize resolution before {@link #observe(Object...)} is called,
- * and their status is passed across network boundaries, encoded in the scope header added to requests that
- * trigger resolution. If resolution in the runtime fails, the resulting observation will be in an unresolved
- * state, unusable to make any further resolution, and the context is to be considered inconsistent.
+ * A context scope is used to add observations, which will trigger resolution, through
+ * {@link #observe(Observation)} and carries information (parent observation, observer, namespace, project,
+ * scenarios) that is relevant to the resolver. Scopes can be specialized to customize resolution before
+ * {@link #observe(Observation)} is called, and their status is passed across network boundaries, encoded in
+ * the scope header added to requests that trigger resolution. If resolution in the runtime fails, the
+ * resulting observation will be in an unresolved state, unusable to make any further resolution, and the
+ * context is inconsistent unless all the inconsistent observations are substantials that can simply be
+ * stated. In the runtime service API, the GraphQL endpoint is used to submit observations to a digital twin
+ * for resolution through a mutation.
  * <p>
  * The context scope carries the URL of the digital twin (a GraphQL endpoint) and can be connected to another
  * to form larger, multi-observer, distributed scopes.
@@ -105,8 +110,9 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     Observer getObserverOf(Observation observation);
 
     /**
-     * Return the observations made in this context using {@link #observe(Object...)}. The resulting
-     * collection must iterate in order of observation, established by provenance.
+     * Return the consistent observations made in the root context using {@link #observe(Observation)}. The
+     * resulting collection must iterate in order of observation, established by provenance. All the root
+     * observations must be direct, so they cannot be inconsistent even if they are unresolved.
      *
      * @return
      */
@@ -219,7 +225,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @return a future for the observation being contextualized. The associated ID can be used for inquiries
      * beyond the future's own API, such as retrieval of notifications.
      */
-    ResolutionTask observe(Object... observables);
+    ResolutionTask observe(Observation observation);
 
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or
@@ -410,9 +416,9 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param traitIncarnations   traits incarnated, passed after a & marker as =-separated strings
      * @param resolutionNamespace passed after a $ sign
      */
-    public record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId,
-                            String[] scenarioUrns, Map<String, String> traitIncarnations,
-                            String resolutionNamespace) {
+    record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId,
+                     String[] scenarioUrns, Map<String, String> traitIncarnations,
+                     String resolutionNamespace) {
         public boolean empty() {
             return scopeId() == null;
         }

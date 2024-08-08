@@ -157,9 +157,5 @@ public class ChannelImpl implements Channel {
     public void addListener(BiConsumer<Channel, Message> listener) {
         this.listeners.add(listener);
     }
-
-    @Override
-    public void close() {
-        // TODO
-    }
+    
 }

@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableC
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -311,7 +312,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public Concept defineConcept(KimConceptStatement statement) {
+    public Concept defineConcept(KimConceptStatement statement, UserScope scope) {
         return build(statement, this.owl.requireOntology(statement.getNamespace(),
                 OWL.DEFAULT_ONTOLOGY_PREFIX), null, scope);
     }
@@ -1282,7 +1283,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public boolean loadKnowledge(Worldview worldview) {
+    public boolean loadKnowledge(Worldview worldview, UserScope scope) {
 
         this.worldview = worldview;
 
@@ -1294,7 +1295,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         for (KimOntology ontology : worldview.getOntologies()) {
             for (var statement : ontology.getStatements()) {
-                defineConcept(statement);
+                defineConcept(statement, scope);
             }
             this.owl.registerWithReasoner(ontology);
         }
@@ -1311,7 +1312,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public boolean updateKnowledge(ResourceSet changes) {
+    public boolean updateKnowledge(ResourceSet changes, UserScope scope) {
         // TODO
         return true;
     }

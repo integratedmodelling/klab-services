@@ -48,7 +48,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public void startResolution(Observation observation) {
+    public void submit(Observation observation, Observation related, Relationship relationship) {
 
     }
+
 }

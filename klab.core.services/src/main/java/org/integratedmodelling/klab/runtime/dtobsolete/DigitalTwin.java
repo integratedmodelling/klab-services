@@ -239,7 +239,7 @@ public class DigitalTwin implements Closeable {
             data = new ObservationData();
             data.actuator = actuator;
 //            data.observation = createObservation(actuator, contextObservation, scope);
-            data.scale = scope.getContextObservation().getGeometry();
+            data.scale = Scale.create(scope.getContextObservation().getGeometry());
             data.contextObservation = contextObservation;
 
             var customScale = dataflow.getResources().get((actuator.getId() + "_dataflow"), Scale.class);
@@ -440,11 +440,11 @@ public class DigitalTwin implements Closeable {
         // TODO use options from the scope for parallelization and choice float/double
         var storage = switch (observable.getDescriptionType()) {
             case QUANTIFICATION ->
-                    new DoubleStorage(scope.getContextObservation().getGeometry(), storageScope);
+                    new DoubleStorage(Scale.create(scope.getContextObservation().getGeometry()), storageScope);
             case CATEGORIZATION ->
-                    new KeyedStorage(scope.getContextObservation().getGeometry(), storageScope);
+                    new KeyedStorage(Scale.create(scope.getContextObservation().getGeometry()), storageScope);
             case VERIFICATION ->
-                    new BooleanStorage(scope.getContextObservation().getGeometry(), storageScope);
+                    new BooleanStorage(Scale.create(scope.getContextObservation().getGeometry()), storageScope);
             default ->
                     throw new KlabIllegalStateException("Unexpected value: " + observable.getDescriptionType());
         };

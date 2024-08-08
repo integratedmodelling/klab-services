@@ -152,9 +152,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ResolutionTask observe(Object... resolvables) {
-
-        Observation observation = null; // TODO have the DT create the prototype unresolved obs
+    public ResolutionTask observe(Observation observation) {
 
         //
         //        if (resolvables != null) {
@@ -181,11 +179,12 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         //            }
         //        }
 
-        var taskId = ask(Long.class, Message.MessageType.ResolveObservation, observation);
+        var taskId = ask(Long.class, Message.MessageClass.ActorCommunication,
+                Message.MessageType.ResolveObservation, observation);
 
         // TODO return a completable future that watches the response using the existing channels. Even
         //  when the messaging is duplex, ask one first time in case the response was already sent or missed.
-        return responseFuture(observation);
+        return responseFuture(observation, taskId);
     }
 
     @Override

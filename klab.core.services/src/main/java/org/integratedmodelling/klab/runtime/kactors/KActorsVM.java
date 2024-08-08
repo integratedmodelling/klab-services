@@ -18,6 +18,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Expression.Forcing;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ExpressionCode;
 import org.integratedmodelling.klab.api.lang.kactors.*;
@@ -463,7 +464,7 @@ public class KActorsVM implements VM {
             scope.onException(t, "action " + behavior + " " + action.getUrn());
 
             if (scope.getSender() != null) {
-//                scope.send(new Fire(scope));
+                //                scope.send(new Fire(scope));
             } /*
              * else if (parentActor != null) {
              *
@@ -1028,7 +1029,7 @@ public class KActorsVM implements VM {
                 break;
             case LIST:
                 ret = new ArrayList<Object>();
-                for (Object o : ((Collection<?>)arg.getStatedValue())) {
+                for (Object o : ((Collection<?>) arg.getStatedValue())) {
                     ((List<Object>) ret).add(o instanceof KActorsValue ? evaluateInScope((KActorsValue) o,
                             scope) : o);
                 }
@@ -1692,7 +1693,8 @@ public class KActorsVM implements VM {
 
             states.put("self", (State) target);
 
-            for (Locator locator : ((ContextScope) runtimeScope).getContextObservation().getGeometry()) {
+            for (Locator locator :
+                    Scale.create(((ContextScope) runtimeScope).getContextObservation().getGeometry())) {
 
                 args.clear();
                 for (String key : states.keySet()) {
@@ -1849,7 +1851,8 @@ public class KActorsVM implements VM {
                         || (value instanceof String && ((String) value).isEmpty())
                         || (value instanceof Concept && ((Concept) value).is(SemanticType.NOTHING))
                         || (value instanceof Observable && ((Observable) value).is(SemanticType.NOTHING))
-//                        || (value instanceof Artifact && !(value instanceof ObservationGroup) && ((Artifact) value).isEmpty())
+                        //                        || (value instanceof Artifact && !(value instanceof
+                        //                        ObservationGroup) && ((Artifact) value).isEmpty())
                         || (value instanceof Observation && ((Observation) value).getObservable().is(SemanticType.NOTHING));
             case OBJECT:
                 break;

@@ -95,7 +95,9 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
      * Return a future for the result of an agent message which encodes the request/response using
      * AgentMessage/AgentResponse
      */
-    protected <T> ResolutionTask responseFuture(Observation observation) {
+    protected <T> ResolutionTask responseFuture(Observation observation, long taskId) {
+
+
         //        var ret = new ObservationTask(new Callable<T>() {
         //
         //            @Override

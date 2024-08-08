@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import com.google.common.net.HttpHeaders;
 import jakarta.servlet.http.HttpServletRequest;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -56,10 +57,19 @@ public class RuntimeServerContextController {
     }
 
     @QueryMapping
-    public List<GraphModel.Notification> notifications(@Argument(name="after") float after) {
+    public List<GraphModel.Notification> notifications(@Argument(name = "after") float after) {
         return List.of();
     }
 
+    /**
+     * Observations are set into the digital twin by the context after creating them in an unresolved state.
+     * The GraphQL endpoint is used to do that using a mutation. The return long ID is the handle to the
+     * resolution; according to the messaging protocol, the observation tasks should monitor resolution until
+     * completion.
+     *
+     * @param observation
+     * @return
+     */
     @MutationMapping
     public long observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
         var authorization = getAuthorization();
@@ -67,9 +77,16 @@ public class RuntimeServerContextController {
         var observable = scope.getService(Reasoner.class).resolveObservable(observation.observable());
         var geometry = Geometry.create(observation.geometry());
         var pod = observation.defaultValue() == null ? null : Utils.Data.asPOD(observation.defaultValue());
-        var observerGeometry = observation.observerGeometry() == null ? null : Geometry.create(observation.observerGeometry());
+        var observerGeometry = observation.observerGeometry() == null ? null :
+                               Geometry.create(observation.observerGeometry());
+
+        /*
+        TODO create the observation (or observer), pass that to observe() and call it add() or something
+         like it.
+         */
+
         var task = authorization.getScope(ContextScope.class)
-                                .observe(observation.name(), geometry, observable, pod, observerGeometry);
+                                .observe(DigitalTwin.createObservation(observation.name(), geometry, observable, pod, observerGeometry));
         return task.getId();
     }
 

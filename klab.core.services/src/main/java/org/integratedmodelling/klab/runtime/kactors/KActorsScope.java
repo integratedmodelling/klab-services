@@ -596,8 +596,4 @@ public class KActorsScope implements VM.BehaviorScope {
 		return mainScope.hasErrors();
 	}
 
-	@Override
-	public void close()  {
-		// TODO
-	}
 }

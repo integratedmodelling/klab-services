@@ -78,10 +78,10 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public ResolutionTask observe(Object... observables) {
+    public ResolutionTask observe(Observation observation) {
 
         var runtime = getService(RuntimeService.class);
-        var taskId = runtime.observe(this, observables);
+//        var taskId = runtime.observe(this, observables);
 
         return null; // new ClientResolutionTask(this);
     }

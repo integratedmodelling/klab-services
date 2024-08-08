@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.EnumeratedExtension;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Extent;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
@@ -270,6 +271,8 @@ public class ModelKbox extends ObservableKbox {
             return ret;
         }
 
+        var scale = Scale.create(context.getContextObservation().getGeometry());
+
         String query = "SELECT model.oid FROM model WHERE ";
         Concept contextObservable = context.getResolutionObservation() == null
                                     ? null
@@ -282,14 +285,14 @@ public class ModelKbox extends ObservableKbox {
 
         query += "(" + scopeQuery(context, observable) + ")";
         query += " AND (" + typequery + ")";
-        if (context.getContextObservation().getGeometry().getSpace() != null) {
-            String sq = spaceQuery(context.getContextObservation().getGeometry().getSpace());
+        if (scale.getSpace() != null) {
+            String sq = spaceQuery(scale.getSpace());
             if (!sq.isEmpty()) {
                 query += " AND (" + sq + ")";
             }
         }
 
-        String tquery = timeQuery(context.getContextObservation().getGeometry().getTime());
+        String tquery = timeQuery(scale.getTime());
         if (!tquery.isEmpty()) {
             query += " AND (" + tquery + ");";
         }
@@ -303,7 +306,7 @@ public class ModelKbox extends ObservableKbox {
             if (model != null) {
                 if (model.getPermissions().checkAuthorization(context)) {
                     Coverage coverage = resourceService.modelGeometry(model.getName());
-                    if (coverage != null && !coverage.checkConstraints(context.getContextObservation().getGeometry())) {
+                    if (coverage != null && !coverage.checkConstraints(scale)) {
                         resourceService.serviceScope().debug("model " + model.getName() + " of " + observable
                                 + " discarded because of coverage constraints mismatch");
                         continue;

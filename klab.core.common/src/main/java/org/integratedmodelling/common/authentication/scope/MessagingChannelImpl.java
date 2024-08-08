@@ -19,17 +19,16 @@ import java.util.function.Predicate;
 /**
  * Hosts the AMQP connections and channels for all the subscribed queues. In service use, creates the queues
  * and advertises them. In client configurations, consumes the queues and dispatches the messages to their
- * respective handlers. Calling {@link #post(Consumer, Object...)} will react appropriately when the message
- * receive a response,
+ * respective handlers.
  */
 public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
     private Channel channel_;
     private boolean sender;
     private boolean receiver;
-    ConnectionFactory connectionFactory = null;
-    Connection connection = null;
-    Map<Message.Queue, String> queueNames = new HashMap<>();
+    private ConnectionFactory connectionFactory = null;
+    private Connection connection = null;
+    private Map<Message.Queue, String> queueNames = new HashMap<>();
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
@@ -56,24 +55,29 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return super.send(args);
     }
 
-    private Channel getChannel(Message.Queue queue) {
+    protected Channel getChannel(Message.Queue queue) {
+
+        if (queueNames.containsKey(queue)) {
 
         /*
         in this implementation it looks like we can do with just one channel
          */
-        if (this.channel_ == null) {
-            var holder = findParent((p) -> p.channel_ != null);
-            if (holder != null) {
-                return holder.channel_;
+            if (this.channel_ == null) {
+                var holder = findParent((p) -> p.channel_ != null);
+                if (holder != null) {
+                    return holder.channel_;
+                }
+                try {
+                    this.channel_ = this.connection.createChannel();
+                } catch (IOException e) {
+                    // just return null
+                }
             }
-            try {
-                this.channel_ = this.connection.createChannel();
-            } catch (IOException e) {
-                // just return null
-            }
+
+            return this.channel_;
         }
 
-        return this.channel_;
+        return null;
     }
 
     /*

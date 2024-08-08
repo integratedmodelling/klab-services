@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
@@ -217,7 +218,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             resolvables.add(asset.toString());
         }
 
-        currentContext.observe(resolvables.toArray());
+        currentContext.observe(DigitalTwin.createObservation(resolvables.toArray()));
 
     }
 

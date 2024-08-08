@@ -157,16 +157,6 @@ public abstract class AbstractDelegatingScope implements Scope {
         this.parentScope = parentScope;
     }
 
-//    @Override
-//    public void close() {
-//        delegateChannel.close();
-//    }
-
-    @Override
-    public void close() throws IOException {
-
-    }
-
     public void addListener(BiConsumer<Channel, Message> listener) {
         if (delegateChannel instanceof ChannelImpl channel) {
             channel.addListener(listener);

@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
@@ -577,17 +578,17 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
 
     @Override
-    public boolean loadKnowledge(Worldview worldview) {
+    public boolean loadKnowledge(Worldview worldview, UserScope scope) {
         return client.post(ServicesAPI.REASONER.ADMIN.LOAD_KNOWLEDGE, worldview, Boolean.class);
     }
 
     @Override
-    public boolean updateKnowledge(ResourceSet changes) {
+    public boolean updateKnowledge(ResourceSet changes, UserScope scope) {
         return client.post(ServicesAPI.REASONER.ADMIN.UPDATE_KNOWLEDGE, changes, Boolean.class);
     }
 
     @Override
-    public Concept defineConcept(KimConceptStatement statement) {
+    public Concept defineConcept(KimConceptStatement statement, UserScope scope) {
         return client.post(ServicesAPI.REASONER.ADMIN.DEFINE_CONCEPT, statement, Concept.class);
     }
 

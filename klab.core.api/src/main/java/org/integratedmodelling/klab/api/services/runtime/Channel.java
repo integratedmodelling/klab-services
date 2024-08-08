@@ -52,7 +52,7 @@ import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
  * @author ferdinando.villa
  * @version $Id: $Id
  */
-public interface Channel extends Closeable {
+public interface Channel {
 
     default Set<Message.Queue> defaultQueues() {
         return EnumSet.of(Message.Queue.Info);

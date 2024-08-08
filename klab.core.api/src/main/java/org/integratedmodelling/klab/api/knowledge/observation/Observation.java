@@ -65,15 +65,6 @@ public interface Observation extends Knowledge, Artifact, Resolvable {
     Identity getObserver();
 
     /**
-     * Return the scale where this is contextualized. It may differ from the scale of the context although the
-     * latter should always contain the scale of all observations and observers in it.
-     *
-     * @return the observation's scale
-     */
-    @Override
-    Scale getGeometry();
-
-    /**
      * True if the observation has been resolved. This will be false until the resolution task with the same
      * ID has finished. Dependent observation that are unresolved make the context inconsistent. Substantials
      * remain usable in an unresolved state.

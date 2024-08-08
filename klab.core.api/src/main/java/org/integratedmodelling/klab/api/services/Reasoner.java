@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -954,12 +955,12 @@ public interface Reasoner extends KlabService {
          * assumed in correct load order, consistent and complete. This must be reentrant, enabling the bulk
          * substitution of the entire knowledge base in one shot.
          *
-         * FIXME this must report NOTIFICATIONS not boolean
-         *
          * @param worldview
+         * @param scope admin user scope to report and validate
+
          * @return
          */
-        boolean loadKnowledge(Worldview worldview);
+        boolean loadKnowledge(Worldview worldview, UserScope scope);
 
         /**
          * When a reasoner is registered with a resources service by an external orchestrator, changes in the
@@ -968,23 +969,24 @@ public interface Reasoner extends KlabService {
          * {@link org.integratedmodelling.klab.api.services.Reasoner.Capabilities#getWorldviewId()} is the
          * same as the one where the changes have been made.
          *
-         * FIXME this must report NOTIFICATIONS not true/false
-         *
          * @param changes the set of changed ontology and strategy resources with their URLs
+         * @param scope admin user scope to report and validate
+
          * @return true if any change was made
          */
-        boolean updateKnowledge(ResourceSet changes);
+        boolean updateKnowledge(ResourceSet changes, UserScope scope);
 
         /**
-         * The "port" to ingest an individual concept definition, called by {@link #loadKnowledge(Worldview)}.
+         * The "port" to ingest an individual concept definition, called by {@link #loadKnowledge(Worldview, UserScope)} (Worldview)}.
          * Provided separately to make it possible for a resolver service to declare individual local
          * concepts, as long as it owns the semantic service. Definition must be made only in terms of known
          * concepts (no forward declaration is allowed), so order of ingestion is critical.
          *
          * @param statement
+         * @param scope admin user scope to report and validate
          * @return
          */
-        Concept defineConcept(KimConceptStatement statement);
+        Concept defineConcept(KimConceptStatement statement, UserScope scope);
 
         /**
          * Export a namespace as an OWL ontology with all dependencies.

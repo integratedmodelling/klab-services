@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
@@ -31,12 +32,14 @@ public class Generators {
                                   "of the values produced. Default is 0 to 4000", optional = true),
                           @KlabFunction.Argument(name = "detail", type = Type.NUMBER, description =
                                   "Controls the " +
-                                  "amount of detail in the generated structure. Default is 8, appropriate " +
+                                          "amount of detail in the generated structure. Default is 8, " +
+                                          "appropriate " +
                                           "for " +
-                                  "elevation", optional = true),
+                                          "elevation", optional = true),
                           @KlabFunction.Argument(name = "roughness", type = Type.NUMBER, description =
                                   "Controls the " +
-                                  "roughness of the generated terrain. Default is 0.55, appropriate for " +
+                                          "roughness of the generated terrain. Default is 0.55, appropriate" +
+                                          " for " +
                                           "elevation",
                                                  optional = true)
                   })
@@ -64,7 +67,7 @@ public class Generators {
              requirement ensures that we get a regular 2D spatial extent, so this is safe w/o error checking.
              */
             for (Geometry subscale :
-                    scope.getContextObservation().getGeometry().without(Dimension.Type.SPACE)) {
+                    Scale.create(scope.getContextObservation().getGeometry()).without(Dimension.Type.SPACE)) {
 
                 double dx = 1.0 / (double) xy.get(0);
                 double dy = 1.0 / (double) xy.get(1);
