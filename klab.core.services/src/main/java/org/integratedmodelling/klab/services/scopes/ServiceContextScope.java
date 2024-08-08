@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
+import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -25,7 +26,8 @@ import java.util.*;
 
 /**
  * The service-side {@link ContextScope}. Does most of the heavy lifting in the runtime service through the
- * services chosen by the session scope. Uses agents as needed..
+ * services chosen by the session scope. Uses agents as needed. Relies on external instrumentation after
+ * creation.
  * <p>
  * Maintained by the {@link ScopeManager}
  */
@@ -343,6 +345,26 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return ret;
 
     }
+
+    @Override
+    public boolean initializeAgents(String scopeId) {
+        // setting the ID here is dirty as technically this is still being set and will be set again later,
+        // but
+        // no big deal for now. Alternative is a complicated restructuring of messages to take multiple
+        // payloads.
+        setId(scopeId);
+        setStatus(Status.WAITING);
+        KActorsBehavior.Ref contextAgent = parentScope.ask(KActorsBehavior.Ref.class,
+                Message.MessageClass.ActorCommunication, Message.MessageType.CreateContext, this);
+        if (contextAgent != null && !contextAgent.isEmpty()) {
+            setStatus(Status.STARTED);
+            setAgent(contextAgent);
+            return true;
+        }
+        setStatus(Status.ABORTED);
+        return false;
+    }
+
 
     @Override
     public void close() {

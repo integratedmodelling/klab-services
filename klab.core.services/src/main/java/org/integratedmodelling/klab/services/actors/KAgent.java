@@ -7,13 +7,16 @@ import io.reacted.core.reactors.ReActions;
 import io.reacted.core.reactors.ReActor;
 import io.reacted.core.reactorsystem.ReActorContext;
 import io.reacted.core.reactorsystem.ReActorRef;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabActorException;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 import org.integratedmodelling.klab.api.services.runtime.kactors.VM;
 import org.integratedmodelling.klab.runtime.kactors.KActorsVM;
 import org.integratedmodelling.klab.runtime.kactors.messages.SetState;
@@ -61,6 +64,12 @@ public abstract class KAgent implements ReActor {
     public KAgent(String name, ReactiveScope scope) {
         this.name = name;
         this.scope = scope;
+    }
+
+    public static String sanitizeName(String name) {
+        // TODO check for other characters. At the moment we just need the dot. Don't know why ReAct is so
+        //  anal about names.
+        return name.replace(".", "_");
     }
 
     /**
@@ -132,6 +141,10 @@ public abstract class KAgent implements ReActor {
              */
             final Class<? extends R> rClass = replyClass;
             this.ref.ask(message, replyClass, timeout, "request_" + nextId.incrementAndGet())
+                    .exceptionally((ex) -> {
+                        Logging.INSTANCE.error(new KlabActorException(ex));
+                        return null;
+                    })
                     .whenComplete((reply, failure) -> {
                         if (reply != null && rClass.isAssignableFrom(reply.getClass())) {
                             result.set(reply);
@@ -196,7 +209,7 @@ public abstract class KAgent implements ReActor {
         return ReActions.newBuilder()
                         .reAct(ReActorInit.class, this::initialize)
                         .reAct(ReActorStop.class, this::stop)
-                        .reAct(Message.class, this::handleMessage);
+                        .reAct(MessageImpl.class, this::handleMessage);
     }
 
     /*

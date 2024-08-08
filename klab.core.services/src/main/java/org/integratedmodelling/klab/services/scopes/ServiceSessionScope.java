@@ -1,10 +1,5 @@
 package org.integratedmodelling.klab.services.scopes;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -14,7 +9,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope} at each new
- * session, script, application or test case run.
+ * session, script, application or test case run. Relies on external instrumentation after creation.
  * <p>
  * Maintained by the {@link ScopeManager}
  */
@@ -34,18 +29,9 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     @Override
     public ContextScope createContext(String contextName) {
-
         final ServiceContextScope ret = new ServiceContextScope(this);
         ret.setName(contextName);
-        ret.setStatus(Status.WAITING);
-        Ref contextAgent = ask(Ref.class, Message.MessageType.CreateContext, ret);
-        if (!contextAgent.isEmpty()) {
-            ret.setStatus(Status.STARTED);
-            ret.setAgent(contextAgent);
-        } else {
-            ret.setStatus(Status.ABORTED);
-        }
-
+        // Scope is incomplete and will be instrumented with ID, messaging queues and agent by the caller.
         return ret;
     }
 
@@ -64,5 +50,23 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     @Override
     public void logout() {
         // TODO
+    }
+
+    public boolean initializeAgents(String scopeId) {
+        // setting the ID here is dirty as technically this is still being set and will be set again later,
+        // but
+        // no big deal for now. Alternative is a complicated restructuring of messages to take multiple
+        // payloads.
+        setId(scopeId);
+        setStatus(Status.WAITING);
+        Ref sessionAgent = parentScope.ask(Ref.class, Message.MessageClass.ActorCommunication,
+                Message.MessageType.CreateSession, this);
+        if (sessionAgent != null && !sessionAgent.isEmpty()) {
+            setStatus(Status.STARTED);
+            setAgent(sessionAgent);
+            return true;
+        }
+        setStatus(Status.ABORTED);
+        return false;
     }
 }

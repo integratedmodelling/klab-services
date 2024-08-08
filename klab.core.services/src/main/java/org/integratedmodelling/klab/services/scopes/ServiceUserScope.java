@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
-import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -14,14 +13,15 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
-import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.security.Role;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.BiConsumer;
 
 /**
  * Service-side user scope and parent class for other scopes, created and maintained on request upon
@@ -30,8 +30,7 @@ import java.util.function.BiConsumer;
  * In this implementation (currently) the only scope that has services is the context scope, and the other
  * scopes have empty service maps. The {@link ScopeManager} contains the logic.
  * <p>
- * Uses the actor system in a lazy fashion, with actors created only upon first necessity at all scope
- * levels.
+ * Relies on external instrumentation after creation.
  * <p>
  * Maintained by the {@link ScopeManager}
  *
@@ -47,10 +46,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     private Collection<Role> roles;
     private String id;
     private boolean local;
-    //    private Map<Long, Pair<Message, BiConsumer<Message, Message>>> responseHandlers =
-    //            Collections.synchronizedMap(new HashMap<>());
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-
     protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
     protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
 
@@ -95,30 +91,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         }
     }
 
-    //    /**
-    //     * Obtain a message to an agent that is set up to intercept a response sent to this channel using
-    //     send()
-    //     *
-    //     * @param <T>
-    //     * @param messageClass
-    //     * @param handler
-    //     * @return
-    //     */
-    //    @SuppressWarnings("unchecked")
-    //    protected Message registerMessage(BiConsumer<Message, Message> handler) {
-    //
-    //        Message ret = null;
-    //        try {
-    //            ret = (T) messageClass.getDeclaredConstructor().newInstance();
-    //            this.responseHandlers.put(ret.getId(),
-    //                    Pair.of((Message) ret, (BiConsumer<Message, Message>) handler));
-    //        } catch (Throwable e) {
-    //            error(e);
-    //        }
-    //
-    //        return ret;
-    //    }
-
     /**
      * Return a future for the result of an agent message which encodes the request/response using
      * AgentMessage/AgentResponse
@@ -152,20 +124,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
 
     @Override
     public SessionScope runSession(String sessionName) {
-
         final ServiceSessionScope ret = new ServiceSessionScope(this);
         ret.setStatus(Status.WAITING);
-        Ref sessionAgent = ask(Ref.class, Message.MessageClass.ActorCommunication,
-                Message.MessageType.CreateSession, ret);
-
-        if (!sessionAgent.isEmpty()) {
-            ret.setName(sessionName);
-            ret.setStatus(Status.STARTED);
-            ret.setAgent(sessionAgent);
-        } else {
-            ret.setStatus(Status.ABORTED);
-        }
-
+        ret.setName(sessionName);
+        // Scope is incomplete and will be instrumented with ID, messaging connection, queues and agent by
+        // the caller explicitly calling the methods.
         return ret;
     }
 
@@ -305,9 +268,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
 
     //	@Override
     public void stop() {
-        agent.tell(ReActorStop.STOP);
+        if (agent != null) {
+            agent.tell(ReActorStop.STOP);
+            this.agent = null;
+        }
         this.data.clear();
-        this.agent = null;
         setStatus(Status.EMPTY);
     }
 

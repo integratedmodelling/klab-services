@@ -85,7 +85,7 @@ public class ScopeManager {
 
             ret = new ServiceUserScope(user);
 
-            String agentName = user.getUsername();
+            String agentName = KAgent.sanitizeName(user.getUsername());
             // TODO move to lazy logics
             KActorsBehavior.Ref agent = KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName,
                     ret)).get());
@@ -121,40 +121,6 @@ public class ScopeManager {
         var scope = scopes.get(scopeId);
         return false;
     }
-
-    //    public ServiceUserScope createScope(EngineAuthorization engineAuthorization) {
-    //
-    //        String[] path = engineAuthorization.getScopeId().split("\\/");
-    //        ServiceUserScope ret = null;
-    //
-    //        /**
-    //         * The physical scope levels are user.session.context. Below that, scopes are "virtual"
-    //         * incarnations of the context scope with modified state and
-    //         * their hierarchy is handled internally by the {@link ContextScope} implementation.
-    //         */
-    //        ServiceUserScope scope = null;
-    //        StringBuilder scopeId = new StringBuilder();
-    //        for (int i = 0; i < 3; i++) {
-    //            scopeId.append((scopeId.isEmpty()) ? path[i] : ("/" + path[i]));
-    //            var currentScope = scopes.get(scopeId.toString());
-    //            if (currentScope == null) {
-    //                // create from the previous scope according to level
-    //                currentScope = switch (i) {
-    //                    case 0 -> login(createUserIdentity(engineAuthorization));
-    //                    case 1 -> null; // currentScope.runSession();
-    //                    case 2 -> null; // ((SessionScope)currentScope)....
-    //                    default -> null; // should exist but we keep the scope and ask it to specialize
-    //                };
-    //            }
-    //
-    //            scope = currentScope;
-    //        }
-    //
-    //        ret = scope;
-    //        ret.setLocal(engineAuthorization.isLocal());
-    //
-    //        return ret;
-    //    }
 
     private UserIdentity createUserIdentity(EngineAuthorization engineAuthorization) {
         UserIdentityImpl ret = new UserIdentityImpl();

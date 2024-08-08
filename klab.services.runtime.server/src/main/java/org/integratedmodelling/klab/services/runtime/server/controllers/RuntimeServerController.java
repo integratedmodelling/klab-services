@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.server.controllers;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.reasoner.ReasonerClient;
 import org.integratedmodelling.common.services.client.resolver.ResolverClient;
@@ -74,6 +75,9 @@ public class RuntimeServerController {
 
                     var implementedQueues = serviceSessionScope.setupMessaging(brokerUrl.toString(), id,
                             queuesHeader);
+                    if (!serviceSessionScope.initializeAgents(id)) {
+                        Logging.INSTANCE.warn("agent initialization failed in session creation");
+                    }
                     response.setHeader(ServicesAPI.MESSAGING_QUEUES_HEADER,
                             Utils.Strings.join(implementedQueues, ", "));
                 }
@@ -94,7 +98,7 @@ public class RuntimeServerController {
      *
      * @param request
      * @param principal
-     * @param sessionHeader
+
      * @return the ID of the new context scope
      */
     @PostMapping(ServicesAPI.RUNTIME.CREATE_CONTEXT)
@@ -140,6 +144,9 @@ public class RuntimeServerController {
                     serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
 
                     var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);
+                    if (!serviceContextScope.initializeAgents(id)) {
+                        Logging.INSTANCE.warn("agent initialization failed in context creation");
+                    }
                     response.setHeader(ServicesAPI.MESSAGING_QUEUES_HEADER,
                             Utils.Strings.join(queuesAvailable, ", "));
 

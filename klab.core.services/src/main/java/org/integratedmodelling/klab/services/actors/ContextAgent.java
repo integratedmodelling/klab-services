@@ -11,7 +11,7 @@ public class ContextAgent extends KAgent {
     private DigitalTwin digitalTwin;
 
     public ContextAgent(ContextScope scope) {
-        super(scope.getId(), scope);
+        super(sanitizeName(scope.getId()), scope);
     }
 
     @Override
