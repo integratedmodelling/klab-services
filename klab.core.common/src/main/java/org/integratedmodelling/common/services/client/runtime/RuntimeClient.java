@@ -135,30 +135,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public long observe(ContextScope scope, Object... resolvables) {
-
-        // TODO ensure we have all info to proceed
-
-        // TODO if we have no geometry and it's a dependent, use the observer's scale if any, otherwise
-        //  empty is OK
-
-        // TODO if we have no name, use the observable
-
-        /*
-        build a mutation query and send to the digital twin endpoint of the runtime
-        ObservationInput(String name, String observable, String geometry, String defaultValue, String
-        observerGeometry) {
-         */
-        GraphModel.ObservationInput request = new GraphModel.ObservationInput(name, observable.getUrn(),
-                geometry.encode(), defaultValue, observerGeometry == null ? null : observerGeometry.encode());
-
-        return graphClient.query(GraphModel.Queries.GraphQL.OBSERVE, Long.class, scope, "observation",
-                request);
-    }
-
-    @Override
     public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class);
     }
 
+    public GraphQLClient graphClient() {
+        return graphClient;
+    }
 }

@@ -302,10 +302,4 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         throw new KlabIllegalArgumentException("unexpected scope class");
     }
 
-    @Override
-    public long observe(ContextScope scope, Object... resolvables) {
-        // TODO this is the actual shit. Talk to the actor in the scope, sending the proper message.
-        return Observation.UNASSIGNED_ID;
-    }
-
 }

@@ -1,13 +1,13 @@
 package org.integratedmodelling.common.services.client.scope;
 
-import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Urn;
-import org.integratedmodelling.klab.api.knowledge.observation.*;
+import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
@@ -19,6 +19,9 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
@@ -81,9 +84,49 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public ResolutionTask observe(Observation observation) {
 
         var runtime = getService(RuntimeService.class);
-//        var taskId = runtime.observe(this, observables);
+        if (runtime instanceof RuntimeClient runtimeClient) {
+            long id = runtimeClient.graphClient().query(GraphModel.Queries.GraphQL.OBSERVE, Long.class,
+                    this, "observation",
+                    GraphModel.adapt(observation, this));
+            return resolutionWatcher(id); // event watcher using either messaging or queues
+        }
 
         return null; // new ClientResolutionTask(this);
+    }
+
+    private ResolutionTask resolutionWatcher(long id) {
+        return new ResolutionTask() {
+
+            @Override
+            public long getId() {
+                return id;
+            }
+
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return false;
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public boolean isDone() {
+                return false;
+            }
+
+            @Override
+            public Observation get() throws InterruptedException, ExecutionException {
+                return null;
+            }
+
+            @Override
+            public Observation get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                return null;
+            }
+        };
     }
 
     @Override
@@ -167,7 +210,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String, String> localNames) {
+    public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale,
+                                                  Map<String, String> localNames) {
         return null;
     }
 
