@@ -23,7 +23,9 @@ import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.utilities.Utils;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
@@ -252,25 +254,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public boolean releaseScope(Scope scope) {
-        //
-        //        /**
-        //         * TODO fix based on the type of scope. Each should release every resource held below the
-        //          scope.
-        //         */
-        //        var dt = this.digitalTwins.remove(scope.getIdentity().getId());
-        //        if (dt != null) {
-        //            try {
-        //                dt.close();
-        //            } catch (IOException e) {
-        //                throw new KlabInternalErrorException(e);
-        //            }
-        //        }
-        //        return dt != null;
-        return true;
-    }
-
-    @Override
     public String registerSession(SessionScope sessionScope) {
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
             serviceSessionScope.setId(Utils.Names.shortUUID());
@@ -284,18 +267,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public String registerContext(ContextScope contextScope) {
 
         if (contextScope instanceof ServiceContextScope serviceContextScope) {
-
             serviceContextScope.setId(serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
-
-            /*
-            create the digital twin and send it to the scope's actor where it will be managed. The runtime
-            in the scope is guaranteed to exist and be this
-             */
-            var digitalTwin = new DigitalTwinImpl(contextScope, getGraphDatabase());
-            serviceContextScope.send(Message.MessageClass.ActorCommunication,
-                    Message.MessageType.InitializeObservationContext, digitalTwin);
-
+            serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getGraphDatabase()));
             return serviceContextScope.getId();
 
         }

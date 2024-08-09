@@ -6,26 +6,23 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
 import java.net.URL;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
-    private Observer observer;
+    private Observation observer;
     private DirectObservation contextObservation;
     private String[] scenarios;
     private String resolutionNamespace;
@@ -41,7 +38,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Observer getObserver() {
+    public Observation getObserver() {
         return this.observer;
     }
 
@@ -51,7 +48,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public ContextScope withObserver(Observer observer) {
+    public ContextScope withObserver(Observation observer) {
         return this;
     }
 
@@ -81,52 +78,18 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public ResolutionTask observe(Observation observation) {
+    public Task<Observation, Long> observe(Observation observation) {
 
         var runtime = getService(RuntimeService.class);
         if (runtime instanceof RuntimeClient runtimeClient) {
-            long id = runtimeClient.graphClient().query(GraphModel.Queries.GraphQL.OBSERVE, Long.class,
+            long taskId = runtimeClient.graphClient().query(GraphModel.Queries.GraphQL.OBSERVE, Long.class,
                     this, "observation",
                     GraphModel.adapt(observation, this));
-            return resolutionWatcher(id); // event watcher using either messaging or queues
+            return trackMessages(EnumSet.of(Message.MessageType.ResolutionAborted,
+                    Message.MessageType.ResolutionSuccessful), taskId, this::getObservation); // event watcher using either messaging or queues
         }
 
         return null; // new ClientResolutionTask(this);
-    }
-
-    private ResolutionTask resolutionWatcher(long id) {
-        return new ResolutionTask() {
-
-            @Override
-            public long getId() {
-                return id;
-            }
-
-            @Override
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                return false;
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return false;
-            }
-
-            @Override
-            public boolean isDone() {
-                return false;
-            }
-
-            @Override
-            public Observation get() throws InterruptedException, ExecutionException {
-                return null;
-            }
-
-            @Override
-            public Observation get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                return null;
-            }
-        };
     }
 
     @Override
@@ -189,6 +152,16 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         return null;
     }
 
+    /**
+     * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and is the fastest way.
+     *
+     * @param id
+     * @return
+     */
+    public Observation getObservation(long id) {
+        return null;
+    }
+
     @Override
     public String getResolutionNamespace() {
         return "";
@@ -241,7 +214,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Observer getObserverOf(Observation observation) {
+    public Observation getObserverOf(Observation observation) {
         return null;
     }
 

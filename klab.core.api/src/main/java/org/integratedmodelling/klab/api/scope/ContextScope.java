@@ -4,17 +4,16 @@ import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.Future;
 
 /**
  * The scope for a context and any observations made within it. The context scope is the handle to the
@@ -23,10 +22,11 @@ import java.util.*;
  * {@link org.integratedmodelling.klab.api.services.RuntimeService}.
  * <p>
  * The context scope always has an observer that can be switched to another when making observations. The
- * observer is an observation of an agent (a {@link Observer} in the API, with agent semantics). The calling
- * client should explicitly provide an observer; if not, the digital twin should provide one by default, using
- * information from the parent scopes (session user identity, including any roles specified in the user groups
- * subscribed to). Observations of the same observable with different observers are different observations.
+ * observer is an observation of an agent that also specifies an observed geometry in addition to its own. The
+ * calling client should explicitly provide an observer; if not, the digital twin should provide one by
+ * default, using information from the parent scopes (session user identity, including any roles specified in
+ * the user groups subscribed to). Observations of the same observable with different observers are different
+ * observations.
  * <p>
  * A context scope is used to add observations, which will trigger resolution, through
  * {@link #observe(Observation)} and carries information (parent observation, observer, namespace, project,
@@ -50,6 +50,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
         return Type.CONTEXT;
     }
 
+
     /**
      * Context scopes have a URL that enables communication with clients but also allows other contexts to
      * connect to them and become part of federated contexts to form distributed digital twins. When
@@ -61,14 +62,14 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     URL getUrl();
 
     /**
-     * Return the observer for this context. This should never be null even if the context is not focused on
-     * an observation, and the system should provide a default observer built from session data if
-     * observations were made without an explicit observer. The scale of the observer implies the default
-     * context of observation.
+     * Return the observer for this context. This should normally not be null even if the context is not
+     * focused on an observation except at context initialization; the system should provide a default
+     * observer built from session data if non-observer observations are made without an explicit observer.
+     * The scale of the observer implies the default context of observation.
      *
      * @return
      */
-    Observer getObserver();
+    Observation getObserver();
 
     /**
      * A context scope is inconsistent if resolution has failed for one or more <em>dependent</em>
@@ -107,7 +108,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observation
      * @return
      */
-    Observer getObserverOf(Observation observation);
+    Observation getObserverOf(Observation observation);
 
     /**
      * Return the consistent observations made in the root context using {@link #observe(Observation)}. The
@@ -131,7 +132,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observer
      * @return
      */
-    ContextScope withObserver(Observer observer);
+    ContextScope withObserver(Observation observer);
 
     /**
      * Return a new observation scope that sets the passed scenarios for any future observation.
@@ -186,7 +187,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     ContextScope connect(URL remoteContext);
 
     /**
-     * Make an observation. Must be called on a context scope, possibly focused on a given root observation
+     * Submit an observation. Must be called on a context scope, possibly focused on a given root observation
      * using {@link #within(DirectObservation)}}. If no root observation is present in the scope, the
      * arguments must fully specify a <em>substantial</em>, either through a direct definition from a passed
      * object or a URN specifying a definition or a subject observation. If the observer is focused on a
@@ -194,10 +195,11 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * defaults that enable construction of default substantials when a dependent is the first observation
      * query, like in k.Explorer.
      * <p>
-     * After this is called, the observation will be created and resolution started in the runtime service
-     * chosen at context creation. The ID in the returned {@link ResolutionTask} is the ID of the observation.
-     * If resolution fails, the observation will exist in an unresolved state; if any of these observations
-     * are of dependents, the context will be inconsistent.
+     * After this is called, resolution will started in the runtime service chosen at context creation. The ID
+     * tracked by the returned {@link Task} is the ID of the observation. If resolution fails, the observation
+     * will be returned in an unresolved state, recorded but invisible to the DT unless unresolved
+     * observations are queried. If any of these observations are of dependents, the context will be
+     * inconsistent.
      * <p>
      * Observables will be routinely specified through URNs, which will be validated as any observable object
      * - concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a
@@ -217,7 +219,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * If the observation is at root level, or connecting two root-level subject through a relationship, the
      * overall geometry of the context will be automatically adjusted.
      *
-     * @param observables URN(s) specifying resolvables, or direct objects that can be resolved and observed,
+     * @param observation URN(s) specifying resolvables, or direct objects that can be resolved and observed,
      *                    such as observables, resources, geometries and resolvable k.IM syntactic objects.
      *                    Nulls should be admitted and ignored. Two geometries will specify an observer (own
      *                    and observed geometry, in the passed order) and the scope shouldn't have an observer
@@ -225,7 +227,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @return a future for the observation being contextualized. The associated ID can be used for inquiries
      * beyond the future's own API, such as retrieval of notifications.
      */
-    ResolutionTask observe(Observation observation);
+    Task<Observation, Long> observe(Observation observation);
 
     /**
      * Return all observations affected by the passed one in this scope, either through model dependencies or

@@ -50,11 +50,6 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
-    public boolean releaseScope(Scope scope) {
-        return false;
-    }
-
-    @Override
     protected String establishConnection() {
         var ret = super.establishConnection();
         this.graphClient = new GraphQLClient(this.getUrl() + ServicesAPI.RUNTIME.DIGITAL_TWIN_GRAPH, ret);

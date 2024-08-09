@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.knowledge.DataArtifact;
  *
  * TODO/FIXME we should just have getStorage() and move all the access methods there; storage == artifact
  *
+ * @deprecated Observation should suffice, if quality the DT can produce the storage.
  * @author ferdinando.villa
  * @version $Id: $Id
  */

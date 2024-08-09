@@ -3,11 +3,14 @@ package org.integratedmodelling.klab.api.utils;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Artifact.Type;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
@@ -179,6 +182,7 @@ public class Utils {
         /**
          * TODO return any comment on top of the passed statement that matches the rules to be a literate
          * programming comment, or null.
+         *
          * @param statement
          * @param document
          * @return
@@ -197,6 +201,7 @@ public class Utils {
 
         /**
          * Create an empty resources carrying the passed notification
+         *
          * @param notification
          * @return
          */
@@ -313,7 +318,8 @@ public class Utils {
         }
 
         private static Map<String, ResourceSet.Resource> collectNewerOrAbsent(Collection<ResourceSet.Resource> resources,
-                                                                              Map<String, ResourceSet.Resource> destination) {
+                                                                              Map<String,
+                                                                                      ResourceSet.Resource> destination) {
             for (ResourceSet.Resource r : resources) {
                 boolean swap = !destination.containsKey(r.getResourceUrn());
                 if (!swap) {
@@ -3552,6 +3558,23 @@ public class Utils {
                 return (E) new HashMap<Object, Object>();
             }
             return null;
+        }
+
+        public static String asString(Object o) {
+
+            if (o == null) {
+                return null;
+            }
+
+            return switch(o) {
+                case KimObservable observable -> observable.getUrn();
+                case KimConcept observable -> observable.getUrn();
+                case Observable observable -> observable.getUrn();
+                case Concept observable -> observable.getUrn();
+                case Geometry geometry -> geometry.encode();
+                // TODO improve ensuring that format is optimal for transport and reparsing
+                default -> o.toString();
+            };
         }
 
         public static Object convertValue(Object value, Type type) {

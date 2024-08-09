@@ -1,15 +1,18 @@
 package org.integratedmodelling.klab.api.digitaltwin;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The digital twin is a graph model composed of observations and all their history. Each
@@ -18,10 +21,15 @@ import java.util.Map;
  */
 public interface DigitalTwin {
 
+    /**
+     * The type of relationships in the graph. All relationship carry further information
+     */
     enum Relationship {
         Parent,
         Affects,
         Connects,
+        EmergesFrom,
+        Observer,
     }
 
     /**
@@ -32,11 +40,13 @@ public interface DigitalTwin {
     StateStorage stateStorage();
 
     /**
-     * Return a view of the graph that only addresses observations.
+     * Return a view of the graph that links observations using the passed relationships (all existing if none
+     * is specified). Some relationships may be computed on demand, and their presence in the graph when no
+     * relationship type is passed is not guaranteed.
      *
      * @return
      */
-    ObservationGraph observationGraph();
+    ObservationGraph observationGraph(Relationship... relationships);
 
     /**
      * Return a view of the graph that only addresses the dataflow.
@@ -59,8 +69,7 @@ public interface DigitalTwin {
     void dispose();
 
     /**
-     * Ingest and resolve an observation created externally. Ensure that the {@link Observation#getId()}
-     * returns a proper key value before this is called.
+     * Ingest an observation created externally. Return the unique ID of the observation in the DT.
      * <p>
      * Submitting a resolved observation that does not belong or unresolved related will throw a
      * {@link org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException}.
@@ -70,24 +79,30 @@ public interface DigitalTwin {
      * @param relationship the relationship of the new observation to the second, must be non-null if related
      *                     isn't
      */
-    void submit(Observation observation, Observation related, Relationship relationship);
+    long submit(Observation observation, Observation related, Relationship relationship);
 
     /**
      * Assemble the passed parameters into an unresolved Observation, to be passed to
      * {@link #submit(Observation, Observation, Relationship)} for resolution and insertion in the graph.
+     * <p>
+     * Accepts:
+     *      TODO
      *
-     * @param array
+     * @param resolvables
      * @return
      */
     static Observation createObservation(Scope scope, Object... resolvables) {
 
+        final Set<String> knownKeys = Set.of("observation", "semantics", "space", "time");
+
         String name = null;
         Geometry geometry = Geometry.EMPTY;
         Observable observable = null;
-        String resourceUrn;
-        String modelUrn;
+        String resourceUrn = null;
+        String modelUrn = null;
         Geometry observerGeometry = null;
         String defaultValue = null;
+        Metadata metadata = Metadata.create();
 
         if (resolvables != null) {
             for (Object o : resolvables) {
@@ -108,6 +123,7 @@ public interface DigitalTwin {
                 } else if (o instanceof Urn urn) {
                     resourceUrn = urn.getUrn();
                 } else if (o instanceof KimSymbolDefinition symbol) {
+
                     // must be an "observation" class
                     if ("observation".equals(symbol.getDefineClass()) && symbol.getValue() instanceof Map<?
                             , ?> definition) {
@@ -154,17 +170,40 @@ public interface DigitalTwin {
                             geometry = geometryBuilder.build();
                         }
 
+                        for (var key : definition.keySet()) {
+                            if (!knownKeys.contains(key.toString())) {
+                                metadata.put(key.toString(), definition.get(key));
+                            }
+                        }
                     }
                 } else if (o instanceof KimModel model) {
                     // send the model URN and extract the observable
                     observable =
                             scope.getService(Reasoner.class).declareObservable(model.getObservables().get(0));
                     modelUrn = model.getUrn();
+                } else if (o instanceof Map<?, ?> map) {
+                    // metadata
+                    metadata.putAll((Map<? extends String, ?>) map);
                 }
             }
         }
 
-        return null;
+        /*
+        least requisite is having an observable
+         */
+        if (observable != null) {
+            ObservationImpl ret = new ObservationImpl();
+            ret.setGeometry(geometry);
+            ret.setMetadata(metadata);
+            ret.setObservable(observable);
+            ret.setObserverGeometry(observerGeometry);
+            ret.setUrn(resourceUrn == null ? modelUrn : resourceUrn);
+            ret.setValue(defaultValue);
+            ret.setName(name);
+            return ret;
+        }
+
+        return Observation.empty();
     }
 
 

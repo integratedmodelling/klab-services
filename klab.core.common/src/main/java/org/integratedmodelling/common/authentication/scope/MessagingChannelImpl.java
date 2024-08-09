@@ -6,6 +6,8 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -13,8 +15,15 @@ import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Hosts the AMQP connections and channels for all the subscribed queues. In service use, creates the queues
@@ -29,11 +38,127 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private ConnectionFactory connectionFactory = null;
     private Connection connection = null;
     private Map<Message.Queue, String> queueNames = new HashMap<>();
+    private Set<EventResultSupplier<?, ?>> eventResultSupplierSet =
+            Collections.synchronizedSet(new LinkedHashSet<>());
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
         this.sender = isSender;
         this.receiver = isReceiver;
+    }
+
+    /**
+     * Convenience Task implementation that delegates to a {@link CompletableFuture} while exposing the
+     * tracking key all along.
+     *
+     * @param <P>
+     * @param <T>
+     */
+    class TrackingTask<P, T> implements ReactiveScope.Task<P, T> {
+
+        private final T value;
+        private final CompletableFuture<P> delegate;
+
+        public TrackingTask(Set<Message.MessageType> matchTypes, T value, Function<T, P> payloadConverter) {
+            this.value = value;
+            delegate = CompletableFuture.supplyAsync(new EventResultSupplier<>(matchTypes, value,
+                    payloadConverter));
+        }
+
+        @Override
+        public T trackingKey() {
+            return value;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return delegate.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return delegate.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return delegate.isDone();
+        }
+
+        @Override
+        public P get() throws InterruptedException, ExecutionException {
+            return (P) delegate.get();
+        }
+
+        @Override
+        public P get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+                TimeoutException {
+            return (P) delegate.get(timeout, unit);
+        }
+    }
+
+    /**
+     * Blocking supplier that waits for an event match, then returns the event payload. Can be used in a
+     * {@link java.util.concurrent.CompletableFuture#supplyAsync(Supplier)} to wait for an event.
+     *
+     * @param <T>
+     */
+    private class EventResultSupplier<P, T> implements Supplier<P> {
+
+        private final AtomicReference<Message> match = new AtomicReference<>();
+        private final Function<T, P> converter;
+        Set<Message.MessageType> matchTypes;
+        T value;
+
+        EventResultSupplier(Set<Message.MessageType> matchTypes, T value, Function<T, P> payloadConverter) {
+            this.matchTypes = matchTypes;
+            this.value = value;
+            this.converter = payloadConverter;
+        }
+
+        public boolean match(Message message) {
+            if (matchTypes != null && matchTypes.contains(message.getMessageType())) {
+                if (value != null && value.equals(message.getPayload(Object.class))) {
+                    match.set(message);
+                    match.notify();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public P get() {
+
+            synchronized (match) {
+                while (match.get() == null) {
+                    try {
+                        match.wait();
+                    } catch (InterruptedException e) {
+                        return null;
+                    }
+                }
+            }
+            eventResultSupplierSet.remove(this);
+            return converter.apply((T) match.get().getPayload(Object.class));
+        }
+    }
+
+    /**
+     * Return a future that exposes the tracking ID and produces the payload when the event message matches.
+     *
+     * @param matchTypes
+     * @param value
+     * @param payloadConverter this could be skipped and just use .thenApply on the enclosing future
+     * @param <P>
+     * @param <T>
+     * @return
+     */
+    protected <P, T> ContextScope.Task<P, T> trackMessages(Set<Message.MessageType> matchTypes, T value,
+                                                           Function<T, P> payloadConverter) {
+        var ret = new EventResultSupplier<>(matchTypes, value, payloadConverter);
+        eventResultSupplierSet.add(ret);
+        return new TrackingTask<>(matchTypes, value, payloadConverter);
     }
 
     @Override
@@ -98,6 +223,18 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         }
 
         return null;
+    }
+
+    @Override
+    public void event(Message message) {
+        Set<EventResultSupplier<?, ?>> done = new HashSet<>();
+        for (var supplier : eventResultSupplierSet) {
+            if (supplier.match(message)) {
+                done.add(supplier);
+            }
+        }
+        eventResultSupplierSet.removeAll(done);
+        super.event(message);
     }
 
     /**

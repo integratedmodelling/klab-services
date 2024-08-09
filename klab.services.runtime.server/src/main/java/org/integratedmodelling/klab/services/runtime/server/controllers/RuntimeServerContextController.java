@@ -35,7 +35,7 @@ public class RuntimeServerContextController {
     private HttpServletRequest request;
 
     /**
-     * Return the authorization including the scope referenced in the request
+     * Return the authorization, including the scope referenced in the request.
      *
      * @return
      */
@@ -72,23 +72,10 @@ public class RuntimeServerContextController {
      */
     @MutationMapping
     public long observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
-
         var authorization = getAuthorization();
         var scope = authorization.getScope(ContextScope.class);
-        var observable = scope.getService(Reasoner.class).resolveObservable(observation.observable());
-        var geometry = Geometry.create(observation.geometry());
-        var pod = observation.defaultValue() == null ? null : Utils.Data.asPOD(observation.defaultValue());
-        var observerGeometry = observation.observerGeometry() == null ? null :
-                               Geometry.create(observation.observerGeometry());
-
-        /*
-        TODO create the observation (or observer), pass that to observe() and call it add() or something
-         like it.
-         */
-        // Make an observation <-> observationinput adapter in GraphModel
-
         var task = authorization.getScope(ContextScope.class).observe(GraphModel.adapt(observation, scope));
-        return task.getId();
+        return task.trackingKey();
     }
 
 }

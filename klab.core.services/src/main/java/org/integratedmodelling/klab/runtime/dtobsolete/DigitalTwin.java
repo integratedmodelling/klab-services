@@ -9,7 +9,6 @@ import org.integratedmodelling.klab.api.knowledge.DescriptionType;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
@@ -658,13 +657,13 @@ public class DigitalTwin implements Closeable {
         return null;
     }
 
-    public Observer getObserverOf(Observation observation) {
+    public Observation getObserverOf(Observation observation) {
         if (!physicalStructure.vertexSet().contains(observation)) {
             return null;
         }
         for (StructureEdge edge : physicalStructure.incomingEdgesOf(observation)) {
             if (edge.type == StructureEdge.Type.Observer) {
-                return (Observer)physicalStructure.getEdgeSource(edge);
+                return physicalStructure.getEdgeSource(edge);
             }
         }
         return null;

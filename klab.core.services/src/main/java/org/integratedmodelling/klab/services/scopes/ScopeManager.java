@@ -8,7 +8,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observer;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -170,7 +170,7 @@ public class ScopeManager {
         }
 
         if (contextualization.observerId() != null) {
-            var observer = ret.getObservation(contextualization.observerId(), Observer.class);
+            var observer = ret.getObservation(contextualization.observerId(), Observation.class);
             if (observer == null) {
                 throw new KlabResourceAccessException("Subject with ID " + contextualization.observerId() + " not found in " +
                         "context " + ret.getName());

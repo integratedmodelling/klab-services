@@ -224,6 +224,8 @@ public interface Message extends Serializable {
         TestStarted(Queue.Events, ActionStatistics.class),
         TestFinished(Queue.Events, ActionStatistics.class),
 
+        ResolutionSuccessful(Queue.Events, Long.class),
+        ResolutionAborted(Queue.Events, Long.class),
 
         /*
          * --- actor communication messages
@@ -233,8 +235,6 @@ public interface Message extends Serializable {
         CreateContext,
         CreateSession,
         Fire,
-        InitializeObservationContext(Queue.None, DigitalTwin.class),
-        ResolveObservation,
 
         /*
          * --- View actor messages

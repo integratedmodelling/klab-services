@@ -87,7 +87,7 @@ public class GraphModel {
     }
 
     public static org.integratedmodelling.klab.api.knowledge.observation.Observation adapt(ObservationInput observationInput, Scope scope) {
-
+        // TODO metadata
         var observable = scope.getService(Reasoner.class).resolveObservable(observationInput.observable());
         var geometry = org.integratedmodelling.klab.api.geometry.Geometry.create(observationInput.geometry());
         var pod = observationInput.defaultValue() == null ? null :
@@ -95,14 +95,14 @@ public class GraphModel {
         var observerGeometry = observationInput.observerGeometry() == null ? null :
                                org.integratedmodelling.klab.api.geometry.Geometry.create(observationInput.observerGeometry());
 
-        // TODO metadata
-
         return DigitalTwin.createObservation(scope, observable, geometry, pod, observerGeometry);
     }
 
     public static ObservationInput adapt(org.integratedmodelling.klab.api.knowledge.observation.Observation observation, Scope scope) {
-
-
-        return null;
+        // TODO needs model/resource URN and metadata
+        return new ObservationInput(observation.getName(), observation.getObservable().getUrn(),
+                observation.getGeometry().encode(), Utils.Data.asString(observation.getValue()),
+                observation.getObserverGeometry() == null ? null :
+                observation.getObserverGeometry().encode());
     }
 }

@@ -6,13 +6,10 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.security.Role;
 
@@ -91,29 +88,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         }
     }
 
-    /**
-     * Return a future for the result of an agent message which encodes the request/response using
-     * AgentMessage/AgentResponse
-     */
-    protected <T> ResolutionTask responseFuture(Observation observation, long taskId) {
-
-
-        //        var ret = new ObservationTask(new Callable<T>() {
-        //
-        //            @Override
-        //            public T call() throws Exception {
-        //                // TODO Auto-generated method stub
-        //                return null;
-        //            }
-        //
-        //        }) {
-        //        };
-
-        // TODO enqueue, listen or poll based on messaging protocol configured
-
-        return null; // ret;
-    }
-
     protected ServiceUserScope(ServiceUserScope parent) {
         super(parent.user, parent.isSender(), parent.isReceiver());
         this.user = parent.user;
@@ -137,22 +111,9 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     @Override
     public SessionScope run(String behaviorName, KActorsBehavior.Type behaviorType) {
 
-        // TODO set the application URN or content in the new scope so we can use the same message and
-        //  automatically startup
-        return null;
-        //        final ServiceSessionScope ret = new ServiceSessionScope(this);
-        //        ret.setStatus(Status.WAITING);
-        //        Ref sessionAgent = ask(new CreateApplication(ret, behaviorName, behaviorType), Ref.class);
-        //        if (!sessionAgent.isEmpty()) {
-        //            ret.setStatus(Status.STARTED);
-        //            ret.setAgent(sessionAgent);
-        //            ret.setName(behaviorName);
-        //            sessionAgent.tell(new RunBehavior(behaviorName));
-        //        } else {
-        //            ret.setStatus(Status.ABORTED);
-        //        }
-        //
-        //        return ret;
+        var ret = runSession(behaviorName);
+        // TODO add the behavior info
+        return ret;
     }
 
     @Override
@@ -165,14 +126,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         return this.data;
     }
 
-    @Override
-    public Ref getAgent() {
-        return this.agent;
-    }
-
-    public void setAgent(Ref agent) {
-        this.agent = agent;
-    }
     //
     //    @Override
     //    public Message post(Consumer<Message> responseHandler, Object... message) {

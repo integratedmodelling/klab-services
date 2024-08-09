@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
 import java.io.Serializable;
+import java.util.concurrent.Future;
 
 /**
  * A reactive scope talks to a Klab agent through the exposed
@@ -12,6 +13,19 @@ import java.io.Serializable;
  * {@link ServiceScope} are reactive.
  */
 public interface ReactiveScope extends MessagingChannel, Scope {
+
+    /**
+     * A Task is a Future producing P and always able to produce a tracking ID T. Used throughout the system
+     * to access observations and tasks while they are being resolved.
+     *
+     * @param <P> the type of the final product once the task has finished
+     * @param <T> the type of the ID used to track the final product
+     */
+    interface Task<P, T> extends Future<P> {
+
+        T trackingKey();
+
+    }
 
     /**
      * If this scope is owned by an agent, return the agent handle for communication.
@@ -27,8 +41,15 @@ public interface ReactiveScope extends MessagingChannel, Scope {
      * @param resultClass the expected result type
      * @param messageArgs anything that can be converted to a
      *                    {@link org.integratedmodelling.klab.api.services.runtime.Message}, including a
-     *                    prebuild Message. The MessageClass will be automatically set to {@link
-     *                    org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ActorCommunication}
+     *                    prebuild Message. The MessageClass will be automatically set to
+     *                    {@link
+     *
+     *
+     *
+     *
+     *
+     *
+     *              org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ActorCommunication}
      *                    and passing anything else will cause an exception.
      * @param <T>
      * @return

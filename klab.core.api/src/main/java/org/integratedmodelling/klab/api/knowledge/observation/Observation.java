@@ -15,6 +15,7 @@
  */
 package org.integratedmodelling.klab.api.knowledge.observation;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -48,6 +49,14 @@ public interface Observation extends Knowledge, Artifact, Resolvable {
      * @return
      */
     long getId();
+
+    /**
+     * A name should never be null, although only substantials have the name as a defining feature. Names do
+     * not need to be unique or conform to any syntax rule.
+     *
+     * @return
+     */
+    String getName();
 
     /**
      * Return the observable.
@@ -96,4 +105,8 @@ public interface Observation extends Knowledge, Artifact, Resolvable {
     public static Observation empty() {
         return EMPTY_OBSERVATION;
     }
+
+    Geometry getObserverGeometry();
+
+    Object getValue();
 }

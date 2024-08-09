@@ -28,7 +28,8 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public ObservationGraph observationGraph() {
+    public ObservationGraph observationGraph(Relationship... relationships) {
+        // TODO filter or compute
         return this.observationGraph;
     }
 
@@ -48,8 +49,9 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public void submit(Observation observation, Observation related, Relationship relationship) {
-
+    public long submit(Observation observation, Observation related, Relationship relationship) {
+        // TODO add first param to the DB + add any linkage. Return the new ID
+        return 0L;
     }
 
 }

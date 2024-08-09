@@ -2,19 +2,17 @@ package org.integratedmodelling.klab.services.scopes;
 
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.Observer;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionTask;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
@@ -33,7 +31,7 @@ import java.util.*;
  */
 public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
 
-    private Observer observer;
+    private Observation observer;
     private DirectObservation contextObservation;
     private Set<String> resolutionScenarios = new LinkedHashSet<>();
     private Scale geometry = Scale.empty();
@@ -43,7 +41,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     private Map<String, Observable> namedCatalog = new HashMap<>();
     private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
     private URL url;
-
+    private DigitalTwin digitalTwin;
     protected ServiceContextScope parent;
     private Dataflow<Observation> dataflow = Dataflow.empty(Observation.class);
 
@@ -96,7 +94,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
 
     @Override
-    public Observer getObserver() {
+    public Observation getObserver() {
         return this.observer;
     }
 
@@ -115,8 +113,19 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return List.of();
     }
 
+    /**
+     * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and is the
+     * fastest way.
+     *
+     * @param id
+     * @return
+     */
+    private Observation getObservation(long id) {
+        return null;
+    }
+
     @Override
-    public Observer getObserverOf(Observation observation) {
+    public Observation getObserverOf(Observation observation) {
         return null;
     }
 
@@ -144,7 +153,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ServiceContextScope withObserver(Observer observer) {
+    public ServiceContextScope withObserver(Observation observer) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.observer = observer;
         ret.catalog = new HashMap<>(this.catalog);
@@ -152,39 +161,21 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public ResolutionTask observe(Observation observation) {
+    public Task<Observation, Long> observe(Observation observation) {
 
-        //
-        //        if (resolvables != null) {
-        //            for (Object o : resolvables) {
-        //                if (o instanceof Observable obs) {
-        //                    message.setObservable(obs);
-        //                } else if (o instanceof Geometry geom) {
-        //                    if (message.getGeometry() == null) {
-        //                        message.setGeometry(geom);
-        //                    } else {
-        //                        message.setObserverGeometry(geom);
-        //                    }
-        //                } else if (o instanceof String string) {
-        //                    if (message.getName() == null) {
-        //                        message.setName(string);
-        //                    } else {
-        //                        message.setDefaultValue(Utils.Data.asPOD(string));
-        //                    }
-        //                } else if (o instanceof Urn urn) {
-        //                    message.setResourceUrn(urn);
-        //                } else if (o instanceof KimModel model) {
-        //                    message.setModelUrn(model.getUrn());
-        //                }
-        //            }
-        //        }
+        long id = digitalTwin.submit(observation, null, null);
 
-        var taskId = ask(Long.class, Message.MessageClass.ActorCommunication,
-                Message.MessageType.ResolveObservation, observation);
+        /*
+        create task before resolution starts so we guarantee a response
+         */
+        var ret = trackMessages(EnumSet.of(Message.MessageType.ResolutionAborted,
+                Message.MessageType.ResolutionSuccessful), id, this::getObservation);
 
-        // TODO return a completable future that watches the response using the existing channels. Even
-        //  when the messaging is duplex, ask one first time in case the response was already sent or missed.
-        return responseFuture(observation, taskId);
+        // start virtual resolution thread
+
+
+        return ret;
+
     }
 
     @Override
@@ -364,11 +355,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return false;
     }
 
+    public DigitalTwin getDigitalTwin() {
+        return digitalTwin;
+    }
+
+    public void setDigitalTwin(DigitalTwin digitalTwin) {
+        this.digitalTwin = digitalTwin;
+    }
 
     @Override
     public void close() {
 
-        getService(RuntimeService.class).releaseScope(this);
+        digitalTwin.dispose();
 
         // Call close() on all closeables in our dataset, including AutoCloseable if any.
         for (String key : getData().keySet()) {
