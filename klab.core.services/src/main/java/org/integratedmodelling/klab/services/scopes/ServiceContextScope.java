@@ -45,7 +45,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     private URL url;
     private DigitalTwin digitalTwin;
     protected ServiceContextScope parent;
-    private Dataflow<Observation> dataflow = Dataflow.empty(Observation.class);
 
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private ServiceContextScope(ServiceContextScope parent) {
@@ -58,6 +57,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.contextualizedPredicates.putAll(parent.contextualizedPredicates);
         this.resolutionScenarios.addAll(parent.resolutionScenarios);
         this.resolutionNamespace = parent.resolutionNamespace;
+        this.digitalTwin = parent.digitalTwin;
     }
 
     // next 3 are overridden with the same code as the parent because they need to use the local maps, not the
@@ -165,37 +165,38 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     @Override
     public Task<Observation, Long> observe(Observation observation) {
 
-
-        long id = digitalTwin.submit(observation, null, null);
+        long id = submitObservation(observation);
 
         // create task before resolution starts so we guarantee a response
-        var ret = trackMessages(EnumSet.of(Message.MessageType.ResolutionAborted,
+        var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), id, this::getObservation);
 
         final var runtime = getService(RuntimeService.class);
         final var resolver = getService(Resolver.class);
 
-        // start virtual resolution thread
+        // start virtual resolution thread. This should be everything we need.
         Thread.ofVirtual().start(() -> {
-
             try {
                 var dataflow = resolver.resolve(observation, this);
                 if (!dataflow.isEmpty()) {
                     var provenance = runtime.runDataflow(dataflow, this);
                     digitalTwin.finalizeObservation(observation, dataflow, provenance);
                 }
-
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
-
             } catch (Throwable t) {
-
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
-
             }
         });
 
         return ret;
 
+    }
+
+    private long submitObservation(Observation observation) {
+        // TODO FIXME - create all the structure and metadata from the current context, parents and all
+        // should we have the same for relationships? A context 'between" x and y where a relationship
+        // can be observed? (wouldn't address collective relationships)
+        return digitalTwin.submit(observation, null, null);
     }
 
     @Override
@@ -212,7 +213,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     @Override
     public Dataflow<Observation> getDataflow() {
-        return this.dataflow;
+        return null;
     }
 
     @Override
@@ -346,6 +347,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.contextualizedPredicates.put(abstractTrait, concreteTrait);
         return ret;
+    }
+
+    @Override
+    public ContextScope between(Observation source, Observation target) {
+        return null;
     }
 
     @Override

@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -154,8 +153,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
      * @param <T>
      * @return
      */
-    protected <P, T> ContextScope.Task<P, T> trackMessages(Set<Message.MessageType> matchTypes, T value,
-                                                           Function<T, P> payloadConverter) {
+    protected <P, T> ContextScope.Task<P, T> newMessageTrackingTask(Set<Message.MessageType> matchTypes, T value,
+                                                                    Function<T, P> payloadConverter) {
         var ret = new EventResultSupplier<>(matchTypes, value, payloadConverter);
         eventResultSupplierSet.add(ret);
         return new TrackingTask<>(matchTypes, value, payloadConverter);

@@ -178,6 +178,15 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait);
 
     /**
+     * Return a new context with source and target set to create and resolve a relationship.
+     *
+     * @param source
+     * @param target
+     * @return
+     */
+    ContextScope between(Observation source, Observation target);
+
+    /**
      * Add another context to this one to build a higher-level one. Authentication details will define what is
      * seen and done.
      *

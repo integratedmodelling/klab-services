@@ -85,7 +85,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             long taskId = runtimeClient.graphClient().query(GraphModel.Queries.GraphQL.OBSERVE, Long.class,
                     this, "observation",
                     GraphModel.adapt(observation, this));
-            return trackMessages(EnumSet.of(Message.MessageType.ResolutionAborted,
+            return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                     Message.MessageType.ResolutionSuccessful), taskId, this::getObservation); // event watcher using either messaging or queues
         }
 
@@ -225,6 +225,12 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public ContextScope getRootContextScope() {
+        return null;
+    }
+
+    @Override
+    public ContextScope between(Observation source, Observation target) {
+        // TODO
         return null;
     }
 }
