@@ -35,30 +35,14 @@ public interface Resolver extends KlabService {
      */
     Capabilities capabilities(Scope scope);
 
-    //    /**
-    //     * The resolver holds the translation of the lexical {@link KlabAsset}s into resolvable {@link
-    //     Knowledge},
-    //     * using the {@link ResourcesService} in the scope to build them when necessary. This method
-    //     resolves a
-    //     * {@link Model} or a {@link org.integratedmodelling.klab.api.lang.kim.KimInstance} from their
-    //     syntactic
-    //     * peers in resources, efficiently loading and validating the closure of all other knowledge
-    //     needed to
-    //     * understand it.
-    //     * <p>
-    //     * The search for models (by scale and semantics) should happen in the resource servers with help
-    //     from the
-    //     * reasoner, yielding a {@link ResourceSet} from
-    //     * {@link ResourcesService#queryModels(Observable, ContextScope)}}. Models that are accessible to
-    //     the
-    //     * Resolvers but invalid should generate an info message. Should cache the build {@link Model}s and
-    //     * refresh the cache based on version matching.
-    //     *
-    //     * @param urn
-    //     * @param scope
-    //     * @return
-    //     */
-    //    <T extends Resolvable> T resolveKnowledge(String urn, Class<T> knowledgeClass, Scope scope);
+    /**
+     * Main entry point and sole function of the resolver. Everything else could be non-API.
+     *
+     * @param observation
+     * @param contextScope
+     * @return a dataflow that will resolve the passed observation, or an empty dataflow if nothing is needed.
+     */
+    Dataflow<Observation> resolve(Observation observation, ContextScope contextScope);
 
     /**
      * The main function of the resolver is to resolve knowledge to a dataflow in a context scope. This is
@@ -74,8 +58,11 @@ public interface Resolver extends KlabService {
      * accordingly.
      * <p>
      * {@link DescriptionType#INSTANTIATION}.
+     * <p>
+     * FIXME should resolve an observation (everything else is in the scope). Also this doesn't need to
+     *  be API, although exposing the graph probably helps enforce data sanity.
      *
-     * @param resolvable
+     * @param resolvableUrn
      * @param scope
      * @return the dataflow that will create the observation in a runtime.
      */
@@ -84,6 +71,8 @@ public interface Resolver extends KlabService {
     /**
      * Compile a resolution graph into a dataflow. The scope passed must be the same that the resolution graph
      * was computed into.
+     * <p>
+     * FIXME probably also does not need to be API but see above.
      *
      * @param resolution
      * @param scope

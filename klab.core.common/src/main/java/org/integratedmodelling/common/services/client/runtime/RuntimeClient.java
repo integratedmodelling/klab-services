@@ -10,8 +10,10 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
@@ -20,6 +22,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.objects.ContextRequest;
@@ -127,6 +130,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         }
 
         return ret;
+    }
+
+    @Override
+    public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+        return null;
     }
 
     @Override

@@ -3,7 +3,9 @@ package org.integratedmodelling.klab.services.runtime.digitaltwin;
 import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.digitaltwin.*;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.runtime.storage.StateStorageImpl;
 
 public class DigitalTwinImpl implements DigitalTwin {
@@ -52,6 +54,11 @@ public class DigitalTwinImpl implements DigitalTwin {
     public long submit(Observation observation, Observation related, Relationship relationship) {
         // TODO add first param to the DB + add any linkage. Return the new ID
         return 0L;
+    }
+
+    @Override
+    public void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow, Provenance provenance) {
+
     }
 
 }

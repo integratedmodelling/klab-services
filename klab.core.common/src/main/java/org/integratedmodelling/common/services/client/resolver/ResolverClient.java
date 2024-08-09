@@ -63,6 +63,11 @@ public class ResolverClient extends ServiceClient implements Resolver {
     }
 
     @Override
+    public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
+        return null;
+    }
+
+    @Override
     public Resolution resolve(String resolvableUrn, ContextScope scope) {
 
         ResolutionRequest request = new ResolutionRequest();

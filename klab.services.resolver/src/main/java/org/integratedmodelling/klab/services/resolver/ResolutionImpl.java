@@ -93,7 +93,6 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
         public String toString() {
             return observable + "\n" + org.integratedmodelling.common.utils.Utils.Strings.capitalize(this.type.name().toLowerCase()) + " (" + NumberFormat.getPercentInstance().format(coverage.getCoverage()) + ")";
         }
-
     }
 
     /**

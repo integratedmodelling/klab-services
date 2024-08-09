@@ -132,6 +132,11 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     @Override
+    public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
+        return null;
+    }
+
+    @Override
     public String serviceId() {
         return configuration.getServiceId();
     }

@@ -8,8 +8,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 import java.util.Map;
 import java.util.Set;
@@ -80,6 +82,13 @@ public interface DigitalTwin {
      *                     isn't
      */
     long submit(Observation observation, Observation related, Relationship relationship);
+
+    /**
+     * @param resolved
+     * @param dataflow
+     * @param provenance
+     */
+    void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow, Provenance provenance);
 
     /**
      * Assemble the passed parameters into an unresolved Observation, to be passed to

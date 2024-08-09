@@ -4,9 +4,12 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Map;
 
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 
 /**
  * The runtime service holds the actual digital twins referred to by context scopes. Client scopes will
@@ -46,6 +49,14 @@ public interface RuntimeService extends KlabService {
      * @return the ID of the new session created at server side, or null in case of failure.
      */
     String registerContext(ContextScope contextScope);
+
+    /**
+     * The main function of the runtime.
+     *
+     * @param contextScope
+     * @return
+     */
+    Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope);
 
 
     /**

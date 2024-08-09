@@ -7,10 +7,12 @@ import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
@@ -274,6 +276,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
         }
         throw new KlabIllegalArgumentException("unexpected scope class");
+    }
+
+    @Override
+    public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
+        return null;
     }
 
 }

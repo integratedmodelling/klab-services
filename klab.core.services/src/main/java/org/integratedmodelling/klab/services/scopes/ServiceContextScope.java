@@ -13,6 +13,8 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
@@ -163,16 +165,34 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     @Override
     public Task<Observation, Long> observe(Observation observation) {
 
+
         long id = digitalTwin.submit(observation, null, null);
 
-        /*
-        create task before resolution starts so we guarantee a response
-         */
+        // create task before resolution starts so we guarantee a response
         var ret = trackMessages(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), id, this::getObservation);
 
-        // start virtual resolution thread
+        final var runtime = getService(RuntimeService.class);
+        final var resolver = getService(Resolver.class);
 
+        // start virtual resolution thread
+        Thread.ofVirtual().start(() -> {
+
+            try {
+                var dataflow = resolver.resolve(observation, this);
+                if (!dataflow.isEmpty()) {
+                    var provenance = runtime.runDataflow(dataflow, this);
+                    digitalTwin.finalizeObservation(observation, dataflow, provenance);
+                }
+
+                send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
+
+            } catch (Throwable t) {
+
+                send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
+
+            }
+        });
 
         return ret;
 
