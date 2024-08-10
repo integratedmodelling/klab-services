@@ -173,6 +173,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param abstractTrait subsuming value, may be concrete but will be observed if absent, so if concrete
      *                      the base trait will be observed instead.
      * @param concreteTrait the fill value, may be abstract as long as it's subsumed by abstractTrait
+     * @deprecated use resolution constraints
      * @return a new context scope that only considers the passed incarnation of the trait.
      */
     ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait);
@@ -372,6 +373,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * When resolving, the resolution namespace that provides the resolution scope must be provided. In other
      * situations this will be null.
      *
+     * @deprecated use resolution constraints
      * @return
      */
     String getResolutionNamespace();
@@ -379,6 +381,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     /**
      * Same as {@link #getResolutionNamespace()}, reporting the project in scope during resolution.
      *
+     * @deprecated use resolution constraints
      * @return
      */
     String getResolutionProject();
@@ -386,6 +389,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     /**
      * Any scenarios set during the resolution.
      *
+     * @deprecated use resolution constraints
      * @return
      */
     Collection<String> getResolutionScenarios();
@@ -393,6 +397,9 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     /**
      * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
      * resolution may acquire a root observation which serves as context for the resolution.
+     *
+     * @deprecated use the context but the geometry of resolution is the observer's for substantials, and the
+     * context observation's for dependents
      *
      * @return
      */
@@ -405,6 +412,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      *
      * @param scale      may be null, meaning that the original scale is unchanged
      * @param localNames if empty, the catalog remains the same
+     * @deprecated revise, this is
      * @return a localized context or this one if nothing needs to change
      */
     ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String,

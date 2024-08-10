@@ -181,7 +181,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
 
     protected Channel getChannel(Message.Queue queue) {
 
-        if (queueNames.containsKey(queue)) {
+        if (!queueNames.containsKey(queue)) {
 
         /*
         in this implementation it looks like we can do with just one channel

@@ -73,9 +73,11 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     private Set<Message.Queue> getQueuesFromHeader(SessionScope scope, String responseHeader) {
         if (responseHeader != null) {
             var ret = EnumSet.noneOf(Message.Queue.class);
-            String[] qq = responseHeader.split(", ");
-            for (var q : qq) {
-                ret.add(Message.Queue.valueOf(q));
+            if (!responseHeader.isBlank()) {
+                String[] qq = responseHeader.split(", ");
+                for (var q : qq) {
+                    ret.add(Message.Queue.valueOf(q));
+                }
             }
             return ret;
         }
