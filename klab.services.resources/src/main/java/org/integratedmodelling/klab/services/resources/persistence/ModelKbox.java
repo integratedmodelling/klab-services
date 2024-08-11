@@ -274,9 +274,9 @@ public class ModelKbox extends ObservableKbox {
         var scale = Scale.create(context.getContextObservation().getGeometry());
 
         String query = "SELECT model.oid FROM model WHERE ";
-        Concept contextObservable = context.getResolutionObservation() == null
+        Concept contextObservable = context.getContextObservation() == null
                                     ? null
-                                    : context.getResolutionObservation().getObservable().getSemantics();
+                                    : context.getContextObservation().getObservable().getSemantics();
         String typequery = observableQuery(observable, contextObservable);
 
         if (typequery == null) {

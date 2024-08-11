@@ -178,6 +178,7 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     private KimConcept getDeclaration(Concept semantics) {
+
         return scope.getService(ResourcesService.class).resolveConcept(semantics.getUrn());
     }
 
@@ -211,6 +212,8 @@ public class ObservableBuilder implements Observable.Builder {
         this.reasoner = other.reasoner;
         this.defaultValue = other.defaultValue;
         this.resolutionDirectives.addAll(other.resolutionDirectives);
+
+
 
         checkTrivial();
     }

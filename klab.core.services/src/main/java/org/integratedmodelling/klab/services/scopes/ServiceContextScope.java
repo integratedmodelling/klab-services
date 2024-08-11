@@ -35,16 +35,22 @@ import java.util.*;
 public class ServiceContextScope extends ServiceSessionScope implements ContextScope {
 
     private Observation observer;
-    private DirectObservation contextObservation;
+    private Observation contextObservation;
     private Set<String> resolutionScenarios = new LinkedHashSet<>();
     private Scale geometry = Scale.empty();
+    @Deprecated
     private String resolutionNamespace;
+    @Deprecated
     private String resolutionProject;
+    @Deprecated
     private Map<Observable, Observation> catalog;
+    @Deprecated
     private Map<String, Observable> namedCatalog = new HashMap<>();
+    @Deprecated
     private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
     private URL url;
     private DigitalTwin digitalTwin;
+    // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
     protected ServiceContextScope parent;
     protected List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
 
@@ -275,13 +281,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return resolutionScenarios;
     }
 
-    @Override
-    public DirectObservation getResolutionObservation() {
-        return contextObservation;
-    }
+//    @Override
+//    public Observation getResolutionObservation() {
+//        return contextObservation;
+//    }
 
     @Override
-    public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale,
+    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
                                                   Map<String, String> localNames) {
         if (scale == null && localNames.isEmpty()) {
             return this;
@@ -333,7 +339,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public DirectObservation getContextObservation() {
+    public Observation getContextObservation() {
         return this.contextObservation;
     }
 

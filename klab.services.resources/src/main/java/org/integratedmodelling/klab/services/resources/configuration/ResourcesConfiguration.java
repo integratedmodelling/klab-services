@@ -19,6 +19,7 @@ import java.util.Set;
  */
 public class ResourcesConfiguration implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 8407649258899502009L;
 
     public static class ResourceConfiguration implements Serializable {

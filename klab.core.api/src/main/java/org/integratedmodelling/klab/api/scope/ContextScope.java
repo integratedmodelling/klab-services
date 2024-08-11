@@ -125,7 +125,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      *
      * @return the context observation or null
      */
-    DirectObservation getContextObservation();
+    Observation getContextObservation();
 
     /**
      * Return a child scope with the passed observer instead of ours.
@@ -390,16 +390,16 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @deprecated use resolution constraints
      */
     Collection<String> getResolutionScenarios();
-
-    /**
-     * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
-     * resolution may acquire a root observation which serves as context for the resolution.
-     *
-     * @return
-     * @deprecated use the context but the geometry of resolution is the observer's for substantials, and the
-     * context observation's for dependents
-     */
-    DirectObservation getResolutionObservation();
+//
+//    /**
+//     * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
+//     * resolution may acquire a root observation which serves as context for the resolution.
+//     *
+//     * @return
+//     * @deprecated use the context but the geometry of resolution is the observer's for substantials, and the
+//     * context observation's for dependents
+//     */
+//    DirectObservation getResolutionObservation();
 
     /**
      * Create a new scope if necessary where the catalog uses the passed local names and the scale, if not
@@ -409,9 +409,9 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param scale      may be null, meaning that the original scale is unchanged
      * @param localNames if empty, the catalog remains the same
      * @return a localized context or this one if nothing needs to change
-     * @deprecated revise, this is
+     * @deprecated revise, at best this should be non-API and only at service side
      */
-    ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String,
+    ContextScope withContextualizationData(Observation contextObservation, Scale scale, Map<String,
             String> localNames);
 
     /**
@@ -427,7 +427,6 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @return
      */
     List<ResolutionConstraint> getResolutionConstraints();
-
 
     /**
      * A data structure incorporating the results of parsing a scope token string into all its possible

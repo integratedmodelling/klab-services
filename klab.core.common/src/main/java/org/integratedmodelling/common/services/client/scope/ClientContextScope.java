@@ -21,7 +21,7 @@ import java.util.*;
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
     private Observation observer;
-    private DirectObservation contextObservation;
+    private Observation contextObservation;
     private String[] scenarios;
     private String resolutionNamespace;
     private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
@@ -41,7 +41,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public DirectObservation getContextObservation() {
+    public Observation getContextObservation() {
         return this.contextObservation;
     }
 
@@ -175,13 +175,13 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         return List.of();
     }
 
-    @Override
-    public DirectObservation getResolutionObservation() {
-        return null;
-    }
+//    @Override
+//    public DirectObservation getResolutionObservation() {
+//        return null;
+//    }
 
     @Override
-    public ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale,
+    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
                                                   Map<String, String> localNames) {
         return null;
     }

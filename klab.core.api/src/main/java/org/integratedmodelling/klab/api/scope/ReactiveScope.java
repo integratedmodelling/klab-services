@@ -41,15 +41,8 @@ public interface ReactiveScope extends MessagingChannel, Scope {
      * @param resultClass the expected result type
      * @param messageArgs anything that can be converted to a
      *                    {@link org.integratedmodelling.klab.api.services.runtime.Message}, including a
-     *                    prebuild Message. The MessageClass will be automatically set to
-     *                    {@link
-     *
-     *
-     *
-     *
-     *
-     *
-     *              org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ActorCommunication}
+     *                    prebuilt Message. The MessageClass will be automatically set to
+     *                    {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ActorCommunication}
      *                    and passing anything else will cause an exception.
      * @param <T>
      * @return
