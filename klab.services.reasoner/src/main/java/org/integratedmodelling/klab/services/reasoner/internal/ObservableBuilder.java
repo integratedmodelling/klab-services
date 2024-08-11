@@ -80,8 +80,8 @@ public class ObservableBuilder implements Observable.Builder {
     private boolean collective;
 
     private Object defaultValue = null;
-    private Set<Observable.ResolutionException> resolutionExceptions = EnumSet
-            .noneOf(Observable.ResolutionException.class);
+    private Set<Observable.ResolutionDirective> resolutionDirectives = EnumSet
+            .noneOf(Observable.ResolutionDirective.class);
     private ReasonerService reasoner;
     // this gets set to true if a finished declaration is set using
     // withDeclaration() and the
@@ -155,7 +155,7 @@ public class ObservableBuilder implements Observable.Builder {
         // observable.getIncarnatedAbstractObservable();
         // this.deferredTarget = observable.getDeferredTarget();
         this.defaultValue = observable.getDefaultValue();
-        this.resolutionExceptions.addAll(observable.getResolutionExceptions());
+        this.resolutionDirectives.addAll(observable.getResolutionDirectives());
 
         for (Concept role : reasoner.directRoles(observable.getSemantics())) {
             this.roles.add(role);
@@ -210,7 +210,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.url = other.url;
         this.reasoner = other.reasoner;
         this.defaultValue = other.defaultValue;
-        this.resolutionExceptions.addAll(other.resolutionExceptions);
+        this.resolutionDirectives.addAll(other.resolutionDirectives);
 
         checkTrivial();
     }
@@ -1598,8 +1598,8 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     @Override
-    public Observable.Builder withResolutionException(Observable.ResolutionException resolutionException) {
-        this.resolutionExceptions.add(resolutionException);
+    public Observable.Builder withResolutionException(Observable.ResolutionDirective resolutionDirective) {
+        this.resolutionDirectives.add(resolutionDirective);
         return this;
     }
 

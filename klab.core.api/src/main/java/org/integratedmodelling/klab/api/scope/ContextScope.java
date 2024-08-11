@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -139,6 +140,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      *
      * @param scenarios
      * @return
+     * @deprecated use resolution constraints
      */
     ContextScope withScenarios(String... scenarios);
 
@@ -148,6 +150,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      *
      * @param namespace
      * @return
+     * @deprecated use resolution constraints
      */
     ContextScope withResolutionNamespace(String namespace);
 
@@ -173,8 +176,8 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param abstractTrait subsuming value, may be concrete but will be observed if absent, so if concrete
      *                      the base trait will be observed instead.
      * @param concreteTrait the fill value, may be abstract as long as it's subsumed by abstractTrait
-     * @deprecated use resolution constraints
      * @return a new context scope that only considers the passed incarnation of the trait.
+     * @deprecated use resolution constraints
      */
     ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait);
 
@@ -197,45 +200,36 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     ContextScope connect(URL remoteContext);
 
     /**
-     * Submit an observation. Must be called on a context scope, possibly focused on a given root observation
-     * using {@link #within(DirectObservation)}}. If no root observation is present in the scope, the
-     * arguments must fully specify a <em>substantial</em>, either through a direct definition from a passed
-     * object or a URN specifying a definition or a subject observation. If the observer is focused on a
-     * scale, the context can decide to use it as a scale for the root observation. The worldview may have
-     * defaults that enable construction of default substantials when a dependent is the first observation
-     * query, like in k.Explorer.
+     * Submit an observation to the digital twin for resolution. If no context observation or observer is
+     * present in the scope, the arguments must fully specify a non-collective <em>substantial</em> with its
+     * own geometry. Otherwise, the geometry of reference is the observation geometry of the observer if the
+     * observation is of a collective substantial, and that of the context observation, which must be present,
+     * if the observation is of a dependent.  If the observation is a non-collective relationship, the scope
+     * must be the result of a {@link #between(Observation, Observation)} call to specify the source and
+     * target.
      * <p>
-     * After this is called, resolution will started in the runtime service chosen at context creation. The ID
-     * tracked by the returned {@link Task} is the ID of the observation. If resolution fails, the observation
-     * will be returned in an unresolved state, recorded but invisible to the DT unless unresolved
-     * observations are queried. If any of these observations are of dependents, the context will be
-     * inconsistent.
+     * If the passed observation contains an observation geometry and the semantics is of an agent, the
+     * runtime will build an observation suitable to be an observer. At the API level, no automatic linking is
+     * done in the DT except for what the scope defines, so setting it as the observer for other observations
+     * must be done through the scope using the with- methods.
      * <p>
-     * Observables will be routinely specified through URNs, which will be validated as any observable object
-     * - concepts/observables, resource URNs, model/acknowledgement URNs, or full URLs specifying a
-     * context/observation in an externally hosted runtime to link to the current context. Passing descriptors
-     * for concepts, observables, acknowledgements or models should not cause errors.
-     * <p>
-     * If the parameters contain two scales and the semantics is an agent, the runtime should build an
-     * observer, and set it as the observer for the scope if there isn't one already. The second scale will be
-     * set as the observation scale.
-     * <p>
-     * In case the observable specifies a relationship, k.LAB will attempt to instantiate it, observing its
-     * source/target endpoints as well, unless two subject observations are passed, in which case a specified
-     * relationship will be instantiated between them using them as source and target respectively. In the
-     * latter case, each relationship will be resolved but configuration detection will only happen upon
-     * exiting the scope where observe() is called.
-     * <p>
-     * If the observation is at root level, or connecting two root-level subject through a relationship, the
-     * overall geometry of the context will be automatically adjusted.
+     * After this is called, resolution will started in the runtime service chosen at context creation, using
+     * any {@link ResolutionConstraint}s set into the scope. The ID tracked by the returned {@link Task} is
+     * the ID of the observation. If resolution fails, the task will fail and the observation will be returned
+     * in an unresolved state, recorded but invisible to the DT unless unresolved observations are queried.
+     * Unresolved observations are those that the resolver wasn't able to explain with a model: this only
+     * applies to dependents (qualities and processes) as substantials can be simply acknowledged as long as
+     * their scale is given. If any dependents are unresolved, the context will be in an inconsistent state.
      *
-     * @param observation URN(s) specifying resolvables, or direct objects that can be resolved and observed,
-     *                    such as observables, resources, geometries and resolvable k.IM syntactic objects.
-     *                    Nulls should be admitted and ignored. Two geometries will specify an observer (own
-     *                    and observed geometry, in the passed order) and the scope shouldn't have an observer
-     *                    set.
-     * @return a future for the observation being contextualized. The associated ID can be used for inquiries
-     * beyond the future's own API, such as retrieval of notifications.
+     * @param observation an unresolved observation to be resolved by the runtime and added to the digital
+     *                    twin. The
+     *                    {@link
+     *                    org.integratedmodelling.klab.api.digitaltwin.DigitalTwin#createObservation(Scope,
+     *                    Object...)} method can be used to construct it from existing knowledge.
+     * @return a {@link org.integratedmodelling.klab.api.scope.ReactiveScope.Task}, which is a {@link Future}
+     * producing the resolved observation. The associated tracking ID, available immediately, can be used for
+     * inquiries beyond the future's own API, such as retrieval of notifications or addressing of
+     * observations, reports, provenance or dataflows in the knowledge graph contained in the digital twin.
      */
     Task<Observation, Long> observe(Observation observation);
 
@@ -275,11 +269,13 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     Provenance getProvenance();
 
     /**
-     * Return the report that pertains to this scope. The result may be a subgraph of the root report
+     * Return the compiled report that pertains to this scope. The result may be a subgraph of the root report
      * available from the root context scope. There is one report per root context. Actuators will add
      * sections to it as models are computed, based on the documentation templates associated with models and
      * their parts. The report can be compiled and rendered at any time. Each observation in the same context
      * will report the same report.
+     *
+     * TODO pass reporting options
      *
      * @return
      */
@@ -314,7 +310,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observation
      * @return the parent, or null if root subject
      */
-    DirectObservation getParentOf(Observation observation);
+    Observation getParentOf(Observation observation);
 
     /**
      * Return all children of the passed observation, using the logical structure (i.e. skipping observation
@@ -330,6 +326,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * Return mappings for any predicates contextualized with
      * {@link #withContextualizedPredicate(Concept, Concept)} at context creation.
      *
+     * @deprecated merge into resolution constraints
      * @return the contextualized predicates mapping
      */
     Map<Concept, Concept> getContextualizedPredicates();
@@ -341,7 +338,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observation a {@link DirectObservation} object.
      * @return a {@link java.util.Collection} object.
      */
-    Collection<Observation> getOutgoingRelationships(DirectObservation observation);
+    Collection<Observation> getOutgoingRelationshipsOf(Observation observation);
 
     /**
      * Inspect the network graph of the current context, returning all relationships that have the passed
@@ -350,7 +347,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param observation a {@link DirectObservation} object.
      * @return a {@link java.util.Collection} object.
      */
-    Collection<Observation> getIncomingRelationships(DirectObservation observation);
+    Collection<Observation> getIncomingRelationshipsOf(Observation observation);
 
     /**
      * Return the observations in this scope as a map indexed by observable.
@@ -373,24 +370,24 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * When resolving, the resolution namespace that provides the resolution scope must be provided. In other
      * situations this will be null.
      *
-     * @deprecated use resolution constraints
      * @return
+     * @deprecated use resolution constraints
      */
     String getResolutionNamespace();
 
     /**
      * Same as {@link #getResolutionNamespace()}, reporting the project in scope during resolution.
      *
-     * @deprecated use resolution constraints
      * @return
+     * @deprecated use resolution constraints
      */
     String getResolutionProject();
 
     /**
      * Any scenarios set during the resolution.
      *
-     * @deprecated use resolution constraints
      * @return
+     * @deprecated use resolution constraints
      */
     Collection<String> getResolutionScenarios();
 
@@ -398,10 +395,9 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
      * resolution may acquire a root observation which serves as context for the resolution.
      *
+     * @return
      * @deprecated use the context but the geometry of resolution is the observer's for substantials, and the
      * context observation's for dependents
-     *
-     * @return
      */
     DirectObservation getResolutionObservation();
 
@@ -412,11 +408,25 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      *
      * @param scale      may be null, meaning that the original scale is unchanged
      * @param localNames if empty, the catalog remains the same
-     * @deprecated revise, this is
      * @return a localized context or this one if nothing needs to change
+     * @deprecated revise, this is
      */
     ContextScope withContextualizationData(DirectObservation contextObservation, Scale scale, Map<String,
             String> localNames);
+
+    /**
+     * Set resolution constraints here. Returns a new scope with all the constraints added to the ones in
+     * this. Pass nothing (null array) to reset the constraints and return a new scope with no constraints.
+     */
+    ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints);
+
+    /**
+     * These will substitute all the deprecated methods and include scenarios, pre-set models and all the
+     * observables already resolved in the scope.
+     *
+     * @return
+     */
+    List<ResolutionConstraint> getResolutionConstraints();
 
 
     /**

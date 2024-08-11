@@ -4,7 +4,6 @@ package org.integratedmodelling.klab.api.lang.kim;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
@@ -60,7 +59,7 @@ public interface KimObservable extends KlabStatement, Resolvable {
      *
      * @return
      */
-    Collection<Observable.ResolutionException> getResolutionExceptions();
+    Collection<Observable.ResolutionDirective> getResolutionExceptions();
 
     /**
      * Value operators with their operands.

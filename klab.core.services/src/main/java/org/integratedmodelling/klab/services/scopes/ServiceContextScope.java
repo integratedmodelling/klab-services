@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
@@ -45,6 +46,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     private URL url;
     private DigitalTwin digitalTwin;
     protected ServiceContextScope parent;
+    protected List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
 
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private ServiceContextScope(ServiceContextScope parent) {
@@ -58,6 +60,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.resolutionScenarios.addAll(parent.resolutionScenarios);
         this.resolutionNamespace = parent.resolutionNamespace;
         this.digitalTwin = parent.digitalTwin;
+        this.resolutionConstraints.addAll(parent.resolutionConstraints);
     }
 
     // next 3 are overridden with the same code as the parent because they need to use the local maps, not the
@@ -222,7 +225,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public DirectObservation getParentOf(Observation observation) {
+    public Observation getParentOf(Observation observation) {
         return null;
     }
 
@@ -238,13 +241,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     }
 
     @Override
-    public Collection<Observation> getOutgoingRelationships(DirectObservation observation) {
+    public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Collection<Observation> getIncomingRelationships(DirectObservation observation) {
+    public Collection<Observation> getIncomingRelationshipsOf(Observation observation) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -359,7 +362,22 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.resolutionNamespace = namespace;
         return ret;
+    }
 
+    @Override
+    public ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
+        ServiceContextScope ret = new ServiceContextScope(this);
+        if (resolutionConstraints == null) {
+            ret.resolutionConstraints.clear();
+        } else {
+            ret.resolutionConstraints.addAll(Arrays.stream(resolutionConstraints).toList());
+        }
+        return ret;
+    }
+
+    @Override
+    public List<ResolutionConstraint> getResolutionConstraints() {
+        return this.resolutionConstraints;
     }
 
     @Override

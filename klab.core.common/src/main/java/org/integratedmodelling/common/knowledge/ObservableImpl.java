@@ -15,7 +15,6 @@ import org.integratedmodelling.klab.api.lang.ValueOperator;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
@@ -39,7 +38,7 @@ public class ObservableImpl implements Observable {
     private boolean optional;
     private boolean generic;
     private boolean collective;
-    private Collection<ResolutionException> resolutionExceptions = EnumSet.noneOf(ResolutionException.class);
+    private Collection<ResolutionDirective> resolutionDirectives = EnumSet.noneOf(ResolutionDirective.class);
     private Object defaultValue;
     private Object value;
     private String statedName;
@@ -96,7 +95,7 @@ public class ObservableImpl implements Observable {
         this.genericComponents.addAll(other.genericComponents);
         this.optional = other.optional;
         this.generic = other.generic;
-        this.resolutionExceptions = other.resolutionExceptions;
+        this.resolutionDirectives = other.resolutionDirectives;
         this.defaultValue = other.defaultValue;
         this.value = other.value;
         this.statedName = other.statedName;
@@ -254,8 +253,8 @@ public class ObservableImpl implements Observable {
     }
 
     @Override
-    public Collection<ResolutionException> getResolutionExceptions() {
-        return resolutionExceptions;
+    public Collection<ResolutionDirective> getResolutionDirectives() {
+        return resolutionDirectives;
     }
 
     @Override
@@ -362,8 +361,8 @@ public class ObservableImpl implements Observable {
         this.generic = generic;
     }
 
-    public void setResolutionExceptions(Collection<ResolutionException> resolutionExceptions) {
-        this.resolutionExceptions = resolutionExceptions;
+    public void setResolutionExceptions(Collection<ResolutionDirective> resolutionDirectives) {
+        this.resolutionDirectives = resolutionDirectives;
     }
 
     public void setDefaultValue(Object defaultValue) {

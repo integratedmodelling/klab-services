@@ -10,15 +10,13 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Report;
 
 import java.net.URL;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class ClientContextScope extends ClientSessionScope implements ContextScope {
 
@@ -26,7 +24,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     private DirectObservation contextObservation;
     private String[] scenarios;
     private String resolutionNamespace;
-
+    private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
 
     public ClientContextScope(ClientUserScope parent, String contextName, RuntimeService runtimeService) {
         super(parent, contextName, runtimeService);
@@ -123,7 +121,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public DirectObservation getParentOf(Observation observation) {
+    public Observation getParentOf(Observation observation) {
         return null;
     }
 
@@ -133,12 +131,12 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     @Override
-    public Collection<Observation> getOutgoingRelationships(DirectObservation observation) {
+    public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
         return List.of();
     }
 
     @Override
-    public Collection<Observation> getIncomingRelationships(DirectObservation observation) {
+    public Collection<Observation> getIncomingRelationshipsOf(Observation observation) {
         return List.of();
     }
 
@@ -232,5 +230,15 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     public ContextScope between(Observation source, Observation target) {
         // TODO
         return null;
+    }
+
+    @Override
+    public ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
+        return null;
+    }
+
+    @Override
+    public List<ResolutionConstraint> getResolutionConstraints() {
+        return this.resolutionConstraints;
     }
 }

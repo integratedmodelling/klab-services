@@ -2,8 +2,10 @@ package org.integratedmodelling.klab.api.digitaltwin;
 
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.List;
@@ -74,7 +76,8 @@ public class GraphModel {
     }
 
     public record ObservationInput(String name, String observable, String geometry, String defaultValue,
-                                   String observerGeometry) {
+                                   String observerGeometry,
+                                   List<ResolutionConstraint> resolutionConstraints) {
     }
 
     public record Dataflow(String id, List<Actuator> actuators) {
@@ -98,11 +101,11 @@ public class GraphModel {
         return DigitalTwin.createObservation(scope, observable, geometry, pod, observerGeometry);
     }
 
-    public static ObservationInput adapt(org.integratedmodelling.klab.api.knowledge.observation.Observation observation, Scope scope) {
+    public static ObservationInput adapt(org.integratedmodelling.klab.api.knowledge.observation.Observation observation, ContextScope scope) {
         // TODO needs model/resource URN and metadata
         return new ObservationInput(observation.getName(), observation.getObservable().getUrn(),
                 observation.getGeometry().encode(), Utils.Data.asString(observation.getValue()),
                 observation.getObserverGeometry() == null ? null :
-                observation.getObserverGeometry().encode());
+                observation.getObserverGeometry().encode(), scope.getResolutionConstraints());
     }
 }

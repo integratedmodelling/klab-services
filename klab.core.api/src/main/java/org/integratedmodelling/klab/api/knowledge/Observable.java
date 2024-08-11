@@ -1,7 +1,6 @@
 package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.Klab;
-//import org.integratedmodelling.klab.api.collections.Literal;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
@@ -9,7 +8,6 @@ import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.data.mediation.ValueMediator;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
-import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
@@ -42,7 +40,7 @@ public interface Observable extends Semantics, Resolvable {
      *
      * @author Ferd
      */
-    enum ResolutionException {
+    enum ResolutionDirective {
         Missing, Nodata, Error
     }
 
@@ -274,13 +272,13 @@ public interface Observable extends Semantics, Resolvable {
          */
         Builder named(String name);
 
-//        /**
-//         * Set the flag that signifies distributed inherency (of each).
-//         *
-//         * @param ofEach
-//         * @return
-//         */
-//        Builder withDistributedInherency(boolean ofEach);
+        //        /**
+        //         * Set the flag that signifies distributed inherency (of each).
+        //         *
+        //         * @param ofEach
+        //         * @return
+        //         */
+        //        Builder withDistributedInherency(boolean ofEach);
 
         /**
          * Remove any value operators
@@ -327,7 +325,6 @@ public interface Observable extends Semantics, Resolvable {
         Builder withTemporalInherent(Concept concept);
 
 
-
         /**
          * Set both the name and the reference name, to preserve a previous setting
          *
@@ -369,10 +366,10 @@ public interface Observable extends Semantics, Resolvable {
         Builder withDefaultValue(Object defaultValue);
 
         /**
-         * @param resolutionException
+         * @param resolutionDirective
          * @return
          */
-        Builder withResolutionException(ResolutionException resolutionException);
+        Builder withResolutionException(ResolutionDirective resolutionDirective);
 
         /**
          * Add a numeric range (check that the artifact type is numeric at build)
@@ -506,16 +503,19 @@ public interface Observable extends Semantics, Resolvable {
     Object getDefaultValue();
 
     /**
-     * Resolution exceptions linked to the use of a stated default value.
+     * What to do when resolution fails, allowing to specify default values or move on with other optional
+     * actions instead of simply failing. Linked to stated metadata with stated default values or actions.
      *
      * @return
      */
-    Collection<ResolutionException> getResolutionExceptions();
+    Collection<ResolutionDirective> getResolutionDirectives();
 
 
     /**
      * True if the observable was declared optional. This can only happen in model dependencies and for the
-     * observables of acknowledged subjects.
+     * observables of acknowledged subjects. In this case resolution may fail without consequences, removing
+     * the unresolved observation from the observation tree and leaving the context scope in a consistent
+     * state.
      *
      * @return optional status
      */
@@ -562,23 +562,15 @@ public interface Observable extends Semantics, Resolvable {
 
     /**
      * Collective observables have <code>each</code> in front of their declaration and specify the
-     * instantiation of substantials. The same observable without <code>each</code> specifies its
-     * resolution.
+     * instantiation of substantials. The same observable without <code>each</code> specifies its resolution.
+     * when collective observables are the subject of a
+     * {@link org.integratedmodelling.klab.api.lang.BinarySemanticOperator}, they imply a "collective",
+     * distributing resolution strategy for their observable, possibly resorting to observing qualities in the
+     * surrounding context instead of individually observing the values of each observation made.
      *
      * @return
      */
     boolean isCollective();
-
-//    /**
-//     * @return
-//     */
-//    String getDereifiedAttribute();
-
-//    /**
-//     * @return
-//     */
-//    boolean isDistributedInherency();
-
 
     public static Observable promote(Concept concept) {
         Klab.Configuration configuration = Klab.INSTANCE.getConfiguration();

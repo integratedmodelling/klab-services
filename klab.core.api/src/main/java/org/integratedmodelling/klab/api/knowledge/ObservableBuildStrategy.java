@@ -6,7 +6,7 @@ import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
-import org.integratedmodelling.klab.api.knowledge.Observable.ResolutionException;
+import org.integratedmodelling.klab.api.knowledge.Observable.ResolutionDirective;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
 import org.integratedmodelling.klab.api.lang.ValueOperator;
@@ -49,7 +49,7 @@ public class ObservableBuildStrategy implements Observable.Builder {
         private static final long serialVersionUID = -3560499809607527771L;
 
         private List<Annotation> annotations = new ArrayList<>();
-        private ResolutionException resolutionException;
+        private ResolutionDirective resolutionDirective;
 
         private DescriptionType descriptionType;
         private Unit unit;
@@ -141,9 +141,9 @@ public class ObservableBuildStrategy implements Observable.Builder {
             this.pod = name;
         }
 
-        public Operation(OperationType operationType, ResolutionException resolutionException) {
+        public Operation(OperationType operationType, ResolutionDirective resolutionDirective) {
             this.type = operationType;
-            this.resolutionException = resolutionException;
+            this.resolutionDirective = resolutionDirective;
         }
 
         public Operation(OperationType operationType, Annotation annotation) {
@@ -239,12 +239,12 @@ public class ObservableBuildStrategy implements Observable.Builder {
             this.valueOperation = valueOperation;
         }
 
-        public ResolutionException getResolutionException() {
-            return resolutionException;
+        public ResolutionDirective getResolutionException() {
+            return resolutionDirective;
         }
 
-        public void setResolutionException(ResolutionException resolutionException) {
-            this.resolutionException = resolutionException;
+        public void setResolutionException(ResolutionDirective resolutionDirective) {
+            this.resolutionDirective = resolutionDirective;
         }
 
         public List<Annotation> getAnnotations() {
@@ -507,8 +507,8 @@ public class ObservableBuildStrategy implements Observable.Builder {
     }
 
     @Override
-    public Builder withResolutionException(ResolutionException resolutionException) {
-        this.operations.add(new Operation(OperationType.WITH_RESOLUTION_EXCEPTION, resolutionException));
+    public Builder withResolutionException(ResolutionDirective resolutionDirective) {
+        this.operations.add(new Operation(OperationType.WITH_RESOLUTION_EXCEPTION, resolutionDirective));
         return this;
     }
 
