@@ -25,6 +25,7 @@ import org.jgrapht.graph.DefaultEdge;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,7 +84,31 @@ public class ScopeManager {
         ServiceUserScope ret = scopes.get(user.getUsername());
         if (ret == null) {
 
-            ret = new ServiceUserScope(user);
+            /**
+             * The user scope is for a legitimately authorized user, so by default it uses all
+             * services from the service scope. TODO we should filter them by permission vs. the
+             * user identity! That can be done directly in the overloaded functions below.
+             */
+            ret = new ServiceUserScope(user) {
+
+                @Override
+                public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                    // TODO filter by permission
+                    return service.serviceScope().getServices(serviceClass);
+                }
+
+                @Override
+                public <T extends KlabService> T getService(Class<T> serviceClass) {
+                    // TODO filter by permission
+                    return service.serviceScope().getService(serviceClass);
+                }
+
+                @Override
+                public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+                    // TODO filter by permission
+                    return service.serviceScope().getService(serviceId, serviceClass);
+                }
+            };
 
             String agentName = KAgent.sanitizeName(user.getUsername());
             // TODO move to lazy logics

@@ -66,9 +66,9 @@ public class ObservableBuilder implements Observable.Builder {
     private Unit unit;
     private Currency currency;
     private List<Annotation> annotations = new ArrayList<>();
-//    private String dereifiedAttribute;
+    //    private String dereifiedAttribute;
     private boolean isTrivial = true;
-//    private boolean distributedInherency = false;
+    //    private boolean distributedInherency = false;
     private KimConcept declaration;
     private boolean axiomsAdded = false;
     private String referenceName = null;
@@ -139,7 +139,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.scope = scope;
         this.type = this.main.getType();
         this.ontology = reasoner.owl().getOntology(observable.getSemantics().getNamespace());
-//        this.context = reasoner.directContext(observable.getSemantics());
+        //        this.context = reasoner.directContext(observable.getSemantics());
         this.adjacent = reasoner.directAdjacent(observable.getSemantics());
         this.inherent = reasoner.directInherent(observable.getSemantics());
         this.causant = reasoner.directCausant(observable.getSemantics());
@@ -178,7 +178,6 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     private KimConcept getDeclaration(Concept semantics) {
-
         return scope.getService(ResourcesService.class).resolveConcept(semantics.getUrn());
     }
 
@@ -190,7 +189,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.caused = other.caused;
         this.comparison = other.comparison;
         this.compresent = other.compresent;
-//        this.context = other.context;
+        //        this.context = other.context;
         this.inherent = other.inherent;
         this.cooccurrent = other.cooccurrent;
         this.goal = other.goal;
@@ -212,7 +211,6 @@ public class ObservableBuilder implements Observable.Builder {
         this.reasoner = other.reasoner;
         this.defaultValue = other.defaultValue;
         this.resolutionDirectives.addAll(other.resolutionDirectives);
-
 
 
         checkTrivial();
@@ -241,15 +239,15 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-//    @Override
-//    public Observable.Builder within(Concept concept) {
-//        this.context = concept;
-//        if (this.declaration != null) {
-//            ((KimConceptImpl) this.declaration).setContext(getDeclaration(concept));
-//        }
-//        isTrivial = false;
-//        return this;
-//    }
+    //    @Override
+    //    public Observable.Builder within(Concept concept) {
+    //        this.context = concept;
+    //        if (this.declaration != null) {
+    //            ((KimConceptImpl) this.declaration).setContext(getDeclaration(concept));
+    //        }
+    //        isTrivial = false;
+    //        return this;
+    //    }
 
     @Override
     public Observable.Builder withTemporalInherent(Concept concept) {
@@ -364,7 +362,7 @@ public class ObservableBuilder implements Observable.Builder {
 
         if (incarnatedAbstractObservable != null) {
             incarnatedAbstractObservable = incarnatedAbstractObservable.builder(scope).as(type, participants)
-                    .build();
+                                                                       .build();
         }
 
         if (argument != null) {
@@ -501,7 +499,7 @@ public class ObservableBuilder implements Observable.Builder {
          * for now these have no roles associated
          */
         ret.name = name;
-//        ret.targetPredicate = targetPredicate;
+        //        ret.targetPredicate = targetPredicate;
         ret.optional = this.optional;
         ret.mustContextualize = mustContextualize;
         ret.annotations.addAll(annotations);
@@ -533,11 +531,11 @@ public class ObservableBuilder implements Observable.Builder {
             for (int i = 0; i < rdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.ROLE);
             }
-//            if (ret.context != null && ret.context.equals(concept)) {
-//                ret.context = null;
-//                ret.removed.add(concept);
-//                removedRoles.add(SemanticRole.CONTEXT);
-//            }
+            //            if (ret.context != null && ret.context.equals(concept)) {
+            //                ret.context = null;
+            //                ret.removed.add(concept);
+            //                removedRoles.add(SemanticRole.CONTEXT);
+            //            }
             if (ret.inherent != null && ret.inherent.equals(concept)) {
                 ret.inherent = null;
                 ret.removed.add(concept);
@@ -610,11 +608,11 @@ public class ObservableBuilder implements Observable.Builder {
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.ROLE);
             }
-//            if (ret.context != null && ret.context.is(concept)) {
-//                ret.removed.add(ret.context);
-//                ret.context = null;
-//                removedRoles.add(SemanticRole.CONTEXT);
-//            }
+            //            if (ret.context != null && ret.context.is(concept)) {
+            //                ret.removed.add(ret.context);
+            //                ret.context = null;
+            //                removedRoles.add(SemanticRole.CONTEXT);
+            //            }
             if (ret.inherent != null && ret.inherent.is(concept)) {
                 ret.removed.add(ret.inherent);
                 ret.inherent = null;
@@ -688,11 +686,11 @@ public class ObservableBuilder implements Observable.Builder {
             for (int i = 0; i < tdelta.getSecond().size(); i++) {
                 removedRoles.add(SemanticRole.ROLE);
             }
-//            if (ret.context != null && reasoner.subsumes(ret.context, concept)) {
-//                ret.context = null;
-//                ret.removed.add(concept);
-//                removedRoles.add(SemanticRole.CONTEXT);
-//            }
+            //            if (ret.context != null && reasoner.subsumes(ret.context, concept)) {
+            //                ret.context = null;
+            //                ret.removed.add(concept);
+            //                removedRoles.add(SemanticRole.CONTEXT);
+            //            }
             if (ret.inherent != null && reasoner.subsumes(ret.inherent, concept)) {
                 ret.inherent = null;
                 ret.removed.add(concept);
@@ -986,24 +984,25 @@ public class ObservableBuilder implements Observable.Builder {
             rId += "_of_" + inherent.getReferenceName();
         }
 
-//        if (context != null) {
-//            Concept other = reasoner.context(main);
-//            // use the version of isCompatible that allows for observations that are
-//            // compatible with
-//            // the context's context if the context is an occurrent (e.g. Precipitation of
-//            // Storm)
-//            if (other != null && !reasoner.contextuallyCompatible(main, context, other)) {
-//                scope.error("cannot set the context type of " + main.displayName() + " to " + context
-//                .displayName()
-//                        + " as it already has an incompatible context: " + other.displayName(),
-//                        declaration);
-//            }
-//            cleanId = getCleanId(context);
-//            cId += "In" + cleanId;
-//            cDs += "In" + cleanId;
-//            rId += "_within_" + context.getReferenceName();
-//            // uId += "In" + cleanId;
-//        }
+        //        if (context != null) {
+        //            Concept other = reasoner.context(main);
+        //            // use the version of isCompatible that allows for observations that are
+        //            // compatible with
+        //            // the context's context if the context is an occurrent (e.g. Precipitation of
+        //            // Storm)
+        //            if (other != null && !reasoner.contextuallyCompatible(main, context, other)) {
+        //                scope.error("cannot set the context type of " + main.displayName() + " to " +
+        //                context
+        //                .displayName()
+        //                        + " as it already has an incompatible context: " + other.displayName(),
+        //                        declaration);
+        //            }
+        //            cleanId = getCleanId(context);
+        //            cId += "In" + cleanId;
+        //            cDs += "In" + cleanId;
+        //            rId += "_within_" + context.getReferenceName();
+        //            // uId += "In" + cleanId;
+        //        }
 
         if (compresent != null) {
             Concept other = reasoner.compresent(main);
@@ -1173,9 +1172,9 @@ public class ObservableBuilder implements Observable.Builder {
         axioms.add(Axiom.AnnotationAssertion(conceptId, NS.DISPLAY_LABEL_PROPERTY, cDs));
         axioms.add(Axiom.AnnotationAssertion(conceptId, "rdfs:label", cId));
         axioms.add(Axiom.SubClass(main.getNamespace() + ":" + main.getName(), conceptId));
-//        if (distributedInherency) {
-//            axioms.add(Axiom.AnnotationAssertion(conceptId, NS.INHERENCY_IS_DISTRIBUTED, "true"));
-//        }
+        //        if (distributedInherency) {
+        //            axioms.add(Axiom.AnnotationAssertion(conceptId, NS.INHERENCY_IS_DISTRIBUTED, "true"));
+        //        }
 
         /*
          * add the core observable concept ID using NS.CORE_OBSERVABLE_PROPERTY
@@ -1199,49 +1198,63 @@ public class ObservableBuilder implements Observable.Builder {
          */
 
         if (identities.size() > 0) {
-            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_IDENTITY_PROPERTY), LogicalConnector.UNION, identities
+            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_IDENTITY_PROPERTY),
+                    LogicalConnector.UNION, identities
                     , ontology);
         }
         if (realms.size() > 0) {
-            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_REALM_PROPERTY), LogicalConnector.UNION, realms,
+            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_REALM_PROPERTY),
+                    LogicalConnector.UNION, realms,
                     ontology);
         }
         if (attributes.size() > 0) {
-            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_ATTRIBUTE_PROPERTY), LogicalConnector.UNION,
+            reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_ATTRIBUTE_PROPERTY),
+                    LogicalConnector.UNION,
                     attributes, ontology);
         }
         if (acceptedRoles.size() > 0) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_ROLE_PROPERTY), LogicalConnector.UNION,
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_ROLE_PROPERTY),
+                    LogicalConnector.UNION,
                     acceptedRoles,
                     ontology);
         }
         if (inherent != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IS_INHERENT_TO_PROPERTY), inherent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IS_INHERENT_TO_PROPERTY),
+                    inherent, ontology);
         }
-//        if (context != null) {
-//            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CONTEXT_PROPERTY), context, ontology);
-//        }
+        //        if (context != null) {
+        //            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CONTEXT_PROPERTY),
+        //            context, ontology);
+        //        }
         if (caused != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CAUSED_PROPERTY), caused, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CAUSED_PROPERTY), caused,
+                    ontology);
         }
         if (causant != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CAUSANT_PROPERTY), causant, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_CAUSANT_PROPERTY), causant,
+                    ontology);
         }
         if (compresent != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_COMPRESENT_PROPERTY), compresent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_COMPRESENT_PROPERTY),
+                    compresent, ontology);
         }
         if (goal != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_PURPOSE_PROPERTY), goal, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_PURPOSE_PROPERTY), goal,
+                    ontology);
         }
         if (cooccurrent != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.OCCURS_DURING_PROPERTY), cooccurrent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.OCCURS_DURING_PROPERTY),
+                    cooccurrent, ontology);
         }
         if (adjacent != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IS_ADJACENT_TO_PROPERTY), adjacent, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IS_ADJACENT_TO_PROPERTY),
+                    adjacent, ontology);
         }
         if (relationshipSource != null) {
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IMPLIES_SOURCE_PROPERTY), relationshipSource, ontology);
-            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IMPLIES_DESTINATION_PROPERTY), relationshipTarget,
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IMPLIES_SOURCE_PROPERTY),
+                    relationshipSource, ontology);
+            reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.IMPLIES_DESTINATION_PROPERTY),
+                    relationshipTarget,
                     ontology);
         }
 
@@ -1294,7 +1307,8 @@ public class ObservableBuilder implements Observable.Builder {
     }
 
     private Ontology getTargetOntology() {
-        return reasoner.owl().getTargetOntology(ontology, main, traits, roles, inherent, /*context,*/ caused, causant,
+        return reasoner.owl().getTargetOntology(ontology, main, traits, roles, inherent, /*context,
+        */ caused, causant,
                 compresent,
                 goal, cooccurrent, adjacent);
     }
@@ -1414,9 +1428,9 @@ public class ObservableBuilder implements Observable.Builder {
         ret.setOptional(this.optional);
         // ret.setMustContextualizeAtResolution(mustContextualize);
         ret.getAnnotations().addAll(annotations);
-//        ret.setDistributedInherency(distributedInherency);
+        //        ret.setDistributedInherency(distributedInherency);
         // ret.setTemporalInherent(temporalInherent);
-//        ret.setDereifiedAttribute(this.dereifiedAttribute);
+        //        ret.setDereifiedAttribute(this.dereifiedAttribute);
         // ret.setDereified(this.dereified);
         ret.setGeneric(this.generic);
         // ret.setGlobal(this.global);
@@ -1500,11 +1514,11 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-//    @Override
-//    public Observable.Builder withDistributedInherency(boolean b) {
-//        this.distributedInherency = b;
-//        return this;
-//    }
+    //    @Override
+    //    public Observable.Builder withDistributedInherency(boolean b) {
+    //        this.distributedInherency = b;
+    //        return this;
+    //    }
 
     @Override
     public Observable.Builder withValueOperator(ValueOperator operator, Object operand) {
@@ -1518,17 +1532,17 @@ public class ObservableBuilder implements Observable.Builder {
         return this;
     }
 
-//    @Override
-//    public Observable.Builder withTargetPredicate(Concept targetPredicate) {
-//        this.targetPredicate = targetPredicate;
-//        return this;
-//    }
+    //    @Override
+    //    public Observable.Builder withTargetPredicate(Concept targetPredicate) {
+    //        this.targetPredicate = targetPredicate;
+    //        return this;
+    //    }
 
-//    @Override
-//    public Observable.Builder withDereifiedAttribute(String dereifiedAttribute) {
-//        this.dereifiedAttribute = dereifiedAttribute;
-//        return this;
-//    }
+    //    @Override
+    //    public Observable.Builder withDereifiedAttribute(String dereifiedAttribute) {
+    //        this.dereifiedAttribute = dereifiedAttribute;
+    //        return this;
+    //    }
 
     public boolean axiomsAdded() {
         return this.axiomsAdded;

@@ -13,6 +13,7 @@ type Query {
 
 type Mutation {
     # submit the data for an observation and obtain the observation ID, also the task ID of its resolution
+    # the ID is a long but there's no Long and Int is a real Int, I use a String because I hate it less than Float.
     observe(observation: ObservationInput): String
 }
 
@@ -96,6 +97,15 @@ enum ObservationType {SUBJECT, STATE, PROCESS, OBSERVER, EVENT, RELATIONSHIP}
 
 # ==== Input schema to create observations ====
 
+# Resolution constraints. These come with the observation scope and get transmitted to
+# ObservationInput when submitting a new observation.
+enum Constraint {Scenarios, ResolveWith, Resolved, ResolutionScope, ConcretePredicates,
+    Whitelist, Blacklist}
+
+input ResolutionConstraint {
+    type: Constraint
+}
+
 input ObservationInput {
     name: String
     observable: String!
@@ -103,6 +113,7 @@ input ObservationInput {
     # default value, optional, only for states, parsed from string according to semantics
     defaultValue: String
     observerGeometry: String
+    resolutionConstraints: [ResolutionConstraint]
 }
 
 # ----- DATAFLOW schema
