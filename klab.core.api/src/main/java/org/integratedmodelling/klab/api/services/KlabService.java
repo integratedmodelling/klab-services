@@ -9,12 +9,14 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Services may be locally implemented or clients to remote services: each service implementation should
@@ -223,6 +225,15 @@ public interface KlabService extends Service {
          * @return
          */
         URL getUrl();
+
+        /**
+         * Messaging queues may be made available only if the capabilities are retrieved by a privileged user.
+         * These are used in all send() methods invoked on an authorized user scope.
+         *
+         * @return the set of messaging queues published by this service for the requesting user, in the form
+         * <code>username.queuetype</code>.
+         */
+        Set<Message.Queue> getAvailableMessagingQueues();
     }
 
     /**

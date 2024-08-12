@@ -307,7 +307,7 @@ public class ServiceAuthorizationManager {
          * User scope is created anyway.
          */
         Scope scope = klabService.get().klabService().getScopeManager().getOrCreateUserScope(ret);
-        ((ServiceUserScope) scope).setLocal(ret.isLocal());
+
         if (scopeHeader != null) {
             // ...then contextualized as needed
             var scopeData = ContextScope.parseScopeId(scopeHeader);

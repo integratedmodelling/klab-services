@@ -74,17 +74,17 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         serviceMap.put(KlabService.Type.RESOURCES, resources);
         serviceMap.put(KlabService.Type.RUNTIME, runtimes);
 
-        if (reasoners.size() > 0) {
-            defaultServiceMap.put(KlabService.Type.REASONER, reasoners.get(0));
+        if (!reasoners.isEmpty()) {
+            defaultServiceMap.put(KlabService.Type.REASONER, reasoners.getFirst());
         }
-        if (resolvers.size() > 0) {
-            defaultServiceMap.put(KlabService.Type.RESOLVER, resolvers.get(0));
+        if (!resolvers.isEmpty()) {
+            defaultServiceMap.put(KlabService.Type.RESOLVER, resolvers.getFirst());
         }
-        if (resources.size() > 0) {
-            defaultServiceMap.put(KlabService.Type.RESOURCES, resources.get(0));
+        if (!resources.isEmpty()) {
+            defaultServiceMap.put(KlabService.Type.RESOURCES, resources.getFirst());
         }
-        if (runtimes.size() > 0) {
-            defaultServiceMap.put(KlabService.Type.RUNTIME, runtimes.get(0));
+        if (!runtimes.isEmpty()) {
+            defaultServiceMap.put(KlabService.Type.RUNTIME, runtimes.getFirst());
         }
     }
 

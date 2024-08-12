@@ -11,13 +11,16 @@ import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
+import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +83,22 @@ public abstract class BaseService implements KlabService {
             this.serviceSecret = Files.readString(secretFile.toPath());
         } catch (IOException e) {
             throw new KlabIOException(e);
+        }
+    }
+
+    /**
+     * Set up the messaging queues according to configuration in case the user is local and privileged. TODO
+     * this ignores the configuration for now.
+     *
+     * @param scope
+     * @param capabilities
+     */
+    public void setupMessaging(UserScope scope, ServiceCapabilities capabilities) {
+        if (scope instanceof ServiceUserScope serviceUserScope && serviceUserScope.isLocal()) {
+            capabilities.getAvailableMessagingQueues().add(Message.Queue.Errors);
+            capabilities.getAvailableMessagingQueues().add(Message.Queue.Warnings);
+            capabilities.getAvailableMessagingQueues().add(Message.Queue.Info);
+            // TODO configure debug
         }
     }
 

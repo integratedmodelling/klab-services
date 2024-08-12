@@ -212,7 +212,6 @@ public class ObservableBuilder implements Observable.Builder {
         this.defaultValue = other.defaultValue;
         this.resolutionDirectives.addAll(other.resolutionDirectives);
 
-
         checkTrivial();
     }
 

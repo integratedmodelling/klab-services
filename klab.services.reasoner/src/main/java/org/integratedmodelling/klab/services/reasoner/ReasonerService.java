@@ -1090,7 +1090,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return new ReasonerCapabilitiesImpl() {
+        var ret = new ReasonerCapabilitiesImpl() {
 
             @Override
             public String getWorldviewId() {
@@ -1123,6 +1123,12 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
 
         };
+
+        if (scope instanceof UserScope userScope) {
+            setupMessaging(userScope, ret);
+        }
+
+        return ret;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.impl;
 
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.net.URL;
 import java.util.EnumSet;
@@ -13,7 +14,7 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
     private String serviceId;
     private String serverId;
     private URL url;
-    private Set<KlabService.Type> availableServices = EnumSet.noneOf(KlabService.Type.class);
+    private Set<Message.Queue> availableMessagingQueues = EnumSet.noneOf(Message.Queue.class);
 
     @Override
     public String getLocalName() {
@@ -58,5 +59,14 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
 
     public void setUrl(URL url) {
         this.url = url;
+    }
+
+    @Override
+    public Set<Message.Queue> getAvailableMessagingQueues() {
+        return availableMessagingQueues;
+    }
+
+    public void setAvailableMessagingQueues(Set<Message.Queue> availableMessagingQueues) {
+        this.availableMessagingQueues = availableMessagingQueues;
     }
 }

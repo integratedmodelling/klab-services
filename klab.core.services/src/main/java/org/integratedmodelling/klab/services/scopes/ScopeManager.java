@@ -61,6 +61,7 @@ public class ScopeManager {
         this.service = service;
         /*
          * boot the actor system right away, so that we can call login() before boot().
+         * TODO this should only be done if the service wants it
          */
         this.actorSystem =
                 new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build()).initReActorSystem();
@@ -110,6 +111,9 @@ public class ScopeManager {
                 }
             };
 
+            /**
+             * TODO agents should only be created for services that request them
+             */
             String agentName = KAgent.sanitizeName(user.getUsername());
             // TODO move to lazy logics
             KActorsBehavior.Ref agent = KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName,
@@ -166,7 +170,16 @@ public class ScopeManager {
             throw new KlabInternalErrorException("Pre-existing user scope with wrong identifier");
         }
 
-        return login(createUserIdentity(authorization));
+        ret = login(createUserIdentity(authorization));
+
+        if (authorization.isLocal()) {
+            ret.setLocal(true);
+            // TODO setup queues in scope
+            System.out.println("HEY SETUP THE PRIVILEGED QUEUES");
+//            ret.setupMessaging()
+        }
+
+        return ret;
 
     }
 
