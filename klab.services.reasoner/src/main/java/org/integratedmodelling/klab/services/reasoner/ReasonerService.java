@@ -1817,7 +1817,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             //            for (KimConcept pdecl : parent.getConcepts()) {
             Concept declared = declare(concept.getDeclaredParent(), ontology, monitor);
             if (declared == null) {
-                monitor.error("parent declaration " + concept.getDeclaredParent() + " does not identify " + "known " + "concepts", concept.getDeclaredParent());
+                monitor.error("parent declaration " + concept.getDeclaredParent().getUrn() + " does not identify " + "known " + "concepts", concept.getDeclaredParent());
                 return null;
             } else {
                 ontology.add(Axiom.SubClass(declared.getNamespace() + ":" + declared.getName(), mainId));
