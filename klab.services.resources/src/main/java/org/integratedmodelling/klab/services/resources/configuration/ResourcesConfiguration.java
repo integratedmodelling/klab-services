@@ -2,10 +2,12 @@ package org.integratedmodelling.klab.services.resources.configuration;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
+import org.integratedmodelling.klab.api.services.KlabService;
 
 import java.io.File;
 import java.io.Serial;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -186,6 +188,7 @@ public class ResourcesConfiguration implements Serializable {
      */
     private String localResourcePath = "local";
     private String publicResourcePath = "public";
+    private URI brokerURI = null;
 
     /**
      * Each workspace name is a subdirectory with a number of projects in them. All are relative to the
@@ -248,6 +251,14 @@ public class ResourcesConfiguration implements Serializable {
 
     public String getServiceId() {
         return serviceId;
+    }
+
+    public URI getBrokerURI() {
+        return brokerURI;
+    }
+
+    public void setBrokerURI(URI brokerURI) {
+        this.brokerURI = brokerURI;
     }
 
     public void setServiceId(String serviceId) {

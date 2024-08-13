@@ -16,8 +16,6 @@ import java.util.Set;
 public class RuntimeCapabilitiesImpl extends AbstractServiceCapabilities implements RuntimeService.Capabilities {
 
     private KlabService.Type type;
-    private URI brokerURI;
-
     @Override
     public KlabService.Type getType() {
         return type;
@@ -27,12 +25,4 @@ public class RuntimeCapabilitiesImpl extends AbstractServiceCapabilities impleme
         this.type = type;
     }
 
-    @Override
-    public URI getBrokerURI() {
-        return brokerURI;
-    }
-
-    public void setBrokerURL(URI brokerURI) {
-        this.brokerURI = brokerURI;
-    }
 }

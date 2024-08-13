@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services.impl;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.EnumSet;
 import java.util.Set;
@@ -15,6 +16,8 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
     private String serverId;
     private URL url;
     private Set<Message.Queue> availableMessagingQueues = EnumSet.noneOf(Message.Queue.class);
+    private URI brokerURI;
+
 
     @Override
     public String getLocalName() {
@@ -69,4 +72,14 @@ public abstract class AbstractServiceCapabilities implements KlabService.Service
     public void setAvailableMessagingQueues(Set<Message.Queue> availableMessagingQueues) {
         this.availableMessagingQueues = availableMessagingQueues;
     }
+
+    @Override
+    public URI getBrokerURI() {
+        return brokerURI;
+    }
+
+    public void setBrokerURI(URI brokerURI) {
+        this.brokerURI = brokerURI;
+    }
+
 }

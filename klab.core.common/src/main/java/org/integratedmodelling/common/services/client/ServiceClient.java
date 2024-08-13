@@ -153,37 +153,25 @@ public abstract class ServiceClient implements KlabService {
         return ret;
     }
 
-    //    private String makeSecretToken(String secret, Identity identity) {
-    //        StringBuffer ret = new StringBuffer(secret);
-    //        if (identity instanceof UserIdentity userIdentity) {
-    //            ret.append("/");
-    //            ret.append(userIdentity.getUsername());
-    //            ret.append("/");
-    //            ret.append(userIdentity.getEmailAddress());
-    //            for (Group group : userIdentity.getGroups()) {
-    //                ret.append("/");
-    //                ret.append(group.getName());
-    //            }
+    //    /**
+    //     * Find the token on the filesystem installed by a running service of the passed type. If found,
+    //     we may
+    //     * have a local service that lets us connect with just that token and administer it.
+    //     *
+    //     * @param serviceType
+    //     * @return
+    //     */
+    //    private String readLocalServiceToken(Type serviceType) {
+    //        File secretFile =
+    //                Configuration.INSTANCE.getFileWithTemplate("services/" + serviceType.name()
+    //                .toLowerCase() + "/secret.key", org.integratedmodelling.klab.api.utils.Utils.Names
+    //                .newName());
+    //        try {
+    //            return Files.readString(secretFile.toPath());
+    //        } catch (IOException e) {
+    //            throw new KlabIOException(e);
     //        }
-    //        return ret.toString();
     //    }
-
-    /**
-     * Find the token on the filesystem installed by a running service of the passed type. If found, we may
-     * have a local service that lets us connect with just that token and administer it.
-     *
-     * @param serviceType
-     * @return
-     */
-    private String readLocalServiceToken(Type serviceType) {
-        File secretFile =
-                Configuration.INSTANCE.getFileWithTemplate("services/" + serviceType.name().toLowerCase() + "/secret.key", org.integratedmodelling.klab.api.utils.Utils.Names.newName());
-        try {
-            return Files.readString(secretFile.toPath());
-        } catch (IOException e) {
-            throw new KlabIOException(e);
-        }
-    }
 
 
     protected ServiceClient(URL url) {
@@ -230,10 +218,13 @@ public abstract class ServiceClient implements KlabService {
         }
 
         /**
-         * Service scopes are non-messaging
+         * Service scopes are non-messaging but if the services are local, messaging happens through the
+         * user scope. Set up the proper channel according to whether we have messaging or not.
          */
+
         this.scope =
                 new AbstractServiceDelegatingScope(new ChannelImpl(this.authentication.getFirst())) {
+
                     @Override
                     public UserScope createUser(String username, String password) {
                         return null;
@@ -308,11 +299,13 @@ public abstract class ServiceClient implements KlabService {
                             }
                         }
 
-//                        if (Configuration.INSTANCE.pairServiceScopes() && local) {
-//                            // establish whatever scope "entanglement" is allowed by the service. For now
-//                            // disable, we try to do everything through REST and see if it's practical.
-//                            scope.connect(this);
-//                        }
+                        //                        if (Configuration.INSTANCE.pairServiceScopes() && local) {
+                        //                            // establish whatever scope "entanglement" is allowed
+                        //                            by the service. For now
+                        //                            // disable, we try to do everything through REST and
+                        //                            see if it's practical.
+                        //                            scope.connect(this);
+                        //                        }
 
                     }
 
@@ -355,7 +348,7 @@ public abstract class ServiceClient implements KlabService {
 
     @Override
     public final boolean shutdown() {
-//        scope.disconnect(this);
+        //        scope.disconnect(this);
         this.scheduler.shutdown();
         if (local) {
             return client.put(ServicesAPI.ADMIN.SHUTDOWN);

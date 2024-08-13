@@ -227,13 +227,25 @@ public interface KlabService extends Service {
         URL getUrl();
 
         /**
-         * Messaging queues may be made available only if the capabilities are retrieved by a privileged user.
-         * These are used in all send() methods invoked on an authorized user scope.
+         * Messaging queues listed here are available for user scopes only if the capabilities are retrieved
+         * by a privileged user (normally a local, exclusive user or an authorized administrator). These are
+         * used in all send() methods invoked on an authorized user scope. This may return an empty set
+         * without jeopardizing the ability to instrument session and context scopes with messaging, as long
+         * as {@link #getBrokerURI()} returns a valid URI.
          *
          * @return the set of messaging queues published by this service for the requesting user, in the form
          * <code>username.queuetype</code>.
          */
         Set<Message.Queue> getAvailableMessagingQueues();
+
+        /**
+         * URI for the message broker. If null, the service doesn't have messaging capabilities and will not
+         * enable distributed digital twin functionalities. If this isn't null, messaging can be added to
+         * scopes.
+         *
+         * @return the broker URL or null
+         */
+        URI getBrokerURI();
     }
 
     /**

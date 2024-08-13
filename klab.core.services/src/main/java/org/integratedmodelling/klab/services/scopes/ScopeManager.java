@@ -174,9 +174,15 @@ public class ScopeManager {
 
         if (authorization.isLocal()) {
             ret.setLocal(true);
-            // TODO setup queues in scope
-            System.out.println("HEY SETUP THE PRIVILEGED QUEUES");
-//            ret.setupMessaging()
+            // setup queues in scope if user is local and messaging is configured, Queue will be
+            // servicetype.username.queuetype
+            var brokerURI = service.capabilities(ret).getBrokerURI();
+            if (brokerURI != null && !service.capabilities(ret).getAvailableMessagingQueues().isEmpty()) {
+                ret.setupMessaging(brokerURI.toString(),
+                        service.capabilities(null).getType().name().toLowerCase() + "." + authorization.getUsername(),
+                        service.capabilities(ret).getAvailableMessagingQueues());
+            }
+
         }
 
         return ret;

@@ -67,15 +67,6 @@ public interface RuntimeService extends KlabService {
      * @author Ferd
      */
     interface Capabilities extends ServiceCapabilities {
-
-        /**
-         * URL for the message broker. If null, the engine doesn't have messaging capabilities and will not
-         * enable distributed digital twin functionalities. If this isn't null, the context/DT ID is the
-         * channel for communication of that context.
-         *
-         * @return the broker URL or null
-         */
-        URI getBrokerURI();
     }
 
     /**

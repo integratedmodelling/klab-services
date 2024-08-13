@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.scopes.ScopeManager;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
+import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import java.util.function.BiConsumer;
 public abstract class BaseService implements KlabService {
 
     private final Type type;
+    protected EmbeddedBroker embeddedBroker;
     private String serviceSecret;
 
     private URL url;
@@ -86,6 +88,7 @@ public abstract class BaseService implements KlabService {
         }
     }
 
+
     /**
      * Set up the messaging queues according to configuration in case the user is local and privileged. TODO
      * this ignores the configuration for now.
@@ -100,6 +103,15 @@ public abstract class BaseService implements KlabService {
             capabilities.getAvailableMessagingQueues().add(Message.Queue.Info);
             // TODO configure debug
         }
+    }
+
+    /**
+     * Use this broker in local configurations unless a broker URL is specified in configuration
+     *
+     * @return
+     */
+    protected EmbeddedBroker getLocalBroker() {
+        return null;
     }
 
     /**

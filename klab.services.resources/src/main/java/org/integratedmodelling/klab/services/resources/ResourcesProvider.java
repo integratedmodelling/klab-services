@@ -9,6 +9,7 @@ package org.integratedmodelling.klab.services.resources;
 //import org.integratedmodelling.kim.model.KimLoader.NamespaceDescriptor;
 
 import com.google.common.collect.Sets;
+import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
@@ -61,6 +62,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -96,6 +98,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private DB db = null;
     private ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
     private ModelKbox kbox;
+    private URI embeddedBrokerURI = null;
 
     /*
      * "fair" read/write lock to ensure no reading during updates
@@ -141,6 +144,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
 
+        initializeMessaging();
+
         this.kbox = ModelKbox.create(localName, this.scope);
         this.workspaceManager.loadWorkspace();
         /*
@@ -148,6 +153,37 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          */
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities(serviceScope()));
+    }
+
+    private void initializeMessaging() {
+
+        // initialize messaging
+        if (workspaceManager.getConfiguration().getBrokerURI() == null && Utils.URLs.isLocalHost(getUrl())) {
+
+            Logging.INSTANCE.info("Local service configuration: using embedded AMQP broker");
+
+//            Map<String, Object> attributes = new HashMap<>();
+//            URL initialConfig = this.getClass().getClassLoader().getResource
+//                    (EMBEDDED_BROKER_CONFIGURATION);
+//            attributes.put("type", "Memory");
+//            attributes.put("startupLoggedToSystemOut", true);
+//            attributes.put("initialConfigurationLocation", initialConfig.toExternalForm());
+//            try {
+//                this.systemLauncher = new SystemLauncher()r();
+//                if (System.getProperty("QPID_WORK") == null) {
+//                    // this works; setting qpid.work_dir in the attributes does not.
+//                    System.setProperty("QPID_WORK", BaseService.getConfigurationSubdirectory
+//                                                                       (startupOptions
+//                                                                               , "broker").toString());
+//                }
+//                systemLauncher.startup(attributes);
+//                this.embeddedBrokerURI = new URI("amqp://127.0.0.1:" + EMBEDDED_BROKER_PORT);
+//                serviceScope().info("Embedded broker available for local connections on " +
+//                        this.embeddedBrokerURI);
+//            } catch (Exception e) {
+//                serviceScope().error("Error initializing embedded broker: " + e.getMessage());
+//            }
+        }
     }
 
     /**
@@ -190,7 +226,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 } else {
                     // CHUPA CHUPA
                     //                    resource = KimAdapter.adaptResource(Utils.Json
-                    //                            .load(new File(subdir + File.separator + "resource.json"),
+                    //                            .load(new File(subdir + File.separator + "resource
+                    //                            .json"),
                     //                                    ResourceReference.class));
                 }
                 if (resource != null) {
@@ -446,6 +483,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.getPermissions().add(CRUDOperation.DELETE);
         ret.getPermissions().add(CRUDOperation.UPDATE);
 
+        if (scope != null && scope.getIdentity().isAuthenticated()) {
+            ret.setBrokerURI(workspaceManager.getConfiguration().getBrokerURI() != null ?
+                             workspaceManager.getConfiguration().getBrokerURI() :
+                             embeddedBrokerURI);
+        }
+
+
         return ret;
 
     }
@@ -505,7 +549,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         //        for (String projectName : this.configuration.getProjectConfiguration().keySet()) {
         //            if (projects.contains(projectName)) {
         ////                if (!localProjects.containsKey(projectName)) {
-        ////                    importProject(projectName, this.configuration.getProjectConfiguration().get
+        ////                    importProject(projectName, this.configuration.getProjectConfiguration()
+        // .get
         // (projectName));
         ////                }
         //                ret = Utils.Resources.merge(ret, collectProject(projectName, scope));
@@ -564,7 +609,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      * @param scope
      * @return
      */
-    private List<ResourceSet> collectProject(String projectName, CRUDOperation operation, String workspace,
+    private List<ResourceSet> collectProject(String projectName, CRUDOperation operation, String
+            workspace,
                                              Scope scope) {
 
         List<ResourceSet> ret = new ArrayList<>();
@@ -678,7 +724,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ResourceSet results = new ResourceSet();
         for (ModelReference model : this.kbox.query(observable, scope)) {
             results.getResults().add(new ResourceSet.Resource(getUrl().toString(),
-                    model.getNamespaceId() + "." + model.getName(), model.getProjectUrn(), model.getVersion(),
+                    model.getNamespaceId() + "." + model.getName(), model.getProjectUrn(),
+                    model.getVersion(),
                     KnowledgeClass.MODEL));
         }
 

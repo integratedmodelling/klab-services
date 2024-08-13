@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.services.runtime.digitaltwin.DigitalTwinImpl
 import org.integratedmodelling.klab.services.runtime.neo4j.GraphDatabaseNeo4jEmbedded;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
+import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.Closeable;
@@ -34,8 +35,6 @@ import java.util.*;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService, org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
-    private static final String EMBEDDED_BROKER_CONFIGURATION = "klab-broker-config.json";
-    private static final int EMBEDDED_BROKER_PORT = 20937;
 
     private String hardwareSignature =
             org.integratedmodelling.common.utils.Utils.Strings.hash(Utils.OS.getMACAddress());
@@ -51,54 +50,10 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     private void initializeMessaging() {
-
-
-        // CLIENT CODE:
-        //        SaslConfig saslConfig = new SaslConfig() {
-        //            public SaslMechanism getSaslMechanism(String[] mechanisms) {
-        //                return new SaslMechanism() {
-        //                    public String getName() {
-        //                        return "ANONYMOUS";
-        //                    }
-        //
-        //                    public LongString handleChallenge(LongString challenge, String username,
-        //                    String password) {
-        //                        return LongStringHelper.asLongString("");
-        //                    }
-        //                };
-        //            }
-        //        };
-        //        ConnectionFactory factory = new ConnectionFactory();
-        //        factory.setHost("localhost");
-        //        factory.setPort(20179);
-        //        factory.setSaslConfig(saslConfig);
-        //
-        //        Connection connection = factory.newConnection();
-        //        Channel channel = connection.createChannel();
-
         if (this.configuration.getBrokerURI() == null) {
-            /*
-                Create local broker. Uses the
-                simplest possible authentication with guest/guest plain credentials, will only allow local
-                connections.
-             */
-            Map<String, Object> attributes = new HashMap<>();
-            URL initialConfig = this.getClass().getClassLoader().getResource(EMBEDDED_BROKER_CONFIGURATION);
-            attributes.put("type", "Memory");
-            attributes.put("startupLoggedToSystemOut", true);
-            attributes.put("initialConfigurationLocation", initialConfig.toExternalForm());
-            try {
-                this.systemLauncher = new SystemLauncher();
-                if (System.getProperty("QPID_WORK") == null) {
-                    // this works; setting qpid.work_dir in the attributes does not.
-                    System.setProperty("QPID_WORK", BaseService.getConfigurationSubdirectory(startupOptions
-                            , "broker").toString());
-                }
-                systemLauncher.startup(attributes);
-                this.embeddedBrokerURI = new URI("amqp://127.0.0.1:" + EMBEDDED_BROKER_PORT);
-                serviceScope().info("Embedded broker available for local connections on " + this.embeddedBrokerURI);
-            } catch (Exception e) {
-                serviceScope().error("Error initializing embedded broker: " + e.getMessage());
+            this.embeddedBroker = new EmbeddedBroker();
+            if (this.embeddedBroker.isOnline()) {
+                this.embeddedBrokerURI = this.embeddedBroker.getURI();
             }
         }
     }
