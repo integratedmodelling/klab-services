@@ -249,13 +249,15 @@ public interface Message extends Serializable {
         UsingDistribution(Queue.UI, Distribution.class);
 
         public final Class<?> payloadClass;
-        public final Queue queue = Queue.None;
+        public final Queue queue;
 
         private MessageType() {
             this.payloadClass = Void.class;
+            this.queue = Queue.None;
         }
 
         private MessageType(Queue queue, Class<?> payloadClass) {
+            this.queue = queue;
             this.payloadClass = payloadClass;
         }
 
@@ -272,8 +274,9 @@ public interface Message extends Serializable {
 
     /**
      * Return this or a new message with the response ID set to that of the passed message, so that the call
-     * chain can be reconstructed across network boundaries. This is used to enable the
-     * {@link Channel#post(Consumer, Object...)} call.
+     * chain can be reconstructed across network boundaries. At the moment unused (post() in channels has been
+     * removed, may come back) because there are better ways to exchange messages and they shouldn't be
+     * instructions.
      *
      * @param message
      * @return
@@ -356,21 +359,27 @@ public interface Message extends Serializable {
         boolean queueOverridden = false;
         MessageImpl ret = new MessageImpl();
         ret.setIdentity(identity);
-        Notification.Type notype = null;
+//        Notification.Type notype = null;
         for (Object ob : o) {
             if (ob instanceof MessageType) {
                 ret.setMessageType((MessageType) ob);
             } else if (ob instanceof MessageClass) {
                 ret.setMessageClass((MessageClass) ob);
-            } else if (ob instanceof Notification.Type) {
+            } /*else if (ob instanceof Notification.Type) {
                 notype = (Notification.Type) ob;
-            } else if (ob instanceof Queue q) {
+            } */else if (ob instanceof Queue q) {
                 queueOverridden = true;
                 ret.setQueue(q);
             } else if (ob instanceof ForwardingPolicy) {
                 ret.setForwardingPolicy((ForwardingPolicy) ob);
-            } else if (ob instanceof Notification) {
-                notype = ((Notification) ob).getType();
+            } else if (ob instanceof Notification notification) {
+                ret.setMessageClass(MessageClass.Notification);
+                ret.setMessageType(switch (notification.getLevel()) {
+                    case Debug -> MessageType.Debug;
+                    case Info -> MessageType.Info;
+                    case Warning -> MessageType.Warning;
+                    case Error, SystemError -> MessageType.Error;
+                });
                 ret.setPayload(ob);
             } else if (ob != null) {
                 if (ret.getPayload() == null) {
@@ -389,7 +398,6 @@ public interface Message extends Serializable {
                 ret.setMessageType(MessageType.Info);
             }
         }
-        ret.setNotificationType(notype);
 
         if (ret.getMessageType() != null && !queueOverridden) {
             ret.setQueue(ret.getMessageType().queue);

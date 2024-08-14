@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.scopes;
 
 import io.reacted.core.config.reactorsystem.ReActorSystemConfig;
 import io.reacted.core.reactorsystem.ReActorSystem;
+import org.glassfish.grizzly.compression.lzma.impl.Base;
 import org.integratedmodelling.common.authentication.UserIdentityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
@@ -18,6 +19,8 @@ import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.actors.KAgent;
 import org.integratedmodelling.klab.services.actors.UserAgent;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
+import org.integratedmodelling.klab.services.base.BaseService;
+import org.integratedmodelling.klab.utilities.Utils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
@@ -90,7 +93,7 @@ public class ScopeManager {
              * services from the service scope. TODO we should filter them by permission vs. the
              * user identity! That can be done directly in the overloaded functions below.
              */
-            ret = new ServiceUserScope(user) {
+            ret = new ServiceUserScope(user, service) {
 
                 @Override
                 public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
@@ -110,6 +113,16 @@ public class ScopeManager {
                     return service.serviceScope().getService(serviceId, serviceClass);
                 }
             };
+
+            if (Utils.URLs.isLocalHost(service.getUrl())) {
+                /*
+                pre-advertise queues; channel setup will happen later
+                 */
+                var capabilities = service.capabilities(ret);
+                for (var queue : capabilities.getAvailableMessagingQueues()) {
+                    ret.presetMessagingQueue(queue, capabilities.getType().name().toLowerCase() + "." + user.getUsername());
+                }
+            }
 
             /**
              * TODO agents should only be created for services that request them

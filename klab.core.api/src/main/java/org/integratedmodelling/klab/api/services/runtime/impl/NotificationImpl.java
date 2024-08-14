@@ -21,7 +21,7 @@ public class NotificationImpl implements Notification, Serializable {
 
     private String message;
     private Level level;
-    private Type type = Type.None;
+//    private Type type = Type.None;
     private long timestamp = System.currentTimeMillis();
     // this will be null when parsed, identities are in the runtime
     private String identity;
@@ -31,17 +31,18 @@ public class NotificationImpl implements Notification, Serializable {
     private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
     public static class LexicalContextImpl implements LexicalContext {
-        private URL url;
+
+        private String documentUrn;
         private int offsetInDocument;
         private int length;
 
         @Override
-        public URL getUrl() {
-            return url;
+        public String getDocumentUrn() {
+            return documentUrn;
         }
 
-        public void setUrl(URL url) {
-            this.url = url;
+        public void setDocumentUrn(String documentUrn) {
+            this.documentUrn = documentUrn;
         }
 
         @Override
@@ -71,22 +72,22 @@ public class NotificationImpl implements Notification, Serializable {
         this.level = level;
     }
 
-    public NotificationImpl(Pair<String, Type> message, Level level) {
-        this.message = message.getFirst();
-        this.type = message.getSecond();
-        this.level = level;
-    }
+//    public NotificationImpl(Pair<String, Type> message, Level level) {
+//        this.message = message.getFirst();
+//        this.type = message.getSecond();
+//        this.level = level;
+//    }
 
-    public NotificationImpl(String message2, Level level2, long timestamp2) {
-        this(message2, level2);
-        this.timestamp = timestamp2;
-    }
-
-    public NotificationImpl(Pair<String, Type> message2, Level level2, long timestamp2) {
-        this(message2.getFirst(), level2);
-        this.timestamp = timestamp2;
-        this.type = message2.getSecond();
-    }
+//    public NotificationImpl(String message2, Level level2, long timestamp2) {
+//        this(message2, level2);
+//        this.timestamp = timestamp2;
+//    }
+//
+//    public NotificationImpl(Pair<String, Type> message2, Level level2, long timestamp2) {
+//        this(message2.getFirst(), level2);
+//        this.timestamp = timestamp2;
+//        this.type = message2.getSecond();
+//    }
 
     public String getMessage() {
         return message;
@@ -109,10 +110,10 @@ public class NotificationImpl implements Notification, Serializable {
         return timestamp;
     }
 
-    @Override
-    public Type getType() {
-        return type;
-    }
+//    @Override
+//    public Type getType() {
+//        return type;
+//    }
 
     @Override
     public Mode getMode() {
@@ -124,9 +125,9 @@ public class NotificationImpl implements Notification, Serializable {
         return identity;
     }
 
-    public void setType(Type type) {
-        this.type = type;
-    }
+//    public void setType(Type type) {
+//        this.type = type;
+//    }
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;

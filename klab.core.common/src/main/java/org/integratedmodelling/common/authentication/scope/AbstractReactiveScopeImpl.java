@@ -15,7 +15,6 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
 
     protected KActorsBehavior.Ref agent;
 
-
     public AbstractReactiveScopeImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity, isSender, isReceiver);
     }
@@ -57,4 +56,5 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
 
         throw new KlabInternalErrorException("wrong message with class " + message.getMessageClass() + " sent to ReactiveScope::ask");
     }
+
 }

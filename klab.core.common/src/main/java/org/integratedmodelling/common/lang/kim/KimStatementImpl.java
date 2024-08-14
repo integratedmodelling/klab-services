@@ -29,7 +29,6 @@ public abstract class KimStatementImpl extends KimAssetImpl implements KlabState
     protected KimStatementImpl(KimStatementImpl other) {
         super(other);
         this.metadata = other.metadata;
-//        this.documentationMetadata = other.documentationMetadata;
         this.namespace = other.namespace;
         this.scope = other.scope;
         this.notifications.addAll(other.notifications);
@@ -45,11 +44,6 @@ public abstract class KimStatementImpl extends KimAssetImpl implements KlabState
 ////        // TODO Auto-generated method stub
 ////
 //    }
-//
-//    @Override
-//    public Parameters<String> getDocumentationMetadata() {
-//        return this.documentationMetadata;
-//    }
 
     @Override
     public String getNamespace() {
@@ -61,22 +55,9 @@ public abstract class KimStatementImpl extends KimAssetImpl implements KlabState
         return this.scope;
     }
 
-
-//    public void setErrors(boolean errors) {
-//        this.errors = errors;
-//    }
-//
-//    public void setWarnings(boolean warnings) {
-//        this.warnings = warnings;
-//    }
-
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
-//
-//    public void setDocumentationMetadata(Parameters<String> documentationMetadata) {
-//        this.documentationMetadata = documentationMetadata;
-//    }
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
@@ -85,23 +66,6 @@ public abstract class KimStatementImpl extends KimAssetImpl implements KlabState
     public void setScope(Scope scope) {
         this.scope = scope;
     }
-
-//    public String getKimStatementClass() {
-//        return kimStatementClass;
-//    }
-//
-//    public void setKimStatementClass(String kimStatementClass) {
-//        this.kimStatementClass = kimStatementClass;
-//    }
-
-//    @Override
-//    public String toString() {
-//        if (sourceCode() != null) {
-//            return sourceCode();
-//        }
-//        return Utils.Paths.getLast(this.getClass().getCanonicalName(), '.') + " (no source available)";
-//    }
-
     @Override
     public List<Notification> getNotifications() {
         return notifications;

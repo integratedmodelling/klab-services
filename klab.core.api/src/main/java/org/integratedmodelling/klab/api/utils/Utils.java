@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsValue;
 import org.integratedmodelling.klab.api.lang.kim.*;
@@ -21,6 +22,7 @@ import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.Notification.Level;
+import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 
 import java.awt.*;
 import java.io.*;
@@ -496,47 +498,6 @@ public class Utils {
     }
 
     public static class Notifications {
-
-        /**
-         * Organizes a set of inputs into a message and a severity level.
-         * <p>
-         * FIXME this is useless, just use Notification.create()
-         *
-         * @param objects the objects
-         * @return the message
-         */
-        public static Notification getMessage(Object... objects) {
-
-            StringBuilder ret = new StringBuilder(256);
-            Notification.Type ntype = Notification.Type.None;
-            Notification.Mode nmode = Notification.Mode.Normal;
-            Notification.Level nlevel = Level.Info;
-
-            for (Object o : objects) {
-                if (o instanceof String) {
-                    ret.append(ret.isEmpty() ? "" : " ").append(o);
-                } else if (o instanceof Throwable throwable) {
-                    ret.append(ret.isEmpty() ? "" : " ").append(throwable.getLocalizedMessage()).append(". " +
-                            "Stack trace:\n").append(Exceptions.stackTrace(throwable));
-                }/* else if (o instanceof KimScope) {
-                    ret.insert(0, ((KimScope) o).getLocationDescriptor() + ": ");
-                }*/ else if (o instanceof Notification.Type notificationType) {
-                    ntype = notificationType;
-                } else if (o instanceof Notification notification) {
-                    ntype = notification.getType();
-                    nlevel = notification.getLevel();
-                    nmode = notification.getMode();
-                    ret.append(notification.getMessage());
-                } else if (o instanceof Notification.Mode mode) {
-                    nmode = mode;
-                } else if (o instanceof Notification.Level level) {
-                    nlevel = level;
-                }
-                // TODO continue
-            }
-
-            return Notification.create(ntype, nmode, nlevel, ret.toString());
-        }
 
         public static boolean hasErrors(Collection<Notification> notifications) {
             for (Notification notification : notifications) {

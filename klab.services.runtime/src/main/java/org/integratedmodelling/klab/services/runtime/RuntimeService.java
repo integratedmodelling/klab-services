@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
 import org.apache.qpid.server.SystemLauncher;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.GraphDatabase;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -88,6 +89,8 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public void initializeService() {
+        
+        Logging.INSTANCE.setSystemIdentifier("Resources service: ");
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());

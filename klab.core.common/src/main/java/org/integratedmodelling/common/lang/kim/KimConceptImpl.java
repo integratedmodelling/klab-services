@@ -14,12 +14,10 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private static final long serialVersionUID = 8531431719010407385L;
 
     private SemanticRole semanticRole;
-//    private boolean traitObservable;
     private String name;
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private KimConcept observable;
     private KimConcept parent;
-//    private KimConcept context;
     private KimConcept inherent;
     private KimConcept goal;
     private KimConcept causant;
@@ -33,7 +31,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private KimConcept relationshipTarget;
     private List<KimConcept> traits = new ArrayList<>();
     private List<KimConcept> roles = new ArrayList<>();
-    //    private boolean template;
     private boolean negated;
     private String urn;
     private List<KimConcept> operands = new ArrayList<>();
@@ -43,18 +40,7 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private KimConcept adjacent;
     private String codeName;
     private KimConcept temporalInherent;
-//    private SemanticRole distributedInherent;
-//    private Version version;
     private boolean collective;
-
-//    @Override
-//    public SemanticRole getDistributedInherent() {
-//        return distributedInherent;
-//    }
-
-//    public void setDistributedInherent(SemanticRole distributedInherent) {
-//        this.distributedInherent = distributedInherent;
-//    }
 
     public Set<SemanticType> getArgumentType() {
         return argumentType;
@@ -76,7 +62,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.type = EnumSet.copyOf(other.type);
         this.observable = other.observable;
         this.parent = other.parent;
-//        this.context = other.context;
         this.inherent = other.inherent;
         this.goal = other.goal;
         this.causant = other.causant;
@@ -100,7 +85,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         this.adjacent = other.adjacent;
         this.codeName = other.codeName;
         this.temporalInherent = other.temporalInherent;
-//        this.distributedInherent = other.distributedInherent;
         this.argumentType = EnumSet.copyOf(other.argumentType);
     }
 
@@ -184,11 +168,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         return this.roles;
     }
 
-//    @Override
-//    public boolean isTemplate() {
-//        return this.template;
-//    }
-
     @Override
     public boolean isNegated() {
         return this.negated;
@@ -239,11 +218,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         return this.semanticRole;
     }
 
-//    @Override
-//    public boolean isTraitObservable() {
-//        return this.traitObservable;
-//    }
-
     @Override
     public KimConcept getTemporalInherent() {
         return this.temporalInherent;
@@ -252,10 +226,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     public void setSemanticRole(SemanticRole semanticRole) {
         this.semanticRole = semanticRole;
     }
-
-//    public void setTraitObservable(boolean traitObservable) {
-//        this.traitObservable = traitObservable;
-//    }
 
     public void setName(String name) {
         this.name = name;
@@ -268,10 +238,6 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     public void setObservable(KimConcept observable) {
         this.observable = observable;
     }
-
-//    public void setContext(KimConcept context) {
-//        this.context = context;
-//    }
 
     public void setInherent(KimConcept inherent) {
         this.inherent = inherent;

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import org.apache.groovy.util.Maps;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -36,9 +37,11 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
+import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
+import java.net.URI;
 import java.util.*;
 
 public class ResolverService extends BaseService implements Resolver {
@@ -63,6 +66,7 @@ public class ResolverService extends BaseService implements Resolver {
     Parameters<String> defines = Parameters.createSynchronized();
     private String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
+    private URI embeddedBrokerURI;
 
     public ResolverService(ServiceScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
@@ -128,6 +132,21 @@ public class ResolverService extends BaseService implements Resolver {
                 return hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature);
             }
 
+            @Override
+            public URI getBrokerURI() {
+                if (embeddedBrokerURI != null) {
+                    return embeddedBrokerURI;
+                }
+                return super.getBrokerURI();
+            }
+
+            @Override
+            public Set<Message.Queue> getAvailableMessagingQueues() {
+                if (Utils.URLs.isLocalHost(getUrl())) {
+                    return EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings);
+                }
+                return super.getAvailableMessagingQueues();
+            }
         };
     }
 
@@ -708,6 +727,8 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public void initializeService() {
 
+        Logging.INSTANCE.setSystemIdentifier("Resolver service: ");
+
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
 
@@ -730,6 +751,17 @@ public class ResolverService extends BaseService implements Resolver {
         for (String pack : extensionPackages) {
             ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
                     ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
+        }
+
+        /**
+         * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+         * is no configured broker.
+         */
+        if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
+            this.embeddedBroker = new EmbeddedBroker();
+            if (this.embeddedBroker.isOnline()) {
+                this.embeddedBrokerURI = this.embeddedBroker.getURI();
+            }
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,

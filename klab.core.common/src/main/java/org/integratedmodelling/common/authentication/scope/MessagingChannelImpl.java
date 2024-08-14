@@ -153,7 +153,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
      * @param <T>
      * @return
      */
-    protected <P, T> ContextScope.Task<P, T> newMessageTrackingTask(Set<Message.MessageType> matchTypes, T value,
+    protected <P, T> ContextScope.Task<P, T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
+                                                                    T value,
                                                                     Function<T, P> payloadConverter) {
         var ret = new EventResultSupplier<>(matchTypes, value, payloadConverter);
         eventResultSupplierSet.add(ret);
@@ -179,12 +180,15 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return super.send(args);
     }
 
-    protected Channel getChannel(Message.Queue queue) {
+    protected Channel getOrCreateChannel(Message.Queue queue) {
 
-        if (!queueNames.containsKey(queue)) {
+//        if (!queueNames.containsKey(queue)) {
 
         /*
-        in this implementation it looks like we can do with just one channel
+        in this implementation it looks like we can do with just one channel - so one connection factory, one
+        connection, one channel. Maybe the whole API could be simpler. Maybe channels are synchronizing? In all cases
+        we now can have a queue name w/o a channel so we would need to keep a hash of channels and dispose
+        properly.
          */
             if (this.channel_ == null) {
                 var holder = findParent((p) -> p.channel_ != null);
@@ -199,9 +203,13 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             }
 
             return this.channel_;
-        }
+//        }
 
-        return null;
+//        return null;
+    }
+
+    protected Channel getChannel(Message.Queue queue) {
+        return getOrCreateChannel(queue);
     }
 
     /*
@@ -283,7 +291,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             for (var queue : queuesHeader) {
                 try {
                     String queueId = scopeId + "." + queue.name().toLowerCase();
-                    getChannel(queue).queueDeclare(queueId, true, false, false, Map.of());
+                    getOrCreateChannel(queue).queueDeclare(queueId, true, false, false, Map.of());
                     this.queueNames.put(queue, queueId);
                     ret.add(queue);
                 } catch (Throwable e) {
@@ -366,6 +374,19 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
             }
         }
     }
+
+    /**
+     * Only called in advance of setupMessaging() when setup happens in {@link #getChannel(Message.Queue)} and
+     * can only be called after scope creation, which is in local services when the user must receive
+     * notifications. TODO check if we can make this simpler.
+     *
+     * @param queue
+     * @param s
+     */
+    public void presetMessagingQueue(Message.Queue queue, String s) {
+        queueNames.put(queue, s + "." + queue.name().toLowerCase());
+    }
+
 
     public boolean isSender() {
         return sender;

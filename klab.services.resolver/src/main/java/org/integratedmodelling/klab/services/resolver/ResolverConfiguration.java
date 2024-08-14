@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +14,6 @@ import java.util.UUID;
  * FIXME copied from ReasonerConfiguration
  */
 public class ResolverConfiguration {
-
     public static class ProjectConfiguration {
 
         private String project;
@@ -139,7 +139,7 @@ public class ResolverConfiguration {
     private String url = null;
     //    private List<ProjectConfiguration> worldview = new ArrayList<>();
     private List<ProjectConfiguration> authorities = new ArrayList<>();
-
+    private URI brokerURI;
     private String serviceId;
 
     public int getRefreshIntervalMinutes() {
@@ -194,6 +194,14 @@ public class ResolverConfiguration {
 
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public URI getBrokerURI() {
+        return brokerURI;
+    }
+
+    public void setBrokerURI(URI brokerURI) {
+        this.brokerURI = brokerURI;
     }
 
     // this generates a first-boot config with only the im project from the connected resources

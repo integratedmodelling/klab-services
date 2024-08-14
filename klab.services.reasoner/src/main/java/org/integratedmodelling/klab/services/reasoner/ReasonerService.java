@@ -36,6 +36,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.indexing.Indexer;
@@ -51,6 +52,7 @@ import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
+import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -58,6 +60,8 @@ import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.Serial;
+import java.net.URI;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -159,6 +163,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private String hardwareSignature = Utils.Names.getHardwareId();
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
+    private URI embeddedBrokerURI;
 
     public boolean derived(Semantics c) {
         return internalConceptPattern.matcher(c.getName()).matches();
@@ -273,6 +278,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public void initializeService() {
 
+        Logging.INSTANCE.setSystemIdentifier("Resources service: ");
+
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()));
 
@@ -281,6 +288,17 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
 
         this.observationReasoner = new ObservationReasoner(this);
+
+        /**
+         * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+         * is no configured broker.
+         */
+        if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
+            this.embeddedBroker = new EmbeddedBroker();
+            if (this.embeddedBroker.isOnline()) {
+                this.embeddedBrokerURI = this.embeddedBroker.getURI();
+            }
+        }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities(serviceScope()));
@@ -1122,11 +1140,27 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 return hardwareSignature == null ? null : ("REASONER_" + hardwareSignature);
             }
 
-        };
+            @Override
+            public URL getUrl() {
+                return ReasonerService.this.getUrl();
+            }
 
-        if (scope instanceof UserScope userScope) {
-            setupMessaging(userScope, ret);
-        }
+            @Override
+            public URI getBrokerURI() {
+                if (embeddedBrokerURI != null) {
+                    return embeddedBrokerURI;
+                }
+                return super.getBrokerURI();
+            }
+
+            @Override
+            public Set<Message.Queue> getAvailableMessagingQueues() {
+                if (Utils.URLs.isLocalHost(ReasonerService.this.getUrl())) {
+                    return EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings);
+                }
+                return super.getAvailableMessagingQueues();
+            }
+        };
 
         return ret;
     }
@@ -1308,7 +1342,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.owl.flushReasoner();
         for (var strategyDocument : worldview.getObservationStrategies()) {
             for (var strategy : strategyDocument.getStatements()) {
-                defineStrategy(strategy);
+                defineStrategy(strategy, scope);
             }
         }
 
@@ -1323,7 +1357,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return true;
     }
 
-    private ObservationStrategy defineStrategy(KimObservationStrategy strategy) {
+    private ObservationStrategy defineStrategy(KimObservationStrategy strategy, Scope scope) {
         return null;
     }
 
@@ -1709,8 +1743,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 if (concept.getUpperConceptDefined() != null) {
                     parent = this.owl.getConcept(concept.getUpperConceptDefined());
                     if (parent == null) {
-                        monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown",
-                                concept);
+                        monitor.send(Notification.error("Core concept " + concept.getUpperConceptDefined() + " is unknown",
+                                concept));
                     } else {
                         parent.getType().addAll(concept.getType());
                     }
@@ -1735,8 +1769,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     if (concept.getUpperConceptDefined() != null) {
                         upperConceptDefined = parent = this.owl.getConcept(concept.getUpperConceptDefined());
                         if (parent == null) {
-                            monitor.error("Core concept " + concept.getUpperConceptDefined() + " is " +
-                                    "unknown", concept);
+                            monitor.send(Notification.error("Core concept " + concept.getUpperConceptDefined() + " is " +
+                                    "unknown", concept));
                         }
                     } else {
                         parent = this.owl.getCoreOntology().getCoreType(concept.getType());
@@ -1768,7 +1802,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             return ret;
 
         } catch (Throwable e) {
-            monitor.error(e, concept);
+            monitor.send(Notification.error(e, concept));
         }
         return null;
     }
@@ -1817,7 +1851,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             //            for (KimConcept pdecl : parent.getConcepts()) {
             Concept declared = declare(concept.getDeclaredParent(), ontology, monitor);
             if (declared == null) {
-                monitor.error("parent declaration " + concept.getDeclaredParent().getUrn() + " does not identify " + "known " + "concepts", concept.getDeclaredParent());
+                monitor.send(Notification.error("parent declaration " + concept.getDeclaredParent().getUrn() + " does not " +
+                        "identify " + "known " + "concepts", concept.getDeclaredParent()));
                 return null;
             } else {
                 ontology.add(Axiom.SubClass(declared.getNamespace() + ":" + declared.getName(), mainId));
@@ -1868,15 +1903,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 }
                 // kimObject.getChildren().add(chobj);
             } catch (Throwable e) {
-                monitor.error(e, child);
+                monitor.send(Notification.error(e, child));
             }
         }
 
         for (KimConcept inherited : concept.getTraitsInherited()) {
             Concept trait = declare(inherited, ontology, monitor);
             if (trait == null) {
-                monitor.error("inherited " + inherited.getName() + " does not identify known concepts",
-                        inherited);
+                monitor.send(Notification.error("inherited " + inherited.getName() + " does not identify known concepts",
+                        inherited));
                 // return null;
             } else {
                 this.owl.addTrait(main, trait, ontology);
@@ -1887,8 +1922,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept affected : concept.getQualitiesAffected()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.error("affected " + affected.getName() + " does not identify known concepts",
-                        affected);
+                monitor.send(Notification.error("affected " + affected.getName() + " does not identify known concepts",
+                        affected));
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality
                         , ontology);
@@ -1898,8 +1933,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept required : concept.getRequiredIdentities()) {
             Concept quality = declare(required, ontology, monitor);
             if (quality == null) {
-                monitor.error("required " + required.getName() + " does not identify known concepts",
-                        required);
+                monitor.send(Notification.error("required " + required.getName() + " does not identify known concepts",
+                        required));
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality,
                         ontology);
@@ -1909,8 +1944,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept affected : concept.getObservablesCreated()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.error("created " + affected.getName() + " does not identify known concepts",
-                        affected);
+                monitor.send(Notification.error("created " + affected.getName() + " does not identify known concepts",
+                        affected));
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(NS.CREATES_PROPERTY), quality, ontology);
             }
@@ -2215,8 +2250,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 // consistency check
                 if (!satisfiable(ret)) {
                     ret.getType().add(SemanticType.NOTHING);
-                    monitor.error("the definition of this concept has logical errors and is inconsistent",
-                            concept);
+                    monitor.send(Notification.error("the definition of this concept has logical errors and is inconsistent",
+                            concept));
                 }
 
                 /**
@@ -2226,7 +2261,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
 
         } catch (Throwable e) {
-            monitor.error(e, concept);
+            monitor.send(Notification.error(e, concept));
         }
 
         if (concept.isNegated()) {
@@ -2614,7 +2649,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 //                    ret = ret.withDereifiedAttribute(op.getPod().get(String.class));
                 //                }
                 case REFERENCE_NAMED -> {
-                    ret = ret.withReferenceName((String)op.getPod());
+                    ret = ret.withReferenceName((String) op.getPod());
                 }
                 case WITH_INLINE_VALUE -> {
                     ret = ret.withInlineValue(op.getPod());
@@ -2629,7 +2664,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     ret = ret.withResolutionException(op.getResolutionException());
                 }
                 case AS_GENERIC -> {
-                    ret = ret.generic((Boolean)op.getPod());
+                    ret = ret.generic((Boolean) op.getPod());
                 }
                 case WITH_ANNOTATION -> {
                     for (Annotation annotation : op.getAnnotations()) {

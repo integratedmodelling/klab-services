@@ -25,7 +25,6 @@ public class KimAssetImpl implements KimAsset {
         this.deprecation = other.deprecation;
     }
 
-
     @Override
     public List<Annotation> getAnnotations() {
         return this.annotations;

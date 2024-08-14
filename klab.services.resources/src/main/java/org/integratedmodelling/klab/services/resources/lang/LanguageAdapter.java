@@ -37,12 +37,15 @@ public enum LanguageAdapter {
         return true;
     }
 
-    public KimObservable adaptObservable(ObservableSyntax observableSyntax) {
+    public KimObservable adaptObservable(ObservableSyntax observableSyntax, String namespace) {
 
         KimObservableImpl ret = new KimObservableImpl();
 
+        ret.setLength(observableSyntax.getCodeLength());
+        ret.setOffsetInDocument(observableSyntax.getCodeOffset());
         ret.setUrn(observableSyntax.encode());
-        ret.setSemantics(adaptSemantics(observableSyntax.getSemantics()));
+        ret.setNamespace(namespace);
+        ret.setSemantics(adaptSemantics(observableSyntax.getSemantics(), namespace));
         ret.setCodeName(ret.getSemantics().getType().contains(SemanticType.NOTHING)
                         ? "invalid_observable"
                         : observableSyntax.codeName());
@@ -54,14 +57,12 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    public KimConcept adaptSemantics(SemanticSyntax semantics) {
+    public KimConcept adaptSemantics(SemanticSyntax semantics, String namespace) {
 
         KimConceptImpl ret = new KimConceptImpl();
 
-        if (semantics.getType() == null) {
-            System.out.println("dio porco should never happen");
-        }
-
+        ret.setLength(semantics.getCodeLength());
+        ret.setOffsetInDocument(semantics.getCodeOffset());
         ret.setType(adaptSemanticType(semantics.getType()));
         ret.setNegated(semantics.isNegated());
         ret.setCollective(semantics.isCollective());
@@ -92,34 +93,34 @@ public enum LanguageAdapter {
             switch (restriction.getFirst()) {
                 case OF -> {
                     // TODO
-                    ret.setInherent(adaptSemantics(restriction.getSecond().get(0)));
+                    ret.setInherent(adaptSemantics(restriction.getSecond().get(0), namespace));
                     //                    if (restriction.getFirst() == SemanticSyntax.BinaryOperator
                     //                    .OF_EACH) {
                     //                        ret.setDistributedInherent(SemanticRole.INHERENT);
                     //                    }
                 }
                 case FOR -> {
-                    ret.setGoal(adaptSemantics(restriction.getSecond().get(0)));
+                    ret.setGoal(adaptSemantics(restriction.getSecond().get(0), namespace));
                 }
                 case WITH -> {
-                    ret.setCompresent(adaptSemantics(restriction.getSecond().get(0)));
+                    ret.setCompresent(adaptSemantics(restriction.getSecond().get(0), namespace));
                 }
                 case ADJACENT -> {
-                    ret.setAdjacent(adaptSemantics(restriction.getSecond().get(0)));
+                    ret.setAdjacent(adaptSemantics(restriction.getSecond().get(0), namespace));
                 }
                 case OR -> {
                 }
                 case AND -> {
                 }
                 case CAUSING -> {
-                    ret.setCaused(adaptSemantics(restriction.getSecond().get(0)));
+                    ret.setCaused(adaptSemantics(restriction.getSecond().get(0), namespace));
                 }
                 case CAUSED_BY -> {
-                    ret.setCausant(adaptSemantics(restriction.getSecond().get(0)));
+                    ret.setCausant(adaptSemantics(restriction.getSecond().get(0), namespace));
                 }
                 case LINKING -> {
-                    ret.setRelationshipSource(adaptSemantics(restriction.getSecond().get(0)));
-                    ret.setRelationshipTarget(adaptSemantics(restriction.getSecond().get(1)));
+                    ret.setRelationshipSource(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setRelationshipTarget(adaptSemantics(restriction.getSecond().get(1), namespace));
                 }
                 case CONTAINING -> {
                     // TODO
@@ -130,7 +131,7 @@ public enum LanguageAdapter {
                     throw new IllegalStateException("no syntax for containment");
                 }
                 case DURING -> { // TODO missing DURING_EACH - but is it necessary?
-                    ret.setCooccurrent(adaptSemantics(restriction.getSecond().get(0)));
+                    ret.setCooccurrent(adaptSemantics(restriction.getSecond().get(0), namespace));
                 }
             }
         }
@@ -177,7 +178,7 @@ public enum LanguageAdapter {
         ret.setName(define.getName());
         ret.setLength(define.getCodeLength());
         ret.setNamespace(namespace.getUrn());
-        ret.setValue(adaptValue(define.getValue()));
+        ret.setValue(adaptValue(define.getValue(), namespace.getUrn()));
         return ret;
     }
 
@@ -188,7 +189,7 @@ public enum LanguageAdapter {
      * @param value
      * @return
      */
-    private Object adaptValue(Object value) {
+    private Object adaptValue(Object value, String namespace) {
 
         if (value == null) {
             return null;
@@ -206,35 +207,35 @@ public enum LanguageAdapter {
                 ret.setValue(parsedLiteral.getPod() instanceof Number number ? number : 0);
                 return ret;
             }
-            object = adaptValue(parsedLiteral.getPod());
+            object = adaptValue(parsedLiteral.getPod(), namespace);
             if (object == null) {
                 return null;
             }
         } /*else if (object instanceof Literal literal) {
             object = literal.get(Object.class);
         } */else if (object instanceof ObservableSyntax observableSyntax) {
-            object = adaptObservable(observableSyntax);
+            object = adaptObservable(observableSyntax, namespace);
         } else if (object instanceof SemanticSyntax semanticSyntax) {
-            object = adaptSemantics(semanticSyntax);
+            object = adaptSemantics(semanticSyntax, namespace);
         }
 
         return switch (object) {
             case Map<?, ?> map -> {
                 var ret = new LinkedHashMap<Object, Object>();
                 for (Object key : map.keySet()) {
-                    ret.put(key, adaptValue(map.get(key)));
+                    ret.put(key, adaptValue(map.get(key), namespace));
                 }
                 yield ret;
             }
             case Collection<?> collection -> {
                 var ret = new ArrayList<>();
                 for (Object item : collection) {
-                    ret.add(adaptValue(item));
+                    ret.add(adaptValue(item, namespace));
                 }
                 yield ret;
             }
             case ObservableSyntax observableSyntax -> {
-                yield adaptObservable(observableSyntax);
+                yield adaptObservable(observableSyntax, namespace);
             }
             default -> {
                 yield object;
@@ -265,14 +266,14 @@ public enum LanguageAdapter {
 
         boolean inactive = false;
         for (var observable : model.getObservables()) {
-            var obs = adaptObservable(observable);
+            var obs = adaptObservable(observable, namespace.getUrn());
             ret.getObservables().add(obs);
             if (obs.getSemantics().is(SemanticType.NOTHING)) {
                 inactive = true;
             }
         }
         for (var dependency : model.getDependencies()) {
-            var obs = adaptObservable(dependency);
+            var obs = adaptObservable(dependency, namespace.getUrn());
             ret.getDependencies().add(obs);
             if (obs.getSemantics().is(SemanticType.NOTHING)) {
                 inactive = true;
@@ -479,7 +480,7 @@ public enum LanguageAdapter {
 
             }
             if (operation.getObservable() != null) {
-                o.setObservable(adaptObservable(operation.getObservable()));
+                o.setObservable(adaptObservable(operation.getObservable(), strategy.getName()));
             }
             if (!operation.getFunctions().isEmpty()) {
 
@@ -492,53 +493,9 @@ public enum LanguageAdapter {
 
         for (var let : strategy.getMacroVariables().keySet()) {
             var f = new KimObservationStrategyImpl.FilterImpl();
-            // TODO
-//            ret.getMacroVariables().put(adaptLiteral(let), f);
         }
         return ret;
     }
-//
-//    private Object adaptLiteral(Literal literal) {
-//        if (literal.getBoolean() != null) {
-//            return literal.getBoolean();
-//        } else if (literal.getId() != null) {
-//            return Identifier.create(literal.getId());
-//        } else if (literal.getList() != null) {
-//            List<Object> ret = new ArrayList<>();
-//            for (var o : literal.getList().getContents()) {
-//                ret.add(adaptLiteral(o));
-//            }
-//        } else if (literal.getMap() != null) {
-//
-//            for (var entry : literal.getMap().getEntries()) {
-//            }
-//
-//        } else if (literal.getNumber() != null) {
-//
-//        } else if (literal.getObservable() != null) {
-//
-//        } else if (literal.getQuantity() != null) {
-//
-//        } else if (literal.getRangeMax() != null) {
-//
-//        } else if (literal.getString() != null) {
-//
-//        }
-//        return null;
-//    }
-
-//    private KimLiteral adaptLiteral(ParsedLiteral let) {
-//        if (let.getCurrency() != null) {
-//            // TODO return a KimQuantity
-//        } else if (let.getUnit() != null) {
-//            // TODO return a KimQuantity
-//        } else if (let.getPod() instanceof Map<?, ?> map) {
-//
-//        } else if (let.getPod() instanceof Collection<?> collection) {
-//
-//        }
-//        return let.getPod();
-//    }
 
     public KimOntology adaptOntology(OntologySyntax ontology, String projectName,
                                      Collection<Notification> notifications) {
@@ -559,7 +516,7 @@ public enum LanguageAdapter {
                         ontology.getImportedCoreOntologies().get(owlImport)));
             }
         } else {
-            ret.setDomain(adaptSemantics(ontology.getDomain()));
+            ret.setDomain(adaptSemantics(ontology.getDomain(), ontology.getName()));
         }
 
         for (var definition : ontology.getConceptDeclarations()) {
@@ -605,7 +562,7 @@ public enum LanguageAdapter {
             ret.setUpperConceptDefined(definition.getDeclaredParent().encode());
         } else {
             ret.setDeclaredParent(definition.getDeclaredParent() == null ? null :
-                                  adaptSemantics(definition.getDeclaredParent()));
+                                  adaptSemantics(definition.getDeclaredParent(), namespace));
             if (ret.getDeclaredParent() != null && definition.isGenericQuality()) {
                 ret.getType().clear();
                 ret.getType().addAll(ret.getDeclaredParent().getType());

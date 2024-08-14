@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.scopes;
 
+import com.rabbitmq.client.Channel;
 import io.reacted.core.messages.reactors.ReActorStop;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -10,8 +11,10 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.security.Role;
+import org.integratedmodelling.klab.services.base.BaseService;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,11 +49,17 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     protected Map<KlabService.Type, List<? extends KlabService>> serviceMap = new HashMap<>();
     protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
+    private boolean messagingChecked = false;
 
-    public ServiceUserScope(UserIdentity user) {
+    // these are users of this service, which we keep around individually so that we can enable messaging for
+    // local users
+    private KlabService service;
+
+    public ServiceUserScope(UserIdentity user, KlabService service) {
         super(user, true, false);
         this.user = user;
         this.data = Parameters.create();
+        this.service = service;
     }
 
     /**
@@ -175,11 +184,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         return new Utils.Casts<KlabService, T>().cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
     }
 
-    //    @Override
-    //    public Message send(Object... message) {
-    //        return post(null, message);
-    //    }
-
     @Override
     public boolean hasErrors() {
         // TODO Auto-generated method stub
@@ -274,4 +278,24 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         return user.toString();
     }
 
+    /**
+     * This implementation ensures that if we don't have channels set up but the service has an embedded
+     * broker (which means it's local and talking to local users) these get set up. Channel setup is only
+     * called once after the service has been initialized.
+     *
+     * @param queue
+     * @return
+     */
+    @Override
+    protected Channel getChannel(Message.Queue queue) {
+
+        if (!messagingChecked && service instanceof BaseService baseService && baseService.isInitialized() && baseService.getEmbeddedBroker() != null) {
+            setupMessaging(baseService.getEmbeddedBroker().getURI().toString(),
+                    service.capabilities(this).getType().name().toLowerCase() + "." + getUser().getUsername(),
+                    service.capabilities(this).getAvailableMessagingQueues());
+            messagingChecked = true;
+        }
+
+        return super.getChannel(queue);
+    }
 }

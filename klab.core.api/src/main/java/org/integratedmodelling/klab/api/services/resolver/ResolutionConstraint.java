@@ -28,6 +28,8 @@ import org.integratedmodelling.klab.api.scope.Scope;
  * be compiled in instead of resolving them;</li>
  * <li>communicating externally set concrete predicates to expand an abstract predicate in an observable
  * instead of observing the abstract predicate first. </li>
+ * <li>communicating interactively defined parameters to substitute defaults for the contextualizers in the
+ * dataflow. </li>
  * </ol><p>
  * Any resolution constraints are found in a {@link org.integratedmodelling.klab.api.scope.ContextScope},
  * returned by its {@link ContextScope#getResolutionConstraints()} method.
@@ -46,7 +48,8 @@ public interface ResolutionConstraint {
         ResolutionScope,
         ConcretePredicates,
         Whitelist,
-        Blacklist
+        Blacklist,
+        Parameters
     }
 
     Type getType();

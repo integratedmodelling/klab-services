@@ -63,6 +63,13 @@ public class EmbeddedBroker {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        if (online) {
+            Logging.INSTANCE.info("Embedded broker online as a " + (systemLauncher == null ? "slave" :
+                                                                  "native") + " instance");
+        } else {
+            Logging.INSTANCE.warn("Embedded broker failed to initialize");
+        }
     }
 
     private boolean startLocalBroker() {

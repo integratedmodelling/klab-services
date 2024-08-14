@@ -49,7 +49,7 @@ public class MessageImpl implements Message, Serializable {
     private Object payload;
     private long id = nextId.incrementAndGet();
     private long inResponseTo;
-    private Notification.Type notificationType;
+//    private Notification.Type notificationType;
     private long timestamp = System.currentTimeMillis();
     private ForwardingPolicy forwardingPolicy = ForwardingPolicy.DoNotForward;
     private Message.Queue queue;
@@ -211,13 +211,13 @@ public class MessageImpl implements Message, Serializable {
         return queue;
     }
 
-    public Notification.Type getNotificationType() {
-        return notificationType;
-    }
-
-    public void setNotificationType(Notification.Type notificationType) {
-        this.notificationType = notificationType;
-    }
+//    public Notification.Type getNotificationType() {
+//        return notificationType;
+//    }
+//
+//    public void setNotificationType(Notification.Type notificationType) {
+//        this.notificationType = notificationType;
+//    }
 
     @Override
     public ForwardingPolicy getForwardingPolicy() {

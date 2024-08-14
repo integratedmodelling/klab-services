@@ -55,6 +55,7 @@ public abstract class BaseService implements KlabService {
     protected String localName = "Embedded";
     protected final ServiceStartupOptions startupOptions;
     private ScopeManager _scopeManager;
+    private boolean initialized;
 
     protected BaseService(ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
         this.scope = scope;
@@ -88,6 +89,9 @@ public abstract class BaseService implements KlabService {
         }
     }
 
+    public EmbeddedBroker getEmbeddedBroker() {
+        return embeddedBroker;
+    }
 
     /**
      * Set up the messaging queues according to configuration in case the user is local and privileged. TODO
@@ -287,5 +291,17 @@ public abstract class BaseService implements KlabService {
     public ExternalAuthenticationCredentials.CredentialInfo addCredentials(String host,
                                                                            ExternalAuthenticationCredentials credentials, Scope scope) {
         return Authentication.INSTANCE.addExternalCredentials(host, credentials, scope);
+    }
+
+    /**
+     * Called by ServiceInstance after initializeService was successful
+     * @param b
+     */
+    public void setInitialized(boolean b) {
+        this.initialized = true;
+    }
+
+    public boolean isInitialized() {
+        return this.initialized;
     }
 }

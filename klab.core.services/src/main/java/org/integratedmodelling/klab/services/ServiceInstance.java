@@ -329,6 +329,7 @@ public abstract class ServiceInstance<T extends BaseService> {
         if (ok && !initialized.get()) {
             setBusy(true);
             klabService().initializeService();
+            klabService().setInitialized(true);
             initialized.set(true);
             serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                     klabService().capabilities(serviceScope));

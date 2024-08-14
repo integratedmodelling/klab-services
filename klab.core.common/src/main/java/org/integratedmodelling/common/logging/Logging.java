@@ -39,7 +39,7 @@ public enum Logging {
     INSTANCE;
 
     private Logger logger;
-
+    private String systemIdentifier = "";
     private Identity rootIdentity;
 
     Consumer<String> infoWriter = (message) -> System.out.println("INFO: " + message);
@@ -63,7 +63,7 @@ public enum Logging {
 
     public void info(Object... o) {
 
-        Notification payload = Utils.Notifications.getMessage(o);
+        Notification payload = Notification.create(o);
 
         if (payload.getMode() == Notification.Mode.Silent) {
             return;
@@ -71,10 +71,10 @@ public enum Logging {
 
         if (Configuration.INSTANCE.getLoggingLevel().intValue() >= Level.INFO.intValue()) {
             if (infoWriter != null) {
-                infoWriter.accept(payload.getMessage());
+                infoWriter.accept(systemIdentifier + payload.getMessage());
             }
             if (logger != null) {
-                logger.info(payload.getMessage());
+                logger.info(systemIdentifier + payload.getMessage());
             }
         }
 
@@ -82,7 +82,7 @@ public enum Logging {
 
     public void warn(Object... o) {
 
-        Notification payload = Utils.Notifications.getMessage(o);
+        Notification payload = Notification.create(o);
 
         if (payload.getMode() == Notification.Mode.Silent) {
             return;
@@ -90,17 +90,17 @@ public enum Logging {
 
         if (Configuration.INSTANCE.getLoggingLevel().intValue() >= Level.WARNING.intValue()) {
             if (warningWriter != null) {
-                warningWriter.accept(payload.getMessage());
+                warningWriter.accept(systemIdentifier + payload.getMessage());
             }
             if (logger != null) {
-                logger.warn(payload.getMessage());
+                logger.warn(systemIdentifier + payload.getMessage());
             }
         }
     }
 
     public void error(Object... o) {
 
-        Notification payload = Utils.Notifications.getMessage(o);
+        Notification payload = Notification.create(o);
 
         if (payload.getMode() == Notification.Mode.Silent) {
             return;
@@ -108,17 +108,17 @@ public enum Logging {
 
         if (Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.SEVERE.intValue()) {
             if (errorWriter != null) {
-                errorWriter.accept(payload.getMessage());
+                errorWriter.accept(systemIdentifier + payload.getMessage());
             }
             if (logger != null) {
-                logger.error(payload.getMessage());
+                logger.error(systemIdentifier + payload.getMessage());
             }
         }
     }
 
     public void debug(Object... o) {
 
-        Notification payload = Utils.Notifications.getMessage(o);
+        Notification payload = Notification.create(o);
 
         if (payload.getMode() == Notification.Mode.Silent) {
             return;
@@ -126,10 +126,10 @@ public enum Logging {
 
         if (Configuration.INSTANCE.getNotificationLevel().intValue() <= Level.FINE.intValue()) {
             if (debugWriter != null) {
-                debugWriter.accept(payload.getMessage());
+                debugWriter.accept(systemIdentifier + payload.getMessage());
             }
             if (logger != null) {
-                logger.debug(payload.getMessage());
+                logger.debug(systemIdentifier + payload.getMessage());
             }
         }
     }
@@ -168,6 +168,10 @@ public enum Logging {
 
     public void setDebugWriter(Consumer<String> debugWriter) {
         this.debugWriter = debugWriter;
+    }
+
+    public void setSystemIdentifier(String systemIdentifier) {
+        this.systemIdentifier = systemIdentifier;
     }
 
 }

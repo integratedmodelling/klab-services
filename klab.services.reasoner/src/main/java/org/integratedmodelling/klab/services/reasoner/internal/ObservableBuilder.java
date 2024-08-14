@@ -30,17 +30,19 @@ import org.integratedmodelling.klab.services.reasoner.owl.QualifiedName;
 
 import java.util.*;
 
+/**
+ * The working, server-side builder for observables. Clients will send a parameterized one that will call
+ * methods on an instance of this at server side.
+ */
 public class ObservableBuilder implements Observable.Builder {
 
     private Scope scope;
-
     private Ontology ontology;
 
     private Concept main;
     private String mainId;
     private Set<SemanticType> type = EnumSet.noneOf(SemanticType.class);
     private Concept inherent;
-    //    private Concept context;
     private Concept compresent;
     private Concept causant;
     private Concept caused;
@@ -52,47 +54,41 @@ public class ObservableBuilder implements Observable.Builder {
     private Concept relationshipTarget;
     private boolean optional;
     private String name;
-    //    private Concept targetPredicate;
     private Concept temporalInherent;
     private boolean mustContextualize = false;
     private String statedName;
     private String url;
-
     private List<Concept> traits = new ArrayList<>();
     private List<Concept> roles = new ArrayList<>();
     private List<Concept> removed = new ArrayList<>();
     private List<Pair<ValueOperator, Object>> valueOperators = new ArrayList<>();
-    private List<Notification> notifications = new ArrayList<>();
+    //    private List<Notification> notifications = new ArrayList<>();
     private Unit unit;
     private Currency currency;
     private List<Annotation> annotations = new ArrayList<>();
-    //    private String dereifiedAttribute;
     private boolean isTrivial = true;
-    //    private boolean distributedInherency = false;
     private KimConcept declaration;
     private boolean axiomsAdded = false;
     private String referenceName = null;
-    String unitStatement;
-    String currencyStatement;
-    Object inlineValue;
-    NumericRange range;
-    boolean generic;
+    private String unitStatement;
+    private String currencyStatement;
+    private Object inlineValue;
+    private NumericRange range;
+    private boolean generic;
     private boolean collective;
 
     private Object defaultValue = null;
     private Set<Observable.ResolutionDirective> resolutionDirectives = EnumSet
             .noneOf(Observable.ResolutionDirective.class);
-    private ReasonerService reasoner;
+    private final ReasonerService reasoner;
     // this gets set to true if a finished declaration is set using
     // withDeclaration() and the
     // builder is merely building it.
     private boolean declarationIsComplete = false;
 
-    // marks the observable to build as dereifying for a resolution of inherents
+    // marks the observable to build as dereifying for a resolution of inherents TODO check if this is
+    //  still relevant
     private boolean dereified = false;
-
-    // private boolean global;
-
     private boolean hasUnaryOp;
 
     private Observable incarnatedAbstractObservable;
@@ -134,12 +130,12 @@ public class ObservableBuilder implements Observable.Builder {
      * @param observable
      */
     public ObservableBuilder(Observable observable, Scope scope, ReasonerService reasoner) {
+
         this.reasoner = reasoner;
         this.main = reasoner.rawObservable(observable.getSemantics());
         this.scope = scope;
         this.type = this.main.getType();
         this.ontology = reasoner.owl().getOntology(observable.getSemantics().getNamespace());
-        //        this.context = reasoner.directContext(observable.getSemantics());
         this.adjacent = reasoner.directAdjacent(observable.getSemantics());
         this.inherent = reasoner.directInherent(observable.getSemantics());
         this.causant = reasoner.directCausant(observable.getSemantics());
@@ -148,12 +144,7 @@ public class ObservableBuilder implements Observable.Builder {
         this.goal = reasoner.directGoal(observable.getSemantics());
         this.compresent = reasoner.directCompresent(observable.getSemantics());
         this.declaration = getDeclaration(observable.getSemantics());
-        // this.mustContextualize = observable.isMustContextualizeAtResolution();
-        // this.temporalInherent = observable.temporalInherent();
         this.annotations.addAll(observable.getAnnotations());
-        // this.incarnatedAbstractObservable =
-        // observable.getIncarnatedAbstractObservable();
-        // this.deferredTarget = observable.getDeferredTarget();
         this.defaultValue = observable.getDefaultValue();
         this.resolutionDirectives.addAll(observable.getResolutionDirectives());
 
@@ -288,7 +279,8 @@ public class ObservableBuilder implements Observable.Builder {
     @Override
     public Observable.Builder withRole(Concept concept) {
         if (!concept.is(SemanticType.ROLE)) {
-            notifications.add(Notification.of("cannot use concept " + concept + " as a role", Level.Error));
+            scope.send(Notification.error("cannot use concept " + concept + " as a role",
+                    getDeclaration(concept)));
         }
         if (!declarationIsComplete) {
             this.declaration.getRoles().add(getDeclaration(concept));
@@ -424,7 +416,7 @@ public class ObservableBuilder implements Observable.Builder {
                 }
             } catch (KlabValidationException e) {
                 // thrown by the makeXXX functions in case of incompatibility
-                scope.error(e.getMessage(), declaration);
+                scope.send(Notification.error(e.getMessage(), declaration));
             }
         }
 
@@ -756,8 +748,8 @@ public class ObservableBuilder implements Observable.Builder {
     public Observable.Builder withTrait(Concept... concepts) {
         for (Concept concept : concepts) {
             if (!concept.is(SemanticType.TRAIT)) {
-                notifications.add(Notification.of("cannot use concept " + concept + " as a trait",
-                        Level.Error));
+                scope.send(Notification.error("cannot use concept " + concept + " as a trait",
+                        declaration));
             } else {
                 traits.add(concept);
                 if (!declarationIsComplete) {
@@ -791,9 +783,9 @@ public class ObservableBuilder implements Observable.Builder {
                     }
                 }
                 if (ontology == null) {
-                    notifications.add(Notification.of(
+                    scope.send(Notification.error(
                             "cannot create a new concept from an ID if the ontology is not specified",
-                            Level.Error));
+                            declaration));
                 }
             }
         }
@@ -809,16 +801,16 @@ public class ObservableBuilder implements Observable.Builder {
             impl.finalizeDefinition();
         }
 
-        if (notifications.size() > 0) {
-
-            // build anyway but leave errors for notification
-
-            String message = "";
-            for (Notification error : notifications) {
-                message += (message.isEmpty() ? "" : "\n") + error.getMessage();
-            }
-            scope.error(message, declaration);
-        }
+        //        if (scope.hasErrors()) {
+        //
+        //            // build anyway but leave errors for notification
+        //
+        //            String message = "";
+        //            for (Notification error : notifications) {
+        //                message += (message.isEmpty() ? "" : "\n") + error.getMessage();
+        //            }
+        //            scope.error(message, declaration);
+        //        }
 
         if (!resolveMain()) {
             return null;
@@ -923,11 +915,11 @@ public class ObservableBuilder implements Observable.Builder {
                 Concept base = reasoner.baseParentTrait(t);
 
                 if (base == null) {
-                    scope.error("base declaration for trait " + t + " could not be found", declaration);
+                    scope.send(Notification.error("base declaration for trait " + t + " could not be found", declaration));
                 } else {
                     if (!baseTraits.add(base)) {
-                        scope.error("cannot add trait " + t.displayName() + " to concept " + main
-                                + " as it already adopts a trait of type " + base.displayName(), declaration);
+                        scope.send(Notification.error("cannot add trait " + t.displayName() + " to concept " + main
+                                + " as it already adopts a trait of type " + base.displayName(), declaration));
                     } else {
                         if (t.isAbstract()) {
                             abstractTraitBases.add(base);
@@ -972,9 +964,9 @@ public class ObservableBuilder implements Observable.Builder {
         if (inherent != null) {
             Concept other = reasoner.inherent(main);
             if (other != null && !reasoner.compatible(inherent, other)) {
-                scope.error("cannot set the inherent type of " + main.displayName() + " to " + inherent.displayName()
+                scope.send(Notification.error("cannot set the inherent type of " + main.displayName() + " to " + inherent.displayName()
                                 + " as it already has an incompatible inherency: " + other.displayName(),
-                        declaration);
+                        declaration));
                 var removeme = reasoner.compatible(inherent, other);
             }
             cleanId = getCleanId(inherent);
@@ -983,33 +975,13 @@ public class ObservableBuilder implements Observable.Builder {
             rId += "_of_" + inherent.getReferenceName();
         }
 
-        //        if (context != null) {
-        //            Concept other = reasoner.context(main);
-        //            // use the version of isCompatible that allows for observations that are
-        //            // compatible with
-        //            // the context's context if the context is an occurrent (e.g. Precipitation of
-        //            // Storm)
-        //            if (other != null && !reasoner.contextuallyCompatible(main, context, other)) {
-        //                scope.error("cannot set the context type of " + main.displayName() + " to " +
-        //                context
-        //                .displayName()
-        //                        + " as it already has an incompatible context: " + other.displayName(),
-        //                        declaration);
-        //            }
-        //            cleanId = getCleanId(context);
-        //            cId += "In" + cleanId;
-        //            cDs += "In" + cleanId;
-        //            rId += "_within_" + context.getReferenceName();
-        //            // uId += "In" + cleanId;
-        //        }
-
         if (compresent != null) {
             Concept other = reasoner.compresent(main);
             if (other != null && !reasoner.compatible(compresent, other)) {
-                scope.error(
+                scope.send(Notification.error(
                         "cannot set the compresent type of " + main.displayName() + " to " + compresent.displayName()
                                 + " as it already has an incompatible compresent type: " + other.displayName(),
-                        declaration);
+                        declaration));
             }
             cleanId = getCleanId(compresent);
             cId += "With" + cleanId;
@@ -1021,9 +993,9 @@ public class ObservableBuilder implements Observable.Builder {
             // TODO transform as necessary
             Concept other = reasoner.goal(main);
             if (other != null && !reasoner.compatible(goal, other)) {
-                scope.error("cannot set the goal type of " + main.displayName() + " to " + goal.displayName()
+                scope.send(Notification.error("cannot set the goal type of " + main.displayName() + " to " + goal.displayName()
                                 + " as it already has an incompatible goal type: " + other.displayName(),
-                        declaration);
+                        declaration));
             }
             cleanId = getCleanId(goal);
             cId += "For" + cleanId;
@@ -1034,10 +1006,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (caused != null) {
             Concept other = reasoner.caused(main);
             if (other != null && !reasoner.compatible(caused, other)) {
-                scope.error(
+                scope.send(Notification.error(
                         "cannot set the caused type of " + main.displayName() + " to " + caused.displayName()
                                 + " as it already has an incompatible caused type: " + other.displayName(),
-                        declaration);
+                        declaration));
             }
             cleanId = getCleanId(caused);
             cId += "To" + cleanId;
@@ -1048,10 +1020,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (causant != null) {
             Concept other = reasoner.causant(main);
             if (other != null && !reasoner.compatible(causant, other)) {
-                scope.error(
+                scope.send(Notification.error(
                         "cannot set the causant type of " + main.displayName() + " to " + causant.displayName()
                                 + " as it already has an incompatible causant type: " + other.displayName(),
-                        declaration);
+                        declaration));
             }
             cleanId = getCleanId(causant);
             cId += "From" + cleanId;
@@ -1062,10 +1034,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (adjacent != null) {
             Concept other = reasoner.adjacent(main);
             if (other != null && !reasoner.compatible(adjacent, other)) {
-                scope.error(
+                scope.send(Notification.error(
                         "cannot set the adjacent type of " + main.displayName() + " to " + adjacent.displayName()
                                 + " as it already has an incompatible adjacent type: " + other.displayName(),
-                        declaration);
+                        declaration));
             }
             cleanId = getCleanId(adjacent);
             cId += "AdjacentTo" + cleanId;
@@ -1076,10 +1048,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (cooccurrent != null) {
             Concept other = reasoner.cooccurrent(main);
             if (other != null && !reasoner.compatible(cooccurrent, other)) {
-                scope.error(
+                scope.send(Notification.error(
                         "cannot set the co-occurrent type of " + main.displayName() + " to " + cooccurrent.displayName()
                                 + " as it already has an incompatible co-occurrent type: " + other.displayName(),
-                        declaration);
+                        declaration));
             }
             cleanId = getCleanId(cooccurrent);
             cId += "During" + cleanId;
@@ -1090,17 +1062,17 @@ public class ObservableBuilder implements Observable.Builder {
         if (relationshipSource != null) {
             Concept other = reasoner.relationshipSource(main);
             if (other != null && !reasoner.compatible(relationshipSource, other)) {
-                scope.error("cannot set the relationship source type of " + main.displayName() + " to "
+                scope.send(Notification.error("cannot set the relationship source type of " + main.displayName() + " to "
                         + relationshipSource.displayName() + " as it already has an incompatible source " +
                         "type: "
-                        + other.displayName(), declaration);
+                        + other.displayName(), declaration));
             }
             Concept other2 = reasoner.relationshipTarget(main);
             if (other2 != null && !reasoner.compatible(relationshipTarget, other2)) {
-                scope.error("cannot set the relationship target type of " + main.displayName() + " to "
+                scope.send(Notification.error("cannot set the relationship target type of " + main.displayName() + " to "
                         + relationshipTarget.displayName() + " as it already has an incompatible target " +
                         "type: "
-                        + other2.displayName(), declaration);
+                        + other2.displayName(), declaration));
             }
             cleanId = getCleanId(relationshipSource);
             cId += "Linking" + cleanId;
@@ -1119,8 +1091,8 @@ public class ObservableBuilder implements Observable.Builder {
         if (roles != null && roles.size() > 0) {
             for (Concept role : roles) {
                 if (reasoner.roles(main).contains(role)) {
-                    scope.error("concept " + main.displayName() + " already has role " + role.displayName(),
-                            declaration);
+                    scope.send(Notification.error("concept " + main.displayName() + " already has role " + role.displayName(),
+                            declaration));
                 }
                 rids.add(role.displayName());
                 refIds.add("_as_" + role.getReferenceName());
@@ -1258,7 +1230,7 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (scope != null && !reasoner.satisfiable(ret)) {
-            scope.error("this declaration has logical errors and is inconsistent", declaration);
+            scope.send(Notification.error("this declaration has logical errors and is inconsistent", declaration));
         }
 
         return ret;
@@ -1307,7 +1279,7 @@ public class ObservableBuilder implements Observable.Builder {
 
     private Ontology getTargetOntology() {
         return reasoner.owl().getTargetOntology(ontology, main, traits, roles, inherent, /*context,
-        */ caused, causant,
+                 */ caused, causant,
                 compresent,
                 goal, cooccurrent, adjacent);
     }
@@ -1681,13 +1653,13 @@ public class ObservableBuilder implements Observable.Builder {
         }
         return Pair.of(ret, rem);
     }
-
-    public List<Notification> getNotifications() {
-        return notifications;
-    }
-
-    public void setNotifications(List<Notification> notifications) {
-        this.notifications = notifications;
-    }
+    //
+    //    public List<Notification> getNotifications() {
+    //        return notifications;
+    //    }
+    //
+    //    public void setNotifications(List<Notification> notifications) {
+    //        this.notifications = notifications;
+    //    }
 
 }

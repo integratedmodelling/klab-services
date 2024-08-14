@@ -184,18 +184,17 @@ public interface Observable extends Semantics, Resolvable {
          * detail types). Use after constructing from an observable using {@link Observable#builder(Scope)}.
          *
          * @return the built concept
-         * @throws KlabValidationException
          */
-        Observable build() throws KlabValidationException;
+        Observable build();
 
-        /**
-         * Return any exceptions accumulated through the building process before build() is called. If build()
-         * is called when getErrors() returns a non-empty collection, it will throw an exception collecting
-         * the messages from all exception in the list.
-         *
-         * @return any errors accumulated
-         */
-        Collection<Notification> getNotifications();
+//        /**
+//         * Return any exceptions accumulated through the building process before build() is called. If build()
+//         * is called when getErrors() returns a non-empty collection, it will throw an exception collecting
+//         * the messages from all exception in the list.
+//         *
+//         * @return any errors accumulated
+//         */
+//        Collection<Notification> getNotifications();
 
         /**
          * @param cooccurrent

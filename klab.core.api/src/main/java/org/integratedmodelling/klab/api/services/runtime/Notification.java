@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 
@@ -10,32 +11,34 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.stream.Stream;
 
 public interface Notification extends Serializable {
 
-    /**
-     * Additional classification info. Can be used for display or other purposes. Will be filled as things
-     * progress.
-     *
-     * @author ferdinando.villa
-     */
-    public enum Type {
-        None, Success, Failure
-    }
+//    /**
+//     * Additional classification info. Can be used for display or other purposes. Will be filled as things
+//     * progress.
+//     *
+//     * @author ferdinando.villa
+//     */
+//    public enum Type {
+//        None, Success, Failure
+//    }
 
-    public enum Mode {
+    enum Mode {
         Silent, Normal, Verbose
     }
 
-    public enum Level {
+    enum Level {
         Debug, Info, Warning, Error, SystemError
     }
 
     /**
      * If the notification is relative to a document, return the document context to which it pertains.
      */
-    public interface LexicalContext {
-        URL getUrl();
+    interface LexicalContext {
+
+        String getDocumentUrn();
 
         int getOffsetInDocument();
 
@@ -65,7 +68,7 @@ public interface Notification extends Serializable {
 
     String getMessage();
 
-    Type getType();
+//    Type getType();
 
     Mode getMode();
 
@@ -87,6 +90,22 @@ public interface Notification extends Serializable {
         return new NotificationImpl(message, level);
     }
 
+    public static Notification error(Object... objects) {
+        return create(Utils.Collections.flatCollection(Level.Error, objects).toArray());
+    }
+
+    public static Notification info(Object... objects) {
+        return create(Utils.Collections.flatCollection(Level.Info, objects).toArray());
+    }
+
+    public static Notification warning(Object... objects) {
+        return create(Utils.Collections.flatCollection(Level.Warning, objects).toArray());
+    }
+
+    public static Notification debug(Object... objects) {
+        return create(Utils.Collections.flatCollection(Level.Debug, objects).toArray());
+    }
+
     /**
      * Make the best of the passed arguments and create a notification from them.
      *
@@ -99,7 +118,7 @@ public interface Notification extends Serializable {
         String message = "No message";
         LexicalContext lexicalContext = null;
         long timestamp = System.currentTimeMillis();
-        Type type = Type.None;
+//        Type type = Type.None;
         Mode mode = Mode.Normal;
         Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
@@ -120,10 +139,16 @@ public interface Notification extends Serializable {
                     lexicalContext = lc;
                 } else if (o instanceof Mode mod) {
                     mode = mod;
-                } else if (o instanceof Type typ) {
+                } /*else if (o instanceof Type typ) {
                     type = typ;
-                } else if (o instanceof Message.ForwardingPolicy fwp) {
+                } */else if (o instanceof Message.ForwardingPolicy fwp) {
                     forwardingPolicy = fwp;
+                } else if (o instanceof KlabStatement statement) {
+                    var lc = new NotificationImpl.LexicalContextImpl();
+                    lc.setLength(statement.getLength());
+                    lc.setOffsetInDocument(statement.getOffsetInDocument());
+                    lc.setDocumentUrn(statement.getNamespace());
+                    lexicalContext = lc;
                 }
             }
         }
@@ -132,7 +157,7 @@ public interface Notification extends Serializable {
         ret.setLexicalContext(lexicalContext);
         ret.setTimestamp(timestamp);
         ret.setMode(mode);
-        ret.setType(type);
+//        ret.setType(type);
         ret.setForwardingPolicy(forwardingPolicy);
 
         return ret;

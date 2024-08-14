@@ -40,6 +40,7 @@ import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
+import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.integratedmodelling.languages.validation.LanguageValidationScope;
 import org.jgrapht.Graph;
@@ -132,6 +133,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public void initializeService() {
 
+        Logging.INSTANCE.setSystemIdentifier("Resources service: ");
+
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
 
@@ -140,6 +143,18 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         /*
          * TODO launch update service
          */
+
+        /**
+         * Setup an embedded broker, possibly to be shared with other services, if we're local and there
+         * is no configured broker.
+         */
+        if (Utils.URLs.isLocalHost(this.getUrl()) && workspaceManager.getConfiguration().getBrokerURI() == null) {
+            this.embeddedBroker = new EmbeddedBroker();
+            if (this.embeddedBroker.isOnline()) {
+                this.embeddedBrokerURI = this.embeddedBroker.getURI();
+            }
+        }
+
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities(serviceScope()));
     }
@@ -447,9 +462,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                              embeddedBrokerURI);
         }
 
-
         return ret;
-
     }
 
     @Override
@@ -470,7 +483,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                     scope.error(notification.message().message());
                 }
             }
-            return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed);
+            return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed, null);
         }
         return null;
     }
@@ -493,7 +506,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                     scope.error(notification.message().message());
                 }
             }
-            return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed);
+            return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null);
         }
         return null;
     }
