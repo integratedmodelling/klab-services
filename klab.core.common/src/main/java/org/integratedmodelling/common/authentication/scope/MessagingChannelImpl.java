@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     private Map<Message.Queue, String> queueNames = new HashMap<>();
     private Set<EventResultSupplier<?, ?>> eventResultSupplierSet =
             Collections.synchronizedSet(new LinkedHashSet<>());
+    private Map<String, List<Consumer<Message>>> queueConsumers = new HashMap<>();
 
     public MessagingChannelImpl(Identity identity, boolean isSender, boolean isReceiver) {
         super(identity);
@@ -180,32 +182,37 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         return super.send(args);
     }
 
+    public void installQueueConsumer(String queueId, Consumer<Message> consumer) {
+
+    }
+
     protected Channel getOrCreateChannel(Message.Queue queue) {
 
-//        if (!queueNames.containsKey(queue)) {
+        //        if (!queueNames.containsKey(queue)) {
 
         /*
         in this implementation it looks like we can do with just one channel - so one connection factory, one
-        connection, one channel. Maybe the whole API could be simpler. Maybe channels are synchronizing? In all cases
+        connection, one channel. Maybe the whole API could be simpler. Maybe channels are synchronizing? In
+         all cases
         we now can have a queue name w/o a channel so we would need to keep a hash of channels and dispose
         properly.
          */
-            if (this.channel_ == null) {
-                var holder = findParent((p) -> p.channel_ != null);
-                if (holder != null) {
-                    return holder.channel_;
-                }
-                try {
-                    this.channel_ = this.connection.createChannel();
-                } catch (IOException e) {
-                    // just return null
-                }
+        if (this.channel_ == null) {
+            var holder = findParent((p) -> p.channel_ != null);
+            if (holder != null) {
+                return holder.channel_;
             }
+            try {
+                this.channel_ = this.connection.createChannel();
+            } catch (IOException e) {
+                // just return null
+            }
+        }
 
-            return this.channel_;
-//        }
+        return this.channel_;
+        //        }
 
-//        return null;
+        //        return null;
     }
 
     protected Channel getChannel(Message.Queue queue) {
@@ -308,6 +315,16 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
                         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                             var message = Utils.Json.parseObject(new String(delivery.getBody(),
                                     StandardCharsets.UTF_8), Message.class);
+
+                            // if there is a consumer installed fo this queue, run it. Then if it returns
+                            //  continue, continue, else stop
+                            var consumers = queueConsumers.get(queueId);
+                            if (consumers != null) {
+                                for (var consumer : consumers) {
+                                    consumer.accept(message);
+                                }
+                            }
+
                             switch (queue) {
                                 case Events -> {
                                     event(message);
