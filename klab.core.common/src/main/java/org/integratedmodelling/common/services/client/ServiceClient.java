@@ -262,6 +262,7 @@ public abstract class ServiceClient implements KlabService {
 
             /*
             TODO check for changes of status and send messages over
+            YES porcoddio
              */
             try {
                 var s = readServiceStatus(this.url, scope);
@@ -276,6 +277,7 @@ public abstract class ServiceClient implements KlabService {
                     }
                 }
             } finally {
+
                 if (connected.get() != currentStatus) {
 
                     // add the URL to the capabilities.
@@ -298,15 +300,6 @@ public abstract class ServiceClient implements KlabService {
                                 local = true;
                             }
                         }
-
-                        //                        if (Configuration.INSTANCE.pairServiceScopes() && local) {
-                        //                            // establish whatever scope "entanglement" is allowed
-                        //                            by the service. For now
-                        //                            // disable, we try to do everything through REST and
-                        //                            see if it's practical.
-                        //                            scope.connect(this);
-                        //                        }
-
                     }
 
                 }

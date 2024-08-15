@@ -23,7 +23,7 @@ import java.io.PrintWriter;
          subcommands = {
                  org.integratedmodelling.cli.Services.List.class,
                  org.integratedmodelling.cli.Services.Connect.class})
-public class Services  {
+public class Services {
 
     @Command(name = "list", mixinStandardHelpOptions = true, description = {"List the services available",
                                                                             "Colors show services connected" +
@@ -102,18 +102,20 @@ public class Services  {
                          */
 
                         if (first) {
-//                            out.println(serviceType);
-                            // TODO number for selection; highlight the name of the "current" service in each category
+                            //                            out.println(serviceType);
+                            // TODO number for selection; highlight the name of the "current" service in
+                            //  each category
                             out.println("  " + Utils.Paths.getLast(service.getClass().getName(), '.') + ": "
                                     + service.getServiceName() + " "
                                     + " ["
                                     + (service.status().isAvailable() ? "available" : "not available")
-                                    + (service instanceof ServiceClient client && client.isLocal() ? "," + "local" : "")
+                                    + (service instanceof ServiceClient client && client.isLocal() ? "," +
+                                    "local" : "")
                                     + "] "
                                     + service.getUrl() + ServicesAPI.CAPABILITIES
                             );
                             if (verbose) {
-                                out.println(Utils.Strings.indent(service.capabilities(KlabCLI.INSTANCE.engine().serviceScope()).toString(), 6));
+                                out.println(Utils.Strings.indent(Utils.Json.printAsJson(service.capabilities(KlabCLI.INSTANCE.engine().getUsers().get(0))), 6));
                             }
                         }
                         first = false;

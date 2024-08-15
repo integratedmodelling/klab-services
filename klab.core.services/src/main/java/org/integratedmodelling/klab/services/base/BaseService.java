@@ -152,7 +152,7 @@ public abstract class BaseService implements KlabService {
         var ret = new ServiceStatusImpl();
         ret.setServiceId(serviceId());
         ret.setServiceType(serviceType());
-        ret.setAvailable(serviceScope().isAvailable());
+        ret.setAvailable(initialized && serviceScope().isAvailable());
         ret.setBusy(serviceScope().isBusy());
         ret.setLocality(serviceScope().getLocality());
         return ret;

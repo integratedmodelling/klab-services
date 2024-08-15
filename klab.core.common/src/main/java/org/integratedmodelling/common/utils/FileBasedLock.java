@@ -296,7 +296,7 @@ public final class FileBasedLock implements Lock, java.io.Closeable {
     }
 
     /**
-     * will release lock if owned, will not nothing if not owned.
+     * will release lock if owned, will do nothing if not owned.
      */
     @Override
     @WillClose

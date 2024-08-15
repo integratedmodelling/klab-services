@@ -42,7 +42,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     private RuntimeConfiguration configuration;
     private GraphDatabase graphDatabase;
     private SystemLauncher systemLauncher;
-    private URI embeddedBrokerURI = null;
 
     public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
         super(scope, Type.RUNTIME, options);
@@ -53,9 +52,6 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     private void initializeMessaging() {
         if (this.configuration.getBrokerURI() == null) {
             this.embeddedBroker = new EmbeddedBroker();
-            if (this.embeddedBroker.isOnline()) {
-                this.embeddedBrokerURI = this.embeddedBroker.getURI();
-            }
         }
     }
 
@@ -148,43 +144,21 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public Capabilities capabilities(Scope scope) {
 
-        /*
-        TODO if scope is admin, add descriptors for all the DTs and their data
-         */
-        return new RuntimeCapabilitiesImpl() {
+        var ret = new RuntimeCapabilitiesImpl();
+        ret.setLocalName(localName);
+        ret.setType(Type.RUNTIME);
+        ret.setUrl(getUrl());
+        ret.setServerId(hardwareSignature == null ? null : ("RUNTIME_" + hardwareSignature));
+        ret.setServiceId(configuration.getServiceId());
+        ret.setServiceName("Runtime");
+        ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
+//        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
+//                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
+//                                                Message.Queue.Warnings) :
+//                                        EnumSet.noneOf(Message.Queue.class));
+        ret.setBrokerURI(embeddedBroker != null? embeddedBroker.getURI() : configuration.getBrokerURI());
 
-            @Override
-            public Type getType() {
-                return Type.RUNTIME;
-            }
-
-            @Override
-            public String getLocalName() {
-                return localName;
-            }
-
-            @Override
-            public String getServiceName() {
-                return "Runtime";
-            }
-
-            @Override
-            public String getServiceId() {
-                return serviceId();
-            }
-
-            @Override
-            public String getServerId() {
-                return hardwareSignature == null ? null : ("REASONER_" + hardwareSignature);
-            }
-
-            @Override
-            public URI getBrokerURI() {
-                return (scope != null && scope.getIdentity().isAuthenticated()) ?
-                       (configuration.getBrokerURI() != null ? configuration.getBrokerURI() :
-                        embeddedBrokerURI) : null;
-            }
-        };
+        return ret;
     }
 
     public String serviceId() {

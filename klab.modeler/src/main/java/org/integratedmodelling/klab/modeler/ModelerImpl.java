@@ -80,8 +80,12 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
         // intercept some messages for bookkeeping
         if (event == UIEvent.ServiceAvailable && payload.length > 0 && payload[0] instanceof KlabService.ServiceCapabilities capabilities) {
+            System.out.println("POPOPOPOPO EXCO URI IS " + capabilities.getBrokerURI() + "  FOR " + capabilities.getType());
             if (capabilities.getUrl() != null) {
                 serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
+            }
+            if (capabilities.getBrokerURI() != null) {
+                // HERE
             }
         }
 
@@ -193,7 +197,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         }
 
         /* TODO handle observer, if not there make it and set it into the context. The logic should be
-        *   configurable and specific of the modeler, no defaults should be used in the runtime. */
+         *   configurable and specific of the modeler, no defaults should be used in the runtime. */
 
 
         List<Object> resolvables = new ArrayList<>();

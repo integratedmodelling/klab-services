@@ -267,7 +267,7 @@ public enum Authentication {
                 for (var url : service.getUrls()) {
                     if (ServiceClient.readServiceStatus(url, scope) != null) {
                         scope.info("Using authenticated " + service.getServiceType() + " service from " + service.getPartner().getId());
-                        return (T) createLocalServiceClient(serviceType, url, identity, availableServices,
+                        return (T) createLocalServiceClient(serviceType, url, scope, identity, availableServices,
                                 listeners);
                     }
                 }
@@ -278,7 +278,7 @@ public enum Authentication {
         var status = ServiceClient.readServiceStatus(serviceType.localServiceUrl(), null);
         if (status != null) {
             scope.info("Using locally running " + status.getServiceType() + " service at " + serviceType.localServiceUrl());
-            return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
+            return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), scope, identity,
                     availableServices, listeners);
         }
 
@@ -306,16 +306,14 @@ public enum Authentication {
                 var instance = product.getInstance(scope);
                 if (instance.start()) {
                     scope.info("Service is starting: will be attempting connection to locally running " + serviceType);
-                    scope.send(Message.MessageClass.ServiceLifecycle,
-                            Message.MessageType.ServiceInitializing,
-                            serviceType + " service at " + serviceType.localServiceUrl());
+
                     try {
                         // give the service a few seconds to start up
                         Thread.sleep(Duration.ofSeconds(2));
                     } catch (InterruptedException e) {
                         // move on
                     }
-                    return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), identity,
+                    return (T) createLocalServiceClient(serviceType, serviceType.localServiceUrl(), scope, identity,
                             availableServices, listeners);
                 }
             }
@@ -329,7 +327,7 @@ public enum Authentication {
 
     @SafeVarargs
     public final <T extends KlabService> T createLocalServiceClient(KlabService.Type serviceType, URL url,
-                                                                    Identity identity,
+                                                                    Scope scope, Identity identity,
                                                                     List<ServiceReference> services,
                                                                     BiConsumer<Channel, Message>... listeners) {
         T ret = switch (serviceType) {
@@ -350,6 +348,10 @@ public enum Authentication {
             }
             default -> throw new IllegalStateException("Unexpected value: " + serviceType);
         };
+
+        scope.send(Message.MessageClass.ServiceLifecycle,
+                Message.MessageType.ServiceInitializing,
+                serviceType + " service at " + serviceType.localServiceUrl());
 
         return ret;
     }

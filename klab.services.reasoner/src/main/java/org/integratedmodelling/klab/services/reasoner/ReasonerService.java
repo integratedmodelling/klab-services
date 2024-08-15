@@ -163,7 +163,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     private String hardwareSignature = Utils.Names.getHardwareId();
 
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
-    private URI embeddedBrokerURI;
 
     public boolean derived(Semantics c) {
         return internalConceptPattern.matcher(c.getName()).matches();
@@ -295,9 +294,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          */
         if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
             this.embeddedBroker = new EmbeddedBroker();
-            if (this.embeddedBroker.isOnline()) {
-                this.embeddedBrokerURI = this.embeddedBroker.getURI();
-            }
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
@@ -1108,60 +1104,20 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        var ret = new ReasonerCapabilitiesImpl() {
 
-            @Override
-            public String getWorldviewId() {
-                return worldview == null ? null : worldview.getWorldviewId();
-            }
-
-            @Override
-            public Type getType() {
-                return Type.REASONER;
-            }
-
-            @Override
-            public String getLocalName() {
-                return localName;
-            }
-
-            @Override
-            public String getServiceName() {
-                return "Reasoner";
-            }
-
-            @Override
-            public String getServiceId() {
-                return configuration.getServiceId();
-            }
-
-            @Override
-            public String getServerId() {
-                return hardwareSignature == null ? null : ("REASONER_" + hardwareSignature);
-            }
-
-            @Override
-            public URL getUrl() {
-                return ReasonerService.this.getUrl();
-            }
-
-            @Override
-            public URI getBrokerURI() {
-                if (embeddedBrokerURI != null) {
-                    return embeddedBrokerURI;
-                }
-                return super.getBrokerURI();
-            }
-
-            @Override
-            public Set<Message.Queue> getAvailableMessagingQueues() {
-                if (Utils.URLs.isLocalHost(ReasonerService.this.getUrl())) {
-                    return EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings);
-                }
-                return super.getAvailableMessagingQueues();
-            }
-        };
-
+        var ret = new ReasonerCapabilitiesImpl();
+        ret.setWorldviewId(worldview == null ? null : worldview.getWorldviewId());
+        ret.setLocalName(localName);
+        ret.setType(Type.REASONER);
+        ret.setUrl(getUrl());
+        ret.setServerId(hardwareSignature == null ? null : ("REASONER_" + hardwareSignature));
+        ret.setServiceId(configuration.getServiceId());
+        ret.setServiceName("Reasoner");
+        ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
+        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(ReasonerService.this.getUrl()) ?
+                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
+                                                Message.Queue.Warnings) :
+                                        EnumSet.noneOf(Message.Queue.class));
         return ret;
     }
 
@@ -1910,7 +1866,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept inherited : concept.getTraitsInherited()) {
             Concept trait = declare(inherited, ontology, monitor);
             if (trait == null) {
-                monitor.send(Notification.error("inherited " + inherited.getName() + " does not identify known concepts",
+                monitor.send(Notification.error("inherited " + inherited.getName() + " does not identify " +
+                                "known concepts",
                         inherited));
                 // return null;
             } else {
@@ -1922,7 +1879,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept affected : concept.getQualitiesAffected()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.send(Notification.error("affected " + affected.getName() + " does not identify known concepts",
+                monitor.send(Notification.error("affected " + affected.getName() + " does not identify " +
+                                "known concepts",
                         affected));
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality
@@ -1933,7 +1891,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept required : concept.getRequiredIdentities()) {
             Concept quality = declare(required, ontology, monitor);
             if (quality == null) {
-                monitor.send(Notification.error("required " + required.getName() + " does not identify known concepts",
+                monitor.send(Notification.error("required " + required.getName() + " does not identify " +
+                                "known concepts",
                         required));
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality,
@@ -1944,7 +1903,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept affected : concept.getObservablesCreated()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.send(Notification.error("created " + affected.getName() + " does not identify known concepts",
+                monitor.send(Notification.error("created " + affected.getName() + " does not identify known" +
+                                " concepts",
                         affected));
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(NS.CREATES_PROPERTY), quality, ontology);
@@ -2250,7 +2210,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 // consistency check
                 if (!satisfiable(ret)) {
                     ret.getType().add(SemanticType.NOTHING);
-                    monitor.send(Notification.error("the definition of this concept has logical errors and is inconsistent",
+                    monitor.send(Notification.error("the definition of this concept has logical errors and " +
+                                    "is inconsistent",
                             concept));
                 }
 

@@ -90,7 +90,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private DB db = null;
     private ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
     private ModelKbox kbox;
-    private URI embeddedBrokerURI = null;
 
     /*
      * "fair" read/write lock to ensure no reading during updates
@@ -150,9 +149,6 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          */
         if (Utils.URLs.isLocalHost(this.getUrl()) && workspaceManager.getConfiguration().getBrokerURI() == null) {
             this.embeddedBroker = new EmbeddedBroker();
-            if (this.embeddedBroker.isOnline()) {
-                this.embeddedBrokerURI = this.embeddedBroker.getURI();
-            }
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
@@ -456,11 +452,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.getPermissions().add(CRUDOperation.DELETE);
         ret.getPermissions().add(CRUDOperation.UPDATE);
 
-        if (scope != null && scope.getIdentity().isAuthenticated()) {
-            ret.setBrokerURI(workspaceManager.getConfiguration().getBrokerURI() != null ?
-                             workspaceManager.getConfiguration().getBrokerURI() :
-                             embeddedBrokerURI);
-        }
+        // CHECK the embedded broker presence means we're local
+        ret.setBrokerURI(embeddedBroker != null? embeddedBroker.getURI() : workspaceManager.getConfiguration().getBrokerURI());
+
+        //        if (scope != null && scope.getIdentity().isAuthenticated()) {
+        //        }
 
         return ret;
     }

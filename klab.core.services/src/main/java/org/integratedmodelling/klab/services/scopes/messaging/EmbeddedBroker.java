@@ -36,11 +36,17 @@ public class EmbeddedBroker {
 
     public EmbeddedBroker() {
 
+        try {
+            this.uri = new URI("amqp://127.0.0.1:" + EMBEDDED_BROKER_PORT);
+        } catch (URISyntaxException e) {
+            // dio animale
+        }
+
+
         try (FileBasedLock lock = FileBasedLock.getLock(Configuration.INSTANCE.getFile(".broker.lock"))) {
 
             if (lock.tryLock(10, TimeUnit.SECONDS)) {
                 try {
-                    this.uri = new URI("amqp://127.0.0.1:" + EMBEDDED_BROKER_PORT);
 
                     // wait until the file lock is released
                     // establish file lock
@@ -50,23 +56,25 @@ public class EmbeddedBroker {
                         this.connection = this.connectionFactory.newConnection();
                         this.online = this.connection.isOpen();
                     } catch (Exception e) {
+                        Logging.INSTANCE.info("No active broker connection");
                     }
 
                     if (!this.online) {
                         this.online = startLocalBroker();
                     }
 
-                } catch (URISyntaxException e) {
-                    // just leave this offline
+                } catch (Throwable t) {
+                    Logging.INSTANCE.error(t);
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            Logging.INSTANCE.error(e);
+            online = false;
         }
 
         if (online) {
             Logging.INSTANCE.info("Embedded broker online as a " + (systemLauncher == null ? "slave" :
-                                                                  "native") + " instance");
+                                                                    "native") + " instance");
         } else {
             Logging.INSTANCE.warn("Embedded broker failed to initialize");
         }
@@ -74,13 +82,12 @@ public class EmbeddedBroker {
 
     private boolean startLocalBroker() {
 
-        Map<String, Object> attributes = new HashMap<>();
-        URL initialConfig = this.getClass().getClassLoader().getResource(EMBEDDED_BROKER_CONFIGURATION);
-        assert initialConfig != null;
-        attributes.put("type", "Memory");
-        attributes.put("startupLoggedToSystemOut", true);
-        attributes.put("initialConfigurationLocation", initialConfig.toExternalForm());
         try {
+            Map<String, Object> attributes = new HashMap<>();
+            URL initialConfig = this.getClass().getClassLoader().getResource(EMBEDDED_BROKER_CONFIGURATION);
+            attributes.put("type", "Memory");
+            attributes.put("startupLoggedToSystemOut", true);
+            attributes.put("initialConfigurationLocation", initialConfig.toExternalForm());
             this.systemLauncher = new SystemLauncher();
             if (System.getProperty("QPID_WORK") == null) {
                 // this works; setting qpid.work_dir in the attributes does not.
@@ -89,7 +96,7 @@ public class EmbeddedBroker {
             systemLauncher.startup(attributes);
             Logging.INSTANCE.info("Embedded broker available for local connections on " + this.uri);
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logging.INSTANCE.error("Error initializing embedded broker: " + e.getMessage());
         }
         return false;
