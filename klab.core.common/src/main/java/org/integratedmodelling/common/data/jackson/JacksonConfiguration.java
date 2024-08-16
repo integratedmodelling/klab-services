@@ -251,7 +251,8 @@ public class JacksonConfiguration {
                                       KimSymbolDefinition.class, Contextualizable.class, Identifier.class,
                                       KimConcept.class, KimObservable.class, Quantity.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
-                                      Geometry.Dimension.class, Parameters.class}) {
+                                      Geometry.Dimension.class, Parameters.class,
+                                      Notification.LexicalContext.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
             module.addDeserializer(cls, new PolymorphicDeserializer<>());
         }

@@ -184,6 +184,12 @@ public interface KlabService extends Service {
         public static ServiceStatus offline() {
             return new ServiceStatusImpl();
         }
+
+        default boolean hasChangedComparedTo(ServiceStatus statusBeforeChecking) {
+            return
+                    this.isAvailable() != statusBeforeChecking.isAvailable() ||
+                    this.isBusy() != statusBeforeChecking.isBusy();
+        }
     }
 
     /**

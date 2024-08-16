@@ -153,27 +153,6 @@ public abstract class ServiceClient implements KlabService {
         return ret;
     }
 
-    //    /**
-    //     * Find the token on the filesystem installed by a running service of the passed type. If found,
-    //     we may
-    //     * have a local service that lets us connect with just that token and administer it.
-    //     *
-    //     * @param serviceType
-    //     * @return
-    //     */
-    //    private String readLocalServiceToken(Type serviceType) {
-    //        File secretFile =
-    //                Configuration.INSTANCE.getFileWithTemplate("services/" + serviceType.name()
-    //                .toLowerCase() + "/secret.key", org.integratedmodelling.klab.api.utils.Utils.Names
-    //                .newName());
-    //        try {
-    //            return Files.readString(secretFile.toPath());
-    //        } catch (IOException e) {
-    //            throw new KlabIOException(e);
-    //        }
-    //    }
-
-
     protected ServiceClient(URL url) {
         this.url = url;
         establishConnection();
@@ -218,30 +197,32 @@ public abstract class ServiceClient implements KlabService {
         }
 
         /**
-         * Service scopes are non-messaging but if the services are local, messaging happens through the
-         * user scope. Set up the proper channel according to whether we have messaging or not.
+         * Service scopes are non-messaging at service side, but if the services are local, messaging
+         * happens through the user scope used for admin calls. Messages sent to the service-side user
+         * scope use
+         * service channels intercepted here, set up when the service becomes available based on capabilities.
          */
+        Channel channel = local ? new MessagingChannelImpl(this.authentication.getFirst(), false, true) :
+                          new ChannelImpl(this.authentication.getFirst());
 
-        this.scope =
-                new AbstractServiceDelegatingScope(new ChannelImpl(this.authentication.getFirst())) {
+        this.scope = new AbstractServiceDelegatingScope(channel) {
 
-                    @Override
-                    public UserScope createUser(String username, String password) {
-                        return null;
-                    }
+            @Override
+            public UserScope createUser(String username, String password) {
+                return null;
+            }
 
-                    @Override
-                    public <T extends KlabService> T getService(Class<T> serviceClass) {
-                        return KlabService.Type.classify(serviceClass) == serviceType ?
-                               (T) ServiceClient.this : null;
-                    }
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+                return KlabService.Type.classify(serviceClass) == serviceType ? (T) ServiceClient.this : null;
+            }
 
-                    @Override
-                    public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-                        return KlabService.Type.classify(serviceClass) == serviceType ?
-                               (Collection<T>) List.of(ServiceClient.this) : Collections.emptyList();
-                    }
-                };
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                return KlabService.Type.classify(serviceClass) == serviceType ?
+                       (Collection<T>) List.of(ServiceClient.this) : Collections.emptyList();
+            }
+        };
 
         if (this.scopeListeners != null) {
             for (var listener : scopeListeners) {
@@ -258,19 +239,19 @@ public abstract class ServiceClient implements KlabService {
 
         try {
 
-            boolean currentStatus = connected.get();
+            var connectedBeforeChecking = connected.get();
+            var statusBeforeChecking = status.get();
 
             /*
             TODO check for changes of status and send messages over
-            YES porcoddio
              */
             try {
-                var s = readServiceStatus(this.url, scope);
-                if (s == null) {
+                var currentServiceStatus = readServiceStatus(this.url, scope);
+                if (currentServiceStatus == null) {
                     connected.set(false);
                     status.set(ServiceStatus.offline());
                 } else {
-                    status.set(s);
+                    status.set(currentServiceStatus);
                     connected.set(true);
                     if (capabilities == null) {
                         this.capabilities = capabilities(scope);
@@ -278,15 +259,16 @@ public abstract class ServiceClient implements KlabService {
                 }
             } finally {
 
-                if (connected.get() != currentStatus) {
+                boolean connectionHasChanged = connected.get() != connectedBeforeChecking;
+                boolean statusHasChanged =
+                        statusBeforeChecking == null && status.get() != null || statusBeforeChecking != null && status.get() == null || status.get().hasChangedComparedTo(statusBeforeChecking);
+
+                if (connectionHasChanged) {
 
                     // add the URL to the capabilities.
                     if (capabilities instanceof AbstractServiceCapabilities asc) {
                         asc.setUrl(this.url);
                     }
-
-                    scope.send(Message.MessageClass.ServiceLifecycle, (connected.get() ?
-                                                                       Message.MessageType.ServiceAvailable : Message.MessageType.ServiceUnavailable), capabilities);
 
                     if (connected.get()) {
 
@@ -303,13 +285,26 @@ public abstract class ServiceClient implements KlabService {
                     }
 
                 }
+
+                if (statusHasChanged || connectionHasChanged) {
+
+                    var message = (!connected.get() || status.get() == null)
+                                  ? Message.MessageType.ServiceUnavailable
+                                  : (status.get().isAvailable() ? Message.MessageType.ServiceAvailable :
+                                     Message.MessageType.ServiceInitializing);
+
+                    // refresh the capabilities after change
+                    this.capabilities = capabilities(scope);
+
+                    scope.send(Message.MessageClass.ServiceLifecycle, message, capabilities);
+                }
             }
 
             /**
              *
              */
             // send the status
-            if (connected.get() && status != null) {
+            if (connected.get() && status.get() != null) {
                 scope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceStatus,
                         status.get());
             }

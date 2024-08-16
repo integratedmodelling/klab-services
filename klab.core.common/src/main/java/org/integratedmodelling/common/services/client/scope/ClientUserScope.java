@@ -2,6 +2,7 @@ package org.integratedmodelling.common.services.client.scope;
 
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
+import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -12,8 +13,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.KlabService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
 import java.util.*;
@@ -68,6 +68,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
     @Override
     public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+
         for (var service : getServices(serviceClass)) {
             if (serviceId.equals(service.serviceId())) {
                 return service;

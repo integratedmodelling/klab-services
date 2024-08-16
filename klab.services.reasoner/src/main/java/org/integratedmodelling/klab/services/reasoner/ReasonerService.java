@@ -277,7 +277,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public void initializeService() {
 
-        Logging.INSTANCE.setSystemIdentifier("Resources service: ");
+        Logging.INSTANCE.setSystemIdentifier("Reasoner service: ");
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()));
@@ -293,7 +293,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
          * is no configured broker.
          */
         if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
+            Logging.INSTANCE.info("Setting up embedded broker in local service");
             this.embeddedBroker = new EmbeddedBroker();
+            Logging.INSTANCE.info("Embedded broker is " + (embeddedBroker.isOnline() ?
+                                                           ("online at " + embeddedBroker.getURI()) :
+                                                           "offline"));
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
@@ -1113,7 +1117,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret.setServerId(hardwareSignature == null ? null : ("REASONER_" + hardwareSignature));
         ret.setServiceId(configuration.getServiceId());
         ret.setServiceName("Reasoner");
-        ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
+        ret.setBrokerURI((embeddedBroker != null && embeddedBroker.isOnline()) ? embeddedBroker.getURI() :
+                         configuration.getBrokerURI());
         ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(ReasonerService.this.getUrl()) ?
                                         EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
                                                 Message.Queue.Warnings) :

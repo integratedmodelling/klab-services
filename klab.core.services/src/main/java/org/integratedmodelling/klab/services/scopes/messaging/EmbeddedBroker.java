@@ -40,6 +40,7 @@ public class EmbeddedBroker {
             this.uri = new URI("amqp://127.0.0.1:" + EMBEDDED_BROKER_PORT);
         } catch (URISyntaxException e) {
             // dio animale
+            Logging.INSTANCE.error("Error impossible: " + e.getMessage());
         }
 
 
@@ -55,24 +56,27 @@ public class EmbeddedBroker {
                         this.connectionFactory.setUri(this.uri);
                         this.connection = this.connectionFactory.newConnection();
                         this.online = this.connection.isOpen();
-                    } catch (Exception e) {
-                        Logging.INSTANCE.info("No active broker connection");
+                    } catch (Throwable e) {
+                        // no broker connection from other services, move on to startup
                     }
 
                     if (!this.online) {
+                        Logging.INSTANCE.info("Attempting to start local broker instance");
                         this.online = startLocalBroker();
+                        Logging.INSTANCE.info("Local broker instance startup " + (this.online ?
+                                                                                  "succeeded" : "failed"));
                     }
 
                 } catch (Throwable t) {
                     Logging.INSTANCE.error(t);
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logging.INSTANCE.error(e);
-            online = false;
+            this.online = false;
         }
 
-        if (online) {
+        if (this.online) {
             Logging.INSTANCE.info("Embedded broker online as a " + (systemLauncher == null ? "slave" :
                                                                     "native") + " instance");
         } else {
@@ -109,7 +113,7 @@ public class EmbeddedBroker {
      * @return
      */
     public boolean isOnline() {
-        return false;
+        return this.online;
     }
 
     /**

@@ -6,9 +6,11 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
@@ -183,7 +185,7 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     }
 
     public void installQueueConsumer(String queueId, Consumer<Message> consumer) {
-
+        queueConsumers.computeIfAbsent(queueId, k -> new ArrayList<>()).add(consumer);
     }
 
     protected Channel getOrCreateChannel(Message.Queue queue) {
@@ -379,6 +381,21 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     @Override
     public boolean hasMessaging() {
         return connection != null && connection.isOpen();
+    }
+
+    @Override
+    public void connectToService(KlabService.ServiceCapabilities capabilities, UserIdentity identity,
+                                 Consumer<Message> consumer) {
+        if (capabilities.getAvailableMessagingQueues().isEmpty() || capabilities.getBrokerURI() == null) {
+            return;
+        }
+        setupMessaging(capabilities.getBrokerURI().toString(),
+                capabilities.getType().name().toLowerCase() + "." + identity.getUsername(),
+                capabilities.getAvailableMessagingQueues());
+
+        for (var queue : capabilities.getAvailableMessagingQueues()) {
+            installQueueConsumer(capabilities.getType().name().toLowerCase() + "." + identity.getUsername() + "." + queue.name().toLowerCase(), consumer);
+        }
     }
 
     @Override

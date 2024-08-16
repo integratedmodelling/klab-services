@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.resolver;
 
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
@@ -66,7 +67,6 @@ public class ResolverService extends BaseService implements Resolver {
     Parameters<String> defines = Parameters.createSynchronized();
     private String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
-    private URI embeddedBrokerURI;
 
     public ResolverService(ServiceScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
@@ -105,49 +105,22 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        // TODO Auto-generated method stub
-        return new ResolverCapabilitiesImpl() {
-            @Override
-            public Type getType() {
-                return Type.RESOLVER;
-            }
 
-            @Override
-            public String getLocalName() {
-                return localName;
-            }
+        var ret = new ResolverCapabilitiesImpl();
+        ret.setLocalName(localName);
+        ret.setType(Type.RESOLVER);
+        ret.setUrl(getUrl());
+        ret.setServerId(hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature));
+        ret.setServiceId(configuration.getServiceId());
+        ret.setServiceName("Resolver");
+        ret.setBrokerURI((embeddedBroker != null && embeddedBroker.isOnline()) ? embeddedBroker.getURI() :
+                         configuration.getBrokerURI());
+        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
+                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
+                                                Message.Queue.Warnings) :
+                                        EnumSet.noneOf(Message.Queue.class));
+        return ret;
 
-            @Override
-            public String getServiceName() {
-                return "Resolver";
-            }
-
-            @Override
-            public String getServiceId() {
-                return serviceId();
-            }
-
-            @Override
-            public String getServerId() {
-                return hardwareSignature == null ? null : ("RESOLVER_" + hardwareSignature);
-            }
-
-            @Override
-            public URI getBrokerURI() {
-                if (embeddedBrokerURI != null) {
-                    return embeddedBrokerURI;
-                }
-                return super.getBrokerURI();
-            }
-
-            @Override
-            public Set<Message.Queue> getAvailableMessagingQueues() {
-                if (Utils.URLs.isLocalHost(getUrl())) {
-                    return EnumSet.of(Message.Queue.Info, Message.Queue.Errors, Message.Queue.Warnings);
-                }
-                return super.getAvailableMessagingQueues();
-            }
-        };
     }
 
     @Override
@@ -160,7 +133,6 @@ public class ResolverService extends BaseService implements Resolver {
     public String serviceId() {
         return configuration.getServiceId();
     }
-
 
     @Override
     public Resolution resolve(String resolvableUrn, ContextScope scope) {
@@ -254,7 +226,7 @@ public class ResolverService extends BaseService implements Resolver {
         // see what the reasoner thinks of this observable
         for (ObservationStrategyObsolete strategy :
                 scope.getService(Reasoner.class).inferStrategies(observable,
-                scope)) {
+                        scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
             ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
@@ -446,7 +418,7 @@ public class ResolverService extends BaseService implements Resolver {
             }
 
             // GAAAH
-//            ret.setId(id);
+            //            ret.setId(id);
             ret.setName(observable.getName());
             ret.setAlias(observable.getStatedName());
 
@@ -759,9 +731,6 @@ public class ResolverService extends BaseService implements Resolver {
          */
         if (Utils.URLs.isLocalHost(this.getUrl()) && this.configuration.getBrokerURI() == null) {
             this.embeddedBroker = new EmbeddedBroker();
-            if (this.embeddedBroker.isOnline()) {
-                this.embeddedBrokerURI = this.embeddedBroker.getURI();
-            }
         }
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,

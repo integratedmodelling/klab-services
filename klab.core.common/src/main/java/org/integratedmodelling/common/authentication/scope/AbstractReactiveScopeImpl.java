@@ -1,14 +1,17 @@
 package org.integratedmodelling.common.authentication.scope;
 
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl implements ReactiveScope {
@@ -37,6 +40,21 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
         } else {
             return super.send(args);
         }
+    }
+
+    public KlabService getService(String serviceId) {
+        KlabService ret = null;
+        for (var sc : List.of(Reasoner.class, ResourcesService.class, Resolver.class, RuntimeService.class)) {
+            try {
+                ret = getService(serviceId, sc);
+            } catch (KlabResourceAccessException e) {
+                // that's OK here
+            }
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return null;
     }
 
     @Override
