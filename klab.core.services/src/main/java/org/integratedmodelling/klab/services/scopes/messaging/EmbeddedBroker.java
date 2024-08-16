@@ -6,17 +6,13 @@ import org.apache.qpid.server.SystemLauncher;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.utils.FileBasedLock;
 import org.integratedmodelling.klab.api.configuration.Configuration;
-import org.integratedmodelling.klab.services.ServiceStartupOptions;
-import org.integratedmodelling.klab.services.base.BaseService;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * An embedded broker that only starts once and finds the service after it's started. Checking for an active
