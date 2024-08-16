@@ -452,11 +452,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         ret.getPermissions().add(CRUDOperation.DELETE);
         ret.getPermissions().add(CRUDOperation.UPDATE);
 
-        // CHECK the embedded broker presence means we're local
-        ret.setBrokerURI(embeddedBroker != null? embeddedBroker.getURI() : workspaceManager.getConfiguration().getBrokerURI());
-
-        //        if (scope != null && scope.getIdentity().isAuthenticated()) {
-        //        }
+        ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() :
+                         workspaceManager.getConfiguration().getBrokerURI());
+        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
+                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
+                                                Message.Queue.Warnings, Message.Queue.Events) :
+                                        EnumSet.noneOf(Message.Queue.class));
 
         return ret;
     }

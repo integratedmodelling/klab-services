@@ -1110,6 +1110,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Capabilities capabilities(Scope scope) {
 
         var ret = new ReasonerCapabilitiesImpl();
+
         ret.setWorldviewId(worldview == null ? null : worldview.getWorldviewId());
         ret.setLocalName(localName);
         ret.setType(Type.REASONER);
@@ -1119,9 +1120,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ret.setServiceName("Reasoner");
         ret.setBrokerURI((embeddedBroker != null && embeddedBroker.isOnline()) ? embeddedBroker.getURI() :
                          configuration.getBrokerURI());
-        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(ReasonerService.this.getUrl()) ?
+        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
                                         EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
-                                                Message.Queue.Warnings) :
+                                                Message.Queue.Warnings, Message.Queue.Events) :
                                         EnumSet.noneOf(Message.Queue.class));
         return ret;
     }
