@@ -1286,28 +1286,42 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public boolean loadKnowledge(Worldview worldview, UserScope scope) {
 
-        this.worldview = worldview;
-
         if (worldview.isEmpty()) {
             return false;
         }
 
+        scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorldviewInitializing,
+                worldview.getUrn());
+
+        this.worldview = worldview;
+
+
         this.owl.initialize(worldview.getOntologies().get(0));
 
         for (KimOntology ontology : worldview.getOntologies()) {
+            scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.OntologyInitializing,
+             ontology.getUrn());
             for (var statement : ontology.getStatements()) {
                 defineConcept(statement, scope);
             }
             this.owl.registerWithReasoner(ontology);
+            scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.OntologyFinalized,
+             ontology.getUrn());
         }
         this.owl.flushReasoner();
         for (var strategyDocument : worldview.getObservationStrategies()) {
+            scope.send(Message.MessageClass.KnowledgeLifecycle,
+             Message.MessageType.ObservationStrategyInitializing, strategyDocument.getUrn());
             for (var strategy : strategyDocument.getStatements()) {
                 defineStrategy(strategy, scope);
             }
+            scope.send(Message.MessageClass.KnowledgeLifecycle,
+             Message.MessageType.ObservationStrategyFinalized, strategyDocument.getUrn());
         }
 
         // TODO set the loaded worldview as the one of reference
+        scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorldviewFinalized,
+         worldview.getUrn());
 
         return true;
     }

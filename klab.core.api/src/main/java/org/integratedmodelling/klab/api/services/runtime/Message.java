@@ -219,22 +219,26 @@ public interface Message extends Serializable {
         Info(Queue.Info, Notification.class),
         Warning(Queue.Warnings, Notification.class),
         Error(Queue.Errors, Notification.class),
+
+        /**
+         * Runtime event messages
+         */
         TestCaseStarted(Queue.Events, TestStatistics.class),
         TestCaseFinished(Queue.Events, TestStatistics.class),
         TestStarted(Queue.Events, ActionStatistics.class),
         TestFinished(Queue.Events, ActionStatistics.class),
-
-        ResolutionSuccessful(Queue.Events, Long.class),
-        ResolutionAborted(Queue.Events, Long.class),
-
-        /*
-         * --- actor communication messages
-         */
         RunApplication,
         RunBehavior,
         CreateContext,
         CreateSession,
         Fire,
+
+        /**
+         * Resolver event messages
+         */
+        ResolutionSuccessful(Queue.Events, Long.class),
+        ResolutionAborted(Queue.Events, Long.class),
+
 
         /*
          * --- View actor messages
@@ -246,7 +250,18 @@ public interface Message extends Serializable {
         /**
          * Engine lifecycle, should only be client-wide
          */
-        UsingDistribution(Queue.UI, Distribution.class);
+        UsingDistribution(Queue.UI, Distribution.class),
+
+        /**
+         * Admin service messages for Reasoner. Notifications sent in between these with same service and
+         * lexical context build up the logical markers for the content.
+         */
+        WorldviewInitializing(Queue.Events, String.class),
+        OntologyInitializing(Queue.Events, String.class),
+        OntologyFinalized(Queue.Events, String.class),
+        ObservationStrategyInitializing(Queue.Events, String.class),
+        ObservationStrategyFinalized(Queue.Events, String.class),
+        WorldviewFinalized(Queue.Events, String.class);
 
         public final Class<?> payloadClass;
         public final Queue queue;
