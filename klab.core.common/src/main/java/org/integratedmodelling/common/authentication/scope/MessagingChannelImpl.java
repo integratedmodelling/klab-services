@@ -28,9 +28,10 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Hosts the AMQP connections and channels for all the subscribed queues. In service use, creates the queues
- * and advertises them. In client configurations, consumes the queues and dispatches the messages to their
- * respective handlers.
+ * A channel instrumented for messaging, containing the AMQP connections and channels for all the subscribed
+ * queues. In service use, creates the queues and advertises them. In client configurations, consumes the
+ * queues and dispatches the messages to their respective handlers. Can be configured as a sender, receiver or
+ * both.
  */
 public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
 
@@ -51,8 +52,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
     }
 
     /**
-     * Convenience Task implementation that delegates to a {@link CompletableFuture} while exposing the
-     * tracking key all along.
+     * Convenience Task implementation that delegates to a {@link CompletableFuture} tracking a tracking key
+     * that is updated by messages.
      *
      * @param <P>
      * @param <T>
@@ -193,10 +194,9 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         //        if (!queueNames.containsKey(queue)) {
 
         /*
-        in this implementation it looks like we can do with just one channel - so one connection factory, one
+        Looks like just one channel is enough - so one connection factory, one
         connection, one channel. Maybe the whole API could be simpler. Maybe channels are synchronizing? In
-         all cases
-        we now can have a queue name w/o a channel so we would need to keep a hash of channels and dispose
+         all cases we now can have a queue name w/o a channel so we would need to keep a hash of channels and dispose
         properly.
          */
         if (this.channel_ == null) {

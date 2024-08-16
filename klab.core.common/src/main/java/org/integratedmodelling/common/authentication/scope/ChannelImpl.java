@@ -17,12 +17,11 @@ import java.util.function.Consumer;
 /**
  * Basic listenable, logging channel not instrumented for messaging. Meant to be use as an on-off scope when
  * one is required or as a parent for {@link org.integratedmodelling.klab.api.scope.ServiceScope}. Calls to
- * {@link #post(Consumer, Object...)} and {@link #send(Object...)} have no effect besides invoking the scope's
- * own handlers and listeners. Because messaging is not enabled, calling {@link #post(Consumer, Object...)}
- * will not produce a response.
+ * {@link #send(Object...)} and related methods have no effect besides invoking the scope's own handlers and
+ * listeners.
  * <p>
- * Listeners can be added at any time and only get invoked by send() and post(), never by the handlers when
- * directly called.
+ * Listeners can be added at any time and only get invoked by send(), never by the handlers when directly
+ * called.
  */
 public class ChannelImpl implements Channel {
 
@@ -126,14 +125,14 @@ public class ChannelImpl implements Channel {
         return message;
     }
 
-//    @Override
-//    public Message post(Consumer<Message> handler, Object... message) {
-//        var me = Message.create(this, message);
-//        for (var listener : listeners) {
-//            listener.accept(this, me);
-//        }
-//        return me;
-//    }
+    //    @Override
+    //    public Message post(Consumer<Message> handler, Object... message) {
+    //        var me = Message.create(this, message);
+    //        for (var listener : listeners) {
+    //            listener.accept(this, me);
+    //        }
+    //        return me;
+    //    }
 
     @Override
     public void interrupt() {
@@ -157,5 +156,5 @@ public class ChannelImpl implements Channel {
     public void addListener(BiConsumer<Channel, Message> listener) {
         this.listeners.add(listener);
     }
-    
+
 }

@@ -4,7 +4,6 @@ import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
-import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.ReactiveScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -12,8 +11,13 @@ import org.integratedmodelling.klab.api.services.runtime.impl.MessageImpl;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
+/**
+ * A scope thqt hosts an agent ref and will route messages with
+ * {@link org.integratedmodelling.klab.api.services.runtime.Message.MessageClass#ActorCommunication} class to
+ * them instead of sending through the normal channels. This scope also exposes an
+ * {@link #ask(Class, Object...)} method that blocks until an agent's response is received.
+ */
 public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl implements ReactiveScope {
 
     protected KActorsBehavior.Ref agent;
@@ -72,7 +76,7 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
             return agent.ask(message, responseClass);
         }
 
-        throw new KlabInternalErrorException("wrong message with class " + message.getMessageClass() + " sent to ReactiveScope::ask");
+        throw new KlabInternalErrorException("wrong message with class " + message.getMessageClass() + " " + "sent to ReactiveScope::ask");
     }
 
 }
