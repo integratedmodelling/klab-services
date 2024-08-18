@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.reasoner.ReasonerServer;
@@ -30,21 +31,21 @@ public class AdminController implements ServicesAPI.REASONER.ADMIN {
     private ReasonerServer reasoner;
 
     @PostMapping(LOAD_KNOWLEDGE)
-    public @ResponseBody boolean loadKnowledge(@RequestBody Worldview resources, Principal principal) {
+    public @ResponseBody ResourceSet loadKnowledge(@RequestBody Worldview resources, Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             var userScope = authorization.getScope(UserScope.class);
             return reasoner.klabService().loadKnowledge(resources, userScope);
         }
-        return false;
+        return ResourceSet.empty();
     }
 
     @PostMapping(UPDATE_KNOWLEDGE)
-    public @ResponseBody boolean loadKnowledge(@RequestBody ResourceSet changes, Principal principal) {
+    public @ResponseBody ResourceSet loadKnowledge(@RequestBody ResourceSet changes, Principal principal) {
         if (principal instanceof EngineAuthorization authorization) {
             var userScope = authorization.getScope(UserScope.class);
             return reasoner.klabService().updateKnowledge(changes, userScope);
         }
-        return false;
+        return ResourceSet.empty();
     }
 
     @PostMapping(DEFINE_CONCEPT)

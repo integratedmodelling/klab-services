@@ -279,8 +279,8 @@ public class ObservableBuilder implements Observable.Builder {
     @Override
     public Observable.Builder withRole(Concept concept) {
         if (!concept.is(SemanticType.ROLE)) {
-            scope.send(Notification.error("cannot use concept " + concept + " as a role",
-                    getDeclaration(concept)));
+            scope.error("cannot use concept " + concept + " as a role",
+                    getDeclaration(concept));
         }
         if (!declarationIsComplete) {
             this.declaration.getRoles().add(getDeclaration(concept));
@@ -416,7 +416,7 @@ public class ObservableBuilder implements Observable.Builder {
                 }
             } catch (KlabValidationException e) {
                 // thrown by the makeXXX functions in case of incompatibility
-                scope.send(Notification.error(e.getMessage(), declaration));
+                scope.error(e.getMessage(), declaration);
             }
         }
 
@@ -748,8 +748,8 @@ public class ObservableBuilder implements Observable.Builder {
     public Observable.Builder withTrait(Concept... concepts) {
         for (Concept concept : concepts) {
             if (!concept.is(SemanticType.TRAIT)) {
-                scope.send(Notification.error("cannot use concept " + concept + " as a trait",
-                        declaration));
+                scope.error("cannot use concept " + concept + " as a trait",
+                        declaration);
             } else {
                 traits.add(concept);
                 if (!declarationIsComplete) {
@@ -783,9 +783,9 @@ public class ObservableBuilder implements Observable.Builder {
                     }
                 }
                 if (ontology == null) {
-                    scope.send(Notification.error(
+                    scope.error(
                             "cannot create a new concept from an ID if the ontology is not specified",
-                            declaration));
+                            declaration);
                 }
             }
         }
@@ -915,11 +915,14 @@ public class ObservableBuilder implements Observable.Builder {
                 Concept base = reasoner.baseParentTrait(t);
 
                 if (base == null) {
-                    scope.send(Notification.error("base declaration for trait " + t + " could not be found", declaration));
+                    scope.error("base declaration for trait " + t + " could not be found"
+                            , declaration);
                 } else {
                     if (!baseTraits.add(base)) {
-                        scope.send(Notification.error("cannot add trait " + t.displayName() + " to concept " + main
-                                + " as it already adopts a trait of type " + base.displayName(), declaration));
+                        scope.error("cannot add trait " + t.displayName() + " to concept "
+                                        + main
+                                        + " as it already adopts a trait of type " + base.displayName(),
+                                declaration);
                     } else {
                         if (t.isAbstract()) {
                             abstractTraitBases.add(base);
@@ -964,9 +967,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (inherent != null) {
             Concept other = reasoner.inherent(main);
             if (other != null && !reasoner.compatible(inherent, other)) {
-                scope.send(Notification.error("cannot set the inherent type of " + main.displayName() + " to " + inherent.displayName()
+                scope.error("cannot set the inherent type of " + main.displayName() + " " +
+                                "to " + inherent.displayName()
                                 + " as it already has an incompatible inherency: " + other.displayName(),
-                        declaration));
+                        declaration);
                 var removeme = reasoner.compatible(inherent, other);
             }
             cleanId = getCleanId(inherent);
@@ -978,10 +982,9 @@ public class ObservableBuilder implements Observable.Builder {
         if (compresent != null) {
             Concept other = reasoner.compresent(main);
             if (other != null && !reasoner.compatible(compresent, other)) {
-                scope.send(Notification.error(
-                        "cannot set the compresent type of " + main.displayName() + " to " + compresent.displayName()
+                scope.error("cannot set the compresent type of " + main.displayName() + " to " + compresent.displayName()
                                 + " as it already has an incompatible compresent type: " + other.displayName(),
-                        declaration));
+                        declaration);
             }
             cleanId = getCleanId(compresent);
             cId += "With" + cleanId;
@@ -993,9 +996,9 @@ public class ObservableBuilder implements Observable.Builder {
             // TODO transform as necessary
             Concept other = reasoner.goal(main);
             if (other != null && !reasoner.compatible(goal, other)) {
-                scope.send(Notification.error("cannot set the goal type of " + main.displayName() + " to " + goal.displayName()
+                scope.error("cannot set the goal type of " + main.displayName() + " to " + goal.displayName()
                                 + " as it already has an incompatible goal type: " + other.displayName(),
-                        declaration));
+                        declaration);
             }
             cleanId = getCleanId(goal);
             cId += "For" + cleanId;
@@ -1006,10 +1009,9 @@ public class ObservableBuilder implements Observable.Builder {
         if (caused != null) {
             Concept other = reasoner.caused(main);
             if (other != null && !reasoner.compatible(caused, other)) {
-                scope.send(Notification.error(
-                        "cannot set the caused type of " + main.displayName() + " to " + caused.displayName()
+                scope.error("cannot set the caused type of " + main.displayName() + " to " + caused.displayName()
                                 + " as it already has an incompatible caused type: " + other.displayName(),
-                        declaration));
+                        declaration);
             }
             cleanId = getCleanId(caused);
             cId += "To" + cleanId;
@@ -1020,10 +1022,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (causant != null) {
             Concept other = reasoner.causant(main);
             if (other != null && !reasoner.compatible(causant, other)) {
-                scope.send(Notification.error(
+                scope.error(
                         "cannot set the causant type of " + main.displayName() + " to " + causant.displayName()
                                 + " as it already has an incompatible causant type: " + other.displayName(),
-                        declaration));
+                        declaration);
             }
             cleanId = getCleanId(causant);
             cId += "From" + cleanId;
@@ -1034,10 +1036,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (adjacent != null) {
             Concept other = reasoner.adjacent(main);
             if (other != null && !reasoner.compatible(adjacent, other)) {
-                scope.send(Notification.error(
+                scope.error(
                         "cannot set the adjacent type of " + main.displayName() + " to " + adjacent.displayName()
                                 + " as it already has an incompatible adjacent type: " + other.displayName(),
-                        declaration));
+                        declaration);
             }
             cleanId = getCleanId(adjacent);
             cId += "AdjacentTo" + cleanId;
@@ -1048,10 +1050,10 @@ public class ObservableBuilder implements Observable.Builder {
         if (cooccurrent != null) {
             Concept other = reasoner.cooccurrent(main);
             if (other != null && !reasoner.compatible(cooccurrent, other)) {
-                scope.send(Notification.error(
+                scope.error(
                         "cannot set the co-occurrent type of " + main.displayName() + " to " + cooccurrent.displayName()
                                 + " as it already has an incompatible co-occurrent type: " + other.displayName(),
-                        declaration));
+                        declaration);
             }
             cleanId = getCleanId(cooccurrent);
             cId += "During" + cleanId;
@@ -1062,17 +1064,17 @@ public class ObservableBuilder implements Observable.Builder {
         if (relationshipSource != null) {
             Concept other = reasoner.relationshipSource(main);
             if (other != null && !reasoner.compatible(relationshipSource, other)) {
-                scope.send(Notification.error("cannot set the relationship source type of " + main.displayName() + " to "
+                scope.error("cannot set the relationship source type of " + main.displayName() + " to "
                         + relationshipSource.displayName() + " as it already has an incompatible source " +
                         "type: "
-                        + other.displayName(), declaration));
+                        + other.displayName(), declaration);
             }
             Concept other2 = reasoner.relationshipTarget(main);
             if (other2 != null && !reasoner.compatible(relationshipTarget, other2)) {
-                scope.send(Notification.error("cannot set the relationship target type of " + main.displayName() + " to "
+                scope.error("cannot set the relationship target type of " + main.displayName() + " to "
                         + relationshipTarget.displayName() + " as it already has an incompatible target " +
                         "type: "
-                        + other2.displayName(), declaration));
+                        + other2.displayName(), declaration);
             }
             cleanId = getCleanId(relationshipSource);
             cId += "Linking" + cleanId;
@@ -1091,8 +1093,8 @@ public class ObservableBuilder implements Observable.Builder {
         if (roles != null && roles.size() > 0) {
             for (Concept role : roles) {
                 if (reasoner.roles(main).contains(role)) {
-                    scope.send(Notification.error("concept " + main.displayName() + " already has role " + role.displayName(),
-                            declaration));
+                    scope.error("concept " + main.displayName() + " already has role " + role.displayName(),
+                            declaration);
                 }
                 rids.add(role.displayName());
                 refIds.add("_as_" + role.getReferenceName());
@@ -1230,7 +1232,8 @@ public class ObservableBuilder implements Observable.Builder {
         }
 
         if (scope != null && !reasoner.satisfiable(ret)) {
-            scope.send(Notification.error("this declaration has logical errors and is inconsistent", declaration));
+            scope.error("this declaration has logical errors and is inconsistent",
+                    declaration);
         }
 
         return ret;

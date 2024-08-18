@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.services.application.security.Role;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -51,6 +52,12 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     protected Map<KlabService.Type, KlabService> defaultServiceMap = new HashMap<>();
     private boolean messagingChecked = false;
 
+    // if the next two are filled in, the payloads of any message generated will be collected in the list
+    // if they are of the passed class. Used on scope copies for monitoring and messaging.These are never
+    // copied downstream
+    private List<Object> payloadCollector = null;
+    private Class<?> collectedPayloadClass = null;
+
     // these are users of this service, which we keep around individually so that we can enable messaging for
     // local users
     private KlabService service;
@@ -60,6 +67,36 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         this.user = user;
         this.data = Parameters.create();
         this.service = service;
+    }
+
+
+    protected ServiceUserScope(ServiceUserScope parent) {
+        super(parent.user, parent.isSender(), parent.isReceiver());
+        this.user = parent.user;
+        this.parentScope = parent;
+        this.data = parent.data;
+        this.local = parent.local;
+        this.serviceMap.putAll(parent.serviceMap);
+        this.defaultServiceMap.putAll(parent.defaultServiceMap);
+    }
+
+    /**
+     * Create an exact copy to modify. Exclusively available to other scopes and the scope manager.
+     *
+     * @return
+     */
+    ServiceUserScope copy() {
+        var ret = new ServiceUserScope(this);
+        ret.copyInfo(this);
+        return ret;
+    }
+
+    protected void copyInfo(ServiceUserScope other) {
+        this.id = other.id;
+        this.messagingChecked = other.messagingChecked;
+        this.serviceMap.putAll(other.serviceMap);
+        this.roles = other.roles;
+        this.status = other.status;
     }
 
     /**
@@ -97,15 +134,6 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         }
     }
 
-    protected ServiceUserScope(ServiceUserScope parent) {
-        super(parent.user, parent.isSender(), parent.isReceiver());
-        this.user = parent.user;
-        this.parentScope = parent;
-        this.data = parent.data;
-        this.local = parent.local;
-        this.serviceMap.putAll(parent.serviceMap);
-        this.defaultServiceMap.putAll(parent.defaultServiceMap);
-    }
 
     @Override
     public SessionScope runSession(String sessionName) {
@@ -297,5 +325,58 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         }
 
         return super.getChannel(queue);
+    }
+
+    @Override
+    public void event(Message message) {
+        super.event(message);
+        if (payloadCollector != null && (collectedPayloadClass != null && collectedPayloadClass.isAssignableFrom(message.getPayload(Object.class).getClass()))) {
+            payloadCollector.add(message.getPayload(Object.class));
+        }
+    }
+
+    @Override
+    public void error(Object... o) {
+        super.error(o);
+        if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
+            payloadCollector.add(Notification.error(o));
+        }
+    }
+
+    @Override
+    public void info(Object... info) {
+        super.info(info);
+        if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
+            payloadCollector.add(Notification.info(info));
+        }
+    }
+
+    @Override
+    public void ui(Message message) {
+        super.ui(message);
+        if (payloadCollector != null && (collectedPayloadClass != null && collectedPayloadClass.isAssignableFrom(message.getPayload(Object.class).getClass()))) {
+            payloadCollector.add(message.getPayload(Object.class));
+        }
+    }
+
+    @Override
+    public void warn(Object... o) {
+        super.warn(o);
+        if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
+            payloadCollector.add(Notification.warning(o));
+        }
+    }
+
+    @Override
+    public void debug(Object... o) {
+        super.debug(o);
+        if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
+            payloadCollector.add(Notification.debug(o));
+        }
+    }
+
+    public <T> void collectMessagePayload(Class<T> payloadClass, List<T> payloadCollection) {
+        this.collectedPayloadClass = payloadClass;
+        this.payloadCollector = (List<Object>) payloadCollection;
     }
 }

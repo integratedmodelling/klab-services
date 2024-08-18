@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearch
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
@@ -578,13 +579,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
 
     @Override
-    public boolean loadKnowledge(Worldview worldview, UserScope scope) {
-        return client.post(ServicesAPI.REASONER.ADMIN.LOAD_KNOWLEDGE, worldview, Boolean.class);
+    public ResourceSet loadKnowledge(Worldview worldview, UserScope scope) {
+        return client.post(ServicesAPI.REASONER.ADMIN.LOAD_KNOWLEDGE, worldview, ResourceSet.class);
     }
 
     @Override
-    public boolean updateKnowledge(ResourceSet changes, UserScope scope) {
-        return client.post(ServicesAPI.REASONER.ADMIN.UPDATE_KNOWLEDGE, changes, Boolean.class);
+    public ResourceSet  updateKnowledge(ResourceSet changes, UserScope scope) {
+        return client.post(ServicesAPI.REASONER.ADMIN.UPDATE_KNOWLEDGE, changes, ResourceSet.class);
     }
 
     @Override

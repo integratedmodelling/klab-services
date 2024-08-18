@@ -69,6 +69,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.resolutionConstraints.addAll(parent.resolutionConstraints);
     }
 
+    @Override
+    ServiceContextScope copy() {
+        return new ServiceContextScope(this);
+    }
+
     // next 3 are overridden with the same code as the parent because they need to use the local maps, not the
     // parent's
 

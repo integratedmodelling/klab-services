@@ -28,6 +28,18 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     }
 
     @Override
+    ServiceSessionScope copy() {
+        return new ServiceSessionScope(this);
+    }
+
+    @Override
+    protected void copyInfo(ServiceUserScope other) {
+        super.copyInfo(other);
+        this.name = name;
+        this.data.putAll(other.data);
+    }
+
+    @Override
     public ContextScope createContext(String contextName) {
         final ServiceContextScope ret = new ServiceContextScope(this);
         ret.setName(contextName);

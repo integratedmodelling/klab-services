@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.File;
 import java.util.Collection;
@@ -466,13 +467,13 @@ public interface Reasoner extends KlabService {
      */
     boolean hasParentRole(Semantics o1, Concept t);
 
-//    /**
-//     * True if the concept was declared with distributed inherency (<code>of each</code>)
-//     *
-//     * @param c
-//     * @return
-//     */
-//    boolean hasDistributedInherency(Concept c);
+    //    /**
+    //     * True if the concept was declared with distributed inherency (<code>of each</code>)
+    //     *
+    //     * @param c
+    //     * @return
+    //     */
+    //    boolean hasDistributedInherency(Concept c);
 
     /**
      * Like {@link #traits(Semantics)} but only returns the traits directly attributed to this concept.
@@ -956,11 +957,11 @@ public interface Reasoner extends KlabService {
          * substitution of the entire knowledge base in one shot.
          *
          * @param worldview
-         * @param scope admin user scope to report and validate
-
-         * @return
+         * @param scope     admin user scope to report and validate
+         * @return a {@link ResourceSet} including the ontologies, observation strategies, each with any
+         * notifications created during the load process, with the lexical context set as needed
          */
-        boolean loadKnowledge(Worldview worldview, UserScope scope);
+        ResourceSet loadKnowledge(Worldview worldview, UserScope scope);
 
         /**
          * When a reasoner is registered with a resources service by an external orchestrator, changes in the
@@ -970,20 +971,21 @@ public interface Reasoner extends KlabService {
          * same as the one where the changes have been made.
          *
          * @param changes the set of changed ontology and strategy resources with their URLs
-         * @param scope admin user scope to report and validate
-
-         * @return true if any change was made
+         * @param scope   admin user scope to report and validate
+         * @return a {@link ResourceSet} including the passed ontologies, observation strategies, each with
+         * any notifications created during the load process, with the lexical context set as needed
          */
-        boolean updateKnowledge(ResourceSet changes, UserScope scope);
+        ResourceSet updateKnowledge(ResourceSet changes, UserScope scope);
 
         /**
-         * The "port" to ingest an individual concept definition, called by {@link #loadKnowledge(Worldview, UserScope)} (Worldview)}.
-         * Provided separately to make it possible for a resolver service to declare individual local
-         * concepts, as long as it owns the semantic service. Definition must be made only in terms of known
-         * concepts (no forward declaration is allowed), so order of ingestion is critical.
+         * The "port" to ingest an individual concept definition, called by
+         * {@link #loadKnowledge(Worldview, UserScope)} (Worldview)}. Provided separately to make it possible
+         * for a resolver service to declare individual local concepts, as long as it owns the semantic
+         * service. Definition must be made only in terms of known concepts (no forward declaration is
+         * allowed), so order of ingestion is critical.
          *
          * @param statement
-         * @param scope admin user scope to report and validate
+         * @param scope     admin user scope to report and validate
          * @return
          */
         Concept defineConcept(KimConceptStatement statement, UserScope scope);

@@ -16,8 +16,8 @@ import java.io.Serializable;
  * language specifications. Assets are managed by the {@link ResourcesService}, which handles review,
  * versioning and dependencies but knows no semantics; they are retrieved and promoted to {@link Knowledge} in
  * other services to become operational. The needed assets are transferred to the {@link Reasoner} (yielding
- * {@link Concept}s and {@link Observable}s) and to the {@link Resolver} (yielding {@link Model}s and
- * {@link Instance}s) to play their role within the k.LAB ecosystem.
+ * {@link Concept}s and {@link Observable}s) and to the {@link Resolver} (yielding {@link Model}s to play
+ * their role within the k.LAB ecosystem.
  *
  * @author Ferd
  */
@@ -63,4 +63,5 @@ public interface KlabAsset extends Serializable {
      * @return
      */
     Metadata getMetadata();
+
 }

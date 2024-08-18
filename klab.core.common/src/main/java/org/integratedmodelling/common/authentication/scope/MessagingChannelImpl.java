@@ -51,6 +51,18 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         this.receiver = isReceiver;
     }
 
+    protected MessagingChannelImpl(MessagingChannelImpl other) {
+        super(other);
+        this.channel_ = other.channel_;
+        this.sender = other.sender;
+        this.receiver = other.receiver;
+        this.connectionFactory = other.connectionFactory;
+        this.connection = other.connection;
+        this.queueNames.putAll(other.queueNames);
+        this.eventResultSupplierSet.addAll(other.eventResultSupplierSet);
+        this.queueConsumers.putAll(other.queueConsumers);
+    }
+
     /**
      * Convenience Task implementation that delegates to a {@link CompletableFuture} tracking a tracking key
      * that is updated by messages.

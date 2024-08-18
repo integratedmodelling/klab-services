@@ -1285,52 +1285,40 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public boolean loadKnowledge(Worldview worldview, UserScope scope) {
+    public ResourceSet loadKnowledge(Worldview worldview, UserScope scope) {
+
+        List<Notification> ret = new ArrayList<>();
+
+        scope = getScopeManager().collectMessagePayload(scope, Notification.class, ret);
 
         if (worldview.isEmpty()) {
-            return false;
+            return ResourceSet.empty();
         }
 
-        scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorldviewInitializing,
-                worldview.getUrn());
-
         this.worldview = worldview;
-
 
         this.owl.initialize(worldview.getOntologies().get(0));
 
         for (KimOntology ontology : worldview.getOntologies()) {
-            scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.OntologyInitializing,
-             ontology.getUrn());
             for (var statement : ontology.getStatements()) {
                 defineConcept(statement, scope);
             }
             this.owl.registerWithReasoner(ontology);
-            scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.OntologyFinalized,
-             ontology.getUrn());
         }
         this.owl.flushReasoner();
         for (var strategyDocument : worldview.getObservationStrategies()) {
-            scope.send(Message.MessageClass.KnowledgeLifecycle,
-             Message.MessageType.ObservationStrategyInitializing, strategyDocument.getUrn());
             for (var strategy : strategyDocument.getStatements()) {
                 defineStrategy(strategy, scope);
             }
-            scope.send(Message.MessageClass.KnowledgeLifecycle,
-             Message.MessageType.ObservationStrategyFinalized, strategyDocument.getUrn());
         }
 
-        // TODO set the loaded worldview as the one of reference
-        scope.send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorldviewFinalized,
-         worldview.getUrn());
-
-        return true;
+        return Utils.Resources.createFromLexicalNotifications(ret);
     }
 
     @Override
-    public boolean updateKnowledge(ResourceSet changes, UserScope scope) {
-        // TODO
-        return true;
+    public ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
+        // TODO could return the same set w/ added notifications
+        return ResourceSet.empty();
     }
 
     private ObservationStrategy defineStrategy(KimObservationStrategy strategy, Scope scope) {
@@ -1719,8 +1707,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 if (concept.getUpperConceptDefined() != null) {
                     parent = this.owl.getConcept(concept.getUpperConceptDefined());
                     if (parent == null) {
-                        monitor.send(Notification.error("Core concept " + concept.getUpperConceptDefined() + " is unknown",
-                                concept));
+                        monitor.error("Core concept " + concept.getUpperConceptDefined() + " is unknown",
+                                concept);
                     } else {
                         parent.getType().addAll(concept.getType());
                     }
@@ -1745,8 +1733,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     if (concept.getUpperConceptDefined() != null) {
                         upperConceptDefined = parent = this.owl.getConcept(concept.getUpperConceptDefined());
                         if (parent == null) {
-                            monitor.send(Notification.error("Core concept " + concept.getUpperConceptDefined() + " is " +
-                                    "unknown", concept));
+                            monitor.error("Core concept " + concept.getUpperConceptDefined() + " is " +
+                                    "unknown", concept);
                         }
                     } else {
                         parent = this.owl.getCoreOntology().getCoreType(concept.getType());
@@ -1778,7 +1766,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             return ret;
 
         } catch (Throwable e) {
-            monitor.send(Notification.error(e, concept));
+            monitor.error(e, concept);
         }
         return null;
     }
@@ -1827,8 +1815,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             //            for (KimConcept pdecl : parent.getConcepts()) {
             Concept declared = declare(concept.getDeclaredParent(), ontology, monitor);
             if (declared == null) {
-                monitor.send(Notification.error("parent declaration " + concept.getDeclaredParent().getUrn() + " does not " +
-                        "identify " + "known " + "concepts", concept.getDeclaredParent()));
+                monitor.error("parent declaration " + concept.getDeclaredParent().getUrn() + " does not " +
+                        "identify " + "known " + "concepts", concept.getDeclaredParent());
                 return null;
             } else {
                 ontology.add(Axiom.SubClass(declared.getNamespace() + ":" + declared.getName(), mainId));
@@ -1879,16 +1867,16 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 }
                 // kimObject.getChildren().add(chobj);
             } catch (Throwable e) {
-                monitor.send(Notification.error(e, child));
+                monitor.error(e, child);
             }
         }
 
         for (KimConcept inherited : concept.getTraitsInherited()) {
             Concept trait = declare(inherited, ontology, monitor);
             if (trait == null) {
-                monitor.send(Notification.error("inherited " + inherited.getName() + " does not identify " +
+                monitor.error("inherited " + inherited.getName() + " does not identify " +
                                 "known concepts",
-                        inherited));
+                        inherited);
                 // return null;
             } else {
                 this.owl.addTrait(main, trait, ontology);
@@ -1899,9 +1887,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept affected : concept.getQualitiesAffected()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.send(Notification.error("affected " + affected.getName() + " does not identify " +
+                monitor.error("affected " + affected.getName() + " does not identify " +
                                 "known concepts",
-                        affected));
+                        affected);
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(CoreOntology.NS.AFFECTS_PROPERTY), quality
                         , ontology);
@@ -1911,9 +1899,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept required : concept.getRequiredIdentities()) {
             Concept quality = declare(required, ontology, monitor);
             if (quality == null) {
-                monitor.send(Notification.error("required " + required.getName() + " does not identify " +
+                monitor.error("required " + required.getName() + " does not identify " +
                                 "known concepts",
-                        required));
+                        required);
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(NS.REQUIRES_IDENTITY_PROPERTY), quality,
                         ontology);
@@ -1923,9 +1911,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         for (KimConcept affected : concept.getObservablesCreated()) {
             Concept quality = declare(affected, ontology, monitor);
             if (quality == null) {
-                monitor.send(Notification.error("created " + affected.getName() + " does not identify known" +
+                monitor.error("created " + affected.getName() + " does not identify known" +
                                 " concepts",
-                        affected));
+                        affected);
             } else {
                 this.owl.restrictSome(main, this.owl.getProperty(NS.CREATES_PROPERTY), quality, ontology);
             }
@@ -2230,9 +2218,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 // consistency check
                 if (!satisfiable(ret)) {
                     ret.getType().add(SemanticType.NOTHING);
-                    monitor.send(Notification.error("the definition of this concept has logical errors and " +
+                    monitor.error("the definition of this concept has logical errors and " +
                                     "is inconsistent",
-                            concept));
+                            concept);
                 }
 
                 /**
@@ -2242,7 +2230,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
 
         } catch (Throwable e) {
-            monitor.send(Notification.error(e, concept));
+            monitor.error(e, concept);
         }
 
         if (concept.isNegated()) {

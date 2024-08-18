@@ -98,8 +98,13 @@ public class EngineClient implements Engine, PropertyHolder {
         return null;
     }
 
+    /**
+     * The client engine works under a user scope.
+     *
+     * @return
+     */
     @Override
-    public Scope serviceScope() {
+    public UserScope serviceScope() {
         return defaultUser;
     }
 
@@ -146,6 +151,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     @Override
     public void boot() {
+
         this.defaultUser = authenticate();
         this.scopeListeners.add((channel, message) -> {
 
@@ -154,10 +160,13 @@ public class EngineClient implements Engine, PropertyHolder {
                 var changes = message.getPayload(ResourceSet.class);
                 var reasoner = defaultUser.getService(Reasoner.class);
                 if (reasoner.status().isAvailable() && reasoner.isExclusive() && reasoner instanceof Reasoner.Admin admin) {
-                    if (admin.updateKnowledge(changes, getUser())) {
-                        defaultUser.info("Worldview was updated in the reasoner");
+                    var notifications = admin.updateKnowledge(changes, getUser());
+                    // send the notifications around for display
+                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, notifications);
+                    if (Utils.Resources.hasErrors(notifications)) {
+                        defaultUser.warn("Worldview update in the reasoner returned ontologies with logical errors");
                     } else {
-                        defaultUser.warn("Worldview update in the reasoner returned a failure code");
+                        defaultUser.info("Worldview was updated in the reasoner");
                     }
                 }
             }
@@ -232,15 +241,19 @@ public class EngineClient implements Engine, PropertyHolder {
 
                 var resources = serviceScope().getService(ResourcesService.class);
                 if (resources != null && resources.status().isAvailable() && resources.capabilities(serviceScope()).isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
-                    if (admin.loadKnowledge(this.worldview = resources.getWorldview(), getUser())) {
+                    var notifications = admin.loadKnowledge(this.worldview = resources.getWorldview(), getUser());
+
+                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, notifications);
+
+                    if (Utils.Resources.hasErrors(notifications)) {
+                        reasonerDisabled = true;
+                        serviceScope().warn("Worldview loading failed: reasoner is disabled");
+                    } else {
                         reasoningAvailable = true;
                         serviceScope().send(Message.MessageClass.EngineLifecycle,
                                 Message.MessageType.ReasoningAvailable,
                                 reasoner.capabilities(serviceScope()));
                         serviceScope().info("Worldview loaded into local reasoner");
-                    } else {
-                        reasonerDisabled = true;
-                        serviceScope().warn("Worldview loading failed: reasoner is disabled");
                     }
                 }
             }

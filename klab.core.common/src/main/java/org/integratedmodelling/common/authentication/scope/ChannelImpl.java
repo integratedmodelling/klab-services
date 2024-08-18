@@ -37,6 +37,15 @@ public class ChannelImpl implements Channel {
         this.subscriptions.addAll(defaultQueues());
     }
 
+    protected ChannelImpl(ChannelImpl other) {
+        this.identity = other.identity;
+        this.interrupted = other.interrupted;
+        this.errors.set(other.errors.get());
+        this.listeners.addAll(other.listeners);
+        this.functors.addAll(other.functors);
+        this.subscriptions.addAll(other.subscriptions);
+    }
+
     @Override
     public Identity getIdentity() {
         return this.identity;

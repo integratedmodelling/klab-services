@@ -1,12 +1,11 @@
 package org.integratedmodelling.klab.api.services.runtime.impl;
 
-import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.net.URL;
 
 /**
  * Trivial bean for notifications, so these can be sent outside the validator and processed in it. The
@@ -21,7 +20,7 @@ public class NotificationImpl implements Notification, Serializable {
 
     private String message;
     private Level level;
-//    private Type type = Type.None;
+    //    private Type type = Type.None;
     private long timestamp = System.currentTimeMillis();
     // this will be null when parsed, identities are in the runtime
     private String identity;
@@ -33,8 +32,10 @@ public class NotificationImpl implements Notification, Serializable {
     public static class LexicalContextImpl implements LexicalContext {
 
         private String documentUrn;
+        private String projectUrn;
         private int offsetInDocument;
         private int length;
+        private KlabAsset.KnowledgeClass documentType;
 
         @Override
         public String getDocumentUrn() {
@@ -62,6 +63,24 @@ public class NotificationImpl implements Notification, Serializable {
         public void setLength(int length) {
             this.length = length;
         }
+
+        @Override
+        public KlabAsset.KnowledgeClass getDocumentType() {
+            return documentType;
+        }
+
+        public void setDocumentType(KlabAsset.KnowledgeClass documentType) {
+            this.documentType = documentType;
+        }
+
+        @Override
+        public String getProjectUrn() {
+            return projectUrn;
+        }
+
+        public void setProjectUrn(String projectUrn) {
+            this.projectUrn = projectUrn;
+        }
     }
 
     public NotificationImpl() {
@@ -72,22 +91,22 @@ public class NotificationImpl implements Notification, Serializable {
         this.level = level;
     }
 
-//    public NotificationImpl(Pair<String, Type> message, Level level) {
-//        this.message = message.getFirst();
-//        this.type = message.getSecond();
-//        this.level = level;
-//    }
+    //    public NotificationImpl(Pair<String, Type> message, Level level) {
+    //        this.message = message.getFirst();
+    //        this.type = message.getSecond();
+    //        this.level = level;
+    //    }
 
-//    public NotificationImpl(String message2, Level level2, long timestamp2) {
-//        this(message2, level2);
-//        this.timestamp = timestamp2;
-//    }
-//
-//    public NotificationImpl(Pair<String, Type> message2, Level level2, long timestamp2) {
-//        this(message2.getFirst(), level2);
-//        this.timestamp = timestamp2;
-//        this.type = message2.getSecond();
-//    }
+    //    public NotificationImpl(String message2, Level level2, long timestamp2) {
+    //        this(message2, level2);
+    //        this.timestamp = timestamp2;
+    //    }
+    //
+    //    public NotificationImpl(Pair<String, Type> message2, Level level2, long timestamp2) {
+    //        this(message2.getFirst(), level2);
+    //        this.timestamp = timestamp2;
+    //        this.type = message2.getSecond();
+    //    }
 
     public String getMessage() {
         return message;
@@ -110,10 +129,10 @@ public class NotificationImpl implements Notification, Serializable {
         return timestamp;
     }
 
-//    @Override
-//    public Type getType() {
-//        return type;
-//    }
+    //    @Override
+    //    public Type getType() {
+    //        return type;
+    //    }
 
     @Override
     public Mode getMode() {
@@ -125,9 +144,9 @@ public class NotificationImpl implements Notification, Serializable {
         return identity;
     }
 
-//    public void setType(Type type) {
-//        this.type = type;
-//    }
+    //    public void setType(Type type) {
+    //        this.type = type;
+    //    }
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;

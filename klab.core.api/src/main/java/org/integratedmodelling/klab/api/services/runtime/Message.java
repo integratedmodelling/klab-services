@@ -220,6 +220,11 @@ public interface Message extends Serializable {
         Warning(Queue.Warnings, Notification.class),
         Error(Queue.Errors, Notification.class),
 
+        /*
+         * --- reasoning-related messages
+         */
+        LogicalValidation(Queue.Events,ResourceSet.class),
+
         /**
          * Runtime event messages
          */
@@ -250,18 +255,7 @@ public interface Message extends Serializable {
         /**
          * Engine lifecycle, should only be client-wide
          */
-        UsingDistribution(Queue.UI, Distribution.class),
-
-        /**
-         * Admin service messages for Reasoner. Notifications sent in between these with same service and
-         * lexical context build up the logical markers for the content.
-         */
-        WorldviewInitializing(Queue.Events, String.class),
-        OntologyInitializing(Queue.Events, String.class),
-        OntologyFinalized(Queue.Events, String.class),
-        ObservationStrategyInitializing(Queue.Events, String.class),
-        ObservationStrategyFinalized(Queue.Events, String.class),
-        WorldviewFinalized(Queue.Events, String.class);
+        UsingDistribution(Queue.UI, Distribution.class);
 
         public final Class<?> payloadClass;
         public final Queue queue;

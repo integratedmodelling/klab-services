@@ -338,6 +338,39 @@ public class Utils {
             return destination;
         }
 
+        /**
+         * Build a ResourceSet from a list of notifications that contain lexical scopes related to document
+         * resources.
+         *
+         * @param notifications
+         * @return
+         */
+        public static ResourceSet createFromLexicalNotifications(List<Notification> notifications) {
+            ResourceSet ret = new ResourceSet();
+            for (var notification : notifications) {
+                if (notification.getLexicalContext() != null) {
+                    
+                }
+            }
+            return ret;
+        }
+
+        public static boolean hasErrors(ResourceSet resourceSet) {
+
+            //  inspect resource set and all resources for error notifications
+            if (Notifications.hasErrors(resourceSet.getNotifications())) {
+                return true;
+            }
+
+            for (var resource : Utils.Collections.join(resourceSet.getNamespaces(),
+                    resourceSet.getBehaviors(), resourceSet.getResources(), resourceSet.getResults(),
+                    resourceSet.getOntologies(), resourceSet.getObservationStrategies())) {
+                if (Notifications.hasErrors(resource.getNotifications())) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     /**
@@ -3527,7 +3560,7 @@ public class Utils {
                 return null;
             }
 
-            return switch(o) {
+            return switch (o) {
                 case KimObservable observable -> observable.getUrn();
                 case KimConcept observable -> observable.getUrn();
                 case Observable observable -> observable.getUrn();

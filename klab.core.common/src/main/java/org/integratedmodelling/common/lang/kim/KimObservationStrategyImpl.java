@@ -22,8 +22,8 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     private String urn;
     private String description;
     private Scope scope = Scope.PUBLIC;
-
     private String namespace;
+    private String projectName;
     private List<Operation> operations = new ArrayList<>();
     private Map<KimLiteral, Filter> macroVariables = new LinkedHashMap<>();
     private List<Filter> filters = new ArrayList<>();
@@ -174,6 +174,13 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         return namespace;
     }
 
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
 
     public static class FilterImpl implements Filter {
 
@@ -261,5 +268,6 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         public void setDeferredStrategies(List<KimObservationStrategy> deferredStrategies) {
             this.deferredStrategies = deferredStrategies;
         }
+
     }
 }

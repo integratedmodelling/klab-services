@@ -13,7 +13,7 @@ public class KimAssetImpl implements KimAsset {
     private List<Annotation> annotations = new ArrayList<>();
     private String deprecation;
     private boolean deprecated;
-
+    private String projectName;
 
     public KimAssetImpl() {}
 
@@ -69,5 +69,13 @@ public class KimAssetImpl implements KimAsset {
 
     public void setLength(int length) {
         this.length = length;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

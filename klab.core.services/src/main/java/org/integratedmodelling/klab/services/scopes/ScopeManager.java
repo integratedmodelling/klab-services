@@ -13,8 +13,10 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.actors.KAgent;
 import org.integratedmodelling.klab.services.actors.UserAgent;
@@ -28,10 +30,7 @@ import org.jgrapht.graph.DefaultEdge;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -274,4 +273,13 @@ public class ScopeManager {
         }
     }
 
+    public <T, S extends Scope> S collectMessagePayload(S scope, Class<T> payloadClass, List<T> payloadCollection) {
+        // TODO create a new scope with collector of any message payload that matches the passed class
+        if (scope instanceof ServiceUserScope serviceUserScope) {
+            var ret = serviceUserScope.copy();
+            ret.collectMessagePayload(payloadClass, payloadCollection);
+            return (S)ret;
+        }
+        return scope;
+    }
 }

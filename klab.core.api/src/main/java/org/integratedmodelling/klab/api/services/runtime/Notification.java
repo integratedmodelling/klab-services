@@ -1,17 +1,13 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
 
-import java.awt.event.WindowStateListener;
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
-import java.net.URL;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.util.stream.Stream;
 
 public interface Notification extends Serializable {
 
@@ -39,6 +35,10 @@ public interface Notification extends Serializable {
     interface LexicalContext {
 
         String getDocumentUrn();
+
+        String getProjectUrn();
+
+        KlabAsset.KnowledgeClass getDocumentType();
 
         int getOffsetInDocument();
 
@@ -148,6 +148,7 @@ public interface Notification extends Serializable {
                     lc.setLength(statement.getLength());
                     lc.setOffsetInDocument(statement.getOffsetInDocument());
                     lc.setDocumentUrn(statement.getNamespace());
+                    lc.setProjectUrn(statement.getProjectName());
                     lexicalContext = lc;
                 }
             }

@@ -37,7 +37,7 @@ public enum LanguageAdapter {
         return true;
     }
 
-    public KimObservable adaptObservable(ObservableSyntax observableSyntax, String namespace) {
+    public KimObservable adaptObservable(ObservableSyntax observableSyntax, String namespace, String projectName) {
 
         KimObservableImpl ret = new KimObservableImpl();
 
@@ -45,19 +45,20 @@ public enum LanguageAdapter {
         ret.setOffsetInDocument(observableSyntax.getCodeOffset());
         ret.setUrn(observableSyntax.encode());
         ret.setNamespace(namespace);
-        ret.setSemantics(adaptSemantics(observableSyntax.getSemantics(), namespace));
+        ret.setSemantics(adaptSemantics(observableSyntax.getSemantics(), namespace, projectName));
         ret.setCodeName(ret.getSemantics().getType().contains(SemanticType.NOTHING)
                         ? "invalid_observable"
                         : observableSyntax.codeName());
         ret.setReferenceName(observableSyntax.referenceName());
         ret.setFormalName(observableSyntax.getStatedName());
+        ret.setProjectName(projectName);
 
         // TODO value ops
 
         return ret;
     }
 
-    public KimConcept adaptSemantics(SemanticSyntax semantics, String namespace) {
+    public KimConcept adaptSemantics(SemanticSyntax semantics, String namespace, String projectName) {
 
         KimConceptImpl ret = new KimConceptImpl();
 
@@ -69,6 +70,8 @@ public enum LanguageAdapter {
         ret.setCodeName(semantics.codeName());
         ret.setDeprecation(semantics.getDeprecation());
         ret.setDeprecated(semantics.getDeprecation() != null);
+        ret.setNamespace(namespace);
+        ret.setProjectName(projectName);
 
         if (semantics.isLeafDeclaration()) {
             ret.setName(semantics.encode());
@@ -93,34 +96,34 @@ public enum LanguageAdapter {
             switch (restriction.getFirst()) {
                 case OF -> {
                     // TODO
-                    ret.setInherent(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setInherent(adaptSemantics(restriction.getSecond().getFirst(), namespace, projectName));
                     //                    if (restriction.getFirst() == SemanticSyntax.BinaryOperator
                     //                    .OF_EACH) {
                     //                        ret.setDistributedInherent(SemanticRole.INHERENT);
                     //                    }
                 }
                 case FOR -> {
-                    ret.setGoal(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setGoal(adaptSemantics(restriction.getSecond().getFirst(), namespace, projectName));
                 }
                 case WITH -> {
-                    ret.setCompresent(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setCompresent(adaptSemantics(restriction.getSecond().getFirst(), namespace, projectName));
                 }
                 case ADJACENT -> {
-                    ret.setAdjacent(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setAdjacent(adaptSemantics(restriction.getSecond().getFirst(), namespace, projectName));
                 }
                 case OR -> {
                 }
                 case AND -> {
                 }
                 case CAUSING -> {
-                    ret.setCaused(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setCaused(adaptSemantics(restriction.getSecond().getFirst(), namespace, projectName));
                 }
                 case CAUSED_BY -> {
-                    ret.setCausant(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setCausant(adaptSemantics(restriction.getSecond().getFirst(), namespace, projectName));
                 }
                 case LINKING -> {
-                    ret.setRelationshipSource(adaptSemantics(restriction.getSecond().get(0), namespace));
-                    ret.setRelationshipTarget(adaptSemantics(restriction.getSecond().get(1), namespace));
+                    ret.setRelationshipSource(adaptSemantics(restriction.getSecond().get(0), namespace, projectName));
+                    ret.setRelationshipTarget(adaptSemantics(restriction.getSecond().get(1), namespace, projectName));
                 }
                 case CONTAINING -> {
                     // TODO
@@ -131,7 +134,7 @@ public enum LanguageAdapter {
                     throw new IllegalStateException("no syntax for containment");
                 }
                 case DURING -> { // TODO missing DURING_EACH - but is it necessary?
-                    ret.setCooccurrent(adaptSemantics(restriction.getSecond().get(0), namespace));
+                    ret.setCooccurrent(adaptSemantics(restriction.getSecond().get(0), namespace, projectName));
                 }
             }
         }
@@ -178,7 +181,8 @@ public enum LanguageAdapter {
         ret.setName(define.getName());
         ret.setLength(define.getCodeLength());
         ret.setNamespace(namespace.getUrn());
-        ret.setValue(adaptValue(define.getValue(), namespace.getUrn()));
+        ret.setProjectName(namespace.getProjectName());
+        ret.setValue(adaptValue(define.getValue(), namespace.getUrn(), namespace.getProjectName()));
         return ret;
     }
 
@@ -189,7 +193,7 @@ public enum LanguageAdapter {
      * @param value
      * @return
      */
-    private Object adaptValue(Object value, String namespace) {
+    private Object adaptValue(Object value, String namespace, String projectName) {
 
         if (value == null) {
             return null;
@@ -207,35 +211,35 @@ public enum LanguageAdapter {
                 ret.setValue(parsedLiteral.getPod() instanceof Number number ? number : 0);
                 return ret;
             }
-            object = adaptValue(parsedLiteral.getPod(), namespace);
+            object = adaptValue(parsedLiteral.getPod(), namespace, projectName);
             if (object == null) {
                 return null;
             }
         } /*else if (object instanceof Literal literal) {
             object = literal.get(Object.class);
         } */else if (object instanceof ObservableSyntax observableSyntax) {
-            object = adaptObservable(observableSyntax, namespace);
+            object = adaptObservable(observableSyntax, namespace, projectName);
         } else if (object instanceof SemanticSyntax semanticSyntax) {
-            object = adaptSemantics(semanticSyntax, namespace);
+            object = adaptSemantics(semanticSyntax, namespace, projectName);
         }
 
         return switch (object) {
             case Map<?, ?> map -> {
                 var ret = new LinkedHashMap<Object, Object>();
                 for (Object key : map.keySet()) {
-                    ret.put(key, adaptValue(map.get(key), namespace));
+                    ret.put(key, adaptValue(map.get(key), namespace, projectName));
                 }
                 yield ret;
             }
             case Collection<?> collection -> {
                 var ret = new ArrayList<>();
                 for (Object item : collection) {
-                    ret.add(adaptValue(item, namespace));
+                    ret.add(adaptValue(item, namespace, projectName));
                 }
                 yield ret;
             }
             case ObservableSyntax observableSyntax -> {
-                yield adaptObservable(observableSyntax, namespace);
+                yield adaptObservable(observableSyntax, namespace, projectName);
             }
             default -> {
                 yield object;
@@ -266,14 +270,14 @@ public enum LanguageAdapter {
 
         boolean inactive = false;
         for (var observable : model.getObservables()) {
-            var obs = adaptObservable(observable, namespace.getUrn());
+            var obs = adaptObservable(observable, namespace.getUrn(), namespace.getProjectName());
             ret.getObservables().add(obs);
             if (obs.getSemantics().is(SemanticType.NOTHING)) {
                 inactive = true;
             }
         }
         for (var dependency : model.getDependencies()) {
-            var obs = adaptObservable(dependency, namespace.getUrn());
+            var obs = adaptObservable(dependency, namespace.getUrn(), namespace.getProjectName());
             ret.getDependencies().add(obs);
             if (obs.getSemantics().is(SemanticType.NOTHING)) {
                 inactive = true;
@@ -452,12 +456,12 @@ public enum LanguageAdapter {
 
         // we don't add source code here as each strategy has its own
         for (var strategy : definition.getStrategies()) {
-            ret.getStatements().add(adaptStrategy(strategy));
+            ret.getStatements().add(adaptStrategy(strategy, projectName));
         }
         return ret;
     }
 
-    private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy) {
+    private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy, String projectName) {
 
         var ret = new KimObservationStrategyImpl();
 
@@ -468,6 +472,7 @@ public enum LanguageAdapter {
         ret.setLength(strategy.getCodeLength());
         ret.setDeprecation(strategy.getDeprecation());
         ret.setDeprecated(strategy.getDeprecation() != null);
+        ret.setProjectName(projectName);
 
         for (var filter : strategy.getFilters()) {
             var f = new KimObservationStrategyImpl.FilterImpl();
@@ -480,7 +485,7 @@ public enum LanguageAdapter {
 
             }
             if (operation.getObservable() != null) {
-                o.setObservable(adaptObservable(operation.getObservable(), strategy.getName()));
+                o.setObservable(adaptObservable(operation.getObservable(), strategy.getName(), projectName));
             }
             if (!operation.getFunctions().isEmpty()) {
 
@@ -516,11 +521,11 @@ public enum LanguageAdapter {
                         ontology.getImportedCoreOntologies().get(owlImport)));
             }
         } else {
-            ret.setDomain(adaptSemantics(ontology.getDomain(), ontology.getName()));
+            ret.setDomain(adaptSemantics(ontology.getDomain(), ontology.getName(), projectName));
         }
 
         for (var definition : ontology.getConceptDeclarations()) {
-            ret.getStatements().add(adaptConceptDefinition(definition, ontology.getName()));
+            ret.getStatements().add(adaptConceptDefinition(definition, ontology.getName(), projectName));
         }
 
         ret.getNotifications().addAll(notifications);
@@ -529,9 +534,10 @@ public enum LanguageAdapter {
     }
 
     private KimConceptStatement adaptConceptDefinition(ConceptDeclarationSyntax definition,
-                                                       String namespace) {
+                                                       String namespace, String projectName) {
 
         KimConceptStatementImpl ret = new KimConceptStatementImpl();
+
         ret.setUrn(definition.getName());
         ret.setNamespace(namespace);
         ret.setAbstract(definition.isAbstract());
@@ -543,8 +549,9 @@ public enum LanguageAdapter {
         ret.setLength(definition.getCodeLength());
         ret.setDeprecation(definition.getDeprecation());
         ret.setDeprecated(definition.getDeprecation() != null);
-
+        ret.setProjectName(projectName);
         ret.setType(adaptSemanticType(definition.getDeclaredType()));
+
         if (definition.isDeniable()) {
             ret.getType().add(SemanticType.DENIABLE);
         }
@@ -562,14 +569,14 @@ public enum LanguageAdapter {
             ret.setUpperConceptDefined(definition.getDeclaredParent().encode());
         } else {
             ret.setDeclaredParent(definition.getDeclaredParent() == null ? null :
-                                  adaptSemantics(definition.getDeclaredParent(), namespace));
+                                  adaptSemantics(definition.getDeclaredParent(), namespace, projectName));
             if (ret.getDeclaredParent() != null && definition.isGenericQuality()) {
                 ret.getType().clear();
                 ret.getType().addAll(ret.getDeclaredParent().getType());
             }
         }
         for (var child : definition.getChildren()) {
-            ret.getChildren().add(adaptConceptDefinition(child, namespace));
+            ret.getChildren().add(adaptConceptDefinition(child, namespace, projectName));
         }
         return ret;
     }

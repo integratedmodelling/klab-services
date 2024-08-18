@@ -26,6 +26,11 @@ public abstract class AbstractReactiveScopeImpl extends MessagingChannelImpl imp
         super(identity, isSender, isReceiver);
     }
 
+    protected AbstractReactiveScopeImpl(AbstractReactiveScopeImpl other) {
+        super(other);
+        this.agent = other.agent;
+    }
+
     @Override
     public KActorsBehavior.Ref getAgent() {
         return this.agent;
