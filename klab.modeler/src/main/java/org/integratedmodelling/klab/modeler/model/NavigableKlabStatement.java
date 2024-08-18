@@ -66,6 +66,11 @@ public class NavigableKlabStatement extends NavigableKlabAsset<KlabStatement> im
 		return delegate.getProjectName();
 	}
 
+	@Override
+	public KnowledgeClass getDocumentClass() {
+		return delegate.getDocumentClass();
+	}
+
 	public NavigableKlabDocument<?, ?> document() {
 		var parent = this.parent();
 		while (parent instanceof NavigableKlabAsset<?> asset && !(parent instanceof NavigableKlabDocument)) {

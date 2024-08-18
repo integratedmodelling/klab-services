@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.utils;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
+import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.data.mediation.classification.Classifier;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -347,9 +348,32 @@ public class Utils {
          */
         public static ResourceSet createFromLexicalNotifications(List<Notification> notifications) {
             ResourceSet ret = new ResourceSet();
+
+            Map<String, ResourceSet.Resource> resources = new HashMap<>();
+
             for (var notification : notifications) {
-                if (notification.getLexicalContext() != null) {
-                    
+                if (notification.getLexicalContext() != null && notification.getLexicalContext().getDocumentType() != null) {
+
+                    var resource =
+                            resources.computeIfAbsent(notification.getLexicalContext().getDocumentUrn(),
+                                    document -> {
+                                        var res = new ResourceSet.Resource();
+                                        res.setKnowledgeClass(notification.getLexicalContext().getDocumentType());
+                                        res.setResourceUrn(notification.getLexicalContext().getDocumentUrn());
+                                        res.setProjectUrn(notification.getLexicalContext().getProjectUrn());
+                                        res.setResourceVersion(Version.ANY_VERSION);
+                                        switch (notification.getLexicalContext().getDocumentType()) {
+                                            case NAMESPACE -> ret.getNamespaces().add(res);
+                                            case ONTOLOGY -> ret.getOntologies().add(res);
+                                            case OBSERVATION_STRATEGY_DOCUMENT ->
+                                                    ret.getObservationStrategies().add(res);
+                                            case BEHAVIOR, APPLICATION, TESTCASE, COMPONENT ->
+                                                    ret.getBehaviors().add(res);
+                                        }
+                                        return res;
+                                    });
+
+                    resource.getNotifications().add(notification);
                 }
             }
             return ret;

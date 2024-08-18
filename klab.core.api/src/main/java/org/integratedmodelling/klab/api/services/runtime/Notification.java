@@ -38,6 +38,8 @@ public interface Notification extends Serializable {
 
         String getProjectUrn();
 
+        KlabAsset.KnowledgeClass getType();
+
         KlabAsset.KnowledgeClass getDocumentType();
 
         int getOffsetInDocument();
@@ -72,12 +74,12 @@ public interface Notification extends Serializable {
 
     Mode getMode();
 
-    /**
-     * Notifications build with Forward policy will be sent to paired scopes through websockets.
-     *
-     * @return
-     */
-    Message.ForwardingPolicy getForwardingPolicy();
+//    /**
+//     * Notifications build with Forward policy will be sent to paired scopes through websockets.
+//     *
+//     * @return
+//     */
+//    Message.ForwardingPolicy getForwardingPolicy();
 
     /**
      * The document context or null.
@@ -120,7 +122,7 @@ public interface Notification extends Serializable {
         long timestamp = System.currentTimeMillis();
 //        Type type = Type.None;
         Mode mode = Mode.Normal;
-        Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
+//        Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
         if (objects != null) {
             for (Object o : objects) {
@@ -139,16 +141,16 @@ public interface Notification extends Serializable {
                     lexicalContext = lc;
                 } else if (o instanceof Mode mod) {
                     mode = mod;
-                } /*else if (o instanceof Type typ) {
-                    type = typ;
-                } */else if (o instanceof Message.ForwardingPolicy fwp) {
+                } /*else if (o instanceof Message.ForwardingPolicy fwp) {
                     forwardingPolicy = fwp;
-                } else if (o instanceof KlabStatement statement) {
+                } */else if (o instanceof KlabStatement statement) {
                     var lc = new NotificationImpl.LexicalContextImpl();
                     lc.setLength(statement.getLength());
                     lc.setOffsetInDocument(statement.getOffsetInDocument());
                     lc.setDocumentUrn(statement.getNamespace());
                     lc.setProjectUrn(statement.getProjectName());
+                    lc.setDocumentType(statement.getDocumentClass());
+                    lc.setType(KlabAsset.classify(statement));
                     lexicalContext = lc;
                 }
             }
@@ -159,7 +161,7 @@ public interface Notification extends Serializable {
         ret.setTimestamp(timestamp);
         ret.setMode(mode);
 //        ret.setType(type);
-        ret.setForwardingPolicy(forwardingPolicy);
+//        ret.setForwardingPolicy(forwardingPolicy);
 
         return ret;
     }

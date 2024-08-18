@@ -75,6 +75,14 @@ public interface KlabStatement extends Statement, KlabAsset {
     String getProjectName();
 
     /**
+     * The knowledge class of the containing document, if any (or if this is a document). Used for reporting
+     * and to compile portable parsing results.
+     *
+     * @return the class of the (containing) document, or null if the statement was defined outside of one.
+     */
+    KnowledgeClass getDocumentClass();
+
+    /**
      * Scope can be declared for namespaces and models. Default is public or whatever the containing namespace
      * scope is. Concepts unfortunately cannot be scoped with current infrastructure.
      *

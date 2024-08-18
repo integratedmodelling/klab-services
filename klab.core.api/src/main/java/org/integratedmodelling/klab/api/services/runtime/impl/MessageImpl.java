@@ -51,7 +51,7 @@ public class MessageImpl implements Message, Serializable {
     private long inResponseTo;
 //    private Notification.Type notificationType;
     private long timestamp = System.currentTimeMillis();
-    private ForwardingPolicy forwardingPolicy = ForwardingPolicy.DoNotForward;
+//    private ForwardingPolicy forwardingPolicy = ForwardingPolicy.DoNotForward;
     private Message.Queue queue;
 
     private static BiFunction<Map<?, ?>, Class<?>, Object> translator;
@@ -218,13 +218,13 @@ public class MessageImpl implements Message, Serializable {
 //    public void setNotificationType(Notification.Type notificationType) {
 //        this.notificationType = notificationType;
 //    }
-
-    @Override
-    public ForwardingPolicy getForwardingPolicy() {
-        return forwardingPolicy;
-    }
-
-    public void setForwardingPolicy(ForwardingPolicy forwardingPolicy) {
-        this.forwardingPolicy = forwardingPolicy;
-    }
+//
+//    @Override
+//    public ForwardingPolicy getForwardingPolicy() {
+//        return forwardingPolicy;
+//    }
+//
+//    public void setForwardingPolicy(ForwardingPolicy forwardingPolicy) {
+//        this.forwardingPolicy = forwardingPolicy;
+//    }
 }

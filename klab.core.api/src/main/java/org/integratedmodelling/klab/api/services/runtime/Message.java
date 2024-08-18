@@ -55,18 +55,18 @@ public interface Message extends Serializable {
         None
     }
 
-    @Deprecated
-    enum ForwardingPolicy {
-        /**
-         * Message was created locally and will be forwarded to paired scopes
-         */
-        Forward,
-        /**
-         * Message was forwarded from a paired scope and will not be further forwarded. This should be the
-         * default policy for newly created messages.
-         */
-        DoNotForward
-    }
+//    @Deprecated
+//    enum ForwardingPolicy {
+//        /**
+//         * Message was created locally and will be forwarded to paired scopes
+//         */
+//        Forward,
+//        /**
+//         * Message was forwarded from a paired scope and will not be further forwarded. This should be the
+//         * default policy for newly created messages.
+//         */
+//        DoNotForward
+//    }
 
     /**
      * Message class. Ugly type name makes life easier.
@@ -272,7 +272,7 @@ public interface Message extends Serializable {
 
     }
 
-    ForwardingPolicy getForwardingPolicy();
+//    ForwardingPolicy getForwardingPolicy();
 
     /**
      * Unique ID for each message.
@@ -379,9 +379,9 @@ public interface Message extends Serializable {
             } */else if (ob instanceof Queue q) {
                 queueOverridden = true;
                 ret.setQueue(q);
-            } else if (ob instanceof ForwardingPolicy) {
+            } /*else if (ob instanceof ForwardingPolicy) {
                 ret.setForwardingPolicy((ForwardingPolicy) ob);
-            } else if (ob instanceof Notification notification) {
+            } */else if (ob instanceof Notification notification) {
                 ret.setMessageClass(MessageClass.Notification);
                 ret.setMessageType(switch (notification.getLevel()) {
                     case Debug -> MessageType.Debug;

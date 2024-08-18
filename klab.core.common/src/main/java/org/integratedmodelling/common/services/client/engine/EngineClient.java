@@ -241,6 +241,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
                 var resources = serviceScope().getService(ResourcesService.class);
                 if (resources != null && resources.status().isAvailable() && resources.capabilities(serviceScope()).isWorldviewProvider() && reasoner instanceof Reasoner.Admin admin) {
+
                     var notifications = admin.loadKnowledge(this.worldview = resources.getWorldview(), getUser());
 
                     serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, notifications);

@@ -27,7 +27,7 @@ public class NotificationImpl implements Notification, Serializable {
     private LexicalContext lexicalContext;
     private Mode mode;
 
-    private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
+//    private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
     public static class LexicalContextImpl implements LexicalContext {
 
@@ -36,6 +36,7 @@ public class NotificationImpl implements Notification, Serializable {
         private int offsetInDocument;
         private int length;
         private KlabAsset.KnowledgeClass documentType;
+        private KlabAsset.KnowledgeClass type;
 
         @Override
         public String getDocumentUrn() {
@@ -80,6 +81,15 @@ public class NotificationImpl implements Notification, Serializable {
 
         public void setProjectUrn(String projectUrn) {
             this.projectUrn = projectUrn;
+        }
+
+        @Override
+        public KlabAsset.KnowledgeClass getType() {
+            return type;
+        }
+
+        public void setType(KlabAsset.KnowledgeClass type) {
+            this.type = type;
         }
     }
 
@@ -169,14 +179,14 @@ public class NotificationImpl implements Notification, Serializable {
         this.mode = mode;
     }
 
-    @Override
-    public Message.ForwardingPolicy getForwardingPolicy() {
-        return forwardingPolicy;
-    }
-
-    public void setForwardingPolicy(Message.ForwardingPolicy forwardingPolicy) {
-        this.forwardingPolicy = forwardingPolicy;
-    }
+//    @Override
+//    public Message.ForwardingPolicy getForwardingPolicy() {
+//        return forwardingPolicy;
+//    }
+//
+//    public void setForwardingPolicy(Message.ForwardingPolicy forwardingPolicy) {
+//        this.forwardingPolicy = forwardingPolicy;
+//    }
 
     @Override
     public String toString() {

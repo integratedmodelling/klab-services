@@ -30,6 +30,7 @@ public interface KimModel extends KlabStatement, Resolvable {
      */
     boolean isInactive();
 
+
     /**
      * Data type of primary observable meant to discriminate void and non-semantic models from the semantic
      * ones. Can be either of VOID, CONCEPT, NUMBER, TEXT or BOOLEAN.

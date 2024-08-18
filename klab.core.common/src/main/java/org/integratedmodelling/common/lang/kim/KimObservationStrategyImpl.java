@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.lang.kim;
 
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
@@ -28,6 +29,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     private Map<KimLiteral, Filter> macroVariables = new LinkedHashMap<>();
     private List<Filter> filters = new ArrayList<>();
     private int rank;
+    private KnowledgeClass documentClass = KnowledgeClass.OBSERVATION_STRATEGY;
 
     public KimObservationStrategyImpl() {}
 
@@ -180,6 +182,15 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    @Override
+    public KnowledgeClass getDocumentClass() {
+        return documentClass;
+    }
+
+    public void setDocumentClass(KnowledgeClass documentClass) {
+        this.documentClass = documentClass;
     }
 
     public static class FilterImpl implements Filter {

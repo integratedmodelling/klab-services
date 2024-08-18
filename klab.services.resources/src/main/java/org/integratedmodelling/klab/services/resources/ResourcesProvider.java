@@ -480,7 +480,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                     scope.error(notification.message().message());
                 }
             }
-            return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed, null, null);
+            return errors ? null : LanguageAdapter.INSTANCE.adaptObservable(parsed, null, null, null);
         }
         return null;
     }
@@ -503,7 +503,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                     scope.error(notification.message().message());
                 }
             }
-            return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null);
+            return errors ? null : LanguageAdapter.INSTANCE.adaptSemantics(parsed, null, null, null);
         }
         return null;
     }

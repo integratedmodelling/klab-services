@@ -22,6 +22,7 @@ public abstract class KimStatementImpl extends KimAssetImpl implements KlabState
     private String namespace;
     private Scope scope = Scope.PUBLIC;
     private List<Notification> notifications = new ArrayList<>();
+    private KnowledgeClass documentClass;
 
     public KimStatementImpl() {
 
@@ -75,4 +76,12 @@ public abstract class KimStatementImpl extends KimAssetImpl implements KlabState
         this.notifications = notifications;
     }
 
+    @Override
+    public KnowledgeClass getDocumentClass() {
+        return documentClass;
+    }
+
+    public void setDocumentClass(KnowledgeClass documentClass) {
+        this.documentClass = documentClass;
+    }
 }
