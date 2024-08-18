@@ -347,8 +347,8 @@ public class Utils {
          * @return
          */
         public static ResourceSet createFromLexicalNotifications(List<Notification> notifications) {
-            ResourceSet ret = new ResourceSet();
 
+            ResourceSet ret = new ResourceSet();
             Map<String, ResourceSet.Resource> resources = new HashMap<>();
 
             for (var notification : notifications) {

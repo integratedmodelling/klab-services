@@ -26,12 +26,14 @@ public interface KlabAsset extends Serializable {
     public enum KnowledgeClass {
         CONCEPT, OBSERVABLE, MODEL, DEFINITION, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE,
         APPLICATION, ONTOLOGY, OBSERVATION_STRATEGY, OBSERVATION_STRATEGY_DOCUMENT,
-        COMPONENT, PROJECT, WORLDVIEW;
+        COMPONENT, PROJECT, WORLDVIEW, CONCEPT_STATEMENT;
     }
 
     public static KnowledgeClass classify(KlabAsset document) {
         return switch (document) {
             case KimConcept c -> KnowledgeClass.CONCEPT;
+            case KimConceptStatement c -> KnowledgeClass.CONCEPT_STATEMENT;
+            case KimObservationStrategy c -> KnowledgeClass.OBSERVATION_STRATEGY;
             case KimObservable c -> KnowledgeClass.OBSERVABLE;
             case KimOntology o -> KnowledgeClass.ONTOLOGY;
             case KimObservationStrategyDocument s -> KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
