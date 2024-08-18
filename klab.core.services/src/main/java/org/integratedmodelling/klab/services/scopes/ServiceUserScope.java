@@ -86,7 +86,26 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
      * @return
      */
     ServiceUserScope copy() {
-        var ret = new ServiceUserScope(this);
+
+        // ensure any virtual defined for this scope is called.
+        final ServiceUserScope originalScope = this;
+
+        var ret = new ServiceUserScope(this) {
+            @Override
+            public <T extends KlabService> T getService(Class<T> serviceClass) {
+                return originalScope.getService(serviceClass);
+            }
+
+            @Override
+            public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
+                return originalScope.getServices(serviceClass);
+            }
+
+            @Override
+            public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
+                return originalScope.getService(serviceId, serviceClass);
+            }
+        };
         ret.copyInfo(this);
         return ret;
     }
