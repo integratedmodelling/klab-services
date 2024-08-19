@@ -7,9 +7,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
+import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 
 public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, KimNamespace> implements KimNamespace {
@@ -22,8 +25,12 @@ public class NavigableKimNamespace extends NavigableKlabDocument<KlabStatement, 
 	}
 
 	@Override
-	protected List<? extends NavigableKlabStatement> createChildren() {
-		return getStatements().stream().map(s -> new NavigableKlabStatement(s, this)).toList();
+	protected List<? extends NavigableKlabStatement<?>> createChildren() {
+		return getStatements().stream().map(s ->  switch(s) {
+			case KimModel kimModel -> new NavigableKimModel(kimModel, this);
+			case KimSymbolDefinition kimSymbolDefinition -> new NavigableKimSymbolDefinition(kimSymbolDefinition, this);
+			default -> throw new KlabInternalErrorException("Unrecognized statement in namespace when wrapping for navigation");
+		}).toList();
 	}
 
 //	@Override

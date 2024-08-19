@@ -175,7 +175,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                 panel.bringForward();
             }
 
-        } else if (asset instanceof NavigableKlabStatement navigableStatement) {
+        } else if (asset instanceof NavigableKlabStatement<?> navigableStatement) {
             var document = navigableStatement.parent(NavigableDocument.class);
             if (document != null) {
                 var panel = getController().getPanelController(document, DocumentEditorController.class);

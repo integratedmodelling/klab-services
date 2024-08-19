@@ -22,8 +22,8 @@ public class NavigableObservationStrategies extends NavigableKlabDocument<KimObs
 	}
 
 	@Override
-	protected List<? extends NavigableKlabStatement> createChildren() {
-		return getStatements().stream().map(s -> new NavigableKlabStatement(s, this)).toList();
+	protected List<? extends NavigableKlabStatement<KimObservationStrategy>> createChildren() {
+		return getStatements().stream().map(s -> new NavigableObservationStrategy(s, this)).toList();
 	}
 
 
