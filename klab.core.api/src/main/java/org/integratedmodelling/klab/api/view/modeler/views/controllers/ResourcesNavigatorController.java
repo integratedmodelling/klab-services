@@ -82,6 +82,9 @@ public interface ResourcesNavigatorController extends ViewController<ResourcesNa
     @UIEventHandler(UIEvent.AssetDeleteRequest)
     void removeAsset(NavigableAsset asset);
 
+    @UIEventHandler(UIEvent.LogicalValidation)
+    void resourcesValidated(ResourceSet notifications);
+
     /**
      * The user has changed its current editing position within a document. The navigator should ensure that
      * the document is selected and adjust its UI to show the element under the caret.

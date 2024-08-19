@@ -358,7 +358,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     public void error(Object... o) {
         super.error(o);
         if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
-            payloadCollector.add(Notification.error(o));
+            payloadCollector.add(Notification.error(o).withIdentity(getId()));
         }
     }
 
@@ -366,7 +366,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     public void info(Object... info) {
         super.info(info);
         if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
-            payloadCollector.add(Notification.info(info));
+            payloadCollector.add(Notification.info(info).withIdentity(getId()));
         }
     }
 
@@ -382,7 +382,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     public void warn(Object... o) {
         super.warn(o);
         if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
-            payloadCollector.add(Notification.warning(o));
+            payloadCollector.add(Notification.warning(o).withIdentity(getId()));
         }
     }
 
@@ -390,7 +390,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
     public void debug(Object... o) {
         super.debug(o);
         if (payloadCollector != null && collectedPayloadClass.isAssignableFrom(Notification.class)) {
-            payloadCollector.add(Notification.debug(o));
+            payloadCollector.add(Notification.debug(o).withIdentity(getId()));
         }
     }
 

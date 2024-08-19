@@ -56,7 +56,7 @@ public abstract class AbstractUIController implements UIController {
 
     private class EventReactor {
 
-//        List<Class<?>> parameterClasses = new ArrayList<>();
+        //        List<Class<?>> parameterClasses = new ArrayList<>();
         Method method;
         Object reactor;
         Queue<Pair<UIReactor, Object[]>> messageQueue = new LinkedBlockingDeque<>(128);
@@ -75,7 +75,7 @@ public abstract class AbstractUIController implements UIController {
         public EventReactor(Object reactor, Method method) {
             this.reactor = reactor;
             this.method = method;
-//            this.parameterClasses.addAll(Arrays.stream(method.getParameterTypes()).toList());
+            //            this.parameterClasses.addAll(Arrays.stream(method.getParameterTypes()).toList());
         }
 
         public void dispatchPendingTasks() {
@@ -204,7 +204,7 @@ public abstract class AbstractUIController implements UIController {
                 switch (message.getMessageType()) {
                     case ServiceUnavailable -> dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
                             message.getPayload(Object.class));
-                    case ServiceAvailable ->  dispatch(this, UIReactor.UIEvent.ServiceAvailable,
+                    case ServiceAvailable -> dispatch(this, UIReactor.UIEvent.ServiceAvailable,
                             message.getPayload(Object.class));
                     case ServiceInitializing -> dispatch(this, UIReactor.UIEvent.ServiceStarting,
                             message.getPayload(Object.class));
@@ -279,6 +279,11 @@ public abstract class AbstractUIController implements UIController {
             }
             case ActorCommunication -> {
             }
+            case KnowledgeLifecycle -> {
+                if (message.is(Message.MessageType.LogicalValidation)) {
+                    dispatch(this, UIEvent.LogicalValidation, message.getPayload(ResourceSet.class));
+                }
+            }
         }
     }
 
@@ -290,7 +295,8 @@ public abstract class AbstractUIController implements UIController {
             if (rs != null) {
                 for (var desc : rs) {
                     if (event != UIEvent.ServiceStatus) {
-                        System.out.println("Dispatching " + event + "(" + Arrays.toString(payload) + ") to " + desc.method);
+                        System.out.println("Dispatching " + event + "(" + Arrays.toString(payload) + ") to "
+                                + desc.method);
                     }
                     desc.call(sender, payload);
                 }
@@ -605,8 +611,10 @@ public abstract class AbstractUIController implements UIController {
     }
 
     @Override
-    public ExternalAuthenticationCredentials.CredentialInfo setCredentials(String host, ExternalAuthenticationCredentials credentials,
-                                                                           KlabService.Type serviceType, String serviceId) {
+    public ExternalAuthenticationCredentials.CredentialInfo setCredentials(String host,
+                                                                           ExternalAuthenticationCredentials credentials,
+                                                                           KlabService.Type serviceType,
+                                                                           String serviceId) {
         if (serviceType == KlabService.Type.ENGINE && (serviceId == null || (engine.serviceId() != null && engine.serviceId().equals(serviceId)))) {
             // TODO add to local credentials, no scope check
             return null;

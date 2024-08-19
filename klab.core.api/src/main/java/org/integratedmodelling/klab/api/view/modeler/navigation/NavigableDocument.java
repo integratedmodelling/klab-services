@@ -1,13 +1,22 @@
 package org.integratedmodelling.klab.api.view.modeler.navigation;
 
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.observation.State;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.util.List;
 
 public interface NavigableDocument extends NavigableAsset {
+
+    /**
+     * Metadata keys for local metadata, changed by interacting with the services.
+     */
+    String ERROR_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+    String WARNING_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+    String INFO_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
 
     /**
      * Any document can live in a file which should have the extension returned here.
@@ -43,12 +52,13 @@ public interface NavigableDocument extends NavigableAsset {
      */
     List<Statement> getStatementPath(int offset);
 
-//    /**
-//     * Return the k.LAB asset path at the position, if any, including inner concept references, observables
-//     * and the like.
-//     *
-//     * @param offset offset in document
-//     * @return the k.LAB asset path to the smallest one defined at offset or the empty list.
-//     */
-//    List<KlabAsset> getKlabAssetAt(int offset);
+    /**
+     * Merge in new metadata or notifications. Won't change the structure of the contents but may change
+     * errors, warnings, and other info associated with them.
+     *
+     * @param metadata
+     * @param notifications
+     */
+    void mergeMetadata(Metadata metadata, List<Notification> notifications);
+
 }

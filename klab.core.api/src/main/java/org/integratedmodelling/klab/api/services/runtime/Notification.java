@@ -88,23 +88,23 @@ public interface Notification extends Serializable {
      */
     LexicalContext getLexicalContext();
 
-    public static Notification of(String message, Level level) {
+    public static NotificationImpl of(String message, Level level) {
         return new NotificationImpl(message, level);
     }
 
-    public static Notification error(Object... objects) {
+    public static NotificationImpl error(Object... objects) {
         return create(Utils.Collections.flatCollection(Level.Error, objects).toArray());
     }
 
-    public static Notification info(Object... objects) {
+    public static NotificationImpl info(Object... objects) {
         return create(Utils.Collections.flatCollection(Level.Info, objects).toArray());
     }
 
-    public static Notification warning(Object... objects) {
+    public static NotificationImpl warning(Object... objects) {
         return create(Utils.Collections.flatCollection(Level.Warning, objects).toArray());
     }
 
-    public static Notification debug(Object... objects) {
+    public static NotificationImpl debug(Object... objects) {
         return create(Utils.Collections.flatCollection(Level.Debug, objects).toArray());
     }
 
@@ -114,7 +114,7 @@ public interface Notification extends Serializable {
      * @param objects
      * @return
      */
-    public static Notification create(Object... objects) {
+    public static NotificationImpl create(Object... objects) {
 
         Level level = Level.Info;
         String message = "No message";

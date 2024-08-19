@@ -101,6 +101,11 @@ public class NotificationImpl implements Notification, Serializable {
         this.level = level;
     }
 
+    public NotificationImpl withIdentity(String identity) {
+        this.identity = identity;
+        return this;
+    }
+
     //    public NotificationImpl(Pair<String, Type> message, Level level) {
     //        this.message = message.getFirst();
     //        this.type = message.getSecond();

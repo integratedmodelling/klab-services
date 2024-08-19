@@ -28,6 +28,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
@@ -89,7 +90,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
             }
             if (capabilities.getBrokerURI() != null && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
-                /**
+                /*
                  * Instrument the service client for messaging. This is pretty involved alas, but the whole
                  * matter isn't exactly trivial.
                  */
@@ -97,20 +98,21 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 if (client != null && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
                         && delegatingScope.getDelegateChannel() instanceof MessagingChannel messagingChannel) {
                     /*
-                    If the scope delegates to a messaging channel, set up messaging and link the available
-                    service queues
-                    to service message dispatchers.
+                     * If the scope delegates to a messaging channel, set up messaging and link the
+                     * available  service queues to service message dispatchers.
                      */
                     messagingChannel.connectToService(capabilities, (UserIdentity) user().getIdentity(),
-                            (message) -> {
-                                    // TODO dispatch
-                                    System.out.println("MESSAGGIO: " + message);
-                            });
+                            (message) -> dispatchServerMessage(capabilities, message));
                 }
             }
         }
 
         super.dispatch(sender, event, payload);
+    }
+
+    private void dispatchServerMessage(KlabService.ServiceCapabilities capabilities, Message message) {
+        // TODO do things
+        System.out.println("SERVER MESSAGE FROM " + capabilities.getType() + " " + capabilities.getServiceId() + ": " + message);
     }
 
     @Override
@@ -219,8 +221,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
         /* TODO handle observer, if not there make it and set it into the context. The logic should be
          *   configurable and specific of the modeler, no defaults should be used in the runtime. */
-
-
         List<Object> resolvables = new ArrayList<>();
 
         /**

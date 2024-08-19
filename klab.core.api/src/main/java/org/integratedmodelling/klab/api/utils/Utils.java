@@ -362,6 +362,8 @@ public class Utils {
                                         res.setResourceUrn(notification.getLexicalContext().getDocumentUrn());
                                         res.setProjectUrn(notification.getLexicalContext().getProjectUrn());
                                         res.setResourceVersion(Version.ANY_VERSION);
+                                        res.setOperation(CRUDOperation.UPDATE_METADATA);
+                                        res.setServiceId(notification.getIdentity());
                                         switch (notification.getLexicalContext().getDocumentType()) {
                                             case NAMESPACE -> ret.getNamespaces().add(res);
                                             case ONTOLOGY -> ret.getOntologies().add(res);

@@ -47,4 +47,9 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
     public void workspaceCreated(NavigableContainer workspace) {
 
     }
+
+    @Override
+    public void resetValidationNotifications(ResourceSet notifications) {
+
+    }
 }

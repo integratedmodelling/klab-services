@@ -50,5 +50,15 @@ public interface NavigableAsset extends KlabAsset {
      */
     Metadata localMetadata();
 
-    <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> assetClass);
+    /**
+     * Find an asset recursively. The assetClass is used for matching; the result class isn't checked and is
+     * only to avoid casting, so a {@link ClassCastException} may be thrown if used incorrectly.
+     *
+     * @param resourceUrn
+     * @param assetClass
+     * @param resultClass
+     * @return
+     * @param <T>
+     */
+    <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetClass, Class<T> resultClass);
 }

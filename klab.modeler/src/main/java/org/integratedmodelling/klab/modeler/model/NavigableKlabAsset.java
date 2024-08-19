@@ -27,6 +27,7 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableFolder;
@@ -219,7 +220,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     public boolean mergeChanges(ResourceSet changes, Scope scope) {
         boolean ret = false;
-        for (var change : changes.getResources()) {
+        for (var change : Utils.Collections.join(changes.getOntologies(), changes.getNamespaces(),
+                changes.getObservationStrategies(), changes.getBehaviors())) {
             if (applyChange(change, scope)) {
                 ret = true;
             }
@@ -244,24 +246,31 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     private boolean applyChange(ResourceSet.Resource change, Scope scope) {
 
-        var service = scope.getService(change.getServiceId(), ResourcesService.class);
 
         switch (change.getOperation()) {
             case CREATE -> {
-                return addChild(resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service, scope));
+                var service = scope.getService(change.getServiceId(), ResourcesService.class);
+                return addChild(resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service,
+                        scope));
             }
             case DELETE -> {
-                var asset = findAsset(change.getResourceUrn(), NavigableKlabAsset.class);
-                if (asset != null) {
-                    var parent = asset.parent;
-                    asset.children =
+                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(), KlabAsset.class);
+                if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
+                    var parent = navigableKlabAsset.parent;
+                    navigableKlabAsset.children =
                             children.stream().filter(child -> !child.getUrn().equals(change.getResourceUrn())).toList();
                     return true;
                 }
             }
             case UPDATE -> {
+                var service = scope.getService(change.getServiceId(), ResourcesService.class);
                 return updateChild(resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service,
                         scope));
+            }
+            case UPDATE_METADATA -> {
+                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(), NavigableKlabDocument.class);
+                asset.mergeMetadata(change.getMetadata(), change.getNotifications());
+                return false;
             }
         }
 
@@ -269,8 +278,22 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     }
 
     @Override
-    public <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> assetClass) {
-        // TODO
+    public <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetType, Class<T> assetClass) {
+
+        // breadth-first as we normally would use this for documents
+        for (var child : this.children) {
+            if (assetType == KlabAsset.classify(child) && resourceUrn.equals(child.getUrn())) {
+                return (T)child;
+            }
+        }
+
+        for (var child : this.children) {
+            var ret = child.findAsset(resourceUrn, assetType, assetClass);
+            if (ret != null) {
+                return ret;
+            }
+        }
+
         return null;
     }
 

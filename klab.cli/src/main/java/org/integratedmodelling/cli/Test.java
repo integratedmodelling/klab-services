@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.lang.Statement;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
@@ -47,6 +48,11 @@ public class Test implements Runnable {
            }
 
            @Override
+           public void mergeMetadata(Metadata metadata, List<Notification> notifications) {
+
+           }
+
+           @Override
            public List<? extends NavigableAsset> children() {
                return List.of();
            }
@@ -72,7 +78,7 @@ public class Test implements Runnable {
            }
 
            @Override
-           public <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> assetClass) {
+           public <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetClass, Class<T> resultClass) {
                return null;
            }
 

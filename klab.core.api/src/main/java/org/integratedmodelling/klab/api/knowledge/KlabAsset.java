@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.api.knowledge;
 
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -26,7 +28,7 @@ public interface KlabAsset extends Serializable {
     public enum KnowledgeClass {
         CONCEPT, OBSERVABLE, MODEL, DEFINITION, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE,
         APPLICATION, ONTOLOGY, OBSERVATION_STRATEGY, OBSERVATION_STRATEGY_DOCUMENT,
-        COMPONENT, PROJECT, WORLDVIEW, CONCEPT_STATEMENT;
+        COMPONENT, PROJECT, WORLDVIEW, WORKSPACE, CONCEPT_STATEMENT;
     }
 
     public static KnowledgeClass classify(KlabAsset document) {
@@ -36,6 +38,10 @@ public interface KlabAsset extends Serializable {
             case KimObservationStrategy c -> KnowledgeClass.OBSERVATION_STRATEGY;
             case KimObservable c -> KnowledgeClass.OBSERVABLE;
             case KimOntology o -> KnowledgeClass.ONTOLOGY;
+            case Project p -> KnowledgeClass.PROJECT;
+            case Worldview w -> KnowledgeClass.WORLDVIEW;
+            case Workspace w -> KnowledgeClass.WORKSPACE;
+            case KimSymbolDefinition sd -> KnowledgeClass.DEFINITION;
             case KimObservationStrategyDocument s -> KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT;
             case KimNamespace n -> KnowledgeClass.NAMESPACE;
             case KActorsBehavior behavior -> switch (behavior.getType()) {

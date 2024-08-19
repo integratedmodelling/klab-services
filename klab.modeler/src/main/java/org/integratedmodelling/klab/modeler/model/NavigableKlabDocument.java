@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -232,4 +233,29 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         return delegate.getRepositoryStatus();
     }
 
+    @Override
+    public void mergeMetadata(Metadata metadata, List<Notification> notifications) {
+
+        this.localMetadata.putAll(metadata);
+
+        for (var notification : notifications) {
+            this.getNotifications().add(notification);
+            if (notification.getLexicalContext() != null) {
+                var key = switch(notification.getLevel()) {
+                    case Info -> INFO_NOTIFICATION_COUNT_KEY;
+                    case Warning -> WARNING_NOTIFICATION_COUNT_KEY;
+                    case Error, SystemError -> ERROR_NOTIFICATION_COUNT_KEY;
+                    default -> null;
+                };
+                if (key != null) {
+                    var path = getAssetsAt(notification.getLexicalContext().getOffsetInDocument());
+                    for (var asset : path) {
+                        // update n. of notifications per level
+                        var count = asset.localMetadata().computeIfAbsent(key, k -> 0);
+                        asset.localMetadata().put(key, (Integer)count + 1);
+                    }
+                }
+            }
+        }
+    }
 }

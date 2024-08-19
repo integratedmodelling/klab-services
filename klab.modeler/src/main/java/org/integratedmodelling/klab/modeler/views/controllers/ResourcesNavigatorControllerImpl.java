@@ -193,6 +193,18 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     }
 
     @Override
+    public void resourcesValidated(ResourceSet notifications) {
+        /*
+         * The asset map doesn't change
+         * TODO we could ingest the notifications into the assets
+         */
+        for (var asset : assetMap.values()) {
+            asset.mergeChanges(notifications, getController().engine().serviceScope());
+        }
+        view().resetValidationNotifications(notifications);
+    }
+
+    @Override
     public void handleDocumentPositionChange(NavigableDocument document, Integer position) {
         if (document instanceof NavigableKlabDocument<?, ?> doc) {
             var path = doc.getClosestAsset(position);

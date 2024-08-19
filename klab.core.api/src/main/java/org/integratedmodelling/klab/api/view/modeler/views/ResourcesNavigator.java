@@ -26,4 +26,6 @@ public interface ResourcesNavigator extends View {
     void setServiceCapabilities(ResourcesService.Capabilities capabilities);
 
     void workspaceCreated(NavigableContainer workspace);
+
+    void resetValidationNotifications(ResourceSet notifications);
 }

@@ -119,7 +119,8 @@ public class ScopeManager {
                  */
                 var capabilities = service.capabilities(ret);
                 for (var queue : capabilities.getAvailableMessagingQueues()) {
-                    ret.presetMessagingQueue(queue, capabilities.getType().name().toLowerCase() + "." + user.getUsername());
+                    ret.presetMessagingQueue(queue,
+                            capabilities.getType().name().toLowerCase() + "." + user.getUsername());
                 }
             }
 
@@ -273,12 +274,27 @@ public class ScopeManager {
         }
     }
 
-    public <T, S extends Scope> S collectMessagePayload(S scope, Class<T> payloadClass, List<T> payloadCollection) {
+    /**
+     * Create a new scope that will record the payload of the messages it sees when they match the passed
+     * class. The ID of the scope is set to that of the service and will be used as the ID of the
+     * {@link org.integratedmodelling.klab.api.services.resources.ResourceSet} generated from collected
+     * notifications.
+     *
+     * @param scope
+     * @param payloadClass
+     * @param payloadCollection
+     * @param <T>
+     * @param <S>
+     * @return
+     */
+    public <T, S extends Scope> S collectMessagePayload(S scope, Class<T> payloadClass,
+                                                        List<T> payloadCollection) {
         // TODO create a new scope with collector of any message payload that matches the passed class
         if (scope instanceof ServiceUserScope serviceUserScope) {
             var ret = serviceUserScope.copy();
+            ret.setId(service.serviceId());
             ret.collectMessagePayload(payloadClass, payloadCollection);
-            return (S)ret;
+            return (S) ret;
         }
         return scope;
     }

@@ -241,6 +241,13 @@ public interface UIReactor {
          * Resource services communicated that a workspace was modified
          */
         WorkspaceModified(EventDirection.EngineToView, ResourceSet.class),
+
+        /**
+         * Reasoner or other service has validated a set of syntactically valid documents and sends back any
+         * notifications.
+         */
+        LogicalValidation(EventDirection.EngineToView, ResourceSet.class),
+
         /**
          * Declaring a dependency on this event means that we want all events sent to the annotated method.
          */
