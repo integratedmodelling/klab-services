@@ -12,13 +12,6 @@ import java.util.List;
 public interface NavigableDocument extends NavigableAsset {
 
     /**
-     * Metadata keys for local metadata, changed by interacting with the services.
-     */
-    String ERROR_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
-    String WARNING_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
-    String INFO_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
-
-    /**
      * Any document can live in a file which should have the extension returned here.
      */
     String getFileExtension();
@@ -58,7 +51,8 @@ public interface NavigableDocument extends NavigableAsset {
      *
      * @param metadata
      * @param notifications
+     * @return true if anything has changed
      */
-    void mergeMetadata(Metadata metadata, List<Notification> notifications);
+    boolean mergeMetadata(Metadata metadata, List<Notification> notifications);
 
 }

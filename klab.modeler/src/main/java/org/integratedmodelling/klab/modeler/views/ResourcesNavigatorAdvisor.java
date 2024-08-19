@@ -49,7 +49,7 @@ public class ResourcesNavigatorAdvisor extends BaseViewAdvisor implements Resour
     }
 
     @Override
-    public void resetValidationNotifications(ResourceSet notifications) {
+    public void resetValidationNotifications(NavigableContainer notifications) {
 
     }
 }

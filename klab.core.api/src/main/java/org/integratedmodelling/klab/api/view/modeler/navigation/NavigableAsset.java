@@ -12,6 +12,13 @@ import java.util.List;
 public interface NavigableAsset extends KlabAsset {
 
     /**
+     * Metadata keys for local metadata, changed by interacting with the services.
+     */
+    String ERROR_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+    String WARNING_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+    String INFO_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+
+    /**
      * A list of all child assets, or an empty list if no children exist.
      *
      * @return

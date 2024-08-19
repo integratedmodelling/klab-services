@@ -48,8 +48,8 @@ public class Test implements Runnable {
            }
 
            @Override
-           public void mergeMetadata(Metadata metadata, List<Notification> notifications) {
-
+           public boolean mergeMetadata(Metadata metadata, List<Notification> notifications) {
+                return false;
            }
 
            @Override

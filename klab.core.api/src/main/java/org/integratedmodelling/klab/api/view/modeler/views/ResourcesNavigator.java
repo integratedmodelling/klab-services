@@ -27,5 +27,5 @@ public interface ResourcesNavigator extends View {
 
     void workspaceCreated(NavigableContainer workspace);
 
-    void resetValidationNotifications(ResourceSet notifications);
+    void resetValidationNotifications(NavigableContainer notifications);
 }

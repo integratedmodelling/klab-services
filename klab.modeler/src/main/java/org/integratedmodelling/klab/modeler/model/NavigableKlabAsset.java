@@ -269,8 +269,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             }
             case UPDATE_METADATA -> {
                 var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(), NavigableKlabDocument.class);
-                asset.mergeMetadata(change.getMetadata(), change.getNotifications());
-                return false;
+                return asset.mergeMetadata(change.getMetadata(), change.getNotifications());
             }
         }
 

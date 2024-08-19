@@ -234,7 +234,9 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
     }
 
     @Override
-    public void mergeMetadata(Metadata metadata, List<Notification> notifications) {
+    public boolean mergeMetadata(Metadata metadata, List<Notification> notifications) {
+
+        boolean ret = !metadata.isEmpty();
 
         this.localMetadata.putAll(metadata);
 
@@ -253,9 +255,12 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
                         // update n. of notifications per level
                         var count = asset.localMetadata().computeIfAbsent(key, k -> 0);
                         asset.localMetadata().put(key, (Integer)count + 1);
+                        ret = true;
                     }
                 }
             }
         }
+
+        return ret;
     }
 }

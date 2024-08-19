@@ -199,9 +199,10 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
          * TODO we could ingest the notifications into the assets
          */
         for (var asset : assetMap.values()) {
-            asset.mergeChanges(notifications, getController().engine().serviceScope());
+            if (asset.mergeChanges(notifications, getController().engine().serviceScope())) {
+                view().resetValidationNotifications(asset);
+            }
         }
-        view().resetValidationNotifications(notifications);
     }
 
     @Override
