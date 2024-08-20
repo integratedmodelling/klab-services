@@ -37,9 +37,7 @@ public interface RunningInstance {
      * that the instance could not be started, because of a corrupted product or
      * some other issue.
      *
-     * @param listener
-     *
-     * @return
+     * @return whether the startup process has been initiated correctly
      */
     boolean start();
 
@@ -52,12 +50,4 @@ public interface RunningInstance {
      * @return
      */
     boolean stop();
-
-    /**
-     * Start listening for changes in status. Can be called at any time. For now
-     * there is no corresponding stop() method.
-     *
-     * @param listener
-     */
-    void pollStatus(Consumer<Status> listener);
 }

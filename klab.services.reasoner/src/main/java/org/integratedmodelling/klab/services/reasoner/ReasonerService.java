@@ -11,6 +11,7 @@ import org.integratedmodelling.common.lang.kim.KimConceptImpl;
 import org.integratedmodelling.common.lang.kim.KimObservableImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
+import org.integratedmodelling.common.services.client.resources.ResourcesClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
@@ -158,10 +159,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
      */
     private Cache<Integer, SemanticExpression> semanticExpressions =
             CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).build();
-
     private OWL owl;
     private String hardwareSignature = Utils.Names.getHardwareId();
-
     static Pattern internalConceptPattern = Pattern.compile("[A-Z]+_[0-9]+");
 
     public boolean derived(Semantics c) {
@@ -1297,8 +1296,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
         this.worldview = worldview;
 
-        this.owl.initialize(worldview.getOntologies().get(0));
-
+        this.owl.initialize(worldview.getOntologies().getFirst());
         for (KimOntology ontology : worldview.getOntologies()) {
             for (var statement : ontology.getStatements()) {
                 defineConcept(statement, scope);
@@ -1308,7 +1306,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.owl.flushReasoner();
         for (var strategyDocument : worldview.getObservationStrategies()) {
             for (var strategy : strategyDocument.getStatements()) {
-                defineStrategy(strategy, scope);
+                registerStrategy(defineStrategy(strategy, scope));
             }
         }
 
@@ -1317,11 +1315,70 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
-        // TODO could return the same set w/ added notifications
-        return ResourceSet.empty();
+
+        var ownResources = scope.getService(ResourcesService.class);
+        Map<URL, ResourcesService> services = new HashMap<>();
+
+        for (var resource : changes.getOntologies()) {
+
+            var resourceService = ownResources;
+            if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
+                resourceService =
+                        services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
+                                url -> new ResourcesClient(url, scope.getIdentity()));
+            }
+
+            var notifications = new ArrayList<Notification>();
+            var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class,
+                    notifications);
+            var ontology = resourceService.resolveOntology(resource.getResourceUrn(), parsingScope);
+            var knowledge = this.owl.getOntology(ontology.getUrn());
+            if (knowledge != null) {
+                this.owl.releaseOntology(knowledge);
+            }
+            for (var statement : ontology.getStatements()) {
+                defineConcept(statement, scope);
+            }
+            this.owl.registerWithReasoner(ontology);
+            resource.getNotifications().addAll(notifications);
+        }
+
+        for (var resource : changes.getObservationStrategies()) {
+
+            var resourceService = ownResources;
+            if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
+                resourceService =
+                        services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
+                                url -> new ResourcesClient(url, scope.getIdentity()));
+            }
+
+            var notifications = new ArrayList<Notification>();
+            var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class,
+                    notifications);
+            var observationStrategyDocument =
+                    resourceService.resolveObservationStrategyDocument(resource.getResourceUrn(),
+                            parsingScope);
+            removeObservationStrategiesDocument(observationStrategyDocument.getUrn());
+            for (var strategy : observationStrategyDocument.getStatements()) {
+                registerStrategy(defineStrategy(strategy, scope));
+            }
+            resource.getNotifications().addAll(notifications);
+
+        }
+
+        return changes;
+    }
+
+    private void registerStrategy(ObservationStrategy observationStrategy) {
+        // TODO index and record the strategy
+    }
+
+    private void removeObservationStrategiesDocument(String urn) {
+        // TODO remove all strategies that come from the document with the passed URN
     }
 
     private ObservationStrategy defineStrategy(KimObservationStrategy strategy, Scope scope) {
+
         return null;
     }
 

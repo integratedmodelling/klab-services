@@ -13,7 +13,6 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
-import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 import java.io.File;
 import java.util.Collection;
@@ -968,7 +967,17 @@ public interface Reasoner extends KlabService {
          * worldview are communicated through this endpoint. This call should only be made after ensuring that
          * the ID of the loaded worldview (reported by
          * {@link org.integratedmodelling.klab.api.services.Reasoner.Capabilities#getWorldviewId()} is the
-         * same as the one where the changes have been made.
+         * same as the one where the changes have been made. The resources to load must be available through
+         * the URL of the reasoner service, which must be in the request, and be open for access by the
+         * reasoner through its
+         * {@link org.integratedmodelling.klab.api.ServicesAPI.RESOURCES#RESOLVE_ONTOLOGY_URN} and
+         * {@link
+         * org.integratedmodelling.klab.api.ServicesAPI.RESOURCES#RESOLVE_OBSERVATION_STRATEGY_DOCUMENT_URN}.
+         * <p>
+         * As always with a resource set, the order of loading in the input is assumed to be the correct one,
+         * courtesy of the resources service that has produced the input {@link ResourceSet}. The final output
+         * of this method should have the same structure of the input ResourceSet, with the addition of any
+         * notifications and metadata that parsing into knowledge has produced.
          *
          * @param changes the set of changed ontology and strategy resources with their URLs
          * @param scope   admin user scope to report and validate

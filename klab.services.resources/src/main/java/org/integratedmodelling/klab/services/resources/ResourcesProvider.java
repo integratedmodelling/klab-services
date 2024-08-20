@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -308,7 +309,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
      */
     @Override
     public synchronized List<ResourceSet> importProject(String workspaceName, String projectUrl,
-                                                        boolean overwriteIfExisting, Scope scope) {
+                                                        boolean overwriteIfExisting, UserScope scope) {
 
         var storage = workspaceManager.importProject(projectUrl, workspaceName);
         if (storage == null) {
@@ -336,13 +337,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createProject(String workspaceName, String projectName, Scope scope) {
+    public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
         return null;
     }
 
     @Override
     public ResourceSet updateProject(String projectName, Manifest manifest, Metadata metadata,
-                                     Scope scope) {
+                                     UserScope scope) {
         return null;
     }
 
@@ -350,19 +351,19 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public List<ResourceSet> createDocument(String projectName, String documentUrn,
                                             ProjectStorage.ResourceType documentType,
-                                            Scope scope) {
+                                            UserScope scope) {
         return this.workspaceManager.createDocument(projectName, documentType, documentUrn,
                 scope);
     }
 
     @Override
     public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
-                                            String content, Scope scope) {
+                                            String content, UserScope scope) {
         return this.workspaceManager.updateDocument(projectName, documentType, content, scope);
     }
 
     @Override
-    public List<ResourceSet> deleteProject(String projectName, Scope scope) {
+    public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
 
         updateLock.writeLock().lock();
         //
@@ -396,7 +397,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public List<ResourceSet> deleteWorkspace(String workspaceName) {
+    public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
         Workspace workspace = workspaceManager.getWorkspace(workspaceName);
         for (Project project : workspace.getProjects()) {
             deleteProject(project.getUrn(), scope);
@@ -645,13 +646,13 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createResource(Resource resource, Scope scope) {
+    public ResourceSet createResource(Resource resource, UserScope scope) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public ResourceSet createResource(File resourcePath, Scope scope) {
+    public ResourceSet createResource(File resourcePath, UserScope scope) {
         // TODO Auto-generated method stub
         // Concept
         return null;
@@ -659,7 +660,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public Resource createResource(String projectName, String urnId, String adapter,
-                                   Parameters<String> resourceData, Scope scope) {
+                                   Parameters<String> resourceData, UserScope scope) {
         return null;
     }
 
@@ -677,7 +678,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
-                                            Scope scope) {
+                                            UserScope scope) {
         return null;
     }
 
@@ -873,7 +874,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public URL lockProject(String urn, Scope scope) {
+    public URL lockProject(String urn, UserScope scope) {
         String token = scope.getIdentity().getId();
         boolean local =
                 scope instanceof ServiceScope || (scope instanceof ServiceUserScope userScope && userScope.isLocal());
@@ -881,7 +882,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public boolean unlockProject(String urn, Scope scope) {
+    public boolean unlockProject(String urn, UserScope scope) {
         String token = scope.getIdentity().getId();
         return workspaceManager.unlockProject(urn, token);
     }

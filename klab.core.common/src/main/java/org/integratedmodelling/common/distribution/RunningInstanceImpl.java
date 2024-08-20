@@ -4,6 +4,9 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteResultHandler;
+import org.integratedmodelling.common.logging.Logging;
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.engine.distribution.Build;
 import org.integratedmodelling.klab.api.engine.distribution.RunningInstance;
 import org.integratedmodelling.klab.api.engine.StartupOptions;
@@ -73,14 +76,16 @@ public class RunningInstanceImpl implements RunningInstance {
         //            RunningInstanceImpl
         //             */
         Settings settings = new Settings(build.getRelease());
+
+        // load any customizations from the main k.LAB properties
+        settings.initialize(getBuild().getRelease().getProduct(), Configuration.INSTANCE.getProperties());
+
         CommandLine ret = new CommandLine(JreModel.INSTANCE.getJavaExecutable());
         ret.addArguments(getJavaOptions(512, settings.getMaxEngineMemory().getValue(), isServer()));
         //
         if (settings.isUseDebugParameters().getValue()) {
-            ret.addArgument("-Xdebug");
-            ret.addArgument("-Xbootclasspath/p:lib/jsr166.jar");
-            ret.addArgument("-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=" +
-                    debugPort());
+            ret.addArgument("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:" +
+                    getBuild().getRelease().getProduct().getProductType().getDebugPort());
         }
         ret.addArgument("-Dfile.encoding=UTF-8");
         if (isServer()) {
@@ -151,6 +156,9 @@ public class RunningInstanceImpl implements RunningInstance {
 
         CommandLine cmdLine = getCommandLine(scope);
 
+        Logging.INSTANCE.info("Starting " + build.getProduct().getDescription() + " with command line: \"" +
+                cmdLine.toString() + "\"");
+
         /*
          * assume error was reported
          */
@@ -191,11 +199,6 @@ public class RunningInstanceImpl implements RunningInstance {
     public boolean stop() {
         // does nothing - override based on product type
         return false;
-    }
-
-    @Override
-    public void pollStatus(Consumer<Status> listener) {
-        System.out.println("PUTO CAN POLL STATUS");
     }
 
 }

@@ -105,12 +105,12 @@ public interface Product {
             };
         }
 
-        private Type(String userOption) {
+        Type(String userOption) {
             this.userOption = userOption;
         }
     }
 
-    public enum ProductType {
+    enum ProductType {
         CLI {
             @Override
             public String getRemoteUrl(String baseUrl) {
@@ -126,6 +126,9 @@ public interface Product {
             public String getName() {
                 return "k.LAB Engine";
             }
+
+            @Override
+            public int getDebugPort() {return 5005; }
         },
         RESOURCES_SERVICE {
             @Override
@@ -142,6 +145,10 @@ public interface Product {
             public String getName() {
                 return "k.LAB Resources service";
             }
+
+            @Override
+            public int getDebugPort() {return 5006; }
+
         },
         REASONER_SERVICE {
             @Override
@@ -158,6 +165,10 @@ public interface Product {
             public String getName() {
                 return "k.LAB Reasoner service";
             }
+
+            @Override
+            public int getDebugPort() {return 5007; }
+
         },
         RESOLVER_SERVICE {
             @Override
@@ -174,6 +185,10 @@ public interface Product {
             public String getName() {
                 return "k.LAB Resolver service";
             }
+
+            @Override
+            public int getDebugPort() {return 5008; }
+
         },
         RUNTIME_SERVICE {
             @Override
@@ -190,6 +205,10 @@ public interface Product {
             public String getName() {
                 return "k.LAB Runtime service";
             }
+
+            @Override
+            public int getDebugPort() {return 5009; }
+
         },
         COMMUNITY_SERVICE {
             @Override
@@ -206,6 +225,10 @@ public interface Product {
             public String getName() {
                 return "k.LAB Community service";
             }
+
+            @Override
+            public int getDebugPort() {return 5010; }
+
         },
         MODELER {
             @Override
@@ -222,6 +245,9 @@ public interface Product {
             public String getName() {
                 return "k.LAB Modeler";
             }
+
+            @Override
+            public int getDebugPort() {return 5011; }
         };
 
         public static ProductType forService(KlabService.Type serviceType) {
@@ -254,6 +280,8 @@ public interface Product {
         public File getLocalPath(String basePath) {
             return new File(basePath + File.separator + getId());
         }
+
+        public abstract int getDebugPort();
     }
 
     /**

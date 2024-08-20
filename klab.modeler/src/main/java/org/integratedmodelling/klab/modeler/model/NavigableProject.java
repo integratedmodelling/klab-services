@@ -25,9 +25,8 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	private boolean locked;
 	private File rootDirectory;
 
-	public NavigableProject(Project asset, NavigableKlabAsset<?> parent/*, IProject resource*/) {
+	public NavigableProject(Project asset, NavigableKlabAsset<?> parent) {
 		super(asset, parent);
-//		this.resource = resource;
 	}
 
 	@Override
@@ -94,8 +93,6 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 		final Project project = getDelegate();
 
 		ret.addAll(getNamespaces().stream().map(n -> new NavigableKimNamespace(n, this)).toList());
-
-		// TODO behaviors
 
 		// TODO apps, tests, scripts in their folders
 		if (!delegate.getApps().isEmpty()) {

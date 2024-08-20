@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -44,7 +45,7 @@ public class ResourceAdminController {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.importProject(request.getWorkspaceName(), request.getProjectUrl(),
                     request.isOverwrite(), principal instanceof EngineAuthorization authorization ?
-                                           authorization.getScope() : null);
+                                           authorization.getScope(UserScope.class) : null);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -56,7 +57,7 @@ public class ResourceAdminController {
                                                       Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createProject(workspaceName, projectName,
-                    principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
+                    principal instanceof EngineAuthorization authorization ? authorization.getScope(UserScope.class) : null);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -68,7 +69,7 @@ public class ResourceAdminController {
                                                            Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.updateProject(projectName, manifest, metadata,
-                    auth.getScope());
+                    auth.getScope(UserScope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -79,7 +80,7 @@ public class ResourceAdminController {
                                             @PathVariable("urn") String urn, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.createDocument(projectName, urn, documentType,
-                    auth.getScope());
+                    auth.getScope(UserScope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -90,7 +91,7 @@ public class ResourceAdminController {
                                             @RequestBody String content, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
             return admin.updateDocument(projectName, documentType, content,
-                    auth.getScope());
+                    auth.getScope(UserScope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -99,7 +100,8 @@ public class ResourceAdminController {
     public @ResponseBody ResourceSet createResource(@RequestBody Resource resource, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             var urn = admin.createResource(resource,
-                    principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
+                    principal instanceof EngineAuthorization authorization ?
+                    authorization.getScope(UserScope.class) : null);
             return null; // TODO create ResourceSet
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -110,7 +112,7 @@ public class ResourceAdminController {
                                                             Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             var urn = admin.createResource(resourcePath,
-                    principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
+                    principal instanceof EngineAuthorization authorization ? authorization.getScope(UserScope.class) : null);
             return null; // TODO create ResourceSet
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
@@ -124,7 +126,7 @@ public class ResourceAdminController {
                                              Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
             return admin.createResource(projectName, urnId, adapter, resourceData,
-                    principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
+                    principal instanceof EngineAuthorization authorization ? authorization.getScope(UserScope.class) : null);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -133,15 +135,15 @@ public class ResourceAdminController {
     public List<ResourceSet> removeProject(@RequestParam("projectName") String projectName,
                                            Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            admin.deleteProject(projectName, auth.getScope());
+            admin.deleteProject(projectName, auth.getScope(UserScope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
 
     @PostMapping(ServicesAPI.RESOURCES.ADMIN.REMOVE_WORKSPACE)
-    public List<ResourceSet> removeWorkspace(@RequestParam("workspaceName") String workspaceName) {
-        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            admin.deleteWorkspace(workspaceName);
+    public List<ResourceSet> removeWorkspace(@RequestParam("workspaceName") String workspaceName, Principal principal) {
+        if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
+            admin.deleteWorkspace(workspaceName, auth.getScope(UserScope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -149,7 +151,8 @@ public class ResourceAdminController {
     @GetMapping(value = ServicesAPI.RESOURCES.LIST_PROJECTS, produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody Collection<Project> listProjects(Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.listProjects(principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
+            return admin.listProjects(principal instanceof EngineAuthorization authorization ?
+                                      authorization.getScope() : null);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -157,7 +160,8 @@ public class ResourceAdminController {
     @GetMapping(value = ServicesAPI.RESOURCES.LIST_RESOURCE_URNS, produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody Collection<String> listResourceUrns(Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin) {
-            return admin.listResourceUrns(principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
+            return admin.listResourceUrns(principal instanceof EngineAuthorization authorization ?
+                                          authorization.getScope() : null);
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -165,7 +169,7 @@ public class ResourceAdminController {
     @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT)
     public URL lockProject(@PathVariable("urn") String urn, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            return admin.lockProject(urn, auth.getScope());
+            return admin.lockProject(urn, auth.getScope(UserScope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }
@@ -173,7 +177,7 @@ public class ResourceAdminController {
     @GetMapping(value = ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT)
     public boolean unlockProject(@PathVariable("urn") String urn, Principal principal) {
         if (resourcesServer.klabService() instanceof ResourcesService.Admin admin && principal instanceof EngineAuthorization auth) {
-            return admin.unlockProject(urn, auth.getScope());
+            return admin.unlockProject(urn, auth.getScope(UserScope.class));
         }
         throw new KlabInternalErrorException("Resources service is incapable of admin operation");
     }

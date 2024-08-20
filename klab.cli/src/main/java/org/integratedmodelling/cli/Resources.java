@@ -377,7 +377,7 @@ public class Resources {
             public void run() {
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
-                    ((ResourcesService.Admin) service).deleteWorkspace(workspace);
+                    ((ResourcesService.Admin) service).deleteWorkspace(workspace, KlabCLI.INSTANCE.user());
                 }
             }
         }
@@ -543,8 +543,7 @@ public class Resources {
             public void run() {
                 var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
                 if (service instanceof ResourcesService.Admin) {
-                    ((ResourcesService.Admin) service).deleteProject(project,
-                            KlabCLI.INSTANCE.engine().serviceScope());
+                    ((ResourcesService.Admin) service).deleteProject(project,KlabCLI.INSTANCE.user());
                 }
             }
         }

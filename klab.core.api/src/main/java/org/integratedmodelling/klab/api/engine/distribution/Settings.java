@@ -1,14 +1,19 @@
 package org.integratedmodelling.klab.api.engine.distribution;
 
 import org.integratedmodelling.klab.api.configuration.Configuration;
+import org.integratedmodelling.klab.api.engine.distribution.impl.ProductImpl;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Properties;
 
 /**
  * FIXME straight port from ControlCenter. This is for the Engine product.
  */
 public class Settings {
+
+    // Keys for customizable parameters in k.LAB properties, prefixed by lowercase product type
+    private final String DEBUG_CONFIGURATION_KEY_POSTFIX = ".debug.enabled";
 
     public class Setting<T> {
         static final String UNSET = "unset";
@@ -96,6 +101,7 @@ public class Settings {
     private Setting<String> mapboxLayerName = new Setting<String>();
     private Setting<String> mapboxLayerAttribution = new Setting<String>();
     private Setting<String> authenticationEndpoint = new Setting<String>();
+    private Setting<Integer> debugPort = new Setting<>();
 
     public Settings(Release release) {
         startWithCLI.setValue(Boolean.TRUE);
@@ -149,6 +155,8 @@ public class Settings {
         mapboxLayerName.setValue("");
         mapboxLayerAttribution.setValue("");
         authenticationEndpoint.setValue("");
+        debugPort.setValue(5005);
+
         // not used on window
 
         //        releaseUrl.setValue(Release.DEFAULT_RELEASE_URL);
@@ -561,4 +569,15 @@ public class Settings {
     public void setSelectedRelease(String selectedRelease) {
         this.selectedRelease.setValue(selectedRelease);
     }
+
+    public void initialize(ProductImpl product, Properties properties) {
+
+        var debugKey = product.getProductType().name().toLowerCase() + DEBUG_CONFIGURATION_KEY_POSTFIX;
+
+        if (properties.containsKey(debugKey)) {
+            this.setUseDebugParameters(Boolean.parseBoolean(properties.getProperty(debugKey)));
+        }
+    }
+
+
 }

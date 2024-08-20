@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
@@ -359,7 +360,7 @@ public interface ResourcesService extends KlabService {
          * overwritten)
          */
         List<ResourceSet> importProject(String workspaceName, String projectUrl, boolean overwriteIfExisting,
-                                        Scope scope);
+                                        UserScope scope);
 
         /**
          * Create a new empty project. Use the update function to configure the manifest and the create/update
@@ -369,7 +370,7 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @return
          */
-        ResourceSet createProject(String workspaceName, String projectName, Scope scope);
+        ResourceSet createProject(String workspaceName, String projectName, UserScope scope);
 
         /**
          * Update project manifest and metadata. Project must exist.
@@ -381,7 +382,7 @@ public interface ResourcesService extends KlabService {
          * @return the updated project with the new metadata and manifest.
          */
         ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
-                                  Scope scope);
+                                  UserScope scope);
 
         /**
          * Project must exist; namespace must not. Namespace content is parsed and the results are returned.
@@ -394,7 +395,7 @@ public interface ResourcesService extends KlabService {
          */
         List<ResourceSet> createDocument(String projectName, String documentUrn,
                                          ProjectStorage.ResourceType documentType,
-                                         Scope scope);
+                                         UserScope scope);
 
         /**
          * Resource must exist in project and be part of a file-based project. This operation makes the change
@@ -410,7 +411,7 @@ public interface ResourcesService extends KlabService {
          */
         List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
                                          String content,
-                                         Scope scope);
+                                         UserScope scope);
 
         /**
          * Apply the passed operation to the remote repository associated with a project and return whatever
@@ -436,7 +437,7 @@ public interface ResourcesService extends KlabService {
          * @param resource
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
-        ResourceSet createResource(Resource resource, Scope scope);
+        ResourceSet createResource(Resource resource, UserScope scope);
 
         /**
          * Add a resource with file content to those managed by this service. Resource is invisible from the
@@ -446,10 +447,10 @@ public interface ResourcesService extends KlabService {
          *                     file must be present, along with anything else required by the adapter.
          * @return the resource URN, potentially modified w.r.t. the one in the request.
          */
-        ResourceSet createResource(File resourcePath, Scope scope);
+        ResourceSet createResource(File resourcePath, UserScope scope);
 
         Resource createResource(String projectName, String urnId, String adapter,
-                                Parameters<String> resourceData, Scope scope);
+                                Parameters<String> resourceData, UserScope scope);
 
         /**
          * Remove a document in a project. May be a resource when it's exclusive to the project.
@@ -459,21 +460,21 @@ public interface ResourcesService extends KlabService {
          * @param lockingAuthorization
          * @return
          */
-        List<ResourceSet> deleteDocument(String projectName, String assetUrn, Scope scope);
+        List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope);
 
         /**
          * @param projectName
          * @param lockingAuthorization
          * @return true if operation was carried out
          */
-        List<ResourceSet> deleteProject(String projectName, Scope scope);
+        List<ResourceSet> deleteProject(String projectName, UserScope scope);
 
         /**
          * Remove an entire workspace and all the projects and resources in it.
          *
          * @param workspaceName
          */
-        List<ResourceSet> deleteWorkspace(String workspaceName);
+        List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope);
 
         /**
          * Return a list of all the projects available with their contents. Bound to produce a large payload.
@@ -500,7 +501,7 @@ public interface ResourcesService extends KlabService {
          *                                                                                 for any other
          *                                                                                 reason
          */
-        URL lockProject(String urn, Scope scope);
+        URL lockProject(String urn, UserScope scope);
 
         /**
          * Unlock a previously locked project.
@@ -509,7 +510,7 @@ public interface ResourcesService extends KlabService {
          * @param scope the scope that originally locked it
          * @return false if the project wasn't locked or wasn't locked by the same scope
          */
-        boolean unlockProject(String urn, Scope scope);
+        boolean unlockProject(String urn, UserScope scope);
 
     }
 

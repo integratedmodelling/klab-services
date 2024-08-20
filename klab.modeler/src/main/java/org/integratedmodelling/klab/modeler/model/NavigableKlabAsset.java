@@ -246,7 +246,6 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     private boolean applyChange(ResourceSet.Resource change, Scope scope) {
 
-
         switch (change.getOperation()) {
             case CREATE -> {
                 var service = scope.getService(change.getServiceId(), ResourcesService.class);

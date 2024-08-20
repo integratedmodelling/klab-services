@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -212,7 +213,7 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     @Override
     public List<ResourceSet> importProject(String workspaceName, String projectUrl,
                                            boolean overwriteIfExisting,
-                                           Scope scope) {
+                                           UserScope scope) {
         ProjectRequest request = new ProjectRequest();
         request.setWorkspaceName(workspaceName);
         request.setProjectUrl(projectUrl);
@@ -221,26 +222,26 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createProject(String workspaceName, String projectName, Scope scope) {
+    public ResourceSet createProject(String workspaceName, String projectName, UserScope scope) {
         return null;
     }
 
     @Override
     public ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
-                                     Scope scope) {
+                                     UserScope scope) {
         return null;
     }
 
     @Override
     public List<ResourceSet> createDocument(String projectName, String documentUrn,
                                             ProjectStorage.ResourceType documentType,
-                                            Scope scope) {
+                                            UserScope scope) {
         return List.of();
     }
 
     @Override
     public List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,
-                                            String content, Scope scope) {
+                                            String content, UserScope scope) {
         return client.postCollection(ServicesAPI.RESOURCES.ADMIN.UPDATE_DOCUMENT, content,
                 ResourceSet.class, "projectName", projectName, "documentType", documentType);
     }
@@ -261,34 +262,34 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public ResourceSet createResource(Resource resource, Scope scope) {
+    public ResourceSet createResource(Resource resource, UserScope scope) {
         return null;
     }
 
     @Override
-    public ResourceSet createResource(File resourcePath, Scope scope) {
+    public ResourceSet createResource(File resourcePath, UserScope scope) {
         return null;
     }
 
     @Override
     public Resource createResource(String projectName, String urnId, String adapter,
-                                   Parameters<String> resourceData, Scope scope) {
+                                   Parameters<String> resourceData, UserScope scope) {
         return null;
     }
 
     @Override
     public List<ResourceSet> deleteDocument(String projectName, String assetUrn,
-                                            Scope scope) {
+                                            UserScope scope) {
         return null;
     }
 
     @Override
-    public List<ResourceSet> deleteProject(String projectName, Scope scope) {
+    public List<ResourceSet> deleteProject(String projectName, UserScope scope) {
         return null;
     }
 
     @Override
-    public List<ResourceSet> deleteWorkspace(String workspaceName) {
+    public List<ResourceSet> deleteWorkspace(String workspaceName, UserScope scope) {
         return null;
     }
 
@@ -303,12 +304,12 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     }
 
     @Override
-    public URL lockProject(String urn, Scope scope) {
+    public URL lockProject(String urn, UserScope scope) {
         return client.get(ServicesAPI.RESOURCES.ADMIN.LOCK_PROJECT, URL.class, "urn", urn);
     }
 
     @Override
-    public boolean unlockProject(String urn, Scope scope) {
+    public boolean unlockProject(String urn, UserScope scope) {
         return client.get(ServicesAPI.RESOURCES.ADMIN.UNLOCK_PROJECT, Boolean.class, "urn", urn);
     }
 

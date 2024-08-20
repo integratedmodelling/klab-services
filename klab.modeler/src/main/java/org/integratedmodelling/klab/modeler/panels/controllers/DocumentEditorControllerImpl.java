@@ -4,14 +4,18 @@ import org.integratedmodelling.common.view.AbstractUIPanelController;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
 import org.integratedmodelling.klab.api.view.modeler.panels.DocumentEditor;
 import org.integratedmodelling.klab.api.view.modeler.panels.controllers.DocumentEditorController;
 import org.integratedmodelling.klab.modeler.model.NavigableProject;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class DocumentEditorControllerImpl extends AbstractUIPanelController<NavigableDocument,
         DocumentEditor> implements DocumentEditorController {
@@ -25,20 +29,43 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
     public void documentUpdated(String newContents) {
 
         var service = getController().engine().serviceScope().getService(ResourcesService.class);
+        var reasoner = getController().engine().serviceScope().getService(Reasoner.class);
 
         if (service instanceof ResourcesService.Admin admin) {
 
             var scope = getController().engine().serviceScope();
             var changes = switch (getPayload()) {
-                case KimOntology ontology ->
-                        admin.updateDocument(ontology.getProjectName(), ProjectStorage.ResourceType.ONTOLOGY, newContents, scope);
+                case KimOntology ontology -> {
+                    List<ResourceSet> ret = new ArrayList<>();
+                    for (var resourceSet : admin.updateDocument(ontology.getProjectName(),
+                            ProjectStorage.ResourceType.ONTOLOGY, newContents, getController().user())) {
+                        if (reasoner instanceof Reasoner.Admin reasonerAdmin) {
+                            ret.add(reasonerAdmin.updateKnowledge(resourceSet, getController().user()));
+                        } else {
+                            ret.add(resourceSet);
+                        }
+                    }
+                    yield ret;
+                }
                 case KimNamespace namespace ->
-                        admin.updateDocument(namespace.getProjectName(), ProjectStorage.ResourceType.MODEL_NAMESPACE, newContents, scope);
-                case KimObservationStrategyDocument strategyDocument ->
-                        admin.updateDocument(strategyDocument.getProjectName(), ProjectStorage.ResourceType.STRATEGY, newContents,
-                                scope);
+                        admin.updateDocument(namespace.getProjectName(),
+                                ProjectStorage.ResourceType.MODEL_NAMESPACE, newContents, getController().user());
+                case KimObservationStrategyDocument strategyDocument -> {
+                    List<ResourceSet> ret = new ArrayList<>();
+                    for (var resourceSet : admin.updateDocument(strategyDocument.getProjectName(),
+                            ProjectStorage.ResourceType.STRATEGY, newContents,
+                            getController().user())) {
+                        if (reasoner instanceof Reasoner.Admin reasonerAdmin) {
+                            ret.add(reasonerAdmin.updateKnowledge(resourceSet, getController().user()));
+                        } else {
+                            ret.add(resourceSet);
+                        }
+                    }
+                    yield ret;
+                }
                 case KActorsBehavior behavior ->
-                        admin.updateDocument(behavior.getProjectName(), ProjectStorage.ResourceType.BEHAVIOR, newContents, scope);
+                        admin.updateDocument(behavior.getProjectName(),
+                                ProjectStorage.ResourceType.BEHAVIOR, newContents, getController().user());
                 default -> Collections.emptyList();
             };
 
