@@ -770,15 +770,14 @@ public class OWL {
 
     public void releaseOntology(Ontology ontology) {
 
-        // FIXME do we need the file catalog? // remove from _csIndex - should be
-        // harmless to leave
-        // for now
-        KimNamespace ns = this.namespaces.get(ontology.getName());
-        if (ns != null) {
-            // this.resourceIndex.remove(ns.getLocalFile().toString());
-        }
         this.namespaces.remove(ontology.getName());
-        ontologies.remove(ontology.getName());
+        var onto = ontologies.remove(ontology.getName());
+        for (var concept : onto.getConcepts()) {
+            if (concept instanceof ConceptImpl conceptImpl) {
+                conceptsById.remove(conceptImpl.getId());
+                owlClasses.remove(conceptImpl.getId());
+            }
+        }
         iri2ns.remove(((Ontology) ontology).getPrefix());
         manager.removeOntology(((Ontology) ontology).ontology);
     }

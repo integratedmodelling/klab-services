@@ -1337,7 +1337,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 this.owl.releaseOntology(knowledge);
             }
             for (var statement : ontology.getStatements()) {
-                defineConcept(statement, scope);
+                defineConcept(statement, parsingScope);
             }
             this.owl.registerWithReasoner(ontology);
             resource.getNotifications().addAll(notifications);
@@ -1360,7 +1360,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                             parsingScope);
             removeObservationStrategiesDocument(observationStrategyDocument.getUrn());
             for (var strategy : observationStrategyDocument.getStatements()) {
-                registerStrategy(defineStrategy(strategy, scope));
+                registerStrategy(defineStrategy(strategy, parsingScope));
             }
             resource.getNotifications().addAll(notifications);
 
