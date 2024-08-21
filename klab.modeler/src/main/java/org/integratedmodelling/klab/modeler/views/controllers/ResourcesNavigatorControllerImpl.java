@@ -102,7 +102,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                             KlabAsset.KnowledgeClass.APPLICATION, KlabAsset.KnowledgeClass.COMPONENT,
                             KlabAsset.KnowledgeClass.TESTCASE, KlabAsset.KnowledgeClass.RESOURCE);
 
-                    if (document != null && document.root().getUrn().equals(container.getUrn())) {
+                    if (document != null && editorController.getPayload().root().getUrn().equals(container.getUrn())) {
                         editorController.reload(document);
                     }
                 }

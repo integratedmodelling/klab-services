@@ -1310,6 +1310,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
         }
 
+        // TODO assess consistent status
+
         return Utils.Resources.createFromLexicalNotifications(ret);
     }
 
@@ -1378,6 +1380,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             resource.getNotifications().addAll(notifications);
 
         }
+
+        // TODO reassess consistent status
 
         // TODO back to non-busy status
 
