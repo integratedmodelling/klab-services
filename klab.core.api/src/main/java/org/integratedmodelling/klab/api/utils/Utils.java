@@ -1585,8 +1585,6 @@ public class Utils {
         /**
          * Greatest common divisor of an array of integers
          *
-         * @param a
-         * @param b
          * @return the GCD
          */
         public static long gcd(long[] input) {
@@ -1610,8 +1608,6 @@ public class Utils {
         /**
          * Least common multiple of an array of integers
          *
-         * @param a
-         * @param b
          * @return the LCM
          */
         public static long lcm(long[] input) {
@@ -2215,7 +2211,7 @@ public class Utils {
          * </p>
          *
          * <p>
-         * For a word based algorithm, see {@link org.apache.commons.lang3.text.WordUtils#capitalize(String)}.
+         * For a word based algorithm, see org.apache.commons.lang3.text.WordUtils#capitalize(String).
          * A {@code null} input String returns {@code null}.
          * </p>
          *
@@ -2229,8 +2225,6 @@ public class Utils {
          *
          * @param str the String to capitalize, may be null
          * @return the capitalized String, {@code null} if null String input
-         * @see org.apache.commons.lang3.text.WordUtils#capitalize(String)
-         * @see #uncapitalize(String)
          * @since 2.0
          */
         public static String capitalize(final String str) {
@@ -2745,9 +2739,6 @@ public class Utils {
          * Ad-hoc behavior in need for generalization: insert the patch after every newline unless the
          * previous line was empty.
          *
-         * @param stripLeadingWhitespace
-         * @param string
-         * @return
          */
         public static String insertBeginning(String string, String patch, Function<String, Boolean> filter) {
             String lines[] = string.split("\\r?\\n");
@@ -3686,9 +3677,6 @@ public class Utils {
          * Flatten any collections in the source collection and accumulate values after conversion to T in the
          * destination collection.
          *
-         * @param arguments
-         * @param indices
-         * @param class1
          */
         public static <T> void collectValues(Collection<?> source, Collection<? extends T> destination,
                                              Class<T> class1) {
@@ -4118,7 +4106,6 @@ public class Utils {
         /**
          * Return the most logical non-null value for the passed type, assuming there is one.
          *
-         * @param ret
          * @param cls
          * @return the object as a cls or null
          */
