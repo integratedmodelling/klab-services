@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resources.embedded;
 
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.ServiceInstance;
@@ -17,7 +18,7 @@ public class ResourcesServiceInstance extends ServiceInstance<ResourcesProvider>
     }
 
     @Override
-    protected ResourcesProvider createPrimaryService(ServiceScope serviceScope, ServiceStartupOptions options) {
+    protected ResourcesProvider createPrimaryService(AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options) {
         return new ResourcesProvider(serviceScope, options);
     }
 }

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
 import org.apache.groovy.util.Maps;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
@@ -68,7 +69,7 @@ public class ResolverService extends BaseService implements Resolver {
     private String hardwareSignature = Utils.Names.getHardwareId();
     private ResolverConfiguration configuration;
 
-    public ResolverService(ServiceScope scope, ServiceStartupOptions options) {
+    public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
         readConfiguration(options);
     }

@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources;
 
 import com.google.common.collect.Sets;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResourcesCapabilitiesImpl;
@@ -98,7 +99,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private ReadWriteLock updateLock = new ReentrantReadWriteLock(true);
 
     @SuppressWarnings("unchecked")
-    public ResourcesProvider(ServiceScope scope, ServiceStartupOptions options) {
+    public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
 
         super(scope, Type.RESOURCES, options);
 

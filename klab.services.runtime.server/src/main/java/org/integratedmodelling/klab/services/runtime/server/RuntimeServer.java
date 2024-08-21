@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.runtime.server;
 
 
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -34,7 +35,7 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
     }
 
     @Override
-    protected RuntimeService createPrimaryService(ServiceScope serviceScope,
+    protected RuntimeService createPrimaryService(AbstractServiceDelegatingScope serviceScope,
                                                   ServiceStartupOptions options) {
         return new RuntimeService(serviceScope, options);
     }

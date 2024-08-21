@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.services.runtime;
 
 import org.apache.groovy.util.Maps;
 import org.apache.qpid.server.SystemLauncher;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.klab.api.data.GraphDatabase;
@@ -43,7 +44,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     private GraphDatabase graphDatabase;
     private SystemLauncher systemLauncher;
 
-    public RuntimeService(ServiceScope scope, ServiceStartupOptions options) {
+    public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RUNTIME, options);
         readConfiguration(options);
         initializeMessaging();

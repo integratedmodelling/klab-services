@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.community;
 
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
@@ -12,7 +13,7 @@ import java.net.URL;
 
 public class CommunityService extends BaseService implements Community {
 
-    protected CommunityService(ServiceScope scope, Type serviceType, ServiceStartupOptions options) {
+    protected CommunityService(AbstractServiceDelegatingScope scope, Type serviceType, ServiceStartupOptions options) {
         super(scope, serviceType, options);
     }
 

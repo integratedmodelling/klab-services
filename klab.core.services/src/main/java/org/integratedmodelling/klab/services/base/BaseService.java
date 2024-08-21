@@ -4,6 +4,8 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.authentication.scope.AbstractDelegatingScope;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -51,13 +53,13 @@ public abstract class BaseService implements KlabService {
 //    protected AtomicBoolean online = new AtomicBoolean(false);
     protected AtomicBoolean available = new AtomicBoolean(false);
     private final List<Notification> serviceNotifications = new ArrayList<>();
-    protected ServiceScope scope;
+    protected AbstractServiceDelegatingScope scope;
     protected String localName = "Embedded";
     protected final ServiceStartupOptions startupOptions;
     private ScopeManager _scopeManager;
     private boolean initialized;
 
-    protected BaseService(ServiceScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
+    protected BaseService(AbstractServiceDelegatingScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
         this.scope = scope;
         this.localName = localName;
         this.type = serviceType;
@@ -206,7 +208,7 @@ public abstract class BaseService implements KlabService {
     }
 
     @Override
-    public ServiceScope serviceScope() {
+    public AbstractServiceDelegatingScope serviceScope() {
         return scope;
     }
 

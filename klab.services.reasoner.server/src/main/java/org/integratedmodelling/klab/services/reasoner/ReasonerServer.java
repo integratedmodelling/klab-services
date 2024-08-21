@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner;
 
 
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -25,7 +26,7 @@ public class ReasonerServer extends ServiceNetworkedInstance<ReasonerService> {
     }
 
     @Override
-    protected ReasonerService createPrimaryService(ServiceScope serviceScope, ServiceStartupOptions options) {
+    protected ReasonerService createPrimaryService(AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options) {
         return new ReasonerService(serviceScope, options);
     }
 

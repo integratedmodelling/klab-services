@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.reasoner;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.common.knowledge.IntelligentMap;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
@@ -33,6 +34,7 @@ import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.impl.ServiceStatusImpl;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -61,10 +63,10 @@ import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.Serial;
-import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -116,6 +118,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     //     */
     //    static public final int ACCEPT_SUBJECTIVE_OBSERVABLES = 0x10;
 
+    private AtomicBoolean consistent = new AtomicBoolean(false);
     private ReasonerConfiguration configuration = new ReasonerConfiguration();
     private Map<String, String> coreConceptPeers = new HashMap<>();
     private Map<Concept, Emergence> emergent = new HashMap<>();
@@ -248,7 +251,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Autowired
-    public ReasonerService(ServiceScope scope, ServiceStartupOptions options) {
+    public ReasonerService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.REASONER, options);
         this.scope = scope;
         this.owl = new OWL(scope);
@@ -332,6 +335,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Concept defineConcept(KimConceptStatement statement, UserScope scope) {
         return build(statement, this.owl.requireOntology(statement.getNamespace(),
                 OWL.DEFAULT_ONTOLOGY_PREFIX), null, scope);
+    }
+
+    @Override
+    public ServiceStatus status() {
+        var ret = super.status();
+        if (ret instanceof ServiceStatusImpl serviceStatus) {
+            serviceStatus.setConsistent(this.consistent.get());
+        }
+        return ret;
     }
 
     @Override
@@ -1310,7 +1322,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
         }
 
-        // TODO assess consistent status
+        // assess consistent status
+        this.consistent.set(Utils.Notifications.hasErrors(ret));
 
         return Utils.Resources.createFromLexicalNotifications(ret);
     }
@@ -1321,69 +1334,82 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var ownResources = scope.getService(ResourcesService.class);
         Map<URL, ResourcesService> services = new HashMap<>();
 
-        // TODO set busy - should be serviceScope().send(something)
+        serviceScope().setMaintenanceMode(true);
 
         // delete caches
         this.concepts.clear();
         this.observables.clear();
 
+        boolean inconsistent = false;
+
+        try {
         /*
         release all ontologies first. This should not be necessary but it prevents a NPE in case there are
         forward references - which the syntax should flag as errors, but doesn't at the moment.
          */
-        for (var resource : changes.getOntologies()) {
-            var ontology = this.owl.getOntology(resource.getResourceUrn());
-            if (ontology != null) {
-                this.owl.releaseOntology(ontology);
+            for (var resource : changes.getOntologies()) {
+                var ontology = this.owl.getOntology(resource.getResourceUrn());
+                if (ontology != null) {
+                    this.owl.releaseOntology(ontology);
+                }
             }
+
+            for (var resource : changes.getOntologies()) {
+
+                var resourceService = ownResources;
+                if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
+                    resourceService =
+                            services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
+                                    url -> new ResourcesClient(url, scope.getIdentity()));
+                }
+
+                var notifications = new ArrayList<Notification>();
+                var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class,
+                        notifications);
+                var ontology = resourceService.resolveOntology(resource.getResourceUrn(), parsingScope);
+                for (var statement : ontology.getStatements()) {
+                    defineConcept(statement, parsingScope);
+                }
+                this.owl.registerWithReasoner(ontology);
+                resource.getNotifications().addAll(notifications);
+
+                if (Utils.Notifications.hasErrors(notifications)) {
+                    inconsistent = true;
+                }
+            }
+
+            for (var resource : changes.getObservationStrategies()) {
+
+                var resourceService = ownResources;
+                if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
+                    resourceService =
+                            services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
+                                    url -> new ResourcesClient(url, scope.getIdentity()));
+                }
+
+                var notifications = new ArrayList<Notification>();
+                var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class,
+                        notifications);
+                var observationStrategyDocument =
+                        resourceService.resolveObservationStrategyDocument(resource.getResourceUrn(),
+                                parsingScope);
+                removeObservationStrategiesDocument(observationStrategyDocument.getUrn());
+                for (var strategy : observationStrategyDocument.getStatements()) {
+                    registerStrategy(defineStrategy(strategy, parsingScope));
+                }
+                resource.getNotifications().addAll(notifications);
+
+            }
+        } catch (Throwable t) {
+            inconsistent = true;
+            scope.send(Notification.error(t));
+        } finally {
+            serviceScope().setMaintenanceMode(false);
         }
 
-        for (var resource : changes.getOntologies()) {
-
-            var resourceService = ownResources;
-            if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
-                resourceService =
-                        services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
-                                url -> new ResourcesClient(url, scope.getIdentity()));
-            }
-
-            var notifications = new ArrayList<Notification>();
-            var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class,
-                    notifications);
-            var ontology = resourceService.resolveOntology(resource.getResourceUrn(), parsingScope);
-            for (var statement : ontology.getStatements()) {
-                defineConcept(statement, parsingScope);
-            }
-            this.owl.registerWithReasoner(ontology);
-            resource.getNotifications().addAll(notifications);
+        if (inconsistent) {
+            this.consistent.set(false);
         }
-
-        for (var resource : changes.getObservationStrategies()) {
-
-            var resourceService = ownResources;
-            if (!resourceService.capabilities(scope).getServiceId().equals(resource.getServiceId())) {
-                resourceService =
-                        services.computeIfAbsent(changes.getServices().get(resource.getServiceId()),
-                                url -> new ResourcesClient(url, scope.getIdentity()));
-            }
-
-            var notifications = new ArrayList<Notification>();
-            var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class,
-                    notifications);
-            var observationStrategyDocument =
-                    resourceService.resolveObservationStrategyDocument(resource.getResourceUrn(),
-                            parsingScope);
-            removeObservationStrategiesDocument(observationStrategyDocument.getUrn());
-            for (var strategy : observationStrategyDocument.getStatements()) {
-                registerStrategy(defineStrategy(strategy, parsingScope));
-            }
-            resource.getNotifications().addAll(notifications);
-
-        }
-
-        // TODO reassess consistent status
-
-        // TODO back to non-busy status
 
         return changes;
     }

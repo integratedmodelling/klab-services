@@ -159,6 +159,15 @@ public interface KlabService extends Service {
 
         boolean isBusy();
 
+        /**
+         * This may be false when the service is both available and not busy. Refers to the internal
+         * consistency of the data space; e.g. in the reasoner it may mean that there are errors in the
+         * worldview, or the resources server may have internal consistency issues.
+         *
+         * @return
+         */
+        boolean isConsistent();
+
         ServiceScope.Locality getLocality();
 
         int getHealthPercentage();
@@ -188,7 +197,7 @@ public interface KlabService extends Service {
         default boolean hasChangedComparedTo(ServiceStatus statusBeforeChecking) {
             return
                     this.isAvailable() != statusBeforeChecking.isAvailable() ||
-                    this.isBusy() != statusBeforeChecking.isBusy();
+                            this.isBusy() != statusBeforeChecking.isBusy();
         }
     }
 

@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services.resolver.server;
 
+import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -26,8 +27,8 @@ public class ResolverServer extends ServiceNetworkedInstance<ResolverService> {
     }
 
     @Override
-    protected ResolverService createPrimaryService(ServiceScope serviceScope,
-                                                     ServiceStartupOptions options) {
+    protected ResolverService createPrimaryService(AbstractServiceDelegatingScope serviceScope,
+                                                   ServiceStartupOptions options) {
         return new ResolverService(serviceScope, options);
     }
 

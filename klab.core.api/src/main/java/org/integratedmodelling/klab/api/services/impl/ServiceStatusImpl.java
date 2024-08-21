@@ -22,6 +22,7 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
     private Metadata metadata = Metadata.create();
     private boolean available = false;
     private boolean busy = false;
+    private boolean consistent = true;
     private ServiceScope.Locality locality = ServiceScope.Locality.EMBEDDED;
     private KlabService.Type serviceType;
     private String serviceId;
@@ -159,6 +160,15 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
 
     public void setServiceId(String serviceId) {
         this.serviceId = serviceId;
+    }
+
+    @Override
+    public boolean isConsistent() {
+        return consistent;
+    }
+
+    public void setConsistent(boolean consistent) {
+        this.consistent = consistent;
     }
 
     @Override

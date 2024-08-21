@@ -87,7 +87,7 @@ public abstract class ServiceInstance<T extends BaseService> {
      *
      * @return
      */
-    protected abstract T createPrimaryService(ServiceScope serviceScope, ServiceStartupOptions options);
+    protected abstract T createPrimaryService(AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options);
 
     /**
      * Called only if the service(s) specified in the certificate are unavailable or missing. This will be
