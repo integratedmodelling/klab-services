@@ -268,13 +268,15 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                 var physicalChanges = updateChild(resolveAsset(change.getKnowledgeClass(),
                         change.getResourceUrn(), service,
                         scope));
-                var asset = findAsset(change.getResourceUrn(),  NavigableKlabDocument.class, change.getKnowledgeClass());
+                var asset = findAsset(change.getResourceUrn(), NavigableKlabDocument.class,
+                        change.getKnowledgeClass());
                 var metadataChanges = asset != null && asset.mergeMetadata(change.getMetadata(),
                         change.getNotifications());
                 return physicalChanges || metadataChanges;
             }
             case UPDATE_METADATA -> {
-                var asset = findAsset(change.getResourceUrn(), NavigableKlabDocument.class, change.getKnowledgeClass());
+                var asset = findAsset(change.getResourceUrn(), NavigableKlabDocument.class,
+                        change.getKnowledgeClass());
                 return asset.mergeMetadata(change.getMetadata(), change.getNotifications());
             }
         }
@@ -293,9 +295,9 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         var match = EnumSet.noneOf(KnowledgeClass.class);
         match.addAll(Arrays.asList(assetType));
 
-        // breadth-first as we normally would use this for documents
+        // breadth-first as we normally would use this for documents. Skip folders.
         for (var child : this.children) {
-            if (match.contains(KlabAsset.classify(child)) && resourceUrn.equals(child.getUrn())) {
+            if (!(child instanceof NavigableFolder) && match.contains(KlabAsset.classify(child)) && resourceUrn.equals(child.getUrn())) {
                 return (T) child;
             }
         }
