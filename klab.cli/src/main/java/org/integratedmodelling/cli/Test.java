@@ -78,7 +78,7 @@ public class Test implements Runnable {
            }
 
            @Override
-           public <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetClass, Class<T> resultClass) {
+           public <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> resultClass, KnowledgeClass... assetType) {
                return null;
            }
 

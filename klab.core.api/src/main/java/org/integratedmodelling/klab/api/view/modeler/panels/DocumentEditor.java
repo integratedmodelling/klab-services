@@ -6,4 +6,11 @@ import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocumen
 public interface DocumentEditor extends PanelView<NavigableDocument> {
 
     void moveCaretTo(int position);
+
+    /**
+     * Called on an open editor with a modified document whenever there is a reparse of the contents.
+     *
+     * @param document
+     */
+    void reload(NavigableDocument document);
 }

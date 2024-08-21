@@ -39,6 +39,13 @@ public interface DocumentEditorController extends PanelController<NavigableDocum
     }
 
     /**
+     * Called by the UI when documents change enough to justify redisplay
+     *
+     * @param document
+     */
+    void reload(NavigableDocument document);
+
+    /**
      * Controllers call this when an external event makes it necessary to move to a specific position in the
      * handled document.
      *

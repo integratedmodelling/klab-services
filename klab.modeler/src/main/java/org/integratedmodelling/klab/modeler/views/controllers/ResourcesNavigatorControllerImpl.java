@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.modeler.views.controllers;
 import org.integratedmodelling.common.view.AbstractUIViewController;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
+import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
@@ -54,8 +55,10 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     @Override
     public void workspaceModified(ResourceSet changes) {
 
+        NavigableContainer container = null;
+
         if (!changes.isEmpty()) {
-            var container = assetMap.get(changes.getWorkspace());
+            container = assetMap.get(changes.getWorkspace());
             if (container != null) {
                 if (container.mergeChanges(changes, getController().engine().serviceScope())) {
                     view().workspaceModified(container);
@@ -63,30 +66,49 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                         getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged, changes);
                     }
                 }
+
             } else {
 
                 // new workspace!
                 var service = getController().engine().serviceScope().getService(ResourcesService.class);
-                NavigableContainer newContainer = null;
                 if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(changes.getWorkspace())) {
                     var worldview = service.getWorldview();
                     if (worldview != null) {
-                        newContainer = new NavigableWorldview(worldview);
+                        container = new NavigableWorldview(worldview);
                     }
                 } else {
                     var workspace = service.resolveWorkspace(changes.getWorkspace(), getController().user());
                     if (workspace != null) {
-                        newContainer = new NavigableWorkspace(workspace);
+                        container = new NavigableWorkspace(workspace);
                     }
                 }
 
-                if (newContainer != null) {
-                    assetMap.put(newContainer.getUrn(), newContainer);
-                    view().workspaceCreated(newContainer);
+                if (container != null) {
+                    assetMap.put(container.getUrn(), container);
+                    view().workspaceCreated(container);
                 }
+            }
 
+            if (container != null) {
+                // reopen any editors currently open on documents contained in here.
+                for (var editorController : getController().getOpenPanels(DocumentEditorController.class)) {
+
+                    var document = container.findAsset(editorController.getPayload().getUrn(),
+                            NavigableDocument.class,
+                            // TODO add all other documents
+                            KlabAsset.KnowledgeClass.ONTOLOGY, KlabAsset.KnowledgeClass.NAMESPACE,
+                            KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT,
+                            KlabAsset.KnowledgeClass.BEHAVIOR,
+                            KlabAsset.KnowledgeClass.APPLICATION, KlabAsset.KnowledgeClass.COMPONENT,
+                            KlabAsset.KnowledgeClass.TESTCASE, KlabAsset.KnowledgeClass.RESOURCE);
+
+                    if (document != null) {
+                        editorController.reload(document);
+                    }
+                }
             }
         }
+
     }
 
     @Override

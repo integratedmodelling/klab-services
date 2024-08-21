@@ -28,6 +28,9 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
 
     public void documentUpdated(String newContents) {
 
+        // temporarily disable the panel to give us time to modify
+        panel().disable();
+
         var service = getController().engine().serviceScope().getService(ResourcesService.class);
         var reasoner = getController().engine().serviceScope().getService(Reasoner.class);
 
@@ -73,6 +76,11 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
                 getController().dispatch(this, UIEvent.WorkspaceModified, change);
             }
         }
+    }
+
+    @Override
+    public void reload(NavigableDocument document) {
+        panel().reload(document);
     }
 
     @Override

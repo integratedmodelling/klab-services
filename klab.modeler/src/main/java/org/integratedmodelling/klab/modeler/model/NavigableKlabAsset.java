@@ -1,6 +1,8 @@
 package org.integratedmodelling.klab.modeler.model;
 
 import java.io.Serial;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -253,7 +255,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                         scope));
             }
             case DELETE -> {
-                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(), KlabAsset.class);
+                var asset = findAsset(change.getResourceUrn(), KlabAsset.class, change.getKnowledgeClass());
                 if (asset instanceof NavigableKlabAsset<?> navigableKlabAsset) {
                     var parent = navigableKlabAsset.parent;
                     navigableKlabAsset.children =
@@ -266,15 +268,13 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                 var physicalChanges = updateChild(resolveAsset(change.getKnowledgeClass(),
                         change.getResourceUrn(), service,
                         scope));
-                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(),
-                        NavigableKlabDocument.class);
+                var asset = findAsset(change.getResourceUrn(),  NavigableKlabDocument.class, change.getKnowledgeClass());
                 var metadataChanges = asset != null && asset.mergeMetadata(change.getMetadata(),
                         change.getNotifications());
                 return physicalChanges || metadataChanges;
             }
             case UPDATE_METADATA -> {
-                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(),
-                        NavigableKlabDocument.class);
+                var asset = findAsset(change.getResourceUrn(), NavigableKlabDocument.class, change.getKnowledgeClass());
                 return asset.mergeMetadata(change.getMetadata(), change.getNotifications());
             }
         }
@@ -283,18 +283,25 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     }
 
     @Override
-    public <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetType,
-                                             Class<T> assetClass) {
+    public <T extends KlabAsset> T findAsset(String resourceUrn,
+                                             Class<T> assetClass, KnowledgeClass... assetType) {
+
+        if (assetType == null || assetType.length == 0) {
+            return null;
+        }
+
+        var match = EnumSet.noneOf(KnowledgeClass.class);
+        match.addAll(Arrays.asList(assetType));
 
         // breadth-first as we normally would use this for documents
         for (var child : this.children) {
-            if (assetType == KlabAsset.classify(child) && resourceUrn.equals(child.getUrn())) {
+            if (match.contains(KlabAsset.classify(child)) && resourceUrn.equals(child.getUrn())) {
                 return (T) child;
             }
         }
 
         for (var child : this.children) {
-            var ret = child.findAsset(resourceUrn, assetType, assetClass);
+            var ret = child.findAsset(resourceUrn, assetClass, assetType);
             if (ret != null) {
                 return ret;
             }

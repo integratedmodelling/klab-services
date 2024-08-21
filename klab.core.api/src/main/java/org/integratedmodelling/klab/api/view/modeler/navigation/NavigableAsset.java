@@ -62,10 +62,10 @@ public interface NavigableAsset extends KlabAsset {
      * only to avoid casting, so a {@link ClassCastException} may be thrown if used incorrectly.
      *
      * @param resourceUrn
-     * @param assetClass
      * @param resultClass
+     * @param assetType one or more types to match
      * @return
      * @param <T>
      */
-    <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetClass, Class<T> resultClass);
+    <T extends KlabAsset> T findAsset(String resourceUrn,  Class<T> resultClass, KnowledgeClass... assetType);
 }
