@@ -263,11 +263,18 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             }
             case UPDATE -> {
                 var service = scope.getService(change.getServiceId(), ResourcesService.class);
-                return updateChild(resolveAsset(change.getKnowledgeClass(), change.getResourceUrn(), service,
+                var physicalChanges = updateChild(resolveAsset(change.getKnowledgeClass(),
+                        change.getResourceUrn(), service,
                         scope));
+                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(),
+                        NavigableKlabDocument.class);
+                var metadataChanges = asset != null && asset.mergeMetadata(change.getMetadata(),
+                        change.getNotifications());
+                return physicalChanges || metadataChanges;
             }
             case UPDATE_METADATA -> {
-                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(), NavigableKlabDocument.class);
+                var asset = findAsset(change.getResourceUrn(), change.getKnowledgeClass(),
+                        NavigableKlabDocument.class);
                 return asset.mergeMetadata(change.getMetadata(), change.getNotifications());
             }
         }
@@ -276,12 +283,13 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
     }
 
     @Override
-    public <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetType, Class<T> assetClass) {
+    public <T extends KlabAsset> T findAsset(String resourceUrn, KnowledgeClass assetType,
+                                             Class<T> assetClass) {
 
         // breadth-first as we normally would use this for documents
         for (var child : this.children) {
             if (assetType == KlabAsset.classify(child) && resourceUrn.equals(child.getUrn())) {
-                return (T)child;
+                return (T) child;
             }
         }
 

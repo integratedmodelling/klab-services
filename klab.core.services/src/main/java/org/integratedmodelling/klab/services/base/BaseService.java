@@ -48,7 +48,7 @@ public abstract class BaseService implements KlabService {
     private String serviceSecret;
 
     private URL url;
-    protected AtomicBoolean online = new AtomicBoolean(false);
+//    protected AtomicBoolean online = new AtomicBoolean(false);
     protected AtomicBoolean available = new AtomicBoolean(false);
     private final List<Notification> serviceNotifications = new ArrayList<>();
     protected ServiceScope scope;

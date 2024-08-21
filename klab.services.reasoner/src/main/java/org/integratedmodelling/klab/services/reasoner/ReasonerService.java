@@ -1319,6 +1319,23 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         var ownResources = scope.getService(ResourcesService.class);
         Map<URL, ResourcesService> services = new HashMap<>();
 
+        // TODO set busy - should be serviceScope().send(something)
+
+        // delete caches
+        this.concepts.clear();
+        this.observables.clear();
+
+        /*
+        release all ontologies first. This should not be necessary but it prevents a NPE in case there are
+        forward references - which the syntax should flag as errors, but doesn't at the moment.
+         */
+        for (var resource : changes.getOntologies()) {
+            var ontology = this.owl.getOntology(resource.getResourceUrn());
+            if (ontology != null) {
+                this.owl.releaseOntology(ontology);
+            }
+        }
+
         for (var resource : changes.getOntologies()) {
 
             var resourceService = ownResources;
@@ -1332,10 +1349,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             var parsingScope = getScopeManager().collectMessagePayload(scope, Notification.class,
                     notifications);
             var ontology = resourceService.resolveOntology(resource.getResourceUrn(), parsingScope);
-            var knowledge = this.owl.getOntology(ontology.getUrn());
-            if (knowledge != null) {
-                this.owl.releaseOntology(knowledge);
-            }
             for (var statement : ontology.getStatements()) {
                 defineConcept(statement, parsingScope);
             }
@@ -1365,6 +1378,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             resource.getNotifications().addAll(notifications);
 
         }
+
+        // TODO back to non-busy status
 
         return changes;
     }
