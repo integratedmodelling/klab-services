@@ -4,6 +4,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
 import org.integratedmodelling.klab.api.utils.Utils;
+import org.integratedmodelling.klab.api.view.UI;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -74,13 +75,13 @@ public interface Notification extends Serializable {
 
     Mode getMode();
 
-//    /**
-//     * Notifications build with Forward policy will be sent to paired scopes through websockets.
-//     *
-//     * @return
-//     */
-//    Message.ForwardingPolicy getForwardingPolicy();
-
+    /**
+     * If the notification is received within a consumer that has a UI, this specified what to
+     * do with it w.r.t the user interface.
+     *
+     * @return
+     */
+    UI.Interactivity getInteractivity();
     /**
      * The document context or null.
      *
@@ -120,8 +121,8 @@ public interface Notification extends Serializable {
         String message = "No message";
         LexicalContext lexicalContext = null;
         long timestamp = System.currentTimeMillis();
-//        Type type = Type.None;
         Mode mode = Mode.Normal;
+        UI.Interactivity interactivity = UI.Interactivity.BATCH;
 //        Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
         if (objects != null) {
@@ -131,6 +132,8 @@ public interface Notification extends Serializable {
                     level = Level.Error;
                 } else if (o instanceof String string) {
                     message = string;
+                } else if (o instanceof UI.Interactivity inter) {
+                    interactivity = inter;
                 } else if (o instanceof Instant instant) {
                     timestamp = instant.toEpochMilli();
                 } else if (o instanceof OffsetDateTime date) {
@@ -160,6 +163,7 @@ public interface Notification extends Serializable {
         ret.setLexicalContext(lexicalContext);
         ret.setTimestamp(timestamp);
         ret.setMode(mode);
+        ret.setInteractivity(interactivity);
 //        ret.setType(type);
 //        ret.setForwardingPolicy(forwardingPolicy);
 

@@ -11,15 +11,36 @@ import org.integratedmodelling.klab.api.services.runtime.Notification;
 public interface UI {
 
     /**
+     * This can be added to notifications that need to be shown into UIs.
+     */
+    enum Interactivity {
+        /**
+         * Show the bearing object to the user with no further action.
+         */
+        DISPLAY,
+        /**
+         * Show the bearing object with a process expecting a response and send it back using the
+         * bearing object's ID.
+         */
+        ASK,
+        /**
+         * Default for notifications, do not show in a UI but log as configured.
+         */
+        BATCH
+    }
+
+    /**
      * Alert is a notification that should be shown and acknowledged by the UI user. Parameters in the
-     * notification determine the display mode.
+     * notification determine the display mode. Normally notifications that pass through this are interactive,
+     * but that shouldn't be enforced in the implementation.
      *
      * @param notification
      */
     void alert(Notification notification);
 
     /**
-     * Respond yes/no/cancel to the passed notification.
+     * Respond yes/no/cancel to the passed notification.  Normally notifications that pass through this are
+     * interactive, * but that shouldn't be enforced in the implementation
      *
      * @param notification
      * @return

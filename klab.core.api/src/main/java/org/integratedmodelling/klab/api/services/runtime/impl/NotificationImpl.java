@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services.runtime.impl;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.UI;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -26,6 +27,7 @@ public class NotificationImpl implements Notification, Serializable {
     private String identity;
     private LexicalContext lexicalContext;
     private Mode mode;
+    private UI.Interactivity interactivity = UI.Interactivity.BATCH;
 
 //    private Message.ForwardingPolicy forwardingPolicy = Message.ForwardingPolicy.DoNotForward;
 
@@ -192,6 +194,15 @@ public class NotificationImpl implements Notification, Serializable {
 //    public void setForwardingPolicy(Message.ForwardingPolicy forwardingPolicy) {
 //        this.forwardingPolicy = forwardingPolicy;
 //    }
+
+    @Override
+    public UI.Interactivity getInteractivity() {
+        return interactivity;
+    }
+
+    public void setInteractivity(UI.Interactivity interactivity) {
+        this.interactivity = interactivity;
+    }
 
     @Override
     public String toString() {

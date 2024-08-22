@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.UI;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -443,10 +444,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                                     Notification.Level.Info));
                         }
                         if (result.getMergeResult().getConflicts() != null && !result.getMergeResult().getConflicts().isEmpty()) {
-                            ret.getNotifications().add(Notification.create("Conflicts during merge of "
+                            ret.getNotifications().add(Notification.error("Conflicts during merge of "
                                             + Strings.join(result.getMergeResult().getConflicts().keySet(),
                                             ", "),
-                                    Notification.Level.Error));
+                                    UI.Interactivity.DISPLAY));
                         } else {
 
                             // commit locally
@@ -461,14 +462,14 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                                 pushCommand.setCredentialsProvider(getCredentialsProvider(git, scope));
                                 pushCommand.call();
                             } catch (GitAPIException ex) {
-                                ret.getNotifications().add(Notification.create(ex));
+                                ret.getNotifications().add(Notification.error(ex, UI.Interactivity.DISPLAY));
                             }
                         }
                     }
                     compileDiff(repo, git, oldHead, ret);
                 }
             } catch (Exception e) {
-                ret.getNotifications().add(Notification.create(e));
+                ret.getNotifications().add(Notification.error(e, UI.Interactivity.DISPLAY));
             }
             return ret;
 
