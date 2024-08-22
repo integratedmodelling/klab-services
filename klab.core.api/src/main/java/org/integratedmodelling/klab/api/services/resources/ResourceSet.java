@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.services.resources;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -50,6 +51,7 @@ public class ResourceSet implements Serializable {
     private List<Resource> observationStrategies = new ArrayList<>();
     private Set<Resource> results = new HashSet<>();
     private List<Notification> notifications = new ArrayList<>();
+    private RepositoryState repositoryState;
 
     private boolean empty;
 
@@ -250,6 +252,14 @@ public class ResourceSet implements Serializable {
 
     public void setObservationStrategies(List<Resource> observationStrategies) {
         this.observationStrategies = observationStrategies;
+    }
+
+    public RepositoryState getRepositoryState() {
+        return repositoryState;
+    }
+
+    public void setRepositoryState(RepositoryState repositoryState) {
+        this.repositoryState = repositoryState;
     }
 
     public static ResourceSet empty() {

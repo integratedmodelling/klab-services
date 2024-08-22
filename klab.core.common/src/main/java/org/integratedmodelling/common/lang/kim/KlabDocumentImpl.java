@@ -1,7 +1,6 @@
 package org.integratedmodelling.common.lang.kim;
 
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.Statement;
@@ -25,7 +24,7 @@ public abstract class KlabDocumentImpl<T extends Statement> implements KlabDocum
     private List<Notification> notifications = new ArrayList<>();
     private String projectName;
     private String sourceCode;
-    private Repository.Status repositoryStatus = Repository.Status.CLEAN;
+//    private RepositoryState.Status repositoryStatus = RepositoryState.Status.CLEAN;
 
     @Override
     public String getUrn() {
@@ -116,12 +115,12 @@ public abstract class KlabDocumentImpl<T extends Statement> implements KlabDocum
         return "<" + Utils.Strings.capitalize(KlabAsset.classify(this).name()) + " " + projectName + ":" + urn + ">";
     }
 
-    @Override
-    public Repository.Status getRepositoryStatus() {
-        return repositoryStatus;
-    }
-
-    public void setRepositoryStatus(Repository.Status repositoryStatus) {
-        this.repositoryStatus = repositoryStatus;
-    }
+//    @Override
+//    public Repository.Status getRepositoryStatus() {
+//        return repositoryStatus;
+//    }
+//
+//    public void setRepositoryStatus(Repository.Status repositoryStatus) {
+//        this.repositoryStatus = repositoryStatus;
+//    }
 }

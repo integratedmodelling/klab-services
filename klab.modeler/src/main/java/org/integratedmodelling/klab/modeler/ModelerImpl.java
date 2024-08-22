@@ -2,13 +2,12 @@ package org.integratedmodelling.klab.modeler;
 
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
-import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.common.view.AbstractUIController;
 import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.configuration.PropertyHolder;
-import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.exceptions.KlabAuthorizationException;
@@ -321,7 +320,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     }
 
     @Override
-    public void manageProject(String projectId, Repository.Operation operation, String... arguments) {
+    public void manageProject(String projectId, RepositoryState.Operation operation, String... arguments) {
 
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {

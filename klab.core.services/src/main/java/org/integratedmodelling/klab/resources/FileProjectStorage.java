@@ -4,19 +4,15 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Ref;
-import org.integratedmodelling.common.knowledge.ProjectImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
-import org.integratedmodelling.klab.api.collections.impl.RepositoryImpl;
-import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
-import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.common.lang.kim.KlabDocumentImpl;
-import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
@@ -31,78 +27,199 @@ import java.util.function.BiConsumer;
 
 public class FileProjectStorage implements ProjectStorage {
 
-    public void updateMetadata(Project project, KlabDocument<?> resource, Scope scope) {
+    private File file;
 
-        if (isTracked() && project instanceof ProjectImpl pimpl && project.getRepository() instanceof RepositoryImpl projectMetadata) {
+    public RepositoryState getRepositoryState() {
+
+        RepositoryState ret = new RepositoryState();
+
+        String currentBranch;
+        RepositoryState.Status overallStatus = RepositoryState.Status.UNTRACKED;
+
+        if (isTracked()) {
 
             try (var repository = new FileRepository(rootFolder + File.separator + ".git")) {
 
                 try (var git = Git.wrap(repository)) {
 
-                    projectMetadata.setStatus(Repository.Status.TRACKED);
-                    projectMetadata.setCurrentBranch(repository.getBranch());
+                    overallStatus = RepositoryState.Status.CLEAN;
+                    ret.setCurrentBranch(repository.getBranch());
 
                     var status = git.status().call();
 
-                    if (projectMetadata.getBranches().isEmpty()) {
-                        // TODO not doing this unless all branches are empty. When we add/remove branches
-                        //  we must change them manually
-                        var branches =
-                                git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
+                    var branches = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
 
-                        Set<String> branchNames = new HashSet<>();
-                        for (var branchName : branches.stream().map(Ref::getName).toList()) {
-                            branchName = Utils.Paths.getLast(branchName, '/');
-                            branchNames.add(branchName);
-                        }
+                    Set<String> branchNames = new HashSet<>();
+                    for (var branchName : branches.stream().map(Ref::getName).toList()) {
+                        branchName = Utils.Paths.getLast(branchName, '/');
+                        branchNames.add(branchName);
+                    }
 
-                        projectMetadata.getBranches().addAll(branchNames);
+                    ret.getBranchNames().addAll(branchNames);
 
-                        for (var remote : git.remoteList().call()) {
-                            if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
-                                projectMetadata.setRepositoryUrl(new URI(remote.getURIs().getFirst().toASCIIString()).toURL());
-                            }
+                    for (var remote : git.remoteList().call()) {
+                        if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
+                            ret.setRepositoryUrl(new URI(remote.getURIs().getFirst().toASCIIString()).toURL());
                         }
                     }
 
-                    if (resource != null) {
-                        if (resource instanceof KlabDocumentImpl<?> document) {
-                            var resourceType = ProjectStorage.ResourceType.classify(resource);
-                            if (resourceType != null) {
-
-                                var filePath = ProjectStorage.getRelativeFilePath(resource.getUrn(),
-                                        resourceType, "/");
-
-                                if (status.getModified().contains(filePath)) {
-                                    document.setRepositoryStatus(Repository.Status.MODIFIED);
-                                } else if (status.getUntracked().contains(filePath)) {
-                                    document.setRepositoryStatus(Repository.Status.UNTRACKED);
-                                } else {
-                                    document.setRepositoryStatus(Repository.Status.CLEAN);
-                                }
-                            }
+                    for (var changed : status.getModified()) {
+                        ret.getModifiedPaths().add(changed);
+                        overallStatus = RepositoryState.Status.MODIFIED;
+                    }
+                    for (var changed : status.getUntracked()) {
+                        ret.getUntrackedPaths().add(changed);
+                        if (overallStatus == RepositoryState.Status.CLEAN) {
+                            overallStatus = RepositoryState.Status.MODIFIED;
                         }
-
-                    } else {
-                        for (var changed : status.getModified()) {
-                            var document = pimpl.findDocument(changed);
-                            if (document instanceof KlabDocumentImpl<?> doc) {
-                                doc.setRepositoryStatus(Repository.Status.MODIFIED);
-                            }
+                    }
+                    for (var changed : status.getUntrackedFolders()) {
+                        ret.getUntrackedFolders().add(changed);
+                        if (overallStatus == RepositoryState.Status.CLEAN) {
+                            overallStatus = RepositoryState.Status.MODIFIED;
                         }
-                        for (var changed : status.getUntracked()) {
-                            var document = pimpl.findDocument(changed);
-                            if (document instanceof KlabDocumentImpl<?> doc) {
-                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
-                            }
+                    }
+                    for (var changed : status.getAdded()) {
+                        ret.getAddedPaths().add(changed);
+                        if (overallStatus == RepositoryState.Status.CLEAN) {
+                            overallStatus = RepositoryState.Status.MODIFIED;
+                        }
+                    }
+                    for (var changed : status.getConflicting()) {
+                        ret.getConflictingPaths().add(changed);
+                        overallStatus = RepositoryState.Status.CONFLICTED;
+                    }
+                    for (var changed : status.getUncommittedChanges()) {
+                        ret.getUncommittedPaths().add(changed);
+                        if (overallStatus == RepositoryState.Status.CLEAN) {
+                            overallStatus = RepositoryState.Status.MODIFIED;
+                        }
+                    }
+                    for (var changed : status.getRemoved()) {
+                        ret.getRemovedPaths().add(changed);
+                        if (overallStatus == RepositoryState.Status.CLEAN) {
+                            overallStatus = RepositoryState.Status.MODIFIED;
                         }
                     }
                 }
             } catch (Exception e) {
-                scope.error(e);
+                ret.getNotifications().add(Notification.error(e, UI.Interactivity.DISPLAY));
             }
+        } else {
+            ret.getNotifications().add(Notification.info("Project " + projectName + " is not shared on a " +
+                    "repository"));
         }
+        return ret;
     }
+
+    //    public void updateMetadata(Project project, KlabDocument<?> resource, Scope scope) {
+    //
+    //        if (isTracked() && project instanceof ProjectImpl pimpl && project.getRepository() instanceof
+    //        RepositoryImpl projectMetadata) {
+    //
+    //            try (var repository = new FileRepository(rootFolder + File.separator + ".git")) {
+    //
+    //                try (var git = Git.wrap(repository)) {
+    //
+    //                    projectMetadata.setStatus(Repository.Status.TRACKED);
+    //                    projectMetadata.setCurrentBranch(repository.getBranch());
+    //
+    //                    var status = git.status().call();
+    //
+    //                    if (projectMetadata.getBranches().isEmpty()) {
+    //                        // TODO not doing this unless all branches are empty. When we add/remove
+    //                         branches
+    //                        //  we must change them manually
+    //                        var branches =
+    //                                git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call();
+    //
+    //                        Set<String> branchNames = new HashSet<>();
+    //                        for (var branchName : branches.stream().map(Ref::getName).toList()) {
+    //                            branchName = Utils.Paths.getLast(branchName, '/');
+    //                            branchNames.add(branchName);
+    //                        }
+    //
+    //                        projectMetadata.getBranches().addAll(branchNames);
+    //
+    //                        for (var remote : git.remoteList().call()) {
+    //                            if ("origin".equals(remote.getName()) && !remote.getURIs().isEmpty()) {
+    //                                projectMetadata.setRepositoryUrl(new URI(remote.getURIs().getFirst()
+    //                                .toASCIIString()).toURL());
+    //                            }
+    //                        }
+    //                    }
+    //
+    //                    if (resource != null) {
+    //                        if (resource instanceof KlabDocumentImpl<?> document) {
+    //                            var resourceType = ProjectStorage.ResourceType.classify(resource);
+    //                            if (resourceType != null) {
+    //
+    //                                var filePath = ProjectStorage.getRelativeFilePath(resource.getUrn(),
+    //                                        resourceType, "/");
+    //
+    //                                if (status.getModified().contains(filePath)) {
+    //                                    document.setRepositoryStatus(Repository.Status.MODIFIED);
+    //                                } else if (status.getUntracked().contains(filePath)) {
+    //                                    document.setRepositoryStatus(Repository.Status.UNTRACKED);
+    //                                } else {
+    //                                    document.setRepositoryStatus(Repository.Status.CLEAN);
+    //                                }
+    //                            }
+    //                        }
+    //
+    //                    } else {
+    //
+    //
+    //                        for (var changed : status.getModified()) {
+    //                            var document = pimpl.findDocument(changed);
+    //                            if (document instanceof KlabDocumentImpl<?> doc) {
+    //                                doc.setRepositoryStatus(Repository.Status.MODIFIED);
+    //                            }
+    //                        }
+    //                        for (var changed : status.getUntracked()) {
+    //                            var document = pimpl.findDocument(changed);
+    //                            if (document instanceof KlabDocumentImpl<?> doc) {
+    //                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+    //                            }
+    //                        }
+    //                        for (var changed : status.getUntrackedFolders()) {
+    //                            var document = pimpl.findDocument(changed);
+    //                            if (document instanceof KlabDocumentImpl<?> doc) {
+    //                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+    //                            }
+    //                        }
+    //                        for (var changed : status.getAdded()) {
+    //                            var document = pimpl.findDocument(changed);
+    //                            if (document instanceof KlabDocumentImpl<?> doc) {
+    //                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+    //                            }
+    //                        }
+    //                        for (var changed : status.getConflicting()) {
+    //                            var document = pimpl.findDocument(changed);
+    //                            if (document instanceof KlabDocumentImpl<?> doc) {
+    //                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+    //                            }
+    //                        }
+    //                        for (var changed : status.getUncommittedChanges()) {
+    //                            var document = pimpl.findDocument(changed);
+    //                            if (document instanceof KlabDocumentImpl<?> doc) {
+    //                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+    //                            }
+    //                        }
+    //                        for (var changed : status.getRemoved()) {
+    //                            var document = pimpl.findDocument(changed);
+    //                            if (document instanceof KlabDocumentImpl<?> doc) {
+    //                                doc.setRepositoryStatus(Repository.Status.UNTRACKED);
+    //                            }
+    //                        }
+    //
+    //                    }
+    //                }
+    //            } catch (Exception e) {
+    //                scope.error(e);
+    //            }
+    //        }
+    //    }
 
     public String getDocumentUrn(ResourceType type, URL url) {
 
@@ -116,6 +233,24 @@ public class FileProjectStorage implements ProjectStorage {
             return data != null && data.getFirst() == type ? data.getSecond() : null;
         }
 
+        return null;
+    }
+
+    /**
+     * Return the file URL from the document path using the passed separator
+     *
+     * @param path
+     * @param separator
+     * @return a valid file URL or null
+     */
+    public URL getDocumentUrl(String path, String separator) {
+        File file = new File(rootFolder + (path.startsWith(separator) ? path.substring(separator.length())
+                                                                      : path).replace(separator,
+                File.separator));
+        try {
+            return file.exists() ? file.toURI().toURL() : null;
+        } catch (MalformedURLException e) {
+        }
         return null;
     }
 
@@ -186,12 +321,12 @@ public class FileProjectStorage implements ProjectStorage {
         }
     }
 
-    public Repository.Modifications pullChanges(Scope scope) {
-        if (isTracked()) {
-            return Utils.Git.fetchAndMerge(rootFolder, scope);
-        }
-        return new Repository.Modifications();
-    }
+//    public Repository.Modifications pullChanges(Scope scope) {
+//        if (isTracked()) {
+//            return Utils.Git.fetchAndMerge(rootFolder, scope);
+//        }
+//        return new Repository.Modifications();
+//    }
 
     public void lock(boolean locked) {
         this.locked.set(locked);

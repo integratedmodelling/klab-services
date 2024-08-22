@@ -10,7 +10,7 @@ import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -56,7 +56,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.net.URI;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -641,7 +640,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     //    }
 
     @Override
-    public List<ResourceSet> manageRepository(String projectName, Repository.Operation operation,
+    public List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
                                               String... arguments) {
         return workspaceManager.manageRepository(projectName, operation, arguments);
     }

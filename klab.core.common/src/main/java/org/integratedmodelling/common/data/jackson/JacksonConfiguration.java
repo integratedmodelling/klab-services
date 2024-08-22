@@ -12,7 +12,6 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.mediation.Currency;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.data.mediation.Unit;
@@ -242,7 +241,7 @@ public class JacksonConfiguration {
         mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
         SimpleModule module = new SimpleModule();
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
-                                      Repository.class, Project.Manifest.class, Identifier.class,
+                                      Project.Manifest.class, Identifier.class,
                                       Triple.class, Unit.class, Project.class, KlabAsset.class,
                                       Currency.class, Message.class, Worldview.class, Workspace.class,
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,

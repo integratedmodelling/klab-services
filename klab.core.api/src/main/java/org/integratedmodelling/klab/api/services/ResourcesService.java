@@ -1,11 +1,10 @@
 package org.integratedmodelling.klab.api.services;
 
 import org.integratedmodelling.klab.api.authentication.CRUDOperation;
-import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.KlabData;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
@@ -427,7 +426,7 @@ public interface ResourcesService extends KlabService {
          * @param arguments
          * @return a descriptor of what happened and what needs to be reloaded.
          */
-        List<ResourceSet> manageRepository(String projectName, Repository.Operation operation,
+        List<ResourceSet> manageRepository(String projectName, RepositoryState.Operation operation,
                                            String... arguments);
 
         /**
@@ -457,14 +456,14 @@ public interface ResourcesService extends KlabService {
          *
          * @param projectName
          * @param assetUrn
-         * @param lockingAuthorization
+         * @param scope
          * @return
          */
         List<ResourceSet> deleteDocument(String projectName, String assetUrn, UserScope scope);
 
         /**
          * @param projectName
-         * @param lockingAuthorization
+         * @param scope
          * @return true if operation was carried out
          */
         List<ResourceSet> deleteProject(String projectName, UserScope scope);

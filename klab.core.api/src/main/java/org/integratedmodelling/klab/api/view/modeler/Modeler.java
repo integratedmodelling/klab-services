@@ -1,17 +1,13 @@
 package org.integratedmodelling.klab.api.view.modeler;
 
-import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
-import org.integratedmodelling.klab.api.data.Repository;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
-import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.view.UIController;
 import org.integratedmodelling.klab.api.view.UIReactor;
 import org.integratedmodelling.klab.api.view.annotations.UIActionHandler;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 
 import java.net.URL;
-import java.util.List;
 
 /**
  * A {@link UIController} that contains all the user actions relevant to a modeler IDE. Implement this to use
@@ -80,7 +76,7 @@ public interface Modeler extends UIController {
     void deleteAsset(NavigableAsset asset);
 
     @UIActionHandler(UIReactor.UIAction.ManageProject)
-    void manageProject(String projectId, Repository.Operation operation, String... arguments);
+    void manageProject(String projectId, RepositoryState.Operation operation, String... arguments);
 
     @UIActionHandler(UIReactor.UIAction.EditProjectProperties)
     void editProperties(String projectId);

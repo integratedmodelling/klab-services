@@ -7,9 +7,12 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.transport.*;
+import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.integratedmodelling.common.authentication.Authentication;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -20,7 +23,6 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.Statement;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.UI;
@@ -212,8 +214,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                 // TODO
             } else if (object instanceof Model) {
                 collectAnnotations(((Model) object).getObservables().get(0), collection);
-//            } else if (object instanceof Instance) {
-//                collectAnnotations(((Instance) object).getObservable(), collection);
+                //            } else if (object instanceof Instance) {
+                //                collectAnnotations(((Instance) object).getObservable(), collection);
             }
             //
             // if (getParent(object) != null) {
@@ -412,6 +414,63 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
         public static final String MAIN_BRANCH = "master";
 
+        /**
+         * Compound repository operations (as implemented in Utils.Git in the common package) return one of
+         * these, which contains notifications (they should be checked for errors before anything else is
+         * done) and the relative paths that were affected. When changes affect a
+         * {@link org.integratedmodelling.klab.api.knowledge.organization.Workspace}, they can be converted
+         * into {@link org.integratedmodelling.klab.api.services.resources.ResourceSet} by a resources server
+         * that knows mutual dependencies.
+         */
+        public static class Modifications {
+
+            private String repositoryName;
+
+            private List<String> addedPaths = new ArrayList<>();
+            private List<String> removedPaths = new ArrayList<>();
+            private List<String> modifiedPaths = new ArrayList<>();
+            private List<Notification> notifications = new ArrayList<>();
+
+            public List<String> getAddedPaths() {
+                return addedPaths;
+            }
+
+            public void setAddedPaths(List<String> addedPaths) {
+                this.addedPaths = addedPaths;
+            }
+
+            public List<String> getRemovedPaths() {
+                return removedPaths;
+            }
+
+            public void setRemovedPaths(List<String> removedPaths) {
+                this.removedPaths = removedPaths;
+            }
+
+            public List<String> getModifiedPaths() {
+                return modifiedPaths;
+            }
+
+            public void setModifiedPaths(List<String> modifiedPaths) {
+                this.modifiedPaths = modifiedPaths;
+            }
+
+            public List<Notification> getNotifications() {
+                return notifications;
+            }
+
+            public void setNotifications(List<Notification> notifications) {
+                this.notifications = notifications;
+            }
+
+            public String getRepositoryName() {
+                return repositoryName;
+            }
+
+            public void setRepositoryName(String repositoryName) {
+                this.repositoryName = repositoryName;
+            }
+        }
 
         /**
          * Perform a fetch, if no issues do a merge, then commit any changes and push to origin. Use any
@@ -421,10 +480,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
          * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchCommitAndPush(File localRepository, String commitMessage, Scope scope) {
+        public static Modifications fetchCommitAndPush(File localRepository, String commitMessage,
+                                                       Scope scope) {
 
-            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
-                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+            Modifications ret = new Modifications();
 
             ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
@@ -550,10 +609,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
          * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications fetchAndMerge(File localRepository, Scope scope) {
+        public static Modifications fetchAndMerge(File localRepository, Scope scope) {
 
-            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
-                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+            Modifications ret =
+                    new Modifications();
 
             ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
@@ -600,7 +659,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
         private static void compileDiff(Repository repository, org.eclipse.jgit.api.Git git,
                                         ObjectId oldHead,
-                                        org.integratedmodelling.klab.api.data.Repository.Modifications ret) {
+                                        Modifications ret) {
 
             try {
                 var head = repository.resolve("HEAD^{tree}");
@@ -632,7 +691,7 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
             }
         }
 
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications mergeChangesFrom(File localRepository, String branch) {
+        public static Modifications mergeChangesFrom(File localRepository, String branch) {
             // TODO ziobue
             return null;
         }
@@ -646,10 +705,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
          * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications commitAndSwitch(File localRepository, String branch) {
+        public static Modifications commitAndSwitch(File localRepository, String branch) {
 
-            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
-                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+            Modifications ret =
+                    new Modifications();
 
             ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
@@ -676,10 +735,10 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @return Modifications record. Empty notifications means all OK. May have no errors but warnings, no
          * info. Use {@link Notifications#hasErrors(Collection)} on the notifications element to check.
          */
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications hardReset(File localRepository) {
+        public static Modifications hardReset(File localRepository) {
 
-            org.integratedmodelling.klab.api.data.Repository.Modifications ret =
-                    new org.integratedmodelling.klab.api.data.Repository.Modifications();
+            Modifications ret =
+                    new Modifications();
 
             ret.setRepositoryName(Files.getFileBaseName(localRepository));
 
@@ -735,7 +794,8 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
 
             Logging.INSTANCE.info("cloning Git repository " + url + " branch " + branch + " ...");
 
-            CredentialsProvider credentialsProvider = getCredentialsProvider(Authentication.INSTANCE.getCredentials(url, scope));
+            CredentialsProvider credentialsProvider =
+                    getCredentialsProvider(Authentication.INSTANCE.getCredentials(url, scope));
 
             try (org.eclipse.jgit.api.Git result =
                          org.eclipse.jgit.api.Git.cloneRepository().setURI(url)
@@ -799,9 +859,9 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * @param gitDirectory the git directory
          * @return the string
          */
-        public static org.integratedmodelling.klab.api.data.Repository.Modifications requireUpdatedRepository(String gitUrl, File gitDirectory, Scope scope) {
+        public static Modifications requireUpdatedRepository(String gitUrl, File gitDirectory, Scope scope) {
 
-            org.integratedmodelling.klab.api.data.Repository.Modifications ret = null;
+            Modifications ret = null;
             String repositoryName = URLs.getURLBaseName(gitUrl);
             File repoDir = new File(gitDirectory + File.separator + repositoryName);
             File gitDir = new File(repoDir + File.separator + ".git");

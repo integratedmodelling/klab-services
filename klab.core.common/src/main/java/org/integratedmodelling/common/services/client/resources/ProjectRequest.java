@@ -2,7 +2,7 @@ package org.integratedmodelling.common.services.client.resources;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 public class ProjectRequest {
 
 
-    private Repository.Operation operation;
+    private RepositoryState.Operation operation;
     private String workspaceName;
     private String projectName;
     private String projectUrl;
@@ -88,11 +88,11 @@ public class ProjectRequest {
         this.overwrite = overwrite;
     }
 
-    public Repository.Operation getOperation() {
+    public RepositoryState.Operation getOperation() {
         return operation;
     }
 
-    public void setOperation(Repository.Operation operation) {
+    public void setOperation(RepositoryState.Operation operation) {
         this.operation = operation;
     }
 

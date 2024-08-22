@@ -2,10 +2,9 @@ package org.integratedmodelling.common.knowledge;
 
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.collections.impl.RepositoryImpl;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.data.MetadataConvention;
-import org.integratedmodelling.klab.api.data.Repository;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -17,6 +16,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,11 +24,13 @@ import java.util.List;
 
 public class ProjectImpl implements Project {
 
+    @Serial
     private static final long serialVersionUID = 7618524077068234748L;
-    private Repository repositoryMetadata = new RepositoryImpl();
+//    private Repository repositoryMetadata = new RepositoryImpl();
 
     public static class ManifestImpl implements Manifest {
 
+        @Serial
         private static final long serialVersionUID = -6549113149802016133L;
         private String description;
         private ResourcePrivileges privileges = ResourcePrivileges.PUBLIC;
@@ -124,6 +126,7 @@ public class ProjectImpl implements Project {
     private List<String> resourceUrns = new ArrayList<>();
     private List<KimObservationStrategyDocument> observationStrategies = new ArrayList<>();
     private List<Annotation> annotations = new ArrayList<>();
+    private RepositoryState repositoryState = new RepositoryState();
 
     @Override
     public Manifest getManifest() {
@@ -231,13 +234,22 @@ public class ProjectImpl implements Project {
         this.annotations = annotations;
     }
 
-    public Repository getRepository() {
-        return repositoryMetadata;
+    @Override
+    public RepositoryState getRepositoryState() {
+        return repositoryState;
     }
 
-    public void setRepositoryMetadata(Repository repositoryMetadata) {
-        this.repositoryMetadata = repositoryMetadata;
+    public void setRepositoryState(RepositoryState repositoryState) {
+        this.repositoryState = repositoryState;
     }
+
+    //    public Repository getRepository() {
+//        return repositoryMetadata;
+//    }
+//
+//    public void setRepositoryMetadata(Repository repositoryMetadata) {
+//        this.repositoryMetadata = repositoryMetadata;
+//    }
 
     // TODO lots
     public KlabDocument<?> findDocument(String documentPath) {

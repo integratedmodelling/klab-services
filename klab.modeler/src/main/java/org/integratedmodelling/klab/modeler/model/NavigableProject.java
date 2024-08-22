@@ -1,21 +1,20 @@
 package org.integratedmodelling.klab.modeler.model;
 
-import java.io.File;
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-
-//import org.eclipse.core.resources.IProject;
-import org.integratedmodelling.klab.api.data.Repository;
-import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kim.KimNamespace;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategyDocument;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
-import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
+import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
+
+import java.io.File;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NavigableProject extends NavigableKlabAsset<Project> implements Project {
 
@@ -116,7 +115,6 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 			});
 		}
 
-
 		// TODO local project resources
 
 		// TODO settings if editable
@@ -125,9 +123,19 @@ public class NavigableProject extends NavigableKlabAsset<Project> implements Pro
 	}
 
 	@Override
-	public Repository getRepository() {
-		return delegate.getRepository();
+	public RepositoryState getRepositoryState() {
+		return delegate.getRepositoryState();
 	}
+
+	public RepositoryState.Status computeStatus(KlabDocument<?> document) {
+		// Compute the passed document's status re: the repository
+		return RepositoryState.Status.UNTRACKED;
+	}
+
+	//	@Override
+//	public Repository getRepository() {
+//		return delegate.getRepository();
+//	}
 
     public boolean isLocked() {
 		return this.locked;

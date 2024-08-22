@@ -1,13 +1,7 @@
 package org.integratedmodelling.klab.modeler.model;
 
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.data.Metadata;
-import org.integratedmodelling.klab.api.data.Repository;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
@@ -18,6 +12,11 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableDocument;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public abstract class NavigableKlabDocument<E extends Statement, T extends KlabDocument<E>>
         extends NavigableKlabAsset<T> implements KlabDocument<E>, NavigableDocument {
@@ -228,10 +227,10 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 
     }
 
-    @Override
-    public Repository.Status getRepositoryStatus() {
-        return delegate.getRepositoryStatus();
-    }
+//    @Override
+//    public Repository.Status getRepositoryStatus() {
+//        return delegate.getRepositoryStatus();
+//    }
 
     @Override
     public boolean mergeMetadata(Metadata metadata, List<Notification> notifications) {
