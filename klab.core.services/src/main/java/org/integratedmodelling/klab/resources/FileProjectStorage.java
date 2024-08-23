@@ -247,8 +247,9 @@ public class FileProjectStorage implements ProjectStorage {
      * @return a valid file URL or null
      */
     public URL getDocumentUrl(String path, String separator) {
-        File file = new File(rootFolder + (path.startsWith(separator) ? path.substring(separator.length())
-                                                                      : path).replace(separator,
+        File file = new File(rootFolder + File.separator + (path.startsWith(separator) ?
+                                                            path.substring(separator.length())
+                                                                                       : path).replace(separator,
                 File.separator));
         try {
             return file.exists() ? file.toURI().toURL() : null;
@@ -324,12 +325,12 @@ public class FileProjectStorage implements ProjectStorage {
         }
     }
 
-//    public Repository.Modifications pullChanges(Scope scope) {
-//        if (isTracked()) {
-//            return Utils.Git.fetchAndMerge(rootFolder, scope);
-//        }
-//        return new Repository.Modifications();
-//    }
+    //    public Repository.Modifications pullChanges(Scope scope) {
+    //        if (isTracked()) {
+    //            return Utils.Git.fetchAndMerge(rootFolder, scope);
+    //        }
+    //        return new Repository.Modifications();
+    //    }
 
     public void lock(boolean locked) {
         this.locked.set(locked);
