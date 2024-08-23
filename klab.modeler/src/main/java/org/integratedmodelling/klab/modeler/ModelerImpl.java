@@ -324,11 +324,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
         var resources = engine().serviceScope().getService(ResourcesService.class);
         if (resources instanceof ResourcesService.Admin admin) {
-//            Thread.ofVirtual().start(() -> { FIXME REMOVED TEMPORARILY FOR DEBUGGING
+            Thread.ofVirtual().start(() -> {
                 var ret = admin.manageRepository(projectId, operation,
                         arguments);
                 handleResultSets(ret);
-//            });
+            });
         } else if (getUI() != null) {
             getUI().alert(Notification.create("Service does not support this operation",
                     Notification.Level.Warning));
@@ -337,6 +337,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     private void handleResultSets(List<ResourceSet> ret) {
         if (ret != null && !ret.isEmpty()) {
+
+            // TODO display all UI.Interactivity.DISPLAY notifications
+
             for (var change : ret) {
                 if (Utils.Notifications.hasErrors(change.getNotifications())) {
                     if (getUI() != null) {
