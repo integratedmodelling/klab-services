@@ -227,11 +227,6 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
 
     }
 
-//    @Override
-//    public Repository.Status getRepositoryStatus() {
-//        return delegate.getRepositoryStatus();
-//    }
-
     @Override
     public boolean mergeMetadata(Metadata metadata, List<Notification> notifications) {
 

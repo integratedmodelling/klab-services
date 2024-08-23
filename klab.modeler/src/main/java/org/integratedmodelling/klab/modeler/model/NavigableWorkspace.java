@@ -34,6 +34,7 @@ public class NavigableWorkspace extends NavigableKlabAsset<Workspace> implements
 
     public NavigableWorkspace(Workspace delegate) {
         super(delegate, null);
+        computeStatistics();
     }
 
     public Collection<Project> getProjects() {

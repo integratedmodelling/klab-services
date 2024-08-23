@@ -49,9 +49,9 @@ public class ResourceSet implements Serializable {
     private List<Resource> behaviors = new ArrayList<>();
     private List<Resource> resources = new ArrayList<>();
     private List<Resource> observationStrategies = new ArrayList<>();
+    private List<Resource> projects = new ArrayList<>();
     private Set<Resource> results = new HashSet<>();
     private List<Notification> notifications = new ArrayList<>();
-    private RepositoryState repositoryState;
 
     private boolean empty;
 
@@ -72,6 +72,7 @@ public class ResourceSet implements Serializable {
         private Metadata metadata = Metadata.create();
         private List<Notification> notifications = new ArrayList<>();
         private String projectUrn;
+        private RepositoryState repositoryState;
 
         public Resource() {
         }
@@ -153,6 +154,14 @@ public class ResourceSet implements Serializable {
 
         public void setProjectUrn(String projectUrn) {
             this.projectUrn = projectUrn;
+        }
+
+        public RepositoryState getRepositoryState() {
+            return repositoryState;
+        }
+
+        public void setRepositoryState(RepositoryState repositoryState) {
+            this.repositoryState = repositoryState;
         }
 
         @Override
@@ -254,14 +263,6 @@ public class ResourceSet implements Serializable {
         this.observationStrategies = observationStrategies;
     }
 
-    public RepositoryState getRepositoryState() {
-        return repositoryState;
-    }
-
-    public void setRepositoryState(RepositoryState repositoryState) {
-        this.repositoryState = repositoryState;
-    }
-
     public static ResourceSet empty() {
         var ret = new ResourceSet();
         ret.setEmpty(true);
@@ -272,6 +273,14 @@ public class ResourceSet implements Serializable {
         var ret = empty();
         ret.getNotifications().add(notification);
         return ret;
+    }
+
+    public List<Resource> getProjects() {
+        return projects;
+    }
+
+    public void setProjects(List<Resource> projects) {
+        this.projects = projects;
     }
 
     @Override

@@ -5,7 +5,6 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
-import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -18,7 +17,6 @@ import org.integratedmodelling.klab.api.view.modeler.panels.controllers.Document
 import org.integratedmodelling.klab.api.view.modeler.views.ResourcesNavigator;
 import org.integratedmodelling.klab.api.view.modeler.views.controllers.ResourcesNavigatorController;
 import org.integratedmodelling.klab.modeler.model.*;
-import org.integratedmodelling.klab.rest.HubNotificationMessage;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,8 +28,6 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     Map<String, NavigableContainer> assetMap = new LinkedHashMap<>();
     ResourcesService currentService;
     NavigableWorkspace currentWorkspace; // we keep it so we can unlock it when switching to another or
-    private ArrayList<NavigableContainer> workspaces;
-    // exiting
 
     public ResourcesNavigatorControllerImpl(UIController controller) {
         super(controller);
@@ -55,7 +51,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
     @Override
     public void workspaceModified(ResourceSet changes) {
 
-        NavigableContainer container = null;
+        NavigableContainer container;
 
         if (!changes.isEmpty()) {
             container = assetMap.get(changes.getWorkspace());
@@ -125,7 +121,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             negotiateLocking(workspace);
             getController().switchWorkbench(this, workspace);
             view().showResources(workspace);
-        } else if (asset instanceof NavigableKlabStatement navigableStatement) {
+        } else if (asset instanceof NavigableKlabStatement<?> navigableStatement) {
             // double click on statement: if the containing document is not in view, show it; move to the
             // statement
             var document = asset.parent(NavigableDocument.class);
@@ -177,8 +173,8 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                 for (var asset : currentWorkspace.children()) {
                     if (asset instanceof NavigableProject project && project.isLocked()) {
                         admin.unlockProject(project.getUrn(), getController().user());
-                        ((NavigableProject) asset).setLocked(false);
-                        ((NavigableProject) asset).setRootDirectory(null);
+                        project.setLocked(false);
+                        project.setRootDirectory(null);
                     }
                 }
             }

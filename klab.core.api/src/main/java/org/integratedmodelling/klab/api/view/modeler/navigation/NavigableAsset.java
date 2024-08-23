@@ -11,18 +11,55 @@ import java.util.List;
  */
 public interface NavigableAsset extends KlabAsset {
 
+    /*
+     * Metadata keys for local metadata, changed by interacting with the services. These are propagated
+     * across the asset hierarchy by explicitly calling functions  on
+     * the navigable objects after wrapping or updating the original assets. The original data from the
+     * Resources service only contain info (notifications and repository state) within the individual
+     * objects affected.
+     */
+
     /**
-     * Metadata keys for local metadata, changed by interacting with the services.
+     * Key for metadata available through {@link #localMetadata()}. If null, assume 0. Count of error
+     * notifications in asset, cumulated along containment hierarchy.
      */
     String ERROR_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+
+    /**
+     * Key for metadata available through {@link #localMetadata()}. If null, assume 0. Count of warning
+     * notifications in asset, cumulated along containment hierarchy.
+     */
     String WARNING_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+
+    /**
+     * Key for metadata available through {@link #localMetadata()}. If null, assume 0. Count of informational
+     * notifications in asset, cumulated along containment hierarchy.
+     */
     String INFO_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
 
     /**
-     * A list of all child assets, or an empty list if no children exist.
+     * Key for metadata available through {@link #localMetadata()}. If null, assume no status because there is
+     * no official remote repository.
+     * <p>
+     * Status of asset re: the official remote repository (origin). For containers, reflects the status of the
+     * contained assets.
+     */
+    String REPOSITORY_STATUS_KEY = "klab.repository.status";
+
+    /**
+     * In navigable containers representing projects that have a repository, this will be set in
+     * {@link #localMetadata()} to the name of the branch currently represented in the assets.
+     */
+    String REPOSITORY_CURRENT_BRANCH_KEY = "klab.repository.current.branch";
+
+    /**
+     * In navigable containers representing projects that have a repository, this will be set in
+     * {@link #localMetadata()} to the name of all branches currently available in the repository.
      *
      * @return
      */
+    String REPOSITORY_AVAILABLE_BRANCHES_KEY = "klab.repository.available.branches";
+    
     List<? extends NavigableAsset> children();
 
     /**
@@ -63,9 +100,9 @@ public interface NavigableAsset extends KlabAsset {
      *
      * @param resourceUrn
      * @param resultClass
-     * @param assetType one or more types to match
-     * @return
+     * @param assetType   one or more types to match
      * @param <T>
+     * @return
      */
-    <T extends KlabAsset> T findAsset(String resourceUrn,  Class<T> resultClass, KnowledgeClass... assetType);
+    <T extends KlabAsset> T findAsset(String resourceUrn, Class<T> resultClass, KnowledgeClass... assetType);
 }

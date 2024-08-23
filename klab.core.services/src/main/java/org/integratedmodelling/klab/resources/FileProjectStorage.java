@@ -105,6 +105,9 @@ public class FileProjectStorage implements ProjectStorage {
             } catch (Exception e) {
                 ret.getNotifications().add(Notification.error(e, UI.Interactivity.DISPLAY));
             }
+
+            ret.setOverallStatus(overallStatus);
+
         } else {
             ret.getNotifications().add(Notification.info("Project " + projectName + " is not shared on a " +
                     "repository"));

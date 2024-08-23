@@ -18,10 +18,12 @@ import java.util.Objects;
 //import org.eclipse.ui.model.IWorkbenchAdapter2;
 //import org.eclipse.ui.model.IWorkbenchAdapter3;
 import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
+import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kim.KimOntology;
 import org.integratedmodelling.klab.api.lang.kim.KlabDocument;
@@ -29,6 +31,7 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
+import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableAsset;
 import org.integratedmodelling.klab.api.view.modeler.navigation.NavigableContainer;
@@ -87,8 +90,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
 
     public NavigableContainer root() {
         NavigableAsset ret = this;
-        while (((NavigableKlabAsset) ret).parent != null) {
-            ret = ((NavigableKlabAsset) ret).parent;
+        while (((NavigableKlabAsset<?>) ret).parent != null) {
+            ret = ((NavigableKlabAsset<?>) ret).parent;
         }
         return (NavigableContainer) ret;
     }
@@ -228,6 +231,7 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                 ret = true;
             }
         }
+        computeStatistics(changes);
         return ret;
     }
 
@@ -310,6 +314,116 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
         }
 
         return null;
+    }
+
+
+    /*
+    Compute all statistics with an optional state to record the repository state of each asset
+     */
+    private void computeStatisticsUnder(RepositoryState state, ResourceSet resourceSet) {
+
+        boolean inspectChildren = this instanceof NavigableContainer;
+
+        if (this instanceof NavigableProject navigableProject) {
+
+            inspectChildren = true;
+            boolean overrideState = false;
+            if (resourceSet != null) {
+                // find new repo state
+                for (var resource : resourceSet.getProjects()) {
+                    if (resource.getResourceUrn().equals(navigableProject.getUrn())) {
+                        state = resource.getRepositoryState();
+                        overrideState = state != null;
+                        break;
+                    }
+                }
+            }
+
+            // if no state
+            if (!overrideState) {
+                // reset repo state to current
+                state = navigableProject.getRepositoryState();
+            }
+
+            this.localMetadata.put(REPOSITORY_STATUS_KEY, state == null ? null : state.getOverallStatus());
+            this.localMetadata.put(REPOSITORY_CURRENT_BRANCH_KEY, state == null ? null : state.getCurrentBranch());
+            this.localMetadata.put(REPOSITORY_AVAILABLE_BRANCHES_KEY, state == null ? null : state.getBranchNames());
+
+
+        } else if (this instanceof NavigableKlabDocument<?, ?> document) {
+
+            int errors = 0, warnings = 0, info = 0;
+            // count notifications
+            for (Notification notification : document.getNotifications()) {
+                if (notification.getLevel() == Notification.Level.Error) {
+                    errors++;
+                } else if (notification.getLevel() == Notification.Level.Warning) {
+                    warnings++;
+                } else if (notification.getLevel() == Notification.Level.Info) {
+                    info++;
+                }
+            }
+
+            this.localMetadata.put(ERROR_NOTIFICATION_COUNT_KEY, errors);
+            this.localMetadata.put(WARNING_NOTIFICATION_COUNT_KEY, warnings);
+            this.localMetadata.put(INFO_NOTIFICATION_COUNT_KEY, info);
+
+            if (state != null) {
+                var path = ProjectStorage.getRelativeFilePath(document.getUrn(), ProjectStorage.ResourceType.classify(document), "/");
+                if (state.getUncommittedPaths().contains(path)) {
+                    // this is the actual one we need I guess
+                    this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
+                } else if (state.getConflictingPaths().contains(path)) {
+                    this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.CONFLICTED);
+                } else if (state.getAddedPaths().contains(path)) {
+                    this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.ADDED);
+                } else if (state.getUntrackedPaths().contains(path)) {
+                    this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.UNTRACKED);
+                } else if (state.getModifiedPaths().contains(path)) {
+                    this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);
+                } else if (state.getRemovedPaths().contains(path)) {
+                    this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.REMOVED);
+                } else {
+                    this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.CLEAN);
+                }
+            }
+
+        } else if (this instanceof NavigableFolder) {
+            // TODO tracking
+        }
+
+        if (inspectChildren) {
+            for (var child : children) {
+                if (child instanceof NavigableKlabAsset<?> navigableKlabAsset) {
+
+                    navigableKlabAsset.computeStatisticsUnder(state, resourceSet);
+
+                    this.localMetadata.put(ERROR_NOTIFICATION_COUNT_KEY,
+                            this.localMetadata.get(ERROR_NOTIFICATION_COUNT_KEY, 0) + navigableKlabAsset.localMetadata.get(ERROR_NOTIFICATION_COUNT_KEY, 0));
+                    this.localMetadata.put(WARNING_NOTIFICATION_COUNT_KEY,
+                            this.localMetadata.get(WARNING_NOTIFICATION_COUNT_KEY, 0) + navigableKlabAsset.localMetadata.get(WARNING_NOTIFICATION_COUNT_KEY, 0));
+                    this.localMetadata.put(INFO_NOTIFICATION_COUNT_KEY,
+                            this.localMetadata.get(INFO_NOTIFICATION_COUNT_KEY, 0) + navigableKlabAsset.localMetadata.get(INFO_NOTIFICATION_COUNT_KEY, 0));
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Recompute error and repository status across the asset hierarchy, starting at the bottom, using the
+     * info that comes with the wrapped assets.
+     */
+    public void computeStatistics() {
+        computeStatisticsUnder(null, null);
+    }
+
+    /**
+     * Recompute error and repository status across the asset hierarchy, starting at the bottom, merging the
+     * info that comes with the wrapped assets with the repository state
+     */
+    public void computeStatistics(ResourceSet resourceSet) {
+        computeStatisticsUnder(null, resourceSet);
     }
 
 }

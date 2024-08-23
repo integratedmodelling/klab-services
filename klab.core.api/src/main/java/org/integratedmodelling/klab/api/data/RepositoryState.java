@@ -201,4 +201,5 @@ public class RepositoryState {
     public void setNotifications(List<Notification> notifications) {
         this.notifications = notifications;
     }
+
 }

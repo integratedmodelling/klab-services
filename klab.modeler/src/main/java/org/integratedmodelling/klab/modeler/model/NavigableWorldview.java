@@ -24,6 +24,7 @@ public class NavigableWorldview extends NavigableKlabAsset<Worldview> implements
     public NavigableWorldview(Worldview asset) {
         super(asset, null);
         this.path = Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER;
+        computeStatistics();
     }
 
     @Override
