@@ -346,8 +346,10 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             }
 
             this.localMetadata.put(REPOSITORY_STATUS_KEY, state == null ? null : state.getOverallStatus());
-            this.localMetadata.put(REPOSITORY_CURRENT_BRANCH_KEY, state == null ? null : state.getCurrentBranch());
-            this.localMetadata.put(REPOSITORY_AVAILABLE_BRANCHES_KEY, state == null ? null : state.getBranchNames());
+            this.localMetadata.put(REPOSITORY_CURRENT_BRANCH_KEY, state == null ? null :
+                                                                  state.getCurrentBranch());
+            this.localMetadata.put(REPOSITORY_AVAILABLE_BRANCHES_KEY, state == null ? null :
+                                                                      state.getBranchNames());
 
 
         } else if (this instanceof NavigableKlabDocument<?, ?> document) {
@@ -362,6 +364,22 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
                 } else if (notification.getLevel() == Notification.Level.Info) {
                     info++;
                 }
+
+                /**
+                 * Mark the individual statements
+                 */
+                if (notification.getLexicalContext() != null && notification.getLevel() != Notification.Level.Debug) {
+                    var key = switch (notification.getLevel()) {
+                        case Warning -> WARNING_NOTIFICATION_COUNT_KEY;
+                        case Error, SystemError -> ERROR_NOTIFICATION_COUNT_KEY;
+                        default -> INFO_NOTIFICATION_COUNT_KEY;
+                    };
+                    var path = document.getAssetsAt(notification.getLexicalContext().getOffsetInDocument());
+                    if (path != null && !path.isEmpty()) {
+                        path.getLast().localMetadata().put(key, path.getLast().localMetadata().get(key, 0) + 1);
+                    }
+                }
+
             }
 
             this.localMetadata.put(ERROR_NOTIFICATION_COUNT_KEY, errors);
@@ -369,7 +387,8 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
             this.localMetadata.put(INFO_NOTIFICATION_COUNT_KEY, info);
 
             if (state != null) {
-                var path = ProjectStorage.getRelativeFilePath(document.getUrn(), ProjectStorage.ResourceType.classify(document), "/");
+                var path = ProjectStorage.getRelativeFilePath(document.getUrn(),
+                        ProjectStorage.ResourceType.classify(document), "/");
                 if (state.getUncommittedPaths().contains(path)) {
                     // this is the actual one we need I guess
                     this.localMetadata.put(REPOSITORY_STATUS_KEY, RepositoryState.Status.MODIFIED);

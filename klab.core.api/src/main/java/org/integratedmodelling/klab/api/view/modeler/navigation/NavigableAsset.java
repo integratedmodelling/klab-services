@@ -29,13 +29,13 @@ public interface NavigableAsset extends KlabAsset {
      * Key for metadata available through {@link #localMetadata()}. If null, assume 0. Count of warning
      * notifications in asset, cumulated along containment hierarchy.
      */
-    String WARNING_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+    String WARNING_NOTIFICATION_COUNT_KEY = "klab.warning.notifications.count";
 
     /**
      * Key for metadata available through {@link #localMetadata()}. If null, assume 0. Count of informational
      * notifications in asset, cumulated along containment hierarchy.
      */
-    String INFO_NOTIFICATION_COUNT_KEY = "klab.error.notifications.count";
+    String INFO_NOTIFICATION_COUNT_KEY = "klab.info.notifications.count";
 
     /**
      * Key for metadata available through {@link #localMetadata()}. If null, assume no status because there is

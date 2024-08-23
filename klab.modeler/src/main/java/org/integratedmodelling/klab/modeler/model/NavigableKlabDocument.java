@@ -132,7 +132,7 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         }
 
         for (var statement : children()) {
-            var path = getStatementsAt((NavigableKlabStatement) statement, offset, new ArrayList<>());
+            var path = getStatementsAt((NavigableKlabStatement<?>) statement, offset, new ArrayList<>());
             if (!path.isEmpty()) {
                 ret.add(this);
                 ret.addAll(path);
@@ -141,7 +141,7 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         return ret;
     }
 
-    private List<NavigableKlabAsset<?>> getStatementsAt(NavigableKlabStatement statement, int offset,
+    private List<NavigableKlabAsset<?>> getStatementsAt(NavigableKlabStatement<?> statement, int offset,
                                                         List<NavigableKlabAsset<?>> ret) {
 
         int start = statement.getOffsetInDocument();
@@ -149,7 +149,7 @@ public abstract class NavigableKlabDocument<E extends Statement, T extends KlabD
         if (offset >= start && offset < end) {
             ret.add(statement);
             for (var child : statement.children()) {
-                getStatementsAt((NavigableKlabStatement) child, offset, ret);
+                getStatementsAt((NavigableKlabStatement<?>) child, offset, ret);
             }
         }
 
