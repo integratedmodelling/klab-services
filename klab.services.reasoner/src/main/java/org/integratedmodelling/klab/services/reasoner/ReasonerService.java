@@ -1533,26 +1533,26 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             }
         }
 
-        Concept core1 = coreObservable(o1);
-        Concept core2 = coreObservable(o2);
+        /**
+         * first compatibility check is a simple subsumption if o1 is abstract, or a full core observability
+         * check if not.
+         */
+        if (o2.isAbstract()) {
 
-        if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : subsumes(core1,
-                core2))) {
-            return false;
+            if (subsumes(o2, o1)) {
+                return false;
+            }
+
+        } else {
+
+            Concept core1 = coreObservable(o1);
+            Concept core2 = coreObservable(o2);
+
+            if (core1 == null || core2 == null || !(mustBeSameCoreType ? core1.equals(core2) : subsumes(core1,
+                    core2))) {
+                return false;
+            }
         }
-        //
-        //        Concept cc1 = context(o1);
-        //        Concept cc2 = context(o2);
-        //
-        //        // candidate may have no context; if both have them, they must be compatible
-        //        if (cc1 == null && cc2 != null) {
-        //            return false;
-        //        }
-        //        if (cc1 != null && cc2 != null) {
-        //            if (!compatible(cc1, cc2, ACCEPT_REALM_DIFFERENCES)) {
-        //                return false;
-        //            }
-        //        }
 
         Concept ic1 = inherent(o1);
         Concept ic2 = inherent(o2);
