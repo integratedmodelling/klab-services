@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -57,6 +58,18 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
             container = assetMap.get(changes.getWorkspace());
             if (container != null) {
                 if (container.mergeChanges(changes, getController().engine().serviceScope())) {
+                    if (!changes.getObservationStrategies().isEmpty() || !changes.getOntologies().isEmpty()) {
+                        // send resource set to reasoner to update the knowledge if there are relevant changes
+                        var reasoner = getController().user().getService(Reasoner.class);
+                        if (reasoner.isExclusive() && reasoner instanceof Reasoner.Admin adminReasoner) {
+                            var logicalChanges = adminReasoner.updateKnowledge(changes,
+                                    getController().user());
+                            if (!logicalChanges.isEmpty()) {
+                                getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, logicalChanges);
+                            }
+                        }
+                    }
+
                     view().workspaceModified(container);
                     if (Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(container.getUrn())) {
                         getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.WorkspaceChanged, changes);

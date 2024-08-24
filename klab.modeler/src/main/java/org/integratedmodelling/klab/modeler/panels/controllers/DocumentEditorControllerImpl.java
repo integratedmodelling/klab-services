@@ -42,15 +42,16 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
                     List<ResourceSet> ret = new ArrayList<>();
                     for (var resourceSet : admin.updateDocument(ontology.getProjectName(),
                             ProjectStorage.ResourceType.ONTOLOGY, newContents, getController().user())) {
-                        if (reasoner instanceof Reasoner.Admin reasonerAdmin) {
-                            ret.add(reasonerAdmin.updateKnowledge(resourceSet, getController().user()));
-                        } else {
+//                        if (reasoner instanceof Reasoner.Admin reasonerAdmin) {
+//                            ret.add(reasonerAdmin.updateKnowledge(resourceSet, getController().user()));
+//                        } else {
                             ret.add(resourceSet);
-                        }
+//                        }
                     }
                     yield ret;
                 }
                 case KimNamespace namespace ->
+                        // TODO this can have consequences
                         admin.updateDocument(namespace.getProjectName(),
                                 ProjectStorage.ResourceType.MODEL_NAMESPACE, newContents, getController().user());
                 case KimObservationStrategyDocument strategyDocument -> {
@@ -58,11 +59,11 @@ public class DocumentEditorControllerImpl extends AbstractUIPanelController<Navi
                     for (var resourceSet : admin.updateDocument(strategyDocument.getProjectName(),
                             ProjectStorage.ResourceType.STRATEGY, newContents,
                             getController().user())) {
-                        if (reasoner instanceof Reasoner.Admin reasonerAdmin) {
-                            ret.add(reasonerAdmin.updateKnowledge(resourceSet, getController().user()));
-                        } else {
+//                        if (reasoner instanceof Reasoner.Admin reasonerAdmin) {
+//                            ret.add(reasonerAdmin.updateKnowledge(resourceSet, getController().user()));
+//                        } else {
                             ret.add(resourceSet);
-                        }
+//                        }
                     }
                     yield ret;
                 }
