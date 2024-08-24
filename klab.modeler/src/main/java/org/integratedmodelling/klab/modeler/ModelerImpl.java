@@ -337,18 +337,9 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     private void handleResultSets(List<ResourceSet> ret) {
         if (ret != null && !ret.isEmpty()) {
-
-            // TODO display all UI.Interactivity.DISPLAY notifications
-
             for (var change : ret) {
-                if (Utils.Notifications.hasErrors(change.getNotifications())) {
-                    if (getUI() != null) {
-                        getUI().alert(Utils.Notifications.merge(change.getNotifications(),
-                                Notification.Level.Error));
-                    }
-                } else {
-                    dispatch(this, UIEvent.WorkspaceModified, change);
-                }
+                dispatch(this, UIEvent.WorkspaceModified, getUI() == null ? change :
+                                                          getUI().processAlerts(change));
             }
         }
     }
@@ -367,7 +358,8 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
                 var changes = admin.createDocument(projectName, newDocumentUrn, documentType, currentUser());
                 if (changes != null) {
                     for (var change : changes) {
-                        dispatch(this, UIEvent.WorkspaceModified, change);
+                        dispatch(this, UIEvent.WorkspaceModified, getUI() == null ? change :
+                                                                  getUI().processAlerts(change));
                     }
                 }
             });

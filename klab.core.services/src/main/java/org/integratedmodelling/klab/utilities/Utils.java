@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.utilities;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.*;
+import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.ObjectId;
@@ -631,23 +632,35 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
                                     Notification.Level.Info));
                         }
                         if (result.getMergeResult().getConflicts() != null && !result.getMergeResult().getConflicts().isEmpty()) {
-                            ret.getNotifications().add(Notification.create("Conflicts during merge of "
+                            ret.getNotifications().add(Notification.error("Conflicts during merge of "
                                             + Strings.join(result.getMergeResult().getConflicts().keySet(),
                                             ", "),
-                                    Notification.Level.Error));
+                                    UI.Interactivity.DISPLAY));
                         } else {
                             compileDiff(repo, git, oldHead, ret);
                         }
                     } else {
-                        ret.getNotifications().add(Notification.create("Pull from default remote of " +
+                        ret.getNotifications().add(Notification.error("Pull from default remote of " +
                                         "repository " + repo.getIdentifier() + " unsuccessful",
-                                Notification.Level.Error));
+                                UI.Interactivity.DISPLAY));
                     }
 
                     /*
                     report changes
                      */
                 }
+            } catch (CheckoutConflictException c) {
+
+                StringBuilder message = new StringBuilder("Conflicts exist between the local version " +
+                        "and the on in the published repository.\nPlease resolve the conflicts using Git in the " +
+                        "repository located at\n" + localRepository.getAbsolutePath() + "\n\nThe conflicting paths are:");
+
+                for (var conflict : c.getConflictingPaths()) {
+                    message.append("\n   ").append(conflict);
+                }
+
+                ret.getNotifications().add(Notification.error(message.toString(), UI.Interactivity.DISPLAY));
+
             } catch (Throwable e) {
                 ret.getNotifications().add(Notification.create(e));
             }

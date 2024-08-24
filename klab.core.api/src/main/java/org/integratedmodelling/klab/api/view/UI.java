@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.view;
 
+import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
@@ -19,8 +20,8 @@ public interface UI {
          */
         DISPLAY,
         /**
-         * Show the bearing object with a process expecting a response and send it back using the
-         * bearing object's ID.
+         * Show the bearing object with a process expecting a response and send it back using the bearing
+         * object's ID.
          */
         ASK,
         /**
@@ -61,4 +62,18 @@ public interface UI {
      */
     void cleanWorkspace();
 
+
+    /**
+     * Compile all notifications that have the UI.Interactive.DISPLAY tag into the minimum number of alerts
+     * and display them with priority depending on severity. Return the same resource set or a modified one
+     * according to what the UI can deal with.
+     * <p>
+     * Should collect notifications from both the generic set and each resource, displaying them
+     * appropriately. Used as a filter to process each {@link ResourceSet} handled by the client before it's
+     * used.
+     *
+     * @param resourceSet
+     * @return
+     */
+    ResourceSet processAlerts(ResourceSet resourceSet);
 }

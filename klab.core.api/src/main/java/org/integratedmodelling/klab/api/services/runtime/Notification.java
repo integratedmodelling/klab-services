@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.services.runtime.impl.NotificationImpl;
@@ -12,22 +13,30 @@ import java.time.OffsetDateTime;
 
 public interface Notification extends Serializable {
 
-//    /**
-//     * Additional classification info. Can be used for display or other purposes. Will be filled as things
-//     * progress.
-//     *
-//     * @author ferdinando.villa
-//     */
-//    public enum Type {
-//        None, Success, Failure
-//    }
-
     enum Mode {
         Silent, Normal, Verbose
     }
 
     enum Level {
-        Debug, Info, Warning, Error, SystemError
+
+        Debug(0), Info(1), Warning(2), Error(3), SystemError(4);
+
+        public final int severity;
+
+        Level(int severity) {
+            this.severity = severity;
+        }
+
+        public static Level ofSeverity(int severity) {
+            return switch(severity) {
+                case 0 -> Debug;
+                case 1 -> Info;
+                case 2 -> Warning;
+                case 3 -> Error;
+                case 4 -> SystemError;
+                default -> throw new KlabIllegalArgumentException("No notification level of severity " + severity + " exists");
+            };
+        }
     }
 
     /**
