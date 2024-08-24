@@ -87,7 +87,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
                     Message.MessageType.ResolutionSuccessful), taskId, this::getObservation); // event watcher using either messaging or queues
         }
 
-        return null; // new ClientResolutionTask(this);
+        return null;
     }
 
     @Override

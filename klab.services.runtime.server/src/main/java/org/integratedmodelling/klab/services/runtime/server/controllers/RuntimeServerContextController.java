@@ -74,7 +74,7 @@ public class RuntimeServerContextController {
     public long observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
         var authorization = getAuthorization();
         var scope = authorization.getScope(ContextScope.class);
-        var task = authorization.getScope(ContextScope.class).observe(GraphModel.adapt(observation, scope));
+        var task = scope.observe(GraphModel.adapt(observation, scope));
         return task.trackingKey();
     }
 
