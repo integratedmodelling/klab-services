@@ -1329,7 +1329,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
+    public synchronized ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
 
         var ownResources = scope.getService(ResourcesService.class);
         Map<URL, ResourcesService> services = new HashMap<>();

@@ -148,12 +148,6 @@ public class Ontology /* implements IOntology */ {
                 this.propertyIDs.add(p.getIRI().getFragment());
             }
         }
-        // for (OWLNamedIndividual i : this.ontology.getIndividualsInSignature()) {
-        // if (i.getIRI().toString().contains(this.prefix)) {
-        // Individual individual = new Individual(i, this);
-        // this.individuals.put(individual.getName(), individual);
-        // }
-        // }
     }
 
     public void addDelegateConcept(String id, String namespace, Concept concept) {
@@ -163,12 +157,7 @@ public class Ontology /* implements IOntology */ {
     }
 
     public Collection<Concept> getConcepts() {
-
-        ArrayList<Concept> ret = new ArrayList<>(conceptIDs.values());
-        // for (String s : this.conceptIDs) {
-        // ret.add(getConcept(s));
-        // }
-        return ret;
+        return new ArrayList<>(conceptIDs.values());
     }
 
     // @Override

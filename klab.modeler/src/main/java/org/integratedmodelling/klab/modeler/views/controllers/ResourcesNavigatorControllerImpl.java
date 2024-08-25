@@ -61,7 +61,8 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                     if (!changes.getObservationStrategies().isEmpty() || !changes.getOntologies().isEmpty()) {
                         // send resource set to reasoner to update the knowledge if there are relevant changes
                         var reasoner = getController().user().getService(Reasoner.class);
-                        if (reasoner.isExclusive() && reasoner instanceof Reasoner.Admin adminReasoner) {
+                        // do not send logical changes if the workspace is the worldview, which is read-only
+                        if (reasoner.isExclusive() && reasoner instanceof Reasoner.Admin adminReasoner && !Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(changes.getWorkspace())) {
                             var logicalChanges = adminReasoner.updateKnowledge(changes,
                                     getController().user());
                             if (!logicalChanges.isEmpty()) {

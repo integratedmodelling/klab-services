@@ -397,6 +397,32 @@ public class Utils {
             }
             return false;
         }
+
+        public static String dump(ResourceSet resourceSet) {
+
+            StringBuilder ret = new StringBuilder(2048);
+
+            ret.append("ResourceSet workspace=").append(resourceSet.getWorkspace()).append(", #notifications=").append(resourceSet.getNotifications().size());
+            boolean first = true;
+            for (var resource : resourceSet.getOntologies()) {
+                ret.append("\n   ").append(resource.getKnowledgeClass()).append(" ").append(resource.getResourceUrn()).append(" #notifications=").append(resource.getNotifications().size());
+            }
+            for (var resource : resourceSet.getNamespaces()) {
+                ret.append("\n   ").append(resource.getKnowledgeClass()).append(" ").append(resource.getResourceUrn()).append(" #notifications=").append(resource.getNotifications().size());
+            }
+            for (var resource : resourceSet.getObservationStrategies()) {
+                ret.append("\n   ").append(resource.getKnowledgeClass()).append(" ").append(resource.getResourceUrn()).append(" #notifications=").append(resource.getNotifications().size());
+            }
+            for (var resource : resourceSet.getBehaviors()) {
+                ret.append("\n   ").append(resource.getKnowledgeClass()).append(" ").append(resource.getResourceUrn()).append(" #notifications=").append(resource.getNotifications().size());
+            }
+            for (var resource : resourceSet.getResources()) {
+                ret.append("\n   ").append(resource.getKnowledgeClass()).append(" ").append(resource.getResourceUrn()).append(" #notifications=").append(resource.getNotifications().size());
+            }
+
+            return ret.toString();
+        }
+
     }
 
     /**

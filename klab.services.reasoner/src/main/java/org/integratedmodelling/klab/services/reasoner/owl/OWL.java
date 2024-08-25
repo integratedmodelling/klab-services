@@ -243,63 +243,63 @@ public class OWL {
     /**
      * Create a manager and load every OWL file under the load path.
      */
-//    @Deprecated
-//    public void initialize() {
-//
-//        manager = OWLManager.createOWLOntologyManager();
-//        // this.loadPath = loadPath;
-//        coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"), this);
-//        // coreOntology.load(monitor);
-//        load(coreOntology.getRoot());
-//
-//        /*
-//         * TODO insert basic datatypes as well
-//         */
-//        this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
-//        this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
-//
-//        // if (this.loadPath == null) {
-//        // throw new KIOException("owl resources cannot be found: knowledge load
-//        // directory does not
-//        // exist");
-//        // }
-//
-//        // load();
-//
-//        this.mergedReasonerOntology = (Ontology) requireOntology(INTERNAL_REASONER_ONTOLOGY_ID,
-//                OWL.INTERNAL_ONTOLOGY_PREFIX);
-//        this.mergedReasonerOntology.setInternal(true);
-//
-//        /*
-//         * all namespaces so far are internal, and just these.
-//         */
-//        for (KimNamespace ns : this.namespaces.values()) {
-//            // ((Namespace) ns).setInternal(true);
-//            getOntology(ns.getUrn()).setInternal(true);
-//        }
-//
-//        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
-//
-//        /*
-//         * create an independent ontology for the non-semantic types we encounter.
-//         */
-//        // if (Namespaces.INSTANCE.getNamespace(ONTOLOGY_ID) == null) {
-//        // Namespaces.INSTANCE.registerNamespace(new Namespace(ONTOLOGY_ID, null,
-//        // overall),
-//        // monitor);
-//        // }
-//        if (Configuration.INSTANCE.useReasoner()) {
-//            this.reasoner =
-//                    new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology.getOWLOntology());
-//            reasonerActive = true;
-//        }
-//
-//        for (KimNamespace ns : this.namespaces.values()) {
-//            registerWithReasoner(getOntology(ns.getUrn()));
-//        }
-//
-//    }
-
+    //    @Deprecated
+    //    public void initialize() {
+    //
+    //        manager = OWLManager.createOWLOntologyManager();
+    //        // this.loadPath = loadPath;
+    //        coreOntology = new CoreOntology(Configuration.INSTANCE.getDataPath("knowledge"), this);
+    //        // coreOntology.load(monitor);
+    //        load(coreOntology.getRoot());
+    //
+    //        /*
+    //         * TODO insert basic datatypes as well
+    //         */
+    //        this.systemConcepts.put("owl:Thing", manager.getOWLDataFactory().getOWLThing());
+    //        this.systemConcepts.put("owl:Nothing", manager.getOWLDataFactory().getOWLNothing());
+    //
+    //        // if (this.loadPath == null) {
+    //        // throw new KIOException("owl resources cannot be found: knowledge load
+    //        // directory does not
+    //        // exist");
+    //        // }
+    //
+    //        // load();
+    //
+    //        this.mergedReasonerOntology = (Ontology) requireOntology(INTERNAL_REASONER_ONTOLOGY_ID,
+    //                OWL.INTERNAL_ONTOLOGY_PREFIX);
+    //        this.mergedReasonerOntology.setInternal(true);
+    //
+    //        /*
+    //         * all namespaces so far are internal, and just these.
+    //         */
+    //        for (KimNamespace ns : this.namespaces.values()) {
+    //            // ((Namespace) ns).setInternal(true);
+    //            getOntology(ns.getUrn()).setInternal(true);
+    //        }
+    //
+    //        this.nonSemanticConcepts = requireOntology("nonsemantic", INTERNAL_ONTOLOGY_PREFIX);
+    //
+    //        /*
+    //         * create an independent ontology for the non-semantic types we encounter.
+    //         */
+    //        // if (Namespaces.INSTANCE.getNamespace(ONTOLOGY_ID) == null) {
+    //        // Namespaces.INSTANCE.registerNamespace(new Namespace(ONTOLOGY_ID, null,
+    //        // overall),
+    //        // monitor);
+    //        // }
+    //        if (Configuration.INSTANCE.useReasoner()) {
+    //            this.reasoner =
+    //                    new Reasoner.ReasonerFactory().createReasoner(mergedReasonerOntology
+    //                    .getOWLOntology());
+    //            reasonerActive = true;
+    //        }
+    //
+    //        for (KimNamespace ns : this.namespaces.values()) {
+    //            registerWithReasoner(getOntology(ns.getUrn()));
+    //        }
+    //
+    //    }
     public void initialize(KimOntology rootDomain) {
 
         manager = OWLManager.createOWLOntologyManager();
@@ -424,7 +424,13 @@ public class OWL {
 
     Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
         ConceptImpl ret = new ConceptImpl();
-        ret.setId(registerOwlClass(owlClass));
+
+        try {
+            ret.setId(registerOwlClass(owlClass));
+        } catch (IllegalArgumentException e) {
+            System.out.println("PORCODIO stavo infilando " + owlClass + " per " + ontologyName + ":" + id + " e C'ERA GIÁ DIOCANE");
+        }
+
         ret.setName(id);
         ret.setNamespace(ontologyName);
         ret.setUrn(ontologyName + ":" + id);
@@ -1304,7 +1310,7 @@ public class OWL {
         Map<Concept, List<Concept>> pairs = new HashMap<>();
         for (Concept t : fillers) {
             Concept base = scope.getService(org.integratedmodelling.klab.api.services.Reasoner.class)
-                    .baseParentTrait(t);
+                                .baseParentTrait(t);
             if (base == null) {
                 System.err.println("HOSTIA no  base trait for " + t);
                 continue;
@@ -1483,7 +1489,7 @@ public class OWL {
      * Turn a concept into its change if it's not already one, implementing the corresponding semantic
      * operator.
      *
-     * @param concept       the untransformed concept
+     * @param concept the untransformed concept
      * @return the transformed concept
      */
     public Concept makeChange(Concept concept) {
@@ -1899,7 +1905,8 @@ public class OWL {
         }
 
         if (Sets.intersection(concept.getType(), SemanticType.CONTINUOUS_QUALITY_TYPES).size() == 0) {
-            throw new KlabValidationException("magnitudes can only be observed only for quantifiable qualities");
+            throw new KlabValidationException("magnitudes can only be observed only for quantifiable " +
+                    "qualities");
         }
 
         // this.hasUnaryOp = true;
@@ -1951,7 +1958,8 @@ public class OWL {
         }
 
         if (Sets.intersection(concept.getType(), SemanticType.CONTINUOUS_QUALITY_TYPES).size() == 0) {
-            throw new KlabValidationException("magnitudes can only be observed only for quantifiable qualities");
+            throw new KlabValidationException("magnitudes can only be observed only for quantifiable " +
+                    "qualities");
         }
 
         // this.hasUnaryOp = true;
