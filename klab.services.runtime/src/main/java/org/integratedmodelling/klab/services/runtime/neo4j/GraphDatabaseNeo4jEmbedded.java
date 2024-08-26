@@ -103,12 +103,7 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
         var node = session().load(GraphMapping.ContextMapping.class, scope.getId());
         if (node == null) {
-            // produce and store the context root with the provenance and dataflow.
-            node = new GraphMapping.ContextMapping();
-            node.contextId = scope.getId();
-            node.dataflowMapping = new GraphMapping.DataflowMapping();
-            node.provenanceMapping = new GraphMapping.ProvenanceMapping();
-            node.rootObservationsMappings = new ArrayList<>();
+            node = GraphMapping.adapt(scope);
             try (var transaction = session().beginTransaction()) {
                 session().save(node);
                 transaction.commit();

@@ -1,10 +1,13 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -68,5 +71,20 @@ public class GraphMapping {
         @Id @GeneratedValue
         Long id;
         Long observationId;
+    }
+
+    public static ObservationMapping adapt(Observation observation) {
+        var ret = new ObservationMapping();
+        return ret;
+    }
+
+    public static ContextMapping adapt(ContextScope contextScope) {
+        // produce and store the context root with the provenance and dataflow.
+        var ret = new GraphMapping.ContextMapping();
+        ret.contextId = contextScope.getId();
+        ret.dataflowMapping = new DataflowMapping();
+        ret.provenanceMapping = new ProvenanceMapping();
+        ret.rootObservationsMappings = new ArrayList<>();
+        return ret;
     }
 }

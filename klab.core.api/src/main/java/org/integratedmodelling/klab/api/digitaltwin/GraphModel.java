@@ -108,4 +108,5 @@ public class GraphModel {
                 observation.getObserverGeometry() == null ? null :
                 observation.getObserverGeometry().encode(), scope.getResolutionConstraints());
     }
+
 }
