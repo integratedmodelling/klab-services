@@ -322,6 +322,10 @@ public abstract class NavigableKlabAsset<T extends KlabAsset> implements Navigab
      */
     private void computeStatisticsUnder(RepositoryState state, ResourceSet resourceSet) {
 
+        this.localMetadata.put(ERROR_NOTIFICATION_COUNT_KEY, 0);
+        this.localMetadata.put(WARNING_NOTIFICATION_COUNT_KEY, 0);
+        this.localMetadata.put(INFO_NOTIFICATION_COUNT_KEY, 0);
+
         boolean inspectChildren = this instanceof NavigableContainer;
 
         if (this instanceof NavigableProject navigableProject) {

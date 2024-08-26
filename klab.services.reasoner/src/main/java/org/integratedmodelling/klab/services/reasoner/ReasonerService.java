@@ -1890,6 +1890,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         ontology.add(Axiom.AnnotationAssertion(mainId, NS.REFERENCE_NAME_PROPERTY,
                 OWL.getCleanFullId(ontology.getName(), concept.getUrn())));
 
+        if (concept.getType().contains(SemanticType.NOTHING)) {
+            monitor.error("Declaration is inconsistent or uses unknown concepts", concept);
+            return null;
+        }
+
         if (concept.getDocstring() != null) {
             ontology.add(Axiom.AnnotationAssertion(mainId, Vocabulary.RDFS_COMMENT, concept.getDocstring()));
         }
