@@ -286,10 +286,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return resolutionScenarios;
     }
 
-//    @Override
-//    public Observation getResolutionObservation() {
-//        return contextObservation;
-//    }
+    //    @Override
+    //    public Observation getResolutionObservation() {
+    //        return contextObservation;
+    //    }
 
     @Override
     public ContextScope withContextualizationData(Observation contextObservation, Scale scale,

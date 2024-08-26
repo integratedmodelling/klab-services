@@ -53,6 +53,7 @@ public class DigitalTwinImpl implements DigitalTwin {
     @Override
     public long submit(Observation observation, Observation related, Relationship relationship) {
         // TODO add first param to the DB + add any linkage. Return the new ID
+        System.out.println("SUBMITTING THIS PIECE OF SHITE " + observation);
         return 0L;
     }
 

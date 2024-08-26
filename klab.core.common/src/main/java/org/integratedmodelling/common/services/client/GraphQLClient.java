@@ -11,6 +11,7 @@ import org.springframework.graphql.client.HttpSyncGraphQlClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestClient;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +78,17 @@ public class GraphQLClient {
             case Boolean b -> b ? "true" : "false";
             case Number n -> n.toString();
             case String s -> "\"" + s + "\"";
+            case Collection<?> collection -> {
+                StringBuilder buf = new StringBuilder(512);
+                buf.append("[");
+                for (var obj : collection) {
+                    if (buf.length() > 1) {
+                        buf.append(", ");
+                    }
+                    buf.append(convertValue(obj));
+                }
+                yield buf.append("]").toString();
+            }
             default -> {
                 var map = objectMapper.convertValue(o, Map.class);
                 StringBuilder buf = new StringBuilder(512);

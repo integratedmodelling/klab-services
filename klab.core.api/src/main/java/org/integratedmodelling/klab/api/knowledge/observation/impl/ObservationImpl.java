@@ -239,4 +239,19 @@ public class ObservationImpl implements Observation {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        return "ObservationImpl{" +
+                "observable=" + observable +
+                ", geometry=" + geometry +
+                ", metadata=" + metadata +
+                ", observerGeometry=" + observerGeometry +
+                ", id=" + id +
+                ", urn='" + urn + '\'' +
+                ", resolved=" + resolved +
+                ", value=" + value +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }
