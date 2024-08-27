@@ -70,6 +70,12 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
     public <T extends KlabService> T getService(String serviceId, Class<T> serviceClass) {
 
         for (var service : getServices(serviceClass)) {
+
+            if (service == null) {
+                System.out.println("DIO POCO");
+                return null;
+            }
+
             if (serviceId.equals(service.serviceId())) {
                 return service;
             }

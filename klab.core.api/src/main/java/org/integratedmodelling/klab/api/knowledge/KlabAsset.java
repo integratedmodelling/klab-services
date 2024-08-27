@@ -25,7 +25,7 @@ import java.io.Serializable;
  */
 public interface KlabAsset extends Serializable {
 
-    public enum KnowledgeClass {
+    enum KnowledgeClass {
         CONCEPT, OBSERVABLE, MODEL, DEFINITION, RESOURCE, NAMESPACE, BEHAVIOR, SCRIPT, TESTCASE,
         APPLICATION, ONTOLOGY, OBSERVATION_STRATEGY, OBSERVATION_STRATEGY_DOCUMENT,
         COMPONENT, PROJECT, WORLDVIEW, WORKSPACE, CONCEPT_STATEMENT;

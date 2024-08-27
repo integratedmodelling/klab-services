@@ -118,7 +118,7 @@ public class OWL {
         return namespace.replaceAll("\\.", "_") + "__" + CamelCase.toLowerCase(name, '_');
     }
 
-    long registerOwlClass(OWLClass cls) {
+    private long registerOwlClass(OWLClass cls) {
         long ret = classId.getAndIncrement();
         owlClasses.put(ret, cls);
         return ret;
@@ -423,6 +423,17 @@ public class OWL {
     }
 
     Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
+
+        // TODO this should be reentrant but there are still situations when things have been done twice,
+        //  which
+        //  should be solved before
+
+        if (owlClasses.containsValue(owlClass)) {
+            System.out.println("ACHTUNG OWL CLASS IS ALREADY THERE: " + owlClass + " AS OBJECT " + System.identityHashCode(owlClass) + " WITH ID " + owlClasses.inverse().get(owlClass));
+        } else {
+            System.out.println("CREATING CONCEPT FOR OWL CLASS " + owlClass + " AS OBJECT " + System.identityHashCode(owlClass) + " AS " + ontologyName + ":" + id);
+        }
+
         ConceptImpl ret = new ConceptImpl();
 
         try {
@@ -506,7 +517,11 @@ public class OWL {
     }
 
     public void registerConcept(ConceptImpl concept) {
-        this.conceptsById.put(concept.getId(), concept);
+        try {
+            this.conceptsById.put(concept.getId(), concept);
+        } catch (IllegalArgumentException e) {
+            System.out.println("MERDA DIOCAN C'È GIÁ PORCA MADONNA " + concept.getUrn());
+        }
     }
 
     public String getConceptSpace(IRI iri) {
@@ -775,6 +790,8 @@ public class OWL {
     }
 
     public void releaseOntology(Ontology ontology) {
+
+        System.out.println("RELEASING PORCHIDDIO " + ontology.getName());
 
         this.namespaces.remove(ontology.getName());
         var onto = ontologies.remove(ontology.getName());

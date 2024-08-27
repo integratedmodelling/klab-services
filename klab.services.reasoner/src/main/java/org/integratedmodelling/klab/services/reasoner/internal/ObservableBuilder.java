@@ -1170,22 +1170,22 @@ public class ObservableBuilder implements Observable.Builder {
          * restrictions
          */
 
-        if (identities.size() > 0) {
+        if (!identities.isEmpty()) {
             reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_IDENTITY_PROPERTY),
                     LogicalConnector.UNION, identities
                     , ontology);
         }
-        if (realms.size() > 0) {
+        if (!realms.isEmpty()) {
             reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_REALM_PROPERTY),
                     LogicalConnector.UNION, realms,
                     ontology);
         }
-        if (attributes.size() > 0) {
+        if (!attributes.isEmpty()) {
             reasoner.owl().restrict(ret, reasoner.owl().getProperty(NS.HAS_ATTRIBUTE_PROPERTY),
                     LogicalConnector.UNION,
                     attributes, ontology);
         }
-        if (acceptedRoles.size() > 0) {
+        if (!acceptedRoles.isEmpty()) {
             reasoner.owl().restrictSome(ret, reasoner.owl().getProperty(NS.HAS_ROLE_PROPERTY),
                     LogicalConnector.UNION,
                     acceptedRoles,

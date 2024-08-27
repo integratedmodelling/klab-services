@@ -63,8 +63,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                         var reasoner = getController().user().getService(Reasoner.class);
                         // do not send logical changes if the workspace is the worldview, which is read-only
                         if (reasoner.isExclusive() && reasoner instanceof Reasoner.Admin adminReasoner && !Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(changes.getWorkspace())) {
-                            var logicalChanges = adminReasoner.updateKnowledge(changes,
-                                    getController().user());
+                            var logicalChanges = adminReasoner.updateKnowledge(changes,getController().user());
                             if (!logicalChanges.isEmpty()) {
                                 getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, logicalChanges);
                             }
