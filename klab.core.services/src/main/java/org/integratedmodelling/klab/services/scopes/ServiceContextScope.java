@@ -206,11 +206,14 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     }
 
+    /*
+    MODIFIES the observation if it's an ObservationImpl, otherwise throws an exception.
+     */
     private long submitObservation(Observation observation) {
         // TODO FIXME - create all the structure and metadata from the current context, parents and all
         // should we have the same for relationships? A context 'between" x and y where a relationship
         // can be observed? (wouldn't address collective relationships)
-        return digitalTwin.submit(observation, null, null);
+        return digitalTwin.submit(observation, null, null, null);
     }
 
     @Override

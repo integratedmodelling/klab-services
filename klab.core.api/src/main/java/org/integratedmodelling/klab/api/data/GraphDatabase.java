@@ -1,5 +1,7 @@
 package org.integratedmodelling.klab.api.data;
 
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -60,7 +62,9 @@ public interface GraphDatabase {
      *                    {@link Observation#getId()} methods <em>must</em> return a valid ID.
      * @return the ID for the new observation, which must be manually added to the passed peer.
      */
-    long add(Observation observation, Observation parent);
+    long add(Observation observation);
+
+    long link(Observation source, Observation destination, DigitalTwin.Relationship linkType, Metadata linkMetadata);
 
     long add(Actuator actuator, Actuator parent);
 

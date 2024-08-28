@@ -1,8 +1,13 @@
 package org.integratedmodelling.klab.services.runtime.digitaltwin;
 
 import org.integratedmodelling.klab.api.data.GraphDatabase;
+import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.digitaltwin.*;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -51,14 +56,30 @@ public class DigitalTwinImpl implements DigitalTwin {
     }
 
     @Override
-    public long submit(Observation observation, Observation related, Relationship relationship) {
-        // TODO add first param to the DB + add any linkage. Return the new ID
-        System.out.println("SUBMITTING THIS PIECE OF SHITE " + observation);
-        return 0L;
+    public long submit(Observation observation, Observation related, Relationship relationship,
+                       Metadata relationshipMetadata) {
+
+        if (observation instanceof ObservationImpl observationImpl) {
+
+            long ret = this.graphDatabase.add(observation);
+            observationImpl.setId(ret);
+            if (related != null) {
+                if (related.getId() == Observation.UNASSIGNED_ID) {
+                    throw new KlabIllegalArgumentException("The linked observation must have been added to " +
+                            "the graph before");
+                }
+                this.graphDatabase.link(observation, related, relationship, relationshipMetadata);
+            }
+            return ret;
+        }
+
+        throw new KlabInternalErrorException("Database functions called with unknow implementation of " +
+                "Observation");
     }
 
     @Override
-    public void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow, Provenance provenance) {
+    public void finalizeObservation(Observation resolved, Dataflow<Observation> dataflow,
+                                    Provenance provenance) {
 
     }
 

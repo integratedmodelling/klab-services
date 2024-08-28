@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.RelationshipEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +39,9 @@ public class GraphMapping {
 
     @NodeEntity
     public static class ObservationMapping {
-        @Id @GeneratedValue
+        @Id
         Long id;
-
+        Observable observable;
     }
 
     @NodeEntity

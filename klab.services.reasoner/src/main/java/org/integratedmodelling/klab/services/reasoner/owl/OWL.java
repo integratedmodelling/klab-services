@@ -423,8 +423,8 @@ public class OWL {
     }
 
     // careful: not reentrant on purpose. Can't already have the class in the caches or an exception
-    // will be thrown. Must release the ontology in advance.
-    private Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
+    // will be thrown. Must release the ontology in advance. Used in Ontology but should be private.
+    Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
 
         ConceptImpl ret = new ConceptImpl();
 

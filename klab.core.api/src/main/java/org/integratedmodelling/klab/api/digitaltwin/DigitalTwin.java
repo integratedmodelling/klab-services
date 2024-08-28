@@ -81,7 +81,8 @@ public interface DigitalTwin {
      * @param relationship the relationship of the new observation to the second, must be non-null if related
      *                     isn't
      */
-    long submit(Observation observation, Observation related, Relationship relationship);
+    long submit(Observation observation, Observation related, Relationship relationship,
+                Metadata relationshipMetadata);
 
     /**
      * @param resolved

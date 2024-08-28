@@ -33,18 +33,18 @@ public class GraphModel {
     }
 
 
-    enum Status {WAITING, STARTED, FINISHED, ABORTED}
+    public enum Status {WAITING, STARTED, FINISHED, ABORTED}
 
-    enum Level {DEBUG, INFO, WARNING, ERROR}
+    public enum Level {DEBUG, INFO, WARNING, ERROR}
 
-    enum SemanticType {
+    public enum SemanticType {
         QUALITY, AGENT, SUBJECT, FUNCTIONAL_RELATIONSHIP, STRUCTURAL_RELATIONSHIP, BOND,
         EVENT, PROCESS, CONFIGURATION
     }
 
-    enum LinkType {CHILD, PARENT, OBSERVER}
+    public enum LinkType {CHILD, PARENT, OBSERVER}
 
-    enum ObservationType {SUBJECT, STATE, PROCESS, OBSERVER, EVENT, RELATIONSHIP}
+    public enum ObservationType {SUBJECT, STATE, PROCESS, OBSERVER, EVENT, RELATIONSHIP}
 
 
     public record Link(String sourceId, String targetId, LinkType type) {

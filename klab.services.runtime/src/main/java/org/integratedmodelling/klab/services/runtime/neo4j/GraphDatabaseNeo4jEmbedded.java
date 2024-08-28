@@ -2,6 +2,8 @@ package org.integratedmodelling.klab.services.runtime.neo4j;
 
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.data.GraphDatabase;
+import org.integratedmodelling.klab.api.data.Metadata;
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -21,11 +23,10 @@ import org.neo4j.ogm.session.SessionFactory;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
 
 /**
  * A local, embedded, persistent k.LAB-instrumented, configurable Neo4j database. To work with the f'ing
- * community edition it must be a singleton within the service, containing data for all contexts.
+ * community edition the database must be a singleton within the service, containing data for all contexts.
  */
 public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
@@ -43,7 +44,8 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
         this.managementService = parent.managementService;
         this.graphDb = parent.graphDb;
         this.sessionFactory = parent.sessionFactory;
-        if (this.online = parent.online) {
+        this.online = parent.online;
+        if (this.online) {
             this.contextSession_ = sessionFactory.openSession();
             this.scope_ = scope;
         }
@@ -96,7 +98,8 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
                 return this;
             }
 
-            throw new KlabIllegalStateException("cannot recontextualize a previously contextualized graph database");
+            throw new KlabIllegalStateException("cannot recontextualize a previously contextualized graph " +
+                    "database");
         }
 
         contextSession_ = this.sessionFactory.openSession();
@@ -132,7 +135,8 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
     private Session session() {
         if (contextSession_ == null) {
-            throw new KlabIllegalStateException("DB session is null: GraphDatabaseNeo4jEmbedded used without previous " +
+            throw new KlabIllegalStateException("DB session is null: GraphDatabaseNeo4jEmbedded used " +
+                    "without previous " +
                     "contextualization");
         }
         return contextSession_;
@@ -140,17 +144,32 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
 
     /**
      * @param observation any observation, including relationships
-     * @param parent      may be null
      * @return
      */
     @Override
-    public long add(Observation observation, Observation parent) {
+    public long add(Observation observation) {
 
         if (this.scope_ == null) {
-            throw new KlabIllegalStateException("cannot use a graph database in its non-contextualized state");
+            throw new KlabIllegalStateException("cannot use a graph database in its non-contextualized " +
+                    "state");
+        }
+
+        var observationMapping = GraphMapping.adapt(observation);
+        try (var transaction = session().beginTransaction()) {
+            session().save(observationMapping);
+            transaction.commit();
+            return observationMapping.id;
+        } catch (Throwable t) {
+            scope_.error(t);
         }
 
         return Observation.UNASSIGNED_ID;
+    }
+
+    @Override
+    public long link(Observation source, Observation destination, DigitalTwin.Relationship linkType,
+                     Metadata linkMetadata) {
+        return 0;
     }
 
     @Override
