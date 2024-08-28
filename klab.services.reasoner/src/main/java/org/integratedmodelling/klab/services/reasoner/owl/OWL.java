@@ -24,6 +24,7 @@ package org.integratedmodelling.klab.services.reasoner.owl;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
+import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
@@ -46,7 +47,6 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.api.utils.Utils.CamelCase;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.HermiT.Reasoner;
@@ -422,25 +422,17 @@ public class OWL {
         return result;
     }
 
-    Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
-
-        // TODO this should be reentrant but there are still situations when things have been done twice,
-        //  which
-        //  should be solved before
-
-        if (owlClasses.containsValue(owlClass)) {
-            System.out.println("ACHTUNG OWL CLASS IS ALREADY THERE: " + owlClass + " AS OBJECT " + System.identityHashCode(owlClass) + " WITH ID " + owlClasses.inverse().get(owlClass));
-        } else {
-            System.out.println("CREATING CONCEPT FOR OWL CLASS " + owlClass + " AS OBJECT " + System.identityHashCode(owlClass) + " AS " + ontologyName + ":" + id);
-        }
+    // careful: not reentrant on purpose. Can't already have the class in the caches or an exception
+    // will be thrown. Must release the ontology in advance.
+    private Concept makeConcept(OWLClass owlClass, String id, String ontologyName, Collection<SemanticType> type) {
 
         ConceptImpl ret = new ConceptImpl();
 
-        try {
-            ret.setId(registerOwlClass(owlClass));
-        } catch (IllegalArgumentException e) {
-            System.out.println("PORCODIO stavo infilando " + owlClass + " per " + ontologyName + ":" + id + " e C'ERA GIÁ DIOCANE");
-        }
+        /*
+        This will throw an exception if the class is already there. Count on the releaseOntology() having
+        been called and having worked before this happens.
+         */
+        ret.setId(registerOwlClass(owlClass));
 
         ret.setName(id);
         ret.setNamespace(ontologyName);

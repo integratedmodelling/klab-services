@@ -33,6 +33,7 @@ import java.net.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -388,7 +389,7 @@ public class Utils {
                 return true;
             }
 
-            for (var resource : Utils.Collections.join(resourceSet.getNamespaces(),
+            for (var resource : Collections.join(resourceSet.getNamespaces(),
                     resourceSet.getBehaviors(), resourceSet.getResources(), resourceSet.getResults(),
                     resourceSet.getOntologies(), resourceSet.getObservationStrategies())) {
                 if (Notifications.hasErrors(resource.getNotifications())) {
@@ -423,6 +424,47 @@ public class Utils {
             return ret.toString();
         }
 
+        /**
+         * For debugging. There should never be duplications across resources.
+         *
+         * @param resourceSet
+         * @return true if there are duplicated resources
+         */
+        public static boolean hasDuplications(ResourceSet resourceSet) {
+            var urns = new HashSet<String>();
+            for (var resource : Collections.join(resourceSet.getNamespaces(),
+                    resourceSet.getBehaviors(), resourceSet.getResources(), resourceSet.getResults(),
+                    resourceSet.getOntologies(), resourceSet.getObservationStrategies())) {
+                if (urns.contains(resource.getResourceUrn())) {
+                    return true;
+                }
+                urns.add(resource.getResourceUrn());
+            }
+            return false;
+        }
+
+        /**
+         * Check if a resource with this URN and type is already present in the resource set
+         * @param resource
+         * @return
+         */
+        public static boolean contains(ResourceSet resourceSet, ResourceSet.Resource resource) {
+
+            for (var r : switch(resource.getKnowledgeClass()) {
+                case RESOURCE -> resourceSet.getResources();
+                case NAMESPACE -> resourceSet.getNamespaces();
+                case BEHAVIOR, SCRIPT, TESTCASE, APPLICATION, COMPONENT -> resourceSet.getBehaviors();
+                case ONTOLOGY -> resourceSet.getOntologies();
+                case OBSERVATION_STRATEGY_DOCUMENT -> resourceSet.getObservationStrategies();
+                default -> new ArrayList<ResourceSet.Resource>();
+            }) {
+                if (resource.getResourceUrn().equals(r.getResourceUrn())) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /**
@@ -2288,7 +2330,7 @@ public class Utils {
             String out = null;
             try {
                 out = new String(s.getBytes("ISO-8859-1"), "UTF-8");
-            } catch (java.io.UnsupportedEncodingException e) {
+            } catch (UnsupportedEncodingException e) {
                 return null;
             }
             return out;
@@ -2305,7 +2347,7 @@ public class Utils {
             String out = null;
             try {
                 out = new String(s.getBytes("UTF-8"), "ISO-8859-1");
-            } catch (java.io.UnsupportedEncodingException e) {
+            } catch (UnsupportedEncodingException e) {
                 return null;
             }
             return out;
@@ -3518,7 +3560,7 @@ public class Utils {
         }
 
         static public String getHardwareId() {
-            return Strings.hash(Utils.OS.getMACAddress());
+            return Strings.hash(OS.getMACAddress());
         }
 
         /**
@@ -3906,11 +3948,11 @@ public class Utils {
             return value;
         }
 
-        public static boolean validateAs(Object pod, Artifact.Type type) {
+        public static boolean validateAs(Object pod, Type type) {
             if (pod == null) {
                 return false;
             }
-            Artifact.Type tp = getArtifactType(pod.getClass());
+            Type tp = getArtifactType(pod.getClass());
             if (type == tp) {
                 return true;
             }
@@ -4189,7 +4231,7 @@ public class Utils {
             return ret;
         }
 
-        public static Class<?> getClassForType(Artifact.Type type) {
+        public static Class<?> getClassForType(Type type) {
             switch (type) {
                 case BOOLEAN:
                     return Boolean.class;
