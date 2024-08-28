@@ -61,7 +61,7 @@ public class DigitalTwinImpl implements DigitalTwin {
 
         if (observation instanceof ObservationImpl observationImpl) {
 
-            long ret = this.graphDatabase.add(observation);
+            long ret = this.graphDatabase.add(observation, related, relationship, relationshipMetadata);
             observationImpl.setId(ret);
             if (related != null) {
                 if (related.getId() == Observation.UNASSIGNED_ID) {

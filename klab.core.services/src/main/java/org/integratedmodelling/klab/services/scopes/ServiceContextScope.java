@@ -213,7 +213,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         // TODO FIXME - create all the structure and metadata from the current context, parents and all
         // should we have the same for relationships? A context 'between" x and y where a relationship
         // can be observed? (wouldn't address collective relationships)
-        return digitalTwin.submit(observation, null, null, null);
+
+        return digitalTwin.submit(observation, this.contextObservation,
+                DigitalTwin.Relationship.Parent,
+                null);
     }
 
     @Override

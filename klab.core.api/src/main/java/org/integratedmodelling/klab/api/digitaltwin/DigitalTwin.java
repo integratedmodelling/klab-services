@@ -32,6 +32,7 @@ public interface DigitalTwin {
         Connects,
         EmergesFrom,
         Observer,
+        RootObservation
     }
 
     /**

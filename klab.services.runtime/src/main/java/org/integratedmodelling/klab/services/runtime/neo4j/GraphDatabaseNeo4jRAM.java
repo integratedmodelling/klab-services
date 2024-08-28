@@ -33,7 +33,7 @@ public class GraphDatabaseNeo4jRAM implements GraphDatabase {
     }
 
     @Override
-    public long add(Observation observation) {
+    public long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection, Metadata relationshipMetadata) {
         return 0;
     }
 

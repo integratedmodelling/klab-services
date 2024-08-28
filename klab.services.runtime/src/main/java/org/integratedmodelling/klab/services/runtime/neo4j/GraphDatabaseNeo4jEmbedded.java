@@ -39,6 +39,7 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
     // the root nodes for the context
     private Session contextSession_ = null;
     private ContextScope scope_ = null;
+    private GraphMapping.ContextMapping rootNode;
 
     private GraphDatabaseNeo4jEmbedded(GraphDatabaseNeo4jEmbedded parent, ContextScope scope) {
         this.managementService = parent.managementService;
@@ -114,7 +115,10 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
                 return this;
             }
         }
-        return new GraphDatabaseNeo4jEmbedded(this, scope);
+
+        var ret = new GraphDatabaseNeo4jEmbedded(this, scope);
+        ret.rootNode = node;
+        return ret;
     }
 
     @Override
@@ -147,7 +151,9 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
      * @return
      */
     @Override
-    public long add(Observation observation) {
+    public long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection
+            , Metadata relationshipMetadata) {
+
 
         if (this.scope_ == null) {
             throw new KlabIllegalStateException("cannot use a graph database in its non-contextualized " +
@@ -157,6 +163,10 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
         var observationMapping = GraphMapping.adapt(observation);
         try (var transaction = session().beginTransaction()) {
             session().save(observationMapping);
+            var link = createLink(observationMapping, relationshipSource, connection);
+            if (link != null) {
+                session().save(link, 0);
+            }
             transaction.commit();
             return observationMapping.id;
         } catch (Throwable t) {
@@ -164,6 +174,32 @@ public class GraphDatabaseNeo4jEmbedded implements GraphDatabase {
         }
 
         return Observation.UNASSIGNED_ID;
+    }
+
+    private GraphMapping.Link createLink(GraphMapping.ObservationMapping source, Object target,
+                                         DigitalTwin.Relationship connection) {
+        GraphMapping.Link ret = null;
+        DigitalTwin.Relationship defaultConnection = null;
+        if (target == null) {
+            var link = new GraphMapping.RootObservationLink();
+            link.context = rootNode;
+            link.observation = source;
+            defaultConnection = DigitalTwin.Relationship.RootObservation;
+            ret = link;
+        } else if (target instanceof Observation observation) {
+            var link = new GraphMapping.ObservationLink();
+            link.observation = source;
+            link.context = session().load(GraphMapping.ObservationMapping.class, observation.getId());
+            defaultConnection = DigitalTwin.Relationship.Parent;
+            ret = link;
+        }
+
+        if (ret != null) {
+            ret.timestamp = System.currentTimeMillis();
+            ret.type = connection == null ? defaultConnection : connection;
+        }
+
+        return ret;
     }
 
     @Override

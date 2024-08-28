@@ -54,17 +54,21 @@ public interface GraphDatabase {
     boolean isOnline();
 
     /**
-     * Add a new observation to the graph. The return value <em>must</em> become the ID of the observation.
+     * Add a new observation to the graph, optionally linking to context (if other params are null) or
+     * contextual observation. The return value <em>must</em> become the ID of the observation.
      *
-     * @param observation the new observation, whose {@link Observation#getId()} <em>must</em> return
-     *                    {@link Observation#UNASSIGNED_ID} before the call.
-     * @param parent      null for top-level observations, or another previously registered observation whose
-     *                    {@link Observation#getId()} methods <em>must</em> return a valid ID.
+     * @param observation          the new observation, whose {@link Observation#getId()} <em>must</em> return
+     *                             {@link Observation#UNASSIGNED_ID} before the call.
+     * @param relationshipSource   can be null
+     * @param connection           cn be null
+     * @param relationshipMetadata can be null
      * @return the ID for the new observation, which must be manually added to the passed peer.
      */
-    long add(Observation observation);
+    long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection,
+             Metadata relationshipMetadata);
 
-    long link(Observation source, Observation destination, DigitalTwin.Relationship linkType, Metadata linkMetadata);
+    long link(Observation source, Observation destination, DigitalTwin.Relationship linkType,
+              Metadata linkMetadata);
 
     long add(Actuator actuator, Actuator parent);
 

@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import java.net.URL;
 
 public class GraphDatabaseNeo4jClient implements GraphDatabase {
+
     @Override
     public GraphDatabase contextualize(ContextScope scope) {
         return null;
@@ -32,9 +33,10 @@ public class GraphDatabaseNeo4jClient implements GraphDatabase {
     }
 
     @Override
-    public long add(Observation observation) {
+    public long add(Observation observation, Object relationshipSource, DigitalTwin.Relationship connection, Metadata relationshipMetadata) {
         return 0;
     }
+
 
     @Override
     public long link(Observation source, Observation destination, DigitalTwin.Relationship linkType, Metadata linkMetadata) {

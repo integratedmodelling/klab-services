@@ -1,14 +1,12 @@
 package org.integratedmodelling.klab.services.runtime.neo4j;
 
+import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.RelationshipEntity;
+import org.neo4j.ogm.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -21,8 +19,8 @@ public class GraphMapping {
      * We keep IDs for observables so we can build a fast compatibility cache
      */
     @NodeEntity
-    public static class Observable {
-        @Id
+    public static class ObservableMapping {
+        @Id @GeneratedValue
         String referenceName;
         String urn;
         Set<SemanticType> types;
@@ -32,16 +30,15 @@ public class GraphMapping {
     public static class ContextMapping {
         @Id
         String contextId;
-        List<ObservationMapping> rootObservationsMappings;
-        DataflowMapping dataflowMapping;
-        ProvenanceMapping provenanceMapping;
+        DataflowMapping dataflowMapping = new DataflowMapping();
+        ProvenanceMapping provenanceMapping = new ProvenanceMapping();
     }
 
     @NodeEntity
     public static class ObservationMapping {
         @Id
         Long id;
-        Observable observable;
+        ObservableMapping observable;
     }
 
     @NodeEntity
@@ -74,8 +71,40 @@ public class GraphMapping {
         Long observationId;
     }
 
+    public static abstract class Link {
+        @Id @GeneratedValue Long id;
+        long timestamp;
+        DigitalTwin.Relationship type;
+        // TODO metadata
+    }
+
+    @RelationshipEntity
+    public static class RootObservationLink extends Link {
+        @StartNode
+        ContextMapping context;
+        @EndNode
+        ObservationMapping observation;
+    }
+
+    @RelationshipEntity
+    public static class ObservationLink extends Link {
+        @StartNode
+        ObservationMapping context;
+        @EndNode
+        ObservationMapping observation;
+    }
+
     public static ObservationMapping adapt(Observation observation) {
         var ret = new ObservationMapping();
+        ret.observable = adapt(observation.getObservable());
+        return ret;
+    }
+
+    private static ObservableMapping adapt(Observable observable) {
+        var ret = new ObservableMapping();
+        ret.referenceName = observable.getReferenceName();
+        ret.types = observable.getSemantics().getType();
+        ret.urn = observable.getUrn();
         return ret;
     }
 
@@ -85,7 +114,6 @@ public class GraphMapping {
         ret.contextId = contextScope.getId();
         ret.dataflowMapping = new DataflowMapping();
         ret.provenanceMapping = new ProvenanceMapping();
-        ret.rootObservationsMappings = new ArrayList<>();
         return ret;
     }
 }
