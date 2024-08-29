@@ -126,18 +126,17 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
-        // TODO obviously
+
+        var resolution = computeResolution(observation, contextScope);
+        if (!resolution.isEmpty()) {
+            return compile(observation, resolution, contextScope);
+        }
         return Dataflow.empty(Observation.class);
     }
 
     @Override
     public String serviceId() {
         return configuration.getServiceId();
-    }
-
-    @Override
-    public Resolution resolve(String resolvableUrn, ContextScope scope) {
-        return computeResolution(resolveKnowledge(resolvableUrn, scope), scope);
     }
 
     /**
@@ -330,7 +329,7 @@ public class ResolverService extends BaseService implements Resolver {
         return ret.withCoverage(coverage);
     }
 
-    @Override
+//    @Override
     public Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope) {
 
         DataflowImpl ret = new DataflowImpl();

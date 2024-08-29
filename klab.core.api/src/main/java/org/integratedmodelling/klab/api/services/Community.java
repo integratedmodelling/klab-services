@@ -13,4 +13,10 @@ public interface Community extends KlabService {
     interface Capabilities extends ServiceCapabilities {
 
     }
+
+    @Override
+    default boolean scopesAreReactive() {
+        return false;
+    }
+
 }

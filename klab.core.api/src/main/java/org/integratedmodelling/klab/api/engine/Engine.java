@@ -67,4 +67,9 @@ public interface Engine extends KlabService {
      */
     void boot();
 
+    @Override
+    default boolean scopesAreReactive() {
+        return false;
+    }
+
 }

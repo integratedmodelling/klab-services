@@ -77,6 +77,11 @@ public interface RuntimeService extends KlabService {
      */
     Capabilities capabilities(Scope scope);
 
+    @Override
+    default boolean scopesAreReactive() {
+        return true;
+    }
+
 
     interface Admin {
 

@@ -81,47 +81,46 @@ public class Resolver {
             PrintWriter out = commandSpec.commandLine().getOut();
             PrintWriter err = commandSpec.commandLine().getErr();
 
-            ContextScope ctx = context == null ? KlabCLI.INSTANCE.modeler().currentContext() :
-                               KlabCLI.INSTANCE.modeler().context(context, true);
-
-            if (ctx == null) {
-                out.println(Ansi.AUTO.string("No context for the observation! Create a context or choose among the " +
-                        "existing."));
-            } else {
-
-                if (within != null) {
-                    // TODO find the context observation and switch the context to it. If a dot,
-                    // must have a single root subject
-                }
-
-                var urn = Utils.Strings.join(observables, " ");
-                var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
-//                this.knowledge = null; // resolver.resolveKnowledge(urn, Resolvable.class, ctx);
+//            ContextScope ctx = context == null ? KlabCLI.INSTANCE.modeler().currentContext() :
+//                               KlabCLI.INSTANCE.modeler().context(context, true);
 //
-//                if (knowledge == null) {
-//                    err.println("URN " + urn + " does not resolve to any type of knowledge");
-//                    return;
+//            if (ctx == null) {
+//                out.println(Ansi.AUTO.string("No context for the observation! Create a context or choose among the " +
+//                        "existing."));
+//            } else {
+//
+//                if (within != null) {
+//                    // TODO find the context observation and switch the context to it. If a dot,
+//                    // must have a single root subject
 //                }
-
-                this.resolution = resolver.resolve(urn, ctx);
-//                this.push(resolution);
-
-                out.println(Ansi.AUTO.string("Resolution of @|yellow " + resolution.getResolvable() + "|@ terminated " +
-                        "with @|"
-                        + (resolution.getCoverage().isRelevant() ? "green " : "red ")
-                        + NumberFormat.getPercentInstance().format(resolution.getCoverage().getCoverage()) + "|@ " +
-                        "coverage"));
-
-                out.println(
-                        Ansi.AUTO.string("@|" + (resolution.getCoverage().isRelevant() ? "green " : "red ") + resolution + "|@"));
-
-                if (show) {
-//                    Graphs.show(resolution);
-                }
+//
+//                var urn = Utils.Strings.join(observables, " ");
+//                var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
+////                this.knowledge = null; // resolver.resolveKnowledge(urn, Resolvable.class, ctx);
+////
+////                if (knowledge == null) {
+////                    err.println("URN " + urn + " does not resolve to any type of knowledge");
+////                    return;
+////                }
+//
+//                this.resolution = resolver.resolve(urn, ctx);
+////                this.push(resolution);
+//
+//                out.println(Ansi.AUTO.string("Resolution of @|yellow " + resolution.getResolvable() + "|@ terminated " +
+//                        "with @|"
+//                        + (resolution.getCoverage().isRelevant() ? "green " : "red ")
+//                        + NumberFormat.getPercentInstance().format(resolution.getCoverage().getCoverage()) + "|@ " +
+//                        "coverage"));
+//
+//                out.println(
+//                        Ansi.AUTO.string("@|" + (resolution.getCoverage().isRelevant() ? "green " : "red ") + resolution + "|@"));
+//
+//                if (show) {
+////                    Graphs.show(resolution);
+//                }
             }
 
         }
-    }
 
     @Command(name = "compile", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
             "Resolve some knowledge in the current context, compile a dataflow", "Prints or stores the JSON or the k" +
@@ -142,31 +141,31 @@ public class Resolver {
         @Override
         public void run() {
 
-            super.run();
-
-            if (this.resolution instanceof Resolution) {
-
-                ContextScope ctx = context == null
-                        ? KlabCLI.INSTANCE.modeler().currentContext()
-                        : KlabCLI.INSTANCE.modeler().context(context, true);
-
-                PrintWriter out = commandSpec.commandLine().getOut();
-                PrintWriter err = commandSpec.commandLine().getErr();
-                var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
-
-                this.dataflow = resolver.compile(this.knowledge, this.resolution, ctx);
-
-                if (dataflow.isEmpty()) {
-                    err.println("Dataflow is empty");
-                } else if (output == null) {
-                    out.println(json ? Utils.Json.printAsJson(dataflow) : resolver.encodeDataflow(dataflow));
-                } else {
-                    Utils.Files.writeStringToFile(json ? Utils.Json.printAsJson(dataflow) :
-                                    resolver.encodeDataflow(dataflow),
-                            output);
-                    out.println(Ansi.AUTO.string("Result written to @|yellow " + output + "|@"));
-                }
-            }
+//            super.run();
+//
+//            if (this.resolution instanceof Resolution) {
+//
+//                ContextScope ctx = context == null
+//                        ? KlabCLI.INSTANCE.modeler().currentContext()
+//                        : KlabCLI.INSTANCE.modeler().context(context, true);
+//
+//                PrintWriter out = commandSpec.commandLine().getOut();
+//                PrintWriter err = commandSpec.commandLine().getErr();
+//                var resolver = ctx.getService(org.integratedmodelling.klab.api.services.Resolver.class);
+//
+//                this.dataflow = resolver.compile(this.knowledge, this.resolution, ctx);
+//
+//                if (dataflow.isEmpty()) {
+//                    err.println("Dataflow is empty");
+//                } else if (output == null) {
+//                    out.println(json ? Utils.Json.printAsJson(dataflow) : resolver.encodeDataflow(dataflow));
+//                } else {
+//                    Utils.Files.writeStringToFile(json ? Utils.Json.printAsJson(dataflow) :
+//                                    resolver.encodeDataflow(dataflow),
+//                            output);
+//                    out.println(Ansi.AUTO.string("Result written to @|yellow " + output + "|@"));
+//                }
+//            }
         }
     }
 
@@ -177,31 +176,31 @@ public class Resolver {
         @Override
         public void run() {
 
-            super.run();
+//            super.run();
+//
+//            PrintWriter err = commandSpec.commandLine().getErr();
+//            PrintWriter out = commandSpec.commandLine().getOut();
 
-            PrintWriter err = commandSpec.commandLine().getErr();
-            PrintWriter out = commandSpec.commandLine().getOut();
-
-            if (this.dataflow != null && !this.dataflow.isEmpty()) {
-
-                ContextScope ctx = context == null
-                        ? KlabCLI.INSTANCE.modeler().currentContext()
-                        : KlabCLI.INSTANCE.modeler().context(context, true);
-
-//                ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
-
-                var runtime = ctx.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
-//                var result = runtime.run(this.dataflow, ctx);
-//                out.println("Dataflow submitted to the runtime for execution");
-//                try {
-//                    dumpObservationStructure(result.get(), ctx, runtime, out, 0);
-//                } catch (Exception e) {
-//                    throw new KlabIOException(e);
-//                }
-
-            } else {
-                err.println("Dataflow is empty: not submitted to runtime");
-            }
+//            if (this.dataflow != null && !this.dataflow.isEmpty()) {
+//
+//                ContextScope ctx = context == null
+//                        ? KlabCLI.INSTANCE.modeler().currentContext()
+//                        : KlabCLI.INSTANCE.modeler().context(context, true);
+//
+////                ctx = this.knowledge instanceof Instance i ? ctx.withGeometry(i.getScale()) : ctx;
+//
+//                var runtime = ctx.getService(org.integratedmodelling.klab.api.services.RuntimeService.class);
+////                var result = runtime.run(this.dataflow, ctx);
+////                out.println("Dataflow submitted to the runtime for execution");
+////                try {
+////                    dumpObservationStructure(result.get(), ctx, runtime, out, 0);
+////                } catch (Exception e) {
+////                    throw new KlabIOException(e);
+////                }
+//
+//            } else {
+//                err.println("Dataflow is empty: not submitted to runtime");
+//            }
         }
 
         private void dumpObservationStructure(Observation observation, ContextScope scope, RuntimeService service,

@@ -513,4 +513,9 @@ public interface ResourcesService extends KlabService {
 
     }
 
+    @Override
+    default boolean scopesAreReactive() {
+        return false;
+    }
+
 }

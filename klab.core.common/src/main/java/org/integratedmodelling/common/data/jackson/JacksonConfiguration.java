@@ -26,9 +26,12 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.services.runtime.Actuator;
+import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
@@ -241,7 +244,7 @@ public class JacksonConfiguration {
         mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
         SimpleModule module = new SimpleModule();
         for (var cls : new Class<?>[]{Group.class, Geometry.class, Pair.class, Notification.class,
-                                      Project.Manifest.class, Identifier.class,
+                                      Project.Manifest.class, Identifier.class, Dataflow.class,
                                       Triple.class, Unit.class, Project.class, KlabAsset.class,
                                       Currency.class, Message.class, Worldview.class, Workspace.class,
                                       Concept.class, Observable.class, Resource.class, KimOntology.class,
@@ -249,8 +252,9 @@ public class JacksonConfiguration {
                                       KdlDataflow.class, KActorsBehavior.class, KimModel.class,
                                       KimSymbolDefinition.class, Contextualizable.class, Identifier.class,
                                       KimConcept.class, KimObservable.class, Quantity.class,
+                                      Model.class, ServiceCall.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
-                                      Geometry.Dimension.class, Parameters.class,
+                                      Geometry.Dimension.class, Parameters.class, Actuator.class,
                                       Notification.LexicalContext.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
             module.addDeserializer(cls, new PolymorphicDeserializer<>());

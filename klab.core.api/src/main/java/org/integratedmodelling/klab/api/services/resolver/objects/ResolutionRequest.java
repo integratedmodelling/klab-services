@@ -2,41 +2,34 @@ package org.integratedmodelling.klab.api.services.resolver.objects;
 
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 import java.net.URL;
 import java.util.*;
 
 /**
- * TODO revise - this should be sent with the context by the runtime to the resolver, to produce a dataflow.
+ * The resolution constraints come from the scope beyond the content of the scope token.
  */
 public class ResolutionRequest {
 
-    private URL resolverUrl;
-    private String urn;
-    private Parameters<String> data = Parameters.create();
+    private Observation observation;
+    private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
 
-    public URL getResolverUrl() {
-        return resolverUrl;
+    public Observation getObservation() {
+        return observation;
     }
 
-    public void setResolverUrl(URL resolverUrl) {
-        this.resolverUrl = resolverUrl;
+    public void setObservation(Observation observation) {
+        this.observation = observation;
     }
 
-    public String getUrn() {
-        return urn;
+    public List<ResolutionConstraint> getResolutionConstraints() {
+        return resolutionConstraints;
     }
 
-    public void setUrn(String urn) {
-        this.urn = urn;
-    }
-
-    public Parameters<String> getData() {
-        return data;
-    }
-
-    public void setData(Parameters<String> data) {
-        this.data = data;
+    public void setResolutionConstraints(List<ResolutionConstraint> resolutionConstraints) {
+        this.resolutionConstraints = resolutionConstraints;
     }
 }
 

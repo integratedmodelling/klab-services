@@ -192,7 +192,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         Thread.ofVirtual().start(() -> {
             try {
                 var dataflow = resolver.resolve(observation, this);
-                if (!dataflow.isEmpty()) {
+                if (dataflow != null && !dataflow.isEmpty()) {
                     var provenance = runtime.runDataflow(dataflow, this);
                     digitalTwin.finalizeObservation(observation, dataflow, provenance);
                 }

@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ScopeManager {
 
-    private final ReActorSystem actorSystem;
+    private ReActorSystem actorSystem = null;
     KlabService service;
     /**
      * Every scope managed by this service. The relationship between scopes is managed through the scope
@@ -61,14 +61,16 @@ public class ScopeManager {
     public ScopeManager(KlabService service) {
 
         this.service = service;
-        /*
-         * boot the actor system right away, so that we can call login() before boot().
-         * TODO this should only be done if the service wants it
-         */
-        this.actorSystem =
-                new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build()).initReActorSystem();
 
-        Logging.INSTANCE.info("Actor system booted");
+        if (service.scopesAreReactive()) {
+            /*
+             * boot the actor system right away, so that we can call login() before boot().
+             */
+            this.actorSystem =
+                    new ReActorSystem(ReActorSystemConfig.newBuilder().setReactorSystemName("klab").build()).initReActorSystem();
+
+            Logging.INSTANCE.info("Actor system booted");
+        }
 
         executor.scheduleAtFixedRate(() -> expiredScopeCheck(), 60, 60, TimeUnit.SECONDS);
     }
@@ -124,28 +126,31 @@ public class ScopeManager {
                 }
             }
 
-            /**
-             * TODO agents should only be created for services that request them
-             */
-            String agentName = KAgent.sanitizeName(user.getUsername());
-            // TODO move to lazy logics
-            KActorsBehavior.Ref agent = KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName,
-                    ret)).get());
-            ret.setAgent(agent);
-            ret.setId(user.getUsername());
+            if (service.scopesAreReactive()) {
+                /**
+                 * TODO agents should only be created for services that request them
+                 */
+                String agentName = KAgent.sanitizeName(user.getUsername());
+                // TODO move to lazy logics
+                KActorsBehavior.Ref agent = KAgent.KAgentRef.get(actorSystem.spawn(new UserAgent(agentName,
+                        ret)).get());
+                ret.setAgent(agent);
+                ret.setId(user.getUsername());
+
+                File userBehavior = new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator +
+                        "user.kactors");
+                if (userBehavior.isFile() && userBehavior.canRead()) {
+                    try {
+                        ret.send(Message.MessageClass.ActorCommunication, Message.MessageType.RunBehavior,
+                                userBehavior.toURI().toURL());
+                    } catch (MalformedURLException e) {
+                        ret.error(e, "while reading user.kactors behavior");
+                    }
+                }
+            }
 
             scopes.put(user.getUsername(), ret);
 
-            File userBehavior = new File(ServiceConfiguration.INSTANCE.getDataPath() + File.separator +
-                    "user.kactors");
-            if (userBehavior.isFile() && userBehavior.canRead()) {
-                try {
-                    ret.send(Message.MessageClass.ActorCommunication, Message.MessageType.RunBehavior,
-                            userBehavior.toURI().toURL());
-                } catch (MalformedURLException e) {
-                    ret.error(e, "while reading user.kactors behavior");
-                }
-            }
         }
 
         return ret;

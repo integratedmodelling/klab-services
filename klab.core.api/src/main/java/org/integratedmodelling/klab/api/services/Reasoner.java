@@ -45,6 +45,11 @@ public interface Reasoner extends KlabService {
         String getWorldviewId();
     }
 
+    @Override
+    default boolean scopesAreReactive() {
+        return false;
+    }
+
     /**
      * @return
      */

@@ -426,7 +426,7 @@ public interface ServicesAPI {
 
         }
 
-        String RESOLVE_KNOWLEDGE = "/resolve";
+        String RESOLVE_OBSERVATION= "/resolve";
     }
 
     interface COMMUNITY {

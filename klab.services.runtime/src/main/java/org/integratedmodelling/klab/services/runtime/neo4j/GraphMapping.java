@@ -39,6 +39,7 @@ public class GraphMapping {
         @Id @GeneratedValue
         Long id;
         ObservableMapping observable;
+        boolean resolved;
     }
 
     @NodeEntity

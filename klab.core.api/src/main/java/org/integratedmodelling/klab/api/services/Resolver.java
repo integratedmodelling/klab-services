@@ -44,42 +44,42 @@ public interface Resolver extends KlabService {
      */
     Dataflow<Observation> resolve(Observation observation, ContextScope contextScope);
 
-    /**
-     * The main function of the resolver is to resolve knowledge to a dataflow in a context scope. This is
-     * done in two steps: resolution of the knowledge to a resolution graph (initialized from the observations
-     * in the scope) and compilatio of the resulting graph into a dataflow that can be stored or passed to a
-     * runtime service for execution.
-     * <p>
-     * The resolvableUrn must specify a {@link Knowledge} object that can be resolved in the passed context
-     * scope. It can be a URL containing the service URL or a simple URN that will be resolved according to
-     * the scope passed. If the scope is not focused on a direct observation, the resolvable must be an
-     * {@link Observation} or a defined object specifying one. The Observer's focal scale in the scope will
-     * enable dependent observables as well if defined, with a default observation context built, if possible,
-     * accordingly.
-     * <p>
-     * {@link DescriptionType#INSTANTIATION}.
-     * <p>
-     * FIXME should resolve an observation (everything else is in the scope). Also this doesn't need to
-     *  be API, although exposing the graph probably helps enforce data sanity.
-     *
-     * @param resolvableUrn
-     * @param scope
-     * @return the dataflow that will create the observation in a runtime.
-     */
-    Resolution resolve(String resolvableUrn, ContextScope scope);
-
-    /**
-     * Compile a resolution graph into a dataflow. The scope passed must be the same that the resolution graph
-     * was computed into.
-     * <p>
-     * FIXME probably also does not need to be API but see above.
-     *
-     * @param resolution
-     * @param scope
-     * @return
-     */
-    Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope);
-
+//    /**
+//     * The main function of the resolver is to resolve knowledge to a dataflow in a context scope. This is
+//     * done in two steps: resolution of the knowledge to a resolution graph (initialized from the observations
+//     * in the scope) and compilatio of the resulting graph into a dataflow that can be stored or passed to a
+//     * runtime service for execution.
+//     * <p>
+//     * The resolvableUrn must specify a {@link Knowledge} object that can be resolved in the passed context
+//     * scope. It can be a URL containing the service URL or a simple URN that will be resolved according to
+//     * the scope passed. If the scope is not focused on a direct observation, the resolvable must be an
+//     * {@link Observation} or a defined object specifying one. The Observer's focal scale in the scope will
+//     * enable dependent observables as well if defined, with a default observation context built, if possible,
+//     * accordingly.
+//     * <p>
+//     * {@link DescriptionType#INSTANTIATION}.
+//     * <p>
+//     * FIXME should resolve an observation (everything else is in the scope). Also this doesn't need to
+//     *  be API, although exposing the graph probably helps enforce data sanity.
+//     *
+//     * @param resolvableUrn
+//     * @param scope
+//     * @return the dataflow that will create the observation in a runtime.
+//     */
+//    Resolution resolve(String resolvableUrn, ContextScope scope);
+//
+//    /**
+//     * Compile a resolution graph into a dataflow. The scope passed must be the same that the resolution graph
+//     * was computed into.
+//     * <p>
+//     * FIXME probably also does not need to be API but see above.
+//     *
+//     * @param resolution
+//     * @param scope
+//     * @return
+//     */
+//    Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope);
+//
     /**
      * Encode a dataflow to its k.DL specification.
      *
@@ -87,6 +87,11 @@ public interface Resolver extends KlabService {
      * @return
      */
     String encodeDataflow(Dataflow<Observation> dataflow);
+
+    @Override
+    default boolean scopesAreReactive() {
+        return false;
+    }
 
     /**
      * Query all the resource servers available to find models that can observe the passed observable in the
