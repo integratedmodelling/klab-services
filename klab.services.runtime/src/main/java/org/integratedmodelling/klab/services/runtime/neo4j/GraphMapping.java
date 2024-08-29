@@ -20,7 +20,7 @@ public class GraphMapping {
      */
     @NodeEntity
     public static class ObservableMapping {
-        @Id @GeneratedValue
+        @Id
         String referenceName;
         String urn;
         Set<SemanticType> types;
@@ -36,7 +36,7 @@ public class GraphMapping {
 
     @NodeEntity
     public static class ObservationMapping {
-        @Id
+        @Id @GeneratedValue
         Long id;
         ObservableMapping observable;
     }
