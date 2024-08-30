@@ -783,8 +783,6 @@ public class OWL {
 
     public void releaseOntology(Ontology ontology) {
 
-        System.out.println("RELEASING PORCHIDDIO " + ontology.getName());
-
         this.namespaces.remove(ontology.getName());
         var onto = ontologies.remove(ontology.getName());
         for (var concept : onto.getConcepts()) {

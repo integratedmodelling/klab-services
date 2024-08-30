@@ -422,6 +422,15 @@ public class Utils extends org.integratedmodelling.common.utils.Utils {
          * {@link org.integratedmodelling.klab.api.knowledge.organization.Workspace}, they can be converted
          * into {@link org.integratedmodelling.klab.api.services.resources.ResourceSet} by a resources server
          * that knows mutual dependencies.
+         *
+         * FIXME these are often wrong. Must return:
+         *    for pull: all changes w.r.t. head before pull (I think it does id)
+         *    for commit: only those changes that come from the fetch before commit
+         *    reset: what was reset in head + whatever comes from the pull after
+         *
+         *    All the changed paths should be reported in an INFO notification
+         *
+         *
          */
         public static class Modifications {
 
