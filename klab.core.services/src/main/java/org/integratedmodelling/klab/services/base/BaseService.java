@@ -48,9 +48,9 @@ public abstract class BaseService implements KlabService {
     private final Type type;
     protected EmbeddedBroker embeddedBroker;
     private String serviceSecret;
-
+    private boolean provideScopesAutomatically = false;
     private URL url;
-//    protected AtomicBoolean online = new AtomicBoolean(false);
+    //    protected AtomicBoolean online = new AtomicBoolean(false);
     protected AtomicBoolean available = new AtomicBoolean(false);
     private final List<Notification> serviceNotifications = new ArrayList<>();
     protected AbstractServiceDelegatingScope scope;
@@ -59,7 +59,8 @@ public abstract class BaseService implements KlabService {
     private ScopeManager _scopeManager;
     private boolean initialized;
 
-    protected BaseService(AbstractServiceDelegatingScope scope, KlabService.Type serviceType, ServiceStartupOptions options) {
+    protected BaseService(AbstractServiceDelegatingScope scope, KlabService.Type serviceType,
+                          ServiceStartupOptions options) {
         this.scope = scope;
         this.localName = localName;
         this.type = serviceType;
@@ -90,6 +91,27 @@ public abstract class BaseService implements KlabService {
             throw new KlabIOException(e);
         }
     }
+
+    /**
+     * If this returns true, the service will instruct the {@link ScopeManager} to automatically create scope
+     * hierarchies when scope headers are received for session and context scopes that are unknown, as long as
+     * the request is not anonymous or is otherwise privileged. Default is false.
+     *
+     * @return true if scopes can be created automatically
+     */
+    public boolean isProvideScopesAutomatically() {
+        return provideScopesAutomatically;
+    }
+
+    /**
+     * Set the flag returned by {@link #isProvideScopesAutomatically()}.
+     *
+     * @param b
+     */
+    protected void setProvideScopesAutomatically(boolean b) {
+        this.provideScopesAutomatically = b;
+    }
+
 
     public EmbeddedBroker getEmbeddedBroker() {
         return embeddedBroker;
@@ -297,6 +319,7 @@ public abstract class BaseService implements KlabService {
 
     /**
      * Called by ServiceInstance after initializeService was successful
+     *
      * @param b
      */
     public void setInitialized(boolean b) {

@@ -71,6 +71,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
+        setProvideScopesAutomatically(true);
         readConfiguration(options);
     }
 
