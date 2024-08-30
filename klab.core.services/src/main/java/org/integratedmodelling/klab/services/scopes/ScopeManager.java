@@ -272,6 +272,41 @@ public class ScopeManager {
                 if (scope != null && authorization.isAuthenticated()) {
                     // TODO create the scope hierarchy; names are auto-generated in this case.
                     var scopeData = ContextScope.parseScopeId(scopeId);
+                    if (!scopeData.empty()) {
+                        ServiceSessionScope sessionScope = null;
+                        if (scopeData.type() == Scope.Type.SESSION) {
+
+                            sessionScope = new ServiceSessionScope(scope);
+                            sessionScope.setId(scopeData.scopeId());
+                            scopes.put(scopeData.scopeId(), sessionScope);
+                            ret = sessionScope;
+
+                        } else if (scopeData.type() == Scope.Type.CONTEXT) {
+
+                            var sessionId = Utils.Paths.getLeading(scopeData.scopeId(), '.');
+
+                            // could just call self recursively but I think this is clearer
+                            if (scopes.containsKey(sessionId)) {
+                                sessionScope = (ServiceSessionScope) scopes.get(sessionId);
+                            } else {
+                                sessionScope = new ServiceSessionScope(scope);
+                                sessionScope.setId(sessionId);
+                                scopes.put(sessionId, sessionScope);
+                            }
+                            
+                            var contextScope = new ServiceContextScope(sessionScope);
+                            contextScope.setId(scopeData.scopeId());
+                            scopes.put(scopeData.scopeId(), contextScope);
+                            ret = contextScope;
+
+                        } else {
+                            throw new KlabInternalErrorException("invalid scope request in header");
+                        }
+
+                        if (scopeClass.isAssignableFrom(ret.getClass())) {
+                            return (T) ret;
+                        }
+                    }
                 }
             }
         }
