@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -33,7 +34,7 @@ import java.util.function.Supplier;
  * queues and dispatches the messages to their respective handlers. Can be configured as a sender, receiver or
  * both.
  */
-public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel {
+public class MessagingChannelImpl extends ChannelImpl implements MessagingChannel, Closeable {
 
     private Channel channel_;
     private boolean sender;

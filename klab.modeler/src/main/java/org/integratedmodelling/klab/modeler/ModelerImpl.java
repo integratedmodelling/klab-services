@@ -214,7 +214,7 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         }
 
         if (currentContext == null) {
-            currentSession.error("cannot make observation");
+            user().error("cannot make observation");
             return;
         }
 
