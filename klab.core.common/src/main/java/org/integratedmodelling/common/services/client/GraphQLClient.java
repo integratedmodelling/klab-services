@@ -38,8 +38,8 @@ public class GraphQLClient {
         var scopeToken = scope instanceof SessionScope sessionScope ? sessionScope.getId() : null;
         var client = this.graphQlClient;
         var authorization = scope.getIdentity().getId();
-
         var mutation = client.mutate();
+
         if (scopeToken != null) {
             mutation = mutation.header(ServicesAPI.SCOPE_HEADER, scopeToken);
         }
@@ -133,25 +133,5 @@ public class GraphQLClient {
         }
         return null;
     }
-
-    /**
-     * Single response, no target argument
-     *
-     * @param query
-     * @param resultClass
-     * @param scope
-     * @param arguments
-     * @param <T>
-     * @return
-     */
-    public <T> T query(String query, Class<T> resultClass, Scope scope, Object... arguments) {
-        try {
-            return request(query, scope, arguments).executeSync().toEntity(resultClass);
-        } catch (Throwable t) {
-            scope.error(t);
-        }
-        return null;
-    }
-
 
 }

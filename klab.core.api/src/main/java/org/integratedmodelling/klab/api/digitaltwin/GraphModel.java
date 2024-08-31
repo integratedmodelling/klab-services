@@ -23,11 +23,13 @@ public class GraphModel {
 
         interface GraphQL {
 
-            String OBSERVE = """
+            record Query(String queryPattern, String resultTarget, String[] variables) {}
+
+            Query OBSERVE = new Query( """
                     mutation Observe {
                         observe(observation: $observation)
                     }
-                    """;
+                    """, "observe", new String[] {"observation"});
 
         }
     }

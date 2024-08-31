@@ -80,11 +80,14 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
         var runtime = getService(RuntimeService.class);
         if (runtime instanceof RuntimeClient runtimeClient) {
-            long taskId = runtimeClient.graphClient().query(GraphModel.Queries.GraphQL.OBSERVE, Long.class,
+            long taskId =
+                    runtimeClient.graphClient().query(GraphModel.Queries.GraphQL.OBSERVE.queryPattern(),
+                            GraphModel.Queries.GraphQL.OBSERVE.resultTarget(), Long.class,
                     this, "observation",
                     GraphModel.adapt(observation, this));
             return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-                    Message.MessageType.ResolutionSuccessful), taskId, this::getObservation); // event watcher using either messaging or queues
+                    Message.MessageType.ResolutionSuccessful), taskId, this::getObservation); // event
+            // watcher using either messaging or queues
         }
 
         return null;
@@ -151,7 +154,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
     }
 
     /**
-     * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and is the fastest way.
+     * Retrieve the observation with the passed ID straight from the digital twin. This is non-API and is the
+     * fastest way.
      *
      * @param id
      * @return
@@ -175,10 +179,10 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         return List.of();
     }
 
-//    @Override
-//    public DirectObservation getResolutionObservation() {
-//        return null;
-//    }
+    //    @Override
+    //    public DirectObservation getResolutionObservation() {
+    //        return null;
+    //    }
 
     @Override
     public ContextScope withContextualizationData(Observation contextObservation, Scale scale,

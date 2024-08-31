@@ -189,8 +189,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         final var resolver = getService(Resolver.class);
 
         // start virtual resolution thread. This should be everything we need.
-//        Thread.ofVirtual().start(() -> {
-        new Thread(() -> {
+        Thread.ofVirtual().start(() -> {
+//        new Thread(() -> {
             try {
                 var dataflow = resolver.resolve(observation, this);
                 if (dataflow != null && !dataflow.isEmpty()) {
@@ -201,8 +201,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             } catch (Throwable t) {
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
             }
-//        });
-         }).start();
+        });
+//         }).start();
         return ret;
 
     }

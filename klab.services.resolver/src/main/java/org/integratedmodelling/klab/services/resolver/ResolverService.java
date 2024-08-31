@@ -151,33 +151,31 @@ public class ResolverService extends BaseService implements Resolver {
      */
     public Resolution computeResolution(Resolvable knowledge, ContextScope scope) {
 
-        var scale = Scale.create(scope.getContextObservation().getGeometry());
+        Geometry resolutionGeometry = Geometry.EMPTY;
+
         Resolvable observable = switch (knowledge) {
             case Concept concept -> Observable.promote(concept);
-            //            case KimInstance instance -> {
-            //                // FIXME build the scale from the geometry
-            ////                scale = instance.getScale();
-            ////                scope = scope.withResolutionNamespace(((Instance) knowledge).getNamespace());
-            //                yield instance.getObservable();
-            //            }
             case Model model -> model.getObservables().get(0);
             case Observable obs -> obs;
+            case Observation observation -> {
+                resolutionGeometry = observation.getGeometry();
+                yield observation.getObservable();
+            }
             default -> null;
         };
 
         if (observable == null) {
             // FIXME this should just set the resolution to an error state and return it
             throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
-        } else if (scale == null || scale.isEmpty()) {
-            throw new KlabIllegalStateException("cannot resolve " + knowledge + " without a focal scale in " +
-                    "the" +
-                    " context");
-        } /*else if (!(knowledge instanceof Instance) && !observable.getDescriptionType().isInstantiation()
-                && scope.getContextObservation() == null) {
-            throw new KlabIllegalStateException(
-                    "cannot resolve the non-autonomous observable " + knowledge + " without a context " +
-                            "observation");
-        }*/
+        }
+
+        if (scope.getContextObservation() != null) {
+            resolutionGeometry = scope.getContextObservation().getGeometry();
+        } else if (resolutionGeometry.isEmpty() && scope.getObserver() != null) {
+            resolutionGeometry = scope.getObserver().getObserverGeometry();
+        }
+
+        var scale = Scale.create(resolutionGeometry);
 
         ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
         if (knowledge instanceof Model) {
@@ -330,7 +328,7 @@ public class ResolverService extends BaseService implements Resolver {
         return ret.withCoverage(coverage);
     }
 
-//    @Override
+    //    @Override
     public Dataflow<Observation> compile(Resolvable knowledge, Resolution resolution, ContextScope scope) {
 
         DataflowImpl ret = new DataflowImpl();
