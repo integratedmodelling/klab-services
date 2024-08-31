@@ -112,7 +112,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
          * Registration with the runtime succeeded. Return a peer scope locked to the
          * runtime service that hosts it.
          */
-        var ret = new ClientSessionScope(this, sessionName, runtime) {
+        return new ClientSessionScope(this, sessionName, runtime) {
 
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -130,15 +130,6 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
                 return ClientUserScope.this.getServices(serviceClass);
             }
         };
-
-        var sessionId = runtime.registerSession(ret);
-
-        if (sessionId != null) {
-            ret.setId(sessionId);
-            return ret;
-        }
-
-        return null;
     }
 
     @Override

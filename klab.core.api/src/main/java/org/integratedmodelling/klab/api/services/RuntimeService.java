@@ -29,28 +29,6 @@ public interface RuntimeService extends KlabService {
     }
 
     /**
-     * Create a session with the passed name in the passed user scope. If urn(s) are passed, match them to the
-     * correspondent behaviors, test namespaces or scenarios and initialize the session accordingly. Return
-     * the unique session ID.
-     *
-     * @param sessionScope a client scope that should record the ID for future communication. If the ID is
-     *                     null, the call has failed.
-     * @return the ID of the new session created at server side, or null in case of failure.
-     */
-    String registerSession(SessionScope sessionScope);
-
-    /**
-     * Create a context with the passed name in the passed session. Context starts empty with the default
-     * observer for the worldview, using the services available to the user and passed as parameters. The same
-     * runtime that hosts the context must become the one and only runtime accessible to the resulting scope.
-     *
-     * @param contextScope a client scope that should record the ID for future communication. If the ID is
-     *                     null, the call has failed.
-     * @return the ID of the new session created at server side, or null in case of failure.
-     */
-    String registerContext(ContextScope contextScope);
-
-    /**
      * The main function of the runtime.
      *
      * @param contextScope

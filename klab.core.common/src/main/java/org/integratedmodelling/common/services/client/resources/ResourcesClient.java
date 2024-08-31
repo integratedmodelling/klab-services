@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -60,6 +61,16 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
     @Override
     public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, ResourcesCapabilitiesImpl.class);
+    }
+
+    @Override
+    public String registerSession(SessionScope sessionScope) {
+        return null;
+    }
+
+    @Override
+    public String registerContext(ContextScope contextScope) {
+        return null;
     }
 
     @Override

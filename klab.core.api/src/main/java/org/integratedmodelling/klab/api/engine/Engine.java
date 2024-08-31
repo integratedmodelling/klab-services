@@ -1,9 +1,7 @@
 package org.integratedmodelling.klab.api.engine;
 
 import org.integratedmodelling.klab.api.Klab;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 
@@ -32,8 +30,8 @@ import java.util.function.BiConsumer;
  * <p>
  * Engine functions can be exposed through the simple REST API defined in
  * {@link org.integratedmodelling.klab.api.ServicesAPI.ENGINE} and is a {@link KlabService} to ensure it can
- * be implemented as a service; for this reason <code>ENGINE</code> is one of the service categories listed
- * as {@link KlabService.Type}.
+ * be implemented as a service; for this reason <code>ENGINE</code> is one of the service categories listed as
+ * {@link KlabService.Type}.
  */
 public interface Engine extends KlabService {
 
@@ -57,6 +55,29 @@ public interface Engine extends KlabService {
      * @return
      */
     List<UserScope> getUsers();
+
+    /**
+     * Create a session in the runtime service, advertising it to all the other services in the user scope
+     * that must be informed, and locking the runtime and any other needed services in the resulting scope.
+     *
+     * @param sessionName
+     * @return
+     */
+    SessionScope createSession(String sessionName);
+
+    /**
+     * Create an observation scope in the currently selected runtime service, advertising it to all the other
+     * services in the user scope that must be informed, and locking the runtime and any other needed services
+     * in the resulting scope.
+     * <p>
+     * TODO could take parameters to select the best runtime based on requests.
+     *  The choice of runtime is pretty much final after this is called.
+     *
+     * @param sessionScope
+     * @param contextName
+     * @return
+     */
+    ContextScope createContext(SessionScope sessionScope, String contextName);
 
     /**
      * To facilitate implementations, we expose the boot and shutdown as explicitly called phases. Booting the

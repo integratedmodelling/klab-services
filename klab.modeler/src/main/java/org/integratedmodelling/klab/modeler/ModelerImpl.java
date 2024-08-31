@@ -206,11 +206,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          */
 
         if (currentSession == null) {
-            currentSession = createSession("Default session");
+            currentSession = engine().createSession("Default session");
         }
 
         if (currentContext == null && currentSession != null) {
-            currentContext = createContext(currentSession, "Default context");
+            currentContext = engine().createContext(currentSession, "Default context");
         }
 
         if (currentContext == null) {
@@ -246,15 +246,6 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
 
     }
 
-    private SessionScope createSession(String sessionName) {
-        var runtime = engine().serviceScope().getService(RuntimeService.class);
-        return currentUser().runSession(sessionName);
-    }
-
-    private ContextScope createContext(SessionScope sessionScope, String contextName) {
-        var runtime = engine().serviceScope().getService(RuntimeService.class);
-        return sessionScope.createContext(contextName);
-    }
 
     @Override
     public void importProject(String workspaceName, String projectUrl, boolean overwriteExisting) {

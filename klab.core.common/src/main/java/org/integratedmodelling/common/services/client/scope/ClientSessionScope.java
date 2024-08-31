@@ -42,7 +42,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
          * Registration with the runtime succeeded. Return a peer scope locked to the
          * runtime service that hosts it.
          */
-        var ret = new ClientContextScope(this, contextName, runtime) {
+        return new ClientContextScope(this, contextName, runtime) {
 
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -61,14 +61,6 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
             }
         };
 
-        var sessionId = runtime.registerContext(ret);
-
-        if (sessionId != null) {
-            ret.setId(sessionId);
-            return ret;
-        }
-
-        return null;
     }
 
     @Override

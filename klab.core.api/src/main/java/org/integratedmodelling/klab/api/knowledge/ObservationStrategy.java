@@ -4,9 +4,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 
 /**
  * Objects of this class are read from specifications in the worldview, collected, matched and sorted to
- * address observation strategy queries.
- * <p>
- * TODO experimental, unused
+ * address observation strategy queries from resolvers.
  *
  * @author Ferd
  */
