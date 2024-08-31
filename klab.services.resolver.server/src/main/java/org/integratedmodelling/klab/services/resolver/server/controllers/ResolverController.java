@@ -35,7 +35,7 @@ public class ResolverController {
                     authorization.getScope(ContextScope.class).withResolutionConstraints(resolutionRequest.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
             return resolverServer.klabService().resolve(resolutionRequest.getObservation(), contextScope);
         }
-        throw new KlabInternalErrorException("");
+        throw new KlabInternalErrorException("Unexpected implementation of request authorization");
     }
 
 }

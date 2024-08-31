@@ -135,8 +135,10 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         public boolean match(Message message) {
             if (matchTypes != null && matchTypes.contains(message.getMessageType())) {
                 if (value != null && value.equals(message.getPayload(Object.class))) {
-                    match.set(message);
-                    match.notify();
+                    synchronized (match) {
+                        match.set(message);
+                        match.notify();
+                    }
                     return true;
                 }
             }

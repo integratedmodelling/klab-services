@@ -18,7 +18,7 @@ import java.util.List;
 @ComponentScan(basePackages = {"org.integratedmodelling.klab.services.application.security",
                                "org.integratedmodelling.klab.services.messaging",
                                "org.integratedmodelling.klab.services.application.controllers",
-                               "org.integratedmodelling.resolver.server.controllers"})
+                               "org.integratedmodelling.klab.services.resolver.server.controllers"})
 public class ResolverServer extends ServiceNetworkedInstance<ResolverService> {
 
     @Override

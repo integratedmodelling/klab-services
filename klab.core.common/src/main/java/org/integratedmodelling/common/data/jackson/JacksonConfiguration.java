@@ -21,6 +21,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Group;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.Annotation;
@@ -252,7 +253,7 @@ public class JacksonConfiguration {
                                       KdlDataflow.class, KActorsBehavior.class, KimModel.class,
                                       KimSymbolDefinition.class, Contextualizable.class, Identifier.class,
                                       KimConcept.class, KimObservable.class, Quantity.class,
-                                      Model.class, ServiceCall.class,
+                                      Model.class, ServiceCall.class, Observation.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class, Actuator.class,
                                       Notification.LexicalContext.class}) {
