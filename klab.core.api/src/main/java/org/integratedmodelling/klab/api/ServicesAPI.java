@@ -46,6 +46,27 @@ public interface ServicesAPI {
     String URN_PARAMETER = "{urn}";
 
     /**
+     * Create a session scope, return the scope ID unless a sessionId is passed as a parameter (which should
+     * only be done by other services). If the runtime provides AMQP messaging, the MESSAGING_URN_HEADER
+     * header in the response will be set to the full URN of the service. Each session ID and context ID
+     * will correspond to a queue that clients can subscribe to.
+     * <p>
+     * TODO The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a specified
+     *  behavior. The POST endpoint can be fed k.Actors behavior code to run.
+     * <p>
+     */
+    String CREATE_SESSION = "/createSession/{name}";
+
+    /**
+     * Create an observation scope in a session in the runtime, return the scope ID.
+     * <p>
+     * The createContext is a POST endpoint must have the OBSERVER_HEADER set to the ID of a valid session
+     * returned by CREATE_SESSION. The context is created empty and without observer, unless the POST data
+     * contain the definition of one.
+     */
+    String CREATE_CONTEXT = "/createContext";
+
+    /**
      * General administration endpoints common to all services
      */
     interface ADMIN {
@@ -296,26 +317,6 @@ public interface ServicesAPI {
 
         }
 
-        /**
-         * Create a session in the runtime, return the scope ID.
-         * <p>
-         * TODO The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a specified
-         *  behavior. The POST endpoint can be fed k.Actors behavior code to run.
-         * <p>
-         * If the runtime provides AMQP messaging, the MESSAGING_URN_HEADER header in the response will be
-         * set to the full URN of the service. Each session ID and context ID will correspond to a queue
-         * that clients can subscribe to.
-         */
-        String CREATE_SESSION = "/createSession/{name}";
-
-        /**
-         * Create an observation scope in a session in the runtime, return the scope ID.
-         * <p>
-         * The createContext is a POST endpoint must have the OBSERVER_HEADER set to the ID of a valid session
-         * returned by CREATE_SESSION. The context is created empty and without observer, unless the POST data
-         * contain the definition of one.
-         */
-        String CREATE_CONTEXT = "/createContext";
 
         /**
          * The GraphQL endpoint for digital twin access.
@@ -426,7 +427,7 @@ public interface ServicesAPI {
 
         }
 
-        String RESOLVE_OBSERVATION= "/resolve";
+        String RESOLVE_OBSERVATION = "/resolve";
     }
 
     interface COMMUNITY {

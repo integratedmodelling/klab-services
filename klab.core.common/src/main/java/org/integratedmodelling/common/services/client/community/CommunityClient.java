@@ -2,7 +2,9 @@ package org.integratedmodelling.common.services.client.community;
 
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.identities.Identity;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Community;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -29,6 +31,16 @@ public class CommunityClient extends ServiceClient implements Community {
 
     @Override
     public ServiceCapabilities capabilities(Scope scope) {
+        return null;
+    }
+
+    @Override
+    public String registerSession(SessionScope sessionScope) {
+        return null;
+    }
+
+    @Override
+    public String registerContext(ContextScope contextScope) {
         return null;
     }
 

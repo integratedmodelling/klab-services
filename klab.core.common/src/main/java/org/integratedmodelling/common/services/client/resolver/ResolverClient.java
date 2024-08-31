@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
@@ -60,6 +61,16 @@ public class ResolverClient extends ServiceClient implements Resolver {
     @Override
     public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, ResolverCapabilitiesImpl.class);
+    }
+
+    @Override
+    public String registerSession(SessionScope sessionScope) {
+        return null;
+    }
+
+    @Override
+    public String registerContext(ContextScope contextScope) {
+        return null;
     }
 
     @Override

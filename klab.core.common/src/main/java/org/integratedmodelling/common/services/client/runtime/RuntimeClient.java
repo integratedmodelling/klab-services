@@ -5,14 +5,8 @@ import org.integratedmodelling.common.services.RuntimeCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.GraphQLClient;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
-import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.identities.Identity;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.lang.kim.KimModel;
-import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
@@ -31,7 +25,6 @@ import org.integratedmodelling.klab.rest.ServiceReference;
 import java.net.URL;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -48,8 +41,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         super(Type.RUNTIME, url, identity, services, listeners);
     }
 
-    public RuntimeClient(URL url) {
-        super(url);
+    public RuntimeClient(URL url, Identity identity) {
+        super(Type.RUNTIME, url, identity, List.of());
     }
 
     @Override
@@ -61,7 +54,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public String registerSession(SessionScope scope) {
-        var ret = client.get(ServicesAPI.RUNTIME.CREATE_SESSION, String.class, "name", scope.getName());
+        var ret = client.get(ServicesAPI.CREATE_SESSION, String.class, "name", scope.getName());
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
         if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
             var queues = getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
@@ -121,7 +114,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
             // TODO setup desired request. This will send no header and use the defaults.
         }
 
-        var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.RUNTIME.CREATE_CONTEXT, request,
+        var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_CONTEXT, request,
                 String.class);
 
         if (hasMessaging) {

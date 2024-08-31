@@ -2,7 +2,6 @@ package org.integratedmodelling.klab.services.application.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.integratedmodelling.klab.api.ServicesAPI;
-import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -52,5 +51,6 @@ public class KlabServiceController {
     public KlabService.ServiceStatus status() {
         return instance.klabService().status();
     }
+
 
 }

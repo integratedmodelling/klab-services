@@ -3,6 +3,8 @@ package org.integratedmodelling.common.services.client.engine;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.scope.ClientContextScope;
+import org.integratedmodelling.common.services.client.scope.ClientSessionScope;
 import org.integratedmodelling.common.services.client.scope.ClientUserScope;
 import org.integratedmodelling.klab.api.authentication.ExternalAuthenticationCredentials;
 import org.integratedmodelling.klab.api.authentication.ResourcePrivileges;
@@ -16,7 +18,6 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
-import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.utils.Utils;
@@ -131,6 +132,48 @@ public class EngineClient implements Engine, PropertyHolder {
         }
         stopped.set(true);
         return true;
+    }
+
+    @Override
+    public SessionScope createSession(String sessionName) {
+        var ret = getUser().runSession(sessionName);
+        var id = registerSession(ret);
+        if (ret instanceof ClientSessionScope clientSessionScope) {
+            clientSessionScope.setId(id);
+        }
+        return ret;
+    }
+
+    @Override
+    public ContextScope createContext(SessionScope sessionScope, String contextName) {
+        var ret = sessionScope.createContext(contextName);
+        var id = registerContext(ret);
+        if (ret instanceof ClientContextScope clientSessionScope) {
+            clientSessionScope.setId(id);
+        }
+        return ret;
+    }
+
+    @Override
+    public String registerSession(SessionScope sessionScope) {
+        var sessionId = getUser().getService(RuntimeService.class).registerSession(sessionScope);
+        if (sessionId != null) {
+            // TODO advertise the session to all other services that will use it. Keep only the
+            //  services that accepted it.
+        }
+        return sessionId;
+    }
+
+    @Override
+    public String registerContext(ContextScope contextScope) {
+        var contextId = getUser().getService(RuntimeService.class).registerSession(contextScope);
+
+        if (contextId != null) {
+            // TODO advertise the session to all other services that will use it. Keep only the
+            // services that accept it.
+
+        }
+        return contextId;
     }
 
     @Override
