@@ -479,16 +479,17 @@ public enum LanguageAdapter {
 
         // we don't add source code here as each strategy has its own
         for (var strategy : definition.getStrategies()) {
-            ret.getStatements().add(adaptStrategy(strategy, projectName));
+            ret.getStatements().add(adaptStrategy(strategy, definition.getUrn(), projectName));
         }
         return ret;
     }
 
-    private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy, String projectName) {
+    private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy, String namespace, String projectName) {
 
         var ret = new KimObservationStrategyImpl();
 
         ret.setRank(strategy.getRank());
+        ret.setNamespace(namespace);
         ret.setUrn(strategy.getName());
         ret.setDescription(strategy.getDescription());
         ret.setOffsetInDocument(strategy.getCodeOffset());
