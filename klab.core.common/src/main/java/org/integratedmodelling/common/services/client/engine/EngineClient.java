@@ -135,26 +135,6 @@ public class EngineClient implements Engine, PropertyHolder {
     }
 
     @Override
-    public SessionScope createSession(String sessionName) {
-        var ret = getUser().runSession(sessionName);
-        var id = registerSession(ret);
-        if (ret instanceof ClientSessionScope clientSessionScope) {
-            clientSessionScope.setId(id);
-        }
-        return ret;
-    }
-
-    @Override
-    public ContextScope createContext(SessionScope sessionScope, String contextName) {
-        var ret = sessionScope.createContext(contextName);
-        var id = registerContext(ret);
-        if (ret instanceof ClientContextScope clientSessionScope) {
-            clientSessionScope.setId(id);
-        }
-        return ret;
-    }
-
-    @Override
     public String registerSession(SessionScope sessionScope) {
         var sessionId = getUser().getService(RuntimeService.class).registerSession(sessionScope);
         if (sessionId != null) {
@@ -335,7 +315,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     private UserScope createUserScope(Pair<Identity, List<ServiceReference>> authData) {
 
-        var ret = new ClientUserScope(authData.getFirst(),
+        var ret = new ClientUserScope(authData.getFirst(), this,
                 (serviceScope() instanceof ChannelImpl channel) ?
                 channel.listeners().toArray(new BiConsumer[]{}) : new BiConsumer[]{}) {
             @Override

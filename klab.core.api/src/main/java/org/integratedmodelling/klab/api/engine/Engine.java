@@ -57,29 +57,6 @@ public interface Engine extends KlabService {
     List<UserScope> getUsers();
 
     /**
-     * Create a session in the runtime service, advertising it to all the other services in the user scope
-     * that must be informed, and locking the runtime and any other needed services in the resulting scope.
-     *
-     * @param sessionName
-     * @return
-     */
-    SessionScope createSession(String sessionName);
-
-    /**
-     * Create an observation scope in the currently selected runtime service, advertising it to all the other
-     * services in the user scope that must be informed, and locking the runtime and any other needed services
-     * in the resulting scope.
-     * <p>
-     * TODO could take parameters to select the best runtime based on requests.
-     *  The choice of runtime is pretty much final after this is called.
-     *
-     * @param sessionScope
-     * @param contextName
-     * @return
-     */
-    ContextScope createContext(SessionScope sessionScope, String contextName);
-
-    /**
      * To facilitate implementations, we expose the boot and shutdown as explicitly called phases. Booting the
      * engine should start with authentication. Messages should be sent to listeners after authentication and
      * at each new service activation.
