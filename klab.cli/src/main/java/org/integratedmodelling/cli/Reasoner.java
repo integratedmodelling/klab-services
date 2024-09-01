@@ -132,9 +132,9 @@ public class Reasoner {
             out.println(CommandLine.Help.Ansi.AUTO.string("Observation strategies for @|bold " + observable.getDescriptionType().name().toLowerCase()
                     + "|@ of @|green " + observable.getUrn() + "|@:"));
             for (var strategy : reasoner.inferStrategies(observable, ctx)) {
-                out.println(Utils.Strings.indent(strategy.toString(),
-                        Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
-                                " ", 4)));
+//                out.println(Utils.Strings.indent(strategy.toString(),
+//                        Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
+//                                " ", 4)));
             }
         }
     }

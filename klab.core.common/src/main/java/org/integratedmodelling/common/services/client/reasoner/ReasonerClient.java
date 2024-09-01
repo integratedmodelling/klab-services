@@ -546,7 +546,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
+    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
         // TODO Auto-generated method stub
         return null;
     }

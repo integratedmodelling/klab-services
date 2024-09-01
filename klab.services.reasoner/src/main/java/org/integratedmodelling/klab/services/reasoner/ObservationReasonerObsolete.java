@@ -17,12 +17,12 @@ import java.util.*;
  * Specialized functions to infer observation strategies. Kept separately for clarity as this is a crucial
  * k.LAB component, although they are part of the reasoner services.
  */
-public class ObservationReasoner {
+public class ObservationReasonerObsolete {
 
     private Reasoner reasoner;
     private List<ObservationStrategy> observationStrategies = new ArrayList<>();
 
-    public ObservationReasoner(ReasonerService reasonerService) {
+    public ObservationReasonerObsolete(ReasonerService reasonerService) {
         this.reasoner = reasonerService;
     }
 
@@ -37,9 +37,9 @@ public class ObservationReasoner {
     }
 
 
-    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
+    public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
 
-        List<ObservationStrategy> ret = new ArrayList<>();
+        List<ObservationStrategyObsolete> ret = new ArrayList<>();
 
         /*
          * If observable is abstract due to abstract traits, strategy is to find a model
@@ -61,58 +61,58 @@ public class ObservationReasoner {
         /**
          * FIXME check if the "one strategy at a time" technique works in all situations
          */
-//        int rank = 0;
-//        if (generics.isEmpty() && !observable.isAbstract()) {
-//            ret.addAll(getDirectConcreteStrategies(observable, scope, rank++));
-//        }
-//
-//        // TODO deferred strategies for unary operators that have built-in dereifiers
-//        //  defer to the argument(s), add distance computation
-//        ObservationStrategyObsolete opDeferred = null;
-//        if (observable.is(SemanticType.DISTANCE)) {
-//            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
+        int rank = 0;
+        if (generics.isEmpty() && !observable.isAbstract()) {
+            ret.addAll(getDirectConcreteStrategies(observable, scope, rank++));
+        }
+
+        // TODO deferred strategies for unary operators that have built-in dereifiers
+        //  defer to the argument(s), add distance computation
+        ObservationStrategyObsolete opDeferred = null;
+        if (observable.is(SemanticType.DISTANCE)) {
+            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
+                    .withCost(rank++)
+                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
+                    .build();
+        } else if (observable.is(SemanticType.NUMEROSITY)) {
+            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
+                    .withCost(rank++)
+                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
+                    .build();
+        } else if (observable.is(SemanticType.PRESENCE)) {
+            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
+                    .withCost(rank++)
+                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
+                    .build();
+        } else if (observable.is(SemanticType.PERCENTAGE) || observable.is(SemanticType.PROPORTION)) {
+//            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
 //                    .withCost(rank++)
-//                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
+//                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
 //                    .build();
-//        } else if (observable.is(SemanticType.NUMEROSITY)) {
-//            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
+        } else if (observable.is(SemanticType.RATIO)) {
+//            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
 //                    .withCost(rank++)
-//                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
+//                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
 //                    .build();
-//        } else if (observable.is(SemanticType.PRESENCE)) {
-//            opDeferred = ObservationStrategyObsolete.builder(Observable.promote(reasoner.describedType(observable)))
-//                    .withCost(rank++)
-//                    .withOperation(ObservationStrategyObsolete.Operation.APPLY, (ServiceCall) null)
-//                    .build();
-//        } else if (observable.is(SemanticType.PERCENTAGE) || observable.is(SemanticType.PROPORTION)) {
-////            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
-////                    .withCost(rank++)
-////                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
-////                    .build();
-//        } else if (observable.is(SemanticType.RATIO)) {
-////            opDeferred = ObservationStrategy.builder(Observable.promote(reasoner.describedType(observable)))
-////                    .withCost(rank++)
-////                    .withOperation(ObservationStrategy.Operation.APPLY, (ServiceCall) null)
-////                    .build();
-//        }
-//
-//        if (opDeferred != null) {
-//            ret.add(ObservationStrategyObsolete.builder(observable).withStrategy(ObservationStrategyObsolete.Operation.RESOLVE, opDeferred).withCost(rank).build());
-//        }
-//
-//        if (!traits.isEmpty()) {
-//            ret.addAll(getTraitConcreteStrategies(observable, traits, scope, rank++));
-//        }
-//
-//        if (observable.is(SemanticType.QUALITY) && reasoner.directInherent(observable) != null) {
-//            ret.addAll(getInherencyStrategies(observable, scope, rank++));
-//        }
-//
-//        if (!observable.getValueOperators().isEmpty()) {
-//            Observable withoutOperators = observable.builder(scope).withoutValueOperators().build();
-//            return addValueOperatorStrategies(inferStrategies(withoutOperators, scope),
-//                    observable.getValueOperators(), rank);
-//        }
+        }
+
+        if (opDeferred != null) {
+            ret.add(ObservationStrategyObsolete.builder(observable).withStrategy(ObservationStrategyObsolete.Operation.RESOLVE, opDeferred).withCost(rank).build());
+        }
+
+        if (!traits.isEmpty()) {
+            ret.addAll(getTraitConcreteStrategies(observable, traits, scope, rank++));
+        }
+
+        if (observable.is(SemanticType.QUALITY) && reasoner.directInherent(observable) != null) {
+            ret.addAll(getInherencyStrategies(observable, scope, rank++));
+        }
+
+        if (!observable.getValueOperators().isEmpty()) {
+            Observable withoutOperators = observable.builder(scope).withoutValueOperators().build();
+            return addValueOperatorStrategies(inferStrategies(withoutOperators, scope),
+                    observable.getValueOperators(), rank);
+        }
 
 
 //        var traitStrategies = getTraitConcreteStrategies(ret, observable, traits);
@@ -257,47 +257,47 @@ public class ObservationReasoner {
         return ret;
     }
 
-//    /**
-//     * Direct strategies have rank 0
-//     */
-//    private Collection<? extends ObservationStrategy> getDirectConcreteStrategies(Observable observable,
-//                                                                                          Scope scope, int rank) {
-//
-//        List<ObservationStrategy> ret = new ArrayList<>();
-//
-//        /*
-//         * first course of action for concrete observables is always direct observation (finding a model and
-//         * contextualizing it)
-//         */
-//        var builder =
-//                ObservationStrategyObsolete.builder(observable)
-//                        .withCost(rank);
-//
-//        /**
-//         * If we are resolving a relationship, we need the targets of the relationship first of all
-//         */
-//        if (observable.is(SemanticType.RELATIONSHIP)) {
-//            for (var target : reasoner.relationshipTargets(observable)) {
-//                builder.withOperation(ObservationStrategyObsolete.Operation.OBSERVE, Observable.promote(target));
-//            }
-//        }
-//
-//        // main target
-//        builder.withOperation(ObservationStrategyObsolete.Operation.OBSERVE, observable);
-//
-//        // defer resolution of the instances
-//        if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
-//            builder.withStrategy(ObservationStrategyObsolete.Operation.RESOLVE,
-//                    ObservationStrategyObsolete.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT)
-//                                    .optional(true).build())
-//                            .withCost(rank)
-//                            .build());
-//        }
-//
-//        ret.add(builder.build());
-//
-//        return ret;
-//    }
+    /**
+     * Direct strategies have rank 0
+     */
+    private Collection<? extends ObservationStrategyObsolete> getDirectConcreteStrategies(Observable observable,
+                                                                                          Scope scope, int rank) {
+
+        List<ObservationStrategyObsolete> ret = new ArrayList<>();
+
+        /*
+         * first course of action for concrete observables is always direct observation (finding a model and
+         * contextualizing it)
+         */
+        var builder =
+                ObservationStrategyObsolete.builder(observable)
+                        .withCost(rank);
+
+        /**
+         * If we are resolving a relationship, we need the targets of the relationship first of all
+         */
+        if (observable.is(SemanticType.RELATIONSHIP)) {
+            for (var target : reasoner.relationshipTargets(observable)) {
+                builder.withOperation(ObservationStrategyObsolete.Operation.OBSERVE, Observable.promote(target));
+            }
+        }
+
+        // main target
+        builder.withOperation(ObservationStrategyObsolete.Operation.OBSERVE, observable);
+
+        // defer resolution of the instances
+        if (observable.getDescriptionType() == DescriptionType.INSTANTIATION) {
+            builder.withStrategy(ObservationStrategyObsolete.Operation.RESOLVE,
+                    ObservationStrategyObsolete.builder(observable.builder(scope).as(DescriptionType.ACKNOWLEDGEMENT)
+                                    .optional(true).build())
+                            .withCost(rank)
+                            .build());
+        }
+
+        ret.add(builder.build());
+
+        return ret;
+    }
 
 //    /*
 //     * these should be obtained from the classpath. Plug-ins may extend them.

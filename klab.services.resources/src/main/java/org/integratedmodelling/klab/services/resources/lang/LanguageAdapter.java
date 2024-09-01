@@ -12,6 +12,7 @@ import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
+import org.integratedmodelling.languages.ParsedObjectImpl;
 import org.integratedmodelling.languages.api.*;
 
 import java.util.*;
@@ -47,13 +48,20 @@ public enum LanguageAdapter {
         ret.setOffsetInDocument(observableSyntax.getCodeOffset());
         ret.setUrn(observableSyntax.encode());
         ret.setNamespace(namespace);
-        ret.setSemantics(adaptSemantics(observableSyntax.getSemantics(), namespace, projectName,
-                documentClass));
-        ret.setCodeName(ret.getSemantics().getType().contains(SemanticType.NOTHING)
-                        ? "invalid_observable"
-                        : observableSyntax.codeName());
-        ret.setReferenceName(observableSyntax.referenceName());
-        ret.setFormalName(observableSyntax.getStatedName());
+        if (observableSyntax.getSemantics().isPattern()) {
+            ret.setPattern(observableSyntax.getSemantics().encode());
+            ret.getPatternVariables().addAll(observableSyntax.getSemantics().getPatternVariables());
+            System.out.println("SUCA il pattern: " + ret.getPattern() + " " + ret.getPatternVariables());
+        } else {
+            ret.setSemantics(adaptSemantics(observableSyntax.getSemantics(), namespace, projectName,
+                    documentClass));
+            ret.setCodeName(ret.getSemantics().getType().contains(SemanticType.NOTHING)
+                            ? "invalid_observable"
+                            : observableSyntax.codeName());
+            ret.setReferenceName(observableSyntax.referenceName());
+            ret.setFormalName(observableSyntax.getStatedName());
+        }
+
         ret.setProjectName(projectName);
         ret.setDocumentClass(documentClass);
 

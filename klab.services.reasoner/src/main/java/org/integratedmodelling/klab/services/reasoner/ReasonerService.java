@@ -2566,7 +2566,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope) {
+    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
         return observationReasoner.inferStrategies(observable, scope);
     }
 

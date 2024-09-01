@@ -60,7 +60,7 @@ public class WorldviewValidationScope extends BasicObservableValidationScope {
             this.conceptTypes.put(coreConcept.encode(), new ConceptDescriptor(cname[0], cname[1],
                     declaration.getDeclaredType(), coreConcept.encode(),
                     "Core concept " + coreConcept.encode() + " for type " + declaration.getDeclaredType(),
-                    true));
+                    true, false));
         }
         return super.createConceptDescriptor(declaration);
     }
@@ -70,7 +70,7 @@ public class WorldviewValidationScope extends BasicObservableValidationScope {
         ConceptDescriptor descriptor = new ConceptDescriptor(namespace, statement.getUrn(),
                 getMainType(statement.getType()), statement.getMetadata().get(Metadata.DC_LABEL,
                 defaultLabel), statement.getMetadata().get(Metadata.DC_COMMENT, String.class),
-                statement.isAbstract());
+                statement.isAbstract(), false);
         this.conceptTypes.put(defaultLabel, descriptor);
         for (var child : statement.getChildren()) {
             loadConcepts(child, namespace);

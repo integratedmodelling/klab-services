@@ -373,6 +373,7 @@ public interface KlabService extends Service {
      * Returning true will initialize an actor system on boot and provide an agent to each new scope.
      *
      * @return
+     * @deprecated this should move to BaseService as it's only relevant there.
      */
     boolean scopesAreReactive();
 

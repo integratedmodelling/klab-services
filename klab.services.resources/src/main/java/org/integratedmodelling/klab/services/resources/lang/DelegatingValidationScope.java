@@ -26,7 +26,7 @@ public abstract class DelegatingValidationScope implements ReasoningValidationSc
                                                   descriptor.conceptName(),
                                                   WorldviewValidationScope.getMainType(descriptor.mainDeclaredType()),
                                                   descriptor.label(), descriptor.description(),
-                                                  descriptor.isAbstract()));
+                                                  descriptor.isAbstract(), false));
         }
         return descriptorMap.get(conceptUrn);
     }

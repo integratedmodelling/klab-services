@@ -760,7 +760,6 @@ public interface Reasoner extends KlabService {
      * @param observable
      * @param scope
      * @return all the observation strategies for this observable in this context, best first
-     * @deprecated to be substituted with declarative strategy compiler from worldview
      *
      * <p>Return all the possible strategies to observe the passed observable in this context, in order of
      * increasing cost/complexity. These will be resolved by the resolver in the order returned, stopping when
@@ -907,7 +906,7 @@ public interface Reasoner extends KlabService {
      *     if a model
      *     that only explicitly resolves <code>within</code> a specialized context is chosen.</dd>
      */
-    List<ObservationStrategyObsolete> inferStrategies(Observable observable, ContextScope scope);
+    List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope);
 
     /**
      * Entry point of the assisted semantic search behind interactive concept definition. If the request has a

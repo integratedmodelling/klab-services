@@ -223,7 +223,7 @@ public class ResolverService extends BaseService implements Resolver {
         }
 
         // see what the reasoner thinks of this observable
-        for (ObservationStrategyObsolete strategy :
+        for (ObservationStrategy strategy :
                 scope.getService(Reasoner.class).inferStrategies(observable,
                         scope)) {
             // this merges any useful strategy and returns the coverage
@@ -255,50 +255,51 @@ public class ResolverService extends BaseService implements Resolver {
      * @param parentModel
      * @return
      */
-    private ResolutionImpl resolveStrategy(ObservationStrategyObsolete strategy, Scale scale,
+    private ResolutionImpl resolveStrategy(ObservationStrategy strategy, Scale scale,
                                            ContextScope scope,
                                            ResolutionImpl parent,
                                            Model parentModel) {
 
         Coverage coverage = Coverage.create(scale, 0.0);
-        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope, parent);
-
-        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments> operation :
-                strategy) {
-            switch (operation.getFirst()) {
-                case OBSERVE -> {
-                    for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
-                        ResolutionImpl resolution = resolveModel(model, strategy.getOriginalObservable(),
-                                scale,
-                                scope.withResolutionNamespace(model.getNamespace()), parent);
-                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
-                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
-                            continue;
-                        }
-                        // merge the model at root level within the local resolution
-                        resolution.merge(model, coverage, strategy.getOriginalObservable(),
-                                ResolutionType.DIRECT);
-                        if (coverage.isRelevant()) {
-                            // merge the resolution with the parent resolution
-                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
-                            if (parent.getCoverage().isComplete()) {
-                                break;
-                            }
-                        }
-                    }
-                }
-                case RESOLVE -> {
-
-                }
-                case APPLY -> {
-                }
-                case CONCRETIZE -> {
-                    // TODO deprecated?
-                }
-            }
-        }
-
-        return ret;
+//        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope, parent);
+//
+//        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments> operation :
+//                strategy) {
+//            switch (operation.getFirst()) {
+//                case OBSERVE -> {
+//                    for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
+//                        ResolutionImpl resolution = resolveModel(model, strategy.getOriginalObservable(),
+//                                scale,
+//                                scope.withResolutionNamespace(model.getNamespace()), parent);
+//                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
+//                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+//                            continue;
+//                        }
+//                        // merge the model at root level within the local resolution
+//                        resolution.merge(model, coverage, strategy.getOriginalObservable(),
+//                                ResolutionType.DIRECT);
+//                        if (coverage.isRelevant()) {
+//                            // merge the resolution with the parent resolution
+//                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
+//                            if (parent.getCoverage().isComplete()) {
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//                case RESOLVE -> {
+//
+//                }
+//                case APPLY -> {
+//                }
+//                case CONCRETIZE -> {
+//                    // TODO deprecated?
+//                }
+//            }
+//        }
+//
+//        return ret;
+        return null;
     }
 
     /**

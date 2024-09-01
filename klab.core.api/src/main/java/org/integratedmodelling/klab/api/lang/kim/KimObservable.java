@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.lang.kim;
 
 //import org.integratedmodelling.klab.api.collections.Literal;
+
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.data.mediation.NumericRange;
 import org.integratedmodelling.klab.api.knowledge.Artifact;
@@ -153,4 +154,21 @@ public interface KimObservable extends KlabStatement, Resolvable {
      */
     Set<String> namespaces();
 
+    /**
+     * If this is not null, the observable is a macro pattern with variables that needs to be substituted by
+     * concepts before parsing into a concept. String substitution (with the necessary parentheses) of all the
+     * variables listed in {@link #getPatternVariables()}, which are contained in the pattern in the form
+     * <code>$:variable</code>, is needed before sending to the resources services to obtain the actual
+     * concept.
+     *
+     * @return
+     */
+    String getPattern();
+
+    /**
+     * This will return a non-empty collection only if {@link #getPattern()} returns a valid string.
+     *
+     * @return
+     */
+    Collection<String> getPatternVariables();
 }
