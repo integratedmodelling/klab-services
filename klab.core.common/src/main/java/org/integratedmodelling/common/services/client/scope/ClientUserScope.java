@@ -3,6 +3,7 @@ package org.integratedmodelling.common.services.client.scope;
 import org.integratedmodelling.common.authentication.scope.AbstractReactiveScopeImpl;
 import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
+import org.integratedmodelling.common.services.client.engine.EngineClient;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
@@ -36,6 +37,7 @@ import java.util.function.BiConsumer;
  */
 public abstract class ClientUserScope extends AbstractReactiveScopeImpl implements UserScope {
 
+    protected final EngineClient engine;
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
     private Identity user;
@@ -54,11 +56,12 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    public ClientUserScope(Identity user, BiConsumer<Scope, Message>... listeners) {
+    public ClientUserScope(Identity user, EngineClient engine, BiConsumer<Scope, Message>... listeners) {
         super(user, false, true);
         this.user = user;
         this.data = Parameters.create();
         this.id = user.getId();
+        this.engine = engine;
         if (listeners != null) {
             for (var listener : listeners) {
                 this.listeners.add(listener);
@@ -112,7 +115,7 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
          * Registration with the runtime succeeded. Return a peer scope locked to the
          * runtime service that hosts it.
          */
-        return new ClientSessionScope(this, sessionName, runtime) {
+        var ret =new ClientSessionScope(this, sessionName, runtime) {
 
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -130,6 +133,14 @@ public abstract class ClientUserScope extends AbstractReactiveScopeImpl implemen
                 return ClientUserScope.this.getServices(serviceClass);
             }
         };
+
+        var id = engine.registerSession(ret);
+        if (id != null) {
+            ret.setId(id);
+        }
+
+        return ret;
+
     }
 
     @Override

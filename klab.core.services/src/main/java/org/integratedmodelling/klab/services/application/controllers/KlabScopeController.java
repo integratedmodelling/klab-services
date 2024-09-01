@@ -39,15 +39,21 @@ public class KlabScopeController {
     /**
      * Create a session with the passed name. If a broker is available, also setup messaging and any messaging
      * queues requested with the call, defaulting as per implementation.
+     * <p>
+     * If an ID is passed, the scope will mirror a remote one and the return value should be the same ID in
+     * case of success.
      *
      * @param name
+     * @param sessionId
      * @param principal
      * @param response
      * @param queuesHeader
      * @return
      */
     @GetMapping(ServicesAPI.CREATE_SESSION)
-    public String createSession(@PathVariable(name = "name") String name, Principal principal,
+    public String createSession(@PathVariable(name = "name") String name,
+                                @PathVariable(name = "id", required = false) String sessionId,
+                                Principal principal,
                                 HttpServletResponse response,
                                 @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required =
                                         false) Collection<Message.Queue> queuesHeader) {
@@ -91,13 +97,18 @@ public class KlabScopeController {
      * The call contains the URLs of the resolver and resource services, and must ensure they can be used with
      * this runtime, creating the clients within the context scope. Any local service URL passed to a remote
      * runtime should cause an error.
+     * <p>
+     * If an ID is passed, the scope will mirror a remote one and the return value should be the same ID in
+     * case of success.
      *
      * @param request
      * @param principal
      * @return the ID of the new context scope
      */
     @PostMapping(ServicesAPI.CREATE_CONTEXT)
-    public String createContext(@RequestBody ContextRequest request, Principal principal,
+    public String createContext(@RequestBody ContextRequest request,
+                                @PathVariable(name = "id", required = false) String contextId,
+                                Principal principal,
                                 @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required =
                                         false) Collection<Message.Queue> queuesHeader,
                                 HttpServletResponse response) {

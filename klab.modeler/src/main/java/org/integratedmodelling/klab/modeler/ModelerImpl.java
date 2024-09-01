@@ -206,15 +206,15 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          */
 
         if (currentSession == null) {
-            currentSession = engine().createSession("Default session");
+            currentSession = user().runSession("Default session");
         }
 
         if (currentContext == null && currentSession != null) {
-            currentContext = engine().createContext(currentSession, "Default context");
+            currentContext = currentSession.createContext( "Default context");
         }
 
         if (currentContext == null) {
-            currentSession.error("cannot make observation");
+            user().error("cannot make observation");
             return;
         }
 

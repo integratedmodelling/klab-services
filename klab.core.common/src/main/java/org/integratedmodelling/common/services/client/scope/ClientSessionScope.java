@@ -19,7 +19,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
 
     public ClientSessionScope(ClientUserScope parent, String sessionName, RuntimeService runtimeService) {
         // FIXME use a copy constructor that inherits the environment from the parent
-        super(parent.getIdentity());
+        super(parent.getIdentity(), parent.engine);
         this.runtimeService = runtimeService;
         this.name = sessionName;
         this.parentScope = parent;
@@ -42,7 +42,7 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
          * Registration with the runtime succeeded. Return a peer scope locked to the
          * runtime service that hosts it.
          */
-        return new ClientContextScope(this, contextName, runtime) {
+        var ret  =new ClientContextScope(this, contextName, runtime) {
 
             @Override
             public <T extends KlabService> T getService(Class<T> serviceClass) {
@@ -60,6 +60,13 @@ public abstract class ClientSessionScope extends ClientUserScope implements Sess
                 return ClientSessionScope.this.getServices(serviceClass);
             }
         };
+
+        var id = engine.registerContext(ret);
+        if (id != null) {
+            ret.setId(id);
+        }
+
+        return ret;
 
     }
 
