@@ -102,6 +102,7 @@ public class KlabScopeController {
      * case of success.
      *
      * @param request
+     * @param contextId if passed, the context mirrors an existing one in the calling service
      * @param principal
      * @return the ID of the new context scope
      */

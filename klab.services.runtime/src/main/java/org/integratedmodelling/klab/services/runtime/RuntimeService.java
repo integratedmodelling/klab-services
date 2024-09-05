@@ -14,6 +14,9 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
@@ -86,7 +89,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     @Override
     public void initializeService() {
-        
+
         Logging.INSTANCE.setSystemIdentifier("Resources service: ");
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
@@ -153,11 +156,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         ret.setServiceId(configuration.getServiceId());
         ret.setServiceName("Runtime");
         ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
-//        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
-//                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
-//                                                Message.Queue.Warnings) :
-//                                        EnumSet.noneOf(Message.Queue.class));
-        ret.setBrokerURI(embeddedBroker != null? embeddedBroker.getURI() : configuration.getBrokerURI());
+        //        ret.setAvailableMessagingQueues(Utils.URLs.isLocalHost(getUrl()) ?
+        //                                        EnumSet.of(Message.Queue.Info, Message.Queue.Errors,
+        //                                                Message.Queue.Warnings) :
+        //                                        EnumSet.noneOf(Message.Queue.class));
+        ret.setBrokerURI(embeddedBroker != null ? embeddedBroker.getURI() : configuration.getBrokerURI());
 
         return ret;
     }
@@ -193,6 +196,16 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
             serviceSessionScope.setId(Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+
+            /*
+            TODO register the session with all the necessary services - resolver and reasoner, the latter
+             can be
+            substituted by our connected reasoner.
+             */
+            for (var service : serviceSessionScope.getServices(Resolver.class)) {
+//                service.registerSession()
+            }
+
             return serviceSessionScope.getId();
         }
         throw new KlabIllegalArgumentException("unexpected scope class");
@@ -205,6 +218,13 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             serviceContextScope.setId(serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
             serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getGraphDatabase()));
+
+            /*
+            TODO register the context with all the necessary services - resolver and reasoner, the latter
+             can be
+            substituted by our connected reasoner.
+             */
+
             return serviceContextScope.getId();
 
         }
