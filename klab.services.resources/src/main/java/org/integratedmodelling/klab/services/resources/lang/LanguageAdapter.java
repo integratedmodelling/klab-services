@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.resources.lang;
 
 import org.integratedmodelling.common.lang.QuantityImpl;
+import org.integratedmodelling.common.lang.ServiceCallImpl;
 import org.integratedmodelling.common.lang.kim.*;
 import org.integratedmodelling.klab.api.collections.Identifier;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -14,7 +15,6 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
-import org.integratedmodelling.languages.ParsedObjectImpl;
 import org.integratedmodelling.languages.api.*;
 
 import java.util.*;
@@ -53,7 +53,6 @@ public enum LanguageAdapter {
         if (observableSyntax.getSemantics().isPattern()) {
             ret.setPattern(observableSyntax.getSemantics().encode());
             ret.getPatternVariables().addAll(observableSyntax.getSemantics().getPatternVariables());
-            System.out.println("SUCA il pattern: " + ret.getPattern() + " " + ret.getPatternVariables());
         } else {
             ret.setSemantics(adaptSemantics(observableSyntax.getSemantics(), namespace, projectName,
                     documentClass));
@@ -496,8 +495,24 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    private ServiceCall parseServiceCall(FunctionCallSyntax functionCallSyntax) {
-        return null;
+    private ServiceCall adaptServiceCall(FunctionCallSyntax functionCallSyntax, String namespace,
+                                         String projectName, KlabAsset.KnowledgeClass documentClass) {
+
+        ServiceCallImpl ret = new ServiceCallImpl();
+        ret.setLength(functionCallSyntax.getCodeLength());
+        ret.setOffsetInDocument(functionCallSyntax.getCodeOffset());
+        ret.setNamespace(namespace);
+        ret.setProjectName(projectName);
+        ret.setUrn(functionCallSyntax.getName());
+
+        for (String key : functionCallSyntax.getArguments().keySet()) {
+            ret.getParameters().put(key, adaptValue(functionCallSyntax.getArguments().get(key), namespace,
+                    projectName, documentClass));
+        }
+
+        // TODO unnamed parameters, annotations and all that
+
+        return ret;
     }
 
     private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy, String namespace,
@@ -532,7 +547,8 @@ public enum LanguageAdapter {
                 }
 
                 for (var condition : match.getConditions()) {
-                    f.getFunctions().add(parseServiceCall(condition));
+                    f.getFunctions().add(adaptServiceCall(condition, namespace, projectName,
+                            KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT));
                 }
 
                 f.setConnectorToPrevious(match.getConnectorToPrevious() == SemanticSyntax.Quantifier.ALL ?

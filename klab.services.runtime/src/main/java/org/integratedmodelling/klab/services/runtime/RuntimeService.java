@@ -199,8 +199,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
             /*
             TODO register the session with all the necessary services - resolver and reasoner, the latter
-             can be
-            substituted by our connected reasoner.
+             can be substituted by our connected reasoner.
              */
             for (var service : serviceSessionScope.getServices(Resolver.class)) {
 //                service.registerSession()
