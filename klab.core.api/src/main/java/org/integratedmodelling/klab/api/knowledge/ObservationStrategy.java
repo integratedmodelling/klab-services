@@ -1,38 +1,82 @@
 package org.integratedmodelling.klab.api.knowledge;
 
+import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 
+import java.util.List;
+
 /**
- * Objects of this class are read from specifications in the worldview, collected, matched and sorted to
- * address observation strategy queries from resolvers. The observation strategy is just a container for a
- * computational strategy and does not contain the filters or variables used to assess the matching. It is
- * serializable and is built on demand based on the
- * {@link org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy} ingested by the reasoner, then
- * sent to the resolver after with the observables relevant to the actual resolution in lieu of the patterns
- * specified in the language.
+ * The operational side of the observation strategy, coming from the reasoner after the matching to observable
+ * and context has been done. Compared to the syntactic form
+ * {@link org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy}, this only needs to expose the
+ * operations and the identifiers/documentation for provenance; cost and other informations are only used for
+ * reporting, as the observation reasoner returns the matching strategies in order of rank and cost.
  *
  * @author Ferd
  */
 public interface ObservationStrategy extends Knowledge {
 
-
-
-    int rank();
-
     /**
-     * @param observable
-     * @param scope
-     * @return
+     * The definition of one or more operations that compose the strategy. Different operations will leave
+     * different "states" on the contextualization stack for the next operation to use; the last one produces
+     * the final observation.
      */
-    boolean matches(Observable observable, ContextScope scope);
+    interface Operation {
 
+        /**
+         * The type of operation to perform - either observation of the observable (looking for a model),
+         * recursive resolution of a different observable, or application of a contextualizable.
+         *
+         * @return
+         */
+        KimObservationStrategy.Operation.Type getType();
+
+        /**
+         * The observable for OBSERVE and RESOLVE types, computed from the patterns in the syntactic form
+         * applied to observable and scope.
+         *
+         * @return
+         */
+        Observable getObservable();
+
+        /**
+         * The contextualizable for APPLY types, of which the resolver will determine accessibility.
+         *
+         * @return
+         */
+        Contextualizable getContextualizable();
+    }
 
     /**
-     * An integer from 0 to 100, used to rank strategies <em>in context</em> among groups of strategies with
-     * the same {@link #rank()}. Only called if {@link #matches(Observable, ContextScope)} returns true.
+     * The operations involved in the actual execution of the strategy. The resolver establishes if these are
+     * applicable to the context..
      *
      * @return
      */
-    int getCost(Observable observable, ContextScope scope);
+    List<Operation> getOperations();
+
+    /**
+     * The compiled Markdown/AsciiDoc documentation relative to the observable being resolved by this
+     * strategy, ready for inclusion in documentation and provenance. This is obtained in each returned
+     * strategy by computing the template provided as documentation for the strategy in its source form.
+     *
+     * @return
+     */
+    String getDocumentation();
+
+    /**
+     * Exposed for documentation and use by the reasoner.
+     *
+     * @return
+     */
+    String getNamespace();
+
+    /**
+     * Rank is only used for informational purposes.
+     *
+     * @return
+     */
+    int getRank();
 
 }

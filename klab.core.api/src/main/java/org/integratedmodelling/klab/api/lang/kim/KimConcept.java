@@ -3,6 +3,8 @@ package org.integratedmodelling.klab.api.lang.kim;
 import org.integratedmodelling.klab.api.knowledge.SemanticRole;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.UnarySemanticOperator;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -161,6 +163,10 @@ public interface KimConcept extends KlabStatement {
      * @return
      */
     KimConcept getParent();
+
+    boolean isPattern();
+
+    Collection<String> getPatternVariables();
 
     /**
      * Return any temporal inherency for this occurrent ('during each').

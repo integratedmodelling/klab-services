@@ -2,6 +2,7 @@ package org.integratedmodelling.klab.api.lang.kim;
 
 //import org.integratedmodelling.klab.api.collections.Literal;
 
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 
 import java.io.Serializable;
@@ -61,9 +62,11 @@ public interface KimObservationStrategy extends KlabStatement {
 
         boolean isNegated();
 
-        KimObservable getMatch();
+        KimConcept getMatch();
 
-        ServiceCall getFunction();
+        List<ServiceCall> getFunctions();
+
+        LogicalConnector getConnectorToPrevious();
 
         Object getLiteral();
     }
@@ -128,11 +131,13 @@ public interface KimObservationStrategy extends KlabStatement {
     int getRank();
 
     /**
-     * Filters that determine the applicability of the strategy
+     * Filters that determine the applicability of the strategy. Each list is processed independently using
+     * the connectors in the chain (from the previous filter) to check if the filters in the list are in AND
+     * or OR (they must be the same within one list). Each list of filter is in OR with the others.
      *
      * @return
      */
-    List<Filter> getFilters();
+    List<List<Filter>> getFilters();
 
     /**
      * Using filters also to produce the values for the <code>let</code> expression, which could be literals,
@@ -141,7 +146,7 @@ public interface KimObservationStrategy extends KlabStatement {
      *
      * @return
      */
-    Map<KimLiteral, Filter> getMacroVariables();
+    Map<String, Filter> getMacroVariables();
 
     /**
      * No strategy makes sense unless it has 1+ operations associated.

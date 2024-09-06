@@ -29,7 +29,6 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -1318,7 +1317,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.owl.flushReasoner();
         for (var strategyDocument : worldview.getObservationStrategies()) {
             for (var strategy : strategyDocument.getStatements()) {
-                registerStrategy(defineStrategy(strategy, scope));
+                observationReasoner.registerStrategy(strategy);
             }
         }
 
@@ -1394,8 +1393,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                         resourceService.resolveObservationStrategyDocument(resource.getResourceUrn(),
                                 parsingScope);
                 removeObservationStrategiesDocument(observationStrategyDocument.getUrn());
+                observationReasoner.releaseNamespace(observationStrategyDocument.getUrn());
                 for (var strategy : observationStrategyDocument.getStatements()) {
-                    registerStrategy(defineStrategy(strategy, parsingScope));
+                    observationReasoner.registerStrategy(strategy);
                 }
                 resource.getNotifications().addAll(notifications);
 
@@ -1414,19 +1414,9 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return changes;
     }
 
-    private void registerStrategy(ObservationStrategy observationStrategy) {
-        // TODO index and record the strategy
-    }
-
     private void removeObservationStrategiesDocument(String urn) {
         // TODO remove all strategies that come from the document with the passed URN
     }
-
-    private ObservationStrategy defineStrategy(KimObservationStrategy strategy, Scope scope) {
-
-        return null;
-    }
-
 
     public void setLocalName(String localName) {
         this.localName = localName;
@@ -2567,7 +2557,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
-        return observationReasoner.inferStrategies(observable, scope);
+        return observationReasoner.matching(observable, scope);
     }
 
     //    @Override

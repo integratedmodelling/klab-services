@@ -41,6 +41,8 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
     private String codeName;
     private KimConcept temporalInherent;
     private boolean collective;
+    private boolean pattern;
+    private Set<String> patternVariables = new HashSet<>();
 
     public Set<SemanticType> getArgumentType() {
         return argumentType;
@@ -683,6 +685,24 @@ public class KimConceptImpl extends KimStatementImpl implements KimConcept {
         ret.setNamespace("klab");
         ret.setType(EnumSet.of(SemanticType.NOTHING));
         return ret;
+    }
+
+    @Override
+    public boolean isPattern() {
+        return pattern;
+    }
+
+    public void setPattern(boolean pattern) {
+        this.pattern = pattern;
+    }
+
+    @Override
+    public Set<String> getPatternVariables() {
+        return patternVariables;
+    }
+
+    public void setPatternVariables(Set<String> patternVariables) {
+        this.patternVariables = patternVariables;
     }
 
     @Override

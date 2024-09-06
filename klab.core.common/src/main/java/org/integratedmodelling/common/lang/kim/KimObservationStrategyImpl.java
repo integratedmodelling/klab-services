@@ -3,7 +3,9 @@ package org.integratedmodelling.common.lang.kim;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Knowledge;
 import org.integratedmodelling.klab.api.lang.Annotation;
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
+import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimLiteral;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
@@ -26,8 +28,8 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     private String namespace;
     private String projectName;
     private List<Operation> operations = new ArrayList<>();
-    private Map<KimLiteral, Filter> macroVariables = new LinkedHashMap<>();
-    private List<Filter> filters = new ArrayList<>();
+    private Map<String, Filter> macroVariables = new LinkedHashMap<>();
+    private List<List<Filter>> filters = new ArrayList<>();
     private int rank;
     private KnowledgeClass documentClass = KnowledgeClass.OBSERVATION_STRATEGY;
 
@@ -94,12 +96,12 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     }
 
     @Override
-    public List<Filter> getFilters() {
+    public List<List<Filter>> getFilters() {
         return this.filters;
     }
 
     @Override
-    public Map<KimLiteral, Filter> getMacroVariables() {
+    public Map<String, Filter> getMacroVariables() {
         return this.macroVariables;
     }
 
@@ -154,11 +156,11 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         this.operations = operations;
     }
 
-    public void setMacroVariables(Map<KimLiteral, Filter> macroVariables) {
+    public void setMacroVariables(Map<String, Filter> macroVariables) {
         this.macroVariables = macroVariables;
     }
 
-    public void setFilters(List<Filter> filters) {
+    public void setFilters(List<List<Filter>> filters) {
         this.filters = filters;
     }
 
@@ -196,9 +198,10 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     public static class FilterImpl implements Filter {
 
         private boolean negated;
-        private KimObservable match;
-        private ServiceCall function;
+        private KimConcept match;
+        private List<ServiceCall> functions = new ArrayList<>();
         private Object literal;
+        private LogicalConnector connectorToPrevious;
 
         @Override
         public boolean isNegated() {
@@ -206,13 +209,8 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
         }
 
         @Override
-        public KimObservable getMatch() {
+        public KimConcept getMatch() {
             return this.match;
-        }
-
-        @Override
-        public ServiceCall getFunction() {
-            return this.function;
         }
 
         @Override
@@ -220,20 +218,33 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
             return this.literal;
         }
 
+        @Override
+        public List<ServiceCall> getFunctions() {
+            return functions;
+        }
+
+        public void setFunctions(List<ServiceCall> functions) {
+            this.functions = functions;
+        }
+
         public void setNegated(boolean negated) {
             this.negated = negated;
         }
 
-        public void setMatch(KimObservable match) {
+        public void setMatch(KimConcept match) {
             this.match = match;
-        }
-
-        public void setFunction(ServiceCall function) {
-            this.function = function;
         }
 
         public void setLiteral(Object literal) {
             this.literal = literal;
+        }
+
+        public LogicalConnector getConnectorToPrevious() {
+            return connectorToPrevious;
+        }
+
+        public void setConnectorToPrevious(LogicalConnector connectorToPrevious) {
+            this.connectorToPrevious = connectorToPrevious;
         }
     }
 

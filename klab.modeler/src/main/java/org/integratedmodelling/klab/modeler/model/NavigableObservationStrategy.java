@@ -23,12 +23,12 @@ public class NavigableObservationStrategy extends NavigableKlabStatement<KimObse
     }
 
     @Override
-    public List<Filter> getFilters() {
+    public List<List<Filter>> getFilters() {
         return delegate.getFilters();
     }
 
     @Override
-    public Map<KimLiteral, Filter> getMacroVariables() {
+    public Map<String, Filter> getMacroVariables() {
         return delegate.getMacroVariables();
     }
 

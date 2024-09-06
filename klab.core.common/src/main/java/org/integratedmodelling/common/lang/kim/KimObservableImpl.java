@@ -303,4 +303,5 @@ public class KimObservableImpl extends KimStatementImpl implements KimObservable
     public void setPatternVariables(Collection<String> patternVariables) {
         this.patternVariables = patternVariables;
     }
+
 }

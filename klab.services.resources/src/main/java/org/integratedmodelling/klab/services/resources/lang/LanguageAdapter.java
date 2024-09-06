@@ -9,6 +9,8 @@ import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
@@ -86,6 +88,8 @@ public enum LanguageAdapter {
         ret.setNamespace(namespace);
         ret.setProjectName(projectName);
         ret.setDocumentClass(documentClass);
+        ret.setPattern(semantics.isPattern());
+        ret.getPatternVariables().addAll(semantics.getPatternVariables());
 
         if (semantics.isLeafDeclaration()) {
             ret.setName(semantics.encode());
@@ -188,7 +192,7 @@ public enum LanguageAdapter {
 
     private KlabStatement adaptStatement(NamespaceStatementSyntax statement, KimNamespace namespace) {
         return switch (statement) {
-//            case InstanceSyntax instance -> adaptInstance(instance, namespace);
+            //            case InstanceSyntax instance -> adaptInstance(instance, namespace);
             case ModelSyntax model -> adaptModel(model, namespace);
             case DefineSyntax define -> adaptDefine(define, namespace);
             default -> null;
@@ -325,10 +329,10 @@ public enum LanguageAdapter {
     private Contextualizable adaptContextualizable(ParsedObject contextualizable, KimNamespace namespace) {
         return null;
     }
-//
-//    private KlabStatement adaptInstance(InstanceSyntax instance, KimNamespace namespace) {
-//        return null;
-//    }
+    //
+    //    private KlabStatement adaptInstance(InstanceSyntax instance, KimNamespace namespace) {
+    //        return null;
+    //    }
 
     private KimConcept adaptSemantics(SemanticSyntax.ConceptData observable,
                                       KlabAsset.KnowledgeClass documentClass) {
@@ -492,7 +496,12 @@ public enum LanguageAdapter {
         return ret;
     }
 
-    private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy, String namespace, String projectName) {
+    private ServiceCall parseServiceCall(FunctionCallSyntax functionCallSyntax) {
+        return null;
+    }
+
+    private KimObservationStrategy adaptStrategy(ObservationStrategySyntax strategy, String namespace,
+                                                 String projectName) {
 
         var ret = new KimObservationStrategyImpl();
 
@@ -507,15 +516,38 @@ public enum LanguageAdapter {
         ret.setProjectName(projectName);
         ret.setDocumentClass(KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT);
 
+        // these are multiple 'for' statements
         for (var filter : strategy.getFilters()) {
-            var f = new KimObservationStrategyImpl.FilterImpl();
-            // TODO
-            ret.getFilters().add(f);
+
+            List<KimObservationStrategy.Filter> filters = new ArrayList<>();
+
+            // and these are comma-separated filters in a 'for'
+            for (var match : filter.getMatch()) {
+
+                var f = new KimObservationStrategyImpl.FilterImpl();            // TODO
+                f.setNegated(match.isNegated());
+                if (match.getObservable() != null /* which it should */) {
+                    f.setMatch(adaptSemantics(match.getObservable(), namespace, projectName,
+                            KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
+                }
+
+                for (var condition : match.getConditions()) {
+                    f.getFunctions().add(parseServiceCall(condition));
+                }
+
+                f.setConnectorToPrevious(match.getConnectorToPrevious() == SemanticSyntax.Quantifier.ALL ?
+                                         LogicalConnector.INTERSECTION : LogicalConnector.UNION);
+
+                filters.add(f);
+            }
+
+            ret.getFilters().add(filters);
+
         }
         for (var operation : strategy.getOperations()) {
             var o = new KimObservationStrategyImpl.OperationImpl();
             if (operation.getType() != null) {
-
+                o.setType(KimObservationStrategy.Operation.Type.valueOf(operation.getType().name()));
             }
             if (operation.getObservable() != null) {
                 o.setObservable(adaptObservable(operation.getObservable(), strategy.getName(), projectName,

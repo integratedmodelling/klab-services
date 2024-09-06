@@ -31,10 +31,6 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
 	protected ParametersImpl<String> parameters = new ParametersImpl<>();
 	protected Set<String> interactiveParameterIds = new HashSet<>();
 
-	public List<Notification> validateUsage(Set<Artifact.Type> expectedType) {
-		return null;// Kim.INSTANCE.validateFunctionCall(this, expectedType);
-	}
-
 	public ServiceCallImpl() {
 	}
 
