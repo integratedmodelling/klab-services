@@ -22,13 +22,7 @@ public class ObservationReasoner {
     private static Set<String> defaultVariables = Set.of("this", "context");
 
     private Reasoner reasoner;
-    private SortedSet<KimObservationStrategy> observationStrategies =
-            new ConcurrentSkipListSet<>(new Comparator<KimObservationStrategy>() {
-                @Override
-                public int compare(KimObservationStrategy o1, KimObservationStrategy o2) {
-                    return Integer.compare(o1.getRank(), o2.getRank());
-                }
-            });
+    private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
 
     private static class ApplicabileFilter {
 
@@ -171,11 +165,8 @@ public class ObservationReasoner {
      * @param strategyNamespace
      */
     public void releaseNamespace(String strategyNamespace) {
-        for (var strategy : observationStrategies) {
-            if (strategy.getNamespace().equals(strategyNamespace)) {
-                observationStrategies.remove(strategy);
-            }
-        }
+        observationStrategies =
+                observationStrategies.stream().filter(o -> !o.getNamespace().equals(strategyNamespace)).toList();
     }
 
     /**
@@ -184,6 +175,15 @@ public class ObservationReasoner {
     public void registerStrategy(KimObservationStrategy observationStrategy) {
         observationStrategies.add(observationStrategy);
         quickFilters.put(observationStrategy.getUrn(), computeInfo(observationStrategy));
+    }
+
+    public void initializeStrategies() {
+        observationStrategies.sort(new Comparator<KimObservationStrategy>() {
+            @Override
+            public int compare(KimObservationStrategy o1, KimObservationStrategy o2) {
+                return Integer.compare(o1.getRank(), o2.getRank());
+            }
+        });
     }
 
     private ApplicabileFilter computeInfo(KimObservationStrategy observationStrategy) {

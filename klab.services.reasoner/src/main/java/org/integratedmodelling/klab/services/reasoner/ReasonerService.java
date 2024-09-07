@@ -1320,6 +1320,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 observationReasoner.registerStrategy(strategy);
             }
         }
+        observationReasoner.initializeStrategies();
 
         // assess consistent status
         this.consistent.set(Utils.Notifications.hasErrors(ret));
@@ -1393,10 +1394,13 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                         resourceService.resolveObservationStrategyDocument(resource.getResourceUrn(),
                                 parsingScope);
                 removeObservationStrategiesDocument(observationStrategyDocument.getUrn());
+
                 observationReasoner.releaseNamespace(observationStrategyDocument.getUrn());
                 for (var strategy : observationStrategyDocument.getStatements()) {
                     observationReasoner.registerStrategy(strategy);
                 }
+                observationReasoner.initializeStrategies();
+
                 resource.getNotifications().addAll(notifications);
             }
         } catch (Throwable t) {
