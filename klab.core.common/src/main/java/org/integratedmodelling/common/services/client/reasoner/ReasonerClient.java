@@ -101,6 +101,11 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
+    public Observable declareObservable(KimObservable observableDeclaration, Map<String, Object> patternVariables) {
+        return null;
+    }
+
+    @Override
     public boolean subsumes(Semantics conceptImpl, Semantics other) {
         return client.post(ServicesAPI.REASONER.SUBSUMES, List.of(conceptImpl.asConcept(),
                 other.asConcept()), Boolean.class);

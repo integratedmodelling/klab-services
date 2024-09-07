@@ -1398,7 +1398,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                     observationReasoner.registerStrategy(strategy);
                 }
                 resource.getNotifications().addAll(notifications);
-
             }
         } catch (Throwable t) {
             inconsistent = true;
@@ -1493,6 +1492,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public Observable declareObservable(KimObservable observableDeclaration) {
         return declare(observableDeclaration,
                 this.owl.requireOntology(observableDeclaration.getSemantics().getNamespace()), scope);
+    }
+
+    @Override
+    public Observable declareObservable(KimObservable observableDeclaration, Map<String, Object> patternVariables) {
+        if (observableDeclaration.getPatternVariables().isEmpty()) {
+            return declareObservable(observableDeclaration);
+        }
+        // TODO
+        return null;
     }
 
     @Override

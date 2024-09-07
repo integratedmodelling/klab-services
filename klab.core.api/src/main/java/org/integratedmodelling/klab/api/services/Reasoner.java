@@ -102,6 +102,17 @@ public interface Reasoner extends KlabService {
     Observable declareObservable(KimObservable observableDeclaration);
 
     /**
+     * Declare an observable from a pattern using any pattern variables. If the observable is not a
+     * pattern, ignore the variables and return {@link #declareObservable(KimObservable)}. If some of the
+     * pattern variables are undefined in the passed array, return null.
+     *
+     * @param observableDeclaration
+     * @param patternVariables
+     * @return
+     */
+    Observable declareObservable(KimObservable observableDeclaration, Map<String, Object> patternVariables);
+
+    /**
      * Basic operation for subsumption between concepts.
      *
      * @param conceptImpl

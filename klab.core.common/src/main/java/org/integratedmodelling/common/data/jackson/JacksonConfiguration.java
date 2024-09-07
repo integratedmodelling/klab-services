@@ -256,7 +256,8 @@ public class JacksonConfiguration {
                                       Model.class, ServiceCall.class, Observation.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class, Actuator.class,
-                                      Notification.LexicalContext.class}) {
+                                      Notification.LexicalContext.class, KimObservationStrategy.Operation.class,
+                                      KimObservationStrategy.Filter.class}) {
             module.addSerializer(cls, new PolymorphicSerializer<>());
             module.addDeserializer(cls, new PolymorphicDeserializer<>());
         }

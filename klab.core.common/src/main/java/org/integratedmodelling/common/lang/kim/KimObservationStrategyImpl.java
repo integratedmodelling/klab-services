@@ -33,7 +33,8 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     private int rank;
     private KnowledgeClass documentClass = KnowledgeClass.OBSERVATION_STRATEGY;
 
-    public KimObservationStrategyImpl() {}
+    public KimObservationStrategyImpl() {
+    }
 
     @Override
     public Metadata getMetadata() {
@@ -64,11 +65,6 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     public boolean isDeprecated() {
         return this.deprecated;
     }
-
-//    @Override
-//    public String sourceCode() {
-//        return sourceCode;
-//    }
 
     @Override
     public Collection<Notification> getNotifications() {
@@ -117,6 +113,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     public void setAnnotations(List<Annotation> annotations) {
         this.annotations = annotations;
     }
+
     public void setLength(int length) {
         this.length = length;
     }
@@ -152,6 +149,7 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
+
     public void setOperations(List<Operation> operations) {
         this.operations = operations;
     }
@@ -193,6 +191,19 @@ public class KimObservationStrategyImpl implements KimObservationStrategy {
 
     public void setDocumentClass(KnowledgeClass documentClass) {
         this.documentClass = documentClass;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof KimObservationStrategy kimObservationStrategy)) return false;
+        return Objects.equals(urn, kimObservationStrategy.getUrn()) && Objects.equals(namespace,
+                kimObservationStrategy.getNamespace());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(urn, namespace);
     }
 
     public static class FilterImpl implements Filter {

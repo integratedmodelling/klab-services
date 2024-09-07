@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.services.reasoner;
 import org.integratedmodelling.klab.api.data.Metadata;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -20,8 +21,38 @@ public class ObservationStrategyImpl implements ObservationStrategy {
     private List<Operation> operations = new ArrayList<>();
     private String documentation;
 
-    public ObservationStrategyImpl(KimObservationStrategy strategy, Reasoner reasoner) {
+    public static class OperationImpl implements Operation {
 
+        private KimObservationStrategy.Operation.Type type;
+        private Observable observable;
+        private List<Contextualizable> contextualizables = new ArrayList<>();
+
+        @Override
+        public KimObservationStrategy.Operation.Type getType() {
+            return this.type;
+        }
+
+        @Override
+        public Observable getObservable() {
+            return this.observable;
+        }
+
+        @Override
+        public List<Contextualizable> getContextualizables() {
+            return this.contextualizables;
+        }
+
+        public void setContextualizables(List<Contextualizable> contextualizable) {
+            this.contextualizables = contextualizable;
+        }
+
+        public void setObservable(Observable observable) {
+            this.observable = observable;
+        }
+
+        public void setType(KimObservationStrategy.Operation.Type type) {
+            this.type = type;
+        }
     }
 
     @Override

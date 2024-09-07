@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -18,24 +19,28 @@ import java.util.concurrent.ConcurrentSkipListSet;
  */
 public class ObservationReasoner {
 
+    private static Set<String> defaultVariables = Set.of("this", "context");
+
     private Reasoner reasoner;
     private SortedSet<KimObservationStrategy> observationStrategies =
             new ConcurrentSkipListSet<>(new Comparator<KimObservationStrategy>() {
                 @Override
                 public int compare(KimObservationStrategy o1, KimObservationStrategy o2) {
-                    return Integer.compare(o2.getRank(), o2.getRank());
+                    return Integer.compare(o1.getRank(), o2.getRank());
                 }
             });
 
-    private class ApplicabileFilter {
+    private static class ApplicabileFilter {
 
-        public Set<SemanticType> semanticTypes = EnumSet.noneOf(SemanticType.class);
+        public Set<SemanticType> semanticTypesWhitelist = EnumSet.noneOf(SemanticType.class);
+        public Set<SemanticType> semanticTypesBlacklist = EnumSet.noneOf(SemanticType.class);
         // any predefined variables used in patterns
         public Set<String> fixedVariablesUsed = new HashSet<>();
+        public Set<String> customVariablesUsed = new HashSet<>();
 
         public boolean match(Observable observable, ContextScope scope) {
-            if (!semanticTypes.isEmpty()) {
-                if (Sets.intersection(observable.getSemantics().getType(), semanticTypes).isEmpty()) {
+            if (!semanticTypesWhitelist.isEmpty()) {
+                if (Sets.intersection(observable.getSemantics().getType(), semanticTypesWhitelist).isEmpty()) {
                     return false;
                 }
             }
@@ -64,17 +69,23 @@ public class ObservationReasoner {
      */
     public List<ObservationStrategy> matching(Observable observable, ContextScope scope) {
 
+        List<ObservationStrategy> ret = new ArrayList<>();
+
         for (var strategy : observationStrategies) {
 
             ApplicabileFilter filter = quickFilters.get(strategy.getUrn());
+
+            if (filter.customVariablesUsed.contains("context") && scope.getContextObservation() == null) {
+                continue;
+            }
+
             if (filter.match(observable, scope)) {
-                Map<String, String> patternVariableValues = new HashMap<>();
+
+                Map<String, Object> patternVariableValues = new HashMap<>();
                 for (var variable : filter.fixedVariablesUsed) {
                     patternVariableValues.put(variable, switch (variable) {
-                        case "this" -> "(" + observable.getUrn() + ")";
-                        case "context" -> scope.getContextObservation() == null ? null :
-                                          ("(" + scope.getContextObservation().getObservable().
-                                                      getUrn() + ")");
+                        case "this" -> observable;
+                        case "context" -> scope.getContextObservation().getObservable();
                         default ->
                                 throw new KlabUnimplementedException("predefined pattern variable " + variable);
                     });
@@ -89,20 +100,59 @@ public class ObservationReasoner {
                     } else if (!functor.getFunctions().isEmpty()) {
 
                     }
-
                 }
 
-                // if one of the patterns matches a null, this strategy is inapplicable. This catches
-                // a dependent strategy used outside of a context observation.
-                if (!patternVariableValues.containsValue(null)) {
+                // at least a matching filter is necessary
+                boolean match = false;
+                for (var filterList : strategy.getFilters()) {
 
+                    boolean ok = true;
+                    for (var matching : filterList) {
+                        // TODO dio cu'
+                    }
+
+                    if (ok) {
+                        match = true;
+                        break;
+                    }
                 }
+
+                if (!match) {
+                    continue;
+                }
+
+                /*
+                   if we get here, there is a match, compile the observation strategy
+                   customized for the observable and scope
+                 */
+
+                var os = new ObservationStrategyImpl();
+
+                os.setDocumentation(strategy.getDescription()); // TODO compile template
+                os.setUrn(strategy.getUrn());
+
+                for (var operation : strategy.getOperations()) {
+
+                    var op = new ObservationStrategyImpl.OperationImpl();
+
+                    if (operation.getObservable() != null) {
+                        op.setObservable(operation.getObservable().getPatternVariables().isEmpty() ?
+                                         reasoner.declareObservable(operation.getObservable()) :
+                                         reasoner.declareObservable(operation.getObservable(),
+                                                 patternVariableValues));
+                    }
+
+                    for (var function : operation.getFunctions()) {
+                    }
+                }
+
+                ret.add(os);
 
             }
         }
 
 
-        return List.of();
+        return ret;
     }
 
     /**
@@ -137,7 +187,35 @@ public class ObservationReasoner {
     }
 
     private ApplicabileFilter computeInfo(KimObservationStrategy observationStrategy) {
+
+        Set<String> variables = new HashSet<>();
         ApplicabileFilter ret = new ApplicabileFilter();
+        for (var filter : observationStrategy.getFilters()) {
+            for (var match : filter) {
+                // TODO negation is much more complicated
+                if (match.getMatch() != null) {
+                    if (match.isNegated()) {
+                        ret.semanticTypesBlacklist.add(SemanticType.fundamentalType(match.getMatch().getType()));
+                    } else {
+                        ret.semanticTypesWhitelist.add(SemanticType.fundamentalType(match.getMatch().getType()));
+                    }
+
+                    variables.addAll(match.getMatch().getPatternVariables());
+                }
+            }
+        }
+
+        for (var operation : observationStrategy.getOperations()) {
+            if (operation.getObservable() != null) {
+                variables.addAll(operation.getObservable().getPatternVariables());
+            }
+        }
+
+        ret.fixedVariablesUsed.addAll(variables);
+        ret.fixedVariablesUsed.retainAll(defaultVariables);
+        ret.customVariablesUsed.addAll(variables);
+        ret.customVariablesUsed.removeAll(defaultVariables);
+
         return ret;
     }
 

@@ -41,11 +41,11 @@ public interface ObservationStrategy extends Knowledge {
         Observable getObservable();
 
         /**
-         * The contextualizable for APPLY types, of which the resolver will determine accessibility.
+         * The contextualizable(s) for APPLY types, of which the resolver will determine accessibility.
          *
          * @return
          */
-        Contextualizable getContextualizable();
+        List<Contextualizable> getContextualizables();
     }
 
     /**

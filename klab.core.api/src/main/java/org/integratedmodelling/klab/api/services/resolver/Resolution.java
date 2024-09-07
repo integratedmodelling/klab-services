@@ -16,24 +16,24 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 
 /**
- * A resolution is the output of {@link Resolver#resolve(String, ContextScope)} and consists of a graph of
- * {@link Knowledge} objects that details how a particular knowledge object has been resolved through other
- * knowledge in a given scope. The links in the graph connect the resolving knowledge to what is resolved by
- * it, ending at a set of "root" objects that resolve the original query. Each link has a coverage that
- * details how much of the context was covered during resolution, and in order to complete the coverage more
- * than one resolving object may be linked.
+ * A resolution is the intermediate representation of the resolver's output before being turned into a
+ * dataflow. It consists of a graph of {@link Knowledge} objects that details how a particular knowledge
+ * object has been resolved through other knowledge in a given scope. The links in the graph connect the
+ * resolving knowledge to what is resolved by it, ending at a set one or more "root" objects that resolve the
+ * original query. Each link carries a coverage that details how much of the context was resolved during
+ * resolution; in order to complete the coverage, more than one resolving object may be linked.
  * <p>
  * While most of the nodes in the graph are {@link Model}s, some resolutions may originate from
  * {@link Observation}s (those that were already there when resolution was computed) or {@link Observable}s
- * when the resolution is deferred, and further resolution is needed after the execution of the corresponding
- * dataflow to complete the observation.
+ * whose resolution needs the context of another observation to be completed, so further resolution is invoked
+ * after the execution of the "incomplete" dataflow creating the observation.
  * <p>
  * A resolution is compiled into a dataflow to contextualize the strategy. Resolution has been successful if
  * the coverage of the resolution is acceptable (which depends on configuration, but
  * {@link Coverage#isEmpty()} should never be accepted). Each knowledge object in the graph is linked to
  * others through connections that detail the type of resolution that has happened; dataflow compilation
- * starts at the root of the graph, retrieving the resolving knowledge from the graph according to the
- * possible resolution types.
+ * starts at the roots of the graph, in the same order that root nodes were added, retrieving the resolving
+ * knowledge from the graph according to the possible resolution types.
  *
  * @author Ferd
  */
@@ -62,8 +62,11 @@ public interface Resolution {
          * The strategy implies the observation of other direct observables, then the application of the child
          * strateg(ies) to each, then the merging of the results into the original observable (which may
          * become "of X" if the deferred inherency is incompatible). An actuator will be created and the
-         * resolver will be called again on each observation produced by it. The resolution link originates in
-         * an observable, not a model.
+         * resolver will be called again on each observation produced by it. In the resolution graph the
+         * source node of the DEFER_INHERENCY link is an observable, not a model, and the resulting dataflow
+         * contains a "resolve" actuator.
+         * <p>
+         * FIXME just call this DEFER, no need to differentiate and the below should disappear
          */
         DEFER_INHERENCY,
 
@@ -73,6 +76,9 @@ public interface Resolution {
          * observable(s) through successive calls to the resolver. The resolution link originates in an
          * observable, not a model. The resolving model will create a OR-ed observable containing all
          * concepts, to substitute the abstract one, and a merged observation as appropriate.
+         *
+         * @deprecated this should probably become a DEFER node with the strategies implying the various
+         * observable operations.
          */
         DEFER_SEMANTICS,
 
@@ -102,8 +108,7 @@ public interface Resolution {
 
     /**
      * Null at top-level, when present determines the scale, context semantics, and the actuator which will
-     * receive the dataflow's actuators once the resolution is compiled. If null, the knowledge being resolved
-     * is normally an {@link org.integratedmodelling.klab.api.knowledge.Instance}
+     * receive the dataflow's actuators once the resolution is compiled.
      *
      * @return
      */
@@ -111,7 +116,7 @@ public interface Resolution {
 
     /**
      * The root-level models (or possibly observations) resolving the resolvable, each with their coverage of
-     * the resolved knowledge. Use {@link #getResolving(Model, ResolutionType)} to walk the resolution graph.
+     * the resolved knowledge.
      *
      * @return
      */
