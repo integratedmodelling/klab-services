@@ -1495,12 +1495,29 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public Observable declareObservable(KimObservable observableDeclaration, Map<String, Object> patternVariables) {
-        if (observableDeclaration.getPatternVariables().isEmpty()) {
+    public Observable declareObservable(KimObservable observableDeclaration,
+                                        Map<String, Object> patternVariables) {
+
+        if (observableDeclaration.getPattern() == null) {
             return declareObservable(observableDeclaration);
         }
-        // TODO
-        return null;
+        String urn = observableDeclaration.getPattern();
+        for (var key : observableDeclaration.getPatternVariables()) {
+            var value = patternVariables.get(key);
+            if (value == null) {
+                return null;
+            }
+            String valueCode = switch(value) {
+                case KimConcept kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case KimObservable kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case Concept kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case Observable kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case String string -> "\"" + Utils.Escape.forDoubleQuotedString(string, false) + "\"";
+                default -> value.toString();
+            };
+            urn = urn.replace("$:" + key, valueCode);
+        }
+        return resolveObservable(urn);
     }
 
     @Override
@@ -2567,11 +2584,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
         return observationReasoner.matching(observable, scope);
     }
-
-    //    @Override
-    //    public boolean hasDistributedInherency(Concept c) {
-    //        return c.getMetadata().get(NS.INHERENCY_IS_DISTRIBUTED, "false").equals("true");
-    //    }
 
     @Override
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> types) {

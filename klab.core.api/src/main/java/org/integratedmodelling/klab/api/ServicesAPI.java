@@ -48,8 +48,8 @@ public interface ServicesAPI {
     /**
      * Create a session scope, return the scope ID unless a sessionId is passed as a parameter (which should
      * only be done by other services). If the runtime provides AMQP messaging, the MESSAGING_URN_HEADER
-     * header in the response will be set to the full URN of the service. Each session ID and context ID
-     * will correspond to a queue that clients can subscribe to.
+     * header in the response will be set to the full URN of the service. Each session ID and context ID will
+     * correspond to a queue that clients can subscribe to.
      * <p>
      * TODO The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a specified
      *  behavior. The POST endpoint can be fed k.Actors behavior code to run.
@@ -169,10 +169,16 @@ public interface ServicesAPI {
         String RESOLVE_CONCEPT = REASONER_BASE + "/resolve/concept/{definition}";
 
         /**
-         * @protocol GET
+         * @protocol GET for a string definition encoded in the URL
          * @produces {@link Observable}
          */
         String RESOLVE_OBSERVABLE = REASONER_BASE + "/resolve/observable/{definition}";
+
+        /**
+         * @protocol POST for a map containing the KimObservable definition as "OBSERVABLE" and possibly
+         * pattern variables
+         */
+        String DECLARE_OBSERVABLE = REASONER_BASE + "/declare/observable";
 
         String SEMANTIC_SEARCH = REASONER_BASE + "/semanticSearch";
 

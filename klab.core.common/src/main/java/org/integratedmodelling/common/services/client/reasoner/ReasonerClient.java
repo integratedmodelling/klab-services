@@ -49,9 +49,9 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         super(Type.REASONER, url, identity, List.of());
     }
 
-//    public ReasonerClient(Identity identity, List<ServiceReference> services) {
-//        super(Type.REASONER, identity, services);
-//    }
+    //    public ReasonerClient(Identity identity, List<ServiceReference> services) {
+    //        super(Type.REASONER, identity, services);
+    //    }
 
     public ReasonerClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
             Message>... listeners) {
@@ -96,13 +96,15 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Observable declareObservable(KimObservable observableDeclaration) {
-        // TODO Auto-generated method stub
-        return null;
+        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, Map.of("OBSERVABLE",
+                observableDeclaration), Observable.class);
     }
 
     @Override
-    public Observable declareObservable(KimObservable observableDeclaration, Map<String, Object> patternVariables) {
-        return null;
+    public Observable declareObservable(KimObservable observableDeclaration,
+                                        Map<String, Object> patternVariables) {
+        patternVariables.put("OBSERVABLE", observableDeclaration);
+        return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, patternVariables, Observable.class);
     }
 
     @Override
@@ -556,11 +558,11 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         return null;
     }
 
-//    @Override
-//    public boolean hasDistributedInherency(Concept c) {
-//        // TODO Auto-generated method stub
-//        return false;
-//    }
+    //    @Override
+    //    public boolean hasDistributedInherency(Concept c) {
+    //        // TODO Auto-generated method stub
+    //        return false;
+    //    }
 
     @Override
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> type) {
@@ -599,7 +601,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public ResourceSet  updateKnowledge(ResourceSet changes, UserScope scope) {
+    public ResourceSet updateKnowledge(ResourceSet changes, UserScope scope) {
         return client.post(ServicesAPI.REASONER.ADMIN.UPDATE_KNOWLEDGE, changes, ResourceSet.class);
     }
 
