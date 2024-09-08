@@ -56,6 +56,7 @@ import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -2784,15 +2785,15 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     @Override
     public String registerSession(SessionScope sessionScope) {
 
-        if (sessionScope instanceof ServiceContextScope serviceContextScope) {
+        if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
             if (sessionScope.getId() == null) {
                 throw new KlabIllegalArgumentException("resolver: session scope has no ID, cannot register " +
                         "a scope autonomously");
             }
 
-            getScopeManager().registerScope(serviceContextScope, capabilities(sessionScope).getBrokerURI());
-            return serviceContextScope.getId();
+            getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+            return serviceSessionScope.getId();
         }
 
         throw new KlabIllegalArgumentException("unexpected scope class");

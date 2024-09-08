@@ -646,6 +646,16 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
             request.getReasonerServices().add(reasonerClient.getUrl());
         }
 
+        if (getOwnerService() != null) {
+            switch (getOwnerService()) {
+                case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
+                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
+                default -> {}
+            }
+        }
+
         if (hasMessaging) {
             // TODO setup desired request. This will send no header and use the defaults.
             // Resolver should probably only catch events and errors.
@@ -704,6 +714,16 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
         if (isLocal() && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
             request.getReasonerServices().add(reasonerClient.getUrl());
+        }
+
+        if (getOwnerService() != null) {
+            switch (getOwnerService()) {
+                case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
+                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
+                default -> {}
+            }
         }
 
         if (hasMessaging) {

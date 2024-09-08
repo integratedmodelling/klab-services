@@ -132,6 +132,8 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
 
+        System.out.println("VÈ, RISOLVIAMO STA MERDA " + observation);
+
         var resolution = computeResolution(observation, contextScope);
         if (!resolution.isEmpty()) {
             return compile(observation, resolution, contextScope);

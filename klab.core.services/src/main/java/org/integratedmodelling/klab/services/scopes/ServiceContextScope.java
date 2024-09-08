@@ -181,6 +181,8 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
         long id = submitObservation(observation);
 
+        System.out.println("SUBMITTED CROSTA " + id);
+
         // create task before resolution starts so we guarantee a response
         var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), id, this::getObservation);
@@ -192,13 +194,16 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         Thread.ofVirtual().start(() -> {
 //        new Thread(() -> {
             try {
+                System.out.println("RESOLVING CRAPPETTONE " + id);
                 var dataflow = resolver.resolve(observation, this);
                 if (dataflow != null && !dataflow.isEmpty()) {
                     var provenance = runtime.runDataflow(dataflow, this);
+                    System.out.println("RESOLVED CRAPPETTONE " + id);
                     digitalTwin.finalizeObservation(observation, dataflow, provenance);
                 }
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionSuccessful, id);
             } catch (Throwable t) {
+                System.out.println("RESOLVING INKULÉ " + id);
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
             }
         });
