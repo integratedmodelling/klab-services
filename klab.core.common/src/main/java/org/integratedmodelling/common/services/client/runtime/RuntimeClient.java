@@ -12,10 +12,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -31,17 +28,18 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     private GraphQLClient graphClient;
 
-    public RuntimeClient() {
-        super(Type.RUNTIME);
-    }
+//    public RuntimeClient() {
+//        super(Type.RUNTIME);
+//    }
 
     public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
             Message>... listeners) {
         super(Type.RUNTIME, url, identity, services, listeners);
     }
 
-    public RuntimeClient(URL url, Identity identity) {
+    public RuntimeClient(URL url, Identity identity, KlabService owner) {
         super(Type.RUNTIME, url, identity, List.of());
+        setOwnerService(owner);
     }
 
     @Override
@@ -88,7 +86,7 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
-                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
                                            serviceSideScope.getId() : null);
 
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
@@ -130,6 +128,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
             }
         }
 
+        request.getRuntimeServices().add(getUrl());
+
         if (isLocal() && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
             request.getReasonerServices().add(reasonerClient.getUrl());
         }
@@ -139,7 +139,8 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
         }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_CONTEXT, request,
-                String.class);
+                String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
+                                    serviceSideScope.getId() : null);
 
         if (hasMessaging) {
             var queues = getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));

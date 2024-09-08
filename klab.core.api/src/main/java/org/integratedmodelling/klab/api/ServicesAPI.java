@@ -47,15 +47,17 @@ public interface ServicesAPI {
 
     /**
      * Create a session scope, return the scope ID unless a sessionId is passed as a parameter (which should
-     * only be done by other services). If the runtime provides AMQP messaging, the MESSAGING_URN_HEADER
-     * header in the response will be set to the full URN of the service. Each session ID and context ID will
-     * correspond to a queue that clients can subscribe to.
+     * only be done by "master" services when they need a peer in another service). The original session and
+     * context/observation scopes should normally be created in the runtime.
      * <p>
-     * TODO The createSession GET endpoint can take a behavior=behaviorUrn parameter to launch a specified
-     *  behavior. The POST endpoint can be fed k.Actors behavior code to run.
+     * The request is a POST endpoint that will detail the URLs of any services used by the owning UserScope
+     * at the engine side. These can be overridden in context scopes that are created with the same request.
      * <p>
+     * If the receiving service provides AMQP messaging, the MESSAGING_URN_HEADER header in the response will
+     * be set to the full URN of the service. Each session ID and context ID will correspond to a queue that
+     * clients can subscribe to.
      */
-    String CREATE_SESSION = "/createSession/{name}";
+    String CREATE_SESSION = "/createSession";
 
     /**
      * Create an observation scope in a session in the runtime, return the scope ID.

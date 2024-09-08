@@ -10,10 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.scope.*;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
@@ -33,16 +30,17 @@ import java.util.function.BiConsumer;
  */
 public class ResolverClient extends ServiceClient implements Resolver {
 
-    public ResolverClient() {
-        super(Type.RESOLVER);
-    }
+//    public ResolverClient() {
+//        super(Type.RESOLVER);
+//    }
+//
+//    public ResolverClient(Identity identity, List<ServiceReference> services) {
+//        super(Type.RESOLVER, identity, services);
+//    }
 
-    public ResolverClient(Identity identity, List<ServiceReference> services) {
-        super(Type.RESOLVER, identity, services);
-    }
-
-    public ResolverClient(URL url, Identity identity) {
+    public ResolverClient(URL url, Identity identity, KlabService owner) {
         super(Type.RESOLVER, url, identity, List.of());
+        setOwnerService(owner);
     }
 
     public ResolverClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
@@ -161,6 +159,16 @@ public class ResolverClient extends ServiceClient implements Resolver {
             }
         }
 
+        if (getOwnerService() != null) {
+            switch (getOwnerService()) {
+                case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
+                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
+                default -> {}
+            }
+        }
+
         if (isLocal() && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
             request.getReasonerServices().add(reasonerClient.getUrl());
         }
@@ -171,7 +179,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
         }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
-                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
                                            serviceSideScope.getId() : null);
 
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
@@ -226,13 +234,23 @@ public class ResolverClient extends ServiceClient implements Resolver {
             request.getReasonerServices().add(reasonerClient.getUrl());
         }
 
+        if (getOwnerService() != null) {
+            switch (getOwnerService()) {
+                case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
+                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
+                default -> {}
+            }
+        }
+
         if (hasMessaging) {
             // TODO setup desired request. This will send no header and use the defaults.
             // Resolver should probably only catch events and errors.
         }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_CONTEXT, request,
-                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
                                            serviceSideScope.getId() : null);
 
         if (hasMessaging) {

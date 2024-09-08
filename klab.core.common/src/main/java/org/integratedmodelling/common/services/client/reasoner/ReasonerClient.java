@@ -14,10 +14,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 import org.integratedmodelling.klab.api.scope.*;
-import org.integratedmodelling.klab.api.services.Reasoner;
-import org.integratedmodelling.klab.api.services.Resolver;
-import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -44,12 +41,13 @@ import java.util.function.BiConsumer;
 public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.Admin {
 
 
-    public ReasonerClient() {
-        super(Type.REASONER);
-    }
+//    public ReasonerClient() {
+//        super(Type.REASONER);
+//    }
 
-    public ReasonerClient(URL url, Identity identity) {
+    public ReasonerClient(URL url, Identity identity, KlabService owner) {
         super(Type.REASONER, url, identity, List.of());
+        setOwnerService(owner);
     }
 
     //    public ReasonerClient(Identity identity, List<ServiceReference> services) {
@@ -654,7 +652,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
-                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
                                            serviceSideScope.getId() : null);
 
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
@@ -714,7 +712,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         }
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_CONTEXT, request,
-                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
                                            serviceSideScope.getId() : null);
 
         if (hasMessaging) {

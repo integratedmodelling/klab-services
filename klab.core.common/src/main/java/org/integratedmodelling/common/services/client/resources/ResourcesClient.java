@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -41,12 +42,13 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     private static final long serialVersionUID = 4305387731730961701L;
 
-    public ResourcesClient() {
-        super(Type.RESOURCES);
-    }
+//    public ResourcesClient() {
+//        super(Type.RESOURCES);
+//    }
 
-    public ResourcesClient(URL url, Identity identity) {
+    public ResourcesClient(URL url, Identity identity, KlabService owner) {
         super(Type.RESOURCES, identity, List.of());
+        setOwnerService(owner);
     }
 
     public ResourcesClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,

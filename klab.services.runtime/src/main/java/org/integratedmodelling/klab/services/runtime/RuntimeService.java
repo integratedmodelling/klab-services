@@ -194,12 +194,22 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public String registerSession(SessionScope sessionScope) {
         if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
+
             serviceSessionScope.setId(Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+
+            if (serviceSessionScope.getServices(RuntimeService.class).isEmpty()) {
+                // add self as the runtime service, which is needed by the slave scopes
+                serviceSessionScope.getServices(RuntimeService.class).add(this);
+            }
 
             /*
              register the session with all the necessary services - resolver and reasoner, the latter
              can be substituted by our connected reasoner. TODO check if we need others.
+
+             FIXME this doesn't add the client for the current service to the request. Need a way to
+             tell the client of each service that the request to register the session comes from a
+             service.
              */
             for (var service : serviceSessionScope.getServices(Resolver.class)) {
                 service.registerSession(serviceSessionScope);
@@ -221,6 +231,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             serviceContextScope.setId(serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
             serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getGraphDatabase()));
+
+            if (serviceContextScope.getServices(RuntimeService.class).isEmpty()) {
+                // add self as the runtime service, which is needed by the slave scopes
+                serviceContextScope.getServices(RuntimeService.class).add(this);
+            }
 
             /*
              register the context with all the necessary services - resolver and reasoner, the latter

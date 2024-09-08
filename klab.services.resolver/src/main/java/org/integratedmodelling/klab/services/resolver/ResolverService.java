@@ -858,15 +858,15 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public String registerSession(SessionScope sessionScope) {
 
-        if (sessionScope instanceof ServiceContextScope serviceContextScope) {
+        if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
 
             if (sessionScope.getId() == null) {
                 throw new KlabIllegalArgumentException("resolver: session scope has no ID, cannot register " +
                         "a scope autonomously");
             }
 
-            getScopeManager().registerScope(serviceContextScope, capabilities(sessionScope).getBrokerURI());
-            return serviceContextScope.getId();
+            getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+            return serviceSessionScope.getId();
         }
 
         throw new KlabIllegalArgumentException("unexpected scope class");

@@ -60,6 +60,9 @@ public abstract class ServiceClient implements KlabService {
     private long pollCycleSeconds = 2;
     protected Utils.Http.Client client;
     private ServiceCapabilities capabilities;
+    // this is not null only if the client is used by another service. In that case, the service should be
+    // added to scope requests for talkback.
+    private KlabService ownerService;
 
     //    // these can be installed from the outside. TODO these should go in the scope and only there
     //    @Deprecated
@@ -73,6 +76,14 @@ public abstract class ServiceClient implements KlabService {
         if (this.url != null) {
             establishConnection();
         }
+    }
+
+    public KlabService getOwnerService() {
+        return ownerService;
+    }
+
+    protected void setOwnerService(KlabService ownerService) {
+        this.ownerService = ownerService;
     }
 
     protected ServiceClient(KlabService.Type serviceType, Identity identity,
