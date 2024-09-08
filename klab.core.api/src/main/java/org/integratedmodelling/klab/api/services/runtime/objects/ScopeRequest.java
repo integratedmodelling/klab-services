@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Request for a context scope made by the client. The request may contain the URLs of all the services
- * available to the client, which must be validated to ensure they can cross network boundaries at the server
- * side. Only the services that do not correspond to the hosting service itself will be routinely used, and
- * the service may override with services from its own scope.
+ * Request for a scope made by the client. The request endpoint specifies which kind of scope is requested.
+ * The request may contain the URLs of all the services available to the client, which must be validated to
+ * ensure they can cross network boundaries at the server side. Only the services that do not correspond to
+ * the hosting service itself will be routinely used, and the service may override with services from its own
+ * scope.
  */
-public class ContextRequest {
+public class ScopeRequest {
 
     private String name;
     private List<URL> resourceServices = new ArrayList<>();

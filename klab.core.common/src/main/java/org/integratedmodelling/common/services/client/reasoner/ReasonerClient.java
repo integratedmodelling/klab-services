@@ -1,6 +1,7 @@
 package org.integratedmodelling.common.services.client.reasoner;
 
 import com.google.common.collect.Lists;
+import org.integratedmodelling.common.authentication.scope.MessagingChannelImpl;
 import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.client.ServiceClient;
 import org.integratedmodelling.klab.api.ServicesAPI;
@@ -12,16 +13,18 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
+import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.io.File;
@@ -65,16 +68,6 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     @Override
     public Capabilities capabilities(Scope scope) {
         return client.get(ServicesAPI.CAPABILITIES, ReasonerCapabilitiesImpl.class);
-    }
-
-    @Override
-    public String registerSession(SessionScope sessionScope) {
-        return null;
-    }
-
-    @Override
-    public String registerContext(ContextScope contextScope) {
-        return null;
     }
 
     @Override
@@ -614,6 +607,125 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     public boolean exportNamespace(String namespace, File directory) {
         // TODO
         return false;
+    }
+
+    /**
+     * When called as a slave from a service, add the sessionId parameter to build a peer scope at the remote
+     * service side.
+     *
+     * @param scope a client scope that should record the ID for future communication. If the ID is null, the
+     *              call has failed.
+     * @return
+     */
+    @Override
+    public String registerSession(SessionScope scope) {
+
+        ScopeRequest request = new ScopeRequest();
+        request.setName(scope.getName());
+
+        var hasMessaging =
+                scope.getParentScope() instanceof MessagingChannel messagingChannel && messagingChannel.hasMessaging();
+
+        for (var service : scope.getServices(ResourcesService.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResourceServices().add(serviceClient.getUrl());
+                }
+            }
+        }
+
+        for (var service : scope.getServices(Resolver.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResolverServices().add(serviceClient.getUrl());
+                }
+            }
+        }
+
+        if (isLocal() && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
+            request.getReasonerServices().add(reasonerClient.getUrl());
+        }
+
+        if (hasMessaging) {
+            // TODO setup desired request. This will send no header and use the defaults.
+            // Resolver should probably only catch events and errors.
+        }
+
+        var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
+                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                                           serviceSideScope.getId() : null);
+
+        var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
+        if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+            var queues = getQueuesFromHeader(scope,
+                    client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+            messagingChannel.setupMessaging(brokerURI, ret, queues);
+        }
+
+        return ret;
+    }
+
+    /**
+     * When called as a slave from a service, add the sessionId parameter to build a peer scope at the remote
+     * service side.
+     *
+     * @param scope a client scope that should record the ID for future communication. If the ID is null, the
+     *              call has failed.
+     * @return
+     */
+    @Override
+    public String registerContext(ContextScope scope) {
+
+        ScopeRequest request = new ScopeRequest();
+        request.setName(scope.getName());
+
+        var hasMessaging =
+                scope.getParentScope() instanceof MessagingChannel messagingChannel && messagingChannel.hasMessaging();
+
+        // The runtime needs to use our resolver(s) and resource service(s), as long as they're accessible.
+        // The reasoner can be the runtime's own unless we have locked worldview projects.
+        for (var service : scope.getServices(ResourcesService.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResourceServices().add(serviceClient.getUrl());
+                }
+            }
+        }
+
+        for (var service : scope.getServices(Resolver.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResolverServices().add(serviceClient.getUrl());
+                }
+            }
+        }
+
+        if (isLocal() && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
+            request.getReasonerServices().add(reasonerClient.getUrl());
+        }
+
+        if (hasMessaging) {
+            // TODO setup desired request. This will send no header and use the defaults.
+            // Resolver should probably only catch events and errors.
+        }
+
+        var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_CONTEXT, request,
+                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                                           serviceSideScope.getId() : null);
+
+        if (hasMessaging) {
+            var queues = getQueuesFromHeader(scope,
+                    client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+            if (scope instanceof MessagingChannelImpl messagingChannel) {
+                messagingChannel.setupMessagingQueues(ret, queues);
+            }
+        }
+
+        return ret;
     }
 
 }

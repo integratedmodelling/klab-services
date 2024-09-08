@@ -198,11 +198,14 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
 
             /*
-            TODO register the session with all the necessary services - resolver and reasoner, the latter
-             can be substituted by our connected reasoner.
+             register the session with all the necessary services - resolver and reasoner, the latter
+             can be substituted by our connected reasoner. TODO check if we need others.
              */
             for (var service : serviceSessionScope.getServices(Resolver.class)) {
-//                service.registerSession()
+                service.registerSession(serviceSessionScope);
+            }
+            for (var service : serviceSessionScope.getServices(Reasoner.class)) {
+                service.registerSession(serviceSessionScope);
             }
 
             return serviceSessionScope.getId();
@@ -214,15 +217,21 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     public String registerContext(ContextScope contextScope) {
 
         if (contextScope instanceof ServiceContextScope serviceContextScope) {
+
             serviceContextScope.setId(serviceContextScope.getParentScope().getId() + "." + Utils.Names.shortUUID());
             getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
             serviceContextScope.setDigitalTwin(new DigitalTwinImpl(contextScope, getGraphDatabase()));
 
             /*
-            TODO register the context with all the necessary services - resolver and reasoner, the latter
-             can be
-            substituted by our connected reasoner.
+             register the context with all the necessary services - resolver and reasoner, the latter
+             can be substituted by our connected reasoner. TODO check if we need others.
              */
+            for (var service : serviceContextScope.getServices(Resolver.class)) {
+                service.registerContext(serviceContextScope);
+            }
+            for (var service : serviceContextScope.getServices(Reasoner.class)) {
+                service.registerContext(serviceContextScope);
+            }
 
             return serviceContextScope.getId();
 

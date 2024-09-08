@@ -268,7 +268,7 @@ public class ScopeManager {
             var ret = scopes.get(scopeId);
             if (ret != null && scopeClass.isAssignableFrom(ret.getClass())) {
                 return (T) ret;
-            } else if (service instanceof BaseService baseService && baseService.isProvideScopesAutomatically()) {
+            }/* else if (service instanceof BaseService baseService && baseService.isProvideScopesAutomatically()) {
                 if (scope != null && authorization.isAuthenticated()) {
                     // TODO create the scope hierarchy; names are auto-generated in this case.
                     var scopeData = ContextScope.parseScopeId(scopeId);
@@ -308,7 +308,7 @@ public class ScopeManager {
                         }
                     }
                 }
-            }
+            }*/
         }
         return null;
     }

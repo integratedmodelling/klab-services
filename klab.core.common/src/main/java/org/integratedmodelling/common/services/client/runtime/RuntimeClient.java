@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
@@ -19,13 +20,11 @@ import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
-import org.integratedmodelling.klab.api.services.runtime.objects.ContextRequest;
+import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.rest.ServiceReference;
 
 import java.net.URL;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiConsumer;
 
 public class RuntimeClient extends ServiceClient implements RuntimeService {
@@ -54,33 +53,58 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     @Override
     public String registerSession(SessionScope scope) {
-        var ret = client.get(ServicesAPI.CREATE_SESSION, String.class, "name", scope.getName());
-        var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
-        if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
-            var queues = getQueuesFromHeader(scope, client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
-            messagingChannel.setupMessaging(brokerURI, ret, queues);
-        }
-        return ret;
-    }
 
-    private Set<Message.Queue> getQueuesFromHeader(SessionScope scope, String responseHeader) {
-        if (responseHeader != null) {
-            var ret = EnumSet.noneOf(Message.Queue.class);
-            if (!responseHeader.isBlank()) {
-                String[] qq = responseHeader.split(", ");
-                for (var q : qq) {
-                    ret.add(Message.Queue.valueOf(q));
+        ScopeRequest request = new ScopeRequest();
+        request.setName(scope.getName());
+
+        var hasMessaging =
+                scope.getParentScope() instanceof MessagingChannel messagingChannel && messagingChannel.hasMessaging();
+
+        for (var service : scope.getServices(ResourcesService.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResourceServices().add(serviceClient.getUrl());
                 }
             }
-            return ret;
         }
-        return scope.defaultQueues();
+
+        for (var service : scope.getServices(Resolver.class)) {
+            if (service instanceof ServiceClient serviceClient) {
+                // we only send a local URL if we're local ourselves
+                if (!serviceClient.isLocal() || (serviceClient.isLocal() && isLocal())) {
+                    request.getResolverServices().add(serviceClient.getUrl());
+                }
+            }
+        }
+
+        if (isLocal() && scope.getService(Reasoner.class) instanceof ServiceClient reasonerClient && reasonerClient.isLocal()) {
+            request.getReasonerServices().add(reasonerClient.getUrl());
+        }
+
+        if (hasMessaging) {
+            // TODO setup desired request. This will send no header and use the defaults.
+            // Resolver should probably only catch events and errors.
+        }
+
+        var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
+                String.class, "sessionId", scope instanceof ServiceSideScope serviceSideScope ?
+                                           serviceSideScope.getId() : null);
+
+        var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
+        if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
+            var queues = getQueuesFromHeader(scope,
+                    client.getResponseHeader(ServicesAPI.MESSAGING_QUEUES_HEADER));
+            messagingChannel.setupMessaging(brokerURI, ret, queues);
+        }
+
+        return ret;
     }
 
     @Override
     public String registerContext(ContextScope scope) {
 
-        ContextRequest request = new ContextRequest();
+        ScopeRequest request = new ScopeRequest();
         request.setName(scope.getName());
 
         var runtime = scope.getService(RuntimeService.class);

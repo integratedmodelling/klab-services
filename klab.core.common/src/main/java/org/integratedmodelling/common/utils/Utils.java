@@ -296,6 +296,9 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             private String encodeParameters(Map<String, Object> parameters) {
                 StringBuilder ret = new StringBuilder();
                 for (var k : parameters.keySet()) {
+                    if (parameters.get(k) == null) {
+                        continue;
+                    }
                     ret.append((ret.isEmpty()) ? "?" : "&").append(k).append("=")
                        .append(UriUtils.encodeQueryParam(parameters.get(k).toString(),
                                StandardCharsets.UTF_8));

@@ -92,25 +92,25 @@ public abstract class BaseService implements KlabService {
         }
     }
 
-    /**
-     * If this returns true, the service will instruct the {@link ScopeManager} to automatically create scope
-     * hierarchies when scope headers are received for session and context scopes that are unknown, as long as
-     * the request is not anonymous or is otherwise privileged. Default is false.
-     *
-     * @return true if scopes can be created automatically
-     */
-    public boolean isProvideScopesAutomatically() {
-        return provideScopesAutomatically;
-    }
+//    /**
+//     * If this returns true, the service will instruct the {@link ScopeManager} to automatically create scope
+//     * hierarchies when scope headers are received for session and context scopes that are unknown, as long as
+//     * the request is not anonymous or is otherwise privileged. Default is false.
+//     *
+//     * @return true if scopes can be created automatically
+//     */
+//    public boolean isProvideScopesAutomatically() {
+//        return provideScopesAutomatically;
+//    }
 
-    /**
-     * Set the flag returned by {@link #isProvideScopesAutomatically()}.
-     *
-     * @param b
-     */
-    protected void setProvideScopesAutomatically(boolean b) {
-        this.provideScopesAutomatically = b;
-    }
+//    /**
+//     * Set the flag returned by {@link #isProvideScopesAutomatically()}.
+//     *
+//     * @param b
+//     */
+//    protected void setProvideScopesAutomatically(boolean b) {
+//        this.provideScopesAutomatically = b;
+//    }
 
 
     public EmbeddedBroker getEmbeddedBroker() {

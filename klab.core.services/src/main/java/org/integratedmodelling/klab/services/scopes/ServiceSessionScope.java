@@ -4,8 +4,10 @@ import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior.Ref;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+
+import java.util.ArrayList;
 
 /**
  * The service-side {@link SessionScope}. One of these will be created by {@link ServiceUserScope} at each new
@@ -41,9 +43,16 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
 
     @Override
     public ContextScope createContext(String contextName) {
+
         final ServiceContextScope ret = new ServiceContextScope(this);
+
         ret.setName(contextName);
-        // Scope is incomplete and will be instrumented with ID, messaging queues and agent by the caller.
+        ret.setServices(
+                new ArrayList<ResourcesService>(getServices(ResourcesService.class)),
+                new ArrayList<>(getServices(Resolver.class)),
+                new ArrayList<>(getServices(Reasoner.class)),
+                new ArrayList<>(getServices(RuntimeService.class)));
+
         return ret;
     }
 

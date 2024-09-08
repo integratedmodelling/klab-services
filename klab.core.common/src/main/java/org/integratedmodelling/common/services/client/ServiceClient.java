@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.impl.AbstractServiceCapabilities;
@@ -30,9 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -388,4 +387,20 @@ public abstract class ServiceClient implements KlabService {
         return client.post(ServicesAPI.ADMIN.CREDENTIALS, request,
                 ExternalAuthenticationCredentials.CredentialInfo.class);
     }
+
+    // util to retrieve the queue names from the header
+    protected Set<Message.Queue> getQueuesFromHeader(SessionScope scope, String responseHeader) {
+        if (responseHeader != null) {
+            var ret = EnumSet.noneOf(Message.Queue.class);
+            if (!responseHeader.isBlank()) {
+                String[] qq = responseHeader.split(", ");
+                for (var q : qq) {
+                    ret.add(Message.Queue.valueOf(q));
+                }
+            }
+            return ret;
+        }
+        return scope.defaultQueues();
+    }
+
 }

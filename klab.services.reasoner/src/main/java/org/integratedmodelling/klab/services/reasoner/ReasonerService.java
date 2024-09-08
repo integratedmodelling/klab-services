@@ -29,6 +29,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement.ApplicableConcept;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.Reasoner;
@@ -54,6 +55,7 @@ import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1393,7 +1395,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                 var observationStrategyDocument =
                         resourceService.resolveObservationStrategyDocument(resource.getResourceUrn(),
                                 parsingScope);
-                removeObservationStrategiesDocument(observationStrategyDocument.getUrn());
 
                 observationReasoner.releaseNamespace(observationStrategyDocument.getUrn());
                 for (var strategy : observationStrategyDocument.getStatements()) {
@@ -1415,10 +1416,6 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         }
 
         return changes;
-    }
-
-    private void removeObservationStrategiesDocument(String urn) {
-        // TODO remove all strategies that come from the document with the passed URN
     }
 
     public void setLocalName(String localName) {
@@ -2776,4 +2773,54 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return this.owl.exportOntology(namespace, directory);
     }
 
+    /**
+     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
+     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
+     *
+     * @param sessionScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return
+     */
+    @Override
+    public String registerSession(SessionScope sessionScope) {
+
+        if (sessionScope instanceof ServiceContextScope serviceContextScope) {
+
+            if (sessionScope.getId() == null) {
+                throw new KlabIllegalArgumentException("resolver: session scope has no ID, cannot register " +
+                        "a scope autonomously");
+            }
+
+            getScopeManager().registerScope(serviceContextScope, capabilities(sessionScope).getBrokerURI());
+            return serviceContextScope.getId();
+        }
+
+        throw new KlabIllegalArgumentException("unexpected scope class");
+    }
+
+    /**
+     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
+     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
+     *
+     * @param contextScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return
+     */
+    @Override
+    public String registerContext(ContextScope contextScope) {
+
+        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+
+            if (contextScope.getId() == null) {
+                throw new KlabIllegalArgumentException("resolver: context scope has no ID, cannot register " +
+                        "a scope autonomously");
+            }
+
+            getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+            return serviceContextScope.getId();
+        }
+
+        throw new KlabIllegalArgumentException("unexpected scope class");
+
+    }
 }

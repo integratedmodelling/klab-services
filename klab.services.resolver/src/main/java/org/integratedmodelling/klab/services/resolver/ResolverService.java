@@ -9,6 +9,7 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
@@ -39,6 +41,8 @@ import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
 import org.integratedmodelling.klab.services.resolver.dataflow.DataflowImpl;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -71,7 +75,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     public ResolverService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RESOLVER, options);
-        setProvideScopesAutomatically(true);
+        //        setProvideScopesAutomatically(true);
         readConfiguration(options);
     }
 
@@ -261,44 +265,48 @@ public class ResolverService extends BaseService implements Resolver {
                                            Model parentModel) {
 
         Coverage coverage = Coverage.create(scale, 0.0);
-//        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope, parent);
-//
-//        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments> operation :
-//                strategy) {
-//            switch (operation.getFirst()) {
-//                case OBSERVE -> {
-//                    for (Model model : queryModels(operation.getSecond().observable(), scope, scale)) {
-//                        ResolutionImpl resolution = resolveModel(model, strategy.getOriginalObservable(),
-//                                scale,
-//                                scope.withResolutionNamespace(model.getNamespace()), parent);
-//                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
-//                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
-//                            continue;
-//                        }
-//                        // merge the model at root level within the local resolution
-//                        resolution.merge(model, coverage, strategy.getOriginalObservable(),
-//                                ResolutionType.DIRECT);
-//                        if (coverage.isRelevant()) {
-//                            // merge the resolution with the parent resolution
-//                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
-//                            if (parent.getCoverage().isComplete()) {
-//                                break;
-//                            }
-//                        }
-//                    }
-//                }
-//                case RESOLVE -> {
-//
-//                }
-//                case APPLY -> {
-//                }
-//                case CONCRETIZE -> {
-//                    // TODO deprecated?
-//                }
-//            }
-//        }
-//
-//        return ret;
+        //        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope,
+        //        parent);
+        //
+        //        for (Pair<ObservationStrategyObsolete.Operation, ObservationStrategyObsolete.Arguments>
+        //        operation :
+        //                strategy) {
+        //            switch (operation.getFirst()) {
+        //                case OBSERVE -> {
+        //                    for (Model model : queryModels(operation.getSecond().observable(), scope,
+        //                    scale)) {
+        //                        ResolutionImpl resolution = resolveModel(model, strategy
+        //                        .getOriginalObservable(),
+        //                                scale,
+        //                                scope.withResolutionNamespace(model.getNamespace()), parent);
+        //                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
+        //                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+        //                            continue;
+        //                        }
+        //                        // merge the model at root level within the local resolution
+        //                        resolution.merge(model, coverage, strategy.getOriginalObservable(),
+        //                                ResolutionType.DIRECT);
+        //                        if (coverage.isRelevant()) {
+        //                            // merge the resolution with the parent resolution
+        //                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
+        //                            if (parent.getCoverage().isComplete()) {
+        //                                break;
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //                case RESOLVE -> {
+        //
+        //                }
+        //                case APPLY -> {
+        //                }
+        //                case CONCRETIZE -> {
+        //                    // TODO deprecated?
+        //                }
+        //            }
+        //        }
+        //
+        //        return ret;
         return null;
     }
 
@@ -839,4 +847,54 @@ public class ResolverService extends BaseService implements Resolver {
         return org.integratedmodelling.common.utils.Utils.Strings.spaces(offset) + contextualizable.encode(Language.KDL);
     }
 
+    /**
+     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
+     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
+     *
+     * @param sessionScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return
+     */
+    @Override
+    public String registerSession(SessionScope sessionScope) {
+
+        if (sessionScope instanceof ServiceContextScope serviceContextScope) {
+
+            if (sessionScope.getId() == null) {
+                throw new KlabIllegalArgumentException("resolver: session scope has no ID, cannot register " +
+                        "a scope autonomously");
+            }
+
+            getScopeManager().registerScope(serviceContextScope, capabilities(sessionScope).getBrokerURI());
+            return serviceContextScope.getId();
+        }
+
+        throw new KlabIllegalArgumentException("unexpected scope class");
+    }
+
+    /**
+     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
+     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
+     *
+     * @param contextScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return
+     */
+    @Override
+    public String registerContext(ContextScope contextScope) {
+
+        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+
+            if (contextScope.getId() == null) {
+                throw new KlabIllegalArgumentException("resolver: context scope has no ID, cannot register " +
+                        "a scope autonomously");
+            }
+
+            getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+            return serviceContextScope.getId();
+        }
+
+        throw new KlabIllegalArgumentException("unexpected scope class");
+
+    }
 }

@@ -336,7 +336,7 @@ public interface KlabService extends Service {
     String registerSession(SessionScope sessionScope);
 
     /**
-     * Register a context scope created by the scope manager. Return a * unique session ID that may be
+     * Register a context scope created by the scope manager. Return a unique session ID that may be
      * requested with the session or generated within the service. Context starts empty with the default
      * observer for the worldview, using the services available to the user and passed as parameters. The same
      * runtime that hosts the context must become the one and only runtime accessible to the resulting scope.

@@ -16,7 +16,7 @@ import org.integratedmodelling.klab.api.services.Resolver;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.RuntimeService;
 import org.integratedmodelling.klab.api.services.runtime.Message;
-import org.integratedmodelling.klab.api.services.runtime.objects.ContextRequest;
+import org.integratedmodelling.klab.api.services.runtime.objects.ScopeRequest;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
@@ -43,15 +43,15 @@ public class KlabScopeController {
      * If an ID is passed, the scope will mirror a remote one and the return value should be the same ID in
      * case of success.
      *
-     * @param name
+     * @param request
      * @param sessionId
      * @param principal
      * @param response
      * @param queuesHeader
      * @return
      */
-    @GetMapping(ServicesAPI.CREATE_SESSION)
-    public String createSession(@PathVariable(name = "name") String name,
+    @PostMapping(ServicesAPI.CREATE_SESSION)
+    public String createSession(@RequestBody ScopeRequest request,
                                 @PathVariable(name = "id", required = false) String sessionId,
                                 Principal principal,
                                 HttpServletResponse response,
@@ -62,7 +62,51 @@ public class KlabScopeController {
 
             var userScope = authorization.getScope(UserScope.class);
             if (userScope != null) {
-                var ret = userScope.runSession(name);
+
+                var ret = userScope.runSession(request.getName());
+                var identity = userScope.getIdentity();
+
+                List<Reasoner> reasoners =
+                        instance.klabService() instanceof Reasoner r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getReasonerServices().stream().map(url -> new ReasonerClient(url,
+                                identity)).toList());
+                List<RuntimeService> runtimes =
+                        instance.klabService() instanceof RuntimeService r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getRuntimeServices().stream().map(url -> new RuntimeClient(url,
+                                identity)).toList());
+                List<ResourcesService> resources =
+                        instance.klabService() instanceof ResourcesService r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getResourceServices().stream().map(url -> new ResourcesClient(url,
+                                identity)).toList());
+                List<Resolver> resolvers =
+                        instance.klabService() instanceof Resolver r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getResolverServices().stream().map(url -> new ResolverClient(url,
+                                identity)).toList());
+
+                if (request.getReasonerServices().isEmpty()) {
+                    reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
+                }
+
+                // TODO check presence and availability of all services and fail if no response
+
+                if (ret instanceof ServiceSessionScope serviceSessionScope) {
+
+                    serviceSessionScope.setServices(resources, resolvers, reasoners, runtimes);
+                    if (sessionId != null) {
+                        // slave mode: session ID is provided by a calling service. The service's
+                        // registerSession should check that.
+                        serviceSessionScope.setId(sessionId);
+                    }
+                }
+
                 var brokerUrl = instance.klabService().capabilities(userScope).getBrokerURI();
                 var id = instance.klabService().registerSession(ret);
                 if (brokerUrl != null) {
@@ -107,7 +151,7 @@ public class KlabScopeController {
      * @return the ID of the new context scope
      */
     @PostMapping(ServicesAPI.CREATE_CONTEXT)
-    public String createContext(@RequestBody ContextRequest request,
+    public String createContext(@RequestBody ScopeRequest request,
                                 @PathVariable(name = "id", required = false) String contextId,
                                 Principal principal,
                                 @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required =
@@ -125,43 +169,17 @@ public class KlabScopeController {
 
                 if (ret instanceof ServiceContextScope serviceContextScope) {
 
+                    if (contextId != null) {
+                        // slave mode: session ID is provided by a calling service. The service's
+                        // registerSession should check that.
+                        serviceContextScope.setId(contextId);
+                    }
+
+
                     if (queuesHeader == null || queuesHeader.isEmpty()) {
                         queuesHeader = serviceContextScope.defaultQueues();
                     }
-
-                    List<Reasoner> reasoners =
-                            instance.klabService() instanceof Reasoner r
-                            ? new ArrayList<>(List.of(r))
-                            :
-                            new ArrayList<>(request.getReasonerServices().stream().map(url -> new ReasonerClient(url,
-                                    identity)).toList());
-                    List<RuntimeService> runtimes =
-                            instance.klabService() instanceof RuntimeService r
-                            ? new ArrayList<>(List.of(r))
-                            :
-                            new ArrayList<>(request.getRuntimeServices().stream().map(url -> new RuntimeClient(url,
-                                    identity)).toList());
-                    List<ResourcesService> resources =
-                            instance.klabService() instanceof ResourcesService r
-                            ? new ArrayList<>(List.of(r))
-                            :
-                            new ArrayList<>(request.getResourceServices().stream().map(url -> new ResourcesClient(url,
-                                    identity)).toList());
-                    List<Resolver> resolvers =
-                            instance.klabService() instanceof Resolver r
-                            ? new ArrayList<>(List.of(r))
-                            :
-                            new ArrayList<>(request.getResolverServices().stream().map(url -> new ResolverClient(url,
-                                    identity)).toList());
-
-                    if (request.getReasonerServices().isEmpty()) {
-                        reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
-                    }
-
-                    // TODO check presence and availability of all services and fail if no response
-
                     var id = instance.klabService().registerContext(ret);
-                    serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
 
                     var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);
 

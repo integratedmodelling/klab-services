@@ -165,8 +165,9 @@ public class ObservationReasoner {
      * @param strategyNamespace
      */
     public void releaseNamespace(String strategyNamespace) {
-        observationStrategies =
-                observationStrategies.stream().filter(o -> !o.getNamespace().equals(strategyNamespace)).toList();
+        var filtered = observationStrategies.stream().filter(o -> !o.getNamespace().equals(strategyNamespace)).toList();
+        observationStrategies.clear();
+        observationStrategies.addAll(filtered);
     }
 
     /**

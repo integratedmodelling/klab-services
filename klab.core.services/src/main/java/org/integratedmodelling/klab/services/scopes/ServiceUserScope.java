@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
+import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
@@ -37,7 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * @author Ferd
  */
-public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserScope {
+public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserScope, ServiceSideScope {
 
     // the data hash is the SAME OBJECT throughout the child
     protected Parameters<String> data;
@@ -228,7 +229,11 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
 
     @Override
     public <T extends KlabService> Collection<T> getServices(Class<T> serviceClass) {
-        return new Utils.Casts<KlabService, T>().cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
+        var ret = new Utils.Casts<KlabService, T>().cast((Collection<KlabService>) serviceMap.get(KlabService.Type.classify(serviceClass)));
+        if (ret == null) {
+            return List.of();
+        }
+        return ret;
     }
 
     @Override
@@ -295,6 +300,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         this.roles = roles;
     }
 
+    @Override
     public String getId() {
         return id;
     }
