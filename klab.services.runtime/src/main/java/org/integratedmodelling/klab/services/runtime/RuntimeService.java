@@ -90,7 +90,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     @Override
     public void initializeService() {
 
-        Logging.INSTANCE.setSystemIdentifier("Resources service: ");
+        Logging.INSTANCE.setSystemIdentifier("Runtime service: ");
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
