@@ -30,13 +30,13 @@ import java.util.function.BiConsumer;
  */
 public class ResolverClient extends ServiceClient implements Resolver {
 
-//    public ResolverClient() {
-//        super(Type.RESOLVER);
-//    }
-//
-//    public ResolverClient(Identity identity, List<ServiceReference> services) {
-//        super(Type.RESOLVER, identity, services);
-//    }
+    //    public ResolverClient() {
+    //        super(Type.RESOLVER);
+    //    }
+    //
+    //    public ResolverClient(Identity identity, List<ServiceReference> services) {
+    //        super(Type.RESOLVER, identity, services);
+    //    }
 
     public ResolverClient(URL url, Identity identity, KlabService owner) {
         super(Type.RESOLVER, url, identity, List.of());
@@ -54,7 +54,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return client.get(ServicesAPI.CAPABILITIES, ResolverCapabilitiesImpl.class);
+        return client.withScope(scope).get(ServicesAPI.CAPABILITIES, ResolverCapabilitiesImpl.class);
     }
 
     @Override
@@ -162,10 +162,13 @@ public class ResolverClient extends ServiceClient implements Resolver {
         if (getOwnerService() != null) {
             switch (getOwnerService()) {
                 case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
-                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
-                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case RuntimeService runtimeService ->
+                        request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService ->
+                        request.getResourceServices().add(resourcesService.getUrl());
                 case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
-                default -> {}
+                default -> {
+                }
             }
         }
 
@@ -180,7 +183,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
                 String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
-                                           serviceSideScope.getId() : null);
+                                    serviceSideScope.getId() : null);
 
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
         if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
@@ -237,10 +240,13 @@ public class ResolverClient extends ServiceClient implements Resolver {
         if (getOwnerService() != null) {
             switch (getOwnerService()) {
                 case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
-                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
-                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case RuntimeService runtimeService ->
+                        request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService ->
+                        request.getResourceServices().add(resourcesService.getUrl());
                 case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
-                default -> {}
+                default -> {
+                }
             }
         }
 
@@ -251,7 +257,7 @@ public class ResolverClient extends ServiceClient implements Resolver {
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_CONTEXT, request,
                 String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
-                                           serviceSideScope.getId() : null);
+                                    serviceSideScope.getId() : null);
 
         if (hasMessaging) {
             var queues = getQueuesFromHeader(scope,

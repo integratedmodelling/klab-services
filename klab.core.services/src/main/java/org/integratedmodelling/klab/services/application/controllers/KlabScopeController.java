@@ -60,6 +60,8 @@ public class KlabScopeController {
 
         if (principal instanceof EngineAuthorization authorization) {
 
+            Logging.INSTANCE.info("PORCELLING SESSION " + sessionId);
+
             var userScope = authorization.getScope(UserScope.class);
             if (userScope != null) {
 
@@ -159,6 +161,8 @@ public class KlabScopeController {
                                 HttpServletResponse response) {
 
         if (principal instanceof EngineAuthorization authorization) {
+
+            Logging.INSTANCE.info("PORCELLING CONTEXT " + contextId);
 
             var sessionScope = authorization.getScope(SessionScope.class);
 

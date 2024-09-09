@@ -136,6 +136,7 @@ public class EngineClient implements Engine, PropertyHolder {
 
     @Override
     public String registerSession(SessionScope sessionScope) {
+
         var sessionId = getUser().getService(RuntimeService.class).registerSession(sessionScope);
         if (sessionId != null) {
             // TODO advertise the session to all other services that will use it. Keep only the
@@ -146,8 +147,8 @@ public class EngineClient implements Engine, PropertyHolder {
 
     @Override
     public String registerContext(ContextScope contextScope) {
-        var contextId = getUser().getService(RuntimeService.class).registerSession(contextScope);
 
+        var contextId = getUser().getService(RuntimeService.class).registerContext(contextScope);
         if (contextId != null) {
             // TODO advertise the session to all other services that will use it. Keep only the
             // services that accept it.

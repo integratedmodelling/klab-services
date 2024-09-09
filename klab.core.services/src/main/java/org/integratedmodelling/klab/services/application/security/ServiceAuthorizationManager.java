@@ -320,7 +320,7 @@ public class ServiceAuthorizationManager {
 
         if (scope == null) {
             Logging.INSTANCE.error("Internal error: user " + ret.getUsername() + " was authorized with null" +
-                    " scope");
+                    " scope using scope ID " + scopeHeader);
         }
 
         ret.setScope(scope);

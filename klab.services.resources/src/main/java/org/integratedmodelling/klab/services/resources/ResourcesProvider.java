@@ -421,6 +421,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         return shutdown(30);
     }
 
+    @Override
+    public boolean scopesAreReactive() {
+        return false;
+    }
+
     public boolean shutdown(int secondsToWait) {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,
