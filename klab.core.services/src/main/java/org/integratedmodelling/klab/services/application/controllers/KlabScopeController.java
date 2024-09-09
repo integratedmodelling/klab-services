@@ -22,6 +22,7 @@ import org.integratedmodelling.klab.services.application.security.EngineAuthoriz
 import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
 import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -60,7 +61,7 @@ public class KlabScopeController {
 
         if (principal instanceof EngineAuthorization authorization) {
 
-            Logging.INSTANCE.info("PORCELLING SESSION " + sessionId);
+            Logging.INSTANCE.info("PORCELLING SESSION " + sessionId + " WITH INFO " + authorization.getInfo());
 
             var userScope = authorization.getScope(UserScope.class);
             if (userScope != null) {
@@ -130,6 +131,8 @@ public class KlabScopeController {
                             Utils.Strings.join(implementedQueues, ", "));
                 }
                 return id;
+            } else {
+                Logging.INSTANCE.error("Session instantiation failed: no valid user scope for request");
             }
         }
         return null;
@@ -154,7 +157,7 @@ public class KlabScopeController {
      */
     @PostMapping(ServicesAPI.CREATE_CONTEXT)
     public String createContext(@RequestBody ScopeRequest request,
-                                @RequestParam(name = "ids", required = false) String contextId,
+                                @RequestParam(name = "id", required = false) String contextId,
                                 Principal principal,
                                 @RequestHeader(value = ServicesAPI.MESSAGING_QUEUES_HEADER, required =
                                         false) Collection<Message.Queue> queuesHeader,
@@ -162,17 +165,47 @@ public class KlabScopeController {
 
         if (principal instanceof EngineAuthorization authorization) {
 
-            Logging.INSTANCE.info("PORCELLING CONTEXT " + contextId);
+            Logging.INSTANCE.info("PORCELLING CONTEXT " + contextId + " WITH INFO " + authorization.getInfo());
 
             var sessionScope = authorization.getScope(SessionScope.class);
 
             if (sessionScope != null) {
 
                 var identity = sessionScope.getIdentity();
+                List<Reasoner> reasoners =
+                        instance.klabService() instanceof Reasoner r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getReasonerServices().stream().map(url -> new ReasonerClient(url,
+                                identity, instance.klabService())).toList());
+                List<RuntimeService> runtimes =
+                        instance.klabService() instanceof RuntimeService r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getRuntimeServices().stream().map(url -> new RuntimeClient(url,
+                                identity, instance.klabService())).toList());
+                List<ResourcesService> resources =
+                        instance.klabService() instanceof ResourcesService r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getResourceServices().stream().map(url -> new ResourcesClient(url,
+                                identity, instance.klabService())).toList());
+                List<Resolver> resolvers =
+                        instance.klabService() instanceof Resolver r
+                        ? new ArrayList<>(List.of(r))
+                        :
+                        new ArrayList<>(request.getResolverServices().stream().map(url -> new ResolverClient(url,
+                                identity, instance.klabService())).toList());
+
+                if (request.getReasonerServices().isEmpty()) {
+                    reasoners.addAll(instance.klabService().serviceScope().getServices(Reasoner.class));
+                }
+
                 var ret = sessionScope.createContext(request.getName());
 
                 if (ret instanceof ServiceContextScope serviceContextScope) {
 
+                    serviceContextScope.setServices(resources, resolvers, reasoners, runtimes);
                     if (contextId != null) {
                         // slave mode: session ID is provided by a calling service. The service's
                         // registerSession should check that.
@@ -180,9 +213,12 @@ public class KlabScopeController {
                     }
 
 
+                    // TODO check presence and availability of all services and fail if no response
+
                     if (queuesHeader == null || queuesHeader.isEmpty()) {
                         queuesHeader = serviceContextScope.defaultQueues();
                     }
+
                     var id = instance.klabService().registerContext(ret);
 
                     var queuesAvailable = serviceContextScope.setupMessagingQueues(id, queuesHeader);
@@ -195,6 +231,8 @@ public class KlabScopeController {
 
                     return id;
                 }
+            } else {
+                Logging.INSTANCE.error("Context instantiation failed: no valid session scope for request");
             }
         }
         return null;

@@ -90,6 +90,9 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
 
     private boolean local;
 
+    // FIXME remove after debugging
+    private String info;
+
     /**
      * A successful authorization should always result in a scope being obtained.
      */
@@ -306,6 +309,14 @@ public class EngineAuthorization extends AbstractAuthenticationToken implements 
 
     public void setUsername(String username) {
         this.username = new Credentials(username);
+    }
+
+    public String getInfo() {
+        return info;
+    }
+
+    public void setInfo(String info) {
+        this.info = info;
     }
 
     public class Credentials implements CredentialsContainer {

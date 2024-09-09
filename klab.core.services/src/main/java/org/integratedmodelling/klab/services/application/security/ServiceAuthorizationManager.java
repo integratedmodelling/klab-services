@@ -323,6 +323,7 @@ public class ServiceAuthorizationManager {
                     " scope using scope ID " + scopeHeader);
         }
 
+        ret.setInfo("scopeHeader=" + scopeHeader + "; serverKey=" + serverKey);
         ret.setScope(scope);
 
         return ret;

@@ -110,6 +110,18 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             /**
+             * Localize the scope for communication when the scope itself is not available but its ID is.
+             *
+             * @param scopeId
+             * @return
+             */
+            public Client withScope(String scopeId) {
+                var ret = new Client(this);
+                ret.headers.put(ServicesAPI.SCOPE_HEADER, scopeId);
+                return ret;
+            }
+
+            /**
              * Localize the scope to another. Headers passed with the request will reflect the scope nesting.
              *
              * @param scope
@@ -142,6 +154,7 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
 
             /**
              * Return all values for the passed response header, or the empty list.
+             *
              * @param header
              * @return
              */
