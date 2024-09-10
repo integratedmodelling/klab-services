@@ -24,6 +24,10 @@ public class GeometryImpl implements Geometry {
      */
     public static final String WORLD_BBOX_PARAMETERS = "bbox=[-180.0 180.0 -90.0 90.0],proj=EPSG:4326";
 
+    public void setEmpty(boolean b) {
+        this.empty = false;
+    }
+
     /**
      * An internal descriptor for a locator. The API requires using this to disambiguate locators that use world
      * coordinates.

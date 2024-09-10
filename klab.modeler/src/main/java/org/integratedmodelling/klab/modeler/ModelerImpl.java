@@ -210,11 +210,11 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
         }
 
         if (currentContext == null && currentSession != null) {
-            currentContext = currentSession.createContext( "Default context");
+            currentContext = currentSession.createContext("Default context");
         }
 
         if (currentContext == null) {
-            user().error("cannot make observation");
+            user().error("cannot create an observation context: aborting", UI.Interactivity.DISPLAY);
             return;
         }
 

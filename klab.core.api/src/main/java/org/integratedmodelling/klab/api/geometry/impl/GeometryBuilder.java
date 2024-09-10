@@ -160,6 +160,7 @@ public class GeometryBuilder {
 		}
 
 		public SpaceBuilder shape(String wktb) {
+
 			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_SHAPE, GeometryImpl.encodeForSerialization(wktb));
 			return this;
 		}
@@ -279,6 +280,11 @@ public class GeometryBuilder {
 
 		GeometryImpl ret = new GeometryImpl();
 
+		if (space != null || time != null) {
+			ret.setScalar(false);
+			ret.setEmpty(false);
+		}
+
 		if (space != null) {
 			ret.addDimension(space);
 		}
@@ -290,9 +296,10 @@ public class GeometryBuilder {
 		return ret;
 	}
 
+
 	public static void main(String[] args) {
-		System.out.println(GeometryImpl.builder().space().generic().build());
-		System.out.println(GeometryImpl.builder().space().size(200, 339).build());
+		System.out.println(GeometryImpl.builder().space().generic().build().build());
+		System.out.println(GeometryImpl.builder().space().size(200, 339).build().build());
 	}
 
 }

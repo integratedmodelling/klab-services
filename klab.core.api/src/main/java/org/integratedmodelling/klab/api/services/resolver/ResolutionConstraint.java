@@ -43,6 +43,7 @@ public interface ResolutionConstraint {
 
     enum Type {
         Scenarios,
+        Geometry,
         ResolveWith,
         Resolved,
         ResolutionScope,
@@ -54,15 +55,15 @@ public interface ResolutionConstraint {
 
     Type getType();
 
-    /**
-     * Return true if the model is for a different observable or it's for the passed observable but part of a
-     * whitelist, is not blacklisted, comes from an accepted namespace, and uses accepted resources.
-     * <p>
-     * TODO revise
-     *
-     * @param model
-     * @return
-     */
-    boolean accepts(Model model);
+//    /**
+//     * Return true if the model is for a different observable or it's for the passed observable but part of a
+//     * whitelist, is not blacklisted, comes from an accepted namespace, and uses accepted resources.
+//     * <p>
+//     * TODO revise
+//     *
+//     * @param model
+//     * @return
+//     */
+//    boolean accepts(Model model);
 
 }

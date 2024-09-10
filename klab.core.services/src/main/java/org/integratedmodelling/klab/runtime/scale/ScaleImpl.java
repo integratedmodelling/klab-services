@@ -146,7 +146,6 @@ public class ScaleImpl implements Scale {
 
     }
 
-
     private ScaleLocator createLocator(Extent<?>[] extents) {
         int changingExtents = 0;
         int i = 0, changingExtent = 0;

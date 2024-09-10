@@ -1,16 +1,14 @@
 package org.integratedmodelling.klab.api.authentication;
 
+import org.integratedmodelling.klab.api.identities.Group;
+import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.scope.ServiceScope;
+import org.integratedmodelling.klab.api.scope.UserScope;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.integratedmodelling.klab.api.identities.Group;
-import org.integratedmodelling.klab.api.identities.UserIdentity;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
-import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
 /**
  * Permissions in k.LAB are either "*" for public and/or a list of comma-separated groups (uppercase) and/or
@@ -100,9 +98,6 @@ public class ResourcePrivileges implements Serializable {
             return true;
         }
 
-        @SuppressWarnings("unchecked")
-        Collection<ResolutionConstraint> constraints = scope.getData()
-                                                            .get(ResolutionConstraint.RESOLUTION_CONSTRAINTS_METADATA_KEY, Collection.class);
         if (scope instanceof UserScope userScope) {
             return checkAuthorization(userScope.getUser().getUsername(), userScope.getUser().getGroups());
         }

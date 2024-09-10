@@ -238,7 +238,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
-        return null;
+        // TODO
+        return this;
     }
 
     @Override
