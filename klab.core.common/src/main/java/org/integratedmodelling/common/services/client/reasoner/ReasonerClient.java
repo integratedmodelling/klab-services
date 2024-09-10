@@ -9,6 +9,8 @@ import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
@@ -17,6 +19,7 @@ import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchRequest;
 import org.integratedmodelling.klab.api.services.reasoner.objects.SemanticSearchResponse;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -41,9 +44,9 @@ import java.util.function.BiConsumer;
 public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.Admin {
 
 
-//    public ReasonerClient() {
-//        super(Type.REASONER);
-//    }
+    //    public ReasonerClient() {
+    //        super(Type.REASONER);
+    //    }
 
     public ReasonerClient(URL url, Identity identity, KlabService owner) {
         super(Type.REASONER, url, identity, List.of());
@@ -545,15 +548,14 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        ObservationImpl observation = new ObservationImpl();
+        observation.setObservable(observable);
+        ResolutionRequest resolutionRequest = new ResolutionRequest();
+        resolutionRequest.setObservation(observation);
+        resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
+        return client.withScope(scope).postCollection(ServicesAPI.REASONER.INFER_STRATEGIES,
+                resolutionRequest,ObservationStrategy.class);
     }
-
-    //    @Override
-    //    public boolean hasDistributedInherency(Concept c) {
-    //        // TODO Auto-generated method stub
-    //        return false;
-    //    }
 
     @Override
     public Collection<Concept> collectComponents(Concept concept, Collection<SemanticType> type) {
@@ -649,10 +651,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         if (getOwnerService() != null) {
             switch (getOwnerService()) {
                 case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
-                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
-                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case RuntimeService runtimeService ->
+                        request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService ->
+                        request.getResourceServices().add(resourcesService.getUrl());
                 case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
-                default -> {}
+                default -> {
+                }
             }
         }
 
@@ -663,7 +668,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_SESSION, request,
                 String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
-                                           serviceSideScope.getId() : null);
+                                    serviceSideScope.getId() : null);
 
         var brokerURI = client.getResponseHeader(ServicesAPI.MESSAGING_URN_HEADER);
         if (brokerURI != null && scope instanceof MessagingChannelImpl messagingChannel) {
@@ -719,10 +724,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
         if (getOwnerService() != null) {
             switch (getOwnerService()) {
                 case Resolver resolver -> request.getResolverServices().add(resolver.getUrl());
-                case RuntimeService runtimeService -> request.getRuntimeServices().add(runtimeService.getUrl());
-                case ResourcesService resourcesService -> request.getResourceServices().add(resourcesService.getUrl());
+                case RuntimeService runtimeService ->
+                        request.getRuntimeServices().add(runtimeService.getUrl());
+                case ResourcesService resourcesService ->
+                        request.getResourceServices().add(resourcesService.getUrl());
                 case Reasoner reasoner -> request.getReasonerServices().add(reasoner.getUrl());
-                default -> {}
+                default -> {
+                }
             }
         }
 
@@ -733,7 +741,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
         var ret = client.withScope(scope.getParentScope()).post(ServicesAPI.CREATE_CONTEXT, request,
                 String.class, "id", scope instanceof ServiceSideScope serviceSideScope ?
-                                           serviceSideScope.getId() : null);
+                                    serviceSideScope.getId() : null);
 
         if (hasMessaging) {
             var queues = getQueuesFromHeader(scope,

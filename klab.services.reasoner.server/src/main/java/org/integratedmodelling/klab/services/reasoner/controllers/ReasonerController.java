@@ -1,17 +1,20 @@
 package org.integratedmodelling.klab.services.reasoner.controllers;
 
+import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import org.integratedmodelling.klab.api.ServicesAPI;
 import org.integratedmodelling.klab.api.collections.Pair;
-import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.SemanticType;
-import org.integratedmodelling.klab.api.knowledge.Semantics;
+import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
+import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.ResourcesService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
+import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
 import org.integratedmodelling.klab.services.reasoner.ReasonerServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,6 +40,17 @@ public class ReasonerController {
     @GetMapping(ServicesAPI.REASONER.RESOLVE_CONCEPT)
     public @ResponseBody Concept resolveConcept(@PathVariable("definition") String definition) {
         return reasoner.klabService().resolveConcept(definition);
+    }
+
+    @PostMapping(ServicesAPI.REASONER.INFER_STRATEGIES)
+    public @ResponseBody List<ObservationStrategy> inferStrategies(@RequestBody ResolutionRequest request, Principal principal) {
+        if (principal instanceof EngineAuthorization authorization) {
+            var contextScope =
+                    authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
+            return reasoner.klabService().inferStrategies(request.getObservation().getObservable(), contextScope);
+        }
+        throw new KlabInternalErrorException("Unexpected implementation of request authorization");
+
     }
 
     /**

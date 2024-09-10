@@ -12,6 +12,7 @@ import org.locationtech.jts.geom.Point;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.awt.geom.Point2D;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class GridImpl implements Grid {
         SW_CORNER, SE_CORNER, NW_CORNER, NE_CORNER, S_EDGE, E_EDGE, N_EDGE, W_EDGE, INTERNAL
     }
 
+    @Serial
     private static final long serialVersionUID = -4637331840972669199L;
     private static final double EQUATOR_LENGTH_METERS = 40075000;
 

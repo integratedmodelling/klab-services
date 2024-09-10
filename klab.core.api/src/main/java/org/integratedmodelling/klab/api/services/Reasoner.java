@@ -102,9 +102,9 @@ public interface Reasoner extends KlabService {
     Observable declareObservable(KimObservable observableDeclaration);
 
     /**
-     * Declare an observable from a pattern using any pattern variables. If the observable is not a
-     * pattern, ignore the variables and return {@link #declareObservable(KimObservable)}. If some of the
-     * pattern variables are undefined in the passed array, return null.
+     * Declare an observable from a pattern using any pattern variables. If the observable is not a pattern,
+     * ignore the variables and return {@link #declareObservable(KimObservable)}. If some of the pattern
+     * variables are undefined in the passed array, return null.
      *
      * @param observableDeclaration
      * @param patternVariables
@@ -770,7 +770,7 @@ public interface Reasoner extends KlabService {
     /**
      * @param observable
      * @param scope
-     * @return all the observation strategies for this observable in this context, best first
+     * @return all the observation strategies for this observable in this context, best first.
      *
      * <p>Return all the possible strategies to observe the passed observable in this context, in order of
      * increasing cost/complexity. These will be resolved by the resolver in the order returned, stopping when

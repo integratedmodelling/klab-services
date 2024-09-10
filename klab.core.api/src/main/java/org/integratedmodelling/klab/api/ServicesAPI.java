@@ -250,6 +250,8 @@ public interface ServicesAPI {
 
         String IMPLIED_ROLE = REASONER_BASE + "/impliedRole";
 
+        String INFER_STRATEGIES = REASONER_BASE + "/inferStrategies";
+
         String ROLES_FOR = REASONER_BASE + "/rolesFor";
 
         String CREATED = REASONER_BASE + "/created";

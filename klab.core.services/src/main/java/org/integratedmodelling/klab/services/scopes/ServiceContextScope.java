@@ -181,8 +181,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
         long id = submitObservation(observation);
 
-        System.out.println("SUBMITTED CROSTA " + id);
-
         // create task before resolution starts so we guarantee a response
         var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
                 Message.MessageType.ResolutionSuccessful), id, this::getObservation);
@@ -192,9 +190,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
         // start virtual resolution thread. This should be everything we need.
         Thread.ofVirtual().start(() -> {
-//        new Thread(() -> {
             try {
-                System.out.println("RESOLVING CRAPPETTONE " + id);
                 var dataflow = resolver.resolve(observation, this);
                 if (dataflow != null && !dataflow.isEmpty()) {
                     var provenance = runtime.runDataflow(dataflow, this);
@@ -207,7 +203,6 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
             }
         });
-//         }).start();
         return ret;
 
     }
