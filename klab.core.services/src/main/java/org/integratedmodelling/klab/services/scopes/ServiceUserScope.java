@@ -79,6 +79,7 @@ public class ServiceUserScope extends AbstractReactiveScopeImpl implements UserS
         this.local = parent.local;
         this.serviceMap.putAll(parent.serviceMap);
         this.defaultServiceMap.putAll(parent.defaultServiceMap);
+        this.id = parent.id;
     }
 
     /**
