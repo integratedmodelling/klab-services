@@ -132,8 +132,8 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 ret.scope = scope;
                 if (scope instanceof ContextScope contextScope) {
                     ret.headers.put(ServicesAPI.SCOPE_HEADER, ContextScope.getScopeId(contextScope));
-                } else if (scope instanceof ClientSessionScope clientSessionScope) {
-                    ret.headers.put(ServicesAPI.SCOPE_HEADER, clientSessionScope.getId());
+                } else if (scope instanceof SessionScope sessionScope) {
+                    ret.headers.put(ServicesAPI.SCOPE_HEADER, sessionScope.getId());
                 }
                 return ret;
             }
