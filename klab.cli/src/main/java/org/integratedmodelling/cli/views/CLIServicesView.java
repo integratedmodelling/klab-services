@@ -1,4 +1,4 @@
 package org.integratedmodelling.cli.views;
 
-public class ReasonerView {
+public class CLIServicesView {
 }
