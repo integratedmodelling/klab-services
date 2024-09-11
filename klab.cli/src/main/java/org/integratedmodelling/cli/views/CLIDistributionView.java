@@ -1,4 +1,6 @@
 package org.integratedmodelling.cli.views;
 
-public class CLIDistributionView {
+import org.integratedmodelling.klab.api.view.modeler.panels.DistributionView;
+
+public class CLIDistributionView extends CLIView implements DistributionView {
 }
