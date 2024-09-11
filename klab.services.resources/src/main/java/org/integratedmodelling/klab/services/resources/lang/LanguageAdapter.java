@@ -540,7 +540,7 @@ public enum LanguageAdapter {
             // and these are comma-separated filters in a 'for'
             for (var match : filter.getMatch()) {
 
-                var f = new KimObservationStrategyImpl.FilterImpl();            // TODO
+                var f = new KimObservationStrategyImpl.FilterImpl();
                 f.setNegated(match.isNegated());
                 if (match.getObservable() != null /* which it should */) {
                     f.setMatch(adaptSemantics(match.getObservable(), namespace, projectName,
@@ -571,10 +571,11 @@ public enum LanguageAdapter {
                         KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY_DOCUMENT));
             }
             if (!operation.getFunctions().isEmpty()) {
-
+                o.getFunctions().addAll(operation.getFunctions().stream().map(f -> adaptServiceCall(f,
+                        namespace, projectName, KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY)).toList());
             }
             if (!operation.getDeferredStrategies().isEmpty()) {
-
+                o.getDeferredStrategies().addAll(operation.getDeferredStrategies().stream().map(s -> adaptStrategy(s, namespace, projectName)).toList());
             }
             ret.getOperations().add(o);
         }
