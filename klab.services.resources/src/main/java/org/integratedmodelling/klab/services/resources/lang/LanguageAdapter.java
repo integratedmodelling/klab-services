@@ -15,6 +15,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.languages.api.*;
 
 import java.util.*;
@@ -580,6 +581,28 @@ public enum LanguageAdapter {
 
         for (var let : strategy.getMacroVariables().keySet()) {
             var f = new KimObservationStrategyImpl.FilterImpl();
+            String key = null;
+            if (let.isIdentifier()) {
+                key = let.toString();
+            } else if (let.getPod() instanceof List<?> list) {
+                key = Utils.Strings.join(list, ",");
+            }
+            if (key == null) {
+                ret.getNotifications().add(Notification.error("unrecognized argument for let statement",
+                        let));
+                continue;
+            }
+
+            var filter = strategy.getMacroVariables().get(let);
+            if (filter.getObservable() != null) {
+                f.setMatch(adaptSemantics(filter.getObservable(), namespace, projectName,
+                        KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
+            }
+            for (var condition : filter.getConditions()) {
+                f.getFunctions().add(adaptServiceCall(condition, namespace, projectName,
+                        KlabAsset.KnowledgeClass.OBSERVATION_STRATEGY));
+            }
+            ret.getMacroVariables().put(key, f);
         }
         return ret;
     }

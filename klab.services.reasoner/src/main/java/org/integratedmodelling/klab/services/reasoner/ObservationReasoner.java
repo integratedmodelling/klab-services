@@ -3,15 +3,16 @@ package org.integratedmodelling.klab.services.reasoner;
 import com.google.common.collect.Sets;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.*;
-import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
+import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
+import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Specialized functions to infer observation strategies. Kept separately for clarity as this is a crucial
@@ -51,6 +52,9 @@ public class ObservationReasoner {
 
     public ObservationReasoner(ReasonerService reasonerService) {
         this.reasoner = reasonerService;
+        // ensure the core functor library is read. Plugins may add more.
+        ServiceConfiguration.INSTANCE.scanLibraries("org.integratedmodelling.klab.services.reasoner" +
+                ".functors");
     }
 
     /**
@@ -64,12 +68,13 @@ public class ObservationReasoner {
     public List<ObservationStrategy> matching(Observable observable, ContextScope scope) {
 
         List<ObservationStrategy> ret = new ArrayList<>();
+        var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
 
         for (var strategy : observationStrategies) {
 
             ApplicabileFilter filter = quickFilters.get(strategy.getUrn());
 
-            if (filter.customVariablesUsed.contains("context") && scope.getContextObservation() == null) {
+            if (filter.fixedVariablesUsed.contains("context") && scope.getContextObservation() == null) {
                 continue;
             }
 
@@ -92,7 +97,14 @@ public class ObservationReasoner {
                     } else if (functor.getMatch() != null) {
 
                     } else if (!functor.getFunctions().isEmpty()) {
+                        for (var function : functor.getFunctions()) {
+                            var value = languageService.execute(function, scope, Object.class);
+                            if (value instanceof Collection<?> collection) {
+                                for (var v : collection) {
 
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -165,7 +177,8 @@ public class ObservationReasoner {
      * @param strategyNamespace
      */
     public void releaseNamespace(String strategyNamespace) {
-        var filtered = observationStrategies.stream().filter(o -> !o.getNamespace().equals(strategyNamespace)).toList();
+        var filtered =
+                observationStrategies.stream().filter(o -> !o.getNamespace().equals(strategyNamespace)).toList();
         observationStrategies.clear();
         observationStrategies.addAll(filtered);
     }

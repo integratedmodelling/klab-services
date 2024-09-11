@@ -17,6 +17,7 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import javassist.Modifier;
+import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.lang.PrototypeImpl;
@@ -575,6 +576,7 @@ public enum ServiceConfiguration {
             }
         }
 
+
         // Spring-based, uses ASM which is not yet compatible with Java 21
         //        ClassPathScanningCandidateComponentProvider provider = new
         //        ClassPathScanningCandidateComponentProvider(false);
@@ -612,6 +614,16 @@ public enum ServiceConfiguration {
             ret = getProperties().getProperty(property);
         }
         return ret == null ? defaultValue : ret;
+    }
+
+    /**
+     * Simple call to scan a named package for all @Library annotations in it.
+     *
+     * @param pack
+     */
+    public void scanLibraries(String pack) {
+        ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+                ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
     }
 
     /**
