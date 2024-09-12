@@ -1522,6 +1522,33 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         return resolveObservable(urn);
     }
 
+
+    @Override
+    public Concept declareConcept(KimConcept observableDeclaration,
+                                        Map<String, Object> patternVariables) {
+
+        if (!observableDeclaration.isPattern()) {
+            return declareConcept(observableDeclaration);
+        }
+        String urn = observableDeclaration.getUrn();
+        for (var key : observableDeclaration.getPatternVariables()) {
+            var value = patternVariables.get(key);
+            if (value == null) {
+                return null;
+            }
+            String valueCode = switch (value) {
+                case KimConcept kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case KimObservable kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case Concept kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case Observable kimConcept -> "(" + kimConcept.getUrn() + ")";
+                case String string -> "\"" + Utils.Escape.forDoubleQuotedString(string, false) + "\"";
+                default -> value.toString();
+            };
+            urn = urn.replace("$:" + key, valueCode);
+        }
+        return resolveConcept(urn);
+    }
+
     @Override
     public boolean compatible(Semantics o1, Semantics o2) {
         return compatible(o1, o2, 0);
@@ -2583,7 +2610,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public List<ObservationStrategy> inferStrategies(Observation observation, ContextScope scope) {
+    public List<ObservationStrategy> computeObservationStrategies(Observation observation, ContextScope scope) {
         return observationReasoner.matching(observation, scope);
     }
 

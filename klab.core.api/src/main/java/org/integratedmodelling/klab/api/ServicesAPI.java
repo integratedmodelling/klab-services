@@ -182,6 +182,12 @@ public interface ServicesAPI {
          */
         String DECLARE_OBSERVABLE = REASONER_BASE + "/declare/observable";
 
+        /**
+         * @protocol POST for a map containing the KimConcept definition as "OBSERVABLE" and possibly
+         * pattern variables
+         */
+        String DECLARE_CONCEPT = REASONER_BASE + "/declare/concept";
+
         String SEMANTIC_SEARCH = REASONER_BASE + "/semanticSearch";
 
         String HAS_TRAIT = REASONER_BASE + "/hasTrait";
@@ -250,7 +256,7 @@ public interface ServicesAPI {
 
         String IMPLIED_ROLE = REASONER_BASE + "/impliedRole";
 
-        String INFER_STRATEGIES = REASONER_BASE + "/inferStrategies";
+        String COMPUTE_OBSERVATION_STRATEGIES = REASONER_BASE + "/computeStrategies";
 
         String ROLES_FOR = REASONER_BASE + "/rolesFor";
 

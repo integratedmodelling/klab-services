@@ -10,7 +10,6 @@ import org.integratedmodelling.klab.api.identities.Identity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
@@ -92,6 +91,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     public Observable declareObservable(KimObservable observableDeclaration) {
         return client.post(ServicesAPI.REASONER.DECLARE_OBSERVABLE, Map.of("OBSERVABLE",
                 observableDeclaration), Observable.class);
+    }
+
+    @Override
+    public Concept declareConcept(KimConcept conceptDeclaration,
+                                        Map<String, Object> patternVariables) {
+        patternVariables.put("OBSERVABLE", conceptDeclaration);
+        return client.post(ServicesAPI.REASONER.DECLARE_CONCEPT, patternVariables, Concept.class);
     }
 
     @Override
@@ -547,11 +553,11 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public List<ObservationStrategy> inferStrategies(Observation observation, ContextScope scope) {
+    public List<ObservationStrategy> computeObservationStrategies(Observation observation, ContextScope scope) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
         resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
-        return client.withScope(scope).postCollection(ServicesAPI.REASONER.INFER_STRATEGIES,
+        return client.withScope(scope).postCollection(ServicesAPI.REASONER.COMPUTE_OBSERVATION_STRATEGIES,
                 resolutionRequest,ObservationStrategy.class);
     }
 

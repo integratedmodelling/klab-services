@@ -97,6 +97,16 @@ public interface Reasoner extends KlabService {
     Concept declareConcept(KimConcept conceptDeclaration);
 
     /**
+     * Declare a concept from a pattern using any pattern variables. If the observable is not a pattern,
+     * ignore the variables and return {@link #declareObservable(KimObservable)}. If some of the pattern
+     * variables are undefined in the passed array, return null.
+     *
+     * @param conceptDeclaration
+     * @return
+     */
+    Concept declareConcept(KimConcept conceptDeclaration, Map<String, Object> patternVariables);
+
+    /**
      * @param observableDeclaration
      * @return
      */
@@ -918,7 +928,7 @@ public interface Reasoner extends KlabService {
      *     if a model
      *     that only explicitly resolves <code>within</code> a specialized context is chosen.</dd>
      */
-    List<ObservationStrategy> inferStrategies(Observation observation, ContextScope scope);
+    List<ObservationStrategy> computeObservationStrategies(Observation observation, ContextScope scope);
 
     /**
      * Entry point of the assisted semantic search behind interactive concept definition. If the request has a

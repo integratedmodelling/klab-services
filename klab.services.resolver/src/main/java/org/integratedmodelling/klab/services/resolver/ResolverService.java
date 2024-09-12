@@ -3,14 +3,12 @@ package org.integratedmodelling.klab.services.resolver;
 import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.logging.Logging;
-import org.integratedmodelling.common.services.ReasonerCapabilitiesImpl;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.collections.Triple;
 import org.integratedmodelling.klab.api.data.Version;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
-import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.*;
@@ -23,7 +21,6 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
@@ -47,7 +44,6 @@ import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
 
 import java.io.File;
-import java.net.URI;
 import java.util.*;
 
 public class ResolverService extends BaseService implements Resolver {
@@ -180,55 +176,55 @@ public class ResolverService extends BaseService implements Resolver {
 
     }
 
-    /**
-     * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
-     * graph which will contain any observations that were already resolved within the context observation in
-     * the scope, if any.
-     *
-     * @param knowledge
-     * @param scope
-     * @return
-     */
-    public Resolution computeResolution(Resolvable knowledge, ContextScope scope) {
-
-        Geometry resolutionGeometry = Geometry.EMPTY;
-
-        Resolvable observable = switch (knowledge) {
-            case Concept concept -> Observable.promote(concept);
-            case Model model -> model.getObservables().get(0);
-            case Observable obs -> obs;
-            case Observation observation -> {
-                resolutionGeometry = observation.getGeometry();
-                yield observation.getObservable();
-            }
-            default -> null;
-        };
-
-        if (observable == null) {
-            // FIXME this should just set the resolution to an error state and return it
-            throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
-        }
-
-        if (scope.getContextObservation() != null) {
-            resolutionGeometry = scope.getContextObservation().getGeometry();
-        } else if (resolutionGeometry.isEmpty() && scope.getObserver() != null) {
-            resolutionGeometry = scope.getObserver().getObserverGeometry();
-        }
-
-        var scale = Scale.create(resolutionGeometry);
-
-        ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
-        if (knowledge instanceof Model) {
-            resolveModel((Model) knowledge, observable, scale,
-                    scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
-                    ret);
-        } else if (observable instanceof Observable obs) {
-            resolveObservable(obs, scale, scope, ret, null);
-        } // TODO the rest
-
-        return ret;
-
-    }
+//    /**
+//     * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
+//     * graph which will contain any observations that were already resolved within the context observation in
+//     * the scope, if any.
+//     *
+//     * @param knowledge
+//     * @param scope
+//     * @return
+//     */
+//    public Resolution computeResolution(Resolvable knowledge, ContextScope scope) {
+//
+//        Geometry resolutionGeometry = Geometry.EMPTY;
+//
+//        Resolvable observable = switch (knowledge) {
+//            case Concept concept -> Observable.promote(concept);
+//            case Model model -> model.getObservables().get(0);
+//            case Observable obs -> obs;
+//            case Observation observation -> {
+//                resolutionGeometry = observation.getGeometry();
+//                yield observation.getObservable();
+//            }
+//            default -> null;
+//        };
+//
+//        if (observable == null) {
+//            // FIXME this should just set the resolution to an error state and return it
+//            throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
+//        }
+//
+//        if (scope.getContextObservation() != null) {
+//            resolutionGeometry = scope.getContextObservation().getGeometry();
+//        } else if (resolutionGeometry.isEmpty() && scope.getObserver() != null) {
+//            resolutionGeometry = scope.getObserver().getObserverGeometry();
+//        }
+//
+//        var scale = Scale.create(resolutionGeometry);
+//
+//        ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
+//        if (knowledge instanceof Model) {
+//            resolveModel((Model) knowledge, observable, scale,
+//                    scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
+//                    ret);
+//        } else if (observable instanceof Observable obs) {
+//            resolveObservable(obs, scale, scope, ret, null);
+//        } // TODO the rest
+//
+//        return ret;
+//
+//    }
 
     private Coverage resolveObservation(Observation observation, Scale scale, ContextScope scope,
                                        ResolutionImpl parent,
@@ -249,7 +245,7 @@ public class ResolverService extends BaseService implements Resolver {
 
         // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy :
-                scope.getService(Reasoner.class).inferStrategies(observation,
+                scope.getService(Reasoner.class).computeObservationStrategies(observation,
                         scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
@@ -307,7 +303,7 @@ public class ResolverService extends BaseService implements Resolver {
 
         // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy :
-                scope.getService(Reasoner.class).inferStrategies(observation,
+                scope.getService(Reasoner.class).computeObservationStrategies(observation,
                         scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);

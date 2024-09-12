@@ -120,15 +120,14 @@ public class ObservationReasoner {
                 // at least a matching filter is necessary
                 boolean match = false;
                 for (var filterList : strategy.getFilters()) {
-
-                    boolean ok = true;
                     for (var matching : filterList) {
-                        // TODO dio cu'
-                    }
-
-                    if (ok) {
-                        match = true;
-                        break;
+                        if (matchFilter(matching, observation, scope, patternVariableValues)) {
+                            match = true;
+                            break;
+                        }
+                        if (match) {
+                            break;
+                        }
                     }
                 }
 
@@ -168,6 +167,24 @@ public class ObservationReasoner {
 
 
         return ret;
+    }
+
+    private boolean matchFilter(KimObservationStrategy.Filter filter, Observation observation,
+                                ContextScope scope, Map<String, Object> patternVariableValues) {
+
+        boolean ret = true;
+        if (filter.getMatch() != null) {
+
+            var semantics = filter.getMatch().isPattern() ? reasoner.declareConcept(filter.getMatch(),
+                    patternVariableValues) : reasoner.declareConcept(filter.getMatch());
+            ret = semantics != null; // && compatible
+        }
+        if (ret && !filter.getFunctions().isEmpty()) {
+            for (var function : filter.getFunctions()) {
+
+            }
+        }
+        return filter.isNegated() != ret;
     }
 
     /**
