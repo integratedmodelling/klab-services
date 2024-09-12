@@ -46,6 +46,17 @@ public interface ObservationStrategy extends Knowledge {
          * @return
          */
         List<Contextualizable> getContextualizables();
+
+        /**
+         * Strategies to trigger on the contextualized result of the operation, if any. For example, resolve
+         * the individual observations created in a collective observation.
+         * <p>
+         * Each of the returned strategies is a list of contextualized operations; they represent alternatives
+         * of increasing cost, i.e. resolution is complete after the first one succeeds.
+         *
+         * @return
+         */
+        List<List<Operation>> getContextualStrategies();
     }
 
     /**

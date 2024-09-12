@@ -13,11 +13,13 @@ import org.integratedmodelling.klab.api.lang.kim.KimClassification;
 import org.integratedmodelling.klab.api.lang.kim.KimLookupTable;
 import org.integratedmodelling.klab.api.lang.kim.KimObservable;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class ContextualizableImpl extends KimStatementImpl implements Contextualizable {
 
+    @Serial
     private static final long serialVersionUID = -1700963983184974464L;
 
     private Type type;

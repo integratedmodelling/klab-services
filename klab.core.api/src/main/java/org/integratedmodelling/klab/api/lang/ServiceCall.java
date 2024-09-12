@@ -57,5 +57,7 @@ public interface ServiceCall extends Encodeable {
     Collection<String> getInteractiveParameters();
 
 
+    ServiceCall withUnnamedParameters(Object... unnamedParameters);
 
+    ServiceCall withNamedParameters(Object... keyValuePairList);
 }

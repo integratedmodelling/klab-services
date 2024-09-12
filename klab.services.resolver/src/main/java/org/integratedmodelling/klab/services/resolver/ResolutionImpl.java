@@ -12,6 +12,7 @@ import java.util.Set;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.collections.Triple;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resolvable;
@@ -333,5 +334,11 @@ public class ResolutionImpl extends DefaultDirectedGraph<Resolvable, ResolutionI
 
     public void setNotifications(List<Notification> notifications) {
         this.notifications = notifications;
+    }
+
+    public static Resolution empty(Resolvable resolvable, ContextScope scope) {
+        var ret = new ResolutionImpl(resolvable, null, scope);
+        ret.empty = true;
+        return ret;
     }
 }

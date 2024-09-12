@@ -3,6 +3,7 @@ package org.integratedmodelling.klab.api.services;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable.Builder;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.kim.KimConcept;
 import org.integratedmodelling.klab.api.lang.kim.KimConceptStatement;
@@ -917,7 +918,7 @@ public interface Reasoner extends KlabService {
      *     if a model
      *     that only explicitly resolves <code>within</code> a specialized context is chosen.</dd>
      */
-    List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope);
+    List<ObservationStrategy> inferStrategies(Observation observation, ContextScope scope);
 
     /**
      * Entry point of the assisted semantic search behind interactive concept definition. If the request has a

@@ -547,9 +547,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
-        ObservationImpl observation = new ObservationImpl();
-        observation.setObservable(observable);
+    public List<ObservationStrategy> inferStrategies(Observation observation, ContextScope scope) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
         resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());

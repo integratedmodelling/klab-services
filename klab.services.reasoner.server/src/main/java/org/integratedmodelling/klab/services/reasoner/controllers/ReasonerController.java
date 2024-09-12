@@ -47,7 +47,7 @@ public class ReasonerController {
         if (principal instanceof EngineAuthorization authorization) {
             var contextScope =
                     authorization.getScope(ContextScope.class).withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0]));
-            return reasoner.klabService().inferStrategies(request.getObservation().getObservable(), contextScope);
+            return reasoner.klabService().inferStrategies(request.getObservation(), contextScope);
         }
         throw new KlabInternalErrorException("Unexpected implementation of request authorization");
 

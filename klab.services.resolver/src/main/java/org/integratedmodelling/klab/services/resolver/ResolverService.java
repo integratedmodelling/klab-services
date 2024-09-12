@@ -135,6 +135,7 @@ public class ResolverService extends BaseService implements Resolver {
         System.out.println("RISOLVIAMO STA MERDA " + observation);
 
         var resolution = computeResolution(observation, contextScope);
+
         if (!resolution.isEmpty()) {
             return compile(observation, resolution, contextScope);
         }
@@ -144,6 +145,39 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public String serviceId() {
         return configuration.getServiceId();
+    }
+
+    /**
+     * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
+     * graph which will contain any observations that were already resolved within the context observation in
+     * the scope, if any.
+     *
+     * @param scope
+     * @return
+     */
+    public Resolution computeResolution(Observation observation, ContextScope scope) {
+
+        Geometry resolutionGeometry = observation.getGeometry();
+
+        if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
+            if (scope.getContextObservation() != null) {
+                resolutionGeometry = scope.getContextObservation().getGeometry();
+            } else if (resolutionGeometry.isEmpty() && scope.getObserver() != null) {
+                resolutionGeometry = scope.getObserver().getObserverGeometry();
+            }
+        }
+
+        if (resolutionGeometry == null) {
+            return ResolutionImpl.empty(observation, scope);
+        }
+
+        var scale = Scale.create(resolutionGeometry);
+
+        ResolutionImpl ret = new ResolutionImpl(observation.getObservable(), scale, scope);
+        resolveObservation(observation, scale, scope, ret, null);
+
+        return ret;
+
     }
 
     /**
@@ -196,15 +230,55 @@ public class ResolverService extends BaseService implements Resolver {
 
     }
 
-    /**
-     * We always resolve an observable first. This only reports coverage as it does not directly create a
-     * resolution graph; this is done when resolving a model, which creates a graph and merges it with the
-     * parent graph if successful.
-     *
-     * @param observable
-     * @param parent
-     * @return
-     */
+    private Coverage resolveObservation(Observation observation, Scale scale, ContextScope scope,
+                                       ResolutionImpl parent,
+                                       Model parentModel) {
+
+        var observable = observation.getObservable();
+        Coverage ret = Coverage.create(scale, 0.0);
+
+        // infinite recursion is nice but wastes time
+        if (parent.checkResolving(observable)) {
+            return Coverage.universal();
+        }
+
+        // done already, nothing to do here
+        if (parent.getResolved(observable) != null) {
+            return Coverage.universal();
+        }
+
+        // see what the reasoner thinks of this observable
+        for (ObservationStrategy strategy :
+                scope.getService(Reasoner.class).inferStrategies(observation,
+                        scope)) {
+            // this merges any useful strategy and returns the coverage
+            ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
+            ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
+            if (ret.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+                continue;
+            }
+            if (ret.isRelevant()) {
+                // merge the resolution with the parent resolution
+                parent.merge(parentModel, resolution, ResolutionType.DIRECT);
+                if (parent.getCoverage().isComplete()) {
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+
+        /**
+         * We always resolve an observable first. This only reports coverage as it does not directly create a
+         * resolution graph; this is done when resolving a model, which creates a graph and merges it with the
+         * parent graph if successful.
+         *
+         * @param observable
+         * @param parent
+         * @return
+         */
     private Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope,
                                        ResolutionImpl parent,
                                        Model parentModel) {
@@ -228,9 +302,12 @@ public class ResolverService extends BaseService implements Resolver {
             return Coverage.universal();
         }
 
+        // TODO have the runtime make the observation!
+        Observation observation = null;
+
         // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy :
-                scope.getService(Reasoner.class).inferStrategies(observable,
+                scope.getService(Reasoner.class).inferStrategies(observation,
                         scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);

@@ -1509,7 +1509,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
             if (value == null) {
                 return null;
             }
-            String valueCode = switch(value) {
+            String valueCode = switch (value) {
                 case KimConcept kimConcept -> "(" + kimConcept.getUrn() + ")";
                 case KimObservable kimConcept -> "(" + kimConcept.getUrn() + ")";
                 case Concept kimConcept -> "(" + kimConcept.getUrn() + ")";
@@ -2583,8 +2583,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public List<ObservationStrategy> inferStrategies(Observable observable, ContextScope scope) {
-        return observationReasoner.matching(observable, scope);
+    public List<ObservationStrategy> inferStrategies(Observation observation, ContextScope scope) {
+        return observationReasoner.matching(observation, scope);
     }
 
     @Override

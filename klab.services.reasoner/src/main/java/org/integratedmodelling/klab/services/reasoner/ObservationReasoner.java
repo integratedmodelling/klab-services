@@ -5,6 +5,7 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
@@ -58,15 +59,16 @@ public class ObservationReasoner {
     }
 
     /**
-     * Build and return the list of matching strategies created to match the observable and scope, in order of
-     * rank and cost.
+     * Compile and return a list of matching, contextualized observation strategies that match the observable
+     * and scope, in order of rank and cost, for the resolver to resolve.
      *
-     * @param observable
+     * @param observation
      * @param scope
      * @return
      */
-    public List<ObservationStrategy> matching(Observable observable, ContextScope scope) {
+    public List<ObservationStrategy> matching(Observation observation, ContextScope scope) {
 
+        var observable = observation.getObservable();
         List<ObservationStrategy> ret = new ArrayList<>();
         var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
 
@@ -98,6 +100,13 @@ public class ObservationReasoner {
 
                     } else if (!functor.getFunctions().isEmpty()) {
                         for (var function : functor.getFunctions()) {
+
+                            // complete arguments if empty or using previously instantiated variables
+                            if (function.getParameters().isEmpty()) {
+                                function = function.withUnnamedParameters(observable);
+                            } else {
+                                // substitute parameters
+                            }
                             var value = languageService.execute(function, scope, Object.class);
                             if (value instanceof Collection<?> collection) {
                                 for (var v : collection) {
