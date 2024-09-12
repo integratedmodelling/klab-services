@@ -5,7 +5,9 @@ import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
+import org.integratedmodelling.klab.api.knowledge.Semantics;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
+import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
@@ -70,7 +72,6 @@ public class ObservationReasoner {
 
         var observable = observation.getObservable();
         List<ObservationStrategy> ret = new ArrayList<>();
-        var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
 
         for (var strategy : observationStrategies) {
 
@@ -100,18 +101,24 @@ public class ObservationReasoner {
 
                     } else if (!functor.getFunctions().isEmpty()) {
                         for (var function : functor.getFunctions()) {
-
-                            // complete arguments if empty or using previously instantiated variables
-                            if (function.getParameters().isEmpty()) {
-                                function = function.withUnnamedParameters(observable);
-                            } else {
-                                // substitute parameters
-                            }
-                            var value = languageService.execute(function, scope, Object.class);
+                            var value = matchFunction(function, observable, scope, Object.class,
+                                    patternVariableValues);
+                            String[] varNames = variable.split(",");
                             if (value instanceof Collection<?> collection) {
-                                for (var v : collection) {
-
+                                // must be string with same amount of return values
+                                if (varNames.length != collection.size()) {
+                                    scope.error("wrong number of return values from " + function);
                                 }
+                                int i = 0;
+                                for (var o : collection) {
+                                    patternVariableValues.put(varNames[i++], o);
+                                }
+                            } else {
+                                // set pattern var
+                                if (varNames.length != 1) {
+                                    scope.error("wrong number of return values from " + function);
+                                }
+                                patternVariableValues.put(variable, value);
                             }
                         }
                     }
@@ -125,9 +132,9 @@ public class ObservationReasoner {
                             match = true;
                             break;
                         }
-                        if (match) {
-                            break;
-                        }
+                    }
+                    if (match) {
+                        break;
                     }
                 }
 
@@ -136,8 +143,8 @@ public class ObservationReasoner {
                 }
 
                 /*
-                   if we get here, there is a match, compile the observation strategy
-                   customized for the observable and scope
+                   if we get here, the strategy definition is a match: compile the observation strategy
+                   operations for the observable and scope
                  */
 
                 var os = new ObservationStrategyImpl();
@@ -158,6 +165,8 @@ public class ObservationReasoner {
 
                     for (var function : operation.getFunctions()) {
                     }
+
+                    os.getOperations().add(op);
                 }
 
                 ret.add(os);
@@ -169,6 +178,21 @@ public class ObservationReasoner {
         return ret;
     }
 
+    private Object matchFunction(ServiceCall function, Semantics observable, ContextScope scope,
+                                 Class<Object> objectClass, Map<String, Object> patternVariableValues) {
+
+        var languageService = ServiceConfiguration.INSTANCE.getService(Language.class);
+
+        // complete arguments if empty or using previously instantiated variables
+        if (function.getParameters().isEmpty()) {
+            function = function.withUnnamedParameters(observable);
+        } else {
+            // substitute parameters
+        }
+        return languageService.execute(function, scope, Object.class);
+
+    }
+
     private boolean matchFilter(KimObservationStrategy.Filter filter, Observation observation,
                                 ContextScope scope, Map<String, Object> patternVariableValues) {
 
@@ -177,11 +201,13 @@ public class ObservationReasoner {
 
             var semantics = filter.getMatch().isPattern() ? reasoner.declareConcept(filter.getMatch(),
                     patternVariableValues) : reasoner.declareConcept(filter.getMatch());
-            ret = semantics != null; // && compatible
+            ret = semantics != null && reasoner.compatible(observation.getObservable(), semantics);
         }
         if (ret && !filter.getFunctions().isEmpty()) {
             for (var function : filter.getFunctions()) {
-
+                var value = matchFunction(function, observation.getObservable(), scope, Object.class,
+                        patternVariableValues);
+                ret = value instanceof Boolean bool && bool;
             }
         }
         return filter.isNegated() != ret;
