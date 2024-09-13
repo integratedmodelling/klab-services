@@ -513,13 +513,14 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
                 return java.util.Collections.emptyList();
             }
 
-
             private <T> T parseResponse(String body, Class<T> resultClass) {
                 if (body == null) {
                     return null;
                 }
                 if (resultClass == String.class) {
                     return (T) body;
+                } else if (resultClass == Boolean.class) {
+                    return (T) Boolean.valueOf(body);
                 } else if (resultClass == Integer.class) {
                     return (T) Integer.valueOf(body);
                 } else if (resultClass == Long.class) {

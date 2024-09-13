@@ -95,7 +95,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public Concept declareConcept(KimConcept conceptDeclaration,
-                                        Map<String, Object> patternVariables) {
+                                  Map<String, Object> patternVariables) {
         patternVariables.put("OBSERVABLE", conceptDeclaration);
         return client.post(ServicesAPI.REASONER.DECLARE_CONCEPT, patternVariables, Concept.class);
     }
@@ -456,14 +456,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
     @Override
     public boolean compatible(Semantics concept, Semantics other) {
-        // TODO Auto-generated method stub
-        return false;
+        return client.post(ServicesAPI.REASONER.COMPATIBLE, List.of(concept, other), Boolean.class);
     }
 
     @Override
     public boolean contextuallyCompatible(Semantics focus, Semantics context1, Semantics context2) {
-        // TODO Auto-generated method stub
-        return false;
+        return client.post(ServicesAPI.REASONER.CONTEXTUALLY_COMPATIBLE, List.of(focus, context1, context2)
+                , Boolean.class);
     }
 
     @Override
@@ -553,12 +552,13 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public List<ObservationStrategy> computeObservationStrategies(Observation observation, ContextScope scope) {
+    public List<ObservationStrategy> computeObservationStrategies(Observation observation,
+                                                                  ContextScope scope) {
         ResolutionRequest resolutionRequest = new ResolutionRequest();
         resolutionRequest.setObservation(observation);
         resolutionRequest.getResolutionConstraints().addAll(scope.getResolutionConstraints());
         return client.withScope(scope).postCollection(ServicesAPI.REASONER.COMPUTE_OBSERVATION_STRATEGIES,
-                resolutionRequest,ObservationStrategy.class);
+                resolutionRequest, ObservationStrategy.class);
     }
 
     @Override

@@ -34,6 +34,7 @@ import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Instance;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.resources.FileProjectStorage;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -101,6 +102,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public ResourcesProvider(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
 
         super(scope, Type.RESOURCES, options);
+
+        ServiceConfiguration.INSTANCE.setMainService(this);
 
         /*
         Find out any Instance-annotated classes before we read anything

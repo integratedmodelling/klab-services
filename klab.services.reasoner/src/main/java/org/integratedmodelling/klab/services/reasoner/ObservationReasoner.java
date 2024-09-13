@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.services.reasoner;
 
 import com.google.common.collect.Sets;
+import org.integratedmodelling.common.lang.ContextualizableImpl;
 import org.integratedmodelling.klab.api.exceptions.KlabUnimplementedException;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.ObservationStrategy;
@@ -28,17 +29,38 @@ public class ObservationReasoner {
     private Reasoner reasoner;
     private List<KimObservationStrategy> observationStrategies = new ArrayList<>();
 
-    private static class ApplicabileFilter {
+    private static class QuickSemanticFilter {
 
         public Set<SemanticType> semanticTypesWhitelist = EnumSet.noneOf(SemanticType.class);
         public Set<SemanticType> semanticTypesBlacklist = EnumSet.noneOf(SemanticType.class);
         // any predefined variables used in patterns
         public Set<String> fixedVariablesUsed = new HashSet<>();
         public Set<String> customVariablesUsed = new HashSet<>();
+        public boolean collectiveConstraints;
+        public boolean collectiveOnly;
+        public boolean nonCollectiveOnly;
 
+        /**
+         * Quick match to quickly weed out the non-matching classes and minimize the need for inference and
+         * pattern instantiation.
+         *
+         * @param observable
+         * @param scope
+         * @return
+         */
         public boolean match(Observable observable, ContextScope scope) {
             if (!semanticTypesWhitelist.isEmpty()) {
                 if (Sets.intersection(observable.getSemantics().getType(), semanticTypesWhitelist).isEmpty()) {
+                    return false;
+                }
+            }
+            if (!semanticTypesBlacklist.isEmpty()) {
+                if (!Sets.intersection(observable.getSemantics().getType(), semanticTypesBlacklist).isEmpty()) {
+                    return false;
+                }
+            }
+            if (collectiveConstraints) {
+                if ((collectiveOnly && !observable.isCollective()) || (nonCollectiveOnly && observable.isCollective())) {
                     return false;
                 }
             }
@@ -51,7 +73,7 @@ public class ObservationReasoner {
      * We precompute the non-contextual applicable info for each strategy to quickly weed out those that are
      * certain to not apply.
      */
-    private Map<String, ApplicabileFilter> quickFilters = new HashMap<>();
+    private Map<String, QuickSemanticFilter> quickFilters = new HashMap<>();
 
     public ObservationReasoner(ReasonerService reasonerService) {
         this.reasoner = reasonerService;
@@ -68,14 +90,14 @@ public class ObservationReasoner {
      * @param scope
      * @return
      */
-    public List<ObservationStrategy> matching(Observation observation, ContextScope scope) {
+    public List<ObservationStrategy> computeMatchingStrategies(Observation observation, ContextScope scope) {
 
         var observable = observation.getObservable();
         List<ObservationStrategy> ret = new ArrayList<>();
 
         for (var strategy : observationStrategies) {
 
-            ApplicabileFilter filter = quickFilters.get(strategy.getUrn());
+            QuickSemanticFilter filter = quickFilters.get(strategy.getUrn());
 
             if (filter.fixedVariablesUsed.contains("context") && scope.getContextObservation() == null) {
                 continue;
@@ -98,7 +120,7 @@ public class ObservationReasoner {
                     if (functor.getLiteral() != null) {
                         patternVariableValues.put(variable, Utils.Data.asString(functor.getLiteral()));
                     } else if (functor.getMatch() != null) {
-
+                        // can't happen for now, parser won't accept. Should be a pattern to be useful.
                     } else if (!functor.getFunctions().isEmpty()) {
                         for (var function : functor.getFunctions()) {
                             var value = matchFunction(function, observable, scope, Object.class,
@@ -156,6 +178,8 @@ public class ObservationReasoner {
 
                     var op = new ObservationStrategyImpl.OperationImpl();
 
+                    op.setType(operation.getType());
+
                     if (operation.getObservable() != null) {
                         op.setObservable(operation.getObservable().getPatternVariables().isEmpty() ?
                                          reasoner.declareObservable(operation.getObservable()) :
@@ -164,6 +188,7 @@ public class ObservationReasoner {
                     }
 
                     for (var function : operation.getFunctions()) {
+                        op.getContextualizables().add(new ContextualizableImpl(function));
                     }
 
                     os.getOperations().add(op);
@@ -173,7 +198,6 @@ public class ObservationReasoner {
 
             }
         }
-
 
         return ret;
     }
@@ -186,8 +210,10 @@ public class ObservationReasoner {
         // complete arguments if empty or using previously instantiated variables
         if (function.getParameters().isEmpty()) {
             function = function.withUnnamedParameters(observable);
-        } else {
-            // substitute parameters
+        } else for (var key : function.getParameters().keySet()) {
+            // substitute parameters and set them as unnamed
+            function = function.withUnnamedParameters(patternVariableValues.getOrDefault(key.substring(1),
+                    key));
         }
         return languageService.execute(function, scope, Object.class);
 
@@ -198,7 +224,6 @@ public class ObservationReasoner {
 
         boolean ret = true;
         if (filter.getMatch() != null) {
-
             var semantics = filter.getMatch().isPattern() ? reasoner.declareConcept(filter.getMatch(),
                     patternVariableValues) : reasoner.declareConcept(filter.getMatch());
             ret = semantics != null && reasoner.compatible(observation.getObservable(), semantics);
@@ -252,10 +277,14 @@ public class ObservationReasoner {
         });
     }
 
-    private ApplicabileFilter computeInfo(KimObservationStrategy observationStrategy) {
+    private QuickSemanticFilter computeInfo(KimObservationStrategy observationStrategy) {
 
         Set<String> variables = new HashSet<>();
-        ApplicabileFilter ret = new ApplicabileFilter();
+        QuickSemanticFilter ret = new QuickSemanticFilter();
+
+        int nCollective = 0;
+        int nNoncollective = 0;
+
         for (var filter : observationStrategy.getFilters()) {
             for (var match : filter) {
                 // TODO negation is much more complicated
@@ -265,7 +294,11 @@ public class ObservationReasoner {
                     } else {
                         ret.semanticTypesWhitelist.add(SemanticType.fundamentalType(match.getMatch().getType()));
                     }
-
+                    if (match.getMatch().isCollective()) {
+                        nCollective ++;
+                    } else {
+                        nNoncollective ++;
+                    }
                     variables.addAll(match.getMatch().getPatternVariables());
                 }
             }
@@ -275,6 +308,12 @@ public class ObservationReasoner {
             if (operation.getObservable() != null) {
                 variables.addAll(operation.getObservable().getPatternVariables());
             }
+        }
+
+        if ((nCollective == 0 && nNoncollective > 0) || (nCollective > 0 && nNoncollective == 0)) {
+            ret.collectiveConstraints = true;
+            ret.collectiveOnly = nCollective > 0;
+            ret.nonCollectiveOnly = nNoncollective > 0;
         }
 
         ret.fixedVariablesUsed.addAll(variables);

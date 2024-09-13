@@ -45,6 +45,14 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     private boolean variable;
     private boolean empty;
 
+    public ContextualizableImpl() {
+    }
+
+    public ContextualizableImpl(ServiceCall serviceCall) {
+        this.serviceCall = serviceCall;
+    }
+
+
     @Override
     public Type getType() {
         return this.type;
@@ -162,7 +170,7 @@ public class ContextualizableImpl extends KimStatementImpl implements Contextual
     public void setTargetId(String targetId) {
         this.targetId = targetId;
     }
-    
+
     public void setTarget(KimObservable target) {
         this.target = target;
     }

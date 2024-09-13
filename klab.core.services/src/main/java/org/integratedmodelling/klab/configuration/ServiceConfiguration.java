@@ -90,7 +90,7 @@ public enum ServiceConfiguration {
     UpdateManager componentUpdateManager;
     private Map<Class<?>, Map<Set<Object>, Service>> services = new HashMap<>();
     private Map<String, Authority> authorities = new HashMap<>();
-
+    private KlabService mainService;
     /**
      * Standard library loader. Must be registered explicitly when calling {@link #scanPackage(String, Map)}.
      * Not registering this along with the {@link Library} annotation can lead to interesting behaviors.
@@ -356,6 +356,10 @@ public enum ServiceConfiguration {
         registerService(new CurrencyServiceImpl(), CurrencyService.class);
         registerService(new LanguageService(), Language.class);
 
+    }
+
+    public void setMainService(KlabService service) {
+        this.mainService = service;
     }
 
     public List<Prototype> loadLibrary(Library annotation, Class<?> cls) {
@@ -1111,4 +1115,7 @@ public enum ServiceConfiguration {
         return null;
     }
 
+    public KlabService getMainService() {
+        return mainService;
+    }
 }

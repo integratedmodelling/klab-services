@@ -18,7 +18,7 @@ public class TypeFunctors {
 
     private final Reasoner reasoner;
 
-    public TypeFunctors(Reasoner reasoner) {
+    public TypeFunctors(ReasonerService reasoner) {
         this.reasoner = reasoner;
     }
 

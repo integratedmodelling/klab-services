@@ -16,13 +16,14 @@ import picocli.CommandLine.Spec;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Function;
 
 @Command(name = "reason", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
         "Commands to find, access and manipulate semantic knowledge.",
         ""}, subcommands = {Reasoner.Children.class, Reasoner.Parents.class, Reasoner.Traits.class,
-                            Reasoner.Type.class, Reasoner.BaseConcept.class,
+                            Reasoner.Type.class, Reasoner.BaseConcept.class, Reasoner.Compatible.class,
                             Reasoner.Strategy.class, Reasoner.Export.class})
 public class Reasoner {
 
@@ -131,11 +132,11 @@ public class Reasoner {
 
             out.println(CommandLine.Help.Ansi.AUTO.string("Observation strategies for @|bold " + observable.getDescriptionType().name().toLowerCase()
                     + "|@ of @|green " + observable.getUrn() + "|@:"));
-//            for (var strategy : reasoner.inferStrategies(observable, ctx)) {
-//                out.println(Utils.Strings.indent(strategy.toString(),
-//                        Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
-//                                " ", 4)));
-//            }
+            //            for (var strategy : reasoner.inferStrategies(observable, ctx)) {
+            //                out.println(Utils.Strings.indent(strategy.toString(),
+            //                        Utils.Strings.fillUpLeftAligned(strategy.getCost() + ".",
+            //                                " ", 4)));
+            //            }
         }
     }
 
@@ -164,6 +165,57 @@ public class Reasoner {
             } else {
                 out.println(concept.getUrn());
                 printRelated(out, concept, reasoner::children, 3);
+            }
+        }
+    }
+
+    @Command(name = "compatible", mixinStandardHelpOptions = true, version = Version.CURRENT, description = {
+            "Check if two concepts are compatible, optionally in context."}, subcommands = {})
+    public static class Compatible implements Runnable {
+
+        @Spec
+        CommandSpec commandSpec;
+
+        @Parameters
+        java.util.List<String> arguments;
+
+        @Override
+        public void run() {
+
+            PrintWriter out = commandSpec.commandLine().getOut();
+            PrintWriter err = commandSpec.commandLine().getErr();
+
+            java.util.List<java.util.List<String>> tokens = new ArrayList<>();
+
+            var current = new ArrayList<String>();
+            for (var token : arguments) {
+                if (token.equals(",")) {
+                    tokens.add(current);
+                    current = new ArrayList<>();
+                } else {
+                    current.add(token);
+                }
+            }
+            tokens.add(current);
+
+            var urns = tokens.stream().map(l -> Utils.Strings.join(l, " ")).toList();
+            var reasoner = KlabCLI.INSTANCE.modeler().currentUser()
+                                           .getService(org.integratedmodelling.klab.api.services.Reasoner.class);
+            var concepts = urns.stream().map(reasoner::resolveConcept).toList();
+            if (concepts.size() < 2) {
+                err.println("Not enough arguments for compatibility check. Use commas to separate 2 or 3 " +
+                        "definitions.");
+            } else {
+                var distance = concepts.size() == 2 ?
+                               reasoner.compatible(concepts.get(0), concepts.get(1)) :
+                               reasoner.contextuallyCompatible(concepts.get(0), concepts.get(1),
+                                       concepts.get(2));
+
+                out.println("Compatibility check  " + (distance ? "SUCCESSFUL" : "UNSUCCESSFUL") + " " +
+                        "between " + concepts.get(0) + " and " + concepts.get(1) + (concepts.size() == 2 ?
+                                                                                    "" :
+                                                                                    (" in context of " + concepts.get(3))));
+
             }
         }
     }

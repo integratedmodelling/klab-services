@@ -49,6 +49,7 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
     public RuntimeService(AbstractServiceDelegatingScope scope, ServiceStartupOptions options) {
         super(scope, Type.RUNTIME, options);
+        ServiceConfiguration.INSTANCE.setMainService(this);
         readConfiguration(options);
         initializeMessaging();
     }

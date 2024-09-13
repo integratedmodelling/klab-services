@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalStateException;
@@ -24,10 +25,12 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsStatement.Call;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
+import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 
 public class LanguageService implements Language {
 
@@ -90,8 +93,8 @@ public class LanguageService implements Language {
             /*
             check the resource service in the scope to see if we can find a component that supports this call
              */
-            ResourceSet resourceSet = scope.getService(ResourcesService.class).resolveServiceCall(call.getUrn(),
-                    scope);
+            ResourceSet resourceSet =
+                    scope.getService(ResourcesService.class).resolveServiceCall(call.getUrn(), scope);
             if (!resourceSet.isEmpty()) {
                 loadComponent(resourceSet, scope);
                 descriptor = this.functions.get(call.getUrn());
@@ -101,7 +104,8 @@ public class LanguageService implements Language {
             if (descriptor.method != null) {
                 // can't be null
                 try {
-                    return (T) descriptor.method.invoke(descriptor.staticMethod ? null : descriptor.mainClassInstance,
+                    return (T) descriptor.method.invoke(descriptor.staticMethod ? null :
+                                                        descriptor.mainClassInstance,
                             getParameters(descriptor, call, scope, false));
                 } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                     scope.error("runtime error when invoking function " + call.getUrn());
@@ -148,7 +152,26 @@ public class LanguageService implements Language {
     }
 
     private Object[] matchParameters(Class<?>[] parameterTypes, ServiceCall call, Scope scope) {
+
         Object[] ret = new Object[parameterTypes.length];
+
+        /*
+        first check if we have passed unnamed parameters in the right order.
+         */
+        if (call.getParameters().getUnnamedArguments().size() == parameterTypes.length) {
+            boolean ok = true;
+            for (int i = 0; i < parameterTypes.length; i++) {
+                if (!(call.getParameters().getUnnamedArguments().get(i) == null || parameterTypes[i].isAssignableFrom(call.getParameters().getUnnamedArguments().get(0).getClass()))) {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok) {
+                return call.getParameters().getUnnamedArguments().toArray();
+            }
+        }
+
         int i = 0;
         for (Class<?> cls : parameterTypes) {
             if (Scope.class.isAssignableFrom(cls)) {
@@ -163,7 +186,7 @@ public class LanguageService implements Language {
                 ret[i] = call.getParameters();
             } else if (DirectObservation.class.isAssignableFrom(cls)) {
                 ret[i] = scope instanceof ContextScope ? ((ContextScope) scope).getContextObservation() :
-                        null;
+                         null;
             } /* TODO more type inference: definitely Model */ else {
                 ret[i] = null;
             }
@@ -226,8 +249,30 @@ public class LanguageService implements Language {
                 } else if (!prototype.isReentrant()) {
                     // create the instance just for this prototype
                     try {
-                        ret.mainClassInstance = ret.implementation.getDeclaredConstructor().newInstance();
+                        if (ServiceConfiguration.INSTANCE.getMainService() != null) {
+
+                            var mainService = ServiceConfiguration.INSTANCE.getMainService();
+                    /*
+                    try first with the actual service class
+                     */
+                            try {
+                                ret.mainClassInstance =
+                                        ret.implementation.getDeclaredConstructor(ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(mainService);
+                            } catch (Throwable t) {
+                            }
+                            if (ret.mainClassInstance == null) {
+                                try {
+                                    ret.mainClassInstance =
+                                            ret.implementation.getDeclaredConstructor(KlabService.class).newInstance(mainService);
+                                } catch (Throwable t) {
+                                }
+                            }
+                        }
+                        if (ret.mainClassInstance == null) {
+                            ret.mainClassInstance = ret.implementation.getDeclaredConstructor().newInstance();
+                        }
                     } catch (Exception e) {
+                        Logging.INSTANCE.error("Cannot instantiate main class for function library " + ret.implementation.getCanonicalName() + ": " + e.getMessage());
                         ret.error = true;
                     }
                 }
@@ -245,15 +290,17 @@ public class LanguageService implements Language {
                 }
             } else {
                 try {
-                    ret.constructor = ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 1,
-                            true));
+                    ret.constructor =
+                            ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 1,
+                                    true));
                     ret.methodCall = 1;
                 } catch (NoSuchMethodException | SecurityException e) {
                 }
                 if (ret.constructor == null) {
                     try {
-                        ret.constructor = ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 2,
-                                true));
+                        ret.constructor =
+                                ret.implementation.getDeclaredConstructor(getParameterClasses(prototype, 2,
+                                        true));
                         ret.methodCall = 2;
                     } catch (NoSuchMethodException | SecurityException e) {
                     }
@@ -269,8 +316,8 @@ public class LanguageService implements Language {
     }
 
     /**
-     * Return the default parameterization for functions and constructors according to function type and allowed
-     * "style".
+     * Return the default parameterization for functions and constructors according to function type and
+     * allowed "style".
      *
      * @param prototype
      * @param callMethod
@@ -283,7 +330,8 @@ public class LanguageService implements Language {
                 break;
             case FUNCTION:
                 if (isConstructor) {
-                    // TODO check: using the last constructor with parameters, or the empty constructor if found.
+                    // TODO check: using the last constructor with parameters, or the empty constructor if
+                    //  found.
                     Class<?> cls = prototype.executorClass();
                     if (cls == null) {
                         throw new KlabIllegalStateException("no declared executor class for service " + prototype.getName() + ": constructor can't be extracted");
@@ -318,13 +366,37 @@ public class LanguageService implements Language {
         try {
             Object instance = this.globalInstances.get(ret.implementation);
             if (instance == null) {
-                instance = ret.implementation.getDeclaredConstructor().newInstance();
+                // look for a constructor we know what to do with. If we are a service, we can first try
+                // with a constructor that takes it.
+                if (ServiceConfiguration.INSTANCE.getMainService() != null) {
+
+                    var mainService = ServiceConfiguration.INSTANCE.getMainService();
+                    /*
+                    try first with the actual service class
+                     */
+                    try {
+                        instance =
+                                ret.implementation.getDeclaredConstructor(ServiceConfiguration.INSTANCE.getMainService().getClass()).newInstance(mainService);
+                    } catch (Throwable t) {
+                    }
+                    if (instance == null) {
+                        try {
+                            instance =
+                                    ret.implementation.getDeclaredConstructor(KlabService.class).newInstance(mainService);
+                        } catch (Throwable t) {
+                        }
+                    }
+                }
+                if (instance == null) {
+                    instance = ret.implementation.getDeclaredConstructor().newInstance();
+                }
                 this.globalInstances.put(ret.implementation, instance);
             }
             return instance;
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
-                 | NoSuchMethodException | SecurityException e) {
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
+                 InvocationTargetException | NoSuchMethodException | SecurityException e) {
             ret.error = true;
+            Logging.INSTANCE.error("Cannot instantiate main class for function library " + ret.implementation.getCanonicalName() + ": " + e.getMessage());
         }
         return null;
     }

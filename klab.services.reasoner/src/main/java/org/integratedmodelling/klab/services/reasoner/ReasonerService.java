@@ -51,7 +51,7 @@ import org.integratedmodelling.klab.services.reasoner.configuration.ReasonerConf
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.integratedmodelling.klab.services.reasoner.internal.ObservableBuilder;
-import org.integratedmodelling.klab.services.reasoner.owl.Axiom;
+import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.services.reasoner.owl.OWL;
 import org.integratedmodelling.klab.services.reasoner.owl.Ontology;
 import org.integratedmodelling.klab.services.reasoner.owl.Vocabulary;
@@ -259,6 +259,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
         this.owl = new OWL(scope);
         this.indexer = new Indexer(scope);
         this.emergence = new IntelligentMap<>(scope);
+        ServiceConfiguration.INSTANCE.setMainService(this);
         readConfiguration(options);
     }
 
@@ -2611,7 +2612,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public List<ObservationStrategy> computeObservationStrategies(Observation observation, ContextScope scope) {
-        return observationReasoner.matching(observation, scope);
+        return observationReasoner.computeMatchingStrategies(observation, scope);
     }
 
     @Override

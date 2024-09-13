@@ -21,47 +21,23 @@
  *******************************************************************************/
 package org.integratedmodelling.klab.services.reasoner.owl;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import org.integratedmodelling.common.knowledge.ConceptImpl;
+import org.integratedmodelling.common.lang.Axiom;
 import org.integratedmodelling.klab.api.exceptions.KlabIOException;
 import org.integratedmodelling.klab.api.exceptions.KlabInternalErrorException;
 import org.integratedmodelling.klab.api.exceptions.KlabValidationException;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.SemanticType;
 import org.integratedmodelling.klab.api.utils.Utils;
-import org.integratedmodelling.common.knowledge.ConceptImpl;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology;
 import org.integratedmodelling.klab.services.reasoner.internal.CoreOntology.NS;
 import org.semanticweb.HermiT.model.Individual;
 import org.semanticweb.owlapi.io.OWLXMLOntologyFormat;
-import org.semanticweb.owlapi.model.AddImport;
-import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLAnnotation;
-import org.semanticweb.owlapi.model.OWLAnnotationProperty;
-import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLClassExpression;
-import org.semanticweb.owlapi.model.OWLDataFactory;
-import org.semanticweb.owlapi.model.OWLDataProperty;
-import org.semanticweb.owlapi.model.OWLEntity;
-import org.semanticweb.owlapi.model.OWLImportsDeclaration;
-import org.semanticweb.owlapi.model.OWLLiteral;
-import org.semanticweb.owlapi.model.OWLObjectProperty;
-import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyChangeException;
-import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-import org.semanticweb.owlapi.model.OWLOntologyFormat;
-import org.semanticweb.owlapi.model.OWLOntologyStorageException;
-import org.semanticweb.owlapi.model.OWLProperty;
+import org.semanticweb.owlapi.model.*;
+
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A proxy for an ontology. Holds a list of concepts and a list of axioms. Can be turned into a list and
@@ -73,7 +49,7 @@ import org.semanticweb.owlapi.model.OWLProperty;
  *
  * @author Ferd
  */
-public class Ontology /* implements IOntology */ {
+public class Ontology {
 
     String id;
     private Set<String> imported = new HashSet<>();
@@ -319,7 +295,7 @@ public class Ontology /* implements IOntology */ {
                             factory.getOWLDeclarationAxiom(newcl));
                     this.conceptIDs.put(axiom.getArgument(0).toString(),
                             owl.makeConcept(newcl, axiom.getArgument(0).toString(), id,
-                                    ((Axiom) axiom).conceptType));
+                                    axiom.getConceptType()));
 
                 } else if (axiom.is(Axiom.SUBCLASS_OF)) {
 
