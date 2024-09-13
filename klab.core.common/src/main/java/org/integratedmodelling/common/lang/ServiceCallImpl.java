@@ -200,7 +200,7 @@ public class ServiceCallImpl extends KimStatementImpl implements ServiceCall {
     public ServiceCall withUnnamedParameters(Object... unnamedParameters) {
         var ret = new ServiceCallImpl(this.getUrn(), new Object[]{});
         for (Object o : unnamedParameters) {
-            ret.getParameters().getUnnamedArguments().add(o);
+            ret.getParameters().putUnnamed(o);
         }
         return ret;
     }
