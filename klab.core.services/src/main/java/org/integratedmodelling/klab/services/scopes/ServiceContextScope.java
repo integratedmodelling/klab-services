@@ -179,6 +179,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     @Override
     public Task<Observation, Long> observe(Observation observation) {
 
+        if (!isOperative()) {
+            return null;
+        }
+
         long id = submitObservation(observation);
 
         // create task before resolution starts so we guarantee a response

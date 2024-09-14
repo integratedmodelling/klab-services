@@ -17,10 +17,12 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
+import org.integratedmodelling.klab.api.view.UI;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -204,19 +206,19 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 serviceSessionScope.getServices(RuntimeService.class).add(this);
             }
 
-            /*
-             register the session with all the necessary services - resolver and reasoner, the latter
-             can be substituted by our connected reasoner. TODO check if we need others.
-
-             FIXME this doesn't add the client for the current service to the request. Need a way to
-             tell the client of each service that the request to register the session comes from a
-             service.
-             */
-            for (var service : serviceSessionScope.getServices(Resolver.class)) {
-                service.registerSession(serviceSessionScope);
-            }
-            for (var service : serviceSessionScope.getServices(Reasoner.class)) {
-                service.registerSession(serviceSessionScope);
+            // all other services need to know the session we created
+            for (var serviceClass : List.of(Resolver.class, Reasoner.class, ResourcesService.class)) {
+                Thread.ofVirtual().start(() -> {
+                    for (var service : serviceSessionScope.getServices(serviceClass)) {
+                        // if things are OK, the service repeats the ID back
+                        if (!service.registerSession(serviceSessionScope).equals(serviceSessionScope.getId())) {
+                            serviceSessionScope.send(Notification.error("Error registering session with "
+                                    + serviceClass.getName() + ": session is inoperative",
+                                    UI.Interactivity.DISPLAY));
+                            serviceSessionScope.setOperative(false);
+                        }
+                    }
+                });
             }
 
             return serviceSessionScope.getId();
@@ -238,16 +240,22 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
                 serviceContextScope.getServices(RuntimeService.class).add(this);
             }
 
-            /*
-             register the context with all the necessary services - resolver and reasoner, the latter
-             can be substituted by our connected reasoner. TODO check if we need others.
-             */
-            for (var service : serviceContextScope.getServices(Resolver.class)) {
-                service.registerContext(serviceContextScope);
+            // all other services need to know the context we created. TODO we may also need to
+            // register with the stats services and maybe any independent authorities
+            for (var serviceClass : List.of(Resolver.class, Reasoner.class, ResourcesService.class)) {
+                Thread.ofVirtual().start(() -> {
+                    for (var service : serviceContextScope.getServices(serviceClass)) {
+                        // if things are OK, the service repeats the ID back
+                        if (!service.registerContext(serviceContextScope).equals(serviceContextScope.getId())) {
+                            serviceContextScope.send(Notification.error("Error registering context with "
+                                    + serviceClass.getName() + ": context is inoperative",
+                                    UI.Interactivity.DISPLAY));
+                            serviceContextScope.setOperative(false);
+                        }
+                    }
+                });
             }
-            for (var service : serviceContextScope.getServices(Reasoner.class)) {
-                service.registerContext(serviceContextScope);
-            }
+
 
             return serviceContextScope.getId();
 

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 public class ServiceSessionScope extends ServiceUserScope implements SessionScope {
 
     private String name;
+    private boolean operative = true;
 
     public void setName(String name) {
         this.name = name;
@@ -71,6 +72,14 @@ public class ServiceSessionScope extends ServiceUserScope implements SessionScop
     @Override
     public void logout() {
         // TODO
+    }
+
+    public boolean isOperative() {
+        return operative;
+    }
+
+    public void setOperative(boolean operative) {
+        this.operative = operative;
     }
 
     public boolean initializeAgents(String scopeId) {

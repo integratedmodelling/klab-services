@@ -128,11 +128,7 @@ public class ResolverService extends BaseService implements Resolver {
 
     @Override
     public Dataflow<Observation> resolve(Observation observation, ContextScope contextScope) {
-
-        System.out.println("RISOLVIAMO STA MERDA " + observation);
-
         var resolution = computeResolution(observation, contextScope);
-
         if (!resolution.isEmpty()) {
             return compile(observation, resolution, contextScope);
         }
@@ -177,77 +173,72 @@ public class ResolverService extends BaseService implements Resolver {
 
     }
 
-//    /**
-//     * Top-level resolution, resolve and return an independent resolution graph. This creates a new resolution
-//     * graph which will contain any observations that were already resolved within the context observation in
-//     * the scope, if any.
-//     *
-//     * @param knowledge
-//     * @param scope
-//     * @return
-//     */
-//    public Resolution computeResolution(Resolvable knowledge, ContextScope scope) {
-//
-//        Geometry resolutionGeometry = Geometry.EMPTY;
-//
-//        Resolvable observable = switch (knowledge) {
-//            case Concept concept -> Observable.promote(concept);
-//            case Model model -> model.getObservables().get(0);
-//            case Observable obs -> obs;
-//            case Observation observation -> {
-//                resolutionGeometry = observation.getGeometry();
-//                yield observation.getObservable();
-//            }
-//            default -> null;
-//        };
-//
-//        if (observable == null) {
-//            // FIXME this should just set the resolution to an error state and return it
-//            throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
-//        }
-//
-//        if (scope.getContextObservation() != null) {
-//            resolutionGeometry = scope.getContextObservation().getGeometry();
-//        } else if (resolutionGeometry.isEmpty() && scope.getObserver() != null) {
-//            resolutionGeometry = scope.getObserver().getObserverGeometry();
-//        }
-//
-//        var scale = Scale.create(resolutionGeometry);
-//
-//        ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
-//        if (knowledge instanceof Model) {
-//            resolveModel((Model) knowledge, observable, scale,
-//                    scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
-//                    ret);
-//        } else if (observable instanceof Observable obs) {
-//            resolveObservable(obs, scale, scope, ret, null);
-//        } // TODO the rest
-//
-//        return ret;
-//
-//    }
+    //    /**
+    //     * Top-level resolution, resolve and return an independent resolution graph. This creates a new
+    //     resolution
+    //     * graph which will contain any observations that were already resolved within the context
+    //     observation in
+    //     * the scope, if any.
+    //     *
+    //     * @param knowledge
+    //     * @param scope
+    //     * @return
+    //     */
+    //    public Resolution computeResolution(Resolvable knowledge, ContextScope scope) {
+    //
+    //        Geometry resolutionGeometry = Geometry.EMPTY;
+    //
+    //        Resolvable observable = switch (knowledge) {
+    //            case Concept concept -> Observable.promote(concept);
+    //            case Model model -> model.getObservables().get(0);
+    //            case Observable obs -> obs;
+    //            case Observation observation -> {
+    //                resolutionGeometry = observation.getGeometry();
+    //                yield observation.getObservable();
+    //            }
+    //            default -> null;
+    //        };
+    //
+    //        if (observable == null) {
+    //            // FIXME this should just set the resolution to an error state and return it
+    //            throw new KlabIllegalStateException("knowledge " + knowledge + " is not resolvable");
+    //        }
+    //
+    //        if (scope.getContextObservation() != null) {
+    //            resolutionGeometry = scope.getContextObservation().getGeometry();
+    //        } else if (resolutionGeometry.isEmpty() && scope.getObserver() != null) {
+    //            resolutionGeometry = scope.getObserver().getObserverGeometry();
+    //        }
+    //
+    //        var scale = Scale.create(resolutionGeometry);
+    //
+    //        ResolutionImpl ret = new ResolutionImpl(observable, scale, scope);
+    //        if (knowledge instanceof Model) {
+    //            resolveModel((Model) knowledge, observable, scale,
+    //                    scope.withResolutionNamespace(((Model) knowledge).getNamespace()),
+    //                    ret);
+    //        } else if (observable instanceof Observable obs) {
+    //            resolveObservable(obs, scale, scope, ret, null);
+    //        } // TODO the rest
+    //
+    //        return ret;
+    //
+    //    }
 
     private Coverage resolveObservation(Observation observation, Scale scale, ContextScope scope,
-                                       ResolutionImpl parent,
-                                       Model parentModel) {
+                                        ResolutionImpl parent, Model parentModel) {
 
         var observable = observation.getObservable();
         Coverage ret = Coverage.create(scale, 0.0);
 
-        // infinite recursion is nice but wastes time
-        if (parent.checkResolving(observable)) {
+        // observation may have been resolved already. Also it could be being resolved from upstream, and
+        // infinite recursion is fun but helps nobody.
+        if (observation.isResolved() || parent.checkResolving(observable)) {
             return Coverage.universal();
         }
 
-        // done already, nothing to do here
-        if (parent.getResolved(observable) != null) {
-            return Coverage.universal();
-        }
-
-        // see what the reasoner thinks of this observable
         for (ObservationStrategy strategy :
-                scope.getService(Reasoner.class).computeObservationStrategies(observation,
-                        scope)) {
+                scope.getService(Reasoner.class).computeObservationStrategies(observation, scope)) {
             // this merges any useful strategy and returns the coverage
             ResolutionImpl resolution = resolveStrategy(strategy, scale, scope, parent, parentModel);
             ret = ret.merge(resolution.getCoverage(), LogicalConnector.UNION);
@@ -267,18 +258,17 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
 
-        /**
-         * We always resolve an observable first. This only reports coverage as it does not directly create a
-         * resolution graph; this is done when resolving a model, which creates a graph and merges it with the
-         * parent graph if successful.
-         *
-         * @param observable
-         * @param parent
-         * @return
-         */
+    /**
+     * We always resolve an observable first. This only reports coverage as it does not directly create a
+     * resolution graph; this is done when resolving a model, which creates a graph and merges it with the
+     * parent graph if successful.
+     *
+     * @param observable
+     * @param parent
+     * @return
+     */
     private Coverage resolveObservable(Observable observable, Scale scale, ContextScope scope,
-                                       ResolutionImpl parent,
-                                       Model parentModel) {
+                                       ResolutionImpl parent, Model parentModel) {
 
         /**
          * Make graph merging parent Set coverage to scale, 0; Strategies/models: foreach model:
@@ -340,7 +330,66 @@ public class ResolverService extends BaseService implements Resolver {
                                            ResolutionImpl parent,
                                            Model parentModel) {
 
-        Coverage coverage = Coverage.create(scale, 0.0);
+        var coverage = Coverage.create(scale, 0.0);
+        ResolutionImpl ret = null;
+
+        for (var operation : strategy.getOperations()) {
+            switch (operation.getType()) {
+                case RESOLVE -> {
+                    /*
+                    Additional resolution for a different observable, have the runtime produce the
+                    observation, if resolved we're done, otherwise invoke resolution recursively
+                     */
+                    ret = new ResolutionImpl(operation.getObservable(), scale, scope,
+                            parent);
+                    // TODO have the runtime create the observation
+                    // TODO resolve it and merge the resolution
+                }
+                case OBSERVE -> {
+
+                    /*
+                    Observation is there, find models and compile them in, merge resolutions
+                     */
+                    ret = new ResolutionImpl(operation.getObservable(), scale, scope,
+                            parent);
+                    for (Model model : queryModels(operation.getObservable(), scope,
+                            scale)) {
+                        ResolutionImpl resolution = resolveModel(model, operation.getObservable(),
+                                scale,
+                                scope.withResolutionNamespace(model.getNamespace()), parent);
+                        coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
+                        if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
+                            continue;
+                        }
+                        // merge the model at root level within the local resolution
+                        resolution.merge(model, coverage, operation.getObservable(),
+                                ResolutionType.DIRECT);
+                        if (coverage.isRelevant()) {
+                            // merge the resolution with the parent resolution
+                            ret.merge(parentModel, resolution, ResolutionType.DIRECT);
+                            if (parent.getCoverage().isComplete()) {
+                                break;
+                            }
+                        }
+                    }
+
+                }
+                case APPLY -> {
+                    // resolve the contextualizers merging the necessary resource set, coverage is
+                    // unchanged unless contextualizers are not available
+                }
+            }
+
+            // add any deferrals to the compiled strategy node
+            if (!ret.isEmpty()) {
+                for (var deferral : operation.getContextualStrategies()) {
+
+                }
+            }
+        }
+
+        return ret;
+
         //        ResolutionImpl ret = new ResolutionImpl(strategy.getOriginalObservable(), scale, scope,
         //        parent);
         //
@@ -383,7 +432,7 @@ public class ResolverService extends BaseService implements Resolver {
         //        }
         //
         //        return ret;
-        return null;
+        //        return null;
     }
 
     /**

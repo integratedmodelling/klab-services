@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.lang.kim.KimObservationStrategy;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.Language;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.resolver.objects.ObservationStrategyImpl;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.utilities.Utils;
 
@@ -177,7 +178,6 @@ public class ObservationReasoner {
                 for (var operation : strategy.getOperations()) {
 
                     var op = new ObservationStrategyImpl.OperationImpl();
-
                     op.setType(operation.getType());
 
                     if (operation.getObservable() != null) {
@@ -186,16 +186,12 @@ public class ObservationReasoner {
                                          reasoner.declareObservable(operation.getObservable(),
                                                  patternVariableValues));
                     }
-
                     for (var function : operation.getFunctions()) {
                         op.getContextualizables().add(new ContextualizableImpl(function));
                     }
-
                     os.getOperations().add(op);
                 }
-
                 ret.add(os);
-
             }
         }
 
