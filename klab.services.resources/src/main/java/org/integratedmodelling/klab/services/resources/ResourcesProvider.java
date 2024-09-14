@@ -23,10 +23,7 @@ import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
-import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
-import org.integratedmodelling.klab.api.scope.ServiceScope;
-import org.integratedmodelling.klab.api.scope.UserScope;
+import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -42,6 +39,8 @@ import org.integratedmodelling.klab.services.resources.lang.LanguageAdapter;
 import org.integratedmodelling.klab.services.resources.persistence.ModelKbox;
 import org.integratedmodelling.klab.services.resources.persistence.ModelReference;
 import org.integratedmodelling.klab.services.resources.storage.WorkspaceManager;
+import org.integratedmodelling.klab.services.scopes.ServiceContextScope;
+import org.integratedmodelling.klab.services.scopes.ServiceSessionScope;
 import org.integratedmodelling.klab.services.scopes.ServiceUserScope;
 import org.integratedmodelling.klab.services.scopes.messaging.EmbeddedBroker;
 import org.integratedmodelling.klab.utilities.Utils;
@@ -986,6 +985,57 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
          */
 
         return resourceSet;
+    }
+
+    /**
+     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
+     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
+     *
+     * @param sessionScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return
+     */
+    @Override
+    public String registerSession(SessionScope sessionScope) {
+
+        if (sessionScope instanceof ServiceSessionScope serviceSessionScope) {
+
+            if (sessionScope.getId() == null) {
+                throw new KlabIllegalArgumentException("resolver: session scope has no ID, cannot register " +
+                        "a scope autonomously");
+            }
+
+            getScopeManager().registerScope(serviceSessionScope, capabilities(sessionScope).getBrokerURI());
+            return serviceSessionScope.getId();
+        }
+
+        throw new KlabIllegalArgumentException("unexpected scope class");
+    }
+
+    /**
+     * Replicate a remote scope in the scope manager. This should be called by the runtime service after
+     * creating it so if the scope has no ID we issue an error, as we do not create independent scopes.
+     *
+     * @param contextScope a client scope that should record the ID for future communication. If the ID is
+     *                     null, the call has failed.
+     * @return
+     */
+    @Override
+    public String registerContext(ContextScope contextScope) {
+
+        if (contextScope instanceof ServiceContextScope serviceContextScope) {
+
+            if (contextScope.getId() == null) {
+                throw new KlabIllegalArgumentException("resolver: context scope has no ID, cannot register " +
+                        "a scope autonomously");
+            }
+
+            getScopeManager().registerScope(serviceContextScope, capabilities(contextScope).getBrokerURI());
+            return serviceContextScope.getId();
+        }
+
+        throw new KlabIllegalArgumentException("unexpected scope class");
+
     }
 
 }

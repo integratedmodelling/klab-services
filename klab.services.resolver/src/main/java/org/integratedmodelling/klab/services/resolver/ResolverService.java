@@ -818,6 +818,9 @@ public class ResolverService extends BaseService implements Resolver {
 
         var ret = new ArrayList<Model>();
         var prioritizer = new PrioritizerImpl(scope, scale);
+
+        // FIXME use virtual threads & join() to obtain a synchronized list of ResourceSet, then
+        // use a merging strategy to get models one by one
         var resources = scope.getService(ResourcesService.class);
 
         ResourceSet models = resources.queryModels(observable, scope);

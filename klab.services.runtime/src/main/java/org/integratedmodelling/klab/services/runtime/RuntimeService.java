@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RuntimeService extends BaseService implements org.integratedmodelling.klab.api.services.RuntimeService, org.integratedmodelling.klab.api.services.RuntimeService.Admin {
 
@@ -207,18 +208,27 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
             }
 
             // all other services need to know the session we created
+            var fail = new AtomicBoolean(false);
             for (var serviceClass : List.of(Resolver.class, Reasoner.class, ResourcesService.class)) {
-                Thread.ofVirtual().start(() -> {
-                    for (var service : serviceSessionScope.getServices(serviceClass)) {
-                        // if things are OK, the service repeats the ID back
-                        if (!service.registerSession(serviceSessionScope).equals(serviceSessionScope.getId())) {
-                            serviceSessionScope.send(Notification.error("Error registering session with "
-                                    + serviceClass.getName() + ": session is inoperative",
-                                    UI.Interactivity.DISPLAY));
-                            serviceSessionScope.setOperative(false);
+                try {
+                    Thread.ofVirtual().start(() -> {
+                        for (var service : serviceSessionScope.getServices(serviceClass)) {
+                            // if things are OK, the service repeats the ID back
+                            if (!serviceSessionScope.getId().equals(service.registerSession(serviceSessionScope))) {
+                                fail.set(true);
+                            }
                         }
-                    }
-                });
+                    }).join();
+                } catch (InterruptedException e) {
+                    fail.set(true);
+                }
+            }
+
+            if (fail.get()) {
+                serviceSessionScope.send(Notification.error("Error registering session with other services:" +
+                                " session is inoperative",
+                        UI.Interactivity.DISPLAY));
+                serviceSessionScope.setOperative(false);
             }
 
             return serviceSessionScope.getId();
@@ -242,20 +252,28 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
 
             // all other services need to know the context we created. TODO we may also need to
             // register with the stats services and maybe any independent authorities
+            var fail = new AtomicBoolean(false);
             for (var serviceClass : List.of(Resolver.class, Reasoner.class, ResourcesService.class)) {
-                Thread.ofVirtual().start(() -> {
-                    for (var service : serviceContextScope.getServices(serviceClass)) {
-                        // if things are OK, the service repeats the ID back
-                        if (!service.registerContext(serviceContextScope).equals(serviceContextScope.getId())) {
-                            serviceContextScope.send(Notification.error("Error registering context with "
-                                    + serviceClass.getName() + ": context is inoperative",
-                                    UI.Interactivity.DISPLAY));
-                            serviceContextScope.setOperative(false);
+                try {
+                    Thread.ofVirtual().start(() -> {
+                        for (var service : serviceContextScope.getServices(serviceClass)) {
+                            // if things are OK, the service repeats the ID back
+                            if (!serviceContextScope.getId().equals(service.registerContext(serviceContextScope))) {
+                                fail.set(true);
+                            }
                         }
-                    }
-                });
+                    }).join();
+                } catch (InterruptedException e) {
+                    fail.set(true);
+                }
             }
 
+            if (fail.get()) {
+                serviceContextScope.send(Notification.error("Error registering context with other services:" +
+                                " context is inoperative",
+                        UI.Interactivity.DISPLAY));
+                serviceContextScope.setOperative(false);
+            }
 
             return serviceContextScope.getId();
 
