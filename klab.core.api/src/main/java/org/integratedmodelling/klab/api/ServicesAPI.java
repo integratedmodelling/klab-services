@@ -183,8 +183,8 @@ public interface ServicesAPI {
         String DECLARE_OBSERVABLE = REASONER_BASE + "/declare/observable";
 
         /**
-         * @protocol POST for a map containing the KimConcept definition as "OBSERVABLE" and possibly
-         * pattern variables
+         * @protocol POST for a map containing the KimConcept definition as "OBSERVABLE" and possibly pattern
+         * variables
          */
         String DECLARE_CONCEPT = REASONER_BASE + "/declare/concept";
 
@@ -339,6 +339,12 @@ public interface ServicesAPI {
          */
         String DIGITAL_TWIN_GRAPH = "/dt";
 
+        /**
+         * PUT endpoint to ingest and start resolving an observation. Returns the observation ID that can be
+         * used to follow the resolution task. Payload is a
+         * {@link org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest} instance.
+         */
+        String OBSERVE = "/observe";
     }
 
     public interface RESOURCES {

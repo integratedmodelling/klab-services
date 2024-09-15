@@ -282,6 +282,16 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
+    public long submit(Observation observation, ContextScope scope) {
+
+        if (scope instanceof ServiceContextScope serviceContextScope) {
+            return serviceContextScope.submitObservation(observation);
+        }
+
+        return -1L;
+    }
+
+    @Override
     public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
         return null;
     }

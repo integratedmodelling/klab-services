@@ -3,11 +3,9 @@ package org.integratedmodelling.common.services.client.scope;
 import org.integratedmodelling.common.services.client.runtime.RuntimeClient;
 import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.digitaltwin.GraphModel;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.KlabService;
@@ -35,6 +33,8 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     private ClientContextScope(ClientContextScope parent) {
         super(parent, parent.name, parent.runtimeService);
+        // this will have been reset by super to the user's id
+        setId(parent.getId());
     }
 
     @Override
@@ -84,20 +84,10 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
 
     @Override
     public Task<Observation, Long> observe(Observation observation) {
-
         var runtime = getService(RuntimeService.class);
-        if (runtime instanceof RuntimeClient runtimeClient) {
-            long taskId =
-                    runtimeClient.graphClient().query(GraphModel.Queries.GraphQL.OBSERVE.queryPattern(),
-                            GraphModel.Queries.GraphQL.OBSERVE.resultTarget(), Long.class,
-                            this, "observation",
-                            GraphModel.adapt(observation, this));
-            return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-                    Message.MessageType.ResolutionSuccessful), taskId, this::getObservation); // event
-            // watcher using either messaging or queues
-        }
-
-        return null;
+        long taskId = runtime.submit(observation, this);
+        return newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
+                Message.MessageType.ResolutionSuccessful), Observation.class, taskId); // event
     }
 
     @Override
@@ -264,7 +254,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             ret.resolutionConstraints.clear();
         } else {
             for (var constraint : resolutionConstraints) {
-                if (constraint == null || constraint.isEmpty()) {
+                if (constraint == null || constraint.empty()) {
                     continue;
                 }
                 if (constraint.getType().incremental && ret.resolutionConstraints.containsKey(constraint.getType())) {
@@ -290,7 +280,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         if (constraint == null || constraint.size() == 0) {
             return defaultValue;
         }
-        return (T) constraint.get(defaultValue.getClass()).getFirst();
+        return (T) constraint.payload(defaultValue.getClass()).getFirst();
     }
 
     @Override
@@ -299,7 +289,7 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         if (constraint == null || constraint.size() == 0) {
             return null;
         }
-        return (T) constraint.get(resultClass).getFirst();
+        return (T) constraint.payload(resultClass).getFirst();
     }
 
     @Override
@@ -308,6 +298,6 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
         if (constraint == null || constraint.size() == 0) {
             return List.of();
         }
-        return constraint.get(resultClass);
+        return constraint.payload(resultClass);
     }
 }

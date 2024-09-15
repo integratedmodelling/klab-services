@@ -13,6 +13,7 @@ import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.ServiceSideScope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -27,10 +28,6 @@ import java.util.function.BiConsumer;
 public class RuntimeClient extends ServiceClient implements RuntimeService {
 
     private GraphQLClient graphClient;
-
-//    public RuntimeClient() {
-//        super(Type.RUNTIME);
-//    }
 
     public RuntimeClient(URL url, Identity identity, List<ServiceReference> services, BiConsumer<Channel,
             Message>... listeners) {
@@ -153,13 +150,21 @@ public class RuntimeClient extends ServiceClient implements RuntimeService {
     }
 
     @Override
+    public long submit(Observation observation, ContextScope scope) {
+        ResolutionRequest resolutionRequest = new ResolutionRequest();
+        resolutionRequest.setObservation(observation);
+        resolutionRequest.setResolutionConstraints(scope.getResolutionConstraints());
+        return client.withScope(scope).post(ServicesAPI.RUNTIME.OBSERVE, resolutionRequest, Long.class);
+    }
+
+    @Override
     public Provenance runDataflow(Dataflow<Observation> dataflow, ContextScope contextScope) {
         return null;
     }
 
     @Override
     public Capabilities capabilities(Scope scope) {
-        return client.get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class);
+        return client.withScope(scope).get(ServicesAPI.CAPABILITIES, RuntimeCapabilitiesImpl.class);
     }
 
     public GraphQLClient graphClient() {

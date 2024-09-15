@@ -61,21 +61,4 @@ public class RuntimeServerContextController {
         return List.of();
     }
 
-    /**
-     * Observations are set into the digital twin by the context after creating them in an unresolved state.
-     * The GraphQL endpoint is used to do that using a mutation. The return long ID is the handle to the
-     * resolution; according to the messaging protocol, the observation tasks should monitor resolution until
-     * completion.
-     *
-     * @param observation
-     * @return
-     */
-    @MutationMapping
-    public long observe(@Argument(name = "observation") GraphModel.ObservationInput observation) {
-        var authorization = getAuthorization();
-        var scope = authorization.getScope(ContextScope.class);
-        var task = scope.observe(GraphModel.adapt(observation, scope));
-        return task.trackingKey();
-    }
-
 }

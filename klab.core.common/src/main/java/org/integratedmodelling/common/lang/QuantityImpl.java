@@ -37,4 +37,8 @@ public class QuantityImpl implements Quantity {
         this.currency = currency;
     }
 
+    public String toString() {
+        return value + (unit == null ? "" : ("." + unit)) + (currency == null ? "" : ("." + currency));
+    }
+
 }

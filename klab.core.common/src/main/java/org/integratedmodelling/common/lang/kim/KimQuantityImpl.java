@@ -41,6 +41,10 @@ public class KimQuantityImpl extends KimAssetImpl implements KimQuantity {
         this.value = value;
     }
 
+    public String toString() {
+        return value + (unit == null ? "" : ("." + unit)) + (currency == null ? "" : ("." + currency));
+    }
+
     //    @Override
 //    public ValueType getValueType() {
 //        // TODO classify which number

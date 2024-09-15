@@ -3,7 +3,6 @@ package org.integratedmodelling.klab.api.services.resolver.objects;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
-import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
 import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
@@ -35,7 +34,7 @@ public class ResolutionConstraintImpl implements ResolutionConstraint {
     }
 
     @Override
-    public boolean isEmpty() {
+    public boolean empty() {
         return data.isEmpty() || data.stream().anyMatch(Objects::isNull);
     }
 
@@ -44,8 +43,20 @@ public class ResolutionConstraintImpl implements ResolutionConstraint {
         return type;
     }
 
+    public List<Object> getData() {
+        return data;
+    }
+
+    public void setData(List<Object> data) {
+        this.data = data;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
     @Override
-    public <T> List<T> get(Class<T> dataClass) {
+    public <T> List<T> payload(Class<T> dataClass) {
         return new Utils.Casts<Object, T>().cast(data);
     }
 
@@ -56,16 +67,16 @@ public class ResolutionConstraintImpl implements ResolutionConstraint {
         if (type == Type.Parameters) {
             for (int i = 0; i < constraint.size(); i++) {
                 if (data.size() > i) {
-                    var existing = this.get(Parameters.class).get(i);
+                    var existing = this.payload(Parameters.class).get(i);
                     var merged = Parameters.create(existing);
-                    merged.putAll(constraint.get(Parameters.class).get(i));
+                    merged.putAll(constraint.payload(Parameters.class).get(i));
                     ret.data.add(merged);
                 } else {
-                    ret.data.add(constraint.get(Parameters.class).get(i));
+                    ret.data.add(constraint.payload(Parameters.class).get(i));
                 }
             }
         } else {
-          ret.data.addAll(constraint.get(Object.class));
+          ret.data.addAll(constraint.payload(Object.class));
         }
         return ret;
     }

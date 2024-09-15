@@ -1,12 +1,14 @@
 package org.integratedmodelling.klab.api.lang;
 
+import java.io.Serializable;
+
 /**
  * Just a number with units.
  * 
  * @author ferdinando.villa
  *
  */
-public interface Quantity  {
+public interface Quantity extends Serializable {
 	
 	/**
 	 * May be an integer or a double.

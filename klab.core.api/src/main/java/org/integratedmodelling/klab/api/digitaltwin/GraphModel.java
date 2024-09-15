@@ -24,12 +24,12 @@ public class GraphModel {
         interface GraphQL {
 
             record Query(String queryPattern, String resultTarget, String[] variables) {}
-
-            Query OBSERVE = new Query( """
-                    mutation Observe {
-                        observe(observation: $observation)
-                    }
-                    """, "observe", new String[] {"observation"});
+//
+//            Query OBSERVE = new Query( """
+//                    mutation Observe {
+//                        observe(observation: $observation)
+//                    }
+//                    """, "observe", new String[] {"observation"});
 
         }
     }

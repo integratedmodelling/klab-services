@@ -4,11 +4,9 @@ import org.integratedmodelling.common.utils.Utils;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
 import org.integratedmodelling.klab.api.exceptions.KlabResourceAccessException;
-import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
-import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.provenance.Provenance;
 import org.integratedmodelling.klab.api.scope.ContextScope;
@@ -183,11 +181,11 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             return null;
         }
 
-        long id = submitObservation(observation);
+        var id = submitObservation(observation);
 
         // create task before resolution starts so we guarantee a response
         var ret = newMessageTrackingTask(EnumSet.of(Message.MessageType.ResolutionAborted,
-                Message.MessageType.ResolutionSuccessful), id, this::getObservation);
+                Message.MessageType.ResolutionSuccessful), Observation.class, id);
 
         final var runtime = getService(RuntimeService.class);
         final var resolver = getService(Resolver.class);
@@ -207,20 +205,18 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
                 send(Message.MessageClass.ObservationLifecycle, Message.MessageType.ResolutionAborted, id);
             }
         });
-        return ret;
 
+        return ret;
     }
 
-    /*
-    MODIFIES the observation if it's an ObservationImpl, otherwise throws an exception.
-     */
-    private long submitObservation(Observation observation) {
+    public long submitObservation(Observation observation) {
         // TODO FIXME - create all the structure and metadata from the current context, parents and all
         // should we have the same for relationships? A context 'between" x and y where a relationship
         // can be observed? (wouldn't address collective relationships)
 
         return digitalTwin.submit(observation, this.contextObservation,
                 DigitalTwin.Relationship.Parent,
+                // TODO TODO TODO - all the stuff
                 null);
     }
 
@@ -394,7 +390,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
             ret.resolutionConstraints.clear();
         } else {
             for (var constraint : resolutionConstraints) {
-                if (constraint == null || constraint.isEmpty()) {
+                if (constraint == null || constraint.empty()) {
                     continue;
                 }
                 if (constraint.getType().incremental && ret.resolutionConstraints.containsKey(constraint.getType())) {
@@ -419,7 +415,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (constraint == null || constraint.size() == 0) {
             return defaultValue;
         }
-        return (T)constraint.get(defaultValue.getClass()).getFirst();
+        return (T)constraint.payload(defaultValue.getClass()).getFirst();
     }
 
     @Override
@@ -428,7 +424,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (constraint == null || constraint.size() == 0) {
             return null;
         }
-        return (T)constraint.get(resultClass).getFirst();
+        return (T)constraint.payload(resultClass).getFirst();
     }
 
     @Override
@@ -437,7 +433,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (constraint == null || constraint.size() == 0) {
             return List.of();
         }
-        return constraint.get(resultClass);
+        return constraint.payload(resultClass);
     }
 
     @Override

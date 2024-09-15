@@ -31,6 +31,7 @@ import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
 import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
@@ -256,7 +257,7 @@ public class JacksonConfiguration {
                                       Model.class, ServiceCall.class, Observation.class,
                                       NumericRange.class, Annotation.class, Metadata.class,
                                       Geometry.Dimension.class, Parameters.class, Actuator.class,
-                                      Notification.LexicalContext.class,
+                                      Notification.LexicalContext.class, ResolutionConstraint.class,
                                       KimObservationStrategy.Operation.class,
                                       KimObservationStrategy.Filter.class, ObservationStrategy.class,
                                       ObservationStrategy.Operation.class}) {

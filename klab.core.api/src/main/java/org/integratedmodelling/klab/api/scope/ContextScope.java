@@ -44,7 +44,7 @@ import java.util.concurrent.Future;
  *
  * @author Ferd
  */
-public interface ContextScope extends SessionScope, AutoCloseable {
+public interface ContextScope extends SessionScope {
 
     @Override
     default Type getType() {

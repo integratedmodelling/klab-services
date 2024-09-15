@@ -163,6 +163,12 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         }
     }
 
+    protected <P, T> ContextScope.Task<P, T> newMessageTrackingTask(Set<Message.MessageType> matchTypes,
+                                                                    Class<P> contextClass,
+                                                                    T value) {
+        return newMessageTrackingTask(matchTypes, value, null);
+    }
+
     /**
      * Return a future that exposes the tracking ID and produces the payload when the event message matches.
      *
@@ -211,7 +217,8 @@ public class MessagingChannelImpl extends ChannelImpl implements MessagingChanne
         /*
         Looks like just one channel is enough - so one connection factory, one
         connection, one channel. Maybe the whole API could be simpler. Maybe channels are synchronizing? In
-         all cases we now can have a queue name w/o a channel so we would need to keep a hash of channels and dispose
+         all cases we now can have a queue name w/o a channel so we would need to keep a hash of channels
+         and dispose
         properly.
          */
         if (this.channel_ == null) {

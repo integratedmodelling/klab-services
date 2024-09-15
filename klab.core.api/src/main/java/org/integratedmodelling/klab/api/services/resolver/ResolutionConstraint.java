@@ -3,10 +3,10 @@ package org.integratedmodelling.klab.api.services.resolver;
 import org.integratedmodelling.klab.api.collections.Parameters;
 import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
-import org.integratedmodelling.klab.api.knowledge.Model;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionConstraintImpl;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -39,7 +39,7 @@ import java.util.List;
  *
  * @author Ferd
  */
-public interface ResolutionConstraint {
+public interface ResolutionConstraint extends Serializable {
 
     /**
      * Defines type, behavior and intended payload class for the constraint. Each class MUST be serializable
@@ -88,7 +88,7 @@ public interface ResolutionConstraint {
      *
      * @return
      */
-    boolean isEmpty();
+    boolean empty();
 
     Type getType();
 
@@ -99,7 +99,7 @@ public interface ResolutionConstraint {
      * @param <T>
      * @return
      */
-    <T> List<T> get(Class<T> dataClass);
+    <T> List<T> payload(Class<T> dataClass);
 
     /**
      * Used internally to merge a constraint with a previous one and return a new constraint.
