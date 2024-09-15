@@ -113,8 +113,8 @@ public enum ServiceConfiguration {
             private Projection latlonProjection = new ProjectionImpl(ProjectionImpl.DEFAULT_PROJECTION_CODE);
 
             @Override
-            public Scale promoteGeometryToScale(Geometry geometry) {
-                return new ScaleImpl(geometry);
+            public Scale promoteGeometryToScale(Geometry geometry, Scope scope) {
+                return scope == null ? new ScaleImpl(geometry) : new ScaleImpl(geometry, scope);
             }
 
             @Override

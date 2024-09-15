@@ -116,7 +116,7 @@ public enum Klab {
 
         Observable.Builder getObservableBuilder(Observable observable, Scope scope);
 
-        Scale promoteGeometryToScale(Geometry geometry);
+        Scale promoteGeometryToScale(Geometry geometry, Scope scope);
 
         Projection getDefaultSpatialProjection();
 

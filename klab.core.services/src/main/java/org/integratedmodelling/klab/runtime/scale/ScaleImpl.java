@@ -11,6 +11,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.runtime.scale.space.SpaceImpl;
 import org.integratedmodelling.klab.runtime.scale.time.TimeImpl;
@@ -178,7 +179,21 @@ public class ScaleImpl implements Scale {
         };
     }
 
-    ;
+    public ScaleImpl(Geometry geometry, Scope scope) {
+        List<Extent<?>> extents = new ArrayList<>(3);
+        for (Geometry.Dimension dimension : geometry.getDimensions()) {
+            if (dimension.getType() == Type.SPACE) {
+                extents.add(SpaceImpl.create(dimension));
+            } else if (dimension.getType() == Type.TIME) {
+                extents.add(TimeImpl.create(dimension));
+            } else if (dimension.getType() == Type.NUMEROSITY) {
+                // TODO
+                throw new KlabUnimplementedException("numerosity extent");
+            }
+        }
+        define(extents);
+    }
+
 
     public ScaleImpl(Geometry geometry) {
         List<Extent<?>> extents = new ArrayList<>(3);

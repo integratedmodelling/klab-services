@@ -20,6 +20,7 @@ import org.integratedmodelling.klab.api.geometry.Locator;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Space;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
+import org.integratedmodelling.klab.api.scope.Scope;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -221,6 +222,17 @@ public interface Scale extends Geometry, Topology<Scale> {
     }
 
     public static Scale create(Geometry geometry) {
+        return create(geometry, null);
+    }
+
+    /**
+     * Passing the scope enables resolution of grid or resource URNs
+     *
+     * @param geometry
+     * @param scope
+     * @return
+     */
+    public static Scale create(Geometry geometry, Scope scope) {
         if (geometry instanceof Scale) {
             return (Scale) geometry;
         }
@@ -228,7 +240,7 @@ public interface Scale extends Geometry, Topology<Scale> {
         if (configuration == null) {
             throw new KlabIllegalStateException("k.LAB environment not configured to promote a geometry to a scale");
         }
-        return configuration.promoteGeometryToScale(geometry);
+        return configuration.promoteGeometryToScale(geometry, scope);
     }
 
     public static Scale empty() {

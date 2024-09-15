@@ -171,7 +171,7 @@ public class ResolverService extends BaseService implements Resolver {
             return ResolutionImpl.empty(observation, scope);
         }
 
-        var scale = Scale.create(resolutionGeometry);
+        var scale = Scale.create(resolutionGeometry, scope);
 
         ResolutionImpl ret = new ResolutionImpl(observation.getObservable(), scale, scope);
         resolveObservation(observation, scale, scope, ret, null);
