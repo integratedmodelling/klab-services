@@ -294,7 +294,8 @@ public class DigitalTwin implements Closeable {
          * @return
          */
         ContextScope contextualize(ContextScope scope) {
-            return scope.withContextualizationData(this.contextObservation, this.scale, this.localNames);
+            // TODO
+            return scope; //  scope.withContextualizationData(this.contextObservation, this.scale, this.localNames);
         }
     }
 

@@ -14,8 +14,8 @@ import java.util.List;
  */
 public abstract class ClientSessionScope extends ClientUserScope implements SessionScope {
 
-    private final RuntimeService runtimeService;
-    private String name;
+    protected final RuntimeService runtimeService;
+    protected String name;
 
     public ClientSessionScope(ClientUserScope parent, String sessionName, RuntimeService runtimeService) {
         // FIXME use a copy constructor that inherits the environment from the parent

@@ -14,6 +14,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -23,6 +24,7 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -321,8 +323,10 @@ public class ResourcesClient extends ServiceClient implements ResourcesService, 
 
     @Override
     public ResourceSet queryModels(Observable observable, ContextScope scope) {
-        // TODO Auto-generated method stub
-        return null;
+        ResolutionRequest request = new ResolutionRequest();
+        request.setObservable(observable);
+        request.setResolutionConstraints(scope.getResolutionConstraints());
+        return client.withScope(scope).post(ServicesAPI.RESOURCES.QUERY_MODELS, request, ResourceSet.class);
     }
 
     @Override

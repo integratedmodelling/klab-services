@@ -36,23 +36,23 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     private Observation observer;
     private Observation contextObservation;
-    private Set<String> resolutionScenarios = new LinkedHashSet<>();
-    private Scale geometry = Scale.empty();
-    @Deprecated
-    private String resolutionNamespace;
-    @Deprecated
-    private String resolutionProject;
-    @Deprecated
-    private Map<Observable, Observation> catalog;
-    @Deprecated
-    private Map<String, Observable> namedCatalog = new HashMap<>();
-    @Deprecated
-    private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
+//    private Set<String> resolutionScenarios = new LinkedHashSet<>();
+//    private Scale geometry = Scale.empty();
+//    @Deprecated
+//    private String resolutionNamespace;
+//    @Deprecated
+//    private String resolutionProject;
+//    @Deprecated
+//    private Map<Observable, Observation> catalog;
+//    @Deprecated
+//    private Map<String, Observable> namedCatalog = new HashMap<>();
+//    @Deprecated
+//    private Map<Concept, Concept> contextualizedPredicates = new HashMap<>();
     private URL url;
     private DigitalTwin digitalTwin;
     // FIXME there's also parentScope (generic) and I'm not sure these should be duplicated
     protected ServiceContextScope parent;
-    protected List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
+    protected Map<ResolutionConstraint.Type, ResolutionConstraint> resolutionConstraints = new LinkedHashMap<>();
 
     // This uses the SAME catalog, which should only be redefined when changing context or perspective
     private ServiceContextScope(ServiceContextScope parent) {
@@ -60,13 +60,13 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.parent = parent;
         this.observer = parent.observer;
         this.contextObservation = parent.contextObservation;
-        this.catalog = parent.catalog;
-        this.namedCatalog.putAll(parent.namedCatalog);
-        this.contextualizedPredicates.putAll(parent.contextualizedPredicates);
-        this.resolutionScenarios.addAll(parent.resolutionScenarios);
-        this.resolutionNamespace = parent.resolutionNamespace;
+//        this.catalog = parent.catalog;
+//        this.namedCatalog.putAll(parent.namedCatalog);
+//        this.contextualizedPredicates.putAll(parent.contextualizedPredicates);
+//        this.resolutionScenarios.addAll(parent.resolutionScenarios);
+//        this.resolutionNamespace = parent.resolutionNamespace;
         this.digitalTwin = parent.digitalTwin;
-        this.resolutionConstraints.addAll(parent.resolutionConstraints);
+        this.resolutionConstraints.putAll(parent.resolutionConstraints);
     }
 
     @Override
@@ -102,7 +102,7 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         this.observer = null; // NAAH parent.getUser();
         this.data = Parameters.create();
         this.data.putAll(parent.data);
-        this.catalog = new HashMap<>();
+//        this.catalog = new HashMap<>();
         /*
          * TODO choose the services if this context or user requires specific ones
          */
@@ -155,24 +155,24 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     //        return geometry;
     //    }
 
-    @Override
-    public ServiceContextScope withScenarios(String... scenarios) {
-        ServiceContextScope ret = new ServiceContextScope(this);
-        if (scenarios == null) {
-            ret.resolutionScenarios = null;
-        }
-        this.resolutionScenarios = new HashSet<>();
-        for (String scenario : scenarios) {
-            ret.resolutionScenarios.add(scenario);
-        }
-        return ret;
-    }
+//    @Override
+//    public ServiceContextScope withScenarios(String... scenarios) {
+//        ServiceContextScope ret = new ServiceContextScope(this);
+//        if (scenarios == null) {
+//            ret.resolutionScenarios = null;
+//        }
+//        this.resolutionScenarios = new HashSet<>();
+//        for (String scenario : scenarios) {
+//            ret.resolutionScenarios.add(scenario);
+//        }
+//        return ret;
+//    }
 
     @Override
     public ServiceContextScope withObserver(Observation observer) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.observer = observer;
-        ret.catalog = new HashMap<>(this.catalog);
+//        ret.catalog = new HashMap<>(this.catalog);
         return ret;
     }
 
@@ -257,10 +257,10 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         return null;
     }
 
-    @Override
-    public Map<Concept, Concept> getContextualizedPredicates() {
-        return contextualizedPredicates;
-    }
+//    @Override
+//    public Map<Concept, Concept> getContextualizedPredicates() {
+//        return contextualizedPredicates;
+//    }
 
     @Override
     public Collection<Observation> getOutgoingRelationshipsOf(Observation observation) {
@@ -276,48 +276,49 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
 
     @Override
     public Map<Observable, Observation> getObservations() {
-        return catalog;
+        // TODO use the DT
+        return Map.of();
     }
-
-    @Override
-    public String getResolutionNamespace() {
-        return resolutionNamespace;
-    }
-
-    public String getResolutionProject() {
-        return resolutionProject;
-    }
-
-    public void setResolutionProject(String resolutionProject) {
-        this.resolutionProject = resolutionProject;
-    }
-
-    @Override
-    public Set<String> getResolutionScenarios() {
-        return resolutionScenarios;
-    }
+//
+//    @Override
+//    public String getResolutionNamespace() {
+//        return resolutionNamespace;
+//    }
+//
+//    public String getResolutionProject() {
+//        return resolutionProject;
+//    }
+//
+//    public void setResolutionProject(String resolutionProject) {
+//        this.resolutionProject = resolutionProject;
+//    }
+//
+//    @Override
+//    public Set<String> getResolutionScenarios() {
+//        return resolutionScenarios;
+//    }
 
     //    @Override
     //    public Observation getResolutionObservation() {
     //        return contextObservation;
     //    }
 
-    @Override
-    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
-                                                  Map<String, String> localNames) {
-        if (scale == null && localNames.isEmpty()) {
-            return this;
-        }
-        ServiceContextScope ret = new ServiceContextScope(this);
-        ret.contextObservation = contextObservation;
-        if (scale != null) {
-            ret.geometry = scale;
-        }
-        if (!localNames.isEmpty()) {
-            this.namedCatalog = Utils.Maps.translateKeys(namedCatalog, localNames);
-        }
-        return ret;
-    }
+//    @Override
+//    public ContextScope withContextualizationData(Observation contextObservation, Scale scale,
+//                                                  Map<String, String> localNames) {
+//        if (scale == null && localNames.isEmpty()) {
+//            return this;
+//        }
+//        ServiceContextScope ret = new ServiceContextScope(this);
+//        ret.contextObservation = contextObservation;
+//        if (scale != null) {
+//            ret.geometry = scale;
+//        }
+//        if (!localNames.isEmpty()) {
+//            this.namedCatalog = Utils.Maps.translateKeys(namedCatalog, localNames);
+//        }
+//        return ret;
+//    }
 
     @Override
     public <T extends Observation> T getObservation(String localName, Class<T> cls) {
@@ -363,28 +364,28 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
     public ContextScope within(DirectObservation contextObservation) {
         ServiceContextScope ret = new ServiceContextScope(this);
         ret.contextObservation = contextObservation;
-        ret.catalog = new HashMap<>(this.catalog);
+//        ret.catalog = new HashMap<>(this.catalog);
         return ret;
     }
 
-    @Override
-    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
-        ServiceContextScope ret = new ServiceContextScope(this);
-        ret.contextualizedPredicates.put(abstractTrait, concreteTrait);
-        return ret;
-    }
+//    @Override
+//    public ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait) {
+//        ServiceContextScope ret = new ServiceContextScope(this);
+//        ret.contextualizedPredicates.put(abstractTrait, concreteTrait);
+//        return ret;
+//    }
 
     @Override
     public ContextScope between(Observation source, Observation target) {
         return null;
     }
 
-    @Override
-    public ContextScope withResolutionNamespace(String namespace) {
-        ServiceContextScope ret = new ServiceContextScope(this);
-        ret.resolutionNamespace = namespace;
-        return ret;
-    }
+//    @Override
+//    public ContextScope withResolutionNamespace(String namespace) {
+//        ServiceContextScope ret = new ServiceContextScope(this);
+//        ret.resolutionNamespace = namespace;
+//        return ret;
+//    }
 
     @Override
     public ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints) {
@@ -392,14 +393,48 @@ public class ServiceContextScope extends ServiceSessionScope implements ContextS
         if (resolutionConstraints == null) {
             ret.resolutionConstraints.clear();
         } else {
-            ret.resolutionConstraints.addAll(Arrays.stream(resolutionConstraints).toList());
+            for (var constraint : resolutionConstraints) {
+                if (constraint.getType().incremental && ret.resolutionConstraints.containsKey(constraint.getType())) {
+                    ret.resolutionConstraints.put(constraint.getType(),
+                            ret.resolutionConstraints.get(constraint.getType()).merge(constraint));
+                } else {
+                    ret.resolutionConstraints.put(constraint.getType(), constraint);
+                }
+            }
         }
         return ret;
     }
 
     @Override
     public List<ResolutionConstraint> getResolutionConstraints() {
-        return this.resolutionConstraints;
+        return Utils.Collections.promoteToList(this.resolutionConstraints.values());
+    }
+
+    @Override
+    public <T> T getConstraint(ResolutionConstraint.Type type, T defaultValue) {
+        var constraint = resolutionConstraints.get(type);
+        if (constraint == null || constraint.size() == 0) {
+            return defaultValue;
+        }
+        return (T)constraint.get(defaultValue.getClass()).getFirst();
+    }
+
+    @Override
+    public <T> T getConstraint(ResolutionConstraint.Type type, Class<T> resultClass) {
+        var constraint = resolutionConstraints.get(type);
+        if (constraint == null || constraint.size() == 0) {
+            return null;
+        }
+        return (T)constraint.get(resultClass).getFirst();
+    }
+
+    @Override
+    public <T> List<T> getConstraints(ResolutionConstraint.Type type, Class<T> resultClass) {
+        var constraint = resolutionConstraints.get(type);
+        if (constraint == null || constraint.size() == 0) {
+            return List.of();
+        }
+        return constraint.get(resultClass);
     }
 
     @Override

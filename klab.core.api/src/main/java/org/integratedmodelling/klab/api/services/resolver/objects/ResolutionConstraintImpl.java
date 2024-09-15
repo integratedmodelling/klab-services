@@ -1,0 +1,66 @@
+package org.integratedmodelling.klab.api.services.resolver.objects;
+
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resources.adapters.Parameter;
+import org.integratedmodelling.klab.api.utils.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class ResolutionConstraintImpl implements ResolutionConstraint {
+
+    private Type type;
+    private List<Object> data = new ArrayList<>();
+
+    public ResolutionConstraintImpl() {
+    }
+
+    public ResolutionConstraintImpl(Type type, Object... data) {
+        this.type = type;
+        for (var o : data) {
+            if ((o != null && !type.dataClass.isAssignableFrom(o.getClass()))) {
+                throw new KlabIllegalArgumentException("Cannot create resolution constraint: illegal data " +
+                        "content");
+            }
+            this.data.add(o);
+        }
+    }
+
+    @Override
+    public int size() {
+        return data.size();
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public <T> List<T> get(Class<T> dataClass) {
+        return new Utils.Casts<Object, T>().cast(data);
+    }
+
+    @Override
+    public ResolutionConstraint merge(ResolutionConstraint constraint) {
+        ResolutionConstraintImpl ret = new ResolutionConstraintImpl();
+        ret.type = this.type;
+        if (type == Type.Parameters) {
+            for (int i = 0; i < constraint.size(); i++) {
+                if (data.size() > i) {
+                    var existing = this.get(Parameters.class).get(i);
+                    var merged = Parameters.create(existing);
+                    merged.putAll(constraint.get(Parameters.class).get(i));
+                    ret.data.add(merged);
+                } else {
+                    ret.data.add(constraint.get(Parameters.class).get(i));
+                }
+            }
+        } else {
+          ret.data.addAll(constraint.get(Object.class));
+        }
+        return ret;
+    }
+}

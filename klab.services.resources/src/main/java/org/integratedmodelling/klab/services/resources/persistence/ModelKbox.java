@@ -24,6 +24,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
 import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.persistence.h2.SQL;
@@ -374,17 +375,18 @@ public class ModelKbox extends ObservableKbox {
 
         String ret = "";
         String projectId = null;
-        String namespaceId = context.getResolutionNamespace() == null ? DUMMY_NAMESPACE_ID :
-                             context.getResolutionNamespace();
+        String namespaceId = context.getConstraint(ResolutionConstraint.Type.ResolutionNamespace,
+                DUMMY_NAMESPACE_ID);
         if (!namespaceId.equals(DUMMY_NAMESPACE_ID)) {
             ret += "(model.namespaceid = '" + namespaceId + "')";
-            projectId = context.getResolutionProject();
+            projectId = context.getConstraint(ResolutionConstraint.Type.ResolutionProject, String.class);
         }
 
         ret += (ret.isEmpty() ? "" : " OR ") + "((NOT model.scope = 'NAMESPACE') AND (NOT model.inscenario))";
 
-        if (context.getResolutionScenarios().size() > 0) {
-            ret += " OR (" + joinStringConditions("model.namespaceid", context.getResolutionScenarios(),
+        if (!context.getConstraints(ResolutionConstraint.Type.Scenarios, String.class).isEmpty()) {
+            ret += " OR (" + joinStringConditions("model.namespaceid",
+                    context.getConstraints(ResolutionConstraint.Type.Scenarios, String.class),
                     "OR") + ")";
         }
 

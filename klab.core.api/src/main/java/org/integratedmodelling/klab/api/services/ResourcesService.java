@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.data.RepositoryState;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
@@ -301,12 +302,12 @@ public interface ResourcesService extends KlabService {
     Project resolveProject(String projectName, Scope scope);
 
     /**
-     * Return the candidate models for the passed observables in the passed scope (which will provide the
-     * reasoner service). The result should contain an unordered list of candidate model URNs (in
+     * Return the candidate models resolving the passed observation in the passed scope (which will provide
+     * the reasoner service). The result should contain an unordered list of candidate model URNs (in
      * {@link ResourceSet#getResults()}) along with the needed resources, namespaces and behaviors needed to
-     * run them. Prioritization happens in the resolver.
+     * run them. Prioritization and final resource access happens in the resolver.
      *
-     * @param observable
+     * @param observation
      * @param scope
      * @return
      */
@@ -354,7 +355,7 @@ public interface ResourcesService extends KlabService {
          *                            branch name after a # sign) or a http URL from another resource
          *                            manager.
          * @param overwriteIfExisting self-explanatory. If the project is remote, reload if true.
-         * @param scope a scope that must have previously locked the project
+         * @param scope               a scope that must have previously locked the project
          * @return true if operation succeeded and anything was done (false if project existed and wasn't
          * overwritten)
          */
@@ -377,7 +378,7 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param manifest
          * @param metadata
-         * @param scope a scope that must have previously locked the project
+         * @param scope       a scope that must have previously locked the project
          * @return the updated project with the new metadata and manifest.
          */
         ResourceSet updateProject(String projectName, Project.Manifest manifest, Metadata metadata,
@@ -389,7 +390,7 @@ public interface ResourcesService extends KlabService {
          * exception (TODO).
          *
          * @param projectName
-         * @param scope a scope that must have previously locked the project
+         * @param scope       a scope that must have previously locked the project
          * @return
          */
         List<ResourceSet> createDocument(String projectName, String documentUrn,
@@ -405,7 +406,7 @@ public interface ResourcesService extends KlabService {
          * @param projectName
          * @param documentType
          * @param content
-         * @param scope a scope that must have previously locked the project
+         * @param scope        a scope that must have previously locked the project
          * @return a {@link ResourceSet} per affected namespace
          */
         List<ResourceSet> updateDocument(String projectName, ProjectStorage.ResourceType documentType,

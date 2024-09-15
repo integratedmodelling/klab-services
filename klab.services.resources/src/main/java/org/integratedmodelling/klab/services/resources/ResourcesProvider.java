@@ -16,6 +16,7 @@ import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.*;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.KlabAsset.KnowledgeClass;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Project.Manifest;
 import org.integratedmodelling.klab.api.knowledge.organization.ProjectStorage;
@@ -698,6 +699,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     public ResourceSet queryModels(Observable observable, ContextScope scope) {
 
         ResourceSet results = new ResourceSet();
+        // FIXME use the observation's scale (pass the observation)
         for (ModelReference model : this.kbox.query(observable, scope)) {
             results.getResults().add(new ResourceSet.Resource(getUrl().toString(),
                     model.getNamespaceId() + "." + model.getName(), model.getProjectUrn(),

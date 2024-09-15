@@ -1,12 +1,11 @@
 package org.integratedmodelling.klab.api.services.resolver.objects;
 
-import org.integratedmodelling.klab.api.collections.Parameters;
-import org.integratedmodelling.klab.api.knowledge.KlabAsset;
+import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 
-import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The resolution constraints come from the scope beyond the content of the scope token.
@@ -14,6 +13,7 @@ import java.util.*;
 public class ResolutionRequest {
 
     private Observation observation;
+    private Observable observable;
     private List<ResolutionConstraint> resolutionConstraints = new ArrayList<>();
 
     public Observation getObservation() {
@@ -30,6 +30,14 @@ public class ResolutionRequest {
 
     public void setResolutionConstraints(List<ResolutionConstraint> resolutionConstraints) {
         this.resolutionConstraints = resolutionConstraints;
+    }
+
+    public Observable getObservable() {
+        return observable;
+    }
+
+    public void setObservable(Observable observable) {
+        this.observable = observable;
     }
 }
 

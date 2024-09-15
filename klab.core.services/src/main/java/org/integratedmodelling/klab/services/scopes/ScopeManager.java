@@ -240,9 +240,9 @@ public class ScopeManager {
             ret = ret.withObserver(observer);
         }
 
-        if (contextualization.scenarioUrns() != null) {
-            ret = ret.withScenarios(contextualization.scenarioUrns());
-        }
+//        if (contextualization.scenarioUrns() != null) {
+//            ret = ret.withScenarios(contextualization.scenarioUrns());
+//        }
 
         return ret;
     }

@@ -1,7 +1,7 @@
 package org.integratedmodelling.klab.services.resolver;
 
-import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.common.services.ResolverCapabilitiesImpl;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -18,14 +18,20 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeIns
 import org.integratedmodelling.klab.api.lang.Contextualizable;
 import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
-import org.integratedmodelling.klab.api.lang.kim.*;
+import org.integratedmodelling.klab.api.lang.kim.KimModel;
+import org.integratedmodelling.klab.api.lang.kim.KimObservable;
+import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
-import org.integratedmodelling.klab.api.services.*;
+import org.integratedmodelling.klab.api.services.Language;
+import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.Resolver;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.Resolution;
 import org.integratedmodelling.klab.api.services.resolver.Resolution.ResolutionType;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet.Resource;
 import org.integratedmodelling.klab.api.services.runtime.Actuator;
@@ -33,7 +39,6 @@ import org.integratedmodelling.klab.api.services.runtime.Dataflow;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.extension.Library;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
-import org.integratedmodelling.common.knowledge.ModelImpl;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
 import org.integratedmodelling.klab.services.base.BaseService;
 import org.integratedmodelling.klab.services.resolver.dataflow.ActuatorImpl;
@@ -150,12 +155,14 @@ public class ResolverService extends BaseService implements Resolver {
      */
     public Resolution computeResolution(Observation observation, ContextScope scope) {
 
-        Geometry resolutionGeometry = observation.getGeometry();
+        var resolutionGeometry = scope.getConstraint(ResolutionConstraint.Type.Geometry,
+                observation.getGeometry());
 
         if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
             if (scope.getContextObservation() != null) {
                 resolutionGeometry = scope.getContextObservation().getGeometry();
-            } else if (resolutionGeometry.isEmpty() && scope.getObserver() != null) {
+            }
+            if ((resolutionGeometry == null || resolutionGeometry.isEmpty()) && scope.getObserver() != null) {
                 resolutionGeometry = scope.getObserver().getObserverGeometry();
             }
         }
@@ -348,22 +355,22 @@ public class ResolverService extends BaseService implements Resolver {
                 case OBSERVE -> {
 
                     /*
-                    Observation is there, find models and compile them in, merge resolutions
+                    Find models and compile them in, merge resolutions until satisfied
                      */
-                    ret = new ResolutionImpl(operation.getObservable(), scale, scope,
-                            parent);
-                    for (Model model : queryModels(operation.getObservable(), scope,
-                            scale)) {
+                    ret = new ResolutionImpl(operation.getObservable(), scale, scope, parent);
+                    for (Model model : queryModels(operation.getObservable(), scope, scale)) {
                         ResolutionImpl resolution = resolveModel(model, operation.getObservable(),
                                 scale,
-                                scope.withResolutionNamespace(model.getNamespace()), parent);
+                                scope.withResolutionConstraints(
+                                        ResolutionConstraint.of(
+                                                ResolutionConstraint.Type.ResolutionNamespace,
+                                                model.getNamespace())), parent);
                         coverage = coverage.merge(resolution.getCoverage(), LogicalConnector.UNION);
                         if (coverage.getGain() < MINIMUM_WORTHWHILE_CONTRIBUTION) {
                             continue;
                         }
                         // merge the model at root level within the local resolution
-                        resolution.merge(model, coverage, operation.getObservable(),
-                                ResolutionType.DIRECT);
+                        resolution.merge(model, coverage, operation.getObservable(), ResolutionType.DIRECT);
                         if (coverage.isRelevant()) {
                             // merge the resolution with the parent resolution
                             ret.merge(parentModel, resolution, ResolutionType.DIRECT);
@@ -857,7 +864,7 @@ public class ResolverService extends BaseService implements Resolver {
          * annotations) that are exposed to the admin API.
          */
         for (String pack : extensionPackages) {
-            ServiceConfiguration.INSTANCE.scanPackage(pack, Maps.of(Library.class,
+            ServiceConfiguration.INSTANCE.scanPackage(pack, Map.of(Library.class,
                     ServiceConfiguration.INSTANCE.LIBRARY_LOADER));
         }
 
@@ -877,7 +884,7 @@ public class ResolverService extends BaseService implements Resolver {
     @Override
     public String encodeDataflow(Dataflow<Observation> dataflow) {
 
-        StringBuffer kdl = new StringBuffer(1024);
+        StringBuilder kdl = new StringBuilder(1024);
 
         Map<String, String> resources = new HashMap<>();
         for (Actuator actuator : dataflow.getComputation()) {
@@ -885,7 +892,7 @@ public class ResolverService extends BaseService implements Resolver {
             kdl.append(encodeActuator(actuator, 0, resources));
         }
 
-        StringBuffer ret = new StringBuffer(2048);
+        StringBuilder ret = new StringBuilder(2048);
         ret.append(encodePreamble(dataflow));
         ret.append("\n");
         var res = encodeResources(dataflow, resources);

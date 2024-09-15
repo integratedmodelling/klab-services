@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.knowledge.KlabAsset;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.knowledge.Worldview;
+import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.organization.Project;
 import org.integratedmodelling.klab.api.knowledge.organization.Workspace;
 import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
@@ -16,6 +17,8 @@ import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionRequest;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.resources.ResourceStatus;
 import org.integratedmodelling.klab.services.application.security.EngineAuthorization;
@@ -198,12 +201,14 @@ public class ResourcesProviderController {
                 principal instanceof EngineAuthorization authorization ? authorization.getScope() : null);
     }
 
-    @GetMapping(ServicesAPI.RESOURCES.QUERY_MODELS)
-    public @ResponseBody ResourceSet queryModels(@RequestParam("observable") Observable observable,
+    // FIXME use POST and a ResolutionRequest
+    @PostMapping(ServicesAPI.RESOURCES.QUERY_MODELS)
+    public @ResponseBody ResourceSet queryModels(@RequestBody ResolutionRequest request,
                                                  Principal principal) {
-        return resourcesServer.klabService().queryModels(observable,
+        return resourcesServer.klabService().queryModels(request.getObservable(),
                 principal instanceof EngineAuthorization authorization ?
-                authorization.getScope(ContextScope.class) : null);
+                authorization.getScope(ContextScope.class)
+                             .withResolutionConstraints(request.getResolutionConstraints().toArray(new ResolutionConstraint[0])) : null);
     }
 
     @GetMapping(ServicesAPI.RESOURCES.MODEL_GEOMETRY)

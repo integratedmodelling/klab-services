@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.services.KlabService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.Notification;
 import org.springframework.web.util.UriUtils;
@@ -1055,6 +1056,21 @@ public class Utils extends org.integratedmodelling.klab.api.utils.Utils {
             }
 
             return new HashSet<>(items);
+        }
+
+        /**
+         * Ensure that the passed collection is an ordered list, and if not make a list out of it. Used mostly
+         * to promote ordered values() from a linked hash map and similar situations.
+         *
+         * @param values
+         * @param <T>
+         * @return an ordered list with the same values as the incoming collection, in order of iteration
+         */
+        public static <T> List<T> promoteToList(Collection<T> values) {
+            if (values instanceof List) {
+                return (List<T>) values;
+            }
+            return new ArrayList<>(values);
         }
     }
 

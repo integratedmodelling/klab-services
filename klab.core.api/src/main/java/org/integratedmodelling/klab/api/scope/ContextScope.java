@@ -135,24 +135,24 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      */
     ContextScope withObserver(Observation observer);
 
-    /**
-     * Return a new observation scope that sets the passed scenarios for any future observation.
-     *
-     * @param scenarios
-     * @return
-     * @deprecated use resolution constraints
-     */
-    ContextScope withScenarios(String... scenarios);
+    //    /**
+    //     * Return a new observation scope that sets the passed scenarios for any future observation.
+    //     *
+    //     * @param scenarios
+    //     * @return
+    //     * @deprecated use resolution constraints
+    //     */
+    //    ContextScope withScenarios(String... scenarios);
 
-    /**
-     * Return a new context scope with the passed namespace of resolution. Used by the resolver or to
-     * fine-tune resolution, prioritizing models in the passed namespace and the enclosing project.
-     *
-     * @param namespace
-     * @return
-     * @deprecated use resolution constraints
-     */
-    ContextScope withResolutionNamespace(String namespace);
+    //    /**
+    //     * Return a new context scope with the passed namespace of resolution. Used by the resolver or to
+    //     * fine-tune resolution, prioritizing models in the passed namespace and the enclosing project.
+    //     *
+    //     * @param namespace
+    //     * @return
+    //     * @deprecated use resolution constraints
+    //     */
+    //    ContextScope withResolutionNamespace(String namespace);
 
 
     /**
@@ -164,22 +164,25 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      */
     ContextScope within(DirectObservation contextObservation);
 
-    /**
-     * Contextualize to a specific subclass of a trait, which is observed within the current context
-     * observation, and defaults to the passed value overall if the resolution fails. The trait becomes a
-     * constraint in the iteration of the scale, making the iterators skip any state where the trait may be
-     * different from the one set through this method.
-     * <p>
-     * Using this method will trigger resolution and computation for each new base trait subsuming
-     * abstractTrait. Implementations may make its resolution lazy or not.
-     *
-     * @param abstractTrait subsuming value, may be concrete but will be observed if absent, so if concrete
-     *                      the base trait will be observed instead.
-     * @param concreteTrait the fill value, may be abstract as long as it's subsumed by abstractTrait
-     * @return a new context scope that only considers the passed incarnation of the trait.
-     * @deprecated use resolution constraints
-     */
-    ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait);
+    //    /**
+    //     * Contextualize to a specific subclass of a trait, which is observed within the current context
+    //     * observation, and defaults to the passed value overall if the resolution fails. The trait
+    //     becomes a
+    //     * constraint in the iteration of the scale, making the iterators skip any state where the trait
+    //     may be
+    //     * different from the one set through this method.
+    //     * <p>
+    //     * Using this method will trigger resolution and computation for each new base trait subsuming
+    //     * abstractTrait. Implementations may make its resolution lazy or not.
+    //     *
+    //     * @param abstractTrait subsuming value, may be concrete but will be observed if absent, so if
+    //     concrete
+    //     *                      the base trait will be observed instead.
+    //     * @param concreteTrait the fill value, may be abstract as long as it's subsumed by abstractTrait
+    //     * @return a new context scope that only considers the passed incarnation of the trait.
+    //     * @deprecated use resolution constraints
+    //     */
+    //    ContextScope withContextualizedPredicate(Concept abstractTrait, Concept concreteTrait);
 
     /**
      * Return a new context with source and target set to create and resolve a relationship.
@@ -274,7 +277,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * sections to it as models are computed, based on the documentation templates associated with models and
      * their parts. The report can be compiled and rendered at any time. Each observation in the same context
      * will report the same report.
-     *
+     * <p>
      * TODO pass reporting options
      *
      * @return
@@ -322,14 +325,14 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      */
     Collection<Observation> getChildrenOf(Observation observation);
 
-    /**
-     * Return mappings for any predicates contextualized with
-     * {@link #withContextualizedPredicate(Concept, Concept)} at context creation.
-     *
-     * @deprecated merge into resolution constraints
-     * @return the contextualized predicates mapping
-     */
-    Map<Concept, Concept> getContextualizedPredicates();
+    //    /**
+    //     * Return mappings for any predicates contextualized with
+    //     * {@link #withContextualizedPredicate(Concept, Concept)} at context creation.
+    //     *
+    //     * @deprecated merge into resolution constraints
+    //     * @return the contextualized predicates mapping
+    //     */
+    //    Map<Concept, Concept> getContextualizedPredicates();
 
     /**
      * Inspect the network graph of the current context, returning all relationships that have the passed
@@ -366,53 +369,57 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      */
     <T extends Observation> T getObservation(String localName, Class<T> cls);
 
-    /**
-     * When resolving, the resolution namespace that provides the resolution scope must be provided. In other
-     * situations this will be null.
-     *
-     * @return
-     * @deprecated use resolution constraints
-     */
-    String getResolutionNamespace();
+    //    /**
+    //     * When resolving, the resolution namespace that provides the resolution scope must be provided.
+    //     In other
+    //     * situations this will be null.
+    //     *
+    //     * @return
+    //     * @deprecated use resolution constraints
+    //     */
+    //    String getResolutionNamespace();
 
-    /**
-     * Same as {@link #getResolutionNamespace()}, reporting the project in scope during resolution.
-     *
-     * @return
-     * @deprecated use resolution constraints
-     */
-    String getResolutionProject();
+    //    /**
+    //     * Same as {@link #getResolutionNamespace()}, reporting the project in scope during resolution.
+    //     *
+    //     * @return
+    //     * @deprecated use resolution constraints
+    //     */
+    //    String getResolutionProject();
 
-    /**
-     * Any scenarios set during the resolution.
-     *
-     * @return
-     * @deprecated use resolution constraints
-     */
-    Collection<String> getResolutionScenarios();
-//
-//    /**
-//     * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
-//     * resolution may acquire a root observation which serves as context for the resolution.
-//     *
-//     * @return
-//     * @deprecated use the context but the geometry of resolution is the observer's for substantials, and the
-//     * context observation's for dependents
-//     */
-//    DirectObservation getResolutionObservation();
+    //    /**
+    //     * Any scenarios set during the resolution.
+    //     *
+    //     * @return
+    //     * @deprecated use resolution constraints
+    //     */
+    //    Collection<String> getResolutionScenarios();
+    //
+    //    /**
+    //     * A context is born "empty" and since k.LAB 0.12 does not have a root observation, but when used in
+    //     * resolution may acquire a root observation which serves as context for the resolution.
+    //     *
+    //     * @return
+    //     * @deprecated use the context but the geometry of resolution is the observer's for substantials,
+    //     and the
+    //     * context observation's for dependents
+    //     */
+    //    DirectObservation getResolutionObservation();
 
-    /**
-     * Create a new scope if necessary where the catalog uses the passed local names and the scale, if not
-     * null, is the passed one. Called before each actuator's functors are executed and passed to the functor
-     * executor.
-     *
-     * @param scale      may be null, meaning that the original scale is unchanged
-     * @param localNames if empty, the catalog remains the same
-     * @return a localized context or this one if nothing needs to change
-     * @deprecated revise, at best this should be non-API and only at service side
-     */
-    ContextScope withContextualizationData(Observation contextObservation, Scale scale, Map<String,
-            String> localNames);
+    //    /**
+    //     * Create a new scope if necessary where the catalog uses the passed local names and the scale,
+    //     if not
+    //     * null, is the passed one. Called before each actuator's functors are executed and passed to the
+    //     functor
+    //     * executor.
+    //     *
+    //     * @param scale      may be null, meaning that the original scale is unchanged
+    //     * @param localNames if empty, the catalog remains the same
+    //     * @return a localized context or this one if nothing needs to change
+    //     * @deprecated revise, at best this should be non-API and only at service side
+    //     */
+    //    ContextScope withContextualizationData(Observation contextObservation, Scale scale, Map<String,
+    //            String> localNames);
 
     /**
      * Set resolution constraints here. Returns a new scope with all the constraints added to the ones in
@@ -421,12 +428,43 @@ public interface ContextScope extends SessionScope, AutoCloseable {
     ContextScope withResolutionConstraints(ResolutionConstraint... resolutionConstraints);
 
     /**
-     * These will substitute all the deprecated methods and include scenarios, pre-set models and all the
-     * observables already resolved in the scope.
+     * Return all the raw resolution constraints. Used when calling REST endpoints, the
+     * <code>getConstraint[s](...)</code> methods should be used when resolving.
      *
      * @return
      */
     List<ResolutionConstraint> getResolutionConstraints();
+
+    /**
+     * Return the single value of a resolution constraint, or null if absent.
+     *
+     * @param type
+     * @param resultClass
+     * @param <T>
+     * @return
+     */
+    <T> T getConstraint(ResolutionConstraint.Type type, Class<T> resultClass);
+
+    /**
+     * Return the single value of a resolution constraint, or a default value if absent.
+     *
+     * @param type
+     * @param defaultValue
+     * @param <T>
+     * @return
+     */
+    <T> T getConstraint(ResolutionConstraint.Type type, T defaultValue);
+
+    /**
+     * Return all the existing value of a resolution constraint in the scope, or the empty list if no
+     * constraint is there.
+     *
+     * @param type
+     * @param resultClass
+     * @param <T>
+     * @return
+     */
+    <T> List<T> getConstraints(ResolutionConstraint.Type type, Class<T> resultClass);
 
     /**
      * A data structure incorporating the results of parsing a scope token string into all its possible
@@ -435,18 +473,14 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * passed token was null. Tokens must appear in the header content in the order below. All fields may be
      * null, including the arrays, if not passed in the token.
      *
-     * @param type                the scope type, based on the path length
-     * @param scopeId             the ID with which the scope should be registered
-     * @param observationPath     if there is a focal observation ID, the path to the observation
-     * @param observerId          if there is an observer field after #, the path to the observer
-     * @param scenarioUrns        any scenario URNS, passed as a comma-separated list after the @ marker, if
-     *                            present
-     * @param traitIncarnations   traits incarnated, passed after a & marker as =-separated strings
-     * @param resolutionNamespace passed after a $ sign
+     * @param type            the scope type, based on the path length
+     * @param scopeId         the ID with which the scope should be registered
+     * @param observationPath if there is a focal observation ID, the path to the observation
+     * @param observerId      if there is an observer field after #, the path to the observer
      */
-    record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId,
-                     String[] scenarioUrns, Map<String, String> traitIncarnations,
-                     String resolutionNamespace) {
+    record ScopeData(Scope.Type type, String scopeId, String[] observationPath, String observerId
+                     /*, String[] scenarioUrns, Map<String, String> traitIncarnations,
+                     String resolutionNamespace*/) {
         public boolean empty() {
             return scopeId() == null;
         }
@@ -489,25 +523,27 @@ public interface ContextScope extends SessionScope, AutoCloseable {
             ret.append("#").append(scope.getObserver().getId());
         }
 
-        if (!scope.getResolutionScenarios().isEmpty()) {
-            ret.append("@").append(Utils.Strings.join(scope.getResolutionScenarios(), ","));
-        }
+        //        if (!scope.getResolutionScenarios().isEmpty()) {
+        //            ret.append("@").append(Utils.Strings.join(scope.getResolutionScenarios(), ","));
+        //        }
 
-        if (!scope.getContextualizedPredicates().isEmpty()) {
-            ret.append("&");
-            StringBuffer buf = new StringBuffer();
-            for (Concept key : scope.getContextualizedPredicates().keySet()) {
-                buf.append((buf.isEmpty() ? "" : ",") + key.getUrn() + "=" + scope.getContextualizedPredicates().get(key).getUrn());
-            }
-            ret.append(buf);
-        }
+        //        if (!scope.getContextualizedPredicates().isEmpty()) {
+        //            ret.append("&");
+        //            StringBuffer buf = new StringBuffer();
+        //            for (Concept key : scope.getContextualizedPredicates().keySet()) {
+        //                buf.append((buf.isEmpty() ? "" : ",") + key.getUrn() + "=" + scope
+        //                .getContextualizedPredicates().get(key).getUrn());
+        //            }
+        //            ret.append(buf);
+        //        }
 
-        if (scope.getResolutionNamespace() != null) {
-            ret.append("$").append(scope.getResolutionNamespace());
-        }
+        //        if (scope.getResolutionNamespace() != null) {
+        //            ret.append("$").append(scope.getResolutionNamespace());
+        //        }
 
         return ret.toString();
     }
+
 
     /**
      * Parse a scope token into the corresponding data structure
@@ -515,40 +551,40 @@ public interface ContextScope extends SessionScope, AutoCloseable {
      * @param scopeToken
      * @return
      */
-    public static ScopeData parseScopeId(String scopeToken) {
+    static ScopeData parseScopeId(String scopeToken) {
 
         Scope.Type type = Scope.Type.USER;
         String scopeId = null;
         String[] observationPath = null;
         String observerId = null;
-        String[] scenarioUrns = null;
-        String resolutionNamespace = null;
-        Map<String, String> traitIncarnations = null;
+        //        String[] scenarioUrns = null;
+        //        String resolutionNamespace = null;
+        //        Map<String, String> traitIncarnations = null;
 
         if (scopeToken != null) {
 
-            if (scopeToken.contains("$")) {
-                String[] split = scopeToken.split("\\@");
-                scopeToken = split[0];
-                resolutionNamespace = split[1];
-            }
+            //            if (scopeToken.contains("$")) {
+            //                String[] split = scopeToken.split("\\@");
+            //                scopeToken = split[0];
+            //                resolutionNamespace = split[1];
+            //            }
 
-            if (scopeToken.contains("&")) {
-                String[] split = scopeToken.split("\\@");
-                scopeToken = split[0];
-                traitIncarnations = new LinkedHashMap<>();
-                for (var pair : split[1].split(",")) {
-                    String[] pp = pair.split("=");
-                    traitIncarnations.put(pp[0], pp[1]);
-                }
-            }
+            //            if (scopeToken.contains("&")) {
+            //                String[] split = scopeToken.split("\\@");
+            //                scopeToken = split[0];
+            //                traitIncarnations = new LinkedHashMap<>();
+            //                for (var pair : split[1].split(",")) {
+            //                    String[] pp = pair.split("=");
+            //                    traitIncarnations.put(pp[0], pp[1]);
+            //                }
+            //            }
 
-            // separate out scenarios
-            if (scopeToken.contains("@")) {
-                String[] split = scopeToken.split("@");
-                scopeToken = split[0];
-                scenarioUrns = split[1].split(",");
-            }
+            //            // separate out scenarios
+            //            if (scopeToken.contains("@")) {
+            //                String[] split = scopeToken.split("@");
+            //                scopeToken = split[0];
+            //                scenarioUrns = split[1].split(",");
+            //            }
 
             // Separate out observer path if any
             if (scopeToken.contains("#")) {
@@ -565,7 +601,7 @@ public interface ContextScope extends SessionScope, AutoCloseable {
             }
         }
 
-        return new ScopeData(type, scopeId, observationPath, observerId, scenarioUrns, traitIncarnations,
-                resolutionNamespace);
+        return new ScopeData(type, scopeId, observationPath, observerId/*, scenarioUrns, traitIncarnations,
+                resolutionNamespace*/);
     }
 }

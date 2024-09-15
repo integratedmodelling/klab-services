@@ -1,20 +1,21 @@
 package org.integratedmodelling.klab.api.services.resolver;
 
-import javax.xml.stream.events.Namespace;
-
+import org.integratedmodelling.klab.api.collections.Parameters;
+import org.integratedmodelling.klab.api.geometry.Geometry;
+import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Model;
-import org.integratedmodelling.klab.api.knowledge.Observable;
-import org.integratedmodelling.klab.api.knowledge.Resource;
 import org.integratedmodelling.klab.api.scope.ContextScope;
-import org.integratedmodelling.klab.api.scope.Scope;
+import org.integratedmodelling.klab.api.services.resolver.objects.ResolutionConstraintImpl;
+
+import java.util.List;
 
 /**
  * One or more resolution constraints may be added to a
  * {@link org.integratedmodelling.klab.api.scope.ContextScope},  through the API, k.Actors or any other
- * observer that require customizing the accessibility of specific models or resources. The purpose of a
- * resolution constraint is to (de)prioritize a candidate model when resolving an observation, based on
- * several possible conditions, expressed as the constraint's {@link Type}. The associated data are visible
- * only to enable serialization but are handled internally.
+ * observer that require customizing the resolution environment, such as modifying the accessibility of
+ * specific models or resources. The purpose of a resolution constraint is to (de)prioritize a candidate model
+ * when resolving an observation, based on several possible conditions, expressed as the constraint's
+ * {@link Type}. The associated data are visible only to enable serialization but are handled internally.
  * <p>
  * Resolution constraints include:
  * <ol>
@@ -24,46 +25,82 @@ import org.integratedmodelling.klab.api.scope.Scope;
  * resolution based on the lexical scope of a model being resolved</li>
  * <li>defining priority scenarios to use first as resolution sources;</li>
  * <li>forcing the use of a specified model for a specified observable;</li>
- * <li>communicating observables that have been already resolved within the scope, so that references will
- * be compiled in instead of resolving them;</li>
  * <li>communicating externally set concrete predicates to expand an abstract predicate in an observable
  * instead of observing the abstract predicate first. </li>
  * <li>communicating interactively defined parameters to substitute defaults for the contextualizers in the
  * dataflow. </li>
  * </ol><p>
  * Any resolution constraints are found in a {@link org.integratedmodelling.klab.api.scope.ContextScope},
- * returned by its {@link ContextScope#getResolutionConstraints()} method.
+ * returned by its {@link ContextScope#getResolutionConstraints()} method and accessed through the family
+ * of <code>getConstraint[s]</code> methods.
  *
  * @author Ferd
  */
 public interface ResolutionConstraint {
 
-    @Deprecated
-    public static String RESOLUTION_CONSTRAINTS_METADATA_KEY = "klab.constraints.resolution";
 
+    /**
+     * Defines type, behavior and intended payload class for the constraint. Each class MUST be serializable
+     * to JSON without incident.
+     */
     enum Type {
-        Scenarios,
-        Geometry,
-        ResolveWith,
-        Resolved,
-        ResolutionScope,
-        ConcretePredicates,
-        Whitelist,
-        Blacklist,
-        Parameters
+
+        Scenarios(String.class, false /* debatable */),
+        Geometry(Geometry.class, false),
+        ResolutionNamespace(String.class, false),
+        ResolutionProject(String.class, false),
+        UsingModel(Model.class, false),
+        ConcretePredicates(Concept.class, true),
+        Whitelist(String.class, false),
+        Blacklist(String.class, false),
+        Parameters(Parameters.class, true);
+
+        /**
+         * Class of intended data types, used for runtime validation
+         */
+        public final Class<?> dataClass;
+
+        /**
+         * If true, the constraint data will be added to any other pre-existing in the scope. If false, any
+         * new data will override the previous.
+         */
+        public final boolean incremental;
+
+        private Type(Class<?> dataClass, boolean incremental) {
+            this.dataClass = dataClass;
+            this.incremental = incremental;
+        }
     }
+
+    /**
+     * Number of items of the intended type in the internal data. Shorthand for <code>get(..).size()</code>,
+     * provided for fluency.
+     *
+     * @return
+     */
+    int size();
 
     Type getType();
 
-//    /**
-//     * Return true if the model is for a different observable or it's for the passed observable but part of a
-//     * whitelist, is not blacklisted, comes from an accepted namespace, and uses accepted resources.
-//     * <p>
-//     * TODO revise
-//     *
-//     * @param model
-//     * @return
-//     */
-//    boolean accepts(Model model);
+    /**
+     * The
+     *
+     * @param dataClass
+     * @param <T>
+     * @return
+     */
+    <T> List<T> get(Class<T> dataClass);
+
+    /**
+     * Used internally to merge a constraint with a previous one and return a new constraint.
+     *
+     * @param constraint
+     * @return
+     */
+    ResolutionConstraint merge(ResolutionConstraint constraint);
+
+    static ResolutionConstraint of(Type type, Object data) {
+        return new ResolutionConstraintImpl(type, data);
+    }
 
 }

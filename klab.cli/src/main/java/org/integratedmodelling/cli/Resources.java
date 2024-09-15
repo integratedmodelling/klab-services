@@ -98,29 +98,29 @@ public class Resources {
         @Override
         public void run() {
 
-            Observable observable =
-                    KlabCLI.INSTANCE.modeler().currentUser().getService(org.integratedmodelling.klab.api.services.Reasoner.class).resolveObservable(Utils.Strings.join(urns, ' '));
-
-            var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
-            ResourceSet result = service.queryModels(observable, KlabCLI.INSTANCE.modeler().currentContext());
-            out.println("Resource set: (TODO)");
-            KlabCLI.printResourceSet(result, out, 3);
-
-            if (result.getResults().size() > 0) {
-                out.println(Ansi.AUTO.string("Displaying @|green " + result.getResults().size() + "|@ " +
-                        "models:"));
-                for (ResourceSet.Resource model : result.getResults()) {
-                    out.println(Ansi.AUTO.string("   @|green " + model.getResourceUrn() + "|@"));
-                    //					service.resolveNamespace(model.getResourceUrn(), Engine.INSTANCE
-                    //					.getCurrentContext
-                    //					(false));
-                    //					out.println(Utils.Strings.indent(service.resolveModel(model
-                    //					.getResourceUrn(), Engine
-                    //					.INSTANCE.getCurrentContext(false)).get;
-                }
-            } else {
-                out.println("No models found");
-            }
+//            Observable observable =
+//                    KlabCLI.INSTANCE.modeler().currentUser().getService(org.integratedmodelling.klab.api.services.Reasoner.class).resolveObservable(Utils.Strings.join(urns, ' '));
+//
+//            var service = KlabCLI.INSTANCE.service(this.service, ResourcesService.class);
+//            ResourceSet result = service.queryModels(observable, KlabCLI.INSTANCE.modeler().currentContext());
+//            out.println("Resource set: (TODO)");
+//            KlabCLI.printResourceSet(result, out, 3);
+//
+//            if (result.getResults().size() > 0) {
+//                out.println(Ansi.AUTO.string("Displaying @|green " + result.getResults().size() + "|@ " +
+//                        "models:"));
+//                for (ResourceSet.Resource model : result.getResults()) {
+//                    out.println(Ansi.AUTO.string("   @|green " + model.getResourceUrn() + "|@"));
+//                    //					service.resolveNamespace(model.getResourceUrn(), Engine.INSTANCE
+//                    //					.getCurrentContext
+//                    //					(false));
+//                    //					out.println(Utils.Strings.indent(service.resolveModel(model
+//                    //					.getResourceUrn(), Engine
+//                    //					.INSTANCE.getCurrentContext(false)).get;
+//                }
+//            } else {
+//                out.println("No models found");
+//            }
 
         }
     }
