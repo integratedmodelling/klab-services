@@ -8,6 +8,7 @@ import org.integratedmodelling.klab.api.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ResolutionConstraintImpl implements ResolutionConstraint {
 
@@ -31,6 +32,11 @@ public class ResolutionConstraintImpl implements ResolutionConstraint {
     @Override
     public int size() {
         return data.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return data.isEmpty() || data.stream().anyMatch(Objects::isNull);
     }
 
     @Override
@@ -62,5 +68,13 @@ public class ResolutionConstraintImpl implements ResolutionConstraint {
           ret.data.addAll(constraint.get(Object.class));
         }
         return ret;
+    }
+
+    @Override
+    public String toString() {
+        return "ResolutionConstraintImpl{" +
+                "data=" + data +
+                ", type=" + type +
+                '}';
     }
 }

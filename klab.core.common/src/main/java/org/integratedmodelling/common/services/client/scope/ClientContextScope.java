@@ -264,6 +264,9 @@ public abstract class ClientContextScope extends ClientSessionScope implements C
             ret.resolutionConstraints.clear();
         } else {
             for (var constraint : resolutionConstraints) {
+                if (constraint == null || constraint.isEmpty()) {
+                    continue;
+                }
                 if (constraint.getType().incremental && ret.resolutionConstraints.containsKey(constraint.getType())) {
                     ret.resolutionConstraints.put(constraint.getType(),
                             ret.resolutionConstraints.get(constraint.getType()).merge(constraint));

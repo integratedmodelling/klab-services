@@ -25,7 +25,7 @@ import org.integratedmodelling.klab.api.scope.SessionScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.api.services.ResourcesService;
-import org.integratedmodelling.klab.api.services.RuntimeService;
+import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
 import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.api.services.runtime.MessagingChannel;
@@ -222,15 +222,28 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
          *   configurable and specific of the modeler, no defaults should be used in the runtime. */
         List<Object> resolvables = new ArrayList<>();
 
+
+        List<ResolutionConstraint> constraints = new ArrayList<>();
+
         /**
          * Assets are observed by URN unless they're models or observation definitions
          */
         if (asset instanceof NavigableAsset navigableAsset) {
 
-            if (navigableAsset instanceof NavigableKlabStatement statement) {
+            if (asset instanceof NavigableKlabStatement<?> statement) {
+
+                constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionNamespace,
+                        statement.getNamespace()));
+                constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.ResolutionProject,
+                        statement.getProjectName()));
+
                 var delegate = statement.getDelegate();
-                if (delegate instanceof KimModel || (delegate instanceof KimSymbolDefinition definition &&
-                        "observation".equals(definition.getDefineClass()))) {
+                if (delegate instanceof KimModel model) {
+                    resolvables.add(model.getObservables().getFirst());
+                    constraints.add(ResolutionConstraint.of(ResolutionConstraint.Type.UsingModel,
+                            model.getUrn()));
+                } else if (delegate instanceof KimSymbolDefinition definition &&
+                        "observation".equals(definition.getDefineClass())) {
                     resolvables.add(delegate);
                 } else if (delegate instanceof KimConceptStatement conceptStatement) {
                     resolvables.add(conceptStatement.getNamespace() + ":" + conceptStatement.getUrn());
@@ -242,7 +255,13 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
             resolvables.add(asset.toString());
         }
 
-        currentContext.observe(DigitalTwin.createObservation(currentContext, resolvables.toArray()));
+        /*
+        TODO add scenario constraints - scenario controller (TBI) should keep them between contexts
+         */
+
+        currentContext
+                .withResolutionConstraints(constraints.toArray(ResolutionConstraint[]::new))
+                .observe(DigitalTwin.createObservation(currentContext, resolvables.toArray()));
 
     }
 

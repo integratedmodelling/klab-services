@@ -34,10 +34,12 @@ import java.util.List;
  * returned by its {@link ContextScope#getResolutionConstraints()} method and accessed through the family
  * of <code>getConstraint[s]</code> methods.
  *
+ * Note: constraints with any null-valued payload will be ignored. TODO check if these should be a signal to
+ * remove existing constraints of the same class.
+ *
  * @author Ferd
  */
 public interface ResolutionConstraint {
-
 
     /**
      * Defines type, behavior and intended payload class for the constraint. Each class MUST be serializable
@@ -49,7 +51,7 @@ public interface ResolutionConstraint {
         Geometry(Geometry.class, false),
         ResolutionNamespace(String.class, false),
         ResolutionProject(String.class, false),
-        UsingModel(Model.class, false),
+        UsingModel(String.class, false),
         ConcretePredicates(Concept.class, true),
         Whitelist(String.class, false),
         Blacklist(String.class, false),
@@ -79,6 +81,14 @@ public interface ResolutionConstraint {
      * @return
      */
     int size();
+
+    /**
+     * True if there is no payload or the payload contains null data. Checked before use, so that adding
+     * nulls in algorithms can be handled properly.
+     *
+     * @return
+     */
+    boolean isEmpty();
 
     Type getType();
 
