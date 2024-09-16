@@ -6,6 +6,7 @@ import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.Urn;
 import org.integratedmodelling.klab.api.knowledge.observation.Observation;
 import org.integratedmodelling.klab.api.knowledge.observation.impl.ObservationImpl;
+import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
 import org.integratedmodelling.klab.api.lang.kim.KimModel;
 import org.integratedmodelling.klab.api.lang.kim.KimSymbolDefinition;
 import org.integratedmodelling.klab.api.provenance.Provenance;
@@ -173,7 +174,12 @@ public interface DigitalTwin {
                                 var timeBuilder = geometryBuilder.time();
                                 if (definition.get("time") instanceof Map<?, ?> timeDefinition) {
                                     if (timeDefinition.containsKey("year")) {
-                                        // TODO everything
+                                        var year = timeDefinition.get("year");
+                                        if (year instanceof Number number) {
+                                            timeBuilder.year(number.intValue());
+                                        } else if ("default".equals(year.toString())) {
+                                            timeBuilder.year(TimeInstant.create().getYear());
+                                        }
                                     }
                                 }
                                 geometryBuilder = timeBuilder.build();
