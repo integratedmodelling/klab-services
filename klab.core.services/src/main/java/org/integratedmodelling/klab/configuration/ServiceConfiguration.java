@@ -21,6 +21,7 @@ import org.apache.groovy.util.Maps;
 import org.integratedmodelling.common.knowledge.ModelBuilderImpl;
 import org.integratedmodelling.common.knowledge.ObservableImpl;
 import org.integratedmodelling.common.lang.PrototypeImpl;
+import org.integratedmodelling.common.lang.QuantityImpl;
 import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.collections.Pair;
@@ -39,6 +40,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projec
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Prototype;
 import org.integratedmodelling.klab.api.lang.Prototype.FunctionType;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Authority;
 import org.integratedmodelling.klab.api.services.*;
@@ -190,6 +192,11 @@ public enum ServiceConfiguration {
             @Override
             public Model.Builder getModelLearner(String outputResourceUrn) {
                 return new ModelBuilderImpl(outputResourceUrn);
+            }
+
+            @Override
+            public Quantity parseQuantity(String quantityDescription) {
+                return QuantityImpl.parse(quantityDescription);
             }
 
             @Override

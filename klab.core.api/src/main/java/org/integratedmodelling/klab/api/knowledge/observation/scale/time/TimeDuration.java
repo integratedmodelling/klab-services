@@ -133,7 +133,7 @@ public interface TimeDuration extends Serializable, Comparable<TimeDuration> {
     }
 
     public static TimeDuration parse(String string) {
-        return of(Quantity.parse(string));
+        return of(Quantity.create(string));
     }
 
     public static TimeDuration of(Number number, Resolution.Type type) {

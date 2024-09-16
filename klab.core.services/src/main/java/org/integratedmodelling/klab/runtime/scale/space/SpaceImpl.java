@@ -252,7 +252,7 @@ public abstract class SpaceImpl extends ExtentImpl<Space> implements Space {
                 }
             } else if (gridResolution != null && envelope != null) {
                 Quantity resolution = gridResolution instanceof Quantity quantity ? quantity :
-                                      Quantity.parse(gridResolution.toString());
+                                      Quantity.create(gridResolution.toString());
                 grid = new GridImpl(envelope, resolution,
                         Boolean.parseBoolean(Configuration.INSTANCE.getProperty(Configuration.KLAB_USE_IN_MEMORY_DATABASE, "true")));
             } else if (spatialShape != null && envelope != null) {

@@ -530,7 +530,7 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
 
         Resolution.Type resType = unit == null ? null : Resolution.Type.parse(unit);
         if (resType == null && res != null) {
-            Resolution rres = Resolution.of(Quantity.parse(res));
+            Resolution rres = Resolution.of(Quantity.create(res));
             resType = rres.getType();
             scope = rres.getMultiplier();
         }

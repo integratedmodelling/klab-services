@@ -258,7 +258,7 @@ public interface Time extends Extent<Time>, Encodeable {
         }
 
         public static Resolution parse(String string) {
-            return Resolution.of(Quantity.parse(string));
+            return Resolution.of(Quantity.create(string));
         }
 
     }

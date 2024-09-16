@@ -7,6 +7,7 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.Scale;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
 import org.integratedmodelling.klab.api.lang.Contextualizable;
+import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.runtime.extension.KlabFunction;
@@ -139,6 +140,8 @@ public enum Klab {
         Model.Builder getModelBuilder(Object value);
 
         Model.Builder getModelLearner(String outputResourceUrn);
+
+        Quantity parseQuantity(String quantityDescription);
 
         /**
          * Deep copy of an extent - anything not immutable must be a new object.
