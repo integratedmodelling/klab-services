@@ -183,9 +183,9 @@ public class ScaleImpl implements Scale {
         List<Extent<?>> extents = new ArrayList<>(3);
         for (Geometry.Dimension dimension : geometry.getDimensions()) {
             if (dimension.getType() == Type.SPACE) {
-                extents.add(SpaceImpl.create(dimension));
+                extents.add(SpaceImpl.create(dimension, scope));
             } else if (dimension.getType() == Type.TIME) {
-                extents.add(TimeImpl.create(dimension));
+                extents.add(TimeImpl.create(dimension, scope));
             } else if (dimension.getType() == Type.NUMEROSITY) {
                 // TODO
                 throw new KlabUnimplementedException("numerosity extent");
@@ -196,18 +196,7 @@ public class ScaleImpl implements Scale {
 
 
     public ScaleImpl(Geometry geometry) {
-        List<Extent<?>> extents = new ArrayList<>(3);
-        for (Geometry.Dimension dimension : geometry.getDimensions()) {
-            if (dimension.getType() == Type.SPACE) {
-                extents.add(SpaceImpl.create(dimension));
-            } else if (dimension.getType() == Type.TIME) {
-                extents.add(TimeImpl.create(dimension));
-            } else if (dimension.getType() == Type.NUMEROSITY) {
-                // TODO
-                throw new KlabUnimplementedException("numerosity extent");
-            }
-        }
-        define(extents);
+        this(geometry, null);
     }
 
     public ScaleImpl(List<Extent<?>> extents) {

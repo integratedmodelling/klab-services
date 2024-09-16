@@ -4127,6 +4127,19 @@ public class Utils {
             throw new KlabIllegalArgumentException("cannot interpret value " + ret + " as a " + cls.getCanonicalName());
         }
 
+        /**
+         * Split into comma-separated tokens and parse each as a double
+         * @param s
+         * @return
+         */
+        public static <T> List<T> parseList(String s, Class<T> resultClass) {
+            var ret = new ArrayList<T>();
+            for (String token : s.split(",")) {
+                ret.add(parseAsType(token.trim(), resultClass));
+            }
+            return ret;
+        }
+
         @SuppressWarnings("unchecked")
         public static <T> T parseAsType(String ret, Class<?> cls) {
 

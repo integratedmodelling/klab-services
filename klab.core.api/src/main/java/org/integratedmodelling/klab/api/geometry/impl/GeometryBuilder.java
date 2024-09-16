@@ -10,6 +10,7 @@ import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl.DimensionImpl;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.Time;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.time.TimeInstant;
+import org.integratedmodelling.klab.api.lang.Quantity;
 
 /**
  * Builder for geometries to ease defining time and space extents in forms that
@@ -155,23 +156,28 @@ public class GeometryBuilder {
 		 * Bounding box as a double[]{minX, maxX, minY, maxY}; lat/lon use lon as x axis
 		 */
 		public SpaceBuilder boundingBox(double x1, double x2, double y1, double y2) {
-			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX, new double[] { x1, x2, y1, y2 });
+			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_BOUNDINGBOX, List.of(x1, x2, y1, y2));
 			return this;
 		}
 
 		public SpaceBuilder shape(String wktb) {
-
-			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_SHAPE, GeometryImpl.encodeForSerialization(wktb));
+			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_SHAPE, wktb);
 			return this;
 		}
 
 		public SpaceBuilder urn(String urn) {
-			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_RESOURCE_URN,
-					GeometryImpl.encodeForSerialization(urn));
+			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_RESOURCE_URN, urn);
+			return this;
+		}
+
+		public SpaceBuilder resolution(Quantity gridResolution) {
+			space.setRegular(true);
+			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION, gridResolution);
 			return this;
 		}
 
 		public SpaceBuilder resolution(String gridResolution) {
+			space.setRegular(true);
 			space.getParameters().put(GeometryImpl.PARAMETER_SPACE_GRIDRESOLUTION, gridResolution);
 			return this;
 		}
@@ -187,7 +193,6 @@ public class GeometryBuilder {
 	 * by the EPSG: projection). The resulting
 	 *
 	 * @param urn
-	 * @param resolution a string in the format "1 km"
 	 * @return
 	 */
 	public GeometryBuilder region(String urn) {
@@ -202,7 +207,6 @@ public class GeometryBuilder {
 	 * resolution. The box is "straight" with the X axis specifying
 	 * <em>longitude</em>.
 	 *
-	 * @param resolution a string in the format "1 km"
 	 * @return
 	 */
 	public GeometryBuilder grid(double x1, double x2, double y1, double y2) {

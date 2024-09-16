@@ -1,9 +1,12 @@
-package org.integratedmodelling.common.lang;
+package org.integratedmodelling.klab.api.knowledge.impl;
 
 import org.integratedmodelling.klab.api.lang.Quantity;
 
+import java.io.Serial;
+
 public class QuantityImpl implements Quantity {
 
+    @Serial
     private static final long serialVersionUID = -4049367875348743501L;
 
     private String unit;

@@ -17,6 +17,7 @@ import org.integratedmodelling.klab.api.lang.LogicalConnector;
 import org.integratedmodelling.klab.api.lang.Quantity;
 import org.integratedmodelling.klab.api.lang.ServiceCall;
 import org.integratedmodelling.common.lang.ServiceCallImpl;
+import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.UnitService;
 import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.integratedmodelling.klab.runtime.scale.ExtentImpl;
@@ -483,6 +484,10 @@ public class TimeImpl extends ExtentImpl<Time> implements Time {
     }
 
     public static Time create(Dimension dimension) {
+        return create(dimension, null);
+    }
+
+    public static Time create(Dimension dimension, Scope context) {
 
         long[] period = dimension.getParameters().get(GeometryImpl.PARAMETER_TIME_PERIOD, long[].class);
         String representation = dimension.getParameters().get(GeometryImpl.PARAMETER_TIME_REPRESENTATION, String.class);

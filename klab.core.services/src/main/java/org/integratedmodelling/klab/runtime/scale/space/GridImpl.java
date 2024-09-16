@@ -8,6 +8,9 @@ import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Envelo
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Grid;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Projection;
 import org.integratedmodelling.klab.api.knowledge.observation.scale.space.Shape;
+import org.integratedmodelling.klab.api.lang.Quantity;
+import org.integratedmodelling.klab.api.services.UnitService;
+import org.integratedmodelling.klab.configuration.ServiceConfiguration;
 import org.locationtech.jts.geom.Point;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
@@ -89,6 +92,27 @@ public class GridImpl implements Grid {
     public GridImpl(Shape shape, double resolutionInM, boolean makeCellsSquare) {
         this.declaredResolutionM = resolutionInM;
         adjustEnvelope(shape.getEnvelope(), resolutionInM, makeCellsSquare);
+    }
+
+    /**
+     * Constructor for a fully specified, anchored grid
+     *
+     * @param resolutionInM
+     */
+    public GridImpl(Envelope envelope, double resolutionInM, boolean makeCellsSquare) {
+        this.declaredResolutionM = resolutionInM;
+        adjustEnvelope(envelope, resolutionInM, makeCellsSquare);
+    }
+
+    /**
+     * Constructor for a fully specified, anchored grid
+     *
+     */
+    public GridImpl(Envelope envelope, Quantity quantity, boolean makeCellsSquare) {
+        var unitService = ServiceConfiguration.INSTANCE.getService(UnitService.class);
+        var originalUnit = unitService.getUnit(quantity.getUnit());
+        this.declaredResolutionM = unitService.meters().convert(quantity.getValue(), originalUnit).doubleValue();
+        adjustEnvelope(envelope, this.declaredResolutionM, makeCellsSquare);
     }
 
     public GridImpl(double resolutionInM) {
