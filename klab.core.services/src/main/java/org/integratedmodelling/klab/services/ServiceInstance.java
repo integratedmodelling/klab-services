@@ -292,8 +292,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         check all needed services; put self offline if not available or not there, online otherwise; if
         there's a change in online status, report it through the service scope
          */
-        boolean okEssentials = true;
-        boolean okOperationals = true;
 
         var essentials = getEssentialServices();
         var operational = getOperationalServices();
@@ -302,20 +300,33 @@ public abstract class ServiceInstance<T extends BaseService> {
 
         boolean wasAvailable = serviceScope.isAvailable();
 
+        // create all clients that we may need and know how to create
         for (var serviceType : allservices) {
             var service = currentServices.get(serviceType);
             if (service == null) {
                 service = this.createDefaultService(serviceType, serviceScope,
                         (System.currentTimeMillis() - bootTime) / 1000);
-                okEssentials = essentials.contains(serviceType) && service != null && service.status().isAvailable();
-                okOperationals = operational.contains(serviceType) && service != null && service.status().isAvailable();
-
                 if (service != null) {
                     registerService(service, true);
                 }
-            } else if (!service.status().isAvailable()) {
-                okEssentials = !essentials.contains(serviceType);
-                okOperationals = !operational.contains(serviceType);
+            }
+        }
+
+        // now check if they're OK
+        boolean okEssentials = true;
+        boolean okOperationals = true;
+
+        for (var serviceType : allservices) {
+            var service = currentServices.get(serviceType);
+            if (essentials.contains(serviceType)) {
+                if (service == null || !service.status().isAvailable()) {
+                    okEssentials = false;
+                }
+            }
+            if (operational.contains(serviceType)) {
+                if (service == null || !service.status().isAvailable()) {
+                    okOperationals = false;
+                }
             }
         }
 
@@ -373,9 +384,6 @@ public abstract class ServiceInstance<T extends BaseService> {
             setBusy(false);
         }
 
-        /*
-        if subscribed and configured interval has passed, send service health status through the scope
-         */
     }
 
     public void stop() {
