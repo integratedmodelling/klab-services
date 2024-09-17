@@ -250,7 +250,7 @@ public abstract class ServiceInstance<T extends BaseService> {
         bootTime = System.currentTimeMillis();
         serviceScope.setStatus(Scope.Status.STARTED);
         serviceScope.setMaintenanceMode(true);
-        scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 15, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> timedTasks(), 0, 5, TimeUnit.SECONDS);
         return true;
     }
 
@@ -298,6 +298,11 @@ public abstract class ServiceInstance<T extends BaseService> {
         var allservices = EnumSet.copyOf(essentials);
         allservices.addAll(operational);
 
+        if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
+            System.out.println("SUPPA SUPPA: essential = " + essentials + ", operational = " + operational);
+            System.out.println("I am " + (initialized.get() ? "initialized" : "not initialized") + " and " + (operationalized.get() ? "operational" : "not operational"));
+        }
+
         boolean wasAvailable = serviceScope.isAvailable();
 
         // create all clients that we may need and know how to create
@@ -307,6 +312,11 @@ public abstract class ServiceInstance<T extends BaseService> {
                 service = this.createDefaultService(serviceType, serviceScope,
                         (System.currentTimeMillis() - bootTime) / 1000);
                 if (service != null) {
+
+                    if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
+                        System.out.println("Registering a = " + service.status().getServiceType());
+                    }
+
                     registerService(service, true);
                 }
             }
@@ -321,14 +331,25 @@ public abstract class ServiceInstance<T extends BaseService> {
             if (essentials.contains(serviceType)) {
                 if (service == null || !service.status().isAvailable()) {
                     okEssentials = false;
+                    if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
+                        System.out.println("GUASTAFESTE ESSENZIALE DI MERDA = " + service.status().getServiceType());
+                    }
                 }
             }
             if (operational.contains(serviceType)) {
                 if (service == null || !service.status().isAvailable()) {
                     okOperationals = false;
+                    if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
+                        System.out.println("GUASTAFESTE OPERATIVO DI MERDA = " + service.status().getServiceType());
+                    }
                 }
             }
         }
+
+        if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
+            System.out.println("FATTO: essentials = " + okEssentials + "; operational = " + okOperationals);
+        }
+
 
         if (okEssentials) {
             setAvailable(true);
@@ -336,12 +357,6 @@ public abstract class ServiceInstance<T extends BaseService> {
         } else {
             setAvailable(false);
             serviceScope.setStatus(Scope.Status.WAITING);
-        }
-
-        if (okOperationals) {
-            setAvailable(okEssentials);
-        } else {
-            setAvailable(false);
         }
 
         firstCall = false;
