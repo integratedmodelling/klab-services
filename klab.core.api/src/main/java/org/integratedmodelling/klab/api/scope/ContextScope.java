@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.api.scope;
 
+import org.integratedmodelling.klab.api.geometry.Geometry;
 import org.integratedmodelling.klab.api.knowledge.Concept;
 import org.integratedmodelling.klab.api.knowledge.Observable;
 import org.integratedmodelling.klab.api.knowledge.observation.DirectObservation;
@@ -544,6 +545,20 @@ public interface ContextScope extends SessionScope {
         return ret.toString();
     }
 
+
+    static Geometry getResolutionGeometry(ContextScope scope) {
+
+        var resolutionGeometry = scope.getConstraint(ResolutionConstraint.Type.Geometry, Geometry.class);
+        if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
+            if (scope.getContextObservation() != null) {
+                resolutionGeometry = scope.getContextObservation().getGeometry();
+            }
+            if ((resolutionGeometry == null || resolutionGeometry.isEmpty()) && scope.getObserver() != null) {
+                resolutionGeometry = scope.getObserver().getObserverGeometry();
+            }
+        }
+        return resolutionGeometry;
+    }
 
     /**
      * Parse a scope token into the corresponding data structure

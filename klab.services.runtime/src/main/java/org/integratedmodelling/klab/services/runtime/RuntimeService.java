@@ -136,6 +136,11 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
+    public void operationalizeService() {
+        // nothing to do here
+    }
+
+    @Override
     public boolean shutdown() {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceUnavailable,

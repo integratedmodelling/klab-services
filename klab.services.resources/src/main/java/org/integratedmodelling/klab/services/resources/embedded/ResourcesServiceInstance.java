@@ -18,6 +18,11 @@ public class ResourcesServiceInstance extends ServiceInstance<ResourcesProvider>
     }
 
     @Override
+    protected List<KlabService.Type> getOperationalServices() {
+        return List.of(KlabService.Type.REASONER);
+    }
+
+    @Override
     protected ResourcesProvider createPrimaryService(AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options) {
         return new ResourcesProvider(serviceScope, options);
     }

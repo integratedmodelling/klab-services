@@ -92,25 +92,27 @@ public abstract class BaseService implements KlabService {
         }
     }
 
-//    /**
-//     * If this returns true, the service will instruct the {@link ScopeManager} to automatically create scope
-//     * hierarchies when scope headers are received for session and context scopes that are unknown, as long as
-//     * the request is not anonymous or is otherwise privileged. Default is false.
-//     *
-//     * @return true if scopes can be created automatically
-//     */
-//    public boolean isProvideScopesAutomatically() {
-//        return provideScopesAutomatically;
-//    }
+    //    /**
+    //     * If this returns true, the service will instruct the {@link ScopeManager} to automatically
+    //     create scope
+    //     * hierarchies when scope headers are received for session and context scopes that are unknown,
+    //     as long as
+    //     * the request is not anonymous or is otherwise privileged. Default is false.
+    //     *
+    //     * @return true if scopes can be created automatically
+    //     */
+    //    public boolean isProvideScopesAutomatically() {
+    //        return provideScopesAutomatically;
+    //    }
 
-//    /**
-//     * Set the flag returned by {@link #isProvideScopesAutomatically()}.
-//     *
-//     * @param b
-//     */
-//    protected void setProvideScopesAutomatically(boolean b) {
-//        this.provideScopesAutomatically = b;
-//    }
+    //    /**
+    //     * Set the flag returned by {@link #isProvideScopesAutomatically()}.
+    //     *
+    //     * @param b
+    //     */
+    //    protected void setProvideScopesAutomatically(boolean b) {
+    //        this.provideScopesAutomatically = b;
+    //    }
 
 
     public EmbeddedBroker getEmbeddedBroker() {
@@ -234,9 +236,19 @@ public abstract class BaseService implements KlabService {
         return scope;
     }
 
+    /**
+     * Called when all the essential services are available. The non-essential "operational"  services will
+     * not necessarily be available yet.
+     */
     public abstract void initializeService();
 
+    /**
+     * Called when all non-essential operational services become available.
+     */
+    public abstract void operationalizeService();
+
     @Override
+
     public boolean shutdown() {
         _scopeManager.shutdown();
         return true;
@@ -326,7 +338,8 @@ public abstract class BaseService implements KlabService {
      * @return the ID of the new session created at server side, or null in case of failure.
      */
     public String registerSession(SessionScope sessionScope) {
-        return sessionScope instanceof ServiceSessionScope serviceSessionScope ? serviceSessionScope.getId() : null;
+        return sessionScope instanceof ServiceSessionScope serviceSessionScope ?
+               serviceSessionScope.getId() : null;
     }
 
     /**
@@ -342,7 +355,8 @@ public abstract class BaseService implements KlabService {
      * @return the ID of the new context scope created at server side, or null in case of failure.
      */
     public String registerContext(ContextScope contextScope) {
-        return contextScope instanceof ServiceContextScope serviceSessionScope ? serviceSessionScope.getId() : null;
+        return contextScope instanceof ServiceContextScope serviceSessionScope ?
+               serviceSessionScope.getId() : null;
     }
 
 

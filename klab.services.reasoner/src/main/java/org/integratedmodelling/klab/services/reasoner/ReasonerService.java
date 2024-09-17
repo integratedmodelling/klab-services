@@ -310,6 +310,11 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     }
 
+    @Override
+    public void operationalizeService() {
+
+    }
+
     @SuppressWarnings("unchecked")
     private void loadAuthority(ProjectConfiguration authority) {
         if (authority.getUrl().startsWith("classpath:")) {

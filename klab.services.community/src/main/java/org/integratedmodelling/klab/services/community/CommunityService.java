@@ -23,6 +23,11 @@ public class CommunityService extends BaseService implements Community {
     }
 
     @Override
+    public void operationalizeService() {
+
+    }
+
+    @Override
     public ServiceCapabilities capabilities(Scope scope) {
         // TODO Auto-generated method stub
         return null;

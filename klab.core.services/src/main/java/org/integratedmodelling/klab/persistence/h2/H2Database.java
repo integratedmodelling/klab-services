@@ -586,7 +586,6 @@ public class H2Database {
 	 * 
 	 * @param query
 	 * @return the list of IDs resulting, or empty
-	 * @throws KlabException
 	 */
 	public List<Long> queryIds(String query) {
 

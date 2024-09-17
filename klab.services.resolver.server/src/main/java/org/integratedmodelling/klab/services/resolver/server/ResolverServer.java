@@ -27,6 +27,11 @@ public class ResolverServer extends ServiceNetworkedInstance<ResolverService> {
     }
 
     @Override
+    protected List<KlabService.Type> getOperationalServices() {
+        return List.of();
+    }
+
+    @Override
     protected ResolverService createPrimaryService(AbstractServiceDelegatingScope serviceScope,
                                                    ServiceStartupOptions options) {
         return new ResolverService(serviceScope, options);

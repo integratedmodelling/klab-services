@@ -118,13 +118,14 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
             }
         }, Instance.class);
 
+        this.kbox = ModelKbox.create(this);
+        this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(), this,
+                this::resolveRemoteProject);
+
         this.db = DBMaker.fileDB(getConfigurationSubdirectory(options, "catalog") + File.separator +
                 "resources.db").transactionEnable().closeOnJvmShutdown().make();
         this.catalog =
                 db.treeMap("resourcesCatalog", GroupSerializer.STRING, GroupSerializer.JAVA).createOrOpen();
-
-        this.workspaceManager = new WorkspaceManager(scope, getStartupOptions(), this,
-                this::resolveRemoteProject);
     }
 
     public Project resolveRemoteProject(String projectId) {
@@ -141,8 +142,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceInitializing,
                 capabilities(serviceScope()).toString());
 
-        this.kbox = ModelKbox.create(localName, this.scope);
-        this.workspaceManager.loadWorkspace();
+
+        //        this.workspaceManager.loadWorkspace();
         /*
          * TODO launch update service
          */
@@ -157,6 +158,12 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities(serviceScope()));
+    }
+
+    @Override
+    public void operationalizeService() {
+        // reasoner is available, index the kbox
+        indexKnowledge();
     }
 
     /**
@@ -220,6 +227,21 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
                 }
             }
         }
+    }
+
+    private void indexKnowledge() {
+
+        // TODO index ontologies
+
+        for (var namespace : workspaceManager.getNamespaces()) {
+            kbox.remove(namespace.getUrn(), scope);
+            for (var statement : namespace.getStatements()) {
+                if (statement instanceof KimModel model) {
+                    kbox.store(model, scope);
+                }
+            }
+        }
+
     }
 
     @Override
@@ -710,6 +732,15 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
         addDependencies(results, scope);
 
         return results;
+    }
+
+    /**
+     * The workspace manager calls the kbox directly
+     *
+     * @return
+     */
+    public ModelKbox modelKbox() {
+        return this.kbox;
     }
 
     /**

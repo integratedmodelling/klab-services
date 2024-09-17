@@ -5,6 +5,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import org.integratedmodelling.klab.api.Klab;
+import org.integratedmodelling.klab.api.configuration.Configuration;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.geometry.Geometry.Dimension;
 import org.integratedmodelling.klab.api.geometry.impl.GeometryImpl.DimensionImpl;
@@ -46,6 +48,7 @@ public class GeometryBuilder {
             if (time == null) {
                 time = new DimensionImpl();
                 time.setType(Dimension.Type.TIME);
+                time.getParameters().put(GeometryImpl.PARAMETER_TIME_REPRESENTATION, Time.Type.LOGICAL);
                 time.setDimensionality(1);
             }
         }
@@ -72,11 +75,34 @@ public class GeometryBuilder {
             return this;
         }
 
+        public TimeBuilder step(Quantity quantity) {
+            regular();
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_REPRESENTATION, Time.Type.GRID);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_GRIDRESOLUTION, quantity);
+            return this;
+        }
+
+        public TimeBuilder between(TimeInstant start, TimeInstant end) {
+            start(start);
+            end(end);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_REPRESENTATION, Time.Type.PHYSICAL);
+            return this;
+        }
+
+        public TimeBuilder between(long start, long end) {
+            start(start);
+            end(end);
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_REPRESENTATION, Time.Type.PHYSICAL);
+            return this;
+        }
+
         public TimeBuilder year(int year) {
             var start = TimeInstant.create(year);
-            this.start(start.getMilliseconds());
-            this.end(start.plus(1, Time.Resolution.of(1,
+            start(start.getMilliseconds());
+            end(start.plus(1, Time.Resolution.of(1,
                     Time.Resolution.Type.YEAR)).getMilliseconds());
+            resolution(Time.Resolution.of(1, Time.Resolution.Type.YEAR));
+            time.getParameters().put(GeometryImpl.PARAMETER_TIME_REPRESENTATION, Time.Type.PHYSICAL);
             return this;
         }
 
@@ -124,6 +150,10 @@ public class GeometryBuilder {
         }
 
         public GeometryBuilder build() {
+            if (time.getParameters().get(GeometryImpl.PARAMETER_TIME_START) == null || time.getParameters().get(GeometryImpl.PARAMETER_TIME_START) == null) {
+                generic();
+                time.getParameters().put(GeometryImpl.PARAMETER_TIME_REPRESENTATION, Time.Type.LOGICAL);
+            }
             return GeometryBuilder.this;
         }
     }

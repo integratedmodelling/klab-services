@@ -35,6 +35,11 @@ public class RuntimeServer extends ServiceNetworkedInstance<RuntimeService> {
     }
 
     @Override
+    protected List<KlabService.Type> getOperationalServices() {
+        return List.of();
+    }
+
+    @Override
     protected RuntimeService createPrimaryService(AbstractServiceDelegatingScope serviceScope,
                                                   ServiceStartupOptions options) {
         return new RuntimeService(serviceScope, options);

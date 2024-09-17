@@ -1,6 +1,7 @@
 package org.integratedmodelling.resources.server;
 
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
+import org.integratedmodelling.klab.api.Klab;
 import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.services.KlabService;
 import org.integratedmodelling.klab.services.ServiceStartupOptions;
@@ -24,7 +25,12 @@ public class ResourcesServer extends ServiceNetworkedInstance<ResourcesProvider>
 
     @Override
     protected List<KlabService.Type> getEssentialServices() {
-        return Collections.emptyList();
+        return List.of();
+    }
+
+    @Override
+    protected List<KlabService.Type> getOperationalServices() {
+        return List.of(KlabService.Type.REASONER);
     }
 
     @Override

@@ -23,6 +23,7 @@ import org.integratedmodelling.klab.api.lang.kim.KlabStatement;
 import org.integratedmodelling.klab.api.scope.ContextScope;
 import org.integratedmodelling.klab.api.scope.Scope;
 import org.integratedmodelling.klab.api.services.Reasoner;
+import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resolver.ResolutionConstraint;
 import org.integratedmodelling.klab.api.services.runtime.Channel;
@@ -47,12 +48,13 @@ public class ModelKbox extends ObservableKbox {
      * @param name
      * @return a new kbox
      */
-    public static ModelKbox create(String name, Scope scope) {
-        return new ModelKbox(name, scope);
+    public static ModelKbox create(ResourcesService service) {
+        return new ModelKbox(service);
     }
 
-    private ModelKbox(String name, Scope scope) {
-        super(name, scope);
+    private ModelKbox(ResourcesService service) {
+        super(service.getLocalName(), service.serviceScope());
+        this.resourceService = service;
     }
 
     @Override
@@ -164,58 +166,7 @@ public class ModelKbox extends ObservableKbox {
 
         initialize(scope);
 
-        // Resolution resolution = scope.getData().get(Resolution.)
-
-        // Contextualize the observable if needed. Don't do it if we're a predicate or
-        // if
-        // contextualization is deferred.
-
-        /**
-         * CHECK all this logic should be moved to the resolver; if we get here we need to resolve
-         */
-        // if (resolutionScope.getContext() != null &&
-        // !observable.getType().is(Type.PREDICATE)
-        // && observable.mustContextualizeAtResolution()) {
-        // observable = Observables.INSTANCE.contextualizeTo(observable,
-        // resolutionScope.getContext().getObservable().getType(),
-        // true, resolutionScope.getMonitor());
-        // }
-        //
-        // Pair<Scale, Collection<Model>> preResolved = resolutionScope.isCaching()
-        // ? null
-        // : resolutionScope.getPreresolvedModels(observable);
-
-        // Prioritizer<ModelReference> prioritizer =
-        // Resolver.getPrioritizer(resolutionScope);
-        // ModelQueryResult ret = new ModelQueryResult(prioritizer,
-        // resolutionScope.getMonitor());
-        Set<ModelReference> local = new HashSet<>();
-
-        /*
-         * use previously resolved
-         *
-         * TODO check use of contains(): overlaps() would be more correct but then we would need to
-         * continue resolving, which misses the whole point of caching, and limit the resolution to
-         * "other" models.
-         *
-         * FIXME: MODELS FROM SCENARIOS MUST STILL TAKE OVER THESE!
-         */
-        // if (preResolved != null &&
-        // preResolved.getFirst().contains(resolutionScope.getCoverage())) {
-        //
-        // for (IRankedModel model : preResolved.getSecond()) {
-        // // rank them again in our scale
-        // ret.addCachedModel(model);
-        // }
-        //
-        // if (!Configuration.INSTANCE.resolveAllInstances()) {
-        // resolutionScope.getMonitor().debug("Model for " + observable + " was preset
-        // at
-        // resolution");
-        // return ret;
-        // }
-        // }
-
+        Set<ModelReference> local = new LinkedHashSet<>();
         /*
          * only query locally if we've seen a model before.
          */
@@ -223,37 +174,9 @@ public class ModelKbox extends ObservableKbox {
             for (ModelReference md : queryModels(observable, scope)) {
                 if (md.getPermissions().checkAuthorization(scope)) {
                     local.add(md);
-                    // ret.addModel(md);
                 }
             }
         }
-
-        /*
-         * Warn and provide output if models were chosen but reported unavailability. Message is a
-         * warning only if no other models were found. TODO move this to the resolver
-         */
-        // if (ret.getOfflineModels().size() > 0) {
-        //
-        // String message = "warning: " + ret.getOfflineModels().size() + " model"
-        // + (ret.getOfflineModels().size() < 2 ? " was" : "s were") + " chosen but
-        // found offline:
-        // ";
-        //
-        // for (ModelReference m : ret.getOfflineModels()) {
-        // message += "\n " + m.getName();
-        // }
-        //
-        // if (ret.size() > 0) {
-        // scope.info(message);
-        // } else {
-        // scope.warn(message);
-        // }
-        //
-        // for (ModelReference ref : ret.getOfflineModels()) {
-        // scope.debug("model " + ref.getName() + " is offline");
-        // }
-        // }
-
         return local;
     }
 
@@ -272,14 +195,18 @@ public class ModelKbox extends ObservableKbox {
             return ret;
         }
 
-        var scale = Scale.create(context.getContextObservation().getGeometry());
+        var geometry = ContextScope.getResolutionGeometry(context);
+        if (geometry == null || geometry.isEmpty()) {
+            return ret;
+        }
 
+        var scale = Scale.create(geometry);
         String query = "SELECT model.oid FROM model WHERE ";
         Concept contextObservable = context.getContextObservation() == null
                                     ? null
                                     : context.getContextObservation().getObservable().getSemantics();
-        String typequery = observableQuery(observable, contextObservable);
 
+        String typequery = observableQuery(observable, contextObservable);
         if (typequery == null) {
             return ret;
         }
@@ -298,10 +225,9 @@ public class ModelKbox extends ObservableKbox {
             query += " AND (" + tquery + ");";
         }
 
-        // KLAB.info(query);
+        // Logging.INSTANCE.info(query);
 
         final List<Long> oids = database.queryIds(query);
-
         for (long l : oids) {
             ModelReference model = retrieveModel(l, context);
             if (model != null) {

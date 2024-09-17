@@ -155,19 +155,12 @@ public class ResolverService extends BaseService implements Resolver {
      */
     public Resolution computeResolution(Observation observation, ContextScope scope) {
 
-        var resolutionGeometry = scope.getConstraint(ResolutionConstraint.Type.Geometry,
-                observation.getGeometry());
-
+        var resolutionGeometry = ContextScope.getResolutionGeometry(scope);
         if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
-            if (scope.getContextObservation() != null) {
-                resolutionGeometry = scope.getContextObservation().getGeometry();
-            }
-            if ((resolutionGeometry == null || resolutionGeometry.isEmpty()) && scope.getObserver() != null) {
-                resolutionGeometry = scope.getObserver().getObserverGeometry();
-            }
+            resolutionGeometry = observation.getGeometry();
         }
 
-        if (resolutionGeometry == null) {
+        if (resolutionGeometry == null || resolutionGeometry.isEmpty()) {
             return ResolutionImpl.empty(observation, scope);
         }
 
@@ -355,8 +348,13 @@ public class ResolverService extends BaseService implements Resolver {
                 case OBSERVE -> {
 
                     /*
-                    Find models and compile them in, merge resolutions until satisfied
+                    Find models and compile them in, merge resolutions until satisfied. We pass the scale
+                    through scope constraints.
                      */
+                    scope = scope.withResolutionConstraints(
+                            ResolutionConstraint.of(ResolutionConstraint.Type.Geometry,
+                                    scale.as(Geometry.class)));
+
                     ret = new ResolutionImpl(operation.getObservable(), scale, scope, parent);
                     for (Model model : queryModels(operation.getObservable(), scope, scale)) {
                         ResolutionImpl resolution = resolveModel(model, operation.getObservable(),
@@ -878,6 +876,11 @@ public class ResolverService extends BaseService implements Resolver {
 
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities(serviceScope()));
+
+    }
+
+    @Override
+    public void operationalizeService() {
 
     }
 

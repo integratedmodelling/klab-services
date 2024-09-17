@@ -20,6 +20,11 @@ public class ReasonerInstance extends ServiceInstance<ReasonerService> {
     }
 
     @Override
+    protected List<KlabService.Type> getOperationalServices() {
+        return List.of();
+    }
+
+    @Override
     protected ReasonerService createPrimaryService(AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options) {
         return new ReasonerService(serviceScope, options);
     }

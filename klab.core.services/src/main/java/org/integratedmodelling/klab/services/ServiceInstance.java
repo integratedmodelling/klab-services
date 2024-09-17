@@ -1,11 +1,5 @@
 package org.integratedmodelling.klab.services;
 
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
@@ -20,6 +14,12 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
+
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class is a wrapper for a {@link KlabService} whose main purpose is to provide it with a
@@ -40,9 +40,8 @@ import org.integratedmodelling.klab.services.base.BaseService;
  * <p>
  * Once a {@link ServiceInstance} has successfully booted, the wrapped {@link KlabService} can be used through
  * its API and is available through {@link #klabService()}. The {@link ServiceInstance} does not provide
- * network controllers, which can be provided through the outer wrapper
- * {@link ServiceNetworkedInstance} after defining the
- * controllers using Spring.
+ * network controllers, which can be provided through the outer wrapper {@link ServiceNetworkedInstance} after
+ * defining the controllers using Spring.
  * <p>
  *  TODO move all startup/shutdown notifications to the wrapper
  *
@@ -51,6 +50,7 @@ import org.integratedmodelling.klab.services.base.BaseService;
 public abstract class ServiceInstance<T extends BaseService> {
 
     AtomicBoolean initialized = new AtomicBoolean(false);
+    AtomicBoolean operationalized = new AtomicBoolean(false);
 
     private ServiceStartupOptions startupOptions;
     private T service;
@@ -70,13 +70,23 @@ public abstract class ServiceInstance<T extends BaseService> {
     private boolean firstCall = true;
 
     /**
-     * Return the type of any <em>other</em> services required for this service to be online. For each of
-     * these the {@link #createDefaultService(KlabService.Type, Scope, long)} function will be called and
-     * online status won't be set until all of these are available.
+     * Return the type of any <em>other</em> services required for this service to become online. The service
+     * chain must not have circular dependencies in these requirements. When at least one of each required
+     * service is available, the {@link BaseService#initializeService()} function will be called on the
+     * service.
      *
      * @return
      */
     protected abstract List<KlabService.Type> getEssentialServices();
+
+    /**
+     * The services returned here, which must not overlap those returned by {@link #getEssentialServices()},
+     * are needed for full operation but do not prevent initialization. When all the remaining services listed
+     * here are available,
+     *
+     * @return
+     */
+    protected abstract List<KlabService.Type> getOperationalServices();
 
     public Identity getServiceOwner() {
         return identity == null ? null : identity.getFirst();
@@ -87,7 +97,8 @@ public abstract class ServiceInstance<T extends BaseService> {
      *
      * @return
      */
-    protected abstract T createPrimaryService(AbstractServiceDelegatingScope serviceScope, ServiceStartupOptions options);
+    protected abstract T createPrimaryService(AbstractServiceDelegatingScope serviceScope,
+                                              ServiceStartupOptions options);
 
     /**
      * Called only if the service(s) specified in the certificate are unavailable or missing. This will be
@@ -230,7 +241,8 @@ public abstract class ServiceInstance<T extends BaseService> {
             case Community community -> {
                 currentServices.put(KlabService.Type.COMMUNITY, community);
             }
-            default -> {}
+            default -> {
+            }
         }
 
         bootTime = System.currentTimeMillis();
