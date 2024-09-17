@@ -1,9 +1,11 @@
 package org.integratedmodelling.klab.services;
 
 import com.google.common.collect.Sets;
+import org.checkerframework.checker.units.qual.A;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
+import org.integratedmodelling.common.logging.Logging;
 import org.integratedmodelling.klab.api.collections.Pair;
 import org.integratedmodelling.klab.api.exceptions.KlabIllegalArgumentException;
 import org.integratedmodelling.klab.api.identities.Identity;
@@ -12,6 +14,7 @@ import org.integratedmodelling.klab.api.scope.ServiceScope;
 import org.integratedmodelling.klab.api.scope.UserScope;
 import org.integratedmodelling.klab.api.services.*;
 import org.integratedmodelling.klab.api.services.runtime.Message;
+import org.integratedmodelling.klab.api.utils.Utils;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
@@ -288,115 +291,103 @@ public abstract class ServiceInstance<T extends BaseService> {
 
     private void timedTasks() {
 
+        try {
+
         /*
         check all needed services; put self offline if not available or not there, online otherwise; if
         there's a change in online status, report it through the service scope
          */
 
-        var essentials = getEssentialServices();
-        var operational = getOperationalServices();
-        var allservices = EnumSet.copyOf(essentials);
-        allservices.addAll(operational);
+            var essentials = getEssentialServices();
+            var operational = getOperationalServices();
+            var allservices = EnumSet.noneOf(KlabService.Type.class);
+            allservices.addAll(essentials);
+            allservices.addAll(operational);
 
-        if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
-            System.out.println("SUPPA SUPPA: essential = " + essentials + ", operational = " + operational);
-            System.out.println("I am " + (initialized.get() ? "initialized" : "not initialized") + " and " + (operationalized.get() ? "operational" : "not operational"));
-        }
+            boolean wasAvailable = serviceScope.isAvailable();
 
-        boolean wasAvailable = serviceScope.isAvailable();
-
-        // create all clients that we may need and know how to create
-        for (var serviceType : allservices) {
-            var service = currentServices.get(serviceType);
-            if (service == null) {
-                service = this.createDefaultService(serviceType, serviceScope,
-                        (System.currentTimeMillis() - bootTime) / 1000);
-                if (service != null) {
-
-                    if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
-                        System.out.println("Registering a = " + service.status().getServiceType());
-                    }
-
-                    registerService(service, true);
-                }
-            }
-        }
-
-        // now check if they're OK
-        boolean okEssentials = true;
-        boolean okOperationals = true;
-
-        for (var serviceType : allservices) {
-            var service = currentServices.get(serviceType);
-            if (essentials.contains(serviceType)) {
-                if (service == null || !service.status().isAvailable()) {
-                    okEssentials = false;
-                    if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
-                        System.out.println("GUASTAFESTE ESSENZIALE DI MERDA = " + service.status().getServiceType());
+            // create all clients that we may need and know how to create
+            for (var serviceType : allservices) {
+                var service = currentServices.get(serviceType);
+                if (service == null) {
+                    service = this.createDefaultService(serviceType, serviceScope,
+                            (System.currentTimeMillis() - bootTime) / 1000);
+                    if (service != null) {
+                        registerService(service, true);
                     }
                 }
             }
-            if (operational.contains(serviceType)) {
-                if (service == null || !service.status().isAvailable()) {
-                    okOperationals = false;
-                    if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
-                        System.out.println("GUASTAFESTE OPERATIVO DI MERDA = " + service.status().getServiceType());
+
+            // now check if they're OK
+            boolean okEssentials = true;
+            boolean okOperationals = true;
+
+            for (var serviceType : allservices) {
+                var service = currentServices.get(serviceType);
+                if (essentials.contains(serviceType)) {
+                    if (service == null || !service.status().isAvailable()) {
+                        okEssentials = false;
+                    }
+                }
+                if (operational.contains(serviceType)) {
+                    if (service == null || !service.status().isAvailable()) {
+                        okOperationals = false;
                     }
                 }
             }
-        }
-
-        if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
-            System.out.println("FATTO: essentials = " + okEssentials + "; operational = " + okOperationals);
-        }
 
 
-        if (okEssentials) {
-            setAvailable(true);
-            serviceScope.setStatus(Scope.Status.STARTED);
-        } else {
-            setAvailable(false);
-            serviceScope.setStatus(Scope.Status.WAITING);
-        }
-
-        firstCall = false;
-
-        if (wasAvailable != okEssentials) {
             if (okEssentials) {
-                if (initialized.get()) {
-                    serviceScope.send(Message.MessageClass.ServiceLifecycle,
-                            Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
+                setAvailable(true);
+                serviceScope.setStatus(Scope.Status.STARTED);
+            } else {
+                setAvailable(false);
+                serviceScope.setStatus(Scope.Status.WAITING);
+            }
+
+            firstCall = false;
+
+            if (wasAvailable != okEssentials) {
+                if (okEssentials) {
+                    if (initialized.get()) {
+                        serviceScope.send(Message.MessageClass.ServiceLifecycle,
+                                Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
+                    } else {
+                        serviceScope.send(Message.MessageClass.ServiceLifecycle,
+                                Message.MessageType.ServiceInitializing,
+                                klabService().capabilities(serviceScope));
+                    }
                 } else {
                     serviceScope.send(Message.MessageClass.ServiceLifecycle,
-                            Message.MessageType.ServiceInitializing,
-                            klabService().capabilities(serviceScope));
+                            Message.MessageType.ServiceUnavailable, klabService().capabilities(serviceScope));
                 }
-            } else {
-                serviceScope.send(Message.MessageClass.ServiceLifecycle,
-                        Message.MessageType.ServiceUnavailable, klabService().capabilities(serviceScope));
             }
-        }
 
         /*
         if status is OK and the service hasn't been initialized, set maintenance mode and call
         initializeService().
          */
-        if (okEssentials && !initialized.get()) {
-            setBusy(true);
-            klabService().initializeService();
-            klabService().setInitialized(true);
-            initialized.set(true);
-            serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
-                    klabService().capabilities(serviceScope));
-            setBusy(false);
-        }
+            if (okEssentials && !initialized.get()) {
+                setBusy(true);
+                klabService().initializeService();
+                klabService().setInitialized(true);
+                initialized.set(true);
+                serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
+                        klabService().capabilities(serviceScope));
+                setBusy(false);
+            }
 
-        if (okEssentials && okOperationals && !operationalized.get()) {
-            setBusy(true);
-            operationalized.set(true);
-            klabService().operationalizeService();
-            klabService().setOperational(true);
-            setBusy(false);
+            if (okEssentials && okOperationals && !operationalized.get()) {
+                setBusy(true);
+                operationalized.set(true);
+                klabService().operationalizeService();
+                klabService().setOperational(true);
+                setBusy(false);
+            }
+        } catch (Throwable t) {
+            if (this.klabService().status().getServiceType() == KlabService.Type.RESOURCES) {
+                Logging.INSTANCE.error("Exception during scheduled tasks: " + Utils.Exceptions.stackTrace(t));
+            }
         }
 
     }
