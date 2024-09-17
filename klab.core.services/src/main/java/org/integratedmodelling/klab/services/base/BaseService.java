@@ -58,6 +58,7 @@ public abstract class BaseService implements KlabService {
     protected final ServiceStartupOptions startupOptions;
     private ScopeManager _scopeManager;
     private boolean initialized;
+    private boolean operational;
 
     protected BaseService(AbstractServiceDelegatingScope scope, KlabService.Type serviceType,
                           ServiceStartupOptions options) {
@@ -359,7 +360,14 @@ public abstract class BaseService implements KlabService {
                serviceSessionScope.getId() : null;
     }
 
-
+    /**
+     * Called by ServiceInstance after initializeService was successful
+     *
+     * @param b
+     */
+    public void setOperational(boolean b) {
+        this.operational = true;
+    }
     /**
      * Called by ServiceInstance after initializeService was successful
      *

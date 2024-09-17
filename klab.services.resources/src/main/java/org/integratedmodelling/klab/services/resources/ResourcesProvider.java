@@ -163,6 +163,7 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     @Override
     public void operationalizeService() {
         // reasoner is available, index the kbox
+        Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
         indexKnowledge();
     }
 

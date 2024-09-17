@@ -1,5 +1,6 @@
 package org.integratedmodelling.klab.services;
 
+import com.google.common.collect.Sets;
 import org.integratedmodelling.common.authentication.Authentication;
 import org.integratedmodelling.common.authentication.scope.AbstractServiceDelegatingScope;
 import org.integratedmodelling.common.authentication.scope.ChannelImpl;
@@ -14,6 +15,7 @@ import org.integratedmodelling.klab.api.services.runtime.Message;
 import org.integratedmodelling.klab.rest.ServiceReference;
 import org.integratedmodelling.klab.services.application.ServiceNetworkedInstance;
 import org.integratedmodelling.klab.services.base.BaseService;
+import org.springframework.security.core.parameters.P;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -290,25 +292,34 @@ public abstract class ServiceInstance<T extends BaseService> {
         check all needed services; put self offline if not available or not there, online otherwise; if
         there's a change in online status, report it through the service scope
          */
-        boolean ok = true;
+        boolean okEssentials = true;
+        boolean okOperationals = true;
+
+        var essentials = getEssentialServices();
+        var operational = getOperationalServices();
+        var allservices = EnumSet.copyOf(essentials);
+        allservices.addAll(operational);
 
         boolean wasAvailable = serviceScope.isAvailable();
 
-        for (var serviceType : getEssentialServices()) {
+        for (var serviceType : allservices) {
             var service = currentServices.get(serviceType);
             if (service == null) {
                 service = this.createDefaultService(serviceType, serviceScope,
                         (System.currentTimeMillis() - bootTime) / 1000);
-                ok = service != null && service.status().isAvailable();
+                okEssentials = essentials.contains(serviceType) && service != null && service.status().isAvailable();
+                okOperationals = operational.contains(serviceType) && service != null && service.status().isAvailable();
+
                 if (service != null) {
                     registerService(service, true);
                 }
             } else if (!service.status().isAvailable()) {
-                ok = false;
+                okEssentials = !essentials.contains(serviceType);
+                okOperationals = !operational.contains(serviceType);
             }
         }
 
-        if (ok) {
+        if (okEssentials) {
             setAvailable(true);
             serviceScope.setStatus(Scope.Status.STARTED);
         } else {
@@ -316,10 +327,16 @@ public abstract class ServiceInstance<T extends BaseService> {
             serviceScope.setStatus(Scope.Status.WAITING);
         }
 
+        if (okOperationals) {
+            setAvailable(okEssentials);
+        } else {
+            setAvailable(false);
+        }
+
         firstCall = false;
 
-        if (wasAvailable != ok) {
-            if (ok) {
+        if (wasAvailable != okEssentials) {
+            if (okEssentials) {
                 if (initialized.get()) {
                     serviceScope.send(Message.MessageClass.ServiceLifecycle,
                             Message.MessageType.ServiceAvailable, klabService().capabilities(serviceScope));
@@ -338,13 +355,21 @@ public abstract class ServiceInstance<T extends BaseService> {
         if status is OK and the service hasn't been initialized, set maintenance mode and call
         initializeService().
          */
-        if (ok && !initialized.get()) {
+        if (okEssentials && !initialized.get()) {
             setBusy(true);
             klabService().initializeService();
             klabService().setInitialized(true);
             initialized.set(true);
             serviceScope.send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                     klabService().capabilities(serviceScope));
+            setBusy(false);
+        }
+
+        if (okEssentials && okOperationals && !operationalized.get()) {
+            setBusy(true);
+            operationalized.set(true);
+            klabService().operationalizeService();
+            klabService().setOperational(true);
             setBusy(false);
         }
 
@@ -368,6 +393,7 @@ public abstract class ServiceInstance<T extends BaseService> {
     protected void setAvailable(boolean b) {
         serviceScope.setMaintenanceMode(!b);
     }
+
 
     protected void setBusy(boolean b) {
         serviceScope.setAtomicOperationMode(b);
