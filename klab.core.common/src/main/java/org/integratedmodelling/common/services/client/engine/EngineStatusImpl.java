@@ -9,6 +9,7 @@ import java.util.Map;
 public class EngineStatusImpl implements Engine.Status {
 
     private Map<KlabService.Type, KlabService.ServiceStatus> serviceStatusMap = new HashMap<>();
+    private Map<KlabService.Type, KlabService.ServiceCapabilities> serviceCapabilities = new HashMap<>();
     private boolean operational;
 
     @Override
@@ -38,9 +39,18 @@ public class EngineStatusImpl implements Engine.Status {
         this.serviceStatusMap = serviceStatusMap;
     }
 
+    public Map<KlabService.Type, KlabService.ServiceCapabilities> getServiceCapabilities() {
+        return serviceCapabilities;
+    }
+
+    public void setServiceCapabilities(Map<KlabService.Type, KlabService.ServiceCapabilities> serviceCapabilities) {
+        this.serviceCapabilities = serviceCapabilities;
+    }
+
     public static boolean equals(Engine.Status s1, Engine.Status s2) {
         // TODO
         return false;
     }
+
 
 }

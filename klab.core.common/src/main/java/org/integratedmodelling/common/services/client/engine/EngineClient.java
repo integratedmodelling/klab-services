@@ -299,12 +299,26 @@ public class EngineClient implements Engine, PropertyHolder {
         available.set(ok);
     }
 
+
+    /**
+     * TODO remove the polling from the clients, put it here explicitly, check status and update
+     * capablities if not available previously
+     */
     private synchronized void recomputeEngineStatus() {
 
         // explore state of all services, determine what we
         EngineStatusImpl engineStatus = new EngineStatusImpl();
 
         // TODO fill this in, assess operational status w.r.t. current services etc.
+        var reasoner = serviceScope().getServices(Reasoner.class);
+        var resources = serviceScope().getService(ResourcesService.class);
+        var resolver = serviceScope().getService(Resolver.class);
+        var runtime = serviceScope().getService(RuntimeService.class);
+
+        var nss = 0;
+        if (resources != null) {
+
+        }
 
         // if state has changed, swap and send message
         if (this.status.get() == null || !EngineStatusImpl.equals(this.status.get(), engineStatus)) {
