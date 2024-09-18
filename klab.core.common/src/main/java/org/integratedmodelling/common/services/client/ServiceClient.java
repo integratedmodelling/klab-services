@@ -57,7 +57,7 @@ public abstract class ServiceClient implements KlabService {
     private AbstractServiceDelegatingScope scope;
     private URL url;
     private String token;
-    private long pollCycleSeconds = 2;
+    private long pollCycleSeconds = 5;
     protected Utils.Http.Client client;
     private ServiceCapabilities capabilities;
     // this is not null only if the client is used by another service. In that case, the service should be

@@ -593,7 +593,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
 
 
     @Override
-    public ResourceSet loadKnowledge(Worldview worldview, UserScope scope) {
+    public ResourceSet loadKnowledge(Worldview worldview, Scope scope) {
         return client.post(ServicesAPI.REASONER.ADMIN.LOAD_KNOWLEDGE, worldview, ResourceSet.class);
     }
 
@@ -603,7 +603,7 @@ public class ReasonerClient extends ServiceClient implements Reasoner, Reasoner.
     }
 
     @Override
-    public Concept defineConcept(KimConceptStatement statement, UserScope scope) {
+    public Concept defineConcept(KimConceptStatement statement, Scope scope) {
         return client.post(ServicesAPI.REASONER.ADMIN.DEFINE_CONCEPT, statement, Concept.class);
     }
 

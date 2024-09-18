@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
@@ -58,9 +59,10 @@ public class EngineClient implements Engine, PropertyHolder {
     ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private boolean firstCall = true;
     String serviceId = Utils.Names.shortUUID();
-    private boolean reasoningAvailable;
-    private boolean reasonerDisabled;
+//    private boolean reasoningAvailable;
+//    private boolean reasonerDisabled;
     private Worldview worldview;
+    private AtomicReference<Status> status = new AtomicReference<>(EngineStatusImpl.inop());
 
     public UserScope getUser() {
         return !this.users.isEmpty() ? users.getFirst() : null;
@@ -244,14 +246,13 @@ public class EngineClient implements Engine, PropertyHolder {
             firstCall = false;
         }
 
+        recomputeEngineStatus();
+
         /**
          * Check if we have reasoning until we do
          */
-        if (!reasoningAvailable && !reasonerDisabled) {
-            /**
-             * If we have a worldview from the resources service and the reasoner is exclusive and
-             * doesn't have a worldview,  load the worldview in the reasoner.
-             */
+        /* if (!reasoningAvailable && !reasonerDisabled) {
+
             var reasoner = serviceScope().getService(Reasoner.class);
 
             if (reasoner != null && reasoner.status().isAvailable() && reasoner.capabilities(serviceScope()).getWorldviewId() != null) {
@@ -281,9 +282,8 @@ public class EngineClient implements Engine, PropertyHolder {
                         serviceScope().info("Worldview loaded into local reasoner");
                     }
                 }
-            }
-        }
-
+            }*/
+//        }
 
         // inform listeners
         if (wasAvailable != ok) {
@@ -297,6 +297,21 @@ public class EngineClient implements Engine, PropertyHolder {
         }
 
         available.set(ok);
+    }
+
+    private synchronized void recomputeEngineStatus() {
+
+        // explore state of all services, determine what we
+        EngineStatusImpl engineStatus = new EngineStatusImpl();
+
+        // TODO fill this in, assess operational status w.r.t. current services etc.
+
+        // if state has changed, swap and send message
+        if (this.status.get() == null || !EngineStatusImpl.equals(this.status.get(), engineStatus)) {
+            this.status.set(engineStatus);
+            serviceScope().send(Message.MessageClass.EngineLifecycle,
+                    Message.MessageType.EngineStatusChanged, engineStatus);
+        }
     }
 
     private void registerService(KlabService.Type serviceType, KlabService service) {

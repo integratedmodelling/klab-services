@@ -305,14 +305,54 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
                                                            "offline"));
         }
 
+        /*
+        This is called when resources are available, so this is the time to load the worldview.
+         */
+        for (var resources : serviceScope().getServices(ResourcesService.class)) {
+            if (resources.status().isAvailable() && resources.capabilities(serviceScope()).isWorldviewProvider()) {
+
+                var notifications = loadKnowledge(resources.getWorldview(), serviceScope());
+
+                if (!org.integratedmodelling.klab.api.utils.Utils.Resources.hasErrors(notifications)) {
+                    //                    setOperational(false);
+                    //                    serviceScope().warn("Worldview loading failed: reasoner is
+                    //                    disabled");
+                    //                } else {
+                    setOperational(true);
+//                    // FIXME not sure this is useful anymore
+//                    serviceScope().send(Message.MessageClass.EngineLifecycle,
+//                            Message.MessageType.ReasoningAvailable,
+//                            capabilities(serviceScope()));
+                    serviceScope().info("Worldview loaded into local reasoner");
+
+                    // TODO if there were previous logical notifications they should be deleted now
+
+                    // worldview is synchronized, so the first one that works is the one
+                    break;
+
+                }/* else {
+                    // FIXME this isn't reaching the clients as it should in a modeler config. Should just
+                    //  let the client ask for notifications (at that point they can be in capabilities) if
+                    //  status is not operational.
+//                    serviceScope().send(Message.MessageClass.KnowledgeLifecycle,
+//                            Message.MessageType.LogicalValidation, notifications);
+
+                }*/
+            }
+        }
+
+        // TODO keep logical notifications around for the capabilities, or have a separate status call for
+        //  notifications.
         serviceScope().send(Message.MessageClass.ServiceLifecycle, Message.MessageType.ServiceAvailable,
                 capabilities(serviceScope()));
 
     }
 
     @Override
-    public void operationalizeService() {
-
+    public boolean operationalizeService() {
+        // we have done what we needed, just return the outcome. Basically we're not operational unless we
+        // have a valid worldview.
+        return isOperational();
     }
 
     @SuppressWarnings("unchecked")
@@ -340,7 +380,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public Concept defineConcept(KimConceptStatement statement, UserScope scope) {
+    public Concept defineConcept(KimConceptStatement statement, Scope scope) {
         return build(statement, this.owl.requireOntology(statement.getNamespace(),
                 OWL.DEFAULT_ONTOLOGY_PREFIX), null, scope);
     }
@@ -1304,7 +1344,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public ResourceSet loadKnowledge(Worldview worldview, UserScope scope) {
+    public ResourceSet loadKnowledge(Worldview worldview, Scope scope) {
 
         List<Notification> ret = new ArrayList<>();
 
@@ -1531,7 +1571,7 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
 
     @Override
     public Concept declareConcept(KimConcept observableDeclaration,
-                                        Map<String, Object> patternVariables) {
+                                  Map<String, Object> patternVariables) {
 
         if (!observableDeclaration.isPattern()) {
             return declareConcept(observableDeclaration);
@@ -2616,7 +2656,8 @@ public class ReasonerService extends BaseService implements Reasoner, Reasoner.A
     }
 
     @Override
-    public List<ObservationStrategy> computeObservationStrategies(Observation observation, ContextScope scope) {
+    public List<ObservationStrategy> computeObservationStrategies(Observation observation,
+                                                                  ContextScope scope) {
         return observationReasoner.computeMatchingStrategies(observation, scope);
     }
 

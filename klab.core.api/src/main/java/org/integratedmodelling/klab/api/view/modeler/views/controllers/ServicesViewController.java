@@ -25,27 +25,31 @@ public interface ServicesViewController extends ViewController<ServicesView> {
      *
      * @param service
      */
-    @UIEventHandler(UIEvent.ServiceAvailable)
-    void serviceAvailable(KlabService.ServiceCapabilities service);
+    //    @UIEventHandler(UIEvent.ServiceAvailable)
+    //    void serviceAvailable(KlabService.ServiceCapabilities service);
+    //
+    //    @UIEventHandler(UIEvent.ServiceUnavailable)
+    //    void serviceUnavailable(KlabService.ServiceCapabilities service);
+    //
+    //    @UIEventHandler(UIEvent.ServiceStarting)
+    //    void serviceStarting(KlabService.ServiceCapabilities service);
+    //
+    //    /**
+    //     * Will be called at least once to report on service status, and possibly at regular intervals
+    //     depending
+    //     * on the engine implementation. This may make the service available, unavailable, busy, and
+    //     report on
+    //     * current load factor and state.
+    //     *
+    //     * @param status
+    //     */
+    //    @UIEventHandler(UIEvent.ServiceStatus)
+    //    void serviceStatus(KlabService.ServiceStatus status);
 
-    @UIEventHandler(UIEvent.ServiceUnavailable)
-    void serviceUnavailable(KlabService.ServiceCapabilities service);
-
-    @UIEventHandler(UIEvent.ServiceStarting)
-    void serviceStarting(KlabService.ServiceCapabilities service);
-
-    /**
-     * Will be called at least once to report on service status, and possibly at regular intervals depending
-     * on the engine implementation. This may make the service available, unavailable, busy, and report on
-     * current load factor and state.
-     *
-     * @param status
-     */
-    @UIEventHandler(UIEvent.ServiceStatus)
-    void serviceStatus(KlabService.ServiceStatus status);
-
-    @UIEventHandler(UIEvent.ReasoningAvailable)
-    void reasoningAvailable(Reasoner.Capabilities capabilities);
+    //    @UIEventHandler(UIEvent.ReasoningAvailable)
+    //    void reasoningAvailable(Reasoner.Capabilities capabilities);
+    @UIEventHandler(UIEvent.EngineStatusChanged)
+    void engineStatusChanged(Engine.Status status);
 
     /**
      * User action choosing a service to focus on. The view handles all the UI implications and then calls

@@ -23,8 +23,8 @@ public class CommunityService extends BaseService implements Community {
     }
 
     @Override
-    public void operationalizeService() {
-
+    public boolean operationalizeService() {
+        return true;
     }
 
     @Override

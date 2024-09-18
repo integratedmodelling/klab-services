@@ -84,26 +84,31 @@ public class ModelerImpl extends AbstractUIController implements Modeler, Proper
     public void dispatch(UIReactor sender, UIEvent event, Object... payload) {
 
         // intercept some messages for bookkeeping
-        if (event == UIEvent.ServiceAvailable && payload.length > 0 && payload[0] instanceof KlabService.ServiceCapabilities capabilities) {
-            if (capabilities.getUrl() != null) {
-                serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
-            }
-            if (capabilities.getBrokerURI() != null && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
-                /*
-                 * Instrument the service client for messaging. This is pretty involved alas, but the whole
-                 * matter isn't exactly trivial.
-                 */
-                var client = serviceClient.getService(capabilities.getServiceId());
-                if (client != null && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
-                        && delegatingScope.getDelegateChannel() instanceof MessagingChannel messagingChannel) {
-                    /*
-                     * If the scope delegates to a messaging channel, set up messaging and link the
-                     * available  service queues to service message dispatchers.
-                     */
-                    messagingChannel.connectToService(capabilities, (UserIdentity) user().getIdentity(),
-                            (message) -> dispatchServerMessage(capabilities, message));
-                }
-            }
+        if (event == UIEvent.EngineStatusChanged) {
+
+            System.out.println("CAMBIATO STATO DIOCAN " + payload[0]);
+
+//            for (var service : )
+//
+//            if (capabilities.getUrl() != null) {
+//                serviceUrls.put(capabilities.getServiceId(), capabilities.getUrl());
+//            }
+//            if (capabilities.getBrokerURI() != null && scope() instanceof AbstractReactiveScopeImpl serviceClient) {
+//                /*
+//                 * Instrument the service client for messaging. This is pretty involved alas, but the whole
+//                 * matter isn't exactly trivial.
+//                 */
+//                var client = serviceClient.getService(capabilities.getServiceId());
+//                if (client != null && client.serviceScope() instanceof AbstractServiceDelegatingScope delegatingScope
+//                        && delegatingScope.getDelegateChannel() instanceof MessagingChannel messagingChannel) {
+//                    /*
+//                     * If the scope delegates to a messaging channel, set up messaging and link the
+//                     * available  service queues to service message dispatchers.
+//                     */
+//                    messagingChannel.connectToService(capabilities, (UserIdentity) user().getIdentity(),
+//                            (message) -> dispatchServerMessage(capabilities, message));
+//                }
+//            }
         }
 
         super.dispatch(sender, event, payload);

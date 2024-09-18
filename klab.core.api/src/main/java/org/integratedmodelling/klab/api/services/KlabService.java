@@ -153,7 +153,23 @@ public interface KlabService extends Service {
 
         String getServiceId();
 
+        /**
+         * Available means that the service has been initialized and is accepting connections. It does not
+         * mean that the API is fully functional: it may not have gathered enough information from other
+         * services, or it may be configured in ways that make it inoperative. Use {@link #isOperational()} to
+         * check for that, and/or use the capabilities to check what functions are supported.
+         *
+         * @return
+         */
         boolean isAvailable();
+
+        /**
+         * Operational means that the entire API of the service is available to support the functions declared
+         * as supported in the capabilities.
+         *
+         * @return
+         */
+        boolean isOperational();
 
         boolean isBusy();
 
@@ -328,7 +344,7 @@ public interface KlabService extends Service {
     /**
      * Register a session created by the scope manager after receiving a CREATE_SESSION request. Return a
      * unique session ID that may be requested with the session or generated within the service.
-
+     *
      * @param sessionScope a client scope that should record the ID for future communication. If the ID is
      *                     null, the call has failed.
      * @return the ID of the new session created at server side, or null in case of failure.
@@ -336,13 +352,13 @@ public interface KlabService extends Service {
     String registerSession(SessionScope sessionScope);
 
     /**
-     * Register a context scope created by the scope manager. Return a unique session ID that may be
-     * requested with the session or generated within the service. Context starts empty with the default
-     * observer for the worldview, using the services available to the user and passed as parameters. The same
-     * runtime that hosts the context must become the one and only runtime accessible to the resulting scope.
-     * If the service is not a runtime, the request must come from another service and the scope should be
+     * Register a context scope created by the scope manager. Return a unique session ID that may be requested
+     * with the session or generated within the service. Context starts empty with the default observer for
+     * the worldview, using the services available to the user and passed as parameters. The same runtime that
+     * hosts the context must become the one and only runtime accessible to the resulting scope. If the
+     * service is not a runtime, the request must come from another service and the scope should be
      * instrumented as necessary for its purposes.
-
+     *
      * @param contextScope a client scope that should record the ID for future communication. If the ID is
      *                     null, the call has failed.
      * @return the ID of the new context scope created at server side, or null in case of failure.

@@ -36,6 +36,31 @@ import java.util.function.BiConsumer;
 public interface Engine extends KlabService {
 
     /**
+     * Comprehensive engine status is kept up to date by polling or listening to services. Whenever the status
+     * changes, either because of service lifecycle or because of the user choosing a different service as the
+     * current one, a message is sent (intercepted by the modeler and also sent to the UI).
+     */
+    interface Status {
+
+        /**
+         * True if every service is available and a worldview is loaded in the reasoner.
+         *
+         * @return
+         */
+        boolean isOperational();
+
+        /**
+         * Return the current status of each specific service. If the service is not even connected, a
+         * non-null inactive status is returned.
+         *
+         * @param serviceType
+         * @return
+         */
+        ServiceStatus getServiceStatus(KlabService.Type serviceType);
+
+    }
+
+    /**
      * The engine is available to boot.
      *
      * @return

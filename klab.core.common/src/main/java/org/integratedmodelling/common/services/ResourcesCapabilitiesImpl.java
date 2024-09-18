@@ -17,6 +17,7 @@ public class ResourcesCapabilitiesImpl extends AbstractServiceCapabilities imple
     private List<String> workspaceNames = new ArrayList<>();
     private Set<CRUDOperation> permissions = EnumSet.of(CRUDOperation.READ);
     private List<Notification> serviceNotifications = new ArrayList<>();
+    private boolean semanticSearchCapable;
 
     @Override
     public KlabService.Type getType() {
@@ -71,4 +72,12 @@ public class ResourcesCapabilitiesImpl extends AbstractServiceCapabilities imple
         this.permissions = permissions;
     }
 
+    @Override
+    public boolean isSemanticSearchCapable() {
+        return semanticSearchCapable;
+    }
+
+    public void setSemanticSearchCapable(boolean semanticSearchCapable) {
+        this.semanticSearchCapable = semanticSearchCapable;
+    }
 }

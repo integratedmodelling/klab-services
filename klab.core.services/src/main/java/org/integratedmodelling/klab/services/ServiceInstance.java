@@ -380,8 +380,7 @@ public abstract class ServiceInstance<T extends BaseService> {
             if (okEssentials && okOperationals && !operationalized.get()) {
                 setBusy(true);
                 operationalized.set(true);
-                klabService().operationalizeService();
-                klabService().setOperational(true);
+                klabService().setOperational(klabService().operationalizeService());
                 setBusy(false);
             }
         } catch (Throwable t) {

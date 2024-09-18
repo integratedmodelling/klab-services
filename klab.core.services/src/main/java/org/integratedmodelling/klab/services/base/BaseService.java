@@ -182,6 +182,7 @@ public abstract class BaseService implements KlabService {
         ret.setAvailable(initialized && serviceScope().isAvailable());
         ret.setBusy(serviceScope().isBusy());
         ret.setLocality(serviceScope().getLocality());
+        ret.setOperational(operational);
         return ret;
     }
 
@@ -244,9 +245,11 @@ public abstract class BaseService implements KlabService {
     public abstract void initializeService();
 
     /**
-     * Called when all non-essential operational services become available.
+     * Called when all non-essential operational services become available. The return value will be the
+     * operational status returned in {@link #status()}. Operational means that the API is usable as
+     * advertised in {@link #capabilities(Scope)}.
      */
-    public abstract void operationalizeService();
+    public abstract boolean operationalizeService();
 
     @Override
 
@@ -308,6 +311,9 @@ public abstract class BaseService implements KlabService {
         return false;
     }
 
+    protected boolean isOperational() {
+        return operational;
+    }
 
     @Override
     public ResourcePrivileges getRights(String resourceUrn, Scope scope) {
@@ -368,6 +374,7 @@ public abstract class BaseService implements KlabService {
     public void setOperational(boolean b) {
         this.operational = true;
     }
+
     /**
      * Called by ServiceInstance after initializeService was successful
      *

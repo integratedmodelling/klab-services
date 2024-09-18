@@ -25,6 +25,7 @@ import org.integratedmodelling.klab.api.lang.kactors.KActorsBehavior;
 import org.integratedmodelling.klab.api.lang.kdl.KdlDataflow;
 import org.integratedmodelling.klab.api.lang.kim.*;
 import org.integratedmodelling.klab.api.scope.*;
+import org.integratedmodelling.klab.api.services.Reasoner;
 import org.integratedmodelling.klab.api.services.ResourcesService;
 import org.integratedmodelling.klab.api.services.resolver.Coverage;
 import org.integratedmodelling.klab.api.services.resources.ResourceSet;
@@ -92,6 +93,8 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     private DB db = null;
     private ConcurrentNavigableMap<String, ResourceStatus> catalog = null;
     private ModelKbox kbox;
+    // set to true when the connected reasoner becomes operational
+    private boolean semanticSearchAvailable = false;
 
     /*
      * "fair" read/write lock to ensure no reading during updates
@@ -161,10 +164,17 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
     }
 
     @Override
-    public void operationalizeService() {
-        // reasoner is available, index the kbox
-        Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
-        indexKnowledge();
+    public boolean operationalizeService() {
+        var reasoner = serviceScope().getService(Reasoner.class);
+        if (reasoner.status().isOperational()) {
+            Logging.INSTANCE.info("Reasoner is available: indexing semantic assets");
+            indexKnowledge();
+            this.semanticSearchAvailable = true;
+        } else {
+            Logging.INSTANCE.warn("reasoner is inoperative: cannot index semantic content");
+            this.semanticSearchAvailable = false;
+        }
+        return true;
     }
 
     /**
@@ -720,6 +730,11 @@ public class ResourcesProvider extends BaseService implements ResourcesService, 
 
     @Override
     public ResourceSet queryModels(Observable observable, ContextScope scope) {
+
+        if (!semanticSearchAvailable) {
+            Logging.INSTANCE.warn("Semantic search is not available: client should not make this request");
+            return ResourceSet.empty();
+        }
 
         ResourceSet results = new ResourceSet();
         // FIXME use the observation's scale (pass the observation)

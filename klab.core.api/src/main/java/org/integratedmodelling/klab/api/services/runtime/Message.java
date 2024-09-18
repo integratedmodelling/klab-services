@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.services.runtime;
 
 import org.integratedmodelling.klab.api.digitaltwin.DigitalTwin;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.lang.kactors.beans.ActionStatistics;
@@ -184,7 +185,7 @@ public interface Message extends Serializable {
          * Service messages, coming with service capabilities
          */
         ServiceInitializing(Queue.Events, KlabService.ServiceCapabilities.class),
-        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
+//        ReasoningAvailable(Queue.Events, Reasoner.Capabilities.class),
         ServiceAvailable(Queue.Events, KlabService.ServiceCapabilities.class),
         ServiceUnavailable(Queue.Events, KlabService.ServiceCapabilities.class),
         ServiceStatus(Queue.Events, KlabService.ServiceStatus.class),
@@ -220,10 +221,10 @@ public interface Message extends Serializable {
         Warning(Queue.Warnings, Notification.class),
         Error(Queue.Errors, Notification.class),
 
-        /*
-         * --- reasoning-related messages
-         */
-        LogicalValidation(Queue.Events,ResourceSet.class),
+//        /*
+//         * --- reasoning-related messages
+//         */
+//        LogicalValidation(Queue.Events,ResourceSet.class),
 
         /**
          * Runtime event messages
@@ -244,6 +245,11 @@ public interface Message extends Serializable {
         ResolutionSuccessful(Queue.Events, Long.class),
         ResolutionAborted(Queue.Events, Long.class),
 
+
+        /**
+         * Engine status has changed
+         */
+        EngineStatusChanged(Queue.Events, Engine.Status.class),
 
         /*
          * --- View actor messages

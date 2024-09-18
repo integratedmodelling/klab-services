@@ -880,8 +880,8 @@ public class ResolverService extends BaseService implements Resolver {
     }
 
     @Override
-    public void operationalizeService() {
-
+    public boolean operationalizeService() {
+        return true;
     }
 
     @Override

@@ -82,6 +82,14 @@ public interface ResourcesService extends KlabService {
 
         boolean isWorldviewProvider();
 
+        /**
+         * If true, the service is connected to an operational reasoner and can support semantically aware
+         * calls such as {@link #queryModels(Observable, ContextScope)}.
+         *
+         * @return
+         */
+        boolean isSemanticSearchCapable();
+
         String getAdoptedWorldview();
 
         /**

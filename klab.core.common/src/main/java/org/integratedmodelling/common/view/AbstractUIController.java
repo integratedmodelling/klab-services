@@ -202,14 +202,12 @@ public abstract class AbstractUIController implements UIController {
             }
             case ServiceLifecycle -> {
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable -> dispatch(this, UIReactor.UIEvent.ServiceUnavailable,
-                            message.getPayload(Object.class));
-                    case ServiceAvailable -> dispatch(this, UIReactor.UIEvent.ServiceAvailable,
-                            message.getPayload(Object.class));
-                    case ServiceInitializing -> dispatch(this, UIReactor.UIEvent.ServiceStarting,
-                            message.getPayload(Object.class));
-                    case ServiceStatus -> dispatch(this, UIReactor.UIEvent.ServiceStatus,
-                            message.getPayload(KlabService.ServiceStatus.class));
+                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> recomputeStatus(message);
+                    case ServiceStatus -> {
+                        recomputeStatus(message);
+                        dispatch(this, UIReactor.UIEvent.ServiceStatus,
+                                message.getPayload(KlabService.ServiceStatus.class));
+                    }
                     default -> {
                     }
                 }
@@ -217,16 +215,11 @@ public abstract class AbstractUIController implements UIController {
             case EngineLifecycle -> {
                 // TODO engine ready event and status
                 switch (message.getMessageType()) {
-                    case ServiceUnavailable -> {
-                        dispatch(this, UIReactor.UIEvent.EngineUnavailable, message.getPayload(Object.class));
-                    }
-                    case ServiceAvailable -> {
-                        dispatch(this, UIReactor.UIEvent.EngineAvailable, message.getPayload(Object.class));
-                    }
-                    case ServiceInitializing -> {
-                        dispatch(this, UIReactor.UIEvent.EngineStarting, message.getPayload(Object.class));
+                    case ServiceUnavailable, ServiceAvailable, ServiceInitializing -> {
+                        recomputeStatus(message);
                     }
                     case ServiceStatus -> {
+                        recomputeStatus(message);
                         dispatch(this, UIReactor.UIEvent.ServiceStatus,
                                 message.getPayload(KlabService.ServiceStatus.class));
                     }
@@ -234,10 +227,10 @@ public abstract class AbstractUIController implements UIController {
                         dispatch(this, UIReactor.UIEvent.DistributionSelected,
                                 message.getPayload(Distribution.class));
                     }
-                    case ReasoningAvailable -> {
-                        dispatch(this, UIReactor.UIEvent.ReasoningAvailable,
-                                message.getPayload(Reasoner.Capabilities.class));
-                    }
+//                    case ReasoningAvailable -> {
+//                        dispatch(this, UIReactor.UIEvent.ReasoningAvailable,
+//                                message.getPayload(Reasoner.Capabilities.class));
+//                    }
 
                     default -> {
                     }
@@ -280,11 +273,17 @@ public abstract class AbstractUIController implements UIController {
             case ActorCommunication -> {
             }
             case KnowledgeLifecycle -> {
-                if (message.is(Message.MessageType.LogicalValidation)) {
-                    dispatch(this, UIEvent.LogicalValidation, message.getPayload(ResourceSet.class));
-                }
+//                if (message.is(Message.MessageType.LogicalValidation)) {
+//                    dispatch(this, UIEvent.LogicalValidation, message.getPayload(ResourceSet.class));
+//                }
             }
         }
+    }
+
+    private void recomputeStatus(Message message) {
+
+        System.out.println(" HOSTIA RECOMPUTE STATUS DIOCA' "  + message);
+
     }
 
     @Override

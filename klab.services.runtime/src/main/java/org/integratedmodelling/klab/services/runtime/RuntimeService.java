@@ -136,8 +136,9 @@ public class RuntimeService extends BaseService implements org.integratedmodelli
     }
 
     @Override
-    public void operationalizeService() {
+    public boolean operationalizeService() {
         // nothing to do here
+        return true;
     }
 
     @Override

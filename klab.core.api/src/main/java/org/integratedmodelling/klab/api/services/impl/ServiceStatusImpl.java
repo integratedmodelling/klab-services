@@ -23,6 +23,7 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
     private boolean available = false;
     private boolean busy = false;
     private boolean consistent = true;
+    private boolean operational = false;
     private ServiceScope.Locality locality = ServiceScope.Locality.EMBEDDED;
     private KlabService.Type serviceType;
     private String serviceId;
@@ -165,6 +166,15 @@ public class ServiceStatusImpl implements KlabService.ServiceStatus {
     @Override
     public boolean isConsistent() {
         return consistent;
+    }
+
+    @Override
+    public boolean isOperational() {
+        return operational;
+    }
+
+    public void setOperational(boolean operational) {
+        this.operational = operational;
     }
 
     public void setConsistent(boolean consistent) {

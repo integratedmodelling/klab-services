@@ -65,7 +65,7 @@ public class ResourcesNavigatorControllerImpl extends AbstractUIViewController<R
                         if (reasoner.isExclusive() && reasoner instanceof Reasoner.Admin adminReasoner && !Worldview.WORLDVIEW_WORKSPACE_IDENTIFIER.equals(changes.getWorkspace())) {
                             var logicalChanges = adminReasoner.updateKnowledge(changes,getController().user());
                             if (!logicalChanges.isEmpty()) {
-                                getController().engine().serviceScope().send(Message.MessageClass.KnowledgeLifecycle, Message.MessageType.LogicalValidation, logicalChanges);
+                                getController().dispatch(this, UIEvent.LogicalValidation, logicalChanges);
                             }
                         }
                     }

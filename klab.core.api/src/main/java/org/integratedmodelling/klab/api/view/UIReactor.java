@@ -1,6 +1,7 @@
 package org.integratedmodelling.klab.api.view;
 
 import org.integratedmodelling.klab.api.data.mediation.classification.Classification;
+import org.integratedmodelling.klab.api.engine.Engine;
 import org.integratedmodelling.klab.api.engine.distribution.Distribution;
 import org.integratedmodelling.klab.api.identities.UserIdentity;
 import org.integratedmodelling.klab.api.knowledge.Expression;
@@ -160,27 +161,28 @@ public interface UIReactor {
      */
     enum UIEvent {
 
-        EngineStarting(EventDirection.EngineToView, UserIdentity.class),
-        /**
-         * From this point on, the UI should be synced to the services in the scope and made its functions
-         * available based on the current service capabilities.
-         */
-        EngineAvailable(EventDirection.EngineToView, UserScope.class),
-        EngineUnavailable(EventDirection.EngineToView, UserIdentity.class),
-        /**
-         * Sent only for the DEFAULT services in case they are local to the modeler's instance.
-         */
-        ServiceStarting(EventDirection.EngineToView, KlabService.ServiceCapabilities.class),
-        /**
-         * Sent only for the DEFAULT services in case they are local to the modeler's instance or for other
-         * services in case they come online after going offline. Besides a default/local service, the
-         * services listed in the UI should be those listed in the user scope sent with EngineAvailable.
-         */
-        ServiceAvailable(EventDirection.EngineToView, KlabService.ServiceCapabilities.class),
-        /**
-         * Sent for any of the services in the user scope when they go offline.
-         */
-        ServiceUnavailable(EventDirection.EngineToView, KlabService.ServiceCapabilities.class),
+//        EngineStarting(EventDirection.EngineToView, UserIdentity.class),
+//        /**
+//         * From this point on, the UI should be synced to the services in the scope and made its functions
+//         * available based on the current service capabilities.
+//         */
+//        EngineAvailable(EventDirection.EngineToView, UserScope.class),
+//        EngineUnavailable(EventDirection.EngineToView, UserIdentity.class),
+        EngineStatusChanged(EventDirection.EngineToView, Engine.Status.class),
+//        /**
+//         * Sent only for the DEFAULT services in case they are local to the modeler's instance.
+//         */
+//        ServiceStarting(EventDirection.EngineToView, KlabService.ServiceCapabilities.class),
+//        /**
+//         * Sent only for the DEFAULT services in case they are local to the modeler's instance or for other
+//         * services in case they come online after going offline. Besides a default/local service, the
+//         * services listed in the UI should be those listed in the user scope sent with EngineAvailable.
+//         */
+//        ServiceAvailable(EventDirection.EngineToView, KlabService.ServiceCapabilities.class),
+//        /**
+//         * Sent for any of the services in the user scope when they go offline.
+//         */
+//        ServiceUnavailable(EventDirection.EngineToView, KlabService.ServiceCapabilities.class),
 
         /**
          * Sent from the UI to the engine to define which service to use as the default for the class, and to
@@ -234,7 +236,7 @@ public interface UIReactor {
         ImportProjectRequest(EventDirection.ViewToEngine, String.class),
         Notification(EventDirection.Bidirectional, Notification.class),
         DistributionSelected(EventDirection.ViewToView, Distribution.class),
-        ReasoningAvailable(EventDirection.EngineToView, Reasoner.Capabilities.class),
+//        ReasoningAvailable(EventDirection.EngineToView, Reasoner.Capabilities.class),
         UserAuthenticated(EventDirection.Bidirectional, UserIdentity.class),
 
         /**

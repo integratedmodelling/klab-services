@@ -986,7 +986,7 @@ public interface Reasoner extends KlabService {
          * @return a {@link ResourceSet} including the ontologies, observation strategies, each with any
          * notifications created during the load process, with the lexical context set as needed
          */
-        ResourceSet loadKnowledge(Worldview worldview, UserScope scope);
+        ResourceSet loadKnowledge(Worldview worldview, Scope scope);
 
         /**
          * When a reasoner is registered with a resources service by an external orchestrator, changes in the
@@ -1014,7 +1014,7 @@ public interface Reasoner extends KlabService {
 
         /**
          * The "port" to ingest an individual concept definition, called by
-         * {@link #loadKnowledge(Worldview, UserScope)} (Worldview)}. Provided separately to make it possible
+         * {@link #loadKnowledge(Worldview, Scope)} (Worldview)}. Provided separately to make it possible
          * for a resolver service to declare individual local concepts, as long as it owns the semantic
          * service. Definition must be made only in terms of known concepts (no forward declaration is
          * allowed), so order of ingestion is critical.
@@ -1023,7 +1023,7 @@ public interface Reasoner extends KlabService {
          * @param scope     admin user scope to report and validate
          * @return
          */
-        Concept defineConcept(KimConceptStatement statement, UserScope scope);
+        Concept defineConcept(KimConceptStatement statement, Scope scope);
 
         /**
          * Export a namespace as an OWL ontology with all dependencies.
